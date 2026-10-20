@@ -16,14 +16,14 @@
       ref="fieldEditor"
       v-model="fieldModel"
       :disabled="field.options.disabled"
-      :size="field.options.size"
+      :size="toElSize(field.options.size)"
       @change="handleChangeEvent"
     >
       <template v-if="!!field.options.buttonStyle">
         <el-checkbox-button
-          v-for="(item, index) in field.options.optionItems"
+          v-for="(item, index) in optionItems"
           :key="index"
-          :label="item[field.options.valueName] || item.value"
+          :value="item[field.options.valueName] || item.value"
           :disabled="item.disabled"
           :border="field.options.border"
           :style="{ display: field.options.displayStyle }"
@@ -32,9 +32,9 @@
       </template>
       <template v-else>
         <el-checkbox
-          v-for="(item, index) in field.options.optionItems"
+          v-for="(item, index) in optionItems"
           :key="index"
-          :label="item[field.options.valueName] || item.value"
+          :value="item[field.options.valueName] || item.value"
           :disabled="item.disabled"
           :border="field.options.border"
           :style="{ display: field.options.displayStyle }"
@@ -51,14 +51,12 @@
 
 <script>
 import FormItemWrapper from './form-item-wrapper'
-import emitter from '@/utils/emitter'
-import i18n, { translate } from '@/utils/i18n'
+import i18n, { translate } from '@/utils/i18n.ts'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
 
 export default {
   name: 'checkbox-widget',
-  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
-  mixins: [emitter, fieldMixin, i18n],
+  mixins: [fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -99,12 +97,22 @@ export default {
   computed: {
     contentForReadMode() {
       let str = []
-      this.field.options.optionItems.map((item) => {
+      this.optionItems.map((item) => {
         if (this.fieldModel.includes(item.value)) {
           str.push(item.name)
         }
       })
+
       return str.join('，')
+    },
+    optionItems() {
+      const { data_type, optionItems, customizeItems } = this.field.options
+      // 仅当 data_type 为 1 时使用 customizeItems，其他情况统一使用 optionItems
+      if (data_type === 1) {
+        this.fieldModel = Number(this.fieldModel) // 仅在需要时转换类型
+        return customizeItems
+      }
+      return optionItems
     }
   },
   beforeCreate() {
@@ -126,7 +134,7 @@ export default {
     this.handleOnMounted()
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     this.unregisterFromRefList()
   },
 

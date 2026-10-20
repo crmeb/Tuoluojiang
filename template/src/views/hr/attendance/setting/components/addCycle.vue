@@ -2,19 +2,27 @@
   <div>
     <el-drawer
       :title="type == 'add' ? '新增排班周期' : '编辑排班周期'"
-      :visible.sync="drawer"
+      v-model="drawer"
       size="700px"
       :before-close="handleClose"
-      :wrapperClosable="false"
+      :close-on-click-modal="false"
     >
       <el-form ref="ruleForm" label-width="90px" class="demo-ruleForm">
+        <div class="from-item-title mb15">
+          <span>设置周期</span>
+        </div>
+
         <el-form-item>
-          <span slot="label"><span class="color-tab">* </span>周期名称：</span>
-          <el-input v-model="name" size="small" clearable placeholder="请输入周期名称" />
+          <template #label>
+            <span><span class="color-tab">* </span>周期名称：</span>
+          </template>
+          <el-input v-model="name" clearable placeholder="请输入周期名称" />
         </el-form-item>
 
         <el-form-item>
-          <span slot="label"><span class="color-tab">* </span>周期天数：</span>
+          <template #label>
+            <span><span class="color-tab">* </span>周期天数：</span>
+          </template>
           <el-input-number v-model="cycle" controls-position="right" :min="1" :max="31" style="width: 180px">
           </el-input-number>
           天
@@ -26,23 +34,26 @@
         </div>
 
         <el-form-item v-for="index of cycle" :key="index">
-          <span slot="label"><span class="color-tab">* </span>第{{ index }}天：</span>
+          <template #label>
+            <span><span class="color-tab">* </span>第{{ index }}天：</span>
+          </template>
           <el-select v-model="shifts[index]" placeholder="请选择班次" style="width: 100%">
             <el-option v-for="item in shiftList" :label="item.name" :value="item.id" :key="item.id"></el-option>
           </el-select>
         </el-form-item>
       </el-form>
       <div class="button from-foot-btn fix btn-shadow">
-        <el-button @click="handleClose" size="small">取消</el-button>
-        <el-button type="primary" :loading="loading" size="small" @click="submitForm">保存</el-button>
+        <el-button @click="handleClose">取消</el-button>
+        <el-button type="primary" :loading="loading" @click="submitForm">保存</el-button>
       </div>
     </el-drawer>
   </div>
 </template>
 
 <script>
-import { attendanceShiftSelectApi, saveRosterCycleApi, rosterCycleDetailApi, putCycleListApi } from '@/api/config'
+import { attendanceShiftSelectApi, saveRosterCycleApi, rosterCycleDetailApi, putCycleListApi } from '@/api/config.ts'
 export default {
+  emits: ['cycleList'],
   name: 'CrmebOaEntAddCycle',
   props: {
     group_id: {
@@ -50,8 +61,16 @@ export default {
       default: 0
     }
   },
+  watch: {
+    // prop 由父组件更新时同步到本地副本（组件内部改写的是 group_idLocal）
+    group_id(val) {
+      this.group_idLocal = val
+    }
+  },
   data() {
     return {
+      // Vue 3 的 prop 只读，组件内部需要改写时用本地副本
+      group_idLocal: this.group_id,
       drawer: false,
       name: '',
       cycle: 2,
@@ -80,7 +99,7 @@ export default {
 
       let data = {
         name: this.name,
-        group_id: this.group_id,
+        group_id: this.group_idLocal,
         cycle: this.cycle,
         shifts: this.shifts
       }
@@ -96,12 +115,12 @@ export default {
       }
     },
     async getList() {
-      const result = await attendanceShiftSelectApi({ group_id: this.group_id, id: this.$route.query.id })
+      const result = await attendanceShiftSelectApi({ group_id: this.group_idLocal, id: this.$route.query.id })
       this.shiftList = result.data
     },
     async openBox(data, type) {
       this.type = type
-      this.group_id = data.group_id ? data.group_id : data
+      this.group_idLocal = data.group_id ? data.group_id : data
 
       if (this.type == 'edit') {
         this.shifts = [null]
@@ -118,7 +137,7 @@ export default {
     handleClose() {
       this.drawer = false
       this.name = ''
-      this.group_id = null
+      this.group_idLocal = null
       this.cycle = 2
       this.shifts = []
     }

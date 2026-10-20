@@ -1,50 +1,70 @@
 <template>
   <div>
-    <el-drawer title="打卡记录详情" :visible.sync="drawer" size="600px" :before-close="handleClose">
+    <el-drawer title="打卡记录详情" v-model="drawer" size="600px" :before-close="handleClose">
       <div class="contract-body">
         <div class="mt20">
           <el-form label-width="110px">
             <div class="form-box">
               <div class="form-item">
                 <el-form-item>
-                  <span slot="label">姓名：</span>
+                  <template #label>
+                    <span>姓名：</span>
+                  </template>
                   <p>{{ info.card ? info.card.name : '--' }}</p>
                 </el-form-item>
                 <el-form-item>
-                  <span slot="label">部门：</span>
+                  <template #label>
+                    <span>部门：</span>
+                  </template>
                   <p>{{ (info.frame && info.frame.name) || '--' }}</p>
                 </el-form-item>
 
                 <el-form-item>
-                  <span slot="label">考勤组名称：</span>
+                  <template #label>
+                    <span>考勤组名称：</span>
+                  </template>
                   <p>{{ info.group || '--' }}</p>
                 </el-form-item>
                 <el-form-item>
-                  <span slot="label">考勤日期：</span>
-                  <p>{{ $moment(info.created_at).format('YYYY-MM-DD') }}</p>
+                  <template #label>
+                    <span>考勤日期：</span>
+                  </template>
+                  <p>{{ dayjs(info.created_at).format('YYYY-MM-DD') }}</p>
                 </el-form-item>
                 <el-form-item>
-                  <span slot="label">星期：</span>
+                  <template #label>
+                    <span>星期：</span>
+                  </template>
                   <p>{{ getWeek(info.created_at) }}</p>
                 </el-form-item>
                 <el-form-item>
-                  <span slot="label">班次：</span>
+                  <template #label>
+                    <span>班次：</span>
+                  </template>
                   <p>{{ getShift(info.shift_data) }}</p>
                 </el-form-item>
                 <el-form-item>
-                  <span slot="label">打卡时间：</span>
+                  <template #label>
+                    <span>打卡时间：</span>
+                  </template>
                   <p>{{ info.created_at }}</p>
                 </el-form-item>
                 <el-form-item>
-                  <span slot="label">打卡地址：</span>
+                  <template #label>
+                    <span>打卡地址：</span>
+                  </template>
                   <p>{{ info.address }}</p>
                 </el-form-item>
                 <el-form-item>
-                  <span slot="label">打卡备注：</span>
+                  <template #label>
+                    <span>打卡备注：</span>
+                  </template>
                   <p>{{ info.remark || '--' }}</p>
                 </el-form-item>
                 <el-form-item>
-                  <span slot="label">打卡图片：</span>
+                  <template #label>
+                    <span>打卡图片：</span>
+                  </template>
                   <template v-if="info.image && info.image.length > 0">
                     <p v-for="(item, index) in info.image" :key="index">
                       <img class="image" :src="item" alt="" @click="lookViewer(item, '')" />
@@ -63,10 +83,15 @@
 </template>
 
 <script>
-import { clockRecordDetails } from '@/api/config'
-import { toGetWeek } from '@/utils/format'
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
+import { clockRecordDetails } from '@/api/config.ts'
+import { toGetWeek } from '@/utils/format.ts'
 export default {
   name: 'CrmebOaEntDetailsDrawer',
+  computed: {
+    dayjs: () => dayjs
+  },
   data() {
     return {
       drawer: false,
@@ -76,7 +101,7 @@ export default {
   },
 
   components: {
-    imageViewer: () => import('@/components/common/imageViewer')
+    imageViewer: defineAsyncComponent(() => import('@/components/common/imageViewer'))
   },
 
   methods: {
@@ -148,11 +173,11 @@ export default {
   overflow-y: auto;
 }
 
-.description /deep/ .el-form-item {
+.description :deep(.el-form-item) {
   margin-bottom: 0px;
 }
 
-/deep/ .el-form-item__label {
+:deep(.el-form-item__label) {
   font-size: 13px !important;
   font-weight: 400;
   color: #909399 !important;
@@ -167,17 +192,17 @@ export default {
   flex-wrap: wrap;
   justify-content: space-between;
   .form-item {
-    /deep/ .el-form-item__content {
+    :deep(.el-form-item__content) {
       width: calc(100% - 110px);
       font-size: 13px !important;
     }
-    /deep/ .el-select--medium {
+    :deep(.el-select) {
       width: 100%;
     }
-    /deep/ .el-form-item {
+    :deep(.el-form-item) {
       margin-bottom: 0;
     }
-    /deep/ .el-textarea__inner {
+    :deep(.el-textarea__inner) {
       resize: none;
     }
 

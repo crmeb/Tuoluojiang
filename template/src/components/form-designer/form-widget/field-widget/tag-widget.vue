@@ -13,21 +13,21 @@
   >
     <select-label
       v-show="!getReadMode() || field.isShow"
-      :list="field.options.optionItems || []"
-      :value="fieldModel"
+      :list="optionItems || []"
+      :value="Array.isArray(fieldModel) ? fieldModel : []"
       ref="selectLabel"
       style="width: 100%"
       :props="{ children: 'children', label: 'name' }"
-      @handleLabelConf="handleLabelConf($event, val)"
+      @handleLabelConf="handleLabelConf"
       @submit="submit"
     >
-      <template v-slot:custom>
+      <!-- <template v-slot:custom>
         <el-select
           ref="fieldEditor"
           v-model="fieldModel"
           class="full-width-input"
           popper-class="popper-class"
-          :size="field.options.size"
+          :size="toElSize(field.options.size)"
           :default-first-option="allowDefaultFirstOption"
           :multiple="true"
           :placeholder="field.options.placeholder || i18nt('render.hint.selectPlaceholder')"
@@ -37,7 +37,7 @@
         >
           <el-option v-for="item in labelData" :key="item.id" :label="item.name" :value="item.id"> </el-option>
         </el-select>
-      </template>
+      </template> -->
     </select-label>
 
     <template v-if="getReadMode() && !field.isShow">
@@ -52,17 +52,16 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 import FormItemWrapper from './form-item-wrapper'
-import emitter from '@/utils/emitter'
-import i18n, { translate } from '@/utils/i18n'
+import i18n, { translate } from '@/utils/i18n.ts'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
-import { clientConfigLabelApi } from '@/api/enterprise'
+import { clientConfigLabelApi } from '@/api/enterprise.ts'
 import { deepClone } from '@/utils/util'
 
 export default {
   name: 'tag-widget',
-  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
-  mixins: [emitter, fieldMixin, i18n],
+  mixins: [fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -90,20 +89,51 @@ export default {
   },
   components: {
     FormItemWrapper,
-    selectLabel: () => import('@/components/form-common/select-label')
+    selectLabel: defineAsyncComponent(() => import('@/components/form-common/select-label'))
   },
   inject: ['refList', 'formConfig', 'globalOptionData', 'globalModel'],
   data() {
     return {
       oldFieldValue: null, //field组件change之前的值
-      fieldModel: null,
+      fieldModel: [],
       rules: [],
-      tableData: [],
+      /* 标签分组数据，不能命名为tableData：fieldMixin已声明同名prop（明细表行数据），
+         同名会触发Vue告警并覆盖prop，导致明细表内的标签字段回显失效 */
+      labelTreeData: [],
       labelData: [],
       labelList: [] // 选中的标签列表
     }
   },
   computed: {
+    optionItems() {
+      const { options } = this.field
+
+      // 数据类型为0时直接返回选项
+      if (options.data_type == 0) {
+        return options.optionItems
+      }
+
+      // 处理自定义选项，使用map创建新数组避免修改原数据
+      return (options.customizeItems || []).map((item) => {
+        // 复制原始对象，避免直接修改
+        const newItem = {
+          ...item,
+          id: Number(item.id),
+          pid: ''
+        }
+
+        // 处理子项
+        if (newItem.children && newItem.children.length) {
+          newItem.children = newItem.children.map((child) => ({
+            ...child,
+            id: Number(child.id),
+            pid: '2'
+          }))
+        }
+
+        return newItem
+      })
+    },
     allowDefaultFirstOption() {
       return !!this.field.options.filterable && !!this.field.options.allowCreate
     },
@@ -135,7 +165,7 @@ export default {
                 id: item.id,
                 name: name
               }
-              // this.labelList.push(obj)
+
               names.push(name)
               return
             }
@@ -148,7 +178,6 @@ export default {
 
         return names
       }
-
       return getNamesByIds(this.labelData, this.fieldModel)
     }
   },
@@ -172,7 +201,7 @@ export default {
     this.handleOnMounted()
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     this.unregisterFromRefList()
   },
 
@@ -190,7 +219,7 @@ export default {
 
     // 选中客户标签成功回调
     handleLabelConf(res) {
-      this.fieldModel = res.ids
+      this.fieldModel = [...res.ids]
       this.labelList = res.list
 
       /* input的清除输入小按钮会同时触发handleChangeEvent、handleInputCustomEvent！！ */
@@ -201,24 +230,30 @@ export default {
       // this.oldFieldValue = deepClone(this.fieldModel) /* oldFieldValue需要在initFieldModel()方法中赋初值!! */
 
       /* 主动触发表单的单个字段校验，用于清除字段可能存在的校验错误提示 */
-      this.dispatch('VFormRender', 'fieldValidation', [this.getPropName()])
+      this.formRenderHub?.emit('fieldValidation', this.getPropName())
     },
     // 列表
     getTableData() {
-      if (this.field.options.optionItems && this.field.options.optionItems.length == 0) {
+      if (this.field.optionItems && this.optionItems.length == 0) {
         this.getLabelData()
       } else {
-        this.tableData = this.field.options.optionItems
-        if (this.tableData && this.tableData.length > 0) {
-          this.tableData.map((value) => {
-            if (value.children && value.children.length > 0) {
-              value.children.map((val) => {
-                this.labelData.push(val)
-              })
-            }
-          })
-        }
+        this.labelTreeData = this.optionItems
+        this.collectLabelData()
       }
+    },
+
+    // 收集可选中的标签（两级结构取子级，一级扁平结构取自身）
+    collectLabelData() {
+      if (!this.labelTreeData || this.labelTreeData.length === 0) return
+      this.labelTreeData.forEach((value) => {
+        if (value.children && value.children.length > 0) {
+          value.children.forEach((val) => {
+            this.labelData.push(val)
+          })
+        } else {
+          this.labelData.push(value)
+        }
+      })
     },
 
     getLabelData() {
@@ -227,16 +262,8 @@ export default {
         limit: 0
       }
       clientConfigLabelApi(data).then((res) => {
-        this.tableData = res.data.list === undefined ? [] : res.data.list
-        if (this.tableData && this.tableData.length > 0) {
-          this.tableData.map((value) => {
-            if (value.children.length > 0) {
-              value.children.map((val) => {
-                this.labelData.push(val)
-              })
-            }
-          })
-        }
+        this.labelTreeData = res.data.list === undefined ? [] : res.data.list
+        this.collectLabelData()
       })
     }
   }
@@ -253,8 +280,7 @@ export default {
 .full-width-input {
   width: 100% !important;
 }
-::v-deep .el-input__suffix {
+:deep(.el-input__suffix) {
   display: none;
 }
 </style>
-@/utils/i18ns

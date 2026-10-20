@@ -18,7 +18,7 @@ namespace App\Http\Service\Attendance;
 use App\Http\Contract\Attendance\ClockRecordInterface;
 use App\Http\Dao\Attendance\ClockRecordDao;
 use App\Http\Service\BaseService;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 
 /**
  * 打卡记录

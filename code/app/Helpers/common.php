@@ -14,11 +14,11 @@ declare(strict_types=1);
  */
 use App\Http\Requests\ApiValidate;
 use App\Http\Service\Notice\NoticeRecordService;
-use crmeb\exceptions\ApiException;
-use crmeb\exceptions\ApiRequestException;
-use crmeb\services\ConfigService;
-use crmeb\services\GroupDataService;
-use crmeb\services\SmsService;
+use Tuoluojiang\Open\exceptions\ApiException;
+use Tuoluojiang\Open\exceptions\ApiRequestException;
+use Tuoluojiang\Open\services\ConfigService;
+use Tuoluojiang\Open\services\GroupDataService;
+use Tuoluojiang\Open\services\SmsService;
 use Defuse\Crypto\Crypto;
 use Defuse\Crypto\Key;
 use Fastknife\Service\BlockPuzzleCaptchaService;
@@ -36,20 +36,23 @@ use Psr\Container\NotFoundExceptionInterface;
 
 if (! function_exists('sys_config')) {
     /**
-     * 获取单个系统配置.
-     * @param mixed $isCache
-     * @param null|mixed $default
+     * 获取或设置单个系统配置.
+     *
+     * @param null|string $key 配置名称；为 null 时返回 ConfigService 实例
+     * @param null|mixed $default 默认值；当 $isSet 为 true 时作为写入值
+     * @param bool $isSet 是否写入配置；为 true 时写入后仅清除当前 key 缓存
+     * @param bool $clearCache 是否先清除当前 key 缓存再读取；默认 false 走缓存读取
      * @return null|Application|(Application&ConfigService)|ConfigService|mixed|string
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    function sys_config(?string $key = null, $default = null, bool $isSet = false, bool $isCache = false)
+    function sys_config(?string $key = null, $default = null, bool $isSet = false, bool $clearCache = false)
     {
         if ($key === null) {
             return app('config_crmeb');
         }
 
-        return app('config_crmeb')->get($key, $default, $isSet, $isCache);
+        return app('config_crmeb')->get($key, $default, $isSet, $clearCache);
     }
 }
 if (! function_exists('sys_more')) {
@@ -167,12 +170,9 @@ if (! function_exists('is_win')) {
      *
      * @return bool
      */
-    function is_win()
+    function is_win(): bool
     {
-        if (strtoupper(substr(php_uname('s'), 0, 3)) === 'WIN') {
-            return true;
-        }
-        return false;
+        return strtoupper(substr(php_uname('s'), 0, 3)) === 'WIN';
     }
 }
 
@@ -181,13 +181,11 @@ if (! function_exists('get_tree_children')) {
      * 获取tree型数据.
      *
      * @param array $data 数据
-     * @param string $childrenname 子数据名
+     * @param string $children 子数据名
      * @param string $keyName 数据key名
      * @param string $pidName 数据上级key名
-     *
-     * @return array
      */
-    function get_tree_children(array $data, string $childrenname = 'children', string $keyName = 'id', string $pidName = 'pid')
+    function get_tree_children(array $data, string $children = 'children', string $keyName = 'id', string $pidName = 'pid'): array
     {
         $list = [];
         foreach ($data as $value) {
@@ -196,7 +194,7 @@ if (! function_exists('get_tree_children')) {
         $tree = []; // 格式化好的树
         foreach ($list as $item) {
             if (isset($list[$item[$pidName]]) && $item[$pidName]) {
-                $list[$item[$pidName]][$childrenname][] = &$list[$item[$keyName]];
+                $list[$item[$pidName]][$children][] = &$list[$item[$keyName]];
             } else {
                 $tree[] = &$list[$item[$keyName]];
             }
@@ -224,7 +222,7 @@ if (! function_exists('validate')) {
 
             return $validator->errors();
         }
-        if (strpos($validate, '.')) {
+        if (str_contains($validate, '.')) {
             // 支持场景
             [$validate, $scene] = explode('.', $validate);
         }
@@ -246,13 +244,9 @@ if (! function_exists('get_roule_mobu')) {
      *
      * @return string
      */
-    function get_roule_mobu(string $value = '', int $type = 0)
+    function get_roule_mobu(string $value = '', int $type = 0): string
     {
-        if ($type) {
-            $typeName = 'ent';
-        } else {
-            $typeName = 'admin';
-        }
+        $typeName = $type ? 'ent' : 'admin';
         return config('app.' . $typeName . '.path', '/admin') . $value;
     }
 }
@@ -261,7 +255,7 @@ if (! function_exists('get_image_frame_url')) {
     /**
      * 获取总后台图片frame URL.
      */
-    function get_image_frame_url(array $query = [], int $type = 0, string $value = '/setting/uploadPicture')
+    function get_image_frame_url(array $query = [], int $type = 0, string $value = '/setting/uploadPicture'): string
     {
         $queryData = [];
         foreach ($query as $k => $v) {
@@ -280,7 +274,7 @@ if (! function_exists('verification_api_check')) {
      *
      * @return bool
      */
-    function verification_api_check(string $verificationCode, string $phone)
+    function verification_api_check(string $verificationCode, string $phone): bool
     {
         if (! config('sms.verification')) {
             return true;
@@ -309,51 +303,37 @@ if (! function_exists('get_os')) {
      *
      * @return string
      */
-    function get_os()
+    function get_os(): string
     {
-        $user_agent = request()->header('user-agent');
-        if (stripos($user_agent, 'windows nt 5.0')) {
-            $user_os = 'Windows 2000';
-        } elseif (stripos($user_agent, 'windows nt 9')) {
-            $user_os = 'Windows 9X';
-        } elseif (stripos($user_agent, 'windows nt 5.1')) {
-            $user_os = 'Windows XP';
-        } elseif (stripos($user_agent, 'windows nt 5.2')) {
-            $user_os = 'Windows 2003';
-        } elseif (stripos($user_agent, 'windows nt 6.0')) {
-            $user_os = 'Windows Vista';
-        } elseif (stripos($user_agent, 'windows nt 6.1')) {
-            $user_os = 'Windows 7';
-        } elseif (stripos($user_agent, 'windows nt 6.2')) {
-            $user_os = 'Windows 8';
-        } elseif (stripos($user_agent, 'windows nt 6.3')) {
-            $user_os = 'Windows 8.1';
-        } elseif (stripos($user_agent, 'windows nt 10')) {
-            $user_os = 'Windows 10';
-        } elseif (stripos($user_agent, 'windows phone')) {
-            $user_os = 'Windows Phone';
-        } elseif (stripos($user_agent, 'android')) {
-            $user_os = 'Android';
-        } elseif (stripos($user_agent, 'iphone')) {
-            $user_os = 'iPhone';
-        } elseif (stripos($user_agent, 'ipad')) {
-            $user_os = 'iPad';
-        } elseif (stripos($user_agent, 'mac')) {
-            $user_os = 'Mac';
-        } elseif (stripos($user_agent, 'sunos')) {
-            $user_os = 'Sun OS';
-        } elseif (stripos($user_agent, 'bsd')) {
-            $user_os = 'BSD';
-        } elseif (stripos($user_agent, 'ubuntu')) {
-            $user_os = 'Ubuntu';
-        } elseif (stripos($user_agent, 'linux')) {
-            $user_os = 'Linux';
-        } elseif (stripos($user_agent, 'unix')) {
-            $user_os = 'Unix';
-        } else {
-            $user_os = 'Other';
+        $user_agent = request()->header('user-agent') ?? '';
+        // 操作系统关键词映射表（顺序敏感，优先匹配更具体的关键词）
+        $osMap = [
+            'windows nt 5.0' => 'Windows 2000',
+            'windows nt 9'   => 'Windows 9X',
+            'windows nt 5.1' => 'Windows XP',
+            'windows nt 5.2' => 'Windows 2003',
+            'windows nt 6.0' => 'Windows Vista',
+            'windows nt 6.1' => 'Windows 7',
+            'windows nt 6.2' => 'Windows 8',
+            'windows nt 6.3' => 'Windows 8.1',
+            'windows nt 10'  => 'Windows 10',
+            'windows phone'  => 'Windows Phone',
+            'android'        => 'Android',
+            'iphone'         => 'iPhone',
+            'ipad'           => 'iPad',
+            'mac'            => 'Mac',
+            'sunos'          => 'Sun OS',
+            'bsd'            => 'BSD',
+            'ubuntu'         => 'Ubuntu',
+            'linux'          => 'Linux',
+            'unix'           => 'Unix',
+        ];
+        foreach ($osMap as $keyword => $osName) {
+            if (stripos($user_agent, $keyword) !== false) {
+                return $osName;
+            }
         }
-        return $user_os;
+        return 'Other';
     }
 }
 
@@ -363,7 +343,7 @@ if (! function_exists('get_download_url')) {
      *
      * @return string
      */
-    function get_download_url(string $fileId, array $param = [], string $path = 'api/ent')
+    function get_download_url(string $fileId, array $param = [], string $path = 'api/ent'): string
     {
         $param['fileId'] = $fileId;
         $signature       = Crypt::encryptString(json_encode($param));
@@ -378,17 +358,43 @@ if (! function_exists('birthday_to_age')) {
      *
      * @return false|mixed|string
      */
-    function birthday_to_age(string $birthday)
+    function birthday_to_age(string $birthday): int
     {
         [$year, $month, $day] = explode('-', $birthday);
-        $year_diff            = date('Y') - $year;
-        $month_diff           = date('m') - $month;
-        $day_diff             = date('d') - $day;
+        $year_diff  = (int) date('Y') - (int) $year;
+        $month_diff = (int) date('m') - (int) $month;
+        $day_diff   = (int) date('d') - (int) $day;
         if ($day_diff < 0 || $month_diff < 0) {
             --$year_diff;
         }
 
         return $year_diff;
+    }
+}
+
+if (! function_exists('datetime_timestamp')) {
+    /**
+     * 获取时间戳，兼容 Eloquent datetime cast 返回的 Carbon/DateTime 对象.
+     */
+    function datetime_timestamp(mixed $datetime): int|false
+    {
+        if ($datetime instanceof \DateTimeInterface) {
+            return $datetime->getTimestamp();
+        }
+
+        if ($datetime === null || $datetime === '') {
+            return false;
+        }
+
+        if (is_int($datetime)) {
+            return $datetime;
+        }
+
+        if (is_float($datetime)) {
+            return (int) $datetime;
+        }
+
+        return strtotime((string) $datetime);
     }
 }
 
@@ -403,9 +409,9 @@ if (! function_exists('time_contrast_api_check')) {
     function time_contrast_api_check(string $entTime, string $startTime, bool $just = false): bool
     {
         if ($just) {
-            return strtotime($startTime) < strtotime($entTime);
+            return datetime_timestamp($startTime) < datetime_timestamp($entTime);
         }
-        return strtotime($entTime) > strtotime($startTime);
+        return datetime_timestamp($entTime) > datetime_timestamp($startTime);
     }
 }
 
@@ -415,7 +421,7 @@ if (! function_exists('password_confirm_api_check')) {
      *
      * @return bool
      */
-    function password_confirm_api_check(string $password, string $passwordConfirm)
+    function password_confirm_api_check(string $password, string $passwordConfirm): bool
     {
         return $password === $passwordConfirm;
     }
@@ -428,9 +434,8 @@ if (! function_exists('message')) {
      * @return NoticeRecordService
      * @throws BindingResolutionException
      */
-    function message()
+    function message(): NoticeRecordService
     {
-        /* @var NoticeRecordService $service */
         return app()->get(NoticeRecordService::class);
     }
 }
@@ -441,34 +446,18 @@ if (! function_exists('get_week_num')) {
      *
      * @return int
      */
-    function get_week_num(string $type)
+    function get_week_num(string $type): int
     {
-        $week = 0;
-        switch (strtolower($type)) {
-            case 'monday':
-                $week = 1;
-                break;
-            case 'tuesday':
-                $week = 2;
-                break;
-            case 'wednesday':
-                $week = 3;
-                break;
-            case 'thursday':
-                $week = 4;
-                break;
-            case 'friday':
-                $week = 5;
-                break;
-            case 'saturday':
-                $week = 6;
-                break;
-            case 'sunday':
-                $week = 7;
-                break;
-        }
-
-        return $week;
+        return match (strtolower($type)) {
+            'monday'    => 1,
+            'tuesday'   => 2,
+            'wednesday' => 3,
+            'thursday'  => 4,
+            'friday'    => 5,
+            'saturday'  => 6,
+            'sunday'    => 7,
+            default     => 0,
+        };
     }
 }
 
@@ -478,7 +467,7 @@ if (! function_exists('get_password_message')) {
      *
      * @return mixed
      */
-    function get_password_message(array $type = [])
+    function get_password_message(array $type = []): string
     {
         $type = $type ?: sys_config('login_password_type');
         $type = is_array($type) ? $type : [0, 2];
@@ -500,7 +489,7 @@ if (! function_exists('get_password_message')) {
             '123'  => '小写字母+大写字母+特殊字符',
         ];
 
-        return $message[$typeStr];
+        return $message[$typeStr] ?? '未知';
     }
 }
 if (! function_exists('assoc_unique')) {
@@ -513,7 +502,7 @@ if (! function_exists('assoc_unique')) {
     {
         $tmpArr = [];
         foreach ($arr as $k => $v) {
-            if (in_array($v[$key], $tmpArr)) {
+            if (in_array($v[$key], $tmpArr, true)) {
                 unset($arr[$k]);
             } else {
                 $tmpArr[] = $v[$key];
@@ -526,13 +515,20 @@ if (! function_exists('assoc_unique')) {
 }
 
 if (! function_exists('str_content')) {
-    function str_content($content)
+    /**
+     * 获取纯文本摘要.
+     *
+     * @param string $content HTML内容
+     * @param int $length 截取长度
+     * @return string
+     */
+    function str_content(string $content, int $length = 320): string
     {
-        $content_02 = htmlspecialchars_decode($content); // 把一些预定义的 HTML 实体转换为字符
-        $content_03 = str_replace('&nbsp;', '', $content_02); // 将空格替换成空
-        $contents   = strip_tags($content_03); // 函数剥去字符串中的 HTML、XML 以及 PHP 的标签,获取纯文本内容
+        $decoded  = htmlspecialchars_decode($content);
+        $cleaned  = str_replace('&nbsp;', '', $decoded);
+        $plainText = strip_tags($cleaned);
 
-        return mb_substr($contents, 0, 320, 'utf-8') . '...'; // 返回字符串中的前100字符串长度的字符
+        return mb_substr($plainText, 0, $length, 'utf-8') . '...';
     }
 }
 
@@ -542,7 +538,7 @@ if (! function_exists('get_start_and_end_time')) {
      *
      * @return string[]
      */
-    function get_start_and_end_time(int $period)
+    function get_start_and_end_time(int $period): array
     {
         $now       = now();
         $startTime = $endTime = '';
@@ -617,7 +613,7 @@ if (! function_exists('micro_time')) {
     /**
      * 获取时间.
      */
-    function micro_time()
+    function micro_time(): string
     {
         [$usec, $sec] = explode(' ', microtime());
         return $sec . substr($usec, 2, 3);
@@ -651,7 +647,7 @@ if (! function_exists('crypto_decode')) {
 }
 
 if (! function_exists('format_val')) {
-    function format_val($value)
+    function format_val(string $value): string
     {
         if (str_contains($value, ' ') || str_contains($value, '$')) {
             $value = "\"{$value}\"";
@@ -662,7 +658,7 @@ if (! function_exists('format_val')) {
 }
 
 if (! function_exists('modify_env')) {
-    function modify_env($data)
+    function modify_env(array $data): void
     {
         $contentArray = collect(file(base_path('.env'), FILE_IGNORE_NEW_LINES));
 
@@ -678,11 +674,19 @@ if (! function_exists('modify_env')) {
         });
 
         File::put(base_path('.env'), implode(PHP_EOL, $contentArray->toArray()));
+
+        // 同步更新当前进程的环境变量（Swoole常驻内存下避免缓存问题）
+        foreach ($data as $key => $value) {
+            $val = (string) $value;
+            putenv($key . '=' . $val);
+            $_ENV[$key] = $val;
+            $_SERVER[$key] = $val;
+        }
     }
 }
 
 if (! function_exists('sql_split')) {
-    function sql_split($sql, $tablepre)
+    function sql_split(string $sql, string $tablepre): array
     {
         if ($tablepre != 'eb_') {
             $sql = str_replace('eb_', $tablepre, $sql);
@@ -711,18 +715,22 @@ if (! function_exists('sql_split')) {
     }
 }
 if (! function_exists('getVersion')) {
-    function getVersion(string $key = '')
+    /**
+     * 获取版本号.
+     */
+    function getVersion(string $key = ''): array|string
     {
-        $version_arr    = [];
-        $curent_version = @file(base_path('.version'));
-        foreach ($curent_version as $val) {
-            [$k, $v]         = explode('=', $val);
-            $version_arr[$k] = $v;
+        $version_arr     = [];
+        $current_version = @file(base_path('.version'));
+        if ($current_version !== false) {
+            foreach ($current_version as $val) {
+                $parts = explode('=', $val, 2);
+                if (count($parts) === 2) {
+                    $version_arr[trim($parts[0])] = trim($parts[1]);
+                }
+            }
         }
-        if ($key) {
-            return trim($version_arr[$key]);
-        }
-        return $version_arr;
+        return $key ? ($version_arr[$key] ?? '') : $version_arr;
     }
 }
 if (! function_exists('getFieldData')) {
@@ -735,38 +743,19 @@ if (! function_exists('getFieldData')) {
     }
 }
 
-if (! function_exists('getVersion')) {
-    /**
-     * 获取版本号.
-     */
-    function getVersion(string $key = ''): array|string
-    {
-        $version_arr    = [];
-        $curent_version = @file(base_path('.version'));
-        foreach ($curent_version as $val) {
-            [$k, $v]         = explode('=', $val);
-            $version_arr[$k] = $v;
-        }
-        return $key ? trim($version_arr[$key]) : $version_arr;
-    }
-}
-
 if (! function_exists('getMimetype')) {
     /**
      * 获取文件类型.
      * @param mixed $name
      */
-    function getMimetype($name)
+    function getMimetype(string $name): ?string
     {
-        $parts = explode('.', $name);
-        if (count($parts) > 1) {
-            $ext = strtolower(end($parts));
-            if (isset(config('upload.mime_types')[$ext])) {
-                return config('upload.mime_types')[$ext];
-            }
+        $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+        if ($ext === '') {
+            return null;
         }
 
-        return null;
+        return config('upload.mime_types')[$ext] ?? null;
     }
 }
 
@@ -776,7 +765,7 @@ if (! function_exists('text_strlen_confirm_api_check')) {
      *
      * @return bool
      */
-    function text_strlen_confirm_api_check(string $value, string $len)
+    function text_strlen_confirm_api_check(string $value, string $len): bool
     {
         return mb_strlen(strip_tags(stripslashes(htmlspecialchars_decode($value)))) <= $len;
     }
@@ -811,7 +800,7 @@ if (! function_exists('get_env')) {
             }
             if (is_array($key)) {
                 if ($key) {
-                    if (in_array($itemArr[0], $key)) {
+                    if (in_array($itemArr[0], $key, true)) {
                         $arr[$itemArr[0]] = trim(format_val($itemArr[1]), '"');
                     }
                 } else {
@@ -832,18 +821,17 @@ if (! function_exists('sort_mode')) {
     {
         $orderField = request()->input('sort_field', '');
         $orderValue = request()->input('sort_value', '');
-        if (! $orderField || ! $orderValue) {
+        if (empty($orderField) || empty($orderValue)) {
             return $sort;
         }
-        if (! $sort) {
-            return [$orderField => $orderValue];
+        $baseSort = collect([$orderField => $orderValue]);
+        if (is_null($sort)) {
+            return $baseSort->all();
         }
         if (! is_array($sort)) {
-            $sort = [$orderField => $orderValue, $sort];
-        } else {
-            $sort = array_merge([$orderField => $orderValue], $sort);
+            return $baseSort->put($sort, 'asc')->all();
         }
-        return $sort;
+        return $baseSort->merge($sort)->all();
     }
 }
 
@@ -852,16 +840,12 @@ if (! function_exists('is_dimensional_data')) {
      * 是否为多维数组.
      * @return bool
      */
-    function is_dimensional_data(mixed $data = null)
+    function is_dimensional_data(mixed $data = null): bool
     {
-        if (! is_array($data) || empty($data)) {
+        if (! is_array($data)) {
             return false;
         }
-
-        foreach ($data as $val) {
-            return is_array($val);
-        }
-        return false;
+        return count(array_filter($data, 'is_array')) > 0;
     }
 }
 
@@ -872,7 +856,7 @@ if (! function_exists('format_size')) {
      * @param mixed $times
      * @return bool
      */
-    function format_size($b, $times = 0)
+    function format_size(float|int $b, int $times = 0): string
     {
         if ($b > 1024) {
             $temp = $b / 1024;
@@ -904,14 +888,10 @@ if (! function_exists('prefix_correction')) {
             return $content;
         }
         $defaultPrefix = 'eb_';
-        if ($correct === '') {
-            $correct = get_env('DB_PREFIX');
-            if (! $correct) {
-                $correct = $defaultPrefix;
-            }
-        }
+        $correct = $correct ?: (get_env('DB_PREFIX') ?: $defaultPrefix);
         if ($correct !== $defaultPrefix) {
             $content = str_replace('`' . $defaultPrefix, '`' . $correct, $content);
+            $content = preg_replace('/\b(FROM|JOIN|UPDATE|INTO|TABLE)\s+`?' . preg_quote($defaultPrefix, '/') . '([A-Za-z0-9_]+)`?/i', '$1 `' . $correct . '$2`', $content);
         }
         return $content;
     }
@@ -922,7 +902,7 @@ if (! function_exists('aj_captcha_create')) {
      * 创建验证码
      * @return array
      */
-    function aj_captcha_create(string $captchaType)
+    function aj_captcha_create(string $captchaType): array
     {
         return aj_get_serevice($captchaType)->get();
     }
@@ -932,21 +912,16 @@ if (! function_exists('aj_get_serevice')) {
     /**
      * @return BlockPuzzleCaptchaService|ClickWordCaptchaService
      */
-    function aj_get_serevice(string $captchaType)
+    function aj_get_serevice(string $captchaType): BlockPuzzleCaptchaService|ClickWordCaptchaService
     {
         $config                         = Config::get('ajcaptcha');
         $config['cache']['constructor'] = app('cache.store');
-        switch ($captchaType) {
-            case 'clickWord':
-                $service = new ClickWordCaptchaService($config);
-                break;
-            case 'blockPuzzle':
-                $service = new BlockPuzzleCaptchaService($config);
-                break;
-            default:
-                throw new ApiException('captchaType参数不正确！');
-        }
-        return $service;
+
+        return match ($captchaType) {
+            'clickWord'   => new ClickWordCaptchaService($config),
+            'blockPuzzle' => new BlockPuzzleCaptchaService($config),
+            default       => throw new ApiException('captchaType参数不正确！'),
+        };
     }
 }
 
@@ -955,7 +930,7 @@ if (! function_exists('aj_captcha_check_one')) {
      * 验证滑块1次验证
      * @return bool
      */
-    function aj_captcha_check_one(string $captchaType, string $token, string $pointJson)
+    function aj_captcha_check_one(string $captchaType, string $token, string $pointJson): bool
     {
         aj_get_serevice($captchaType)->check($token, $pointJson);
         return true;
@@ -967,7 +942,7 @@ if (! function_exists('aj_captcha_check_two')) {
      * 验证滑块2次验证
      * @return bool
      */
-    function aj_captcha_check_two(string $captchaType, string $captchaVerification)
+    function aj_captcha_check_two(string $captchaType, string $captchaVerification): bool
     {
         aj_get_serevice($captchaType)->verificationByEncryptCode($captchaVerification);
         return true;
@@ -980,27 +955,23 @@ if (! function_exists('array_find')) {
      * @param null|mixed $key
      * @return null|mixed
      */
-    function array_find(array $data, $key = null)
+    function array_find(array $data, mixed $key = null): mixed
     {
         if (! $key) {
             return $data;
         }
 
-        $value = null;
         foreach ($data as $id => $item) {
             if (is_callable($key)) {
                 if ($key($item)) {
-                    $value = $item;
-                    break;
+                    return $item;
                 }
-            } else {
-                if ($key === $id) {
-                    $value = $item;
-                    break;
-                }
+            } elseif ($key === $id) {
+                return $item;
             }
         }
-        return $value;
+
+        return null;
     }
 }
 
@@ -1010,7 +981,7 @@ if (! function_exists('is_nested_array')) {
      * @param mixed $var
      * @return bool
      */
-    function is_nested_array($var)
+    function is_nested_array(mixed $var): bool
     {
         if (! is_array($var)) {
             return false;
@@ -1024,5 +995,132 @@ if (! function_exists('is_nested_array')) {
             }
         }
         return false;
+    }
+}
+
+if (! function_exists('format_url')) {
+    /**
+     * 移除URL中的http/https协议，可选拼接指定前缀
+     * @param string $url 原始URL
+     * @param null|string $prefix 可选前缀缀（如 'http://'、'https://'，默认null不拼接）
+     * @return string 处理后的URL
+     */
+    function format_url(string $url, ?string $prefix = null): string
+    {
+        $parsed = parse_url($url);
+        // 无法解析URL时，直接处理前缀后返回原URL
+        if (empty($parsed['host'])) {
+            return $prefix ? rtrim($prefix, '/') . '/' . ltrim($url, '/') : $url;
+        }
+        // 拼接主机名（含端口）
+        $result = $parsed['host'];
+        if (! empty($parsed['port'])) {
+            $result .= ':' . $parsed['port'];
+        }
+        // 拼接路径、查询参数、锚点
+        if (! empty($parsed['path'])) {
+            $result .= $parsed['path'];
+        }
+        if (! empty($parsed['query'])) {
+            $result .= '?' . $parsed['query'];
+        }
+        if (! empty($parsed['fragment'])) {
+            $result .= '#' . $parsed['fragment'];
+        }
+        // 若指定前缀，拼接前缀（处理斜杠冗余）
+        if ($prefix) {
+            $result = rtrim($prefix, '/') . '/' . ltrim($result, '/');
+        }
+        return $result;
+    }
+}
+if (! function_exists('is_empty')) {
+    /**
+     * 判断字符串是否为无意义值（空字符串、空数组/对象格式字符串等）.
+     * @return bool true=无意义，false=有有效内容
+     */
+    function is_empty(?string $string): bool
+    {
+        // 先处理null/非字符串类型（直接判定为无意义）
+        if (! is_string($string)) {
+            return true;
+        }
+        // 移除首尾空白字符（包括全角空格、换行、制表符等）
+        $trimmedStr = trim($string, " \t\n\r\0\x0B\xA0"); // \xA0是全角空格
+        // 基础判断：纯空字符串
+        if ($trimmedStr === '') {
+            return true;
+        }
+        // 判断空数组/空对象/空引号格式字符串
+        if (preg_match('/^\s*(\[\s*\]|\{\s*\}|[\'"]\s*[\'"])\s*$/', $trimmedStr)) {
+            return true;
+        }
+
+        return false;
+    }
+}
+
+if (! function_exists('get_name_letter')) {
+    /**
+     * 根据姓名获取字母索引.
+     * - 汉字姓名：取姓氏拼音首字母（大写）
+     * - 纯字母姓名：取首字母（大写）
+     * - 非汉字非字母（符号等）：返回 #
+     *
+     * @param string $name 姓名
+     * @return string 字母索引
+     */
+    function get_name_letter(string $name): string
+    {
+        $name = trim($name);
+        if ($name === '') {
+            return '#';
+        }
+
+        // 检测是否包含汉字
+        $hasChinese = preg_match('/[\x{4e00}-\x{9fa5}]/u', $name);
+
+        if ($hasChinese) {
+            // 汉字姓名：使用拼音库获取姓氏首字母
+            $pinyin = \Overtrue\Pinyin\Pinyin::nameAbbr($name);
+            $letter = $pinyin[0] ?? '';
+            if ($letter !== '') {
+                return strtoupper($letter);
+            }
+        }
+
+        // 非汉字姓名：取首字符
+        $firstChar = mb_substr($name, 0, 1, 'utf-8');
+
+        // 检测首字符是否为字母（a-zA-Z）
+        if (preg_match('/^[a-zA-Z]$/', $firstChar)) {
+            return strtoupper($firstChar);
+        }
+
+        // 其他情况（符号等）返回 #
+        return '#';
+    }
+}
+
+if (! function_exists('mask_phone')) {
+    /**
+     * 联系电话脱敏展示.
+     * 长度 ≥ 7：保留前 3、后 4，中间以 **** 替换；更短则按原长度全部替换为 *；空值返回空串.
+     *
+     * @param null|string $phone 原始电话
+     * @return string 脱敏后的电话
+     */
+    function mask_phone(?string $phone): string
+    {
+        if ($phone === null || $phone === '') {
+            return '';
+        }
+
+        $length = strlen($phone);
+        if ($length < 7) {
+            return str_repeat('*', $length);
+        }
+
+        return substr($phone, 0, 3) . '****' . substr($phone, -4);
     }
 }

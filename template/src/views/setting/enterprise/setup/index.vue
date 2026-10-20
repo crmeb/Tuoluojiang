@@ -1,8 +1,8 @@
 <template>
   <div class="divBox">
-    <div class="v-height-flag">
+    <div class="box-height">
       <el-card :body-style="{ padding: 0 }">
-        <el-tabs v-model="activeName" class="cr-header-tabs" @tab-click="handleClick">
+        <el-tabs v-model="activeName" class="cr-header-tabs" @tab-change="handleClick">
           <el-tab-pane
             v-for="item in tabData"
             :key="'id' + item.key"
@@ -14,11 +14,7 @@
           <cloudfile :rule="rule" v-if="activeName === 'wps_config'" />
           <oneNumber v-else-if="activeName === 'yiht_config'" :fromData="rule" />
           <storage v-else-if="activeName === 'storage_config'" />
-          <div v-else>
-            <el-scrollbar style="height: calc(100vh - 190px)">
-              <form-create v-if="fromData" :option="option" :rule="fromData.rule" @submit="onSubmit" />
-            </el-scrollbar>
-          </div>
+          <config-form v-else :config-type="activeName" :rule="rule" :from-data="fromData" @submit="onSubmit" />
         </div>
       </el-card>
     </div>
@@ -26,14 +22,17 @@
 </template>
 
 <script>
+import { mapStores } from 'pinia'
+import { useUserStore } from '@/stores/user.ts'
 import cloudfile from './components/cloudfile'
 import oneNumber from './components/oneNumber'
 import storage from './components/storage.vue'
+import configForm from './components/config-form.vue'
 import formCreate from '@form-create/element-ui'
-import request from '@/api/request'
-import { configCateApi, configUpdateDataApi } from '@/api/setting'
-import { site } from '@/api/user'
-import { AiEmbeddedManage } from "@/libs/ai-embedded"
+import request from '@/api/request.ts'
+import { configCateApi, configUpdateDataApi } from '@/api/setting.ts'
+import { site } from '@/api/user.ts'
+import { aiFloatEntryController } from '@/libs/ai/index.ts'
 
 export default {
   name: 'CompanyInfo',
@@ -41,11 +40,16 @@ export default {
     cloudfile,
     oneNumber,
     storage,
+    configForm,
     formCreate: formCreate.$form()
+  },
+  computed: {
+    ...mapStores(useUserStore)
   },
   data() {
     return {
-      activeName: 0,
+      // tab 的 key 为字符串，初值用空串：接口返回前 config-form 的 configType 传数字会报 prop 类型警告
+      activeName: '',
       fromData: null,
       rule: [],
       tabData: [],
@@ -71,7 +75,7 @@ export default {
   mounted() {
     this.getConfigCate()
   },
-  destroyed() {},
+  unmounted() {},
   methods: {
     getSide() {
       site().then((res) => {
@@ -96,22 +100,11 @@ export default {
       })
     },
     onSubmit(formData) {
-      request[this.fromData.method.toLowerCase()](this.fromData.action, formData)
-        .then(res => {
-          const aiEmbedded = AiEmbeddedManage.getAiEmbedded();
-          if (formData.ai_status === 1) {
-
-            if (!aiEmbedded) {
-              AiEmbeddedManage
-                .getAiEmbedded()
-                .init(this.$store.getters.token);
-            } else if (!aiEmbedded?._inited) {
-              aiEmbedded.init(this.$store.getters.token);
-            }
-          } else {
-            aiEmbedded?.destroy();
-          }
-        });
+      request[this.fromData.method.toLowerCase()](this.fromData.action, formData).then(async () => {
+        if (Object.prototype.hasOwnProperty.call(formData, 'ai_status')) {
+          await aiFloatEntryController.refresh(this.userStore.token, this.$route.path)
+        }
+      })
       localStorage.setItem('isWebConfig', formData.global_watermark_status)
       setTimeout(() => {
         this.getSide()
@@ -122,7 +115,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/deep/ .el-scrollbar__wrap {
+:deep(.el-scrollbar__wrap) {
   overflow-x: hidden;
 }
 .cr-header-tabs {
@@ -130,13 +123,13 @@ export default {
   // margin-bottom: 20px;
   // padding-left: 20px;
 }
-/deep/.el-tabs__header {
+:deep(.el-tabs__header) {
   border-bottom: 1px solid #eeeeee;
 }
-/deep/.el-tabs__nav {
+:deep(.el-tabs__nav) {
   margin-left: 20px;
 }
-/deep/.el-tabs__item {
+:deep(.el-tabs__item) {
   height: 60px;
   line-height: 60px;
 }

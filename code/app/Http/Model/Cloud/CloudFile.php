@@ -17,8 +17,8 @@ namespace App\Http\Model\Cloud;
 
 use App\Http\Model\Admin\Admin;
 use App\Http\Model\BaseModel;
-use crmeb\services\wps\WebOffice;
-use crmeb\traits\model\TimeDataTrait;
+use Tuoluojiang\Open\services\wps\WebOffice;
+use Tuoluojiang\Open\traits\model\TimeDataTrait;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -40,6 +40,25 @@ class CloudFile extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'             => 'integer',
+        'user_id'        => 'integer',
+        'type'           => 'integer',
+        'pid'            => 'integer',
+        'entid'          => 'integer',
+        'download_count' => 'integer',
+        'version'        => 'integer',
+        'is_temp'        => 'integer',
+        'is_share'       => 'integer',
+        'is_collect'     => 'integer',
+        'is_shortcut'    => 'integer',
+        'is_del'         => 'integer',
+        'del_uid'        => 'integer',
+        'created_at'     => 'datetime:Y-m-d H:i:s',
+        'updated_at'     => 'datetime:Y-m-d H:i:s',
+        'deleted_at'     => 'datetime:Y-m-d H:i:s',
+    ];
 
     public function user()
     {

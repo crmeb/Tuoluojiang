@@ -14,7 +14,7 @@ use Casbin\Model\Model;
 use Casbin\Persist\AdapterHelper;
 use DateTime;
 use Casbin\Exceptions\InvalidFilterTypeException;
-use Illuminate\Support\Facades\DB;
+use Throwable;
 
 /**
  * DatabaseAdapter.
@@ -28,14 +28,14 @@ class DatabaseAdapter implements DatabaseAdapterContract, BatchDatabaseAdapterCo
     /**
      * @var bool
      */
-    private $filtered = false;
+    private bool $filtered = false;
 
     /**
      * Rules eloquent model.
      *
      * @var Rule
      */
-    protected $eloquent;
+    protected Rule $eloquent;
 
     /**
      * the DatabaseAdapter constructor.
@@ -183,6 +183,7 @@ class DatabaseAdapter implements DatabaseAdapterContract, BatchDatabaseAdapterCo
      * @param string $sec
      * @param string $ptype
      * @param string[][] $rules
+     * @throws Throwable
      */
     public function removePolicies(string $sec, string $ptype, array $rules): void
     {
@@ -230,11 +231,12 @@ class DatabaseAdapter implements DatabaseAdapterContract, BatchDatabaseAdapterCo
      * RemoveFilteredPolicy removes policy rules that match the filter from the storage.
      * This is part of the Auto-Save feature.
      *
-     * @param string      $sec
-     * @param string      $ptype
-     * @param int         $fieldIndex
+     * @param string $sec
+     * @param string $ptype
+     * @param int $fieldIndex
      * @param string|null ...$fieldValues
      * @return void
+     * @throws Throwable
      */
     public function removeFilteredPolicy(string $sec, string $ptype, int $fieldIndex, ?string ...$fieldValues): void
     {
@@ -277,6 +279,7 @@ class DatabaseAdapter implements DatabaseAdapterContract, BatchDatabaseAdapterCo
      * @param string[][] $oldRules
      * @param string[][] $newRules
      * @return void
+     * @throws Throwable
      */
     public function updatePolicies(string $sec, string $ptype, array $oldRules, array $newRules): void
     {
@@ -296,6 +299,7 @@ class DatabaseAdapter implements DatabaseAdapterContract, BatchDatabaseAdapterCo
      * @param integer $fieldIndex
      * @param string ...$fieldValues
      * @return array
+     * @throws Throwable
      */
     public function updateFilteredPolicies(string $sec, string $ptype, array $newPolicies, int $fieldIndex, string ...$fieldValues): array
     {
@@ -312,6 +316,7 @@ class DatabaseAdapter implements DatabaseAdapterContract, BatchDatabaseAdapterCo
      *
      * @param Model $model
      * @param mixed $filter
+     * @throws InvalidFilterTypeException
      */
     public function loadFilteredPolicy(Model $model, $filter): void
     {
@@ -331,10 +336,8 @@ class DatabaseAdapter implements DatabaseAdapterContract, BatchDatabaseAdapterCo
         }
         $rows = $instance->get()->makeHidden(['created_at','updated_at', 'id'])->toArray();
         foreach ($rows as $row) {
-            $row = array_filter($row, function($value) { return !is_null($value) && $value !== ''; });
-            $line = implode(', ', array_filter($row, function ($val) {
-                return '' != $val && !is_null($val);
-            }));
+            $row = array_filter($row, static fn($value): bool => !is_null($value) && $value !== '');
+            $line = implode(', ', array_filter($row, static fn ($val): bool => '' != $val && !is_null($val)));
             $this->loadPolicyLine(trim($line), $model);
         }
         $this->setFiltered(true);

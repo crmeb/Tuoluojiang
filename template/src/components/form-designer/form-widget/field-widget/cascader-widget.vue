@@ -11,14 +11,15 @@
     :sub-form-col-index="subFormColIndex"
     :sub-form-row-id="subFormRowId"
   >
+
     <el-cascader
-      v-show="!getReadMode() || field.isShow"
+      v-if="!getReadMode() || field.isShow"
       ref="fieldEditor"
-      :options="field.options.optionItems"
+      :options="optionItems"
       v-model="fieldModel"
       class="full-width-input"
       :disabled="field.options.disabled"
-      :size="field.options.size"
+      :size="toElSize(field.options.size)"
       :clearable="field.options.clearable"
       :filterable="field.options.filterable"
       :show-all-levels="showFullPath"
@@ -46,14 +47,12 @@
 
 <script>
 import FormItemWrapper from './form-item-wrapper'
-import emitter from '@/utils/emitter'
-import i18n, { translate } from '@/utils/i18n'
+import i18n, { translate } from '@/utils/i18n.ts'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
 
 export default {
   name: 'cascader-widget',
-  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
-  mixins: [emitter, fieldMixin, i18n],
+  mixins: [fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -93,6 +92,14 @@ export default {
     showFullPath() {
       return this.field.options.showAllLevels === undefined || !!this.field.options.showAllLevels
     },
+    optionItems() {
+      if(this.field.options.data_type ==0){
+        return this.field.options.optionItems
+      }else {
+        return this.field.options.customizeItems
+      }
+     
+    },
     contentForReadMode() {
       function getNamesByIds(data, id) {
         let ids = []
@@ -128,7 +135,7 @@ export default {
 
         return names.toString().replaceAll(',', '、')
       }
-      return getNamesByIds(this.field.options.optionItems, this.fieldModel)
+      return getNamesByIds(this.optionItems, this.fieldModel)
     }
   },
   beforeCreate() {
@@ -150,7 +157,7 @@ export default {
     this.handleOnMounted()
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     this.unregisterFromRefList()
   },
 
@@ -160,7 +167,7 @@ export default {
       setTimeout(() => {
         document.querySelectorAll('.el-cascader-panel .el-radio').forEach((el) => {
           el.onclick = () => {
-            this.$refs.fieldEditor.dropDownVisible = false //单选框部分点击隐藏下拉框
+            this.$refs.fieldEditor?.togglePopperVisible(false) //单选框部分点击隐藏下拉框
           }
         })
       }, 100)
@@ -172,8 +179,7 @@ export default {
 <style lang="scss" scoped>
 @import '../../../../styles/global.scss'; //* form-item-wrapper已引入，还需要重复引入吗？ *//
 
-.full-width-input {
+:deep(.full-width-input) {
   width: 100% !important;
 }
 </style>
-@/utils/i18ns

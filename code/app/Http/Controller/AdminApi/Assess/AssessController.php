@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,11 +15,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controller\AdminApi\Assess;
 
+use App\Constants\ModuleEnum;
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Service\Assess\AssessService;
 use App\Http\Service\Assess\AssessTargetService;
 use App\Http\Service\Assess\UserAssessScoreService;
-use crmeb\traits\SearchTrait;
+use Tuoluojiang\Open\traits\SearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -49,11 +50,18 @@ class AssessController extends AuthController
     /**
      * 获取绩效列表.
      * @return mixed
+     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
      */
     #[Get('index', '获取绩效考核列表')]
     public function index()
     {
-        $this->withScopeFrame('test_uid');
+        // 保留用户选择的被考核人，独立于数据权限与考核职责的可见范围。
+        $filterTestUids = $this->request->get('test_uid', []);
+        $filterTestUids = $filterTestUids === '' ? [] : array_values(array_unique(array_map('intval', (array) $filterTestUids)));
+        $this->withScopeFrame('test_uid', module: ModuleEnum::ASSESS);
         $where = $this->request->getMore([
             ['period', ''],
             ['frame', '', 'frame_id'],
@@ -65,15 +73,17 @@ class AssessController extends AuthController
             ['number', ''],
             ['handle', ''],
         ]);
+        $where['filter_test_uid'] = $filterTestUids;
         $list = $this->service->getAssessList(auth('admin')->id(), $where, (int) $this->request->get('type', 0));
         return $this->success($list);
     }
 
     /**
      * 绩效考核列表(人事).
-     *
      * @return mixed
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
     #[Get('list', '人事绩效考核列表')]
@@ -98,6 +108,8 @@ class AssessController extends AuthController
      * 获取绩效详情.
      * @return mixed
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
     #[Get('info/{id}', '获取绩效考核详情')]
@@ -113,6 +125,9 @@ class AssessController extends AuthController
      * 创建绩效考核.
      * @return mixed
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
      */
     #[Post('create', '创建绩效考核')]
     #[Post('target', '创建绩效考核模板')]
@@ -137,6 +152,8 @@ class AssessController extends AuthController
      * 修改绩效考核(未启用时).
      * @return mixed
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
     #[Post('update/{id}', '修改绩效考核')]
@@ -154,6 +171,8 @@ class AssessController extends AuthController
     /**
      * 绩效自评.
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     #[Put('self_eval/{id}', '绩效考核自评')]
     public function selfEval($id): mixed
@@ -168,8 +187,21 @@ class AssessController extends AuthController
     }
 
     /**
+     * 绩效跳过自评.
+     */
+    #[Post('to_eval/{id}', '绩效跳过自评')]
+    public function jumpToEval($id): mixed
+    {
+        $this->service->toEval((int) $id);
+        return $this->success('保存成功');
+    }
+
+    /**
      * 绩效上级评价.
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
      */
     #[Put('superior_eval/{id}', '绩效考核上级评价')]
     public function superiorEval($id): mixed
@@ -180,13 +212,16 @@ class AssessController extends AuthController
             ['mark', '', 'reply'],
             ['hide_mark', '', 'hide_reply'],
         ], true);
-        $this->service->setSuperiorAssess((int) $id, $data, $this->entId, (bool) $isSubmit, $reply, $hideReply);
+        $this->service->setSuperiorAssess((int) $id, auth('admin')->id(), $data, $this->entId, (bool) $isSubmit, $reply, $hideReply);
         return $this->success('保存成功');
     }
 
     /**
      * 绩效上上级审核.
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
      */
     #[Put('examine_eval/{id}', '绩效考核上上级审核')]
     public function examineEval($id): mixed
@@ -195,7 +230,7 @@ class AssessController extends AuthController
             ['data', []],
             ['is_submit', 0],
         ], true);
-        $this->service->setExamineAssess((int) $id, $data, $this->entId, (bool) $isSubmit);
+        $this->service->setExamineAssess((int) $id, auth('admin')->id(), $data, $this->entId, (bool) $isSubmit);
         return $this->success('保存成功');
     }
 
@@ -203,8 +238,6 @@ class AssessController extends AuthController
      * 启用绩效考核.
      * @return mixed
      * @throws BindingResolutionException
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
     #[Get('show/{id}', '启用绩效考核')]
@@ -219,27 +252,29 @@ class AssessController extends AuthController
 
     /**
      * 获取绩效其他信息.
-     *
      * @return mixed
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
     #[Get('explain/{id}', '获取绩效其他信息')]
     public function explain($id)
     {
-        return $this->success($this->service->getAssessExplain((int) $id, $this->uuid, $this->entId));
+        return $this->success($this->service->getAssessExplain((int) $id, auth('admin')->id()));
     }
 
     /**
      * 考核统计图.
      * @return mixed
      * @throws BindingResolutionException
-     * @throws \ReflectionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     #[Post('census', '考核统计图')]
     public function census()
     {
-        $this->withScopeFrame();
+        $this->withScopeFrame(module: ModuleEnum::ASSESS);
         $where = $this->request->postMore([
             ['period', ''],
             ['start', ''],
@@ -254,9 +289,11 @@ class AssessController extends AuthController
 
     /**
      * 考核统计图.
-     *
      * @return mixed
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
      */
     #[Post('census_bar', '人事考核统计图')]
     public function censusBar()
@@ -271,7 +308,7 @@ class AssessController extends AuthController
             ['entid', 1],
         ]);
 
-        return $this->success($this->service->getAssessStatistics($where, $this->uuid, $this->entId));
+        return $this->success($this->service->getAssessStatistics($where, auth('admin')->id()));
     }
 
     /**
@@ -291,7 +328,7 @@ class AssessController extends AuthController
             ['finish_info', ''],
             ['finish_ratio', 0],
         ], true);
-        $services->selfEvalTarget($assessId, $targetId, $spaceId, compact('finish_info', 'finish_ratio'), $this->uuid, $this->entId);
+        $services->selfEvalTarget($assessId, $targetId, $spaceId, compact('finish_info', 'finish_ratio'), auth('admin')->id());
         return $this->success('common.update.succ');
     }
 
@@ -312,10 +349,7 @@ class AssessController extends AuthController
 
     /**
      * 制定考核目标.
-     *
      * @return mixed
-     * @throws BindingResolutionException
-     * @throws \ReflectionException
      */
     public function save()
     {
@@ -393,7 +427,7 @@ class AssessController extends AuthController
         if (! $id) {
             return $this->fail('common.empty.attrs');
         }
-        $this->service->deleteAssess($id, $mark, $this->uuid, $this->entId);
+        $this->service->deleteAssess($id, $mark, auth('admin')->id());
 
         return $this->success('common.delete.succ');
     }
@@ -426,7 +460,7 @@ class AssessController extends AuthController
         if (! $id) {
             return $this->fail('common.empty.attrs');
         }
-        $this->service->assessAppeal((int) $id, $this->uuid, $this->entId, $data);
+        $this->service->assessAppeal((int) $id, auth('admin')->id(), $data);
 
         return $data['types'] ? $this->success('common.operation.succ') : $this->success('提交申诉成功');
     }

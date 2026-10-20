@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,9 +16,11 @@ declare(strict_types=1);
 namespace App\Http\Service\Approve;
 
 use App\Http\Dao\Approve\ApproveUserDao;
-use App\Http\Service\BaseService;
 use App\Http\Service\Crud\SystemCrudApproveProcessService;
+use App\Http\Service\BaseService;
 use Illuminate\Contracts\Container\BindingResolutionException;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 
 /**
  * 审批流程人员.
@@ -87,8 +89,11 @@ class ApproveUserService extends BaseService
                 foreach ($value['users'] as $key => $item) {
                     $processInfo = $processService->get(
                         ['uniqued' => $value['uniqued']],
-                        ['name', 'types', 'settype', 'director_order', 'director_level', 'no_hander', 'dep_head', 'self_select', 'select_range', 'select_mode', 'examine_mode']
-                    )->toArray();
+                        ['name', 'types', 'settype', 'director_order', 'director_level', 'no_hander', 'dep_head', 'self_select', 'select_range', 'select_mode', 'examine_mode', 'pass_ratio']
+                    )?->toArray();
+                    if (! $processInfo) {
+                        continue;
+                    }
                     $this->dao->create([
                         'types'        => $value['types'],
                         'card_id'      => isset($item['value']) ? (int) $item['value'] : $item['id'],
@@ -119,7 +124,7 @@ class ApproveUserService extends BaseService
      */
     public function getVerifyStatus($cardId, $nodeId, $id)
     {
-        $userInfo = $this->dao->get(['user_id' => $cardId, 'node_id' => $nodeId, 'apply_id' => $id], ['status', 'level', 'sort', 'process_info']);
+        $userInfo = $this->dao->get(['user_id' => $cardId, 'node_id' => $nodeId, 'apply_id' => $id, 'not_status' => -1], ['status', 'level', 'sort', 'process_info']);
         if (! $userInfo) {
             $verify_status = -1;
         } else {
@@ -190,14 +195,15 @@ class ApproveUserService extends BaseService
     /**
      * 获取分组唯一值
      * @param mixed $applyId
-     * @return array
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function getUniqueds($applyId)
+    public function getUniques(int $applyId): array
     {
         return $this->dao->search(['apply_id' => $applyId])->groupBy('node_id')
             ->orderBy('level')
-            ->pluck('node_id')->toArray();
+            ->pluck('node_id')?->toArray();
     }
 }

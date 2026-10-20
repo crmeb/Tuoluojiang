@@ -7,81 +7,77 @@
         <i class="tit1" v-if="approverDelete || copyerDelete">（已由管理员预设不可{{ title01.substring(1) }}）</i>
       </span>
     </div>
-    <el-steps direction="vertical">
+    <!-- 节点都按未开始显示（灰色）；Element Plus 默认 active=0 会把第一个节点标成进行中 -->
+    <el-steps direction="vertical" :active="-1">
       <el-step v-for="(item, index) in examineList" :key="index">
-        <div slot="title" class="caption">
-          {{ item.title }}
-          <el-tag
-            v-if="item.types == 1 && item.settype != 5 && item.examine_mode > 0 && item.users.length > 1"
-            effect="plain"
-            size="mini"
-          >
-            {{ getExamineText(item.examine_mode) }}
-          </el-tag>
-
-          <span class="color-tab tab-icon" v-if="item.types == 1 && item.settype === 4">*</span>
-          <span class="tip-title color-tab" v-if="judgeNodeText(item)">{{ judgeNodeText(item) }}</span>
-        </div>
-        <div slot="icon" class="liuchen">
-          <i :class="item.types == 1 ? 'el-icon-s-check' : 'el-icon-s-promotion'"></i>
-        </div>
-        <div slot="description">
-          <div class="acea-row">
-            <div v-for="(items, indexs) in item.users" :key="indexs" class="manList acea-row row-between-wrapper">
-              <img
-                v-if="items.card || items.avatar"
-                class="mb10"
-                :src="items.card ? items.card.avatar : items.avatar"
-              />
-
-              <img v-else class="mb10" src="../../../../assets/images/portrait.png" />
-
-              <span>{{ items.card ? items.card.name : items.name }}</span>
-              <span v-if="!items.isDelete" class="acea-icon" @click="deleteUsersItem(item.users, indexs)">
-                <i class="el-icon-close"></i>
-              </span>
-              <div
-                v-if="item.types == 1 && item.examine_mode == 3 && indexs !== item.users.length - 1"
-                class="acea-arrow-right"
-              >
-                <i class="el-icon-arrow-right"></i>
-              </div>
-            </div>
-            <select-member
-              ref="selectMember"
-              :only-one="item.select_mode == 1 ? true : false"
-              :value="item.users || []"
-              @getSelectList="getSelectList($event, item)"
+        <template #title>
+          <div class="caption">
+            {{ item.title }}
+            <el-tag
+              v-if="item.types == 1 && item.settype != 5 && item.examine_mode > 0 && item.users.length > 1"
+              effect="plain"
             >
-              <template v-slot:custom>
-                <div
-                  v-if="item.types == 1 && (item.options || editUser)"
-                  class="upload"
-                  @click="openDepartment(item, index)"
-                >
-                  <i class="el-icon-plus"></i>
-                </div>
-                <div
-                  v-if="item.types == 2 && item.self_select == 1"
-                  class="upload"
-                  @click="openDepartment(item, index)"
-                >
-                  <i class="el-icon-plus"></i>
-                </div>
-              </template>
-            </select-member>
+              {{ getExamineText(item.examine_mode) }}
+            </el-tag>
+
+            <span class="color-tab tab-icon" v-if="item.types == 1 && item.settype === 4">*</span>
+            <span class="tip-title color-tab" v-if="judgeNodeText(item)">{{ judgeNodeText(item) }}</span>
           </div>
-        </div>
+        </template>
+        <template #icon>
+          <div class="liuchen">
+            <i :class="item.types == 1 ? 'el-icon-s-check' : 'el-icon-s-promotion'"></i>
+          </div>
+        </template>
+        <template #description>
+          <div>
+            <div class="acea-row">
+              <div v-for="(items, indexs) in item.users" :key="indexs" class="manList acea-row row-between-wrapper">
+                <img
+                  v-default-avatar="items.card || items"
+                  class="mb10"
+                  :src="getAvatarSrc(items.card || items)"
+                />
+                <span>{{ items.card ? items.card.name : items.name }}</span>
+                <span v-if="(item.types==1&&!examineRules.edit.includes(1))||(item.types==2&&!examineRules.edit.includes(2))" class="acea-icon" @click="deleteUsersItem(item.users, indexs)">
+                  <i class="el-icon-close"></i>
+                </span>
+                <div
+                  v-if="item.types == 1 && item.examine_mode == 3 && indexs !== item.users.length - 1"
+                  class="acea-arrow-right"
+                >
+                  <i class="el-icon-arrow-right"></i>
+                </div>
+              </div>
+              <!-- 不可添加的节点不渲染：否则 popover 的触发插槽为空，Element Plus 会告警 -->
+              <select-member
+                v-if="isAllowRender(item)"
+                :ref="(el) => (memberRefs[index] = el)"
+                :only-one="item.select_mode == 1 ? true : false"
+                :value="item.users || []"
+                @getSelectList="getSelectList($event, item)"
+              >
+                <template v-slot:custom>
+                  <div class="upload" @click="openDepartment(item, index)">
+                    <i class="el-icon-plus"></i>
+                  </div>
+                </template>
+              </select-member>
+            </div>
+          </div>
+        </template>
       </el-step>
     </el-steps>
   </div>
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
+import { getAvatarSrc } from '@/utils/avatar.ts'
 export default {
   name: 'Process',
   components: {
-    selectMember: () => import('@/components/form-common/select-member')
+    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member'))
   },
   props: {
     examineData: {
@@ -109,11 +105,15 @@ export default {
       memberShow: false
     }
   },
+  created() {
+    // 按流程节点下标记录 select-member 实例，不需要响应式
+    this.memberRefs = []
+  },
   watch: {
     examineData: {
       handler(nVal) {
         this.examineList = nVal.list
-        this.examineRules = nVal.rules
+        this.examineRules = nVal.rules||{}
         this.title01 = ''
         this.$nextTick(() => {
           if (this.examineRules && this.examineRules.edit) {
@@ -128,11 +128,15 @@ export default {
       },
       immediate: true
     },
-    lang() {
-      this.setOptions()
-    }
   },
+ 
   methods: {
+    getAvatarSrc,
+    isAllowRender(item) {
+      const rule1 =( item.types == 1 && (item.options || this.editUser))||(item.select_mode==1&&item.users.length==0)
+      const rule2 = item.types == 2 && item.self_select == 1
+      return rule1 || rule2
+    },
     getExamineText(id) {
       let str = ''
       if (id == 1) {
@@ -154,11 +158,9 @@ export default {
     // 打开选择部门成员
     openDepartment(row, index) {
       this.index = index
-
-      row.users.forEach((item) => {
-        item.value = item.id
-      })
-      this.$refs.selectMember[index].handlePopoverShow()
+      setTimeout(() => {
+        this.memberRefs[index].handlePopoverShow()
+      }, 300)
     },
     deleteUsersItem(row, index) {
       row.splice(index, 1)
@@ -248,11 +250,11 @@ export default {
   }
 }
 .stepsBox {
-  /deep/.el-step__description {
+  :deep(.el-step__description) {
     margin-top: 17px;
     margin-bottom: 30px;
   }
-  /deep/.el-step__title {
+  :deep(.el-step__title) {
     color: #000;
     font-size: 14px;
     font-weight: 600;
@@ -263,8 +265,12 @@ export default {
     color: #999999;
     font-weight: normal;
   }
-  /deep/.el-step__icon {
+  // 自定义 icon 插槽在 EP 下是 is-icon（无圆框），按线上 Element UI 的 is-text 补回
+  :deep(.el-step__icon) {
     background: #ccc;
+    border-radius: 50%;
+    border: 2px solid;
+    border-color: inherit;
   }
   .liuchen {
     i {

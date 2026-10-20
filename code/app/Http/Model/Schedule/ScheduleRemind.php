@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,9 +15,9 @@ declare(strict_types=1);
 
 namespace App\Http\Model\Schedule;
 
-use App\Http\Model\BaseModel;
 use Carbon\Carbon;
-use crmeb\traits\model\TimeDataTrait;
+use App\Http\Model\BaseModel;
+use Tuoluojiang\Open\traits\model\TimeDataTrait;
 
 /**
  * 日程提醒表.
@@ -38,9 +38,23 @@ class ScheduleRemind extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'sid'        => 'integer',
+        'entid'      => 'integer',
+        'period'     => 'integer',
+        'rate'       => 'integer',
+        'remind_day' => 'date:Y-m-d',
+        'end_time'   => 'datetime:Y-m-d H:i:s',
+        'last_time'  => 'datetime:Y-m-d H:i:s',
+        'is_remind'  => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+        'deleted_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * 重复日期获取器.
-     * @param mixed $value
      * @return mixed
      */
     public function getDaysAttribute($value)
@@ -50,7 +64,6 @@ class ScheduleRemind extends BaseModel
 
     /**
      * 重复日期修改器.
-     * @param mixed $value
      * @return mixed
      */
     public function setDaysAttribute($value)
@@ -64,8 +77,6 @@ class ScheduleRemind extends BaseModel
     }
 
     /**
-     * @param mixed $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeUid($query, $value)
@@ -78,8 +89,6 @@ class ScheduleRemind extends BaseModel
     }
 
     /**
-     * @param mixed $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeSid($query, $value)
@@ -92,8 +101,6 @@ class ScheduleRemind extends BaseModel
     }
 
     /**
-     * @param mixed $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeEntid($query, $value)
@@ -104,8 +111,6 @@ class ScheduleRemind extends BaseModel
     }
 
     /**
-     * @param mixed $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeTypes($query, $value)
@@ -119,8 +124,6 @@ class ScheduleRemind extends BaseModel
     }
 
     /**
-     * @param mixed $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeContent($query, $value)
@@ -131,8 +134,6 @@ class ScheduleRemind extends BaseModel
     }
 
     /**
-     * @param mixed $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeRemind($query, $value)

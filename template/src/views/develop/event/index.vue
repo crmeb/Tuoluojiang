@@ -9,36 +9,37 @@
           :title="`触发器列表`"
           :total="total"
           :isAddBtn="false"
-       
           @confirmData="confirmData"
         >
-          <div slot="rightBtn" class="dropdown-box">
-            <oa-popover
-              :list="typesList"
-              :isValueShow="false"
-              :searchShow="false"
-              :height="`340px`"
-              title="新建触发器"
-              @handleClick="handleClick"
-            ></oa-popover>
-          </div>
+          <template #rightBtn>
+            <div class="dropdown-box">
+              <oa-popover
+                :list="typesList"
+                :isValueShow="false"
+                :searchShow="false"
+                :height="`340px`"
+                title="新建触发器"
+                @handleClick="handleClick"
+              ></oa-popover>
+            </div>
+          </template>
         </oaFromBox>
 
         <!-- 表格数据 -->
-        <div v-loading="loading" class="table-box mt10">
-          <el-table :data="tableData" :height="tableHeight" row-key="id" style="width: 100%">
+        <div class="table-box mt10">
+          <el-table :data="tableData" v-loading="loading" :height="TABLE_HEIGHT" row-key="id" style="width: 100%">
             <el-table-column label="触发器名称" prop="name">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <span class="color-doc pointer" @click="editFn(scope.row)"> {{ scope.row.name }}</span>
               </template>
             </el-table-column>
             <el-table-column :min-width="150" label="触发类型" prop="field_name">
-              <template slot-scope="scope">
+              <template #default="scope">
                 {{ getEvent(scope.row.event) }}
               </template>
             </el-table-column>
             <el-table-column label="触发动作" prop="form_value">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <span v-if="scope.row.action && scope.row.action.length > 0">
                   {{ getAction(scope.row.action) }}
                 </span>
@@ -47,12 +48,12 @@
             </el-table-column>
             <el-table-column label="优先级" prop="sort"> </el-table-column>
             <el-table-column label="关联实体" min-width="140" prop="crud">
-              <template slot-scope="scope">
+              <template #default="scope">
                 {{ scope.row.crud.table_name || '--' }}
               </template>
             </el-table-column>
             <el-table-column label="关联应用" min-width="140" prop="cate_item">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <div v-if="scope.row.cate_item && scope.row.cate_item.length > 0">
                   <span>{{ getString(scope.row.cate_item) }}</span>
                 </div>
@@ -61,7 +62,7 @@
             </el-table-column>
             <el-table-column label="更新时间" prop="updated_at"> </el-table-column>
             <el-table-column label="状态" prop="is_main">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <el-switch
                   v-model="scope.row.status"
                   :active-value="1"
@@ -76,9 +77,9 @@
             </el-table-column>
 
             <el-table-column fixed="right" label="操作" prop="address" width="110">
-              <template slot-scope="scope">
-                <el-button type="text" @click="editFn(scope.row)">编辑</el-button>
-                <el-button type="text" @click="deleteFn(scope.row)">删除</el-button>
+              <template #default="scope">
+                <el-button type="primary" link @click="editFn(scope.row)">编辑</el-button>
+                <el-button type="primary" link @click="deleteFn(scope.row)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -100,9 +101,11 @@
 </template>
 
 <script>
+import { modalSure } from '@/libs/public.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
 import oaPopover from '@/components/form-common/oa-popover'
 import oaFromBox from '@/components/common/oaFromBox'
-import { roterPre } from '@/settings'
+import { roterPre } from '@/settings.ts'
 import {
   getcrudCateListApi,
   getDatabaseApi,
@@ -111,7 +114,7 @@ import {
   dataEventTypeApi,
   dataEventDelApi,
   dataEventStatusApi
-} from '@/api/develop'
+} from '@/api/develop.ts'
 export default {
   name: 'FinanceList',
   components: {
@@ -120,6 +123,7 @@ export default {
   },
   data() {
     return {
+      TABLE_HEIGHT,
       typesList: [],
       search: [
         {
@@ -131,12 +135,14 @@ export default {
           field_name: '关联实体',
           field_name_en: 'crud_id',
           form_value: 'cascaderSelect',
-          data_dict: []
+          data_dict: [],
+          data_type: 1
         },
         {
           field_name: '关联应用',
           field_name_en: 'cate_id',
           form_value: 'select',
+          data_type: 1,
           data_dict: []
         }
       ],
@@ -227,8 +233,8 @@ export default {
      */
     getEvent(val) {
       // 从类型列表中查找匹配的选项
-      const targetOption = this.typesList[0]?.options?.find((item) => item.value === val);
-      return targetOption ? targetOption.label : '--';
+      const targetOption = this.typesList[0]?.options?.find((item) => item.value === val)
+      return targetOption ? targetOption.label : '--'
     },
     getString(arr) {
       return arr.join('、')
@@ -278,7 +284,7 @@ export default {
 
     // 删除触发器
     deleteFn(row) {
-      this.$modalSure('您确定要删除此触发器数据吗').then(() => {
+      modalSure('您确定要删除此触发器数据吗').then(() => {
         dataEventDelApi(row.id).then((res) => {
           let totalPage = Math.ceil((this.total - 1) / this.where.limit)
           let currentPage = this.where.page > totalPage ? totalPage : this.where.page

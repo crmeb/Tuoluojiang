@@ -1,6 +1,6 @@
 <template>
   <div class="divBox">
-    <div class="main employees-card-bottom">
+    <div class="main box-height">
       <div class="title">组织架构图</div>
       <div v-html="content" @click="replayImgShow($event)"></div>
     </div>
@@ -8,7 +8,7 @@
   </div>
 </template>
 <script>
-import { getEmployeeTrainApi } from '@/api/config.js'
+import { getEmployeeTrainApi } from '@/api/config.ts'
 import imageViewer from '@/components/common/imageViewer'
 export default {
   components: { imageViewer },
@@ -40,6 +40,11 @@ export default {
 }
 </script>
 <style scoped lang="scss">
+.divBox {
+  height: 100%;
+  background-color: #fff;
+  border-radius: 8px;
+}
 .main {
   background: #fff;
   max-width: 1000px;
@@ -53,23 +58,23 @@ export default {
     color: rgba(0, 0, 0, 0.85);
     margin-bottom: 16px;
   }
-  /deep/ table {
+  :deep(table) {
     border: 1px solid #ccc;
   }
 
-  /deep/ table th {
+  :deep(table th) {
     border: 1px solid #ccc;
   }
-  /deep/ table td {
+  :deep(table td) {
     padding: 10px 5px;
     border: 1px solid #ccc;
   }
 
-  /deep/ p img {
+  :deep(p img) {
     max-width: 800px;
   }
 }
-/deep/ .wang-editor.w-e-toolbar {
+:deep(.wang-editor.w-e-toolbar) {
   display: none !important;
 }
 </style>

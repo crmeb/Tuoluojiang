@@ -27,9 +27,6 @@ class SystemCrudApproveRuleService extends BaseService
 
     /**
      * 处理规则配置.
-     * @param mixed $data
-     * @param mixed $userId
-     * @param mixed $type
      */
     public function checkRuleConfig($data, $userId, $type = 'ruleConfig'): array
     {
@@ -40,6 +37,8 @@ class SystemCrudApproveRuleService extends BaseService
             'recall'   => $data[$type]['recall'],
             'refuse'   => $data[$type]['refuse'] ?? 0,
             'user_id'  => $userId,
+            'is_transfer'  => $data[$type]['is_transfer'] ?? 1,
+            'is_sign'  => $data[$type]['is_sign'] ?? 0,
         ];
     }
 }

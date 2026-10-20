@@ -12,7 +12,8 @@
 </template>
 
 <script>
-import { DATA_CHANGE } from '../event-constant';
+import { EventBus } from '@/libs/bus.ts'
+import { DATA_CHANGE } from '../event-constant.ts';
 
 
 let countEl = document.createElement('div')
@@ -32,13 +33,13 @@ export default {
     }
   },
   created() {
-    this.$bus.$on(DATA_CHANGE, this.onDataChange)
+    EventBus.$on(DATA_CHANGE, this.onDataChange)
     if (this.mindMap) {
       this.onDataChange(this.mindMap.getData())
     }
   },
-  beforeDestroy() {
-    this.$bus.$off(DATA_CHANGE, this.onDataChange)
+  beforeUnmount() {
+    EventBus.$off(DATA_CHANGE, this.onDataChange)
   },
   methods: {
     onDataChange(data) {

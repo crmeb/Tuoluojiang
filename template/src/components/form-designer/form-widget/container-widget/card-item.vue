@@ -13,17 +13,20 @@
       :ref="widget.id"
       v-show="!widget.options.hidden"
     >
-      <div slot="header" class="clear-fix" v-if="widget.options.cardHeader">
-        <span class="title">{{ widget.options.label }}</span>
-        <i
-          v-if="widget.options.showFold"
-          class="float-right"
-          :class="[!widget.options.folded ? 'el-icon-arrow-down' : 'el-icon-arrow-up']"
-          @click="toggleCard"
-        ></i>
-      </div>
+      <template #header>
+        <div class="clear-fix" v-if="widget.options.cardHeader">
+          <span class="title">{{ widget.options.label }}</span>
+
+          <i
+            v-if="widget.options.showFold"
+            class="float-right"
+            :class="[!widget.options.folded ? 'el-icon-arrow-down' : 'el-icon-arrow-up']"
+            @click.stop="toggleCard"
+          ></i>
+        </div>
+      </template>
       <template v-if="!!widget.widgetList && widget.widgetList.length > 0">
-        <template v-for="(subWidget, swIdx) in widget.widgetList">
+        <template v-for="(subWidget, swIdx) in widget.widgetList" :key="swIdx">
           <template v-if="'container' === subWidget.category">
             <component
               :is="getComponentByContainer(subWidget)"
@@ -35,7 +38,7 @@
               :parent-widget="widget"
             >
               <!-- 递归传递插槽！！！ -->
-              <template v-for="slot in Object.keys($scopedSlots)" v-slot:[slot]="scope">
+              <template v-for="slot in Object.keys($slots)" :key="slot" v-slot:[slot]="scope">
                 <slot :name="slot" v-bind="scope" />
               </template>
             </component>
@@ -52,7 +55,7 @@
               :parent-widget="widget"
             >
               <!-- 递归传递插槽！！！ -->
-              <template v-for="slot in Object.keys($scopedSlots)" v-slot:[slot]="scope">
+              <template v-for="slot in Object.keys($slots)" :key="slot" v-slot:[slot]="scope">
                 <slot :name="slot" v-bind="scope" />
               </template>
             </component>
@@ -64,8 +67,8 @@
 </template>
 
 <script>
-import emitter from '@/utils/emitter'
-import i18n from '@/utils/i18n'
+import { watchActiveField } from '@/components/form-render/activeField.ts'
+import i18n from '@/utils/i18n.ts'
 import refMixin from '@/components/form-render/refMixin'
 import ContainerItemWrapper from '@/components/form-render/container-item/container-item-wrapper'
 import containerItemMixin from '@/components/form-render/container-item/containerItemMixin'
@@ -73,8 +76,7 @@ import FieldComponents from '@/components/form-designer/form-widget/field-widget
 
 export default {
   name: 'card-item',
-  componentName: 'ContainerItem',
-  mixins: [emitter, i18n, refMixin, containerItemMixin],
+  mixins: [i18n, refMixin, containerItemMixin],
   components: {
     ContainerItemWrapper,
     ...FieldComponents
@@ -90,27 +92,16 @@ export default {
     }
   },
   created() {
+    watchActiveField((field) => this.fieldShowFn(field))
     this.initRefList()
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.unregisterFromRefList()
-  },
-  watch: {
-    '$store.state.user.activeField': {
-      deep: true,
-      handler: function (newVal, oldVal) {
-        this.fieldShowFn(newVal)
-      }
-    }
   },
   methods: {
     fieldShowFn(val) {
       this.widget.widgetList.forEach((item) => {
-        if (item.id == val.id) {
-          item.isShow = true
-        } else {
-          item.isShow = false
-        }
+        item.isShow = item.id == val.id
       })
     },
     toggleCard() {
@@ -121,11 +112,11 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-::v-deep .el-card__header {
+:deep(.el-card__header) {
   padding: 10px 12px;
   border: none;
 }
-::v-deep .el-card {
+:deep(.el-card) {
   border: none;
 }
 .title {
@@ -146,7 +137,7 @@ export default {
   margin-top: -7px;
 }
 
-.folded ::v-deep .el-card__body {
+.folded :deep(.el-card__body) {
   display: none;
 }
 

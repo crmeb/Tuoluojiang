@@ -32,7 +32,8 @@
 </template>
 
 <script>
-import { DRAW_CLICK, SCALE } from '../event-constant';
+import { EventBus } from '@/libs/bus.ts'
+import { DRAW_CLICK, SCALE } from '../event-constant.ts';
 
 
 export default {
@@ -49,15 +50,15 @@ export default {
     }
   },
   created() {
-    this.$bus.$on(SCALE, this.onScale)
-    this.$bus.$on(DRAW_CLICK, this.onDrawClick)
+    EventBus.$on(SCALE, this.onScale)
+    EventBus.$on(DRAW_CLICK, this.onDrawClick)
   },
   mounted() {
     this.scaleNum = this.toPer(this.mindMap.view.scale)
   },
-  beforeDestroy() {
-    this.$bus.$off(SCALE, this.onScale)
-    this.$bus.$off(DRAW_CLICK, this.onDrawClick)
+  beforeUnmount() {
+    EventBus.$off(SCALE, this.onScale)
+    EventBus.$off(DRAW_CLICK, this.onDrawClick)
   },
   methods: {
     // 转换成百分数

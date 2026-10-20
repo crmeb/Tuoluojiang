@@ -15,9 +15,9 @@
             :style="'transform: scale(' + nowVal / 100 + '); transform-origin: 50% 0px 0px;'"
           >
             <nodeWrap
-              :node-config.sync="nodeConfig"
-              :flow-permission.sync="flowPermission"
-              :is-tried.sync="isTried"
+              v-model:node-config="nodeConfig"
+              v-model:flow-permission="flowPermission"
+              v-model:is-tried="isTried"
               :table-id="tableId"
             ></nodeWrap>
             <div class="end-node">
@@ -27,7 +27,7 @@
           </div>
         </section>
       </div>
-      <errorDialog :visible.sync="tipVisible" :list="tipList" />
+      <errorDialog v-model:visible="tipVisible" :list="tipList" />
       <promoter-drawer />
       <approver-drawer :director-max-level="directorMaxLevel" />
       <copyer-drawer :director-max-level="directorMaxLevel" />
@@ -37,15 +37,16 @@
 </template>
 
 <script>
-import func from '@/utils/preload'
+import { defineAsyncComponent } from 'vue'
+import func from '@/utils/preload.ts'
 export default {
   name: 'ProcessData',
   components: {
-    promoterDrawer: () => import('@/components/workFlow/drawer/promoterDrawer'),
-    approverDrawer: () => import('@/components/workFlow/drawer/approverDrawer'),
-    copyerDrawer: () => import('@/components/workFlow/drawer/copyerDrawer'),
-    conditionDrawer: () => import('@/components/workFlow/drawer/conditionDrawer'),
-    errorDialog: () => import('@/components/workFlow/dialog/errorDialog')
+    promoterDrawer: defineAsyncComponent(() => import('@/components/workFlow/drawer/promoterDrawer')),
+    approverDrawer: defineAsyncComponent(() => import('@/components/workFlow/drawer/approverDrawer')),
+    copyerDrawer: defineAsyncComponent(() => import('@/components/workFlow/drawer/copyerDrawer')),
+    conditionDrawer: defineAsyncComponent(() => import('@/components/workFlow/drawer/conditionDrawer')),
+    errorDialog: defineAsyncComponent(() => import('@/components/workFlow/dialog/errorDialog'))
   },
   props: {
     tabName: {
@@ -68,7 +69,7 @@ export default {
       nodeConfig: {
         nodeName: '申请人',
         type: 0,
-        onlyValue: this.$func.onlyValue(),
+        onlyValue: func.onlyValue(),
         priorityLevel: '',
         settype: '',
         selectMode: '',
@@ -87,7 +88,7 @@ export default {
           nodeName: '审核人',
           error: false,
           type: '1',
-          onlyValue: this.$func.onlyValue(),
+          onlyValue: func.onlyValue(),
           settype: '2',
           selectMode: '0',
           selectRange: '0',
@@ -99,7 +100,7 @@ export default {
           childNode: {
             nodeName: '抄送人',
             type: 2,
-            onlyValue: this.$func.onlyValue(),
+            onlyValue: func.onlyValue(),
             ccSelfSelectFlag: '1',
             childNode: null,
             departmentHead: [],
@@ -118,9 +119,6 @@ export default {
       isTried: false,
       tableId: ''
     }
-  },
-  beforeCreate() {
-    this.$vue.prototype.$func = func
   },
   created() {
     if (this.conf !== null && typeof this.conf === 'object') {
@@ -142,7 +140,7 @@ export default {
           this.reErr(childNode)
         } else if (type == 4) {
           this.reErr(childNode)
-          for (var i = 0; i < conditionNodes.length; i++) {
+          for (let i = 0; i < conditionNodes.length; i++) {
             if (conditionNodes[i].error) {
               this.tipList.push({ name: conditionNodes[i].nodeName, types: 1, type: ' 条件' })
             }
@@ -157,6 +155,7 @@ export default {
       }
     },
     getData() {
+
       return new Promise((resolve, reject) => {
         this.isTried = true
         this.tipList = []
@@ -165,7 +164,6 @@ export default {
         }
         this.reErr(this.nodeConfig)
         this.nodeConfig.nodeUserList = this.flowPermission
-
         resolve(this.nodeConfig)
       })
     },
@@ -185,13 +183,18 @@ export default {
   }
 }
 </script>
-
+<style src="@/styles/workflow.css"></style>
 <style lang="scss" scoped>
-@import '../../../../styles/workflow.css';
+// 撑满编辑页主体区域（原 calc(100vh - 130px) 比主体高，编辑页出现滚动条）
 .processData {
   height: 100%;
-  /deep/ .el-card__body {
-    height: calc(100vh - 130px);
+  :deep(.el-card) {
+    height: 100%;
+  }
+  // 流程图较高时在卡片内滚动
+  :deep(.el-card__body) {
+    height: 100%;
+    box-sizing: border-box;
     overflow: auto;
 
     &::-webkit-scrollbar-thumb {

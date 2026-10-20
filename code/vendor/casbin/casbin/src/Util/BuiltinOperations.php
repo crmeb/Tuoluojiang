@@ -4,11 +4,8 @@ declare(strict_types=1);
 
 namespace Casbin\Util;
 
-use Casbin\Rbac\RoleManager;
-use Closure;
-use Exception;
-use IPTools\IP;
-use IPTools\Range;
+use Casbin\Rbac\{ConditionalRoleManager, RoleManager};
+use Closure, DateTime, Exception;
 
 /**
  * Class BuiltinOperations.
@@ -28,7 +25,7 @@ class BuiltinOperations
      */
     public static function keyMatch(string $key1, string $key2): bool
     {
-        if (false === strpos($key2, '*')) {
+        if (!str_contains($key2, '*')) {
             return $key1 == $key2;
         }
 
@@ -46,8 +43,7 @@ class BuiltinOperations
      */
     public static function keyMatchFunc(...$args): bool
     {
-        $name1 = $args[0];
-        $name2 = $args[1];
+        [$name1, $name2] = $args;
 
         return self::keyMatch($name1, $name2);
     }
@@ -81,10 +77,9 @@ class BuiltinOperations
      * @param mixed ...$args
      * @return string
      */
-    public static function keyGetFunc(...$args)
+    public static function keyGetFunc(...$args): string
     {
-        $name1 = $args[0];
-        $name2 = $args[1];
+        [$name1, $name2] = $args;
 
         return self::keyGet($name1, $name2);
     }
@@ -107,13 +102,7 @@ class BuiltinOperations
 
         $pattern = '/:[^\/]+/';
 
-        $key2 = preg_replace_callback(
-            $pattern,
-            function ($m) {
-                return '[^\/]+';
-            },
-            $key2
-        );
+        $key2 = preg_replace_callback($pattern, static fn ($m) => '[^\/]+', $key2);
 
         return self::regexMatch($key1, '^' . $key2 . '$');
     }
@@ -127,8 +116,7 @@ class BuiltinOperations
      */
     public static function keyMatch2Func(...$args): bool
     {
-        $name1 = $args[0];
-        $name2 = $args[1];
+        [$name1, $name2] = $args;
 
         return self::keyMatch2($name1, $name2);
     }
@@ -151,13 +139,7 @@ class BuiltinOperations
         $keys = [];
         preg_match_all($pattern, $key2, $keys);
         $keys = $keys[0];
-        $key2 = preg_replace_callback(
-            $pattern,
-            function ($m) {
-                return '([^\/]+)';
-            },
-            $key2
-        );
+        $key2 = preg_replace_callback($pattern, static fn ($m): string => '([^\/]+)', $key2);
 
         $key2 = "~^" . $key2 . "$~";
         $values = [];
@@ -166,11 +148,13 @@ class BuiltinOperations
         if (count($values) === 0) {
             return '';
         }
+
         foreach ($keys as $i => $key) {
             if ($pathVar == substr($key, 1)) {
                 return $values[$i + 1];
             }
         }
+
         return '';
     }
 
@@ -180,11 +164,9 @@ class BuiltinOperations
      * @param mixed ...$args
      * @return string
      */
-    public static function keyGet2Func(...$args)
+    public static function keyGet2Func(...$args): string
     {
-        $name1 = $args[0];
-        $name2 = $args[1];
-        $key   = $args[2];
+        [$name1, $name2, $key] = $args;
 
         return self::keyGet2($name1, $name2, $key);
     }
@@ -203,13 +185,7 @@ class BuiltinOperations
         $key2 = str_replace(['/*'], ['/.*'], $key2);
 
         $pattern = '/\{[^\/]+\}/';
-        $key2 = preg_replace_callback(
-            $pattern,
-            function ($m) {
-                return '[^\/]+';
-            },
-            $key2
-        );
+        $key2 = preg_replace_callback($pattern, static fn ($m): string => '[^\/]+', $key2);
 
         return self::regexMatch($key1, '^' . $key2 . '$');
     }
@@ -223,8 +199,7 @@ class BuiltinOperations
      */
     public static function keyMatch3Func(...$args): bool
     {
-        $name1 = $args[0];
-        $name2 = $args[1];
+        [$name1, $name2] = $args;
 
         return self::keyMatch3($name1, $name2);
     }
@@ -283,8 +258,7 @@ class BuiltinOperations
      */
     public static function keyMatch4Func(...$args): bool
     {
-        $name1 = $args[0];
-        $name2 = $args[1];
+        [$name1, $name2] = $args;
 
         return self::keyMatch4($name1, $name2);
     }
@@ -317,8 +291,7 @@ class BuiltinOperations
      */
     public static function keyMatch5Func(...$args): bool
     {
-        $name1 = $args[0];
-        $name2 = $args[1];
+        [$name1, $name2] = $args;
 
         return self::keyMatch5($name1, $name2);
     }
@@ -345,8 +318,7 @@ class BuiltinOperations
      */
     public static function regexMatchFunc(...$args): bool
     {
-        $name1 = $args[0];
-        $name2 = $args[1];
+        [$name1, $name2] = $args;
 
         return self::regexMatch($name1, $name2);
     }
@@ -364,11 +336,7 @@ class BuiltinOperations
      */
     public static function ipMatch(string $ip1, string $ip2): bool
     {
-        $objIP1 = IP::parse($ip1);
-
-        $objIP2 = Range::parse($ip2);
-
-        return $objIP2->contains($objIP1);
+        return Util::ipInSubnet($ip1, $ip2);
     }
 
     /**
@@ -382,8 +350,7 @@ class BuiltinOperations
      */
     public static function ipMatchFunc(...$args): bool
     {
-        $ip1 = $args[0];
-        $ip2 = $args[1];
+        [$ip1, $ip2] = $args;
 
         return self::ipMatch($ip1, $ip2);
     }
@@ -427,22 +394,21 @@ class BuiltinOperations
      *
      * @return Closure
      */
-    public static function generateGFunction(RoleManager $rm = null): Closure
+    public static function generateGFunction(?RoleManager $rm = null): Closure
     {
         $memorized = [];
         return function (...$args) use ($rm, &$memorized) {
             $key = implode(chr(0b0), $args);
 
-            if(isset($memorized[$key])){
+            if (isset($memorized[$key])) {
                 return $memorized[$key];
             }
 
-            $name1 = $args[0];
-            $name2 = $args[1];
+            [$name1, $name2] = $args;
 
             if (null === $rm) {
                 $v = $name1 == $name2;
-            } elseif (2 == \count($args)) {
+            } elseif (2 == count($args)) {
                 $v = $rm->hasLink($name1, $name2);
             } else {
                 $domain = (string)$args[2];
@@ -452,5 +418,78 @@ class BuiltinOperations
             $memorized[$key] = $v;
             return $v;
         };
+    }
+
+    /**
+     * The factory method of the g(_, _[, _]) function with conditions.
+     *
+     * @param ConditionalRoleManager|null $crm
+     *
+     * @return Closure
+     */
+    public static function generateConditionalGFunction(?ConditionalRoleManager $crm = null): Closure
+    {
+        return function (...$args) use ($crm) {
+            [$name1, $name2] = $args;
+
+            if (is_null($crm)) {
+                $v = $name1 == $name2;
+            } elseif (2 == count($args)) {
+                $v = $crm->hasLink($name1, $name2);
+            } else {
+                $domain = (string)$args[2];
+                $v = $crm->hasLink($name1, $name2, $domain);
+            }
+
+            return $v;
+        };
+    }
+
+    /**
+     * The wrapper for timeMatch.
+     *
+     * @param mixed ...$args
+     *
+     * @return bool
+     */
+    public static function timeMatchFunc(...$args): bool
+    {
+        [$startTime, $endTime] = $args;
+
+        return self::timeMatch($startTime, $endTime);
+    }
+
+    /**
+     * Determines whether the current time is between startTime and endTime.
+     * You can use "_" to indicate that the parameter is ignored.
+     * 
+     * @param string $startTime
+     * @param string $endTime
+     * 
+     * @return bool
+     */
+    public static function timeMatch(string $startTime, string $endTime): bool
+    {
+        $now = new DateTime();
+        if ($startTime !== '_') {
+            if (false === strtotime($startTime)) {
+                return false;
+            }
+            $start = new DateTime($startTime);
+            if ($now < $start) {
+                return false;
+            }
+        }
+        if ($endTime !== '_') {
+            if (false === strtotime($endTime)) {
+                return false;
+            }
+            $end = new DateTime($endTime);
+            if ($now > $end) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

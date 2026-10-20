@@ -18,8 +18,8 @@ namespace App\Http\Service\Crud;
 use App\Constants\Crud\CrudLogTypeEnum;
 use App\Http\Dao\Crud\SystemCrudApproveRecordDao;
 use App\Http\Service\Approve\ApproveUserService;
+use App\Jobs\Crud\CrudLogJob;
 use App\Http\Service\BaseService;
-use App\Jobs\CrudLogJob;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -52,13 +52,13 @@ class SystemCrudApproveRecordService extends BaseService
             return;
         }
 
-        if (app()->make(SystemCrudApproveService::class)->value($applyId, 'status') == -1) {
+        if (app()->get(SystemCrudApproveService::class)->value($applyId, 'status') == -1) {
             $userId = $info['user_id'];
         } else {
-            $userId = app()->make(ApproveUserService::class)->value(['apply_id' => $applyId, 'status' => 2], 'user_id');
+            $userId = app()->get(ApproveUserService::class)->value(['apply_id' => $applyId, 'status' => 2], 'user_id');
         }
         $crudService         = app()->get(CrudModuleService::class)->model($info['table_name']);
-        $scheduleTableInfo   = app()->make(SystemCrudService::class)->get(['crud_id' => $info['crud_id']], ['table_name_en', 'id']);
+        $scheduleTableInfo   = app()->get(SystemCrudService::class)->get(['crud_id' => $info['crud_id']], ['table_name_en', 'id']);
         $scheduleTableNameEn = null;
         $scheduleTableId     = 0;
         if ($scheduleTableInfo) {

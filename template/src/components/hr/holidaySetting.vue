@@ -3,14 +3,14 @@
   <div class="composite-selector">
     <el-table :data="tableData">
       <el-table-column prop="name" label="假期类型" min-width="180">
-        <template slot-scope="scope">
+        <template #default="scope">
           <div class="flex">
             <div class="ml10">{{ scope.row.name }}</div>
           </div>
         </template>
       </el-table-column>
       <el-table-column prop="refuse" label="请假单位" min-width="100">
-        <template slot-scope="scope">
+        <template #default="scope">
           <span>{{ scope.row.duration_type == 1 ? '按小时' : '按天' }}</span>
         </template>
       </el-table-column>
@@ -19,14 +19,21 @@
 </template>
 
 <script>
-import { approveHolidayTypeApi } from '@/api/business'
+import { approveHolidayTypeApi } from '@/api/business.ts'
 export default {
+  emits: ['update:value', 'update:modelValue'],
   name: 'HolidaySetting',
   props: {
-    value: {
+    modelValue: {
       default: undefined,
       type: String
     }
+  },
+  computed: {
+    // Vue 3 的 v-model 走 modelValue，保留 value 供组件内部沿用
+    value() {
+      return this.modelValue
+    },
   },
   data() {
     return {
@@ -42,7 +49,7 @@ export default {
       this.$emit('update:value', value)
     },
     handleInputChange(value) {
-      this.$emit('input', value)
+      this.$emit('update:modelValue', value)
     },
     // 获取假期类型列表
     async getTableData() {
@@ -52,12 +59,3 @@ export default {
   }
 }
 </script>
-
-<style scoped lang="scss">
-.el-select .el-input {
-  width: 130px;
-}
-.el-input-group__prepend .el-select {
-  width: 100px;
-}
-</style>

@@ -2,15 +2,16 @@
 <template>
   <div class="station">
     <el-drawer
-      :visible.sync="drawer"
+      class="program-task-edit-task-drawer"
+      v-model="drawer"
       :modal="true"
       :show-close="false"
       :append-to-body="true"
       size="1120px"
       :before-close="handleClose"
-      @click.native="changeMembers"
+      @click="changeMembers"
     >
-      <template #title>
+      <template #header>
         <div class="flex between-header align-center">
           <div class="flex align-center">
             <span class="ident copy" @click="copy" title="点击复制工作项地址" :data-clipboard-text="identAddress()"
@@ -18,7 +19,6 @@
             >
             <el-select
               v-model="formData.status"
-              size="small"
               filterable
               :disabled="!isOperable"
               collapse-tags
@@ -38,11 +38,13 @@
               <span class="el-dropdown-link">
                 <i class="iconfont icongengduo2 fz30 pointer mb14"></i>
               </span>
-              <el-dropdown-menu slot="dropdown">
-                <el-dropdown-item @click.native="addSubtasks(formData)">新建子任务</el-dropdown-item>
-                <el-dropdown-item @click.native="copyTask">复制工作项</el-dropdown-item>
-                <el-dropdown-item v-if="formData.operate" @click.native="deleteTask">删除</el-dropdown-item>
-              </el-dropdown-menu>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item @click="addSubtasks(formData)">新建子任务</el-dropdown-item>
+                  <el-dropdown-item @click="copyTask">复制工作项</el-dropdown-item>
+                  <el-dropdown-item v-if="formData.operate" @click="deleteTask">删除</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
             </el-dropdown>
           </div>
         </div>
@@ -58,14 +60,15 @@
             maxlength="100"
             show-word-limit
             placeholder="请输入任务名称"
+            ref="name"
             @blur="handleName"
-            @keyup.native.enter="nameShow = false"
+            @keyup.enter="nameShow = false"
           />
-          <i v-if="!nameShow && isOperable" @click="nameShow = true" class="iconfont iconbianji pointer"></i>
+          <i v-if="!nameShow && isOperable" @click="nameShowFn" class="iconfont iconbianji pointer"></i>
         </div>
         <div class="creator">
           <span
-            >{{ formData.creator ? formData.creator[0].name : '' }} · {{ formData.created_at }}，最近更新于{{
+            >{{ formData.creator?.[0]?.name || '' }} · {{ formData.created_at }}，最近更新于{{
               formData.updated_at
             }}</span
           >
@@ -84,7 +87,6 @@
                 <el-select
                   v-if="programShow"
                   v-model="formData.program_id"
-                  size="small"
                   placeholder="请选择关联项目"
                   @change="handleContract"
                   filterable
@@ -104,17 +106,16 @@
             </el-col>
             <el-col :span="12">
               <el-form-item label="负责人：" class="select-bar">
-                <div v-if="!adminsShow" @click.stop="handleToggle('adminsShow')" class="admins pointer flex bg">
+                <div v-if="!adminsShow" @click.stop="handleToggle('adminsShow')" class="admins pointer bg flex">
                   <div class="p-l-12" v-if="formData.admins && formData.admins.length == 0">未设置</div>
                   <div class="avatar-box p-l-12" v-for="(item, index) in formData.admins" :key="index">
-                    <img :src="item.avatar" alt="" />
+                    <img v-default-avatar="item" class="mr4" :src="getAvatarSrc(item)" alt="" />
                     <span>{{ item.name }}</span>
                   </div>
                 </div>
                 <el-select
                   v-if="adminsShow"
                   v-model="formData.uid"
-                  size="small"
                   filterable
                   clearable
                   placeholder="请选择负责人"
@@ -138,15 +139,14 @@
                 <el-date-picker
                   v-if="timeValShow"
                   v-model="timeVal"
-                  size="small"
                   type="daterange"
                   clearable
-                  :format="'yyyy-MM-dd'"
-                  :value-format="'yyyy-MM-dd'"
+                  format="YYYY-MM-DD"
+                  value-format="YYYY-MM-DD"
                   placeholder="请选择项目计划时间"
-                  :range-separator="$t('toptable.to')"
-                  :start-placeholder="$t('toptable.startdate')"
-                  :end-placeholder="$t('toptable.endingdate')"
+                  range-separator="至"
+                  start-placeholder="开始时间"
+                  end-placeholder="结束时间"
                   @blur="timeValShow = false"
                   @change="onchangeTime"
                 ></el-date-picker>
@@ -158,7 +158,7 @@
                   <div class="p-l-12" v-if="formData.members && formData.members.length == 0">未设置</div>
                   <div class="avatar-box p-l-12" v-if="formData.members && formData.members.length <= 3">
                     <div class="members-box" v-for="(item, index) in formData.members.slice(0, 3)" :key="index">
-                      <img :src="item.avatar" alt="" />
+                      <img v-default-avatar="item" class="mr4" :src="getAvatarSrc(item)" alt="" />
                       <span>{{ item.name }}</span>
                     </div>
                   </div>
@@ -171,26 +171,27 @@
                   >
                     <div class="members-box" v-if="formData.members && formData.members.length > 3">
                       <div class="members-box" v-for="(item, index) in formData.members.slice(3)" :key="index">
-                        <img :src="item.avatar" alt="" />
+                        <img v-default-avatar="item" :src="getAvatarSrc(item)" alt="" />
 
                         <span class="members-box-content">{{ item.name }}</span>
                       </div>
                     </div>
-                    <div class="p-l-12" slot="reference" size="small">
-                      <div class="members-box" v-for="(item, index) in formData.members.slice(0, 3)" :key="index">
-                        <img :src="item.avatar" alt="" />
+                    <template #reference>
+                      <div class="p-l-12">
+                        <div class="members-box" v-for="(item, index) in formData.members.slice(0, 3)" :key="index">
+                          <img v-default-avatar="item" :src="getAvatarSrc(item)" alt="" />
+                        </div>
+                        <span v-if="!formData.members">- -</span>
+                        <span class="contents" v-if="formData.members && formData.members.length > 3"
+                          >+ {{ formData.members.length - 3 }}</span
+                        >
                       </div>
-                      <span v-if="!formData.members">- -</span>
-                      <span class="contents" v-if="formData.members && formData.members.length > 3"
-                        >+ {{ formData.members.length - 3 }}</span
-                      >
-                    </div>
+                    </template>
                   </el-popover>
                 </div>
                 <el-select
                   v-else
                   v-model="formData.membersId"
-                  size="small"
                   multiple
                   filterable
                   collapse-tags
@@ -216,7 +217,7 @@
             ></div>
 
             <div v-else>
-              <ueditor-form
+              <component
                 is="ueditorFrom"
                 :border="describeShow"
                 ref="ueditorFrom"
@@ -248,30 +249,6 @@
               </el-tab-pane>
               <el-tab-pane :label="`操作日志(${dynamicTotalCount})`" name="dynamic">
                 <oa-log :list="dynamicTaskList"></oa-log>
-                <!-- <el-table :data="dynamicTaskList" style="width: 100%" :row-class-name="iconHadler">
-                  <el-table-column prop="desc">
-                    <template slot-scope="scope">
-                      【{{ scope.row.action_type == 1 ? '创建' : '编辑' }}】{{ scope.row.operator }}
-                      <span style="max-width: 550px" v-html="scope.row.title" @click="previewPicture($event)"></span>
-                      <span class="created-time">{{ scope.row.created_at }}</span>
-                    </template>
-                  </el-table-column>
-                  <el-table-column type="expand">
-                    <template slot-scope="scope">
-                      <div class="flex expand-describe">
-                        <div class="flex expand-left">
-                          <span>{{ scope.row.describe[0].title }}</span>
-                          <p v-html="scope.row.describe[0].value"></p>
-                        </div>
-                        <div class="line-short"></div>
-                        <div class="flex expand-right">
-                          <span>{{ scope.row.describe[1].title }}</span>
-                          <p v-html="scope.row.describe[1].value"></p>
-                        </div>
-                      </div>
-                    </template>
-                  </el-table-column>
-                </el-table> -->
               </el-tab-pane>
             </el-tabs>
           </div>
@@ -304,7 +281,6 @@
               @change="changePriority"
               v-else
               v-model="formData.priority"
-              size="small"
               placeholder="请选择优先级"
             >
               <el-option v-for="item in priorityOptions" :key="item.value" :label="item.label" :value="item.value">
@@ -319,7 +295,6 @@
             <el-select
               v-if="versionShow"
               v-model="formData.version_id"
-              size="small"
               clearable
               placeholder="请选择关联版本"
               @change="handleVersion"
@@ -338,25 +313,29 @@
       :append-to-body="true"
       top="13%"
       title="版本设置"
-      :visible.sync="dialogVisible"
+      v-model="dialogVisible"
       width="30%"
       :before-close="handleCloseVersion"
     >
-      <draggable v-model="inputs" class="drag-area" @start="dragging = true" @end="dragging = false">
-        <div v-for="(input, index) in inputs" :key="index" class="input-row">
-          <i class="iconfont icontuodong pointer"></i>
-          <el-input v-model="input.name" placeholder="请输入版本名称"></el-input>
-          <span class="pointer" @click="removeInput(index)">-</span>
-        </div>
+      <draggable v-model="inputs" class="drag-area" @start="dragging = true" @end="dragging = false" :item-key="$draggableKey">
+        <template #item="{ element: input, index }">
+          <div class="input-row">
+            <i class="iconfont icontuodong pointer"></i>
+            <el-input v-model="input.name" placeholder="请输入版本名称"></el-input>
+            <span class="pointer" @click="removeInput(index)">-</span>
+          </div>
+        </template>
       </draggable>
       <span class="add-input pointer" @click="addInput">
         <i class="el-icon-plus"></i>
         <span>添加版本</span>
       </span>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="handleCloseVersion">取 消</el-button>
-        <el-button type="primary" @click="submitVersion">确 定</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleCloseVersion">取 消</el-button>
+          <el-button type="primary" @click="submitVersion">确 定</el-button>
+        </div>
+      </template>
     </el-dialog>
 
     <image-viewer ref="imageViewer" :src-list="srcList"></image-viewer>
@@ -364,6 +343,11 @@
 </template>
 
 <script>
+import { mapStores } from 'pinia'
+import { useAppStore } from '@/stores/app.ts'
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { getAvatarSrc } from '@/utils/avatar.ts'
 import {
   putProgramTaskApi,
   getProgramTaskInfoApi,
@@ -371,18 +355,19 @@ import {
   deleteProgramTaskApi,
   getProgramVersionApi,
   setProgramVersionApi
-} from '@/api/program'
+} from '@/api/program.ts'
 import imageViewer from '@/components/common/imageViewer'
 import draggable from 'vuedraggable'
 import ClipboardJS from 'clipboard'
-import SettingMer from '@/libs/settingMer'
+import SettingMer from '@/libs/settingMer.ts'
 import ueditorFrom from '@/components/form-common/oa-wangeditor'
 import oaLog from '@/components/form-common/oa-log'
 
 export default {
+  emits: ['getProgramVersionList', 'getMemberList', 'getProgramSelectList', 'openTask', 'getTableData'],
   name: 'addProgram',
   components: {
-    comment: () => import('../components/comment'),
+    comment: defineAsyncComponent(() => import('../components/comment')),
     ueditorFrom,
     draggable,
     imageViewer,
@@ -500,12 +485,14 @@ export default {
     }
   },
   computed: {
+    ...mapStores(useAppStore),
     // 是否有操作权限
     isOperable() {
       return this.formData.operate
     }
   },
   methods: {
+    getAvatarSrc,
     handleToggle(showProperty) {
       if (!this.formData.operate) {
         return this.$message('没有操作权限')
@@ -518,6 +505,12 @@ export default {
         this.srcList = [e.target.src]
         this.$refs.imageViewer.openImageViewer(e.target.src)
       }
+    },
+    nameShowFn() {
+      this.nameShow = true
+      setTimeout(() => {
+        this.$refs.name.focus()
+      }, 300)
     },
     identAddress() {
       let type = 'type',
@@ -586,13 +579,16 @@ export default {
       result.data.members.map((item) => {
         membersId.push(item.id)
       })
-      this.$set(result.data, 'membersId', membersId)
+      result.data.membersId = membersId
       this.formData = result.data
       this.principal = result.data.admins
       this.formData.uid = result.data.uid !== 0 ? this.formData.uid : null
       this.timeVal = this.formData.plan_start ? [this.formData.plan_start, this.formData.plan_end] : []
       this.formData.priority = result.data.priority ? result.data.priority : 0
       this.formData.version_id = result.data.version_id ? result.data.version_id : null
+      if (this.formData.describe == '') {
+        this.formData.describe = '<p><br></p>'
+      }
       this.$emit('getProgramVersionList', result.data.program_id)
     },
     // 删除标签
@@ -627,6 +623,7 @@ export default {
       this.id = id ? id : 0
       if (this.edit) {
         this.getProgramInfo(id)
+
         this.getDynamicTask()
         // this.$refs.comment.getTaskComment()
       }
@@ -670,7 +667,7 @@ export default {
     },
     // 删除
     deleteTask() {
-      this.$modalSure('删除任务，关联的子级任务均会被删除').then(() => {
+      modalSure('删除任务，关联的子级任务均会被删除').then(() => {
         deleteProgramTaskApi(this.id).then(() => {
           this.drawer = false
           this.reset()
@@ -822,7 +819,7 @@ export default {
       ]
 
       properties.forEach((property) => {
-        this.$set(this, property, false)
+        this[property] = false
       })
 
       this.$emit('getTableData')
@@ -837,10 +834,10 @@ export default {
       this.$nextTick(() => {
         const clipboard = new ClipboardJS('.copy')
         clipboard.on('success', () => {
-          this.$message.success(this.$t('setting.copytitle'))
+          this.$message.success('复制成功')
           clipboard.destroy()
         })
-        this.$store.commit('app/SET_CLICK_TAB', false)
+        this.appStore.setClickTab(false)
       })
     }
   }
@@ -855,25 +852,22 @@ export default {
 .header-item {
   position: fixed;
 }
-.station /deep/.edui-editor-iframeholder {
+.station :deep(.edui-editor-iframeholder) {
   height: 300px !important;
-}
-.station /deep/.el-drawer__body {
-  padding: 20px 20px 50px 20px;
 }
 .dialog-footer {
   // padding-top: 20px;
   // border-top: 1px solid #e6ebf5;
   text-align: right;
 }
-/deep/.el-cascader,
-/deep/ .el-input-number,
-/deep/ .el-select,
-/deep/ .el-date-editor {
+:deep(.el-cascader),
+:deep(.el-input-number),
+:deep(.el-select),
+:deep(.el-date-editor) {
   width: 100%;
 }
-/deep/.el-drawer__body {
-  padding: 0 !important;
+.mr4 {
+  margin-right: 4px;
 }
 .el-form {
   height: 100%;
@@ -885,6 +879,8 @@ export default {
     overflow-y: auto;
     .admins {
       .avatar-box {
+        display: flex;
+        align-items: center;
         margin-right: 6px;
       }
       img {
@@ -893,7 +889,6 @@ export default {
         border-radius: 50%;
       }
     }
-    .el-input__inner,
     .flex-box {
       height: 32px;
       line-height: 32px;
@@ -947,7 +942,7 @@ export default {
     margin-bottom: 20px;
     display: flex;
     align-items: center;
-    /deep/.el-input__inner {
+    :deep(.el-input__inner) {
       width: 1080px;
     }
     .name {
@@ -1000,39 +995,39 @@ export default {
 }
 .describe-box {
   margin: 10px 0 26px;
-  /deep/ table {
+  :deep(table) {
     width: 100% !important;
     border: 1px solid #ccc;
   }
 
-  /deep/ table th {
+  :deep(table th) {
     border: 1px solid #ccc;
   }
-  /deep/ table td {
+  :deep(table td) {
     padding: 10px 5px;
     border: 1px solid #ccc;
   }
 
-  /deep/ p img {
+  :deep(p img) {
     max-width: 800px;
   }
 }
-/deep/ .el-form-item__label {
+:deep(.el-form-item__label) {
   color: #909399;
   padding: 0 !important;
 }
 .comment {
-  /deep/.el-tabs__active-bar.is-top {
+  :deep(.el-tabs__active-bar.is-top) {
     margin-left: 20px;
   }
-  /deep/.el-tabs__item.is-top:nth-child(2) {
+  :deep(.el-tabs__item.is-top:nth-child(2)) {
     margin-left: 20px;
   }
 }
-/deep/.el-form-item {
+:deep(.el-form-item) {
   margin-bottom: 0;
 }
-/deep/.el-table__header-wrapper {
+:deep(.el-table__header-wrapper) {
   display: none;
 }
 .expand-describe {
@@ -1045,14 +1040,14 @@ export default {
   .expand-left {
     width: 50%;
     align-items: flex-start;
-    /deep/ table {
+    :deep(table) {
       border: 1px solid #ccc;
     }
 
-    /deep/ table th {
+    :deep(table th) {
       border: 1px solid #ccc;
     }
-    /deep/ table td {
+    :deep(table td) {
       padding: 10px 5px;
       border: 1px solid #ccc;
     }
@@ -1061,14 +1056,14 @@ export default {
     width: 50%;
     margin-left: 20px;
     align-items: flex-start;
-    /deep/ table {
+    :deep(table) {
       border: 1px solid #ccc;
     }
 
-    /deep/ table th {
+    :deep(table th) {
       border: 1px solid #ccc;
     }
-    /deep/ table td {
+    :deep(table td) {
       padding: 10px 5px;
       border: 1px solid #ccc;
     }
@@ -1083,7 +1078,7 @@ export default {
     line-height: 16px;
     margin-right: 36px;
     margin-bottom: 0;
-    /deep/p {
+    :deep(p) {
       font-size: 14px;
       margin: 0;
     }
@@ -1094,7 +1089,8 @@ export default {
 }
 .bg {
   &:hover {
-    background: #ecedf0;
+    background: #f7f7f7;
+    border-radius: 4px;
   }
 }
 .set-version {
@@ -1130,28 +1126,28 @@ export default {
   flex-grow: 1;
   margin-right: 10px;
 }
-/deep/.icon-no .el-table__expand-icon {
+:deep(.icon-no .el-table__expand-icon) {
   display: none;
 }
-/deep/.el-tabs__nav-wrap::after {
+:deep(.el-tabs__nav-wrap::after) {
   background-color: #f2f6fc;
 }
-/deep/ .el-tabs__nav-wrap {
+:deep(.el-tabs__nav-wrap) {
   height: 54px;
   border-top: 1px solid #f2f6fc;
   line-height: 54px;
 }
-/deep/.w-e-content-preview,
+:deep(.w-e-content-preview),
 .w-e-text {
   padding: 0;
 }
-/deep/.w-e-text p {
+:deep(.w-e-text p) {
   margin: 0;
 }
 .placeholder {
   padding: 0;
 }
-/deep/.w-e-text-container {
+:deep(.w-e-text-container) {
   padding-top: 10px;
 }
 .created-time {
@@ -1161,7 +1157,8 @@ export default {
 }
 .members-box {
   margin-right: 6px;
-  display: inline-block;
+  display: flex;
+  align-items: center;
 
   img {
     width: 16px;
@@ -1177,7 +1174,7 @@ export default {
   line-height: 22px;
   color: #909399;
 }
-/deep/.el-popover__reference {
+:deep(.el-popover__reference) {
   display: flex;
   align-items: center;
 }
@@ -1205,5 +1202,12 @@ export default {
 }
 .el-cascader-node__label {
   max-width: 200px;
+}
+</style>
+
+<style lang="scss">
+// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
+.program-task-edit-task-drawer .el-drawer__body {
+  padding: 0 !important;
 }
 </style>

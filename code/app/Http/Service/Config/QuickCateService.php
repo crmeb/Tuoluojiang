@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,9 +17,9 @@ namespace App\Http\Service\Config;
 
 use App\Http\Dao\Category\CategoryDao;
 use App\Http\Service\BaseService;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\services\FormService as Form;
-use crmeb\traits\service\CategoryTrait;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\services\FormService as Form;
+use Tuoluojiang\Open\traits\service\CategoryTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 
 /**
@@ -45,7 +45,7 @@ class QuickCateService extends BaseService implements ResourceServicesInterface
         if (! ($data = $this->dao->get($id))) {
             throw $this->exception('无效参数！');
         }
-        return $this->elForm('修改配置分类', $this->createFormRule($data->toArray()), '/ent/config/quickCate/' . $id, 'PUT');
+        return $this->createElementForm('修改配置分类', $this->createFormRule($data->toArray()), '/ent/config/quickCate/' . $id, 'PUT');
     }
 
     /**
@@ -53,7 +53,7 @@ class QuickCateService extends BaseService implements ResourceServicesInterface
      */
     public function resourceCreate(array $other = []): array
     {
-        return $this->elForm('创建配置分类', $this->createFormRule(), '/ent/config/quickCate');
+        return $this->createElementForm('创建配置分类', $this->createFormRule(), '/ent/config/quickCate');
     }
 
     /**

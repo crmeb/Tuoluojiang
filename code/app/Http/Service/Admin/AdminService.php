@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,40 +17,45 @@ namespace App\Http\Service\Admin;
 
 use App\Constants\CacheEnum;
 use App\Constants\CommonEnum;
+use App\Constants\NoticeEnum;
+use App\Constants\System\ConfigEnum;
 use App\Constants\UserEnum;
+use App\Events\SystemMessageEvent;
 use App\Http\Contract\User\UserInterface;
 use App\Http\Dao\Admin\AdminDao;
+use App\Http\Model\Admin\Admin;
 use App\Http\Service\Assess\AssessScoreService;
 use App\Http\Service\Assess\UserAssessService;
-use App\Http\Service\BaseService;
-use App\Http\Service\Client\CustomerService;
 use App\Http\Service\Cloud\CloudFileService;
 use App\Http\Service\Company\CompanyService;
 use App\Http\Service\Company\CompanyUserChangeService;
 use App\Http\Service\Company\CompanyUserEducationService;
 use App\Http\Service\Company\CompanyUserWorkService;
+use App\Http\Service\Customer\CustomerService;
 use App\Http\Service\Frame\FrameAssistService;
 use App\Http\Service\Frame\FrameScopeService;
 use App\Http\Service\Frame\FrameService;
+use App\Http\Service\Notice\NoticeRecordService;
 use App\Http\Service\Position\PositionJobService;
 use App\Http\Service\Storage\StorageRecordService;
 use App\Http\Service\User\UserCardPerfectService;
 use App\Http\Service\User\UserChangeService;
 use App\Http\Service\User\UserResumeService;
 use App\Http\Service\User\UserTokenService;
+use App\Http\Service\Work\WorkMemberService;
 use App\Task\frame\FrameCensusTask;
-use App\Task\message\PerfectInfoRemind;
 use App\Task\user\SaveHistoryTask;
 use Carbon\Carbon;
-use crmeb\services\FormService as Form;
-use crmeb\utils\Regex;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\services\FormService as Form;
+use Tuoluojiang\Open\services\wechat\Work;
+use Tuoluojiang\Open\utils\Regex;
 use FormBuilder\Exception\FormBuilderException;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Overtrue\Pinyin\Pinyin;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Psr\SimpleCache\InvalidArgumentException;
@@ -60,7 +65,8 @@ use Psr\SimpleCache\InvalidArgumentException;
  * @method adminListSearch(array $where, array $field = ['*'], int $page = 1, int $limit = 15, $sort = null, array $with = [])
  * @method listSearch(array $where, int $page = 0, int $limit = 0, $sort = null, array $with = [])
  * @method info(int $id, array $field = ['*'])
- * @method getSortData(array $where,array $sortValues,array $field=['*'])
+ * @method getSortData(array $where, array $sortValues, array $field = ['*'])
+ * @mixin AdminDao
  */
 class AdminService extends BaseService implements UserInterface
 {
@@ -82,6 +88,40 @@ class AdminService extends BaseService implements UserInterface
     }
 
     /**
+     * 获取或初始化用户 MCP 工具调用唯一值.
+     *
+     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
+     */
+    public function getMcpKey(int $uid): string
+    {
+        $mcpKey = (string) $this->dao->value($uid, 'mcp_key');
+        if ($mcpKey !== '') {
+            return $mcpKey;
+        }
+
+        return $this->refreshMcpKey($uid);
+    }
+
+    /**
+     * 刷新用户 MCP 工具调用唯一值.
+     *
+     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
+     */
+    public function refreshMcpKey(int $uid): string
+    {
+        $mcpKey = Admin::generateMcpKey();
+        $this->dao->update($uid, ['mcp_key' => $mcpKey]);
+
+        return $mcpKey;
+    }
+
+    /**
      * 获取用户信息.
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
@@ -95,12 +135,24 @@ class AdminService extends BaseService implements UserInterface
             $admin['job']    = app()->get(PositionJobService::class)->get($admin['job'])?->toArray();
             $enterprise      = app()->get(CompanyService::class)->get(['id' => 1], ['title', 'enterprise_name', 'enterprise_name_en', 'id as entid', 'logo', 'uniqued'])?->toArray();
             if ($enterprise) {// 企业考核相关配置信息
-                $enterprise['maxScore']     = app()->get(AssessScoreService::class)->max(['entid' => 1], 'max') ?: 0;
-                $enterprise['culture']      = sys_config('enterprise_culture');
-                $enterprise['compute_mode'] = (int) sys_config('assess_compute_mode', 1);
+                $enterprise['maxScore']        = app()->get(AssessScoreService::class)->max(['entid' => 1], 'max') ?: 0;
+                $enterprise['culture']         = sys_config('enterprise_culture');
+                $enterprise['compute_mode']    = (int) sys_config('assess_compute_mode', 1);
+                $enterprise['customer_switch'] = sys_more([
+                    ConfigEnum::LEAD_MODULE_SWITCH['key'],
+                    ConfigEnum::OPPORTUNITY_MODULE_SWITCH['key'],
+                    ConfigEnum::CONTRACT_MODULE_SWITCH['key'],
+                    ConfigEnum::INVOICE_MODULE_SWITCH['key'],
+                    ConfigEnum::ORDER_MODULE_SWITCH['key'],
+                    ConfigEnum::LIAISON_MODULE_SWITCH['key'],
+                    ConfigEnum::CUSTOMER_MODULE_SWITCH['key'],
+                ]);
             }
 
             $admin['real_name'] = $admin['name'];
+            if ($admin['work_member_id']) {
+                $admin['work'] = app()->get(WorkMemberService::class)->get($admin['work_member_id'], ['name', 'avatar'])?->toArray();
+            }
         }
         return ['userInfo' => $admin, 'enterprise' => $enterprise];
     }
@@ -124,9 +176,9 @@ class AdminService extends BaseService implements UserInterface
                 'name'     => substr($account, 0, 3) . '****' . substr($account, 7, 4),
                 'phone'    => $flag ? $account : '',
                 'account'  => $flag ? '' : $account,
-                'password' => password_hash($password, PASSWORD_DEFAULT),
+                'password' => password_hash($password, PASSWORD_BCRYPT),
                 'status'   => 1,
-                'avatar'   => 'https://shmily-album.oss-cn-shenzhen.aliyuncs.com/admin_face/face' . rand(1, 10) . '.png',
+                'avatar'   => link_file('/static/admin_face/face' . rand(1, 6) . '.png'),
             ]);
         }
         if ($userInfo->status == UserEnum::USER_LOCKING || app()->get(AdminInfoService::class)->value($userInfo->id, 'type') == 4) {
@@ -152,15 +204,9 @@ class AdminService extends BaseService implements UserInterface
         }
         ++$userInfo->login_count;
         $userInfo->save();
-        if ($isSingle) {
-            $this->rememberToken($userInfo->uid, $token, $client, $mac, app('request')->ip());
-        }
         return match ($origin) {
-            CommonEnum::ORIGIN_WEB, CommonEnum::ORIGIN_UNI => [
-                'token'      => $token,
-                'token_type' => 'bearer',
-                'expires_in' => auth()->factory()->getTTL() * 60,
-            ],
+            CommonEnum::ORIGIN_WEB, CommonEnum::ORIGIN_UNI => app()->get(UserTokenService::class)
+                ->issueLoginTokens($userInfo, $token, $client, $mac, app('request')->ip(), $this->resolveSingleLogin($isSingle)),
             default => [],
         };
     }
@@ -183,9 +229,9 @@ class AdminService extends BaseService implements UserInterface
                 'name'     => substr($account, 0, 3) . '****' . substr($account, 7, 4),
                 'phone'    => $flag ? $account : '',
                 'account'  => $flag ? '' : $account,
-                'password' => password_hash('888888', PASSWORD_DEFAULT),
+                'password' => password_hash('888888', PASSWORD_BCRYPT),
                 'status'   => 1,
-                'avatar'   => 'https://shmily-album.oss-cn-shenzhen.aliyuncs.com/admin_face/face' . rand(1, 10) . '.png',
+                'avatar'   => link_file('/static/admin_face/face' . rand(1, 6) . '.png'),
             ]);
         }
         if ($userInfo->status == UserEnum::USER_LOCKING || app()->get(AdminInfoService::class)->value($userInfo->id, 'type') == 4) {
@@ -203,17 +249,73 @@ class AdminService extends BaseService implements UserInterface
         }
         ++$userInfo->login_count;
         $userInfo->save();
-        if ($isSingle) {
-            $this->rememberToken($userInfo->uid, $token, $client, $mac, app('request')->ip());
-        }
+        $clientId && app(NoticeRecordService::class)->updatePushBadge($userInfo->id);
         return match ($origin) {
-            CommonEnum::ORIGIN_WEB, CommonEnum::ORIGIN_UNI => [
-                'token'      => $token,
-                'token_type' => 'bearer',
-                'expires_in' => auth()->factory()->getTTL() * 60,
-            ],
+            CommonEnum::ORIGIN_WEB, CommonEnum::ORIGIN_UNI => app()->get(UserTokenService::class)
+                ->issueLoginTokens($userInfo, $token, $client, $mac, app('request')->ip(), $this->resolveSingleLogin($isSingle)),
             default => [],
         };
+    }
+
+    /**
+     * 企业微信扫码登录.
+     * @return array
+     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
+     */
+    public function workAuthLogin(string $code, string $origin = CommonEnum::ORIGIN_WEB, string $client = '', string $mac = '', bool $isSingle = UserEnum::MULTIPORT_LOGIN)
+    {
+        try {
+            $userInfo = app()->get(Work::class)->auth()->getUserInfo($code);
+        } catch (\Throwable $e) {
+            throw $this->exception($e->getMessage());
+        }
+
+        if (empty($userInfo['userid'])) {
+            throw $this->exception('当前扫码非企业内部成员，无法登录');
+        }
+
+        $id = app()->get(WorkMemberService::class)->value(['userid' => $userInfo['userid']], 'id');
+        if (! $id) {
+            throw $this->exception('没有查到成员信息');
+        }
+
+        $userInfo = $this->dao->get(['work_member_id' => $id]);
+        if (! $userInfo) {
+            throw $this->exception('当前成员没有绑定账号');
+        }
+
+        if ($userInfo->status == UserEnum::USER_LOCKING || app()->get(AdminInfoService::class)->value($userInfo->id, 'type') == 4) {
+            throw $this->exception('您的账号已被锁定,无法登录!');
+        }
+        $token = auth('admin')->login($userInfo, true);
+        if (! $token) {
+            throw $this->exception('token创建失败');
+        }
+        $userInfo->last_ip = app('request')->ip();
+
+        ++$userInfo->login_count;
+        $userInfo->save();
+
+        return match ($origin) {
+            CommonEnum::ORIGIN_WEB, CommonEnum::ORIGIN_UNI => app()->get(UserTokenService::class)
+                ->issueLoginTokens($userInfo, $token, $client, $mac, app('request')->ip(), $this->resolveSingleLogin($isSingle)),
+            default => [],
+        };
+    }
+
+    /**
+     * 按系统配置控制单端登录；关闭后保留所有已登录端。
+     */
+    private function resolveSingleLogin(bool $isSingle): bool
+    {
+        if (! $isSingle) {
+            return false;
+        }
+
+        return (int) sys_config(ConfigEnum::SINGLE_LOGIN_SWITCH['key'], ConfigEnum::SINGLE_LOGIN_SWITCH['value']) === 1;
     }
 
     /**
@@ -235,7 +337,7 @@ class AdminService extends BaseService implements UserInterface
             'phone'    => $phone,
             'name'     => substr($phone, 0, 3) . '****' . substr($phone, 7, 4),
             'password' => password_hash($password, PASSWORD_BCRYPT),
-            'avatar'   => 'https://shmily-album.oss-cn-shenzhen.aliyuncs.com/admin_face/face' . rand(1, 10) . '.png',
+            'avatar'   => link_file('/static/admin_face/face' . rand(1, 6) . '.png'),
         ])->toArray();
     }
 
@@ -244,13 +346,13 @@ class AdminService extends BaseService implements UserInterface
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
-    public function password(int $uid, string $phone, string $password): int
+    public function password(?int $uid, string $phone, string $password): int
     {
         $info = $this->dao->get(['phone' => $phone])?->toArray();
         if (! $info) {
             throw $this->exception('您的手机号码尚未注册');
         }
-        if ($uid != $info['id']) {
+        if ($uid && $uid != $info['id']) {
             throw $this->exception('无法修改其他用户密码');
         }
         return $this->dao->update($info['id'], ['password' => password_hash($password, PASSWORD_BCRYPT), 'is_init' => 0]);
@@ -276,7 +378,16 @@ class AdminService extends BaseService implements UserInterface
      */
     public function logout(): void
     {
+        app()->get(UserTokenService::class)->revokeByAccessToken(request()->bearerToken());
         auth('admin')->logout();
+    }
+
+    /**
+     * 刷新登录凭证.
+     */
+    public function refreshToken(string $refreshToken): array
+    {
+        return app()->get(UserTokenService::class)->refreshAccessToken($refreshToken);
     }
 
     /**
@@ -305,7 +416,7 @@ class AdminService extends BaseService implements UserInterface
         if (($phone = $this->dao->value(['scan_key' => $key], 'phone')) && $key) {
             Cache::tags([CacheEnum::TAG_OTHER])->delete('scan.key.' . $key);
             $this->dao->update(['phone' => $phone], ['scan_key' => '']);
-            return $this->phoneLogin($phone);
+            return $this->phoneLogin($phone, 'web', isSingle: UserEnum::SINGLE_LOGIN);
         }
         if (Cache::tags([CacheEnum::TAG_OTHER])->has('scan.key.' . $key)) {
             if (Cache::tags([CacheEnum::TAG_OTHER])->get('scan.key.' . $key)) {
@@ -435,10 +546,10 @@ class AdminService extends BaseService implements UserInterface
         }
         switch ($where['types']) {
             case [1, 2, 3]:
-                $where['work_time'] = $where['time'] ?: '';
+                $where['work_time'] = $where['time'] ?? '';
                 break;
             case [4]:
-                $where['quit_time'] = $where['time'] ?: '';
+                $where['quit_time'] = $where['time'] ?? '';
                 break;
         }
         unset($where['time']);
@@ -522,16 +633,21 @@ class AdminService extends BaseService implements UserInterface
             throw $this->exception('企业存在相同记录，请勿重复操作');
         }
         $frameAssist = app()->get(FrameAssistService::class);
-        if ($frameInfo && $frameInfo['is_admin'] && ! $frameInfo['manage_frames']) {
-            throw $this->exception('必须选择一个负责部门');
+        if (! ($frameInfo['frame_id'] ?? [])) {
+            $topFrameId                 = (int) app()->get(FrameService::class)->topFrameId();
+            $frameInfo['frame_id']      = [$topFrameId];
+            $frameInfo['main_id']       = (int) ($frameInfo['main_id'] ?? 0) ?: $topFrameId;
+            $frameInfo['manage_frames'] = [];
+            $frameInfo['is_admin']      = 0;
         }
-        $res = $this->transaction(function () use ($data, $frameInfo, $type, $import, $frameAssist) {
+        $frameInfo = $this->normalizeAdminFrameInfo($frameInfo, 'main_id');
+        $res       = $this->transaction(function () use ($data, $frameInfo, $type, $import, $frameAssist) {
             $admin = $this->dao->create([
                 'phone'    => $data['phone'],
                 'name'     => $data['name'],
                 'password' => password_hash('888888', PASSWORD_BCRYPT),
-                'avatar'   => $data['photo'] ?: ('https://shmily-album.oss-cn-shenzhen.aliyuncs.com/admin_face/face' . rand(1, 10) . '.png'),
-                'roles'    => app()->get(FrameService::class)->column(['ids' => $frameInfo['frame_id']], 'role_id'),
+                'avatar'   => $data['photo'] ?: (link_file('/static/admin_face/face' . rand(1, 6) . '.png')),
+                'roles'    => app()->get(FrameService::class)->column(['ids' => $frameInfo['frame_id'] ?? 0], 'role_id'),
                 'job'      => $data['position'],
                 'status'   => $type === 1 ? 1 : 0,
             ])->toArray();
@@ -544,19 +660,21 @@ class AdminService extends BaseService implements UserInterface
                 default => 0
             };
             if ($data['name']) {
-                $data['letter'] = strtoupper(Pinyin::nameAbbr(trim($data['name']))[0]);
+                $data['letter'] = get_name_letter(trim($data['name']));
             }
-            $userWorkService      = app()->get(CompanyUserWorkService::class);
-            $userEducationService = app()->get(CompanyUserEducationService::class);
-            if ($data['works']) {
+            if (isset($data['works']) && $data['works']) {
+                $userWorkService = app()->get(CompanyUserWorkService::class);
                 foreach ($data['works'] as $work) {
                     $work['card_id'] = $admin['id'];
+                    $work['user_id'] = $admin['id'];
                     $userWorkService->create($work);
                 }
             }
-            if ($data['educations']) {
+            if (isset($data['educations']) && $data['educations']) {
+                $userEducationService = app()->get(CompanyUserEducationService::class);
                 foreach ($data['educations'] as $education) {
                     $education['card_id'] = $admin['id'];
+                    $education['user_id'] = $admin['id'];
                     $userEducationService->create($education);
                 }
             }
@@ -565,17 +683,13 @@ class AdminService extends BaseService implements UserInterface
                     'card_id'      => $admin['id'],
                     'entid'        => 1,
                     'new_position' => $data['position'],
-                    'new_frame'    => $frameInfo['main_id'] ?: 0,
+                    'new_frame'    => $frameInfo['main_id'] ?? 0,
                     'created_at'   => $data['work_time'] ? Carbon::make($data['work_time'])->toDateString() : now()->toDateString(),
                 ]);
             }
-            if (! $frameInfo['frame_id']) {
-                $frameInfo['frame_id']      = app()->get(FrameService::class)->topFrameId();
-                $frameInfo['manage_frames'] = [];
-            }
             $frameAssist->setUserFrame($frameInfo['frame_id'], (int) $admin['id'], (int) ($frameInfo['main_id'] ?? 0), (bool) ($frameInfo['is_admin'] ?? false), (int) ($frameInfo['superior_uid'] ?? 0), $frameInfo['manage_frames'] ?: []);
             app()->get(FrameScopeService::class)->saveUserScope($admin['id'], 1, $frameInfo['frames'] ?? []);
-            unset($data['name'],$data['phone'],$data['position'],$data['status'],$data['works'],$data['educations']);
+            unset($data['name'], $data['phone'], $data['position'], $data['status'], $data['works'], $data['educations']);
             app()->get(AdminInfoService::class)->update($admin['id'], $data);
             return true;
         });
@@ -603,8 +717,8 @@ class AdminService extends BaseService implements UserInterface
             throw $this->exception('手机号绑定的帐号已激活，无法修改手机号!');
         }
         $frameAssist = app()->get(FrameAssistService::class);
-        if ($frameInfo && $frameInfo['is_admin'] && ! $frameInfo['manage_frames']) {
-            throw $this->exception('必须选择一个负责部门');
+        if ($type == 'basic' && $frameInfo) {
+            $frameInfo = $this->normalizeAdminFrameInfo($frameInfo, 'main_id');
         }
         return $this->transaction(function () use ($type, $save, $id, $info, $frameInfo, $frameAssist) {
             if ($type == 'basic') {
@@ -612,7 +726,7 @@ class AdminService extends BaseService implements UserInterface
                 $info->name = $save['name'];
                 $frameInfo && $frameAssist->setUserFrame($frameInfo['frame_id'], $id, (int) $frameInfo['main_id'], (bool) $frameInfo['is_admin'], (int) $frameInfo['superior_uid'], (array) $frameInfo['manage_frames']);
                 $frameInfo && app()->get(FrameScopeService::class)->saveUserScope($id, 1, $frameInfo['frame_id']);
-                unset($save['name'],$save['phone'],$save['position']);
+                unset($save['name'], $save['phone'], $save['position']);
             }
             $info->save();
             // reload user role
@@ -659,15 +773,7 @@ class AdminService extends BaseService implements UserInterface
      */
     public function saveAdminFrame(int $id, array $data): bool
     {
-        if (! $data['frame_id']) {
-            throw $this->exception('必须选择一个部门');
-        }
-        if (! $data['mastart_id']) {
-            throw $this->exception('必须选择一个主部门');
-        }
-        if ($data['is_admin'] && ! $data['manage_frames']) {
-            throw $this->exception('必须选择一个负责部门');
-        }
+        $data = $this->normalizeAdminFrameInfo($data, 'mastart_id');
         if ($this->dao->exists(['not_id' => $id, 'phone' => $data['phone']])) {
             throw $this->exception('该手机号已存在');
         }
@@ -688,6 +794,54 @@ class AdminService extends BaseService implements UserInterface
             return true;
         });
         return $res && Cache::tags([CacheEnum::TAG_FRAME, CacheEnum::TAG_APPROVE, CacheEnum::TAG_ROLE, CacheEnum::TAG_ASSESS])->flush() && Task::deliver(new FrameCensusTask(1));
+    }
+
+    /**
+     * 规范化并校验员工部门入参（唯一主部门 / 唯一负责部门）.
+     *
+     * @param array $frameInfo 部门相关入参
+     * @param string $mainKey 主部门字段名（main_id|mastart_id）
+     */
+    protected function normalizeAdminFrameInfo(array $frameInfo, string $mainKey = 'main_id'): array
+    {
+        $frameIds = $frameInfo['frame_id'] ?? [];
+        if (! is_array($frameIds)) {
+            $frameIds = $frameIds ? [(int) $frameIds] : [];
+        }
+        $frameIds               = array_values(array_unique(array_filter(array_map('intval', $frameIds))));
+        $frameInfo['frame_id']  = $frameIds;
+        $frameInfo['is_admin']  = (int) ($frameInfo['is_admin'] ?? 0);
+
+        $mainId = (int) ($frameInfo[$mainKey] ?? 0);
+        if (! $frameIds) {
+            throw $this->exception('必须选择一个部门');
+        }
+        if (! $mainId || ! in_array($mainId, $frameIds, true)) {
+            throw $this->exception('必须选择一个主部门');
+        }
+        $frameInfo[$mainKey] = $mainId;
+
+        $manageFrames = $frameInfo['manage_frames'] ?? [];
+        if (! is_array($manageFrames)) {
+            $manageFrames = $manageFrames !== '' && $manageFrames !== null ? [(int) $manageFrames] : [];
+        }
+        $manageFrames = array_values(array_unique(array_filter(array_map('intval', $manageFrames))));
+        if ($frameInfo['is_admin']) {
+            if (! $manageFrames) {
+                throw $this->exception('必须选择一个负责部门');
+            }
+            if (count($manageFrames) > 1) {
+                throw $this->exception('只能选择一个负责部门');
+            }
+            if (! in_array($manageFrames[0], $frameIds, true)) {
+                throw $this->exception('负责部门必须是所属部门之一');
+            }
+        } else {
+            $manageFrames = [];
+        }
+        $frameInfo['manage_frames'] = $manageFrames;
+
+        return $frameInfo;
     }
 
     /**
@@ -741,7 +895,7 @@ class AdminService extends BaseService implements UserInterface
         if (! $this->dao->exists($id)) {
             throw $this->exception('修改的用户名片不存在');
         }
-        return $this->elForm('办理转正', [
+        return $this->createElementForm('办理转正', [
             Form::input('name', '人员姓名', $this->dao->value($id, 'name') ?: '')->readonly(true),
             Form::date('formal_time', '转正时间', app()->get(AdminInfoService::class)->value($id, 'formal_time') ?: now()->toDateString())
                 ->validate([Form::validateStr()->required()->message('请选择转正时间')]),
@@ -832,7 +986,8 @@ class AdminService extends BaseService implements UserInterface
                 'user_id'      => $data['user_id'],
             ]);
             $assistServices->update(['user_id' => $id], ['is_admin' => 0]);
-            $assistServices->delete(['user_id' => $id]);
+            // 保留 frame_assist 记录以便查询离职人员的部门归属历史
+            // $assistServices->delete(['user_id' => $id]);
             // 处理云盘数据
             app()->get(CloudFileService::class)->leaveUserTransfer($user['id'], (int) $data['user_id']);
             return $res1 && $res2;
@@ -840,7 +995,13 @@ class AdminService extends BaseService implements UserInterface
         $services = app()->get(CustomerService::class);
         $ids      = $services->column(['uid' => $id], 'id') ?: [];
         if ($ids) {
-            $services->shift($ids, $data['user_id'], 1, 1);
+            $services->shift($ids, $data['user_id'], 1, 1, force: true);
+        }
+        // 离职员工名下未完成审批按异常规则自动同意或转交
+        try {
+            app()->get(\App\Http\Service\Approve\ApproveApplyService::class)->handleUserQuitPendingApproves((int) $id);
+        } catch (\Throwable $e) {
+            Log::error('离职审批异常处理失败:' . $e->getMessage(), ['user_id' => $id, 'file' => $e->getFile(), 'line' => $e->getLine()]);
         }
         return $res && Task::deliver(new FrameCensusTask());
     }
@@ -857,7 +1018,7 @@ class AdminService extends BaseService implements UserInterface
                 'name'     => $data['name'],
                 'phone'    => $data['phone'],
                 'position' => $data['position'],
-                'letter'   => strtoupper(Pinyin::nameAbbr(trim($data['name']))[0]) ?: '',
+                'letter'   => get_name_letter(trim($data['name'])),
             ],
             'staff' => [
                 'is_part'            => $data['is_part'],
@@ -908,7 +1069,7 @@ class AdminService extends BaseService implements UserInterface
                 'acad_image'      => $data['acad_image'],
             ],
             'all' => [
-                'letter'             => $data['name'] ? (strtoupper(Pinyin::nameAbbr(trim($data['name']))[0]) ?: '') : '',
+                'letter'             => $data['name'] ? get_name_letter(trim($data['name'])) : '',
                 'work_time'          => $data['work_time'],
                 'trial_time'         => $data['trial_time'],
                 'formal_time'        => $data['formal_time'],
@@ -941,7 +1102,7 @@ class AdminService extends BaseService implements UserInterface
                 'acad_image'         => ! empty($data['acad_image']) ? $data['acad_image'] : '',
             ],
             'perfect' => [
-                'letter'             => $data['name'] ? (strtoupper(Pinyin::nameAbbr(trim($data['name']))[0]) ?: '') : '',
+                'letter'             => $data['name'] ? get_name_letter(trim($data['name'])) : '',
                 'interview_position' => $data['position'] ?? '',
                 'card_id'            => $data['card_id'],
                 'sex'                => $data['sex'],
@@ -1086,12 +1247,15 @@ class AdminService extends BaseService implements UserInterface
             'card_id'   => $id,
             'fail_time' => now()->addDays(8)->toDateTimeString(),
         ];
-        if ($cardPerfec->exists(['time' => 'today', 'user_id' => $id])) {
-            throw $this->exception('每日仅可发送一次邀请！');
-        }
         $entInfo = app()->get(CompanyService::class)->get(1)?->toArray();
-        // 发送邀请
-        Task::deliver(new PerfectInfoRemind($info, $entInfo));
+        event(new SystemMessageEvent(
+            type: NoticeEnum::PERFECT_USER_INFO,
+            params: [
+                '企业名称' => $entInfo['enterprise_name'] ?? '',
+            ],
+            receiverIds: $id,
+            other: ['entid' => 1, 'uid' => $id]
+        ));
         $data = ['url' => '', 'message' => '邀请完善信息已发出，等待用户完善'];
         $cardPerfec->create($save);
         return $data;
@@ -1222,9 +1386,10 @@ class AdminService extends BaseService implements UserInterface
         $tokenServices = app()->get(UserTokenService::class);
         $info          = $tokenServices->get(['uid' => $uid, 'client' => $client]);
         if ($info) {
-            if ($info->last_token) {
+            $oldTokens = array_unique(array_filter([$info->remember_token, $info->last_token]));
+            foreach ($oldTokens as $oldToken) {
                 try {
-                    auth('admin')->setToken($info->last_token)->invalidate(true);
+                    auth('admin')->setToken($oldToken)->invalidate(true);
                 } catch (\Exception $e) {
                     Log::error('单点登录Token失效失败：' . $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
                 }

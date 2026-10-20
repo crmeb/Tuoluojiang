@@ -2,86 +2,100 @@
 <template>
   <div class="oa-dialog">
     <el-dialog
-      top="10%"
-      :visible.sync="show"
-      width="700px"
-      append-to-body
-      :show-close="false"
       :close-on-click-modal="false"
+      :show-close="false"
+      v-model="show"
+      append-to-body
+      top="8%"
+      width="700px"
     >
-      <div slot="title" class="header flex-between">
-        <span class="title">视图管理</span>
-        <span class="el-icon-close" @click="handleClose"></span>
-      </div>
+      <template #header>
+        <div class="header flex-between">
+          <span class="title">视图管理</span>
+          <span class="el-icon-close" @click="handleClose"></span>
+        </div>
+      </template>
       <div class="flex mb20 flex-between">
         <div>
           <el-input
-            v-model="where.title"
-            prefix-icon="el-icon-search"
-            size="small"
-            placeholder="请输入视图名称(10个字以内)"
-            clearable
-            style="width: 300px"
+            v-model="name"
             class="input"
-            @change="changeList"
+            clearable
+            placeholder="请输入视图名称"
+            prefix-icon="el-icon-search"
+            style="width: 300px"
           ></el-input>
         </div>
-        <el-button type="primary" size="small" @click="addViewFn">新建视图</el-button>
+        <el-button type="primary" @click="addViewFn">新建视图</el-button>
       </div>
 
       <!-- 内容 -->
-      <ul class="content-title" v-if="list.length > 0">
+      <ul v-if="list.length > 0" class="content-title" v-loading="loading">
         <li>
           <p>顺序</p>
           <p>视图名称</p>
           <p>类型</p>
+          <p>创建人</p>
           <p>操作</p>
         </li>
         <ul class="content-body">
           <draggable
-            v-model="list"
+            v-model="searchList"
+            animation="1000"
             chosen-class="chosen"
             force-fallback="true"
             group="people"
-            animation="1000"
-            @start="onStart"
+            handle=".item-drag"
             @end="onEnd"
+            @start="onStart"
+            tag="transition-group"
+            item-key="id"
           >
-            <transition-group>
-              <li v-for="(item, index) in list" :key="index">
+            <template #item="{ element: item, index }">
+              <li>
                 <p><i class="icon iconfont icontuodong item-drag"></i></p>
-                <p class="text">{{ item.senior_title }}</p>
-                <p class="text">{{ item.senior_type == 0 ? '个人' : '公共' }}</p>
+                <p class="text">{{ item.senior_title || item.title }}</p>
+                <p v-if="!viewType" class="text">{{ item.senior_type == 0 ? '个人' : '公共' }}</p>
+
+                <p v-else class="text">{{ item.is_public == 0 ? '个人' : '公共' }}</p>
+                <p class="text">{{ item.admin?item.admin.name:'--' }}</p>
                 <p>
-                  <span class="iconfont iconbianji1 mr10" @click.stop="editFn(item)"></span>
-                  <span class="el-icon-delete" @click.stop="delFn(item, index)"></span>
+                  <span class="mr10" @click.stop="editFn(item)" v-if="item.uid !== user_id">--</span>
+
+                  <span class="iconfont iconbianji1 mr10" @click.stop="editFn(item)" v-if="item.uid == user_id"></span>
+
+                  <span class="el-icon-delete" @click.stop="delFn(item, index)" v-if="item.uid == user_id"></span>
                 </p>
               </li>
-            </transition-group>
+            </template>
           </draggable>
         </ul>
       </ul>
-      <div v-if="list.length == 0">
-        <default-page :index="19" :height="`200px`" :imgWidth="`117px`"></default-page>
+      <div v-if="searchList.length == 0">
+        <default-page :height="`200px`" :imgWidth="`117px`" :index="19"></default-page>
       </div>
     </el-dialog>
     <!-- 新建视图 -->
     <oa-dialog
       ref="oaDialog"
-      :fromData="fromData"
       :formConfig="formConfig"
-      :formRules="formRules"
       :formDataInit="formDataInit"
+      :formRules="formRules"
+      :fromData="fromData"
       @submit="submit"
     ></oa-dialog>
   </div>
 </template>
 <script>
+import { modalSure } from '@/libs/public.ts'
 import defaultPage from '@/components/common/defaultPage'
 import draggable from 'vuedraggable'
 import oaDialog from '@/components/form-common/dialog-form'
-import { crudSeniorSaveApi, crudSeniorDelApi, crudSeniorSortApi } from '@/api/develop'
+import { saveViewSeachApi, viewSeachSortApi, delViewSeachApi, putViewSeachInfoApi } from '@/api/client.ts'
+import { crudSeniorSaveApi, crudSeniorDelApi, crudSeniorSortApi } from '@/api/develop.ts'
+import { getStorageJson } from '@/utils/storage.ts'
 export default {
+  emits: ['getViewList'],
   name: '',
   components: {
     oaDialog,
@@ -90,6 +104,16 @@ export default {
   },
   props: {
     keyName: {
+      type: String,
+      default: ''
+    },
+    category: {
+      // 客户管理的视图管理类型，判断是联系人/客户/订单
+      type: String,
+      default: ''
+    },
+    viewType: {
+      // 值为customer是系统客户视图管理，为空值是低代码
       type: String,
       default: ''
     },
@@ -109,6 +133,7 @@ export default {
   data() {
     return {
       show: false,
+      loading: false,
       fromData: {
         width: '500px',
         title: '新建视图',
@@ -120,6 +145,7 @@ export default {
         senior_title: '',
         senior_type: '0'
       },
+      user_id: getStorageJson('userInfo', {}).id,
       formConfig: [
         {
           type: 'input',
@@ -153,6 +179,7 @@ export default {
           },
           { min: 0, max: 10, message: '最多输入10个字', trigger: 'blur' }
         ],
+
         senior_type: [
           {
             required: true,
@@ -162,13 +189,27 @@ export default {
         ]
       },
 
-      where: {
-        title: ''
-      }
+      name: ''
     }
   },
 
-  mounted() {},
+  computed: {
+    searchList: function () {
+      let arr = []
+      if (this.name !== '') {
+        this.list.map((item) => {
+          if (item.title.includes(this.name)) {
+            arr.push(item)
+          }
+        })
+      }
+
+      if (this.name == '') {
+        arr = this.list
+      }
+      return arr
+    }
+  },
   methods: {
     handleClose() {
       this.show = false
@@ -182,21 +223,38 @@ export default {
       this.$refs.oaDialog.openBox()
     },
     delFn(item) {
-      this.$modalSure('确定删除此数据').then(() => {
-        crudSeniorDelApi(this.keyName, item.id).then((res) => {
-          if (res.status == 200) {
-            this.$emit('getViewList')
-          }
-        })
+      modalSure('确定删除此视图').then(() => {
+        if (this.viewType === 'customer') {
+          const viewData = getStorageJson('viewData')
+          delViewSeachApi(item.id).then((res) => {
+            if (res.status == 200) {
+              for (let key in viewData) {
+                if (this.category == key) {
+                  delete viewData[this.category]
+                }
+              }
+              localStorage.setItem('viewData', JSON.stringify(viewData))
+              this.$emit('getViewList', 1)
+            }
+          })
+        } else {
+          crudSeniorDelApi(this.keyName, item.id).then((res) => {
+            if (res.status == 200) {
+              this.$emit('getViewList')
+            }
+          })
+        }
       })
     },
     editFn(item) {
       this.formDataInit = {
-        senior_title: item.senior_title,
-        senior_type: item.senior_type + '',
+        senior_title: item.senior_title || item.title,
+        senior_type: item.senior_type || item.is_public + '',
         id: item.id,
+        sort: item.sort,
+        content: item.content,
         search_boolean: item.view_search_boolean,
-        senior_search: item.senior_search
+        senior_search: item.senior_search || item.content
       }
       this.fromData.title = '编辑视图'
       this.$refs.oaDialog.openBox()
@@ -206,33 +264,68 @@ export default {
       let obj = {
         id: []
       }
-      this.list.map((item) => {
+      this.searchList.map((item) => {
         obj.id.push(item.id)
       })
-      crudSeniorSortApi(this.keyName, obj).then((res) => {
-        this.$emit('getViewList')
-      })
+      if (this.viewType === 'customer') {
+        viewSeachSortApi(obj).then((res) => {
+          if (res.status == 200) {
+            this.$emit('getViewList')
+          }
+        })
+      } else {
+        crudSeniorSortApi(this.keyName, obj).then((res) => {
+          this.$emit('getViewList')
+        })
+      }
     },
-    changeList() {
-      this.$emit('getViewList', this.where.title)
-    },
+
     submit(data) {
-      data.sort = 0
-      if (!data.id) {
+      this.loading = true
+      if (this.viewType === 'customer') {
+        let obj = {
+          title: data.senior_title,
+          category: this.category,
+          is_public: data.senior_type,
+          sort: data.sort || 0,
+          content: data.content
+        }
+        if (data.id) {
+          putViewSeachInfoApi(data.id, obj).then((res) => {
+            if (res.status == 200) {
+              this.$emit('getViewList')
+              this.$refs.oaDialog.handleClose()
+            }
+            this.loading = false
+          })
+        } else {
+          saveViewSeachApi(obj).then((res) => {
+            if (res.status == 200) {
+              this.$emit('getViewList')
+              this.$refs.oaDialog.handleClose()
+            }
+            this.loading = false
+          })
+        }
+      } else {
+        if (!data.id) {
+          data.search_boolean = this.view_search_boolean
+          data.senior_search = this.senior_search
+        }
         data.search_boolean = this.view_search_boolean
         data.senior_search = this.senior_search
-      }
-      data.search_boolean = this.view_search_boolean
-      data.senior_search = this.senior_search
-      if (data.senior_type == 2) {
-        data.senior_type = 0
-      }
-      crudSeniorSaveApi(this.keyName, data).then((res) => {
-        if (res.status == 200) {
-          this.$emit('getViewList')
-          this.$refs.oaDialog.handleClose()
+        if (data.senior_type == 2) {
+          data.senior_type = 0
         }
-      })
+        crudSeniorSaveApi(this.keyName, data).then((res) => {
+          if (res.status == 200) {
+            this.$emit('getViewList')
+            this.$refs.oaDialog.handleClose()
+          }
+          this.loading = false
+        })
+      }
+      this.loading = false
     },
     openBox() {
       this.show = true
@@ -240,7 +333,7 @@ export default {
   }
 }
 </script>
-<style scoped lang="scss">
+<style lang="scss" scoped>
 .oa-dialog {
   .header {
     display: flex;
@@ -280,12 +373,8 @@ export default {
     display: flex;
     justify-content: flex-end;
   }
-  /deep/.el-dialog {
+  :deep(.el-dialog) {
     border-radius: 6px;
-  }
-
-  /deep/ .el-button--medium {
-    padding: 10px 15px;
   }
 }
 
@@ -300,7 +389,7 @@ ul {
     align-items: center;
 
     p {
-      width: calc(100% / 4);
+      width: calc(100% / 5);
       padding-left: 20px;
 
       &:first-of-type {
@@ -326,6 +415,8 @@ ul {
   font-weight: 400;
   font-size: 13px;
   color: #9e9e9e;
+  max-height: 400px;
+  overflow: auto;
 }
 .el-icon-delete {
   margin-left: 6px;

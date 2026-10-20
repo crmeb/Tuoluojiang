@@ -1,37 +1,62 @@
 <template>
   <div class="divBox firewall-box">
-    <el-card class="card-head normal-page" shadow="never" :body-style="{ padding: '20px 20px 0 20px' }">
-      <el-form :model="formData" :inline="true" class="form-box" size="small" label-width="84px">
-        <el-form-item label="开关：">
-          <el-radio-group v-model="formData.status">
-            <el-radio :label="0" :value="0">关闭</el-radio>
-            <el-radio :label="1" :value="1">拦截</el-radio>
-            <el-radio :label="2" :value="2">过滤</el-radio>
-          </el-radio-group>
-          <div class="form-item-tips">
-            关闭：不验证请求数据；拦截：若非发请求则返回错误；过滤：过滤掉非法参数，程序继续执行
-          </div>
-        </el-form-item>
-        <el-form-item label="规则设置：">
-          <div class="firewall-rule-item" v-for="(item, index) of formData.ruleList" :key="index">
-            <el-input v-model="formData.ruleList[index]" placeholder="请输入规则" clearable />
-
-            <div class="delete-btn-box" v-if="index">
-              <el-button type="text" class="delete-btn" @click="handleDeleteRule(index)">删除</el-button>
+    <div class="box-height">
+      <el-card class="card-head normal-page" shadow="never" :body-style="{ padding: '20px 20px 0 20px' }">
+        <el-form :model="formData" :inline="true" class="form-box" label-width="84px">
+          <el-form-item label="开关：">
+            <el-radio-group v-model="formData.status">
+              <el-radio :label="0" :value="0">关闭</el-radio>
+              <el-radio :label="1" :value="1">拦截</el-radio>
+              <el-radio :label="2" :value="2">过滤</el-radio>
+            </el-radio-group>
+            <div class="form-item-tips">
+              关闭：不验证请求数据；拦截：若非发请求则返回错误；过滤：过滤掉非法参数，程序继续执行
             </div>
-          </div>
-          <el-button type="text" icon="el-icon-plus" @click="handleAddRule" style="margin: 10px 0">添加规则</el-button>
-          <div class="firewall-rule-item">
+          </el-form-item>
+          <template v-if="formData.status">
+            <el-form-item label="常用规则：">
+              <div class="firewall-preset-box">
+                <div class="firewall-preset-item" v-for="preset in presetRules" :key="preset.label">
+                  <el-checkbox
+                    :value="isPresetChecked(preset)"
+                    :indeterminate="isPresetIndeterminate(preset)"
+                    @change="(checked) => handleTogglePreset(preset, checked)"
+                    >{{ preset.label }}</el-checkbox
+                  >
+                  <el-tooltip placement="top" :content="preset.rules.join('；')">
+                    <i class="el-icon-question preset-tips-icon" />
+                  </el-tooltip>
+                </div>
+              </div>
+              <div class="form-item-tips preset-tips">勾选常用防护规则后自动加入下方规则列表，也可手动添加自定义规则</div>
+            </el-form-item>
+            <el-form-item label="规则设置：">
+              <div class="firewall-rule-item" v-for="(item, index) of formData.ruleList" :key="index">
+                <el-tag v-if="ruleLabelMap[item]" type="info" class="rule-tag">{{
+                  ruleLabelMap[item]
+                }}</el-tag>
+                <el-input v-model="formData.ruleList[index]" placeholder="请输入正则规则，如 /select|union/i" clearable />
+
+                <div class="delete-btn-box">
+                  <el-button type="primary" link class="delete-btn" @click="handleDeleteRule(index)">删除</el-button>
+                </div>
+              </div>
+              <el-button type="primary" link icon="el-icon-plus" @click="handleAddRule" style="margin: 10px 0"
+                >添加规则</el-button
+              >
+            </el-form-item>
+          </template>
+          <el-form-item class="save-item">
             <el-button type="primary" @click="handleSaveRule">保存</el-button>
-          </div>
-        </el-form-item>
-      </el-form>
-    </el-card>
+          </el-form-item>
+        </el-form>
+      </el-card>
+    </div>
   </div>
 </template>
 
 <script>
-import { getFirewallConfigApi, saveFirewallConfigApi } from '@/api/setting'
+import { getFirewallConfigApi, saveFirewallConfigApi } from '@/api/setting.ts'
 
 export default {
   data() {
@@ -39,7 +64,76 @@ export default {
       formData: {
         status: 0, // 0 -> 关闭，1 -> 拦截, 2 -> 过滤
         ruleList: ['']
-      }
+      },
+      // 常用防护规则预设（取自安装默认规则），勾选后写入规则列表
+      presetRules: [
+        {
+          label: 'SQL 注入',
+          rules: [
+            '/(union[\\s\\S]*?select)/i',
+            '/(select[\\s\\S]*?)(from|limit)/i',
+            '/(having|updatexml|extractvalue)/i',
+            '/(?:from\\W+information_schema\\W)/i',
+            '/group\\s+by.+\\(/i',
+            '/into(\\s+)(?:dump|out)file\\s*/i',
+            '/(?:current_|user|database|schema|connection_id)\\s*\\(/i',
+            '/\\sand\\s+.*=.*/i',
+            '/\\bor\\b.*=.*/i'
+          ]
+        },
+        {
+          label: 'SQL 盲注',
+          rules: ['/sleep\\((\\s*)(\\d*)(\\s*)\\)/i', '/benchmark\\((.*)\\,(.*)\\)/i']
+        },
+        {
+          label: 'XSS 跨站脚本',
+          rules: [
+            '/(onmouseover|onerror|onload|onclick)\\=/i',
+            '/<(iframe|script|body|img|layer|div|meta|style|base|object|input)/i'
+          ]
+        },
+        {
+          label: '命令执行',
+          rules: [
+            '/\\|\\|.*?(?:ls|pwd|whoami|ll|ifconfig|ipconfig|&&|chmod|cd|mkdir|rmdir|cp|mv)/i'
+          ]
+        },
+        {
+          label: 'PHP 代码执行',
+          rules: [
+            '/(?:define|eval|file_get_contents|include|require|require_once|shell_exec|phpinfo|system|passthru|preg_\\w+|execute|echo|print|print_r|var_dump|(fp)open|alert|showmodaldialog)\\(/i',
+            '/base64_decode\\(/i',
+            '/<\\?/'
+          ]
+        },
+        {
+          label: 'PHP 超全局变量',
+          rules: [
+            '/\\$_(GET|POST|COOKIE|FILES|SESSION|ENV|GLOBALS|SERVER)/i',
+            '/\\$_(GET|POST|COOKIE|FILES|SESSION|ENV|GLOBALS|SERVER)\\[/i'
+          ]
+        },
+        {
+          label: '伪协议 / 文件包含',
+          rules: ['/(gopher|doc|php|glob|file|phar|zlib|ftp|ldap|dict|ogg|data):\\/\\//i']
+        },
+        {
+          label: '路径穿越',
+          rules: ['/\\.\\./', '/(?:etc\\/\\W*passwd)/i']
+        }
+      ]
+    }
+  },
+  computed: {
+    // 规则 -> 常用规则分组名，用于规则列表行展示标签
+    ruleLabelMap() {
+      const map = {}
+      this.presetRules.forEach((preset) => {
+        preset.rules.forEach((rule) => {
+          map[rule] = preset.label
+        })
+      })
+      return map
     }
   },
   created() {
@@ -54,18 +148,38 @@ export default {
         ruleList: firewall_content?.length ? firewall_content : ['']
       }
     },
+    isPresetChecked(preset) {
+      return preset.rules.every((rule) => this.formData.ruleList.includes(rule))
+    },
+    isPresetIndeterminate(preset) {
+      return preset.rules.some((rule) => this.formData.ruleList.includes(rule)) && !this.isPresetChecked(preset)
+    },
+    handleTogglePreset(preset, checked) {
+      if (checked) {
+        preset.rules.forEach((rule) => {
+          if (!this.formData.ruleList.includes(rule)) this.formData.ruleList.push(rule)
+        })
+      } else {
+        this.formData.ruleList = this.formData.ruleList.filter((rule) => !preset.rules.includes(rule))
+        if (!this.formData.ruleList.length) this.formData.ruleList.push('')
+      }
+    },
     handleAddRule() {
       this.formData.ruleList.push('')
     },
     handleSaveRule() {
+      // 去空、去重后保存，保存格式与原来保持一致
+      const content = [...new Set(this.formData.ruleList.map((rule) => rule.trim()))].filter((rule) => rule)
+      this.formData.ruleList = content.length ? content : ['']
       const data = {
         firewall_switch: this.formData.status,
-        firewall_content: this.formData.ruleList
+        firewall_content: content
       }
       saveFirewallConfigApi(data)
     },
     handleDeleteRule(index) {
       this.formData.ruleList.splice(index, 1)
+      if (!this.formData.ruleList.length) this.formData.ruleList.push('')
     }
   }
 }
@@ -83,28 +197,70 @@ export default {
 }
 
 .firewall-box {
-  /deep/.el-form-item {
+  :deep(.el-form-item) {
     width: 100%;
     display: flex;
   }
 
-  /deep/.el-form-item__content {
+  :deep(.el-form-item__content) {
     flex: 1;
   }
 
-  /deep/.el-icon-circle-close::before {
+  :deep(.el-icon-circle-close::before) {
     content: '\e79d';
   }
 
-  /deep/.el-form-item__label {
+  :deep(.el-form-item__label) {
     color: #606266;
+  }
+
+  // 保存按钮与表单内容列对齐
+  .save-item :deep(.el-form-item__content) {
+    margin-left: 84px;
+  }
+
+  .firewall-preset-box {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 14px 16px 0;
+    background: #f7f8fa;
+    border-radius: 4px;
+    display: flex;
+    flex-wrap: wrap;
+
+    .firewall-preset-item {
+      display: flex;
+      align-items: center;
+      width: 50%;
+      margin-bottom: 14px;
+    }
+
+    .preset-tips-icon {
+      margin-left: 2px;
+      color: #c0c4cc;
+    }
+  }
+
+  .preset-tips {
+    margin-top: 8px;
   }
 
   .firewall-rule-item {
     position: relative;
+    display: flex;
+    align-items: center;
 
     & + .firewall-rule-item {
-      margin-top: 20px;
+      margin-top: 12px;
+    }
+
+    .rule-tag {
+      flex-shrink: 0;
+      margin-right: 8px;
+    }
+
+    :deep(.el-input) {
+      flex: 1;
     }
 
     .delete-btn-box {

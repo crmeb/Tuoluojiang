@@ -1,154 +1,99 @@
 <template>
   <div>
-    <formBox
-      v-if="keyName"
-      :total="total"
-      :info="info"
-      :type="`view`"
-      :keyName="keyName"
-      :id="id"
-      @getInfo="getInfo"
-      @getList="getList"
-      @confirmData="confirmData"
-      @addData="addData"
-      @handleDelete="handleDelete"
-      @handleDropdown="handleDropdown"
-    ></formBox>
+    <formBox v-if="keyName" :total="total" :info="info" :type="`view`" :keyName="keyName" :id="id" @getInfo="getInfo"
+      @getList="getList" @confirmData="confirmData" @addData="addData" @handleDelete="handleDelete"
+      @handleDropdown="handleDropdown"></formBox>
 
     <!-- 表格数据 -->
-    <div
-      class="table-box mt10 non-resize-el-table"
-      v-loading="loading"
-      v-if="info.showField && info.showField.length > 0"
-    >
-      <el-table
-        :data="tableData"
-        ref="table"
-        style="width: 100%"
-        :height="height"
-        @selection-change="handleSelectionChange"
-        row-key="id"
-        border
-      >
+    <!-- v-if="info.showField && info.showField.length > 0" -->
+    <div class="table-box mt10 non-resize-el-table" v-loading="loading"
+      v-if="info.showField && info.showField.length > 0">
+      <el-table v-if="!where.group" :data="tableData" ref="table" style="width: 100%" :height="height"
+        @selection-change="handleSelectionChange" row-key="id" border>
         <el-table-column type="selection" min-width="55" show-overflow-tooltip> </el-table-column>
-        <el-table-column
-          v-for="(item, index) in info.showField"
-          :prop="item.field_name_en"
-          :label="item.field_name"
-          :key="index"
-          :width="
-            [
+        <el-table-column v-for="(item, index) in info.showField" :prop="item.field_name_en" :label="item.field_name"
+          :key="index" :width="[
               'input_percentage',
               'tag',
-              'image',
               'textarea',
-
               'date_picker',
               'date_time_picker',
               'cascader',
               'cascader_address'
             ].includes(item.form_value)
-              ? 200
+              ? 230
               : ''
-          "
-        >
-          <template slot-scope="scope">
+            ">
+          <template #default="scope">
             <div v-if="item.form_value === 'image'" class="img-box">
-              <img
-                v-for="(val, index) in scope.row[item.field_name_en]"
-                :key="index"
-                :src="val.url"
-                alt=""
-                class="img"
-                @click="lookViewer(val.url, val.name)"
-              />
+              <img v-for="(val, index) in scope.row[item.field_name_en]" :key="index" :src="val.url" alt="" class="img"
+                @click="lookViewer(val.url, val.name)" />
               <span v-if="!scope.row[item.field_name_en] || scope.row[item.field_name_en].length == 0">--</span>
             </div>
             <!-- 关联字典颜色 -->
-            <div
-              v-else-if="
-                scope.row[item.field_name_en] &&
-                Object.prototype.hasOwnProperty.call(scope.row[item.field_name_en], 'color')
-              "
-              class="dictionaries-tag over-text"
-              :style="{
+            <div v-else-if="
+              scope.row[item.field_name_en] &&
+              Object.prototype.hasOwnProperty.call(scope.row[item.field_name_en], 'color')
+            " class="dictionaries-tag over-text" :style="{
                 color: scope.row[item.field_name_en].color ? scope.row[item.field_name_en].color : '#1890ff',
                 background: scope.row[item.field_name_en].color
                   ? getColorFn(scope.row[item.field_name_en].color, '0.1')
                   : getColorFn('#1890ff', '0.1')
-              }"
-            >
+              }">
               {{ scope.row[item.field_name_en].name }}
             </div>
             <div v-else-if="item.form_value === 'input_percentage'">
               <el-progress
-                :percentage="scope.row[item.field_name_en] ? scope.row[item.field_name_en] : 0"
-              ></el-progress>
+                :percentage="scope.row[item.field_name_en] ? scope.row[item.field_name_en] : 0"></el-progress>
             </div>
             <div v-else-if="item.form_value === 'tag'">
               <el-popover
                 v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 2"
-                placement="top-start"
-                trigger="hover"
-              >
-                <template>
-                  <div class="flex_box">
-                    <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                      <el-tag size="small">
-                        {{ val }}
-                      </el-tag>
+                placement="top-start" trigger="hover">
+                <div class="flex_box">
+                  <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
+                    <el-tag>
+                      {{ val }}
+                    </el-tag>
+                  </div>
+                </div>
+                <template #reference>
+                  <div>
+                    <div class="flex_box">
+                      <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
+                        <el-tag v-if="index < 2">
+                          {{ val }}
+                        </el-tag>
+                      </div>
+                      <el-tag v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 2">...</el-tag>
                     </div>
                   </div>
                 </template>
-                <div slot="reference">
-                  <div class="flex_box">
-                    <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                      <el-tag size="small" v-if="index < 2">
-                        {{ val }}
-                      </el-tag>
-                    </div>
-                    <el-tag
-                      v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 2"
-                      size="small"
-                      >...</el-tag
-                    >
-                  </div>
-                </div>
               </el-popover>
               <template v-else>
                 <div class="flex_box">
                   <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                    <el-tag size="small" v-if="index < 2">
+                    <el-tag v-if="index < 2">
                       {{ val }}
                     </el-tag>
                   </div>
-                  <el-tag v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 2" size="small"
-                    >...</el-tag
-                  >
+                  <el-tag v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 2">...</el-tag>
                 </div>
               </template>
               <span v-if="!scope.row[item.field_name_en] || scope.row[item.field_name_en].length == 0">--</span>
             </div>
             <div v-else-if="item.form_value === 'switch'">
-              <el-switch
-                disabled
-                v-model="scope.row[item.field_name_en]"
-                :active-value="1"
-                :inactive-value="0"
-                active-text="开启"
-                inactive-text="关闭"
-              >
+              <el-switch disabled v-model="scope.row[item.field_name_en]" :active-value="1" :inactive-value="0"
+                active-text="开启" inactive-text="关闭">
               </el-switch>
             </div>
             <div v-else-if="item.form_value === 'textarea'">
-              <el-popover placement="top-start" width="350" trigger="hover" :content="scope.row[item.field_name_en]">
-                <div
-                  class="over-text"
-                  slot="reference"
-                  v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 11"
-                >
-                  {{ scope.row[item.field_name_en] }}
-                </div>
+              <el-popover v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 11" placement="top-start" width="350" trigger="hover" :content="scope.row[item.field_name_en]">
+                <template #reference>
+                  <div class="over-text">
+                    {{ scope.row[item.field_name_en] }}
+                  </div>
+                </template>
               </el-popover>
               <span v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length <= 11">
                 {{ scope.row[item.field_name_en] }}
@@ -156,27 +101,24 @@
               <span v-if="!scope.row[item.field_name_en]">--</span>
             </div>
             <div v-else class="flex-center">
-              <span
-                v-if="item.field_name_en == info.crudInfo.main_field_name"
-                class="color-doc pointer"
-                @click="checkRow(scope.row)"
-              >
+              <span v-if="item.field_name_en == info.crudInfo.main_field_name" class="color-doc pointer"
+                @click="checkRow(scope.row)">
                 {{ getValue(scope.row[item.field_name_en], item.form_value) }}
                 <span class="share-tag" v-if="scope.row.is_share"> 共享 </span>
               </span>
 
               <!-- 多选 -->
               <div v-else-if="item.form_value == 'checkbox'">
-                <div
-                  v-for="(val, index) in scope.row[item.field_name_en]"
-                  class="dictionaries-tag over-text mr10"
-                  :style="{
-                    color: val.color ? val.color : '#1890ff',
-                    background: val.color ? getColorFn(val.color, '0.1') : getColorFn('#1890ff', '0.1')
-                  }"
-                >
-                  {{ val.name }}
-                </div>
+                <template v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 0">
+                  <div v-for="(val, index) in scope.row[item.field_name_en]" class="dictionaries-tag over-text mr10"
+                    :style="{
+                      color: val.color ? val.color : '#1890ff',
+                      background: val.color ? getColorFn(val.color, '0.1') : getColorFn('#1890ff', '0.1')
+                    }">
+                    {{ val.name }}
+                  </div>
+                </template>
+                <span v-else>--</span>
               </div>
 
               <span v-else> {{ getValue(scope.row[item.field_name_en], item.form_value) }}</span>
@@ -185,35 +127,43 @@
         </el-table-column>
 
         <el-table-column prop="address" label="操作" fixed="right" width="130">
-          <template slot-scope="scope">
-            <el-button type="text" class="mr10" @click="checkRow(scope.row)">查看</el-button>
-            <!-- <el-button type="text" @click="editRow(scope.row)">编辑</el-button> -->
+
+          <template #header>
+            <div class="flex">
+              <span>操作</span>
+              <field-popover :infoData="infoData" @getInfo="getInfo"></field-popover>
+            </div>
+
+          </template>
+          <template #default="scope">
+
+            <el-button type="primary" link class="mr10" @click="checkRow(scope.row)">查看</el-button>
             <el-dropdown>
-              <span class="el-dropdown-link el-button--text el-button">
-                &nbsp;更多 <i class="el-icon-arrow-down"
-              /></span>
-              <el-dropdown-menu>
-                <el-dropdown-item @click.native="openShare(scope.row)"> 共享协作 </el-dropdown-item>
-                <el-dropdown-item v-if="scope.row.is_share" @click.native="cancelShare(scope.row)">
-                  取消协作
-                </el-dropdown-item>
-                <el-dropdown-item @click.native="handleDropdown('transfer', scope.row)"> 移交负责人 </el-dropdown-item>
-                <el-dropdown-item @click.native="deleteRow(scope.row)">删除</el-dropdown-item>
-              </el-dropdown-menu>
+              <el-button type="primary" link class="el-dropdown-link">
+                &nbsp;更多 <i class="el-icon-arrow-down" /></el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item @click="openShare(scope.row)"> 共享协作 </el-dropdown-item>
+                  <el-dropdown-item v-if="scope.row.is_share" @click="cancelShare(scope.row)">
+                    取消协作
+                  </el-dropdown-item>
+                  <el-dropdown-item @click="handleDropdown('transfer', scope.row)"> 移交负责人 </el-dropdown-item>
+                  <el-dropdown-item @click="deleteRow(scope.row)">删除</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
             </el-dropdown>
           </template>
         </el-table-column>
       </el-table>
-      <div class="page-fixed">
-        <el-pagination
-          :page-size="where.limit"
-          :current-page="where.page"
-          :page-sizes="[15, 20, 30]"
-          layout="total,sizes, prev, pager, next, jumper"
-          :total="total"
-          @size-change="handleSizeChange"
-          @current-change="pageChange"
-        />
+
+       <!-- 分组查看表格 -->
+        <treeTable v-else :treeData="tableData" :group="where.group" :headerFields="info.showField"
+         :info="info" @selectionChange="handleSelectionChange" @checkRow="checkRow" @openShare="openShare"
+          @cancelShare="cancelShare" @handleDropdown="handleDropdown" @deleteRow="deleteRow" @handleLoadMore="handleLoadMore"></treeTable>
+      <div class="page-fixed" :class="where.group ? 'group-page' : ''">
+        <el-pagination :page-size="where.limit" :current-page="where.page" :page-sizes="[15, 20, 30]"
+          layout="total,sizes, prev, pager, next, jumper" :total="total" @size-change="handleSizeChange"
+          @current-change="pageChange" />
       </div>
     </div>
     <div v-else>
@@ -221,14 +171,9 @@
     </div>
 
     <!-- 表格多选批量操作 -->
-    <BatchActionBar
-      :listCount="tableData.length"
-      :selectCount="multipleSelection.length"
-      @change="handleBottomBatchSelectChange"
-      @delete="handleDelete"
-      @share="handleBatchShareData"
-      @transfer="handleBatchTransferData"
-    />
+    <BatchActionBar :listCount="tableData.length" :selectCount="multipleSelection.length"
+      @change="handleBottomBatchSelectChange" @delete="handleDelete" @share="handleBatchShareData"
+      @transfer="handleBatchTransferData" />
 
     <image-viewer ref="imageViewer" :src-list="srcList"></image-viewer>
     <!-- 新增 -->
@@ -236,24 +181,11 @@
     <dragUpload ref="dragUpload" @getList="getList"></dragUpload>
     <add-drawer v-if="addDrawerShow" ref="addDrawer" :keyName="keyName" @getList="getList"></add-drawer>
     <!-- 查看 -->
-    <check-drawer
-      v-if="checkDrawerShow"
-      ref="checkDrawer"
-      :keyName="keyName"
-      :info="info"
-      :crud_id="id"
-      @getList="getList"
-      @getInfo="getInfo"
-    ></check-drawer>
+    <check-drawer v-if="checkDrawerShow" ref="checkDrawer" :keyName="keyName" :info="info" :crud_id="id"
+      @getList="getList" @getInfo="getInfo"></check-drawer>
     <!-- 移交 -->
-    <oa-dialog
-      ref="oaDialog"
-      :formConfig="formConfig"
-      :formDataInit="formDataInit"
-      :formRules="formRules"
-      :fromData="fromData"
-      @submit="submit"
-    ></oa-dialog>
+    <oa-dialog ref="oaDialog" :formConfig="formConfig" :formDataInit="formDataInit" :formRules="formRules"
+      :fromData="fromData" @submit="submit"></oa-dialog>
     <!-- 数据共享列表 -->
     <share ref="share"></share>
     <!-- 邀请填写弹窗 -->
@@ -263,7 +195,11 @@
   </div>
 </template>
 <script>
-import { getColor } from '@/utils/format'
+import { mapStores } from 'pinia'
+import { useConditionDialogStore } from '@/stores/conditionDialog.ts'
+import { modalSure } from '@/libs/public.ts'
+import treeTable from '@/views/develop/module/treeTable.vue'
+import { getColor } from '@/utils/format.ts'
 import Commnt from '@/components/develop/commonData'
 import oaDialog from '@/components/form-common/dialog-form'
 import formBox from '@/views/develop/module/components/formBox'
@@ -274,6 +210,7 @@ import checkDrawer from '@/views/develop/module/components/checkDrawer'
 import addDrawer from '@/views/develop/module/components/addDrawer'
 import imageViewer from '@/components/common/imageViewer'
 import defaultPage from '@/components/common/defaultPage'
+import fieldPopover from './fieldPopover'
 import dragUpload from '@/views/develop/module/components/dragUpload'
 import {
   crudModuleListApi,
@@ -284,7 +221,7 @@ import {
   moduleTransferApi,
   moduleShareApi,
   delCancelShareApi
-} from '@/api/develop'
+} from '@/api/develop.ts'
 import BatchActionBar from '../../module/components/batchActionBar.vue'
 import batchActionHandler from '../../module/mixins/batchActionHandler'
 
@@ -292,7 +229,7 @@ export default {
   props: {
     infoData: {
       type: Object,
-      default: () => {}
+      default: () => { }
     }
   },
   components: {
@@ -306,9 +243,14 @@ export default {
     share,
     BatchActionBar,
     fillInDialog,
-    fillIn
+    fillIn,
+    fieldPopover,
+    treeTable
   },
   mixins: [batchActionHandler],
+  computed: {
+    ...mapStores(useConditionDialogStore)
+  },
   data() {
     return {
       loading: false,
@@ -341,6 +283,11 @@ export default {
         page: 1,
         limit: 15
       },
+      childrenWhere:{
+      children_limit:4,
+      children_page:1,
+      children_id:''
+    },
       rowData: {},
       height: window.innerHeight - 360 + 'px',
       multipleSelection: [],
@@ -349,24 +296,44 @@ export default {
   },
 
   mounted() {
-    if (this.infoData) {
-      this.keyName = this.infoData.table_name_en
-      this.id = this.infoData.id
-      this.getInfo()
-    }
+    this.keyName = this.infoData.table_name_en
+    this.id = this.infoData.id
+    this.getInfo()
   },
-  destroyed() {
-    this.$store.commit('updateConditionDialog', false)
+  unmounted() {
+    this.conditionDialogStore.visible = false
   },
 
   methods: {
+    // 加载更多子级数据
+    async handleLoadMore(group, val) {
+      if (!val) return;
+      const id = group.id.split('_')[1];
+      // 切换分组时重置分页
+      if (id !== this.childrenWhere.children_id) {
+        this.childrenWhere.children_page = 1;
+      }
+      this.childrenWhere.children_id = id;
+      this.childrenWhere.children_page += 1;
+      this.loading = true;
+      try {
+        const res = await crudModuleListApi(this.keyName, { ...this.where, ...this.childrenWhere });
+        const target = this.tableData.find(item => item.id == id);
+        if (target) {
+          target.children = [...(target.children || []), ...(res.data || [])];
+        }
+      } catch {
+        this.$message.error('加载更多失败');
+      } finally {
+        this.loading = false;
+      }
+    },
+
     getList(name) {
       this.loading = true
       this.where.is_system = 1
       this.where.is_field_all = 1
-
-      crudModuleListApi(this.keyName || name, this.where)
-        .then((res) => {
+ crudModuleListApi(this.keyName || name, {...this.where,...this.childrenWhere}) .then((res) => {
           this.loading = false
           this.total = res.data.count
           this.tableData = res.data.list
@@ -379,7 +346,7 @@ export default {
       this.$refs.share.openBox(this.keyName, row)
     },
     cancelShare(val) {
-      this.$modalSure('您确定要取消此数据的协作权限吗').then(() => {
+      modalSure('您确定要取消此数据的协作权限吗').then(() => {
         delCancelShareApi(this.keyName, val.id).then((res) => {
           setTimeout(() => {
             this.getList()
@@ -492,13 +459,13 @@ export default {
       if (val == '') {
         str = '--'
       } else if (Array.isArray(val)) {
-        str = val.toString()
+        str = val ? val.toString() : '--'
       } else if (val && val.type) {
         str = val.name + `(${val.type})`
       } else if (type === 'input_select' && typeof val !== 'string') {
-        str = val.name
+        str = val && val.name ? val.name : '--'
       } else if (val && val.hasOwnProperty('color')) {
-        str = val.name
+        str = val.name ? val.name : '--'
       } else {
         str = val
       }
@@ -509,7 +476,7 @@ export default {
       if (this.multipleSelection.length <= 0) {
         this.$message.error('至少选择一项内容')
       } else {
-        this.$modalSure('您确认要删除吗').then(() => {
+        modalSure('您确认要删除吗').then(() => {
           const ids = []
           this.multipleSelection.map((value) => {
             ids.push(value.id)
@@ -570,7 +537,7 @@ export default {
     },
 
     async deleteRow(item) {
-      await this.$modalSure('您确认要删除吗')
+      await modalSure('您确认要删除吗')
       await crudModuleDelApi(this.keyName, item.id)
       let totalPage = Math.ceil((this.total - 1) / this.where.limit)
       let currentPage = this.where.page > totalPage ? totalPage : this.where.page
@@ -617,11 +584,12 @@ export default {
 .img {
   cursor: pointer;
   display: block;
-  width: 50px;
-  height: 50px;
+  width: 38px;
+  height: 38px;
   margin-right: 4px;
   margin-bottom: 4px;
 }
+
 .share-tag {
   margin-left: 8px;
   display: inline-block;
@@ -636,6 +604,10 @@ export default {
   border-radius: 3px 3px 3px 3px;
   line-height: 22px;
   text-align: center;
+}
+.group-page {
+  position: relative;
+  margin-top: 20px;
 }
 
 .dictionaries-tag {
@@ -671,7 +643,5 @@ export default {
   display: flex;
   flex-wrap: wrap;
 }
-/deep/.el-table__fixed-right .el-table__fixed-body-wrapper {
-  border-right: 1px solid #fff;
-}
+
 </style>

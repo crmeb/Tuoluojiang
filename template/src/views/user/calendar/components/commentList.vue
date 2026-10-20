@@ -8,12 +8,19 @@
         <div class="p_right">
           <div class="p_name">
             <span>{{ item.from_user.name }}</span>
-            <span class="iconfont iconshanchu1" v-if="item.from_user.id == userId" @click="commentDel(item)"></span>
+
+            <div>
+              <span class="iconfont iconhuifu" @click="replyFn(item)"></span>
+              <span class="el-icon-delete" v-if="item.from_user.id == userId" @click="commentDel(item)"></span>
+            </div>
           </div>
           <div class="p_content">
             {{ item.content }}
           </div>
-          <div class="p_time">{{ item.created_at }} <span class="reply" @click="replyFn(item)">回复</span></div>
+          <div class="mt10" v-if="item.files.length > 0">
+            <upload-list :file-list="item.files"></upload-list>
+          </div>
+          <div class="p_time">{{ item.created_at }}</div>
 
           <template v-if="item.children.length !== 0">
             <div class="flex mt14" v-for="(per, v) in item.children" :key="v">
@@ -21,14 +28,16 @@
               <div class="p_right">
                 <div class="p_name">
                   <span>{{ per.from_user.name }}</span>
-                  <span class="iconfont iconshanchu1" v-if="per.from_user.id == userId" @click="commentDel(per)"></span>
+                  <div>
+                    <span class="iconfont iconhuifu" @click="replyFn(item, per)"></span>
+                    <span class="el-icon-delete" v-if="per.from_user.id == userId" @click="commentDel(per)"></span>
+                  </div>
                 </div>
                 <div class="p_content">
                   <span class="p_time"> 回复{{ per.to_user.name }} : </span> {{ per.content }}
                 </div>
                 <div class="p_time">
                   {{ per.created_at }}
-                  <span class="reply" @click="replyFn(item, per)">回复</span>
                 </div>
               </div>
             </div>
@@ -41,12 +50,18 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
+import { getStorageJson } from '@/utils/storage.ts'
 export default {
+  emits: ['replyFn', 'commentDel'],
   name: 'CrmebOaEntCommentList',
+  components: {
+    uploadList: defineAsyncComponent(() => import('@/components/form-common/oa-uploadList'))
+  },
   props: ['commentList'],
   data() {
     return {
-      userId: JSON.parse(localStorage.getItem('userInfo')).id
+      userId: getStorageJson('userInfo', {}).id
     }
   },
   methods: {
@@ -65,12 +80,23 @@ export default {
   margin: 14px 0;
   border-color: #eeeeee;
 }
-.iconshanchu1 {
+.el-icon-delete {
+  color: #909399;
   font-size: 14px;
   cursor: pointer;
 }
-.reply {
+.iconhuifu {
+  color: #909399;
+  font-size: 14px;
   cursor: pointer;
+  margin-right: 10px;
+}
+
+.reply {
+  color: #909399;
+  cursor: pointer;
+  font-size: 13px;
+  margin-right: 8px;
 }
 .p_box {
   margin-top: 10px;

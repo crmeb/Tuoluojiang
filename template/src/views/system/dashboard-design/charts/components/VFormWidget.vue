@@ -1,22 +1,24 @@
 <template>
-  <div class="form-widget-container">
+  <div class="form-widget-container" @click="handleCanvasClick">
     <el-form
       class="full-height-width widget-form custom-class layoutType-layout"
       label-position="top"
-      size="medium"
+      size="default"
       :validate-on-rule-change="false"
     >
-      <div class="no-widget-hint" v-if="designer.widgetList.length && designer.widgetList[0].widgetList.length === 0">
-        <img src="@/assets/images/no-widget-hint.png" alt="" />
-        <div class="trip">暂无图表,选择左侧图表组件，鼠标点击即可加入</div>
-      </div>
-      <div class="form-widget-canvas" v-else>
+      <div
+        class="form-widget-canvas"
+        @dragenter.capture="markDashboardDropTarget"
+        @dragover.capture.prevent="markDashboardDropTarget"
+      >
+        <EmptyPlaceholder v-if="isDashboardContainerEmpty" fixed />
         <draggable
           :list="designer.widgetList"
           item-key="id"
           group="dragGroup"
           ghost-class="ghost"
           animation="400"
+          filter=".no-widget-hint"
           tag="div"
           :component-data="{ name: 'fade', class: 'canvas-drag-drop-zone' }"
           handle=".drag-handler"
@@ -25,7 +27,7 @@
           @update="onDragUpdate"
           :move="checkMove"
         >
-          <template class="transition-group-el" v-for="(g, y) in designer.widgetList">
+          <template #item="{ element: g, index: y }">
             <component
               v-if="g.category === 'container'"
               :is="getWidgetName(g)"
@@ -35,6 +37,7 @@
               :index-of-parent-list="y"
               :parent-widget="null"
             ></component>
+
             <component
               v-else
               :is="getWidgetName(g)"
@@ -55,14 +58,15 @@
 <script>
 import Draggable from 'vuedraggable'
 // import FieldComponents from '../charts-widget/index'
-import i18n, { changeLocale } from '@/utils/i18n'
+import i18n, { changeLocale } from '@/utils/i18n.ts'
+import EmptyPlaceholder from './EmptyPlaceholder.vue'
 
 export default {
   name: 'VFormWidget',
-  componentName: 'VFormWidget',
   mixins: [i18n],
   components: {
-    Draggable
+    Draggable,
+    EmptyPlaceholder
   },
   props: {
     designer: Object,
@@ -104,6 +108,16 @@ export default {
     },
     layoutType() {
       return this.designer.getLayoutType()
+    },
+    isDashboardContainerEmpty() {
+      if (!Array.isArray(this.designer.widgetList) || this.designer.widgetList.length !== 1) {
+        return false
+      }
+
+      const root = this.designer.widgetList[0]
+      return (
+        root && root.type === 'dashboard-container' && Array.isArray(root.widgetList) && root.widgetList.length === 0
+      )
     }
   },
   watch: {
@@ -117,7 +131,7 @@ export default {
     this.designer.loadPresetCssCode(this.getDesignerConfig().presetCssCode)
   },
   mounted() {
-    this.disableFirefoxDefaultDrop(), this.designer.registerFormWidget(this)
+    // this.disableFirefoxDefaultDrop(), this.designer.registerFormWidget(this)
   },
   methods: {
     getWidgetName(o) {
@@ -129,12 +143,68 @@ export default {
           e.stopPropagation(), e.preventDefault()
         })
     },
-    onDragEnd(o) {},
+    onDragEnd(o) {
+      if (this.designer && typeof this.designer.consumeDropTargetContext === 'function') {
+        this.designer.consumeDropTargetContext()
+      }
+    },
     onDragAdd(o) {
-      const e = o.newIndex
-      this.designer.widgetList[e] && this.designer.setSelected(this.designer.widgetList[e]),
-        this.designer.emitHistoryChange(),
-        this.designer.emitEvent('field-selected', null)
+      const dropContext =
+        this.designer && typeof this.designer.consumeDropTargetContext === 'function'
+          ? this.designer.consumeDropTargetContext()
+          : null
+
+      const droppedWidget = this.getDroppedWidgetFromCanvas(o)
+      if (!droppedWidget) {
+        return
+      }
+
+      // 左侧组件库拖入后，先移除临时插入项，再走既有新增逻辑，避免破坏顶层数据结构
+      const insertedIndex = this.designer.widgetList.findIndex((item) => item && item.id === droppedWidget.id)
+      if (insertedIndex > -1) {
+        this.designer.widgetList.splice(insertedIndex, 1)
+      }
+
+      const isContainerType = Array.isArray(this.designer.chartContainers)
+        ? this.designer.chartContainers.some((item) => item.type === droppedWidget.type)
+        : false
+
+      if (isContainerType) {
+        this.designer.addChartContainerByDbClick(droppedWidget, {
+          dropContext,
+          respectSelectedTab: false
+        })
+      } else {
+        this.designer.addChartByDbClick(droppedWidget, {
+          dropContext,
+          respectSelectedTab: false
+        })
+      }
+
+      this.designer.emitEvent('field-selected', null)
+    },
+    getDroppedWidgetFromCanvas(evt) {
+      if (!Array.isArray(this.designer.widgetList)) {
+        return null
+      }
+
+      // 目标画布顶层理论上只应存在 dashboard-container。拖入时会临时插入一个非 dashboard 项。
+      const tempInserted = this.designer.widgetList.find((item) => item && item.type !== 'dashboard-container')
+      if (tempInserted) {
+        return tempInserted
+      }
+
+      if (Number.isInteger(evt.newIndex)) {
+        return this.designer.widgetList[evt.newIndex] || null
+      }
+
+      return null
+    },
+    markDashboardDropTarget() {
+      if (!this.designer || typeof this.designer.setDropTargetContext !== 'function') {
+        return
+      }
+      this.designer.setDropTargetContext({ type: 'dashboard' })
     },
     onDragUpdate() {
       this.designer.emitHistoryChange()
@@ -165,6 +235,19 @@ export default {
       o.forEach((e) => {
         delete this.widgetRefList[e]
       })
+    },
+    handleCanvasClick(event) {
+      // 点击画布空白处时清空选中的ID
+      // 检查是否点击了空白处（容器、表单或画布本身）
+      if (
+        event.target === event.currentTarget ||
+        event.target.className.includes('full-height-width') ||
+        event.target.className.includes('form-widget-canvas') ||
+        event.target.className.includes('no-widget-hint')
+      ) {
+        this.designer.selectedId = null
+        this.designer.setSelected(null)
+      }
     }
   }
 }
@@ -172,23 +255,6 @@ export default {
 <style lang="scss" scoped>
 .form-widget-container {
   padding: 5px;
-}
-.no-widget-hint {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: calc(100vh - 64px);
-  img {
-    width: 129px;
-  }
-  // 提示
-  .trip {
-    font-weight: 400;
-    font-size: 13px;
-    color: #9e9e9e;
-    margin-top: 13px;
-  }
 }
 .vue-grid-item {
   transition: all 0.2s ease;
@@ -342,19 +408,21 @@ body.no-overflow {
 .smartwidget {
   box-sizing: border-box;
   background: #fff;
-  box-shadow: 0 1px 2px #0000000d;
-  border: 1px solid #ebeef5;
+  // box-shadow: 0 1px 2px #0000000d;
+  border: none;
+  border-radius: 8px;
   width: 100%;
   transition: 0.3s;
 }
+
 .smartwidget.is-always-shadow {
-  box-shadow: 0 0 10px #e9e9e9;
+  box-shadow: none;
 }
 .smartwidget.is-hover-shadow:hover {
-  box-shadow: 0 0 10px #e9e9e9;
+  box-shadow: none;
 }
 .smartwidget.is-never-shadow {
-  box-shadow: 0 1px 2px #0000000d;
+  box-shadow: none;
 }
 .smartwidget .widget-header {
   display: flex;
@@ -396,7 +464,7 @@ body.no-overflow {
   padding: 0;
   margin: 0;
 }
-/deep/ .smartwidget .widget-header .widget-header__toolbar a {
+:deep(.smartwidget .widget-header .widget-header__toolbar a) {
   display: inline-block;
   text-decoration: none;
   text-align: center;
@@ -461,5 +529,9 @@ body.no-overflow {
 .form-widget-canvas {
   height: 100%;
   box-sizing: border-box;
+}
+
+.canvas-drag-drop-zone {
+  min-height: 80vh;
 }
 </style>

@@ -15,24 +15,29 @@
       ></oaFromBox>
 
       <div class="mt10 table-box">
-        <el-table :data="tableData" :height="tableHeight">
-          <el-table-column :label="$t('toptable.name')" prop="name" width="100" />
-          <el-table-column :label="$t('toptable.department')" prop="frame_name" width="120" />
-          <el-table-column :label="$t('toptable.worktoday')" min-width="250" prop="finish">
-            <template slot-scope="scope">
+        <el-table :data="tableData" :height="TABLE_HEIGHT">
+          <el-table-column label="姓名" prop="name" width="100" />
+          <el-table-column label="部门" prop="frame_name" width="120" />
+          <el-table-column label="工作总结" min-width="250" prop="finish">
+            <template #default="scope">
               <div v-for="(item, index) in scope.row.finish" :key="index" class="textover3">{{ item }}</div>
             </template>
           </el-table-column>
-          <el-table-column :label="$t('toptable.tomorrowplan')" min-width="250" prop="plan">
-            <template slot-scope="scope">
+          <el-table-column label="工作计划" min-width="250" prop="plan">
+            <template #default="scope">
               <div v-if="scope.row.types !== 3">
                 <div v-for="(item, index) in scope.row.plan" :key="index" class="textover3">{{ item }}</div>
               </div>
               <div v-else>--</div>
             </template>
           </el-table-column>
+          <el-table-column label="感悟" width="200">
+            <template #default="{ row }">
+              {{ row.mark || '--' }}
+            </template>
+          </el-table-column>
 
-          <el-table-column :label="$t('user.work.dailytype')" width="100">
+          <el-table-column label="汇报类型" width="100">
             <template #default="{ row }">
               <span v-if="row.types === 1">周报</span>
               <span v-else-if="row.types === 2">月报</span>
@@ -40,17 +45,16 @@
               <span v-else>日报</span>
             </template>
           </el-table-column>
-          <el-table-column :label="$t('toptable.updatetime')" prop="updated_at" width="160" />
-          <el-table-column :label="$t('user.work.creationtime')" prop="created_at" width="160" />
-          <el-table-column :label="$t('public.operation')" fixed="right" width="100">
-            <template slot-scope="scope">
+          <el-table-column label="更新时间" prop="updated_at" width="160" />
+          <el-table-column label="创建时间" prop="created_at" width="160" />
+          <el-table-column label="操作" fixed="right" width="100">
+            <template #default="scope">
               <el-button
                 v-hasPermi="['hr:report:check']"
-                size="small"
-                type="text"
+                type="primary" link
                 @click="onCheck(scope.row.daily_id, 'check', scope.row)"
               >
-                {{ $t('public.check') }}
+                查看
               </el-button>
             </template>
           </el-table-column>
@@ -75,29 +79,36 @@
 </template>
 
 <script>
-import { enterpriseDailyApi, getEnterpriseUsersApi, enterpriseDailyExportApi } from '@/api/enterprise'
+import { defineAsyncComponent } from 'vue'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { enterpriseDailyApi, getEnterpriseUsersApi, enterpriseDailyExportApi } from '@/api/enterprise.ts'
 import oaFromBox from '@/components/common/oaFromBox'
+import dayjs from 'dayjs'
+
+const defaultTimeRange = [dayjs().startOf('month').format('YYYY/MM/DD'), dayjs().format('YYYY/MM/DD')]
+
 export default {
   name: 'IndexVue',
   components: {
-    addBox: () => import('@/views/user/daily/components/addBox'),
-    exportExcel: () => import('@/components/common/exportExcel'),
+    addBox: defineAsyncComponent(() => import('@/views/user/daily/components/addBox')),
+    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel')),
     oaFromBox
   },
   data() {
     return {
+      TABLE_HEIGHT,
       // 搜索条件列表
       fromList: [
-        { text: this.$t('toptable.all'), val: '' },
-        { text: this.$t('toptable.thisweek'), val: 'week' },
-        { text: this.$t('toptable.thismonth'), val: 'month' },
-        { text: this.$t('toptable.lastmonth'), val: 'lastmonth' } // 修正为和其他逻辑一致的格式
+        { text: '全部', val: '' },
+        { text: '本周', val: 'week' },
+        { text: '本月', val: 'month' },
+        { text: '上月', val: 'lastmonth' } // 修正为和其他逻辑一致的格式
       ],
       // 日报类型数据
       dailyData: [
-        { name: this.$t('user.work.writedaily'), id: 1 },
-        { name: this.$t('user.work.writedailyweek'), id: 2 },
-        { name: this.$t('user.work.writedailymonth'), id: 3 }
+        { name: '填写日报', id: 1 },
+        { name: '填写周报', id: 2 },
+        { name: '填写月报', id: 3 }
       ],
       // 当前日报名称
       dailyName: '',
@@ -106,46 +117,13 @@ export default {
       // 总页数
       totalPage: 0,
       // 时间选择器的值
-      timeVal: [this.$moment().startOf('month').format('YYYY/MM/DD'), this.$moment().format('YYYY/MM/DD')], // 修正为 startOf('month')
+      timeVal: defaultTimeRange,
       // 表格查询参数
-      tableFrom: {
-        page: 1,
-        limit: 15,
-        types: ['0'], // 修正为数组形式
-        time: `${this.$moment().startOf('month').format('YYYY/MM/DD')}-${this.$moment().format('YYYY/MM/DD')}`, // 修正为 startOf('month')
-        viewer: 'hr'
-      },
+      tableFrom: this.getDefaultTableFrom(),
       // 部门列表
       departmentList: [],
       // 搜索表单配置
-      search: [
-        {
-          field_name: '人员姓名',
-          field_name_en: 'name',
-          form_value: 'input'
-        },
-        {
-          field_name: '汇报类型',
-          field_name_en: 'types',
-          form_value: 'select',
-          data_dict: [
-            { name: this.$t('user.work.dailyday'), value: '0' },
-            { name: this.$t('user.work.weekday'), value: '1' }, // 统一为字符串形式
-            { name: this.$t('user.work.monthday'), value: '2' }, // 统一为字符串形式
-            { name: '汇报', value: '3' } // 统一为字符串形式
-          ],
-          value: '0'
-        },
-        {
-          field_name: '选择时间',
-          field_name_en: 'time',
-          form_value: 'date_picker',
-          data_dict: [
-            this.$moment().startOf('month').format('YYYY/MM/DD'), // 修正为 startOf('month')
-            this.$moment().format('YYYY/MM/DD')
-          ]
-        }
-      ],
+      search: this.getDefaultSearch(),
       // 表格数据
       tableData: [],
       // 编辑项的ID
@@ -169,55 +147,66 @@ export default {
       exportLoading: false
     }
   },
-  computed: {
-    lang: function () {
-      return this.$store.getters.lang
-    }
-  },
-  watch: {
-    lang() {
-      this.setOptions()
-    }
-  },
   mounted() {
-    this.nowDateStar = parseInt(this.$moment(new Date()).startOf('day').format('x'))
-    this.nowDateEnd = parseInt(this.$moment(new Date()).endOf('day').format('x'))
+    this.nowDateStar = parseInt(dayjs(new Date()).startOf('day').format('x'))
+    this.nowDateEnd = parseInt(dayjs(new Date()).endOf('day').format('x'))
     this.dailyName = this.dailyData[this.dailyIndex - 1].name
     this.getList()
-    this.getUsersOption()
+    // this.getUsersOption()
   },
   methods: {
-    setOptions() {
-      this.fromList = [
-        { text: this.$t('toptable.all'), val: '' },
-        { text: this.$t('toptable.thisweek'), val: 'week' },
-        { text: this.$t('toptable.thismonth'), val: 'month' },
-        { text: this.$t('toptable.lastmonth'), val: 'lastmonth' }
+    getDefaultTableFrom() {
+      return {
+        page: 1,
+        limit: 15,
+        types: '',
+        time: defaultTimeRange.join('-'),
+        viewer: 'hr'
+      }
+    },
+    getDefaultSearch() {
+      return [
+        {
+          field_name: '人员姓名',
+          field_name_en: 'name',
+          form_value: 'input',
+          value: ''
+        },
+        {
+          field_name: '汇报类型',
+          field_name_en: 'types',
+          form_value: 'select',
+          field: 'repeat',
+          select_type: 'single',
+          data_dict: [
+            { name: '日报', value: '0' },
+            { name: '周报', value: '1' }, // 统一为字符串形式
+            { name: '月报', value: '2' }, // 统一为字符串形式
+            { name: '汇报', value: '3' } // 统一为字符串形式
+          ],
+          value: ''
+        },
+        {
+          field_name: '选择时间',
+          field_name_en: 'time',
+          form_value: 'date_picker',
+          data_dict: [...defaultTimeRange],
+          value: defaultTimeRange.join('-')
+        }
       ]
     },
     confirmData(data) {
       if (data == 'reset') {
         this.restFn()
       } else {
-        this.tableFrom = { ...this.tableFrom, ...data }
-        this.tableData.page = 1
-        this.getList()
+        this.tableFrom = { ...this.tableFrom, ...data, page: 1 }
+        this.getList(1)
       }
     },
     restFn() {
-      this.tableFrom = {
-        page: 1,
-        limit: 15,
-        types: ['0'],
-        time:
-          this.$moment().startOf('months').format('YYYY/MM/DD') + '-' + this.$moment(new Date()).format('YYYY/MM/DD'),
-        viewer: 'hr'
-      }
-      this.timeVal = [
-        this.$moment().startOf('months').format('YYYY/MM/DD'),
-        this.$moment(new Date()).format('YYYY/MM/DD')
-      ]
-      this.search[2].data_dict = this.timeVal
+      this.tableFrom = this.getDefaultTableFrom()
+      this.timeVal = [...defaultTimeRange]
+      this.search = this.getDefaultSearch()
       this.getList()
     },
     async getList(val) {
@@ -232,10 +221,10 @@ export default {
       this.totalPage = data.count
       this.tableData = data.list
     },
-    async getUsersOption() {
-      const result = await getEnterpriseUsersApi()
-      this.usersOption = result.data ? result.data : []
-    },
+    // async getUsersOption() {
+    //   const result = await getEnterpriseUsersApi()
+    //   this.usersOption = result.data ? result.data : []
+    // },
     tableList() {
       this.getList()
     },
@@ -279,7 +268,7 @@ export default {
       this.addDaily()
     },
     getExportData() {
-      this.saveName = '汇报导出_' + this.$moment(new Date()).format('HH_mm_ss') + '.xlsx'
+      this.saveName = '汇报导出_' + dayjs(new Date()).format('HH_mm_ss') + '.xlsx'
       const where = JSON.parse(JSON.stringify(this.tableFrom))
       where.limit = 0
       this.exportLoading = true
@@ -321,14 +310,14 @@ export default {
   white-space: pre-wrap;
 }
 
-/deep/ .el-dropdown-menu__item {
+:deep(.el-dropdown-menu__item) {
   text-align: left;
   i {
     color: #00c050;
   }
 }
 
-/deep/ .el-dropdown__caret-button {
+:deep(.el-dropdown__caret-button) {
   height: 32px;
 }
 </style>

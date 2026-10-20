@@ -1,14 +1,9 @@
-<!-- 客户列表/合同管理：查看-发票页面  contractInvoice：来区分合同管理还是客户管理 -->
+<!-- 客户列表/订单管理：查看-发票页面  contractInvoice：来区分订单管理还是客户管理 -->
 <template>
   <div class="station-invoice">
     <div class="btn-box1">
       <div class="title-16">发票列表</div>
-      <el-button
-        v-if="!formInfo.types || formInfo.types == 2 || (formInfo.types == 1 && userId == formInfo.data.salesman.id)"
-        type="primary"
-        size="small"
-        @click="handleBuild(0, buildData.invoicing_switch, 'invoicing_switch')"
-      >
+      <el-button type="primary" @click="handleBuild(0, buildData.invoicing_switch, 'invoicing_switch')">
         申请开票
       </el-button>
     </div>
@@ -29,45 +24,41 @@
     <el-table :data="tableData" style="width: 100%; height: 100%">
       <el-table-column prop="created_at" label="申请时间" sortable min-width="150"> </el-table-column>
       <el-table-column prop="title" label="发票抬头" min-width="150"> </el-table-column>
-      <el-table-column prop="amount" :label="$t('customer.invoicingpay')" min-width="100">
-        <template slot-scope="scope">
+      <el-table-column prop="amount" label="开票金额(元)" min-width="100">
+        <template #default="scope">
           <span :class="scope.row.price == scope.row.amount ? '' : 'active'">{{ scope.row.amount }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="price" label="付款金额(元)" min-width="100">
-        <template slot-scope="scope">
+        <template #default="scope">
           <span :class="scope.row.price == scope.row.amount ? '' : 'active'">{{ scope.row.price }}</span>
         </template>
       </el-table-column>
 
       <el-table-column prop="status" label="发票审核状态" min-width="110">
-        <template slot-scope="scope">
-          <el-tag :type="scope.row.status == -1 ? 'danger' : scope.row.status == -1 ? 'warning' : ''">
+        <template #default="scope">
+          <el-tag :type="scope.row.status == -1 ? 'danger' : scope.row.status == 0 ? 'warning' : 'primary'">
             {{ getInvoiceStatus(scope.row.status) }}
           </el-tag>
         </template>
       </el-table-column>
 
       <!-- 操作 -->
-      <el-table-column prop="address" min-width="190" :label="$t('public.operation')">
-        <template slot-scope="scope">
-          <el-button @click="handleCheck(scope.row)" type="text">{{ $t('public.check') }}</el-button>
+      <el-table-column prop="address" min-width="240" label="操作">
+        <template #default="scope">
+          <el-button @click="handleCheck(scope.row)" type="primary" link>查看</el-button>
 
-          <el-button @click="setRemarks(scope.row)" type="text">备注</el-button>
+          <el-button @click="setRemarks(scope.row)" type="primary" link>备注</el-button>
 
-          <el-button v-if="scope.row.status === 0" @click="invoiceWithdrawal(scope.row)" type="text">
+          <el-button v-if="scope.row.status === 0" @click="invoiceWithdrawal(scope.row)" type="primary" link>
             发票撤回
           </el-button>
-          <el-button
-            v-if="scope.row.status === 5"
-            @click="handleBuild(scope.row, buildData.void_invoice_switch, 'void_invoice_switch')"
-            type="text"
-          >
-            申请作废
+          <el-button v-if="scope.row.status === 5"
+            @click="handleBuild(scope.row, buildData.void_invoice_switch, 'void_invoice_switch')" type="primary" link>
+            申请冲红
           </el-button>
-          <el-button v-if="scope.row.status === 4" @click="invoiceWithdrawal(scope.row, 1)" type="text"
-            >作废撤回</el-button
-          >
+          <el-button v-if="scope.row.status === 4" @click="invoiceWithdrawal(scope.row, 1)" type="primary" link>冲红撤回</el-button>
+          <el-button @click="handleRelatePayment(scope.row, 1)" type="primary" link>关联付款单</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -75,79 +66,76 @@
       <el-col :span="2"> </el-col>
       <el-col :span="22">
         <div class="block mt10 text-right">
-          <el-pagination
-            :page-size="where.limit"
-            :current-page="where.page"
-            layout="total, prev, pager, next, jumper"
-            :total="total"
-            @current-change="pageChange"
-          />
+          <el-pagination :page-size="where.limit" :current-page="where.page" layout="total, prev, pager, next, jumper"
+            :total="total" @current-change="pageChange" />
         </div>
       </el-col>
     </el-row>
 
     <!-- 发票撤回/申请弹窗 -->
-    <el-dialog
-      :title="title"
-      top="25vh"
-      class="addBox"
-      :append-to-body="true"
-      :visible.sync="dialogVisible"
-      width="540px"
-      :close-on-click-modal="false"
-    >
+    <el-dialog :title="title" top="25vh" class="addBox customer-contract-invoice-dialog" :append-to-body="true" v-model="dialogVisible"
+      width="540px" :close-on-click-modal="false">
       <div class="line" />
       <el-form :model="form" :rules="rules" class="from">
         <el-form-item :label="reason + '：'" label-width="90px" prop="remarks">
           <el-input type="textarea" v-model="form.remarks" placeholder="请填写原因"></el-input>
         </el-form-item>
         <div class="footer">
-          <el-button size="small" class="btn" @click="cancelFn">取消</el-button>
-          <el-button size="small" type="primary" @click="submitFn" class="btn">确定</el-button>
+          <el-button class="btn" @click="cancelFn">取消</el-button>
+          <el-button type="primary" @click="submitFn" class="btn">确定</el-button>
         </div>
       </el-form>
     </el-dialog>
     <!-- 直接申请发票  -->
-    <invoice-apply
-      ref="invoiceApply"
-      :contractInvoice="contractInvoice"
-      :form-data="formBoxConfig"
-      @isOk="isOk"
-    ></invoice-apply>
+    <invoice-apply ref="invoiceApply" :contractInvoice="contractInvoice" :form-data="formBoxConfig"
+      @isOk="isOk"></invoice-apply>
     <!-- 备注 -->
     <mark-dialog ref="markDialog" :config="configMark" @isMark="getTableData()"></mark-dialog>
     <!-- 查看发票 -->
     <invoice-details :form-data="invoiceData" ref="invoiceDetailsView"></invoice-details>
     <invoice-view :form-data="invoiceData" ref="invoiceView"></invoice-view>
     <!-- 选择付款单后开票 -->
-    <mergeInvoice
-      ref="mergeInvoice"
-      :isApproval="is_approval"
-      :contractInvoice="contractInvoice"
-      :form-data="formBoxConfig"
-      :parameterData="parameterData"
-      @isOk="isOk"
-      @getTableData="getTableData"
-    ></mergeInvoice>
+    <mergeInvoice ref="mergeInvoice" :isApproval="is_approval" :contractInvoice="contractInvoice"
+      :form-data="formBoxConfig" :parameterData="parameterData" @isOk="isOk" @getTableData="getTableData">
+    </mergeInvoice>
     <!--审批开票 -->
+    <!-- 关联付款侧滑 -->
+    <el-drawer title="关联付款单" v-model="paymentDrawer" direction="rtl" :append-to-body="true"
+      :before-close="handleClose" size="60%">
+ 
+     <div class="paymentTable-box">
+       <paymentTable ref="paymentTable" edit="" :tableData="tableData1" @handleSelectionFn="handleSelectionChange">
+      </paymentTable>
+     </div>
+     <div class="button from-foot-btn fix btn-shadow" >
+        <el-button class="el-btn" @click="handleClose">取消</el-button>
+        <el-button type="primary" @click="submit">确定</el-button>
+      </div>
+
+    </el-drawer>
+
 
     <edit-examine ref="editExamine" :parameterData="parameterData" @isOk="getTableData()"></edit-examine>
   </div>
 </template>
 
 <script>
-import { getInvoiceText, getInvoiceClassName } from '@/libs/customer'
-import { approveApplyRevokeApi } from '@/api/business'
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { getInvoiceText, getInvoiceClassName } from '@/libs/customer.ts'
+import { approveApplyRevokeApi } from '@/api/business.ts'
 import {
-  clientInvoiceDeleteApi,
-  clientInvoiceListApi,
   accumulatedAmountApi,
-  recallStatus,
-  invalidApply,
-  uninvoicedListApi
-} from '@/api/enterprise'
-import { configRuleApproveApi } from '@/api/config'
+  uninvoicedListApi,
+  invoiceBillApi
+} from '@/api/enterprise.ts'
+import { clientInvoiceDeleteApi, clientInvoiceListApi, recallStatus, invalidApply } from '@/api/client.ts'
+import { configRuleApproveApi } from '@/api/config.ts'
+import invoiceApply from '@/components/invoice/invoiceApply'
+import mergeInvoice from '@/components/invoice/mergeInvoice'
+import editExamine from '@/views/user/examine/components/editExamine'
 export default {
+  emits: ['refresh-detail', 'handleInvoice'],
   name: 'ContractInvoice',
   props: {
     formInfo: {
@@ -162,12 +150,13 @@ export default {
     }
   },
   components: {
-    invoiceApply: () => import('@/components/invoice/invoiceApply'),
-    markDialog: () => import('@/views/customer/contract/components/markDialog'),
-    invoiceDetails: () => import('@/components/invoice/invoiceDetails'),
-    invoiceView: () => import('@/views/customer/invoice/components/invoiceView'),
-    mergeInvoice: () => import('@/components/invoice/mergeInvoice'),
-    editExamine: () => import('@/views/user/examine/components/editExamine')
+    invoiceApply,
+    mergeInvoice,
+    editExamine,
+    markDialog: defineAsyncComponent(() => import('@/views/customer/contract/components/markDialog')),
+    invoiceDetails: defineAsyncComponent(() => import('@/components/invoice/invoiceDetails')),
+    invoiceView: defineAsyncComponent(() => import('@/views/customer/invoice/components/invoiceView')),
+    paymentTable: defineAsyncComponent(() => import('@/components/invoice/paymentTable'))
   },
   data() {
     return {
@@ -177,17 +166,20 @@ export default {
         invoice_id: '',
         bill_id: ''
       },
-      userId: JSON.parse(localStorage.getItem('userInfo')).id,
+      bill_id:[],
+      row:{},
+      paymentDrawer: false,
+
       buildData: [], // 申请开票审批类型
-      voidData: [], // 申请作废类型
-      drawer: false,
+      tableData1: [], // 关联付款单
+
       is_approval: false, // 判断是否开启审批流程
       mergeOpen: false, // 判断是否有付款单
       dialogVisible: false,
       cumulative_invoiced_price: '',
       audit_invoiced_price: '',
       cumulative_payment_price: '',
-      direction: 'rtl',
+
       title: '',
       reason: '',
       form: {
@@ -224,6 +216,7 @@ export default {
   },
   created() {
     this.getConfigApprove()
+    this.getPaymentRecord()
   },
   methods: {
     // V1.4获取开票审批类型
@@ -232,7 +225,50 @@ export default {
       this.buildData = result.data
       this.is_approval = this.buildData.invoicing_switch != 0 ? true : false
     },
+    handleRelatePayment(row) {
+      this.row = row
+      this.paymentDrawer = true
 
+    },
+
+    handleClose(){
+      this.paymentDrawer = false
+    },
+
+    // 获取付款列表
+    getPaymentRecord() {
+      let data = {
+        eid: '',
+        cid: '',
+        withdraw: ''
+      }
+      data.eid = this.formInfo.data.eid||''
+      data.cid = this.formInfo.data.cid||''
+
+      uninvoicedListApi(data).then((res) => {
+    
+        this.tableData1 = res.data
+
+      })
+    },
+    handleSelectionChange(val) {
+      this.bill_id=[]
+      val.map(item=>{
+        this.bill_id.push(item.id)
+      })
+      
+    },
+
+    // 关联付款单
+    submit() {
+      let data = {
+        bill_id: this.bill_id
+      }
+      invoiceBillApi(this.row.id,data).then((res) => {
+        this.getTableData()
+        this.paymentDrawer = false
+      })
+    },
     getTableData() {
       this.accumulatedAmount()
       this.where.cid = this.formInfo.data.cid
@@ -282,13 +318,16 @@ export default {
     isOk() {
       setTimeout(() => {
         this.getTableData()
+        if (!this.formBoxConfig.edit) {
+          this.$emit('refresh-detail')
+        }
       }, 300)
       this.$emit('handleInvoice')
     },
     // 发票撤回
     async invoiceWithdrawal(val, type) {
       let id = type == 1 ? val.revoke_id : val.link_id
-      await this.$modalSure('确认撤回该发票吗')
+      await modalSure('确认撤回该发票吗')
       await approveApplyRevokeApi(id)
       this.getTableData()
     },
@@ -296,9 +335,9 @@ export default {
       await approveApplyRevokeApi(id)
       this.getTableData()
     },
-    // 作废撤回
+    // 冲红撤回
     withdraw(val) {
-      this.$modalSure(this.$t('customer.message08')).then(() => {
+      modalSure('你确定要撤回申请冲红吗').then(() => {
         let data = {
           invalid: -1
         }
@@ -306,13 +345,13 @@ export default {
           .then((res) => {
             this.getTableData()
           })
-          .catch((error) => {})
+          .catch((error) => { })
       })
     },
-    // 申请作废
+    // 申请冲红
     apply(val) {
-      this.title = '发票申请作废'
-      this.reason = '作废原因'
+      this.title = '发票申请冲红'
+      this.reason = '冲红原因'
       this.dialogVisible = true
       this.withdrawId = val.id
     },
@@ -321,7 +360,7 @@ export default {
       let data = {
         remark: this.form.remarks
       }
-      if (this.title == '发票申请作废') {
+      if (this.title == '发票申请冲红') {
         data.invalid = 1
         invalidApply(this.withdrawId, data).then((res) => {
           this.cancelFn()
@@ -429,7 +468,7 @@ export default {
     },
     handleEdit(row) {
       this.formBoxConfig = {
-        title: this.$t('customer.invoiceedit'),
+        title: '发票编辑',
         width: '820px',
         edit: true,
         data: row
@@ -450,7 +489,7 @@ export default {
     },
     setRemarks(row) {
       this.configMark = {
-        title: this.$t('customer.remarkinformation'),
+        title: '备注信息',
         width: '480px',
         id: row.id,
         type: 2,
@@ -460,12 +499,14 @@ export default {
     },
     // 删除
     handleDelete(item) {
-      this.$modalSure(this.$t('customer.placeholder23')).then(() => {
+      modalSure('请确定要撤回该记录吗').then(() => {
         clientInvoiceDeleteApi(item.id).then((res) => {
           if (this.where.page > 1 && this.tableData.length <= 1) {
             this.where.page--
           }
-          this.isOk()
+          this.getTableData()
+          this.$emit('handleInvoice')
+          this.$emit('refresh-detail')
         })
       })
     }
@@ -480,76 +521,73 @@ export default {
   border-bottom: 1px solid #f2f5fc;
   margin-bottom: 30px;
 }
+
 .from {
   margin: 0 24px;
 }
-.addBox /deep/ .el-dialog__body {
-  padding: 0;
-}
+
 .ml36 {
   margin-left: 36px;
 }
-/deep/ .el-dialog__header .el-dialog__title {
-  font-size: 14px;
-  color: #303133;
-}
+
 .footer {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
   margin-bottom: 20px;
 }
+
 .invoice-info {
   color: #909399;
 }
-.invoice-info > div > span {
+
+.invoice-info>div>span {
   color: #606266;
 }
 
 .active {
   color: red;
 }
+
 .amount {
   display: flex;
   margin-bottom: 14px;
   font-size: 13px;
+
   .amount-label {
     color: #909399;
   }
+
   .amount-val {
     color: #303133;
   }
 }
-.addBox /deep/ .el-dialog {
-  border-radius: 6px;
-  height: 249px;
-}
-/deep/ .el-table {
+
+:deep(.el-table) {
   height: 100% !important;
 }
-/deep/ .el-input__inner {
+
+:deep(.el-input__inner) {
   text-align: left;
-}
-.addBox /deep/ .el-textarea__inner {
-  width: 400px;
-  height: 90px;
-  font-size: 13px;
 }
 
 .from-item-title {
   border-left: 5px solid #1890ff;
+
   span {
     padding-left: 10px;
     font-weight: bold;
     font-size: 14px;
   }
 }
+
 .btn-box1 {
   height: 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
+
 .table-btn {
   display: flex;
   align-items: center;
@@ -571,6 +609,7 @@ export default {
     border: 1px solid #ff9900;
     color: #ff9900;
   }
+
   &.red {
     background: rgba(255, 153, 0, 0.05);
     border: 1px solid #ed4014;
@@ -588,5 +627,28 @@ export default {
     border: 1px solid #999999;
     color: #999999;
   }
+}
+.paymentTable-box {
+  padding: 20px;
+}
+</style>
+
+<style lang="scss">
+// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
+.el-dialog.addBox .el-dialog__body {
+  padding: 0;
+}
+.el-dialog.customer-contract-invoice-dialog .el-dialog__header .el-dialog__title {
+  font-size: 14px;
+  color: #303133;
+}
+.el-dialog.addBox {
+  border-radius: 6px;
+  height: 249px;
+}
+.el-dialog.addBox .el-textarea__inner {
+  width: 400px;
+  height: 90px;
+  font-size: 13px;
 }
 </style>

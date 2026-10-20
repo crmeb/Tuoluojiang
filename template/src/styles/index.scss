@@ -8,7 +8,7 @@
 @import './styles.scss'; // 用于定义全局组件的样式
 @import './sidebar.scss'; // 用于定义全局的侧边栏样式
 @import './btn.scss'; // 用于定义全局的按钮样式
-
+@import './form.scss';
 
 body {
   height: 100%;
@@ -17,6 +17,7 @@ body {
   text-rendering: optimizeLegibility;
   font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Microsoft YaHei, Arial, sans-serif;
   min-width: 1200px;
+  overflow: hidden;
 }
 
 label {
@@ -26,9 +27,16 @@ label {
 html {
   height: 100%;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 #app {
+  height: 100%;
+  overflow: hidden;
+}
+
+#app > .app-root,
+.app-root > div {
   height: 100%;
 }
 
@@ -52,7 +60,6 @@ html {
   justify-content: flex-end;
 }
 
-
 a:focus,
 a:active {
   outline: none;
@@ -70,20 +77,16 @@ div:focus {
   outline: none;
 }
 
+p {
+  margin: 0;
+}
+
 .fr {
   float: right;
 }
 
 .fl {
   float: left;
-}
-
-.pr-5 {
-  padding-right: 5px;
-}
-
-.pl-5 {
-  padding-left: 5px;
 }
 
 .block {
@@ -162,10 +165,10 @@ aside {
 }
 
 .header-16 {
+  height: 32px;
   display: flex;
   justify-content: space-between;
 }
-
 
 .text-16 {
   height: 32px;
@@ -175,7 +178,6 @@ aside {
   font-size: 13px;
   color: $--color-text01;
   border-radius: 4px;
-
 }
 
 .placeholder-16 {
@@ -185,7 +187,6 @@ aside {
   color: $--color-text04;
 }
 
-
 .flex-column {
   display: flex;
   flex-direction: column;
@@ -194,7 +195,6 @@ aside {
 .mt24 {
   margin-top: 24px;
 }
-
 
 .cuttLine {
   width: 100%;
@@ -210,68 +210,23 @@ aside {
   margin-right: 10px;
 }
 
-.page-fixed {
-  display: flex;
-  justify-content: flex-end;
-  position: absolute;
-  bottom: 24px;   
-  right: 30px;
+// 分页器：按钮带边框、当前页实心主色。类名可以加在 el-pagination 上，也可以加在外层
+.el-pagination-reset,
+.el-pagination-reset .el-pagination {
+  --el-pagination-font-size: 13px;
+  --el-pagination-button-width: 36px;
+  --el-pagination-item-gap: 10px;
+}
 
-  .el-pagination {
-    margin-top: 24px;
-    font-weight: 400;
-  }
-
-  .el-pagination__total {
-    height: 32px !important;
-    line-height: 32px !important;
-  }
-
-  .el-pagination__sizes {
-    margin: 0;
-  }
-
-  .el-input__inner {
+.el-pagination-reset {
+  .el-pagination__sizes .el-select {
     width: 94px;
-    height: 32px;
-    background: #FFFFFF;
-    border-radius: 2px;
-    border: 1px solid $--color-line01;
-    padding: 10px;
-  }
-
-  .el-input__suffix {
-    right: 10px;
-  }
-
-  .number {
-    width: 32px;
-    height: 32px;
-    background: #FFFFFF;
-    border-radius: 2px;
-    border: 1px solid $--color-line01 !important;
-    margin: 0 6px;
-    font-size: 12px;
-  }
-
-  .number:hover {
-    border: 1px solid $--color-primary !important;
-  }
-
-  .active {
-    background: $--color-primary;
-    border-radius: 2px;
-    border: 1px solid $--color-primary !important;
-    color: #FFFFFF !important;
   }
 
   .btn-prev,
-  .btn-next {
-    width: 32px;
-    height: 32px;
+  .btn-next,
+  .el-pager li {
     border: 1px solid $--color-line01;
-    border-radius: 2px;
-    padding: 0;
   }
 
   .btn-prev {
@@ -282,24 +237,48 @@ aside {
     margin-left: 6px;
   }
 
-  .btn-prev:hover,
-  .btn-next:hover {
-    border: 1px solid $--color-primary;
+  .el-pager li {
+    margin: 0 6px;
+    font-size: 12px;
+
+    &:hover {
+      border-color: $--color-primary;
+    }
+
+    &.is-active {
+      background: $--color-primary;
+      border-color: $--color-primary;
+      color: #ffffff;
+      font-weight: 400;
+    }
+  }
+
+  .btn-prev:not(:disabled):hover,
+  .btn-next:not(:disabled):hover {
+    border-color: $--color-primary;
   }
 
   .el-pagination__jump {
-    height: 32px !important;
-    line-height: 32px !important;
     margin-left: 12px;
-
-    .el-input__inner {
-      width: 48px;
-      height: 32px;
-      background: #FFFFFF;
-      border-radius: 2px;
-      border: 1px solid $--color-line01;
-    }
   }
+
+  .el-pagination__editor.el-input {
+    width: 48px;
+  }
+}
+
+.page-fixed {
+  display: flex;
+  justify-content: flex-end;
+  position: absolute;
+  bottom: 24px;
+  right: 30px;
+
+  .el-pagination {
+    margin-top: 24px;
+  }
+
+  @extend .el-pagination-reset;
 }
 
 .icongengduo2 {
@@ -318,8 +297,7 @@ aside {
 
 /* 全局修改el-table 表头和内容颜色 header color content color */
 .el-table th {
-  background: #F7FBFF !important;
-
+  background: #f7fbff !important;
 }
 
 .el-table thead {
@@ -338,10 +316,6 @@ aside {
   margin-top: 30px;
 }
 
-.text-center {
-  text-align: center;
-}
-
 .sub-navbar {
   height: 50px;
   line-height: 50px;
@@ -350,11 +324,13 @@ aside {
   text-align: right;
   padding-right: 20px;
   transition: 600ms ease position;
-  background: linear-gradient(90deg,
-      rgba(32, 182, 249, 1) 0%,
-      rgba(32, 182, 249, 1) 0%,
-      rgba(33, 120, 241, 1) 100%,
-      rgba(33, 120, 241, 1) 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(32, 182, 249, 1) 0%,
+    rgba(32, 182, 249, 1) 0%,
+    rgba(33, 120, 241, 1) 100%,
+    rgba(33, 120, 241, 1) 100%
+  );
 
   .subtitle {
     font-size: 20px;
@@ -399,7 +375,8 @@ aside {
   z-index: 1000 !important;
 }
 
-.el-input-group__append {}
+.el-input-group__append {
+}
 
 .el-button-solt {
   background-color: $--color-primary !important;
@@ -458,14 +435,6 @@ aside {
   color: $--color-warning;
 }
 
-.text-right {
-  text-align: right;
-}
-
-.text-left {
-  text-align: left;
-}
-
 .color-tab {
   color: #ff4949;
 }
@@ -495,19 +464,19 @@ aside {
 }
 
 .color-text01 {
-  color: $--color-text01
+  color: $--color-text01;
 }
 
 .color-text02 {
-  color: $--color-text02
+  color: $--color-text02;
 }
 
 .color-text03 {
-  color: $--color-text03
+  color: $--color-text03;
 }
 
 .color-text04 {
-  color: $--color-text04
+  color: $--color-text04;
 }
 
 .bg-default {
@@ -530,7 +499,7 @@ aside {
 .area_popper {
   transform: translateX(-40px);
 
-  .popper__arrow {
+  .el-popper__arrow {
     left: 114px !important;
   }
 }
@@ -539,9 +508,7 @@ aside {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-
 }
-
 
 .lh-center {
   display: flex;
@@ -564,6 +531,14 @@ aside {
   -webkit-box-orient: vertical;
 }
 
+.over-text3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3; //规定几行显示省略号
+  -webkit-box-orient: vertical;
+}
+
 .display-center {
   display: flex;
   justify-content: center;
@@ -574,14 +549,16 @@ aside {
   display: flex;
   align-items: center;
 }
+
 .el-icon-close {
   cursor: pointer !important;
 }
+
 .el-card.is-always-shadow {
   box-shadow: none;
 }
 
-.el-button--text {
+.el-button.is-link {
   font-size: 13px;
 }
 
@@ -617,17 +594,12 @@ aside {
 
 .el-table {
   font-size: 13px;
-
 }
-
-
 
 // .table-box {
 //   .el-table th {
 //     background-color: rgba(247, 251, 255, 1);
 //   }
-
-
 
 //   .el-table th.is-leaf,
 //   .el-table td {
@@ -652,8 +624,6 @@ aside {
   height: calc(100vh - 78px);
   padding-bottom: 46px;
 }
-
-
 
 // 全局消息推送
 .message-socket {
@@ -737,7 +707,6 @@ aside {
 
 // 审批流样式设置
 .edit-examine-form {
-
   .el-date-editor,
   .el-select,
   .el-input-number,
@@ -817,11 +786,11 @@ td.el-table__cell {
 }
 
 tabel {
-  border-collapse: collapse !important
+  border-collapse: collapse !important;
 }
 
 .doc {
-  color: #3370FF;
+  color: #3370ff;
 }
 
 .xls {
@@ -829,23 +798,23 @@ tabel {
 }
 
 .ppt {
-  color: #FA6B33;
+  color: #fa6b33;
 }
 
 .pdf {
-  color: #F15752;
+  color: #f15752;
 }
 
 .zip {
-  color: #9EBB32;
+  color: #9ebb32;
 }
 
 .jpg {
-  color: #4D63B2;
+  color: #4d63b2;
 }
 
 .png {
-  color: #D96099;
+  color: #d96099;
 }
 
 .gif {
@@ -853,15 +822,15 @@ tabel {
 }
 
 .md {
-  color: #D922DC;
+  color: #d922dc;
 }
 
 .mp3 {
-  color: #BE4776;
+  color: #be4776;
 }
 
 .mp4 {
-  color: #857AE7;
+  color: #857ae7;
 }
 
 .svg {
@@ -869,11 +838,11 @@ tabel {
 }
 
 .tif {
-  color: #F9BD1A;
+  color: #f9bd1a;
 }
 
 .word {
-  color: #AAAAAA;
+  color: #aaaaaa;
 }
 
 .line2 {
@@ -892,13 +861,32 @@ tabel {
   -webkit-box-orient: vertical;
 }
 
-.el-table__fixed-right {
-  height: 100% !important;
+// 固定列是 sticky 单元格，背景继承自 tr；.divBox 等容器把 tr 设成透明后需要单独补背景
+.el-table .el-table__body-wrapper tr {
+  td.el-table-fixed-column--left,
+  td.el-table-fixed-column--right {
+    background-color: var(--el-table-tr-bg-color);
+  }
+
+  &:hover > td.el-table-fixed-column--left,
+  &:hover > td.el-table-fixed-column--right {
+    background-color: var(--el-table-row-hover-bg-color);
+  }
+}
+
+// 操作列里「按钮 + 更多下拉」并排时按中线对齐（el-dropdown 默认 vertical-align: top）
+.el-table .cell > .el-dropdown {
+  vertical-align: middle;
 }
 
 .flex-box {
   .el-tag {
-    background-color: #F0F2F5 !important;
+    background-color: #f0f2f5 !important;
     border: none;
   }
+}
+
+@font-face {
+  font-family: D-DIN-PRO;
+  src: url('../icons/D-DIN-PRO.ttf') format('truetype');
 }

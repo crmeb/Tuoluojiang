@@ -26,16 +26,15 @@
 </template>
 
 <script>
-import 'element-ui/lib/theme-chalk/display.css'
-import { getTemp, importCardApi } from '@/api/enterprise'
+import pickerOptions from '@/libs/pickerOptions.ts'
+import 'element-plus/theme-chalk/display.css'
+import { getTemp, importCardApi } from '@/api/enterprise.ts'
 import exportExcel from '@/components/common/exportExcel'
 import importExcel from '@/components/common/importExcel'
 import oaFromBox from '@/components/common/oaFromBox'
-import 'animate.css'
-import file from '@/utils/file'
-import Vue from 'vue'
-Vue.use(file)
+import { fileLinkDownLoad } from '@/utils/file.ts'
 export default {
+  emits: ['opendrawer', 'confirmData'],
   name: 'FormBox',
   components: {
     importExcel,
@@ -54,7 +53,7 @@ export default {
   data() {
     return {
       departmentShow: false,
-      pickerOptions: this.$pickerOptionsTimeEle,
+      pickerOptions,
       showForm: false,
       showText: '展开',
       distinguish: 2,
@@ -83,19 +82,19 @@ export default {
       search: [],
       sexOptions: [
         {
-          name: this.$t('toptable.all'),
+          name: '全部',
           value: ''
         },
         {
-          name: this.$t('toptable.unknown'),
+          name: '未知',
           value: '0'
         },
         {
-          name: this.$t('toptable.male'),
+          name: '男',
           value: '1'
         },
         {
-          name: this.$t('toptable.female'),
+          name: '女',
           value: '2'
         }
       ],
@@ -147,11 +146,11 @@ export default {
           type: 'select',
           options: [
             {
-              name: this.$t('toptable.all'),
+              name: '全部',
               value: ''
             },
             {
-              name: this.$t('toptable.normal'),
+              name: '正常',
               value: 1
             },
             {
@@ -215,11 +214,6 @@ export default {
       activeDepartment: {},
       openStatus: false,
       departmentList: []
-    }
-  },
-  computed: {
-    lang: function () {
-      return this.$store.getters.lang
     }
   },
 
@@ -301,19 +295,18 @@ export default {
         this.$refs.importExcel.btnClick()
       } else if (data.value == 3) {
         const result = await getTemp()
-        this.fileLinkDownLoad(result.data.url, '员工档案导入模板.xlsx')
+        fileLinkDownLoad(result.data.url, '员工档案导入模板.xlsx')
       }
       this.tableFrom.exportType = 0
     },
     // 导入
     async importExcelData(value) {
       let tabtypes = localStorage.getItem('tabTypes')
-      var res = []
+      const res = []
       if (value.length <= 0) {
         this.$message.error('批量导入内容为空')
       } else {
-        for (let i = 0; i <= value.length - 1; i++) {
-        
+        for (let i = 3; i <= value.length - 1; i++) {
           if (value[i][0] === '') {
             continue
           } else {
@@ -348,32 +341,31 @@ export default {
               高中及以下: 2
             }
             value[i][2] = isEducation[value[i][2]] || 2
-
             res.push({
               name: value[i][0],
               sex: value[i][1],
               education: value[i][2],
-              phone: value[i][5],
-              is_part: value[i][6],
-              type: value[i][7],
+              phone: value[i][3],
+              is_part: value[i][4],
+              type: value[i][5],
               position: '',
-              frames:'' ,
-              card_id: value[i][8]
+              frames: '',
+              card_id: value[i][6]
             })
           }
         }
       }
       let obj = {
-          type: tabtypes,
-          data: res
-        }
-          await importCardApi(obj)
+        type: tabtypes,
+        data: res
+      }
+      await importCardApi(obj)
     },
 
     // 导出上传模板
     async exportTemplate() {
       const result = await getTemp()
-      this.fileLinkDownLoad(result.data.url, '员工档案导入模板.xlsx')
+      fileLinkDownLoad(result.data.url, '员工档案导入模板.xlsx')
     },
     // 新增
     openDrawer() {
@@ -395,14 +387,11 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/deep/ .animate__animated {
-  animation-duration: 0.4s;
-}
 .noWrap {
   display: flex;
   justify-content: space-between;
 }
-/deep/ .el-button {
+:deep(.el-button) {
   font-size: 13px;
 }
 
@@ -430,10 +419,10 @@ export default {
   display: flex;
   flex-wrap: wrap;
 }
-.department /deep/ .el-input__inner {
+.department :deep(.el-input__inner) {
   color: #c0c4cc;
 }
-/deep/ .from-s .flex-row .el-form-item {
+:deep(.from-s .flex-row .el-form-item) {
   margin-left: 0px;
   margin-right: 10px;
 }

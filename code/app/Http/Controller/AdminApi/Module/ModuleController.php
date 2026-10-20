@@ -17,9 +17,11 @@ namespace App\Http\Controller\AdminApi\Module;
 
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Middleware\AuthCrud;
+use App\Http\Model\Crud\SystemCrud;
 use App\Http\Requests\ApiRequest;
 use App\Http\Service\Crud\CrudModuleService;
 use App\Http\Service\Crud\SystemCrudCommentService;
+use App\Http\Service\Crud\SystemCrudFieldService;
 use App\Http\Service\Crud\SystemCrudLogService;
 use App\Http\Service\Crud\SystemCrudQuestionnaireService;
 use App\Http\Service\Crud\SystemCrudSeniorSearchService;
@@ -27,7 +29,7 @@ use App\Http\Service\Crud\SystemCrudService;
 use App\Http\Service\Crud\SystemCrudShareService;
 use App\Http\Service\Crud\SystemCrudTableUserService;
 use App\Http\Service\Frame\FrameService;
-use crmeb\traits\SearchTrait;
+use Tuoluojiang\Open\traits\SearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -75,10 +77,10 @@ class ModuleController extends AuthController
     #[Get('association_field/{id}', '一对一关联展示字段')]
     public function getAssociationField($id)
     {
-        if (! $id) {
+        if (!$id) {
             return $this->fail('缺少参数');
         }
-        return $this->success($this->service->getAssociationField((int) $id));
+        return $this->success($this->service->getAssociationField((int)$id));
     }
 
     /**
@@ -93,11 +95,11 @@ class ModuleController extends AuthController
     #[Get('association_list/{id}', '一对一关联展示列表')]
     public function getAssociationList($id)
     {
-        if (! $id) {
+        if (!$id) {
             return $this->fail('缺少参数');
         }
         $keyword = $this->request->get('keyword', '');
-        return $this->success($this->service->getAssociationList((int) $id, (string) $keyword));
+        return $this->success($this->service->getAssociationList((int)$id, (string)$keyword));
     }
 
     /**
@@ -117,7 +119,7 @@ class ModuleController extends AuthController
             ['options', []],
         ], true);
 
-        $service->saveUserTable($this->request->crudInfo->id, auth('admin')->id(), (array) $seniorSearch, (array) $showField, (array) $options);
+        $service->saveUserTable($this->request->crudInfo->id, auth('admin')->id(), (array)$seniorSearch, (array)$showField, (array)$options);
 
         return $this->success('保存成功');
     }
@@ -132,7 +134,7 @@ class ModuleController extends AuthController
     #[Get('{name}/senior/list', '获取视图搜索列表')]
     public function getSeniorSearchList(SystemCrudSeniorSearchService $service)
     {
-        $title  = $this->request->get('title', '');
+        $title = $this->request->get('title', '');
         $system = $this->request->get('system', 0);
         return $this->success($service->getSeniorSearchList($this->request->crudInfo, $title, $system ? 0 : auth('admin')->id()));
     }
@@ -147,9 +149,9 @@ class ModuleController extends AuthController
     #[Post('{name}/senior/save', '保存视图信息')]
     public function saveSeniorSearch(ApiRequest $request, SystemCrudSeniorSearchService $service)
     {
-        $id     = $this->request->get('id', '');
+        $id = $this->request->get('id', '');
         $system = $this->request->get('system', 0);
-        $data   = $request->postMore([
+        $data = $request->postMore([
             ['sort', 0],
             ['senior_title', ''],
             ['senior_search', []],
@@ -159,14 +161,14 @@ class ModuleController extends AuthController
 
         $data['crud_id'] = $this->request->crudInfo->id;
 
-        if (! $data['senior_title']) {
+        if (!$data['senior_title']) {
             return $this->fail('缺少视图标题');
         }
 
         if ($id) {
             $service->update($id, $data);
         } else {
-            if (! $system) {
+            if (!$system) {
                 $data['user_id'] = auth('admin')->id();
             }
             if ($service->count() >= 100) {
@@ -189,7 +191,7 @@ class ModuleController extends AuthController
     public function sortSeniorSearch(SystemCrudSeniorSearchService $service)
     {
         $ids = $this->request->post('id', []);
-        if (! $ids) {
+        if (!$ids) {
             return $this->fail('缺少参数');
         }
 
@@ -215,7 +217,7 @@ class ModuleController extends AuthController
     {
         $id = $this->request->route()->parameter('id');
 
-        if (! $id) {
+        if (!$id) {
             return $this->fail('缺少参数');
         }
 
@@ -237,9 +239,9 @@ class ModuleController extends AuthController
     #[Get('{name}/frame/tree', '权限范围')]
     public function getTreeFrame(FrameService $service)
     {
-        $withRole = (bool) $this->request->get('role', 0);
-        $isScope  = (bool) $this->request->get('scope', 0);
-        return $this->success($service->getTree($this->uuid, $this->entId, $withRole, $isScope, $this->request->crudInfo->id));
+        $withRole = (bool)$this->request->get('role', 0);
+        $isScope = (bool)$this->request->get('scope', 0);
+        return $this->success($service->getTree(auth('admin')->id(), $withRole, $isScope, $this->request->crudInfo->id));
     }
 
     /**
@@ -253,9 +255,9 @@ class ModuleController extends AuthController
     #[Get('{name}/crud/info/{id?}', '获取实体列表字段展示和搜索字段展示')]
     public function getCrudInfo(Request $request)
     {
-        $id         = $this->request->route()->parameter('id', 0);
+        $id = $this->request->route()->parameter('id', 0);
         $isFieldAll = $request->get('is_field_all', 0);
-        return $this->success($this->service->getCrudInfo($this->request->crudInfo, auth('admin')->id(), (int) $id, false, (bool) $isFieldAll));
+        return $this->success($this->service->getCrudInfo($this->request->crudInfo, auth('admin')->id(), (int)$id, false, (bool)$isFieldAll));
     }
 
     /**
@@ -271,26 +273,48 @@ class ModuleController extends AuthController
     #[Post('{name}/list', '低代码列表')]
     public function index()
     {
-        $this->withScopeFrame('user_id', $this->request->crudInfo->id);
-
         $systemUserId = $this->request->post('system_user_id', []);
         $defaultWhere = $this->request->postMore([
             ['show_search_type', ''],
-            ['user_id', []],
             ['is_system', 0],
         ]);
+
+        //兼容前端的搜索，前端的系统搜索
+        $scopeFrame = 'all';
+        switch ($defaultWhere['show_search_type']) {
+            case 0:
+                $scopeFrame = 'all';
+                break;
+            case 1:
+                $scopeFrame = 'dep';
+                break;
+            case 2:
+                $scopeFrame = 'self';
+                break;
+        }
+
+        $this->withScopeFrame(key: 'user_id', crudId: $this->request->crudInfo->id, scopeFrame: $scopeFrame);
+
+        $defaultWhere['user_id'] = $this->request->post('user_id', []);
         $defaultWhere['uid'] = auth('admin')->id();
-        $postOrderBy         = $this->request->post('order_by', []);
-        $viewSearch          = $this->request->post('view_search', []);
-        $viewSearchBoolean   = $this->request->post('view_search_boolean', 0);
-        $keywordDefault      = $this->request->post('keyword_default');
-        $crudValue           = $this->request->post('crud_value', 0);
-        $crudId              = $this->request->post('crud_id', 0);
-        $isFieldAll          = $defaultWhere['is_system'] ? true : $this->request->post('is_field_all', 0);
+        $postOrderBy = $this->request->post('order_by', []);
+        $viewSearch = $this->request->post('view_search', []);
+        if (!is_array($viewSearch)) {
+            $viewSearch = [];
+        }
+        $viewSearchBoolean = $this->request->post('view_search_boolean', 0);
+        $keywordDefault = $this->request->post('keyword_default');
+        $crudValue = $this->request->post('crud_value', 0);
+        $crudId = $this->request->post('crud_id', 0);
+        $group = $this->request->post('group', '');
+        $childrenLimit = $this->request->post('children_limit', 5);
+        $childrenPage = $this->request->post('children_page', 1);
+        $childrenId = $this->request->post('children_id', '');
+        $isFieldAll = $defaultWhere['is_system'] ? true : $this->request->post('is_field_all', 0);
         if ($systemUserId && $this->request->post('scope_frame') === 'all') {
             $defaultWhere['user_id'] = array_merge($defaultWhere['user_id'], $systemUserId);
         }
-        if (! $defaultWhere['user_id']) {
+        if (!$defaultWhere['user_id']) {
             $defaultWhere['user_id'] = [0];
         }
         $orderBy = [];
@@ -298,7 +322,7 @@ class ModuleController extends AuthController
             $orderByField = $this->service->getOrderByField($this->request->crudInfo->id);
             foreach ($orderByField as $item) {
                 if (isset($postOrderBy[$item['field_name_en']])) {
-                    $orderBy[$item['field_name_en']] = $postOrderBy[$item['field_name_en']] ? 'desc' : 'asc';
+                    $orderBy[$item['field_name_en']] = $postOrderBy[$item['field_name_en']] ? 'asc' : 'desc';
                 }
             }
         }
@@ -319,7 +343,24 @@ class ModuleController extends AuthController
         }
         $viewSearch = $viewNewSearch;
 
-        return $this->success($this->service->getModuleList($this->request, $this->request->crudInfo, $defaultWhere, $orderBy, (array) $viewSearch, (string) $keywordDefault, (int) $viewSearchBoolean, (int) $crudId, (int) $crudValue, false, (bool) $isFieldAll));
+        return $this->success($this->service->getModuleList(
+            request: $this->request,
+            crud: $this->request->crudInfo,
+            defaultWhere: $defaultWhere,
+            orderBy: $orderBy,
+            viewSearch: (array)$viewSearch,
+            keywordDefault: (string)$keywordDefault,
+            viewSearchBoolean: (int)$viewSearchBoolean,
+            crudId: (int)$crudId,
+            crudValue: (int)$crudValue,
+            isFieldAll: (bool)$isFieldAll,
+            options: [
+                'group'          => $group,
+                'children_limit' => (int)$childrenLimit,
+                'children_page'  => (int)$childrenPage,
+                'children_id'    => $childrenId,
+            ]
+        ));
     }
 
     /**
@@ -335,10 +376,10 @@ class ModuleController extends AuthController
     #[Get('{name}/create', '低代码创建表单')]
     public function create(Request $request)
     {
-        $crudId    = $request->get('crud_id', 0);
+        $crudId = $request->get('crud_id', 0);
         $crudValue = $request->get('crud_value', 0);
-        $id        = $request->get('id', 0);
-        return $this->success($this->service->getCreateForm($this->request->crudInfo, (int) $crudId, (int) $crudValue, (int) $id));
+        $id = $request->get('id', 0);
+        return $this->success($this->service->getCreateForm($this->request->crudInfo, (int)$crudId, (int)$crudValue, (int)$id));
     }
 
     /**
@@ -360,23 +401,14 @@ class ModuleController extends AuthController
             return $this->fail('系统默认数据不允许创建');
         }
 
-        $crudId    = $request->post('crud_id', 0);
+        $crudId = $request->post('crud_id', 0);
         $crudValue = $request->post('crud_value', 0);
 
-        [$data, $validatorData, $rule, $message] = $this->service->checkData($crudInfo, $request);
-
-        if ($validatorData && $rule && $message) {
-            $validator = Validator::make($validatorData, $rule, $message);
-
-            if ($validator->fails()) {
-                // 验证失败的处理逻辑
-                return $this->fail($validator->errors()->first());
-            }
-        }
+        $data = $this->service->checkData($crudInfo, $request);
 
         $this->service->saveModule($crudInfo, $data, [
             'uid' => auth('admin')->id(),
-        ], (int) $crudId, (int) $crudValue);
+        ], (int)$crudId, (int)$crudValue);
 
         return $this->success('添加成功');
     }
@@ -394,57 +426,18 @@ class ModuleController extends AuthController
     #[Put('{name}/update/{id}', '低代码更新数据')]
     public function update(Request $request)
     {
-        $id       = $this->request->route()->parameter('id', 0);
+        $id = $this->request->route()->parameter('id', 0);
         $crudInfo = $this->request->crudInfo;
         if (in_array($crudInfo->table_name_en, app()->get(SystemCrudService::class)->notAllowOperateTable())) {
             return $this->fail('系统默认数据不允许更新');
         }
-        if (! $id) {
+        if (!$id) {
             return $this->fail('缺少参数');
         }
-        $crudList = $this->service->getFormField($crudInfo->id);
-        $data     = $validatorData = $rule = $message = [];
-        foreach ($crudList as $item) {
-            $fieldName = $item['crud']['id'] === $crudInfo->id
-                ? $item['field_name_en']
-                : $item['crud']['table_name_en'] . '.' . $item['field_name_en'];
-            $default     = '';
-            $association = false;
-            if ($item['association_crud_id']) {
-                $default     = [];
-                $association = true;
-            } elseif (in_array($item['field_name_en'], ['user_id', 'update_user_id', 'frame_id', 'owner_user_id'])) {
-                $default     = [];
-                $association = true;
-            }
-            $postValue = $request->post(str_replace('.', '@', $fieldName), $default);
-            if ($association) {
-                $value = is_array($postValue) ? $postValue['id'] ?? 0 : $postValue;
-            } else {
-                $value = $postValue;
-            }
-            [$itemMsg, $ruleData] = $this->service->getValidationRule($item, $fieldName);
-            if ($ruleData) {
-                $validatorFieldName                 = str_replace('.', '_', $fieldName);
-                $validatorData[$validatorFieldName] = $value;
-                $rule[$validatorFieldName]          = implode('|', $ruleData);
-                $message                            = array_merge($message, $itemMsg);
-            }
-            $data[$fieldName] = [
-                'value' => $value,
-                'post'  => $postValue,
-                'item'  => $item,
-            ];
-        }
-        if ($validatorData && $rule && $message) {
-            $validator = Validator::make($validatorData, $rule, $message);
 
-            if ($validator->fails()) {
-                // 验证失败的处理逻辑
-                return $this->fail($validator->errors()->first());
-            }
-        }
-        $this->service->updateModule($crudInfo, (int) $id, $data, [
+        $data = $this->service->checkData($crudInfo, $request);
+
+        $this->service->updateModule($crudInfo, (int)$id, $data, [
             'uid' => auth('admin')->id(),
         ]);
         return $this->success('修改成功');
@@ -461,22 +454,28 @@ class ModuleController extends AuthController
     #[Put('{name}/update_field/{id}', '低代码单个字段修改')]
     public function updateField(Request $request)
     {
-        $id       = $this->request->route()->parameter('id', 0);
+        $id = $this->request->route()->parameter('id', 0);
         $crudInfo = $this->request->crudInfo;
         if (in_array($crudInfo->table_name_en, app()->get(SystemCrudService::class)->notAllowOperateTable())) {
             return $this->fail('系统默认数据不允许更新');
         }
-        if (! $id) {
+        if (!$id) {
             return $this->fail('缺少参数');
         }
         $fieldNameEn = $request->post('field_name', '');
         $fieldNameEn = str_replace('.', '@', $fieldNameEn);
-        $fieldValue  = $request->post('value', '');
-        $crudList    = $this->service->getFormField($crudInfo->id, $fieldNameEn);
-        if (! $crudList) {
+        $fieldValue = $request->post('value', '');
+
+        $addendumInfo = [];
+        if ($crudInfo->is_form_table) {
+            $addendumInfo = app()->make(SystemCrudService::class)->get(['crud_id' => $crudInfo->id])?->toArray();
+        }
+
+        $crudList = $this->service->getFormField($crudInfo->id, $fieldNameEn, $addendumInfo, $crudInfo);
+        if (!$crudList) {
             return $this->fail('字段不存在');
         }
-        if (count($crudList) > 1) {
+        if (count($crudList) > 1 && !$crudInfo->is_form_table) {
             return $this->fail('字段存在重复，请联系管理员');
         }
         $data = $validatorData = $rule = $message = [];
@@ -488,27 +487,60 @@ class ModuleController extends AuthController
             $association = false;
             if ($item['association_crud_id']) {
                 $association = true;
-            } elseif (in_array($item['field_name_en'], ['user_id', 'update_user_id', 'frame_id', 'owner_user_id'])) {
+            } elseif (in_array($item['field_name_en'], [SystemCrud::USER_ID_KEY, SystemCrud::UPDATE_USER_ID_KEY, SystemCrud::FRAME_ID_KEY, SystemCrud::OWNER_USER_ID_KEY])) {
                 $association = true;
             }
 
-            if ($association) {
+            if ($association && !$addendumInfo) {
                 $value = is_array($fieldValue) ? $fieldValue['id'] ?? 0 : $fieldValue;
             } else {
                 $value = $fieldValue;
             }
             [$itemMsg, $ruleData] = $this->service->getValidationRule($item, $fieldName);
             if ($ruleData) {
-                $validatorFieldName                 = str_replace('.', '_', $fieldName);
+                $validatorFieldName = str_replace('.', '_', $fieldName);
                 $validatorData[$validatorFieldName] = $value;
-                $rule[$validatorFieldName]          = implode('|', $ruleData);
-                $message                            = array_merge($message, $itemMsg);
+                $rule[$validatorFieldName] = implode('|', $ruleData);
+                $message = array_merge($message, $itemMsg);
+            }
+
+            $subordinate = [];
+            if ($crudInfo->is_form_table && $fieldNameEn === ($crudInfo->table_name_en . '_' . $addendumInfo['table_name_en'])) {
+                if (!is_array($fieldValue)) {
+                    return $this->fail('表单明细字段数据类型必须位数组');
+                }
+                $item = $addendumInfo;
+                $subordinateKeys = array_keys($fieldValue[0]);
+                $keys = [];
+                foreach ($subordinateKeys as $subordinateKey) {
+                    $keys[] = str_replace($addendumInfo['table_name_en'] . '@', '', $subordinateKey);
+                }
+                $newValue = [];
+                foreach ($value as $key => $valueItem) {
+                    foreach ($valueItem as $k => $i) {
+                        $k = str_replace($addendumInfo['table_name_en'] . '@', '', $k);
+                        if (in_array($k, [SystemCrud::USER_ID_KEY, SystemCrud::UPDATE_USER_ID_KEY, SystemCrud::FRAME_ID_KEY, SystemCrud::OWNER_USER_ID_KEY])) {
+                            $newValue[$key][$k] = is_array($i) ? $i['id'] ?? 0 : $i;
+                        } else {
+                            $newValue[$key][$k] = $i;
+                        }
+                    }
+                }
+                $value = $newValue;
+
+                if ($keys) {
+                    $res = app()->get(SystemCrudFieldService::class)->fieldByListCache((int)$addendumInfo['id'], $keys);
+                    foreach ($res as $resItem) {
+                        $subordinate[$resItem['field_name_en']] = $resItem;
+                    }
+                }
             }
 
             $data[$fieldName] = [
-                'value' => $value,
-                'post'  => $fieldValue,
-                'item'  => $item,
+                'value'       => $value,
+                'post'        => $fieldValue,
+                'item'        => $item,
+                'subordinate' => $subordinate,
             ];
         }
 
@@ -521,7 +553,7 @@ class ModuleController extends AuthController
             }
         }
 
-        $this->service->updateModule($crudInfo, (int) $id, $data, [
+        $this->service->updateModule($crudInfo, (int)$id, $data, [
             'uid'                => auth('admin')->id(),
             'single_field_name'  => $fieldNameEn,
             'single_field_value' => $fieldValue,
@@ -545,10 +577,10 @@ class ModuleController extends AuthController
     {
         $id = $this->request->route()->parameter('id', 0);
 
-        if (! $id) {
+        if (!$id) {
             return $this->fail('缺少参数');
         }
-        return $this->success($this->service->getFindModule($this->request->crudInfo, (int) $id));
+        return $this->success($this->service->getFindModule($this->request->crudInfo, (int)$id));
     }
 
     /**
@@ -564,19 +596,19 @@ class ModuleController extends AuthController
     #[Delete('{name}/delete/{id}', '低代码删除数据')]
     public function delete(Request $request)
     {
-        $id            = $this->request->route()->parameter('id', 0);
-        $crudInfo      = $this->request->crudInfo;
+        $id = $this->request->route()->parameter('id', 0);
+        $crudInfo = $this->request->crudInfo;
         $systemUserIds = $request->post('system_user_id', []);
 
         if (in_array($crudInfo->table_name_en, app()->get(SystemCrudService::class)->notAllowOperateTable())) {
             return $this->fail('系统默认数据不允许删除');
         }
 
-        if (! $id) {
+        if (!$id) {
             return $this->fail('缺少参数');
         }
 
-        $this->service->deleteModule($crudInfo, (int) $id, (array) $systemUserIds);
+        $this->service->deleteModule($crudInfo, (int)$id, (array)$systemUserIds);
 
         return $this->success('删除成功');
     }
@@ -601,7 +633,7 @@ class ModuleController extends AuthController
         }
 
         $ids = $request->post('ids', []);
-        if (! $ids) {
+        if (!$ids) {
             return $this->fail('缺少参数');
         }
 
@@ -627,11 +659,11 @@ class ModuleController extends AuthController
         }
 
         $datas = $request->post('import', []);
-        if (! $datas) {
+        if (!$datas) {
             return $this->fail('缺少导入的数据');
         }
 
-        return $this->success($this->service->importData($crudInfo, $datas, auth('admin')->id()));
+        return $this->success($this->service->runImportData($crudInfo, $datas, auth('admin')->id()));
     }
 
     /**
@@ -644,21 +676,21 @@ class ModuleController extends AuthController
     #[Post('{name}/comment/{id}', '低代码评论')]
     public function saveComment(Request $request, SystemCrudCommentService $commentService)
     {
-        $id       = $this->request->route()->parameter('id', 0);
+        $id = $this->request->route()->parameter('id', 0);
         $crudInfo = $this->request->crudInfo;
-        $data     = $request->postMore([
+        $data = $request->postMore([
             ['pid', 0],
             ['comment', ''],
         ]);
 
-        if (! $id) {
+        if (!$id) {
             return $this->fail('缺少参数');
         }
-        if (! $data['comment']) {
+        if (!$data['comment']) {
             return $this->fail('请输入评论内容');
         }
 
-        $commentService->createComment($crudInfo, $data, (int) $id, auth('admin')->id());
+        $commentService->createComment($crudInfo, $data, (int)$id, auth('admin')->id());
 
         return $this->success('评论成功');
     }
@@ -670,20 +702,20 @@ class ModuleController extends AuthController
     #[Put('{name}/comment/{comment_id}', '低代码修改评论')]
     public function updateComment(Request $request, SystemCrudCommentService $commentService)
     {
-        $id   = $this->request->route()->parameter('comment_id', 0);
+        $id = $this->request->route()->parameter('comment_id', 0);
         $data = $request->postMore([
             ['comment', ''],
         ]);
 
-        if (! $id) {
+        if (!$id) {
             return $this->fail('缺少参数');
         }
-        if (! $data['comment']) {
+        if (!$data['comment']) {
             return $this->fail('请输入评论内容');
         }
 
         $comment = $commentService->get($id);
-        if (! $comment) {
+        if (!$comment) {
             return $this->fail('评论不存在');
         }
 
@@ -706,12 +738,12 @@ class ModuleController extends AuthController
     {
         $id = $this->request->route()->parameter('comment_id', 0);
 
-        if (! $id) {
+        if (!$id) {
             return $this->fail('缺少参数');
         }
 
         $comment = $commentService->get($id);
-        if (! $comment) {
+        if (!$comment) {
             return $this->fail('评论不存在');
         }
 
@@ -738,11 +770,11 @@ class ModuleController extends AuthController
     public function getCommentList(SystemCrudCommentService $commentService)
     {
         $id = $this->request->route()->parameter('id', 0);
-        if (! $id) {
+        if (!$id) {
             return $this->fail('缺少参数');
         }
 
-        return $this->success($commentService->getCommentList($this->request->crudInfo, (int) $id));
+        return $this->success($commentService->getCommentList($this->request->crudInfo, (int)$id));
     }
 
     /**
@@ -752,11 +784,11 @@ class ModuleController extends AuthController
     public function getLogList(SystemCrudLogService $service)
     {
         $id = $this->request->route()->parameter('id', 0);
-        if (! $id) {
+        if (!$id) {
             return $this->fail('缺少参数');
         }
 
-        return $this->success($service->getLogList($this->request->crudInfo, (int) $id));
+        return $this->success($service->getLogList($this->request->crudInfo, (int)$id));
     }
 
     /**
@@ -773,18 +805,18 @@ class ModuleController extends AuthController
         }
 
         $systemUserId = $this->request->post('system_user_id', []);
-        $ids          = $this->request->post('ids', []);
-        $userId       = $this->request->post('user_id', 0);
-        if (! $ids) {
+        $ids = $this->request->post('ids', []);
+        $userId = $this->request->post('user_id', 0);
+        if (!$ids) {
             return $this->fail('请选择需要移交的数据');
         }
-        if (! $userId) {
+        if (!$userId) {
             return $this->fail('请选择需要移交给谁的用户');
         }
         $ids = array_filter($ids, function ($v) {
-            return (int) $v;
+            return (int)$v;
         });
-        $this->service->transferData($this->request->crudInfo, $ids, (int) $userId, $systemUserId, auth('admin')->id());
+        $this->service->transferData($this->request->crudInfo, $ids, (int)$userId, $systemUserId, auth('admin')->id());
 
         return $this->success('移交成功');
     }
@@ -804,22 +836,22 @@ class ModuleController extends AuthController
         }
 
         $systemUserId = $this->request->post('system_user_id', []);
-        $ids          = $this->request->post('ids', []);
-        $userIds      = $this->request->post('user_ids', []);
-        $roleType     = $this->request->post('role_type', 0);
-        if (! $ids) {
+        $ids = $this->request->post('ids', []);
+        $userIds = $this->request->post('user_ids', []);
+        $roleType = $this->request->post('role_type', 0);
+        if (!$ids) {
             return $this->fail('请选择需要移交的数据');
         }
-        if (! $userIds) {
+        if (!$userIds) {
             return $this->fail('请选择需要移交给谁的用户');
         }
-        if (! in_array($roleType, [0, 1, 2])) {
+        if (!in_array($roleType, [0, 1, 2])) {
             return $this->fail('请选择正确的共享类型');
         }
         $ids = array_filter($ids, function ($v) {
-            return (int) $v;
+            return (int)$v;
         });
-        $this->service->shareData($this->request->crudInfo, $ids, $userIds, (int) $roleType, $systemUserId, auth('admin')->id());
+        $this->service->shareData($this->request->crudInfo, $ids, $userIds, (int)$roleType, $systemUserId, auth('admin')->id());
 
         return $this->success('共享成功');
     }
@@ -832,13 +864,13 @@ class ModuleController extends AuthController
     public function updateShare()
     {
         $id = $this->request->route()->parameter('id', 0);
-        if (! $id) {
+        if (!$id) {
             return $this->fail('缺少参数');
         }
 
         $roleType = $this->request->post('role_type', 0);
 
-        $this->service->shareUpdate($this->request->crudInfo, (int) $id, (int) $roleType, auth('admin')->id());
+        $this->service->shareUpdate($this->request->crudInfo, (int)$id, (int)$roleType, auth('admin')->id());
 
         return $this->success('修改成功');
     }
@@ -851,12 +883,12 @@ class ModuleController extends AuthController
     #[Delete('{name}/share/{id}', '低代码共享数据')]
     public function deleteShare()
     {
-        $id     = $this->request->route()->parameter('id', 0);
+        $id = $this->request->route()->parameter('id', 0);
         $dataId = $this->request->post('data_id', 0);
-        if (! $id || ! $dataId) {
+        if (!$id || !$dataId) {
             return $this->fail('缺少参数');
         }
-        $this->service->shareDelete($this->request->crudInfo, (int) $id, auth('admin')->id(), (int) $dataId);
+        $this->service->shareDelete($this->request->crudInfo, (int)$id, auth('admin')->id(), (int)$dataId);
 
         return $this->success('修改成功');
     }
@@ -870,10 +902,10 @@ class ModuleController extends AuthController
     public function cancelShare()
     {
         $dataId = $this->request->route()->parameter('data_id', 0);
-        if (! $dataId) {
+        if (!$dataId) {
             return $this->fail('缺少参数');
         }
-        $this->service->cancelShare($this->request->crudInfo, (int) $dataId, auth('admin')->id());
+        $this->service->cancelShare($this->request->crudInfo, (int)$dataId, auth('admin')->id());
 
         return $this->success('修改成功');
     }
@@ -886,7 +918,7 @@ class ModuleController extends AuthController
     public function shareList(SystemCrudShareService $service)
     {
         $dataId = $this->request->route()->parameter('data_id', 0);
-        return $this->success($service->shareList($this->request->crudInfo->id, (int) $dataId));
+        return $this->success($service->shareList($this->request->crudInfo->id, (int)$dataId));
     }
 
     /**
@@ -907,7 +939,7 @@ class ModuleController extends AuthController
             ['invalid_type', 0],
         ]);
 
-        switch ((int) $data['invalid_type']) {
+        switch ((int)$data['invalid_type']) {
             case 1:// 1天
                 $data['invalid_time'] = date('Y-m-d H:i:s', time() + 86400);
                 break;
@@ -918,7 +950,7 @@ class ModuleController extends AuthController
                 $data['invalid_time'] = date('Y-m-d H:i:s', time() + 2592000);
                 break;
             default:// 永久
-                $data['invalid_time'] = date('Y-m-d H:i:s', strtotime('2999-12-01 23:59:59'));
+                $data['invalid_time'] = date('Y-m-d H:i:s', datetime_timestamp('2999-12-01 23:59:59'));
                 break;
         }
 
@@ -934,14 +966,14 @@ class ModuleController extends AuthController
     public function updateQuestionnaire(SystemCrudQuestionnaireService $service)
     {
         $id = $this->request->route()->parameter('id', 0);
-        if (! $id) {
+        if (!$id) {
             return $this->fail('缺少参数');
         }
 
-        $status = (int) $this->request->post('status', 0);
+        $status = (int)$this->request->post('status', 0);
 
         $questionnaire = $service->get($id, ['id', 'status', 'invalid_time']);
-        if (! $questionnaire) {
+        if (!$questionnaire) {
             return $this->fail('没有找到问卷表单信息');
         }
         if ($questionnaire->invalid_time < date('Y-m-d H:i:s') && $status) {
@@ -970,7 +1002,7 @@ class ModuleController extends AuthController
     public function deleteQuestionnaire(SystemCrudQuestionnaireService $service)
     {
         $id = $this->request->route()->parameter('id', 0);
-        if (! $id) {
+        if (!$id) {
             return $this->fail('缺少参数');
         }
 

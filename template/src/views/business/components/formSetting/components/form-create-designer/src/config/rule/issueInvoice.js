@@ -156,11 +156,11 @@ export default {
         },
         {
           display: true,
-          effect: { required: true },
+          effect: {fetch: "", required: true },
           field: uniqueId(),
           hidden: false,
           info: '',
-          input: false,
+      
           props: { type: 'input', placeholder: '请输入抬头信息' },
           title: '发票抬头',
           symbol: 'invoiceHeader',
@@ -173,7 +173,7 @@ export default {
           field: uniqueId(),
           hidden: false,
           info: '',
-          input: false,
+     
           props: { type: 'input', placeholder: '请输入纳税人识别号' },
           title: '纳税人识别号',
           symbol: 'dutyParagraph',

@@ -1,7 +1,7 @@
 <template>
   <div class="chart-styles">
     <div class="c-s-t">图表样式</div>
-    <template v-for="(style, styleInx) of stylesList">
+    <template v-for="(style, styleInx) of stylesList" :key="styleInx">
       <div class="c-s-c" v-if="style.type == selectedWidget.type" :key="styleInx">
         <div
           class="prive-box"
@@ -24,6 +24,7 @@
 import SvgIcon from '@/components/svg-icon-nc'
 
 export default {
+  emits: ['update:optionModel'],
   name: 'chartStyle-editor',
   components: {
     SvgIcon

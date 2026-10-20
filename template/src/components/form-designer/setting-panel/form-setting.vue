@@ -3,11 +3,10 @@
   <div>
     <el-form
       :model="formConfig"
-      size="mini"
       label-position="left"
       label-width="120px"
       class="setting-form"
-      @submit.native.prevent
+      @submit.prevent
     >
       <el-collapse v-model="formActiveCollapseNames" class="setting-collapse">
         <el-collapse-item name="1" :title="i18nt('designer.setting.basicSetting')">
@@ -19,15 +18,15 @@
           </el-form-item>
           <el-form-item :label="i18nt('designer.setting.labelPosition')">
             <el-radio-group v-model="formConfig.labelPosition" class="radio-group-custom">
-              <el-radio-button label="left">{{ i18nt('designer.setting.leftPosition') }}</el-radio-button>
-              <el-radio-button label="top">{{ i18nt('designer.setting.topPosition') }}</el-radio-button>
+              <el-radio-button value="left">{{ i18nt('designer.setting.leftPosition') }}</el-radio-button>
+              <el-radio-button value="top">{{ i18nt('designer.setting.topPosition') }}</el-radio-button>
             </el-radio-group>
           </el-form-item>
           <el-form-item :label="i18nt('designer.setting.labelAlign')">
             <el-radio-group v-model="formConfig.labelAlign" class="radio-group-custom">
-              <el-radio-button label="label-left-align">{{ i18nt('designer.setting.leftAlign') }}</el-radio-button>
-              <el-radio-button label="label-center-align">{{ i18nt('designer.setting.centerAlign') }}</el-radio-button>
-              <el-radio-button label="label-right-align">{{ i18nt('designer.setting.rightAlign') }}</el-radio-button>
+              <el-radio-button value="label-left-align">{{ i18nt('designer.setting.leftAlign') }}</el-radio-button>
+              <el-radio-button value="label-center-align">{{ i18nt('designer.setting.centerAlign') }}</el-radio-button>
+              <el-radio-button value="label-right-align">{{ i18nt('designer.setting.rightAlign') }}</el-radio-button>
             </el-radio-group>
           </el-form-item>
           <el-form-item :label="i18nt('designer.setting.labelWidth')">
@@ -51,47 +50,51 @@
 
     <el-dialog
       :title="i18nt('designer.setting.editFormEventHandler')"
-      :visible.sync="showFormEventDialogFlag"
+      v-model="showFormEventDialogFlag"
       v-if="showFormEventDialogFlag"
       :show-close="true"
       class="small-padding-dialog"
       append-to-body
-      v-dialog-drag
+      draggable
       :close-on-click-modal="false"
       :close-on-press-escape="false"
       :destroy-on-close="true"
     >
       <el-alert type="info" :closable="false" :title="'form.' + eventParamsMap[curEventName]"></el-alert>
       <el-alert type="info" :closable="false" title="}"></el-alert>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="showFormEventDialogFlag = false">取消</el-button>
-        <el-button type="primary" @click="saveFormEventHandler"> {{ i18nt('designer.hint.confirm') }}</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="showFormEventDialogFlag = false">取消</el-button>
+          <el-button type="primary" @click="saveFormEventHandler"> {{ i18nt('designer.hint.confirm') }}</el-button>
+        </div>
+      </template>
     </el-dialog>
 
     <el-dialog
       :title="i18nt('designer.setting.formCss')"
-      :visible.sync="showEditFormCssDialogFlag"
+      v-model="showEditFormCssDialogFlag"
       v-if="showEditFormCssDialogFlag"
       :show-close="true"
       class="small-padding-dialog"
       append-to-body
-      v-dialog-drag
+      draggable
       :close-on-click-modal="false"
       :close-on-press-escape="false"
       :destroy-on-close="true"
     >
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="showEditFormCssDialogFlag = false"> 取消</el-button>
-        <el-button type="primary" @click="saveFormCss"> {{ i18nt('designer.hint.confirm') }}</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="showEditFormCssDialogFlag = false"> 取消</el-button>
+          <el-button type="primary" @click="saveFormCss"> {{ i18nt('designer.hint.confirm') }}</el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>
 
 <script>
-import i18n from '@/utils/i18n'
-import { deepClone, insertCustomCssToHead, insertGlobalFunctionsToHtml } from '@/utils/util'
+import i18n from '@/utils/i18n.ts'
+import { deepClone, insertCustomCssToHead, insertGlobalFunctionsToHtml } from '@/utils/formDesignerUtils'
 
 export default {
   name: 'form-setting',
@@ -111,9 +114,7 @@ export default {
       formSizes: [
         { label: 'default', value: '' },
         { label: 'large', value: 'large' },
-        { label: 'medium', value: 'medium' },
-        { label: 'small', value: 'small' },
-        { label: 'mini', value: 'mini' }
+        { label: 'small', value: 'small' }
       ],
 
       showEditFormCssDialogFlag: false,
@@ -257,19 +258,19 @@ export default {
 
 <style lang="scss" scoped>
 .setting-form {
-  ::v-deep .el-form-item__label {
+  :deep(.el-form-item__label) {
     font-size: 13px;
     //text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
   }
 
-  ::v-deep .el-form-item--mini.el-form-item {
-    margin-bottom: 6px;
+  :deep(.el-form-item) {
+    margin-bottom: 14px;
   }
 
   .radio-group-custom {
-    ::v-deep .el-radio-button__inner {
+    :deep(.el-radio-button__inner) {
       padding-left: 12px;
       padding-right: 12px;
     }
@@ -281,18 +282,22 @@ export default {
 }
 
 .setting-collapse {
-  ::v-deep .el-collapse-item__content {
+  :deep(.el-collapse-item__content) {
     padding-bottom: 6px;
   }
 
-  ::v-deep .el-collapse-item__header {
+  :deep(.el-collapse-item__header) {
     font-weight: bold;
   }
 }
 
-.small-padding-dialog {
-  ::v-deep .el-dialog__body {
+</style>
+
+<style lang="scss">
+// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
+.el-dialog.small-padding-dialog {
+  .el-dialog__body {
     padding: 6px 15px 12px 15px;
   }
 }
-</style>@/utils/i18ns
+</style>

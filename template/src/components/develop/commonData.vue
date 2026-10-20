@@ -8,7 +8,10 @@ const formDataInit = {
   cate_ids: '',
   show_log: '1',
   show_comment: 1,
-  info: ''
+  info: '',
+  path:[],
+  icon:'',
+  uni_img:'',
 }
 // 新建实体表单验证
 const formRules = {
@@ -117,10 +120,32 @@ const formConfig = [
   },
 
   {
-    type: 'multipleSelect',
+      type: 'multipleSelect',
     label: '关联应用：',
     placeholder: '请搜索选择应用（可多选）',
     key: 'cate_ids',
+    options: []
+  },
+  {
+    type: 'cascader',
+    label: '上级菜单：',
+    placeholder: '请选择上级菜单',
+    key: 'path',
+    props: {label: 'menu_name', value: 'id', children: 'children' ,checkStrictly: true},
+    options: [],
+    tips: '若不选择上级菜单，则不生成菜单'
+  },
+   {
+    type: 'icon',
+    label: '菜单图标：',
+    placeholder: '请选择菜单图标',
+    key: 'icon',
+  },
+  {
+    type: 'uni_img',
+    label: '移动端图标：',
+    placeholder: '请选择移动端图标',
+    key: 'uni_img',
     options: []
   },
   {
@@ -143,6 +168,10 @@ const fieldDataInit = {
   update_modify: 1, // 更新时修改
   comment: '',
   data_dict_id: '',
+  data_type: '1', // 数据选项
+  is_city_show: 'city',
+  customizeItems: [], // 自定义选项字段
+
   association_crud_id: '', // 关联表id
   association_field_names: [],
   association_field_names_list: null
@@ -216,11 +245,29 @@ const optionsEdit = [
 
 const dictMax = [
   {
+    type: 'radio',
+    label: '数据选项：',
+    key: 'data_type',
+    tips: '请在表单设计中维护静态数据',
+
+    options: [
+      {
+        label: 1,
+        value: '静态数据'
+      },
+      {
+        label: 0,
+        value: '数据字典'
+      }
+    ]
+  },
+  {
     type: 'select',
     label: '关联字典：',
     placeholder: '请搜索选择数据字典',
     key: 'data_dict_id',
     sign: 'dict',
+    isShow: 'data_type',
     options: []
   }
 ]
@@ -243,38 +290,38 @@ const keyValue = {
   textarea: [],
   rich_text: [],
   input_number: [
-    {
-      type: 'switch',
-      label: '字段唯一：',
-      key: 'is_uniqid',
-      activeValue: 1,
-      inactiveValue: 0,
-      activeText: '开启',
-      inactiveText: '关闭'
-    }
+    // {
+    //   type: 'switch',
+    //   label: '字段唯一：',
+    //   key: 'is_uniqid',
+    //   activeValue: 1,
+    //   inactiveValue: 0,
+    //   activeText: '开启',
+    //   inactiveText: '关闭'
+    // }
   ],
   input_float: [
-    {
-      type: 'switch',
-      label: '字段唯一：',
-      key: 'is_uniqid',
-      activeValue: 1,
-      inactiveValue: 0,
-      activeText: '开启',
-      inactiveText: '关闭'
-    }
+    // {
+    //   type: 'switch',
+    //   label: '字段唯一：',
+    //   key: 'is_uniqid',
+    //   activeValue: 1,
+    //   inactiveValue: 0,
+    //   activeText: '开启',
+    //   inactiveText: '关闭'
+    // }
   ],
 
   input_price: [
-    {
-      type: 'switch',
-      label: '字段唯一：',
-      key: 'is_uniqid',
-      activeValue: 1,
-      inactiveValue: 0,
-      activeText: '开启',
-      inactiveText: '关闭'
-    }
+    // {
+    //   type: 'switch',
+    //   label: '字段唯一：',
+    //   key: 'is_uniqid',
+    //   activeValue: 1,
+    //   inactiveValue: 0,
+    //   activeText: '开启',
+    //   inactiveText: '关闭'
+    // }
   ],
   radio: [...dictMax],
   cascader_radio: dictMax,
@@ -327,10 +374,10 @@ const conditionConfig = {
       value: 'eq',
       label: '等于'
     },
-    {
-      value: 'regex',
-      label: '正则'
-    },
+    // {
+    //   value: 'regex',
+    //   label: '正则'
+    // },
     {
       value: 'not_eq',
       label: '不等于'
@@ -374,10 +421,10 @@ const conditionConfig = {
       value: 'lt',
       label: '小于'
     },
-    {
-      value: 'regex',
-      label: '正则'
-    },
+    // {
+    //   value: 'regex',
+    //   label: '正则'
+    // },
     {
       value: 'gt_eq',
       label: '大于等于'

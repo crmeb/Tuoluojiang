@@ -15,8 +15,8 @@ declare(strict_types=1);
 
 namespace App\Http\Model\Company;
 
-use App\Http\Model\BaseModel;
 use App\Http\Model\User\User;
+use App\Http\Model\BaseModel;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Query\Builder;
 
@@ -43,10 +43,17 @@ class CompanyApply extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'entid'      => 'integer',
+        'frame_id'   => 'integer',
+        'status'     => 'integer',
+        'verify'     => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * status作用域
-     * @param mixed $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeStatusApply($query, $value)
@@ -77,7 +84,6 @@ class CompanyApply extends BaseModel
     /**
      * entids作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeEntids($query, $value)
@@ -88,7 +94,6 @@ class CompanyApply extends BaseModel
     /**
      * verify作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeVerify($query, $value)
@@ -103,7 +108,6 @@ class CompanyApply extends BaseModel
     /**
      * id作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeId($query, $value)
@@ -116,7 +120,6 @@ class CompanyApply extends BaseModel
     /**
      * entid作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeEntid($query, $value)
@@ -128,7 +131,6 @@ class CompanyApply extends BaseModel
 
     /**
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeStatus($query, $value)

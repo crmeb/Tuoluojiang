@@ -3,7 +3,7 @@
     <el-table
       ref="multipleTable"
       :data="tableData"
-      :height="tableHeight"
+      :height="TABLE_HEIGHT"
       class="mt10"
       style="width: 100%"
       v-bind="$attrs"
@@ -11,23 +11,23 @@
     >
       <el-table-column label="姓名" min-width="100" prop="name"> </el-table-column>
       <el-table-column label="性别" min-width="90" prop="sex">
-        <template slot-scope="scope">
+        <template #default="scope">
           <span>{{ getSex(scope.row.sex) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="学历" prop="education">
-        <template slot-scope="scope">
+        <template #default="scope">
           <span>{{ getEducation(scope.row.education) }}</span>
         </template>
       </el-table-column>
-      <el-table-column
-        :label="notEmployees == '未入职' ? '面试职位' : '职位'"
-        :prop="notEmployees == '未入职' ? 'interview_position' : 'job.name'"
-        min-width="140"
-      >
+      <el-table-column :label="notEmployees == '未入职' ? '面试职位' : '职位'" min-width="140">
+        <template #default="scope">
+          <span v-if="notEmployees == '未入职'">{{ scope.row.interview_position || '--' }}</span>
+          <span v-else>{{ scope.row.job ? scope.row.job.name : '--' }}</span>
+        </template>
       </el-table-column>
       <el-table-column v-if="notEmployees !== '未入职'" label="部门" min-width="120" prop="frame.name">
-        <template slot-scope="scope">
+        <template #default="scope">
           <div v-for="(item, index) in scope.row.frames" :key="index">
             <span class="icon-h">
               {{ item.name }}
@@ -36,51 +36,42 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="手机号码" min-width="110" prop="phone" show-overflow-tooltip> </el-table-column>
+      <el-table-column label="手机号码" min-width="110" prop="phone" show-overflow-tooltip />
       <el-table-column label="类型" min-width="80" prop="is_part" show-overflow-tooltip>
-        <template slot-scope="scope">
+        <template #default="scope">
           <span>{{ getIsPart(scope.row.is_part) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="员工状态" prop="name" width="100">
-        <template slot-scope="scope">
-          <span v-show="scope.row.type == 1" class="table-btn blue">{{ $t('toptable.formal') }}</span>
-          <span v-show="scope.row.type == 2" class="table-btn yellow">{{ $t('toptable.ontrial') }}</span>
-          <span v-show="scope.row.type == 3" class="table-btn green">{{ $t('toptable.internship') }}</span>
-          <span v-show="scope.row.type == 4" class="table-btn yellow">{{ $t('toptable.dimission') }}</span>
-          <span v-show="scope.row.type == 0" class="table-btn gray">未入职</span>
+        <template #default="scope">
+          <!-- 提取当前行的类型信息 -->
+          <template v-if="scope.row.type !== undefined">
+            <span :class="['table-btn', typeMap[scope.row.type] ? typeMap[scope.row.type].color : 'gray']">
+              {{ typeMap[scope.row.type] ? typeMap[scope.row.type].text : '未入职' }}
+            </span>
+          </template>
         </template>
       </el-table-column>
-      <el-table-column :label="addTime" :prop="propTime" min-width="110px" show-overflow-tooltip> </el-table-column>
+      <el-table-column :label="addTime" :prop="propTime" min-width="110px" show-overflow-tooltip>
+        <template #default="scope">
+          <span>{{ getTime(scope.row) || '--' }}</span>
+        </template>
+      </el-table-column>
       <el-table-column v-if="notEmployees !== '未入职'" label="账号状态" min-width="110" prop="name">
-        <template slot-scope="scope">
-          <div v-if="scope.row.uid == ''" class="table-txt">
-            <i class="bg-danger" />
-            未激活
+        <template #default="scope">
+          <div v-if="getStatusInfo(scope.row)" :class="['table-txt', getStatusInfo(scope.row).class]">
+            <i :class="getStatusInfo(scope.row).iconClass" />
+            {{ getStatusInfo(scope.row).text }}
           </div>
-          <div v-else-if="scope.row.status == 0" class="table-txt">
-            <i class="bg-danger" />
-            未激活
-          </div>
-
-          <div v-else-if="scope.row.status == 2" class="table-txt">
-            <i class="bg-danger" />
-            停用
-          </div>
-          <div v-else-if="scope.row.status == 1" class="table-txt">
-            <i class="bg-default" />
-            {{ $t('setting.info.normal') }}
-          </div>
-          <div v-else></div>
         </template>
       </el-table-column>
       <el-table-column v-if="notEmployees == '未入职'" fixed="right" label="操作" min-width="180" prop="address">
-        <template slot-scope="scope">
+        <template #default="scope">
           <slot :data="scope.row" name="options"></slot>
         </template>
       </el-table-column>
       <el-table-column v-if="notEmployees !== '未入职'" fixed="right" label="操作" min-width="180" prop="address">
-        <template slot-scope="scope">
+        <template #default="scope">
           <slot :data="scope.row" name="options"></slot>
         </template>
       </el-table-column>
@@ -100,7 +91,9 @@
 </template>
 
 <script>
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
 export default {
+  emits: ['limitFn', 'pageFn', 'multipleSelection'],
   name: 'Table',
   props: {
     selectAll: {
@@ -127,9 +120,17 @@ export default {
   },
   data() {
     return {
+      TABLE_HEIGHT,
       where: {
         page: 1,
         limit: 15
+      },
+      typeMap: {
+        1: { text: '正式', color: 'blue' },
+        2: { text: '试用', color: 'yellow' },
+        3: { text: '实习', color: 'green' },
+        4: { text: '离职', color: 'yellow' },
+        0: { text: '未入职', color: 'gray' }
       },
 
       multipleSelectList: [],
@@ -158,6 +159,15 @@ export default {
     }
   },
   methods: {
+    getTime(row) {
+      if (this.notEmployees == '未入职') {
+        return row.interview_date
+      } else if (this.notEmployees == '离职') {
+        return row.quit_time
+      } else {
+        return row.work_time
+      }
+    },
     getSex(val) {
       let sexData = {
         0: '未知',
@@ -200,20 +210,39 @@ export default {
     handleSelectionChange(val) {
       this.multipleSelectList = val
       this.$emit('multipleSelection', val)
+    },
+    getStatusInfo(row) {
+      const statusMap = {
+        emptyUid: { text: '未激活', iconClass: 'bg-danger', class: 'table-txt' },
+        status0: { text: '未激活', iconClass: 'bg-danger', class: 'table-txt' },
+        status2: { text: '停用', iconClass: 'bg-danger', class: 'table-txt' },
+        status1: { text: '正常', iconClass: 'bg-default', class: 'table-txt' }
+      }
+
+      if (row.uid === '') {
+        return statusMap.emptyUid
+      } else if (row.status === 0) {
+        return statusMap.status0
+      } else if (row.status === 2) {
+        return statusMap.status2
+      } else if (row.status === 1) {
+        return statusMap.status1
+      }
+      return null
     }
   }
 }
 </script>
 
 <style lang="scss" scoped>
-/deep/ .default-expand-all {
+:deep(.default-expand-all) {
   color: #909399;
   background-color: pink;
 }
 .iconzhuyaobumen {
   color: #ff9900;
 }
-/deep/ .el-table th {
+:deep(.el-table th) {
   background-color: #f7fbff;
 }
 .bg-default {

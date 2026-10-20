@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -19,7 +19,7 @@ use App\Constants\ProgramEnum\DynamicEnum;
 use App\Http\Dao\Program\ProgramDynamicDao;
 use App\Http\Service\Admin\AdminService;
 use App\Http\Service\BaseService;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -56,7 +56,6 @@ class ProgramDynamicService extends BaseService
 
     /**
      * 列表.
-     * @param mixed $sort
      * @throws BindingResolutionException
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
@@ -68,8 +67,8 @@ class ProgramDynamicService extends BaseService
         $list           = $this->dao->getList($where, $field, $page, $limit, $sort, $where['types'] == DynamicEnum::TASK ? array_merge($with, ['task']) : $with);
         $count          = $this->dao->count($where);
 
-        return $where['types'] == DynamicEnum::TASK && $where['relation_id'] > 0
-            ? $this->listData($list, $count, ['total_count' => $this->dao->count(['relation_id' => $where['relation_id'], 'types' => $where['types']])])
-            : $this->listData($list, $count);
+        return $where['types'] == DynamicEnum::TASK && $where['relation_id'] > 0 ?
+            $this->listData($list, $count, ['total_count' => $this->dao->count(['relation_id' => $where['relation_id'], 'types' => $where['types']])]) :
+            $this->listData($list, $count);
     }
 }

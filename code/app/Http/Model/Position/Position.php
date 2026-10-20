@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -38,6 +38,18 @@ class Position extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'entid'      => 'integer',
+        'cate_id'    => 'integer',
+        'card_id'    => 'integer',
+        'number'     => 'integer',
+        'status'     => 'integer',
+        'sort'       => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * 一对一关联职级类型.
      * @return HasOne
@@ -59,7 +71,6 @@ class Position extends BaseModel
     /**
      * id作用域
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeId($query, $value)
     {
@@ -73,7 +84,6 @@ class Position extends BaseModel
     /**
      * id作用域
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeNotid($query, $value)
     {
@@ -85,7 +95,6 @@ class Position extends BaseModel
     /**
      * cate_id作用域
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeCateId($query, $value)
     {
@@ -97,7 +106,6 @@ class Position extends BaseModel
     /**
      * entid作用域
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeEntid($query, $value)
     {
@@ -109,7 +117,6 @@ class Position extends BaseModel
     /**
      * 职级.
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeNameLike($query, $value)

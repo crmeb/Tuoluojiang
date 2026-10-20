@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of PHPPresentation - A pure PHP library for reading and writing
  * presentations documents.
@@ -10,53 +11,54 @@
  * file that was distributed with this source code. For the full list of
  * contributors, visit https://github.com/PHPOffice/PHPPresentation/contributors.
  *
- * @link        https://github.com/PHPOffice/PHPPresentation
- * @copyright   2009-2015 PHPPresentation contributors
+ * @see        https://github.com/PHPOffice/PHPPresentation
+ *
  * @license     http://www.gnu.org/licenses/lgpl.txt LGPL version 3
  */
+
+declare(strict_types=1);
 
 namespace PhpOffice\PhpPresentation\Writer;
 
 use PhpOffice\Common\Adapter\Zip\ZipArchiveAdapter;
+use PhpOffice\PhpPresentation\Exception\DirectoryNotFoundException;
+use PhpOffice\PhpPresentation\Exception\FileCopyException;
+use PhpOffice\PhpPresentation\Exception\FileRemoveException;
+use PhpOffice\PhpPresentation\Exception\InvalidParameterException;
 use PhpOffice\PhpPresentation\HashTable;
 use PhpOffice\PhpPresentation\PhpPresentation;
-use PhpOffice\PhpPresentation\Shape\AbstractDrawing;
-use PhpOffice\PhpPresentation\Shape\Table;
-use DirectoryIterator;
 
 /**
- * ODPresentation writer
+ * ODPresentation writer.
  */
 class ODPresentation extends AbstractWriter implements WriterInterface
 {
     /**
      * @var \PhpOffice\PhpPresentation\Shape\Chart[]
      */
-    public $chartArray = array();
+    public $chartArray = [];
 
     /**
-    * Use disk caching where possible?
-    *
-    * @var boolean
-    */
+     * Use disk caching where possible?
+     *
+     * @var bool
+     */
     private $useDiskCaching = false;
 
     /**
-     * Disk caching directory
+     * Disk caching directory.
      *
      * @var string
      */
     private $diskCachingDirectory;
 
     /**
-     * Create a new \PhpOffice\PhpPresentation\Writer\ODPresentation
-     *
-     * @param PhpPresentation $pPhpPresentation
+     * Create a new \PhpOffice\PhpPresentation\Writer\ODPresentation.
      */
-    public function __construct(PhpPresentation $pPhpPresentation = null)
+    public function __construct(?PhpPresentation $pPhpPresentation = null)
     {
         // Assign PhpPresentation
-        $this->setPhpPresentation($pPhpPresentation);
+        $this->setPhpPresentation($pPhpPresentation ?? new PhpPresentation());
 
         // Set up disk caching location
         $this->diskCachingDirectory = './';
@@ -68,21 +70,18 @@ class ODPresentation extends AbstractWriter implements WriterInterface
     }
 
     /**
-     * Save PhpPresentation to file
-     *
-     * @param  string    $pFilename
-     * @throws \Exception
+     * Save PhpPresentation to file.
      */
-    public function save($pFilename)
+    public function save(string $pFilename): void
     {
         if (empty($pFilename)) {
-            throw new \Exception("Filename is empty");
+            throw new InvalidParameterException('pFilename', '');
         }
         // If $pFilename is php://output or php://stdout, make it a temporary file...
         $originalFilename = $pFilename;
-        if (strtolower($pFilename) == 'php://output' || strtolower($pFilename) == 'php://stdout') {
-            $pFilename = @tempnam('./', 'phppttmp');
-            if ($pFilename == '') {
+        if ('php://output' == strtolower($pFilename) || 'php://stdout' == strtolower($pFilename)) {
+            $pFilename = @tempnam($this->diskCachingDirectory, 'phppttmp');
+            if ('' == $pFilename) {
                 $pFilename = $originalFilename;
             }
         }
@@ -96,28 +95,19 @@ class ODPresentation extends AbstractWriter implements WriterInterface
 
         // Variables
         $oPresentation = $this->getPhpPresentation();
-        $arrayChart = array();
+        $arrayChart = [];
 
-        $arrayFiles = array();
-        $oDir = new DirectoryIterator(dirname(__FILE__).DIRECTORY_SEPARATOR.'ODPresentation');
-        foreach ($oDir as $oFile) {
-            if (!$oFile->isFile()) {
-                continue;
-            }
-
-            $class = __NAMESPACE__ . '\\ODPresentation\\' . $oFile->getBasename('.php');
-            $o = new \ReflectionClass($class);
-
-            if ($o->isAbstract() || !$o->isSubclassOf('PhpOffice\PhpPresentation\Writer\ODPresentation\AbstractDecoratorWriter')) {
-                continue;
-            }
-            $arrayFiles[$oFile->getBasename('.php')] = $o;
-        }
-
-        ksort($arrayFiles);
-
-        foreach ($arrayFiles as $o) {
-            $oService = $o->newInstance();
+        foreach ([
+            __CLASS__ . '\Mimetype',
+            __CLASS__ . '\Content',
+            __CLASS__ . '\Meta',
+            __CLASS__ . '\MetaInfManifest',
+            __CLASS__ . '\ObjectsChart',
+            __CLASS__ . '\Pictures',
+            __CLASS__ . '\Styles',
+            __CLASS__ . '\ThumbnailsThumbnail',
+        ] as $class) {
+            $oService = new $class();
             $oService->setZip($oZip);
             $oService->setPresentation($oPresentation);
             $oService->setDrawingHashTable($this->getDrawingHashTable());
@@ -132,11 +122,11 @@ class ODPresentation extends AbstractWriter implements WriterInterface
 
         // If a temporary file was used, copy it to the correct file stream
         if ($originalFilename != $pFilename) {
-            if (copy($pFilename, $originalFilename) === false) {
-                throw new \Exception("Could not copy temporary zip file $pFilename to $originalFilename.");
+            if (false === copy($pFilename, $originalFilename)) {
+                throw new FileCopyException($pFilename, $originalFilename);
             }
-            if (@unlink($pFilename) === false) {
-                throw new \Exception('The file ' . $pFilename . ' could not be removed.');
+            if (false === @unlink($pFilename)) {
+                throw new FileRemoveException($pFilename);
             }
         }
     }
@@ -144,7 +134,7 @@ class ODPresentation extends AbstractWriter implements WriterInterface
     /**
      * Get use disk caching where possible?
      *
-     * @return boolean
+     * @return bool
      */
     public function hasDiskCaching()
     {
@@ -154,27 +144,26 @@ class ODPresentation extends AbstractWriter implements WriterInterface
     /**
      * Set use disk caching where possible?
      *
-     * @param  boolean $pValue
-     * @param  string $pDirectory Disk caching directory
-     * @throws \Exception
-     * @return \PhpOffice\PhpPresentation\Writer\ODPresentation
+     * @param string $directory Disk caching directory
+     *
+     * @return ODPresentation
      */
-    public function setUseDiskCaching($pValue = false, $pDirectory = null)
+    public function setUseDiskCaching(bool $pValue = false, ?string $directory = null)
     {
         $this->useDiskCaching = $pValue;
 
-        if (!is_null($pDirectory)) {
-            if (!is_dir($pDirectory)) {
-                throw new \Exception("Directory does not exist: $pDirectory");
+        if (null !== $directory) {
+            if (!is_dir($directory)) {
+                throw new DirectoryNotFoundException($directory);
             }
-            $this->diskCachingDirectory = $pDirectory;
+            $this->diskCachingDirectory = $directory;
         }
 
         return $this;
     }
 
     /**
-     * Get disk caching directory
+     * Get disk caching directory.
      *
      * @return string
      */

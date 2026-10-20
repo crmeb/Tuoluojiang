@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,9 +15,9 @@ declare(strict_types=1);
 
 namespace App\Http\Model\System;
 
-use App\Http\Model\BaseModel;
 use App\Http\Model\Company\Assist;
 use App\Http\Service\Company\CompanyService;
+use App\Http\Model\BaseModel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Query\Builder;
 
@@ -44,9 +44,15 @@ class Role extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'     => 'integer',
+        'entid'  => 'integer',
+        'level'  => 'integer',
+        'status' => 'integer',
+    ];
+
     /**
      * 权限修改器.
-     * @param mixed $value
      */
     public function setApisAttribute($value)
     {
@@ -55,7 +61,6 @@ class Role extends BaseModel
 
     /**
      * 权限提取.
-     * @param mixed $value
      * @return mixed
      */
     public function getApisAttribute($value)
@@ -65,7 +70,6 @@ class Role extends BaseModel
 
     /**
      * 权限修改器.
-     * @param mixed $value
      */
     public function setRulesAttribute($value)
     {
@@ -74,7 +78,6 @@ class Role extends BaseModel
 
     /**
      * 权限提取.
-     * @param mixed $value
      * @return mixed
      */
     public function getRulesAttribute($value)
@@ -103,7 +106,6 @@ class Role extends BaseModel
     /**
      * ID作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeId($query, $value)
@@ -117,8 +119,20 @@ class Role extends BaseModel
     }
 
     /**
+     * 排除指定ID.
+     */
+    public function scopeNotId($query, $value)
+    {
+        if (is_array($value) && $value) {
+            return $query->whereNotIn('id', $value);
+        }
+        if ($value) {
+            return $query->where('id', '<>', $value);
+        }
+    }
+
+    /**
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeEntid($query, $value)
     {
@@ -133,7 +147,6 @@ class Role extends BaseModel
 
     /**
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeEntidLike($query, $value)
     {
@@ -150,7 +163,6 @@ class Role extends BaseModel
 
     /**
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeType($query, $value)
     {

@@ -18,7 +18,6 @@
         <template v-if="!check">
           <el-cascader
             v-model="timeData.city"
-            size="small"
             :options="cityData"
             style="width: 100%"
             clearable
@@ -33,12 +32,14 @@
 </template>
 
 <script>
-import { getCityListApi } from '@/api/public'
+import { getStorageJson } from '@/utils/storage.ts'
+import { getCityListApi } from '@/api/public.ts'
 export default {
+  emits: ['update:modelValue'],
   name: 'Index',
   props: {
     formCreateInject: Object,
-    value: {
+    modelValue: {
       type: Object,
       default: () => ({})
     },
@@ -60,6 +61,12 @@ export default {
       default: false
     }
   },
+  computed: {
+    // Vue 3 的 v-model 走 modelValue，保留 value 供组件内部沿用
+    value() {
+      return this.modelValue
+    },
+  },
   mounted() {
     if (!localStorage.getItem('city')) {
       this.getCityList()
@@ -67,10 +74,10 @@ export default {
   },
   data() {
     return {
-      cityData: JSON.parse(localStorage.getItem('city')),
+      cityData: getStorageJson('city'),
       title: this.titleIpt,
       timeData: {
-        city: this.value.city
+        city: this.modelValue.city
       }
     }
   },
@@ -87,30 +94,35 @@ export default {
       })
     },
     changeDuration() {
-      this.$emit('input', this.timeData)
+      this.$emit('update:modelValue', this.timeData)
     }
   }
 }
 </script>
 
 <style scoped lang="scss">
+.timeFrom + :deep(.el-form-item__error) {
+  margin-left: 120px;
+  position: absolute;
+  top: 98%;
+  left: 0;
+}
 .el-form--label-top .el-form-item__label {
+  position: relative;
   float: none;
-  display: inline-block;
-  text-align: left;
+  display: inline-flex;
+  justify-content: flex-start;
   padding: 0 0 10px 0;
 }
 .timeFrom {
+  position: relative;
   padding-top: 10px;
 }
 .timeFrom {
-  /deep/ .el-date-editor,
-  /deep/ .el-date-editor--date,
-  /deep/ .el-select {
+  :deep(.el-date-editor),
+  :deep(.el-date-editor--date),
+  :deep(.el-select) {
     width: 220px;
   }
-}
-.timeFrom /deep/ .el-form-item__error {
-  margin-left: 100px;
 }
 </style>

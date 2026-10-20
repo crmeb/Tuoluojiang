@@ -1,14 +1,13 @@
 <template>
   <container-item-wrapper :widget="widget">
     <div :key="widget.id" class="sub-form-container" v-show="!widget.options.hidden">
-      <el-row class="header-row">
+      <div class="header-row">
         <div class="action-header-column">
           <span class="action-label">{{ i18nt('render.hint.subFormAction') }}</span>
           <el-button
             :disabled="actionDisabled"
             round
             type="primary"
-            size="mini"
             class="action-button"
             @click="addSubFormRow"
             :title="i18nt('render.hint.subFormAddActionHint')"
@@ -16,9 +15,8 @@
             {{ i18nt('render.hint.subFormAddAction') }}<i class="el-icon-plus el-icon-right"></i
           ></el-button>
         </div>
-        <template v-for="subWidget in widget.widgetList">
+        <template :key="subWidget.id + 'thc'" v-for="subWidget in widget.widgetList">
           <div
-            :key="subWidget.id + 'thc'"
             class="field-header-column"
             :class="[getLabelAlign(widget, subWidget), !!subWidget.options.required ? 'is-required' : '']"
             :style="{ width: subWidget.options.columnWidth }"
@@ -50,8 +48,8 @@
             >
           </div>
         </template>
-      </el-row>
-      <el-row v-for="(subFormRowId, sfrIdx) in rowIdData" class="sub-form-row" :key="subFormRowId">
+      </div>
+      <div v-for="(subFormRowId, sfrIdx) in rowIdData" class="sub-form-row" :key="subFormRowId">
         <div class="sub-form-action-column hide-label">
           <div class="action-button-column">
             <el-button
@@ -73,10 +71,9 @@
             <span v-if="widget.options.showRowNumber" class="row-number-span">#{{ sfrIdx + 1 }}</span>
           </div>
         </div>
-        <template v-for="(subWidget, swIdx) in widget.widgetList">
+        <template :key="subWidget.id + 'tc' + subFormRowId" v-for="(subWidget, swIdx) in widget.widgetList">
           <div
             class="sub-form-table-column hide-label"
-            :key="subWidget.id + 'tc' + subFormRowId"
             :style="{ width: subWidget.options.columnWidth }"
           >
             <component
@@ -94,14 +91,14 @@
             </component>
           </div>
         </template>
-      </el-row>
+      </div>
     </div>
   </container-item-wrapper>
 </template>
 
 <script>
-import emitter from '@/utils/emitter'
-import i18n from '../../../utils/i18n'
+import { FORM_RENDER_HUB, hubSubscriberMixin } from '@/utils/eventHub.ts'
+import i18n from '../../../utils/i18n.ts'
 import { deepClone, generateId } from '../../../utils/util'
 import refMixin from '../../../components/form-render/refMixin'
 import ContainerItemWrapper from './container-item-wrapper'
@@ -110,8 +107,7 @@ import FieldComponents from '@/components/form-designer/form-widget/field-widget
 
 export default {
   name: 'sub-form-item',
-  componentName: 'ContainerItem',
-  mixins: [emitter, i18n, refMixin, containerItemMixin],
+  mixins: [hubSubscriberMixin, i18n, refMixin, containerItemMixin],
   components: {
     ContainerItemWrapper,
     ...FieldComponents
@@ -119,7 +115,12 @@ export default {
   props: {
     widget: Object
   },
-  inject: ['refList', 'sfRefList', 'globalModel'],
+  inject: {
+    refList: 'refList',
+    sfRefList: 'sfRefList',
+    globalModel: 'globalModel',
+    formRenderHub: { from: FORM_RENDER_HUB, default: null }
+  },
   data() {
     return {
       rowIdData: [],
@@ -137,7 +138,7 @@ export default {
   mounted() {
     this.handleSubFormFirstRowAdd() //默认添加首行后，主动触发相关事件！！
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.unregisterFromRefList()
   },
   methods: {
@@ -238,7 +239,7 @@ export default {
         return
       }
 
-      this.$on('setFormData', (newFormData) => {
+      this.subscribeHub(this.formRenderHub, 'container:setFormData', (newFormData) => {
         this.initRowIdData(false)
         this.initFieldSchemaData()
 
@@ -351,12 +352,24 @@ export default {
 .sub-form-container {
   margin-bottom: 8px;
   text-align: left; //IE浏览器强制居左对齐
+  overflow-x: auto;
 
-  ::v-deep .el-row.header-row {
+  .header-row,
+  .sub-form-row {
+    display: flex;
+    width: 100%;
+  }
+
+  .header-row > div,
+  .sub-form-row > div {
+    flex-shrink: 0;
+  }
+
+  .header-row {
     padding-bottom: 0;
   }
 
-  ::v-deep .el-row.sub-form-row {
+  .sub-form-row {
     padding-top: 3px;
     padding-bottom: 3px;
 
@@ -413,11 +426,11 @@ div.sub-form-action-column {
   display: inline-block;
   width: 120px;
 
-  ::v-deep .el-form-item {
+  :deep(.el-form-item) {
     margin-bottom: 0;
   }
 
-  ::v-deep .el-button {
+  :deep(.el-button) {
     font-size: 18px;
     padding: 0;
     background: #dcdfe6;
@@ -426,7 +439,7 @@ div.sub-form-action-column {
 }
 
 div.sub-form-action-column.hide-label {
-  ::v-deep .el-form-item__label {
+  :deep(.el-form-item__label) {
     display: none;
   }
 }
@@ -435,21 +448,20 @@ div.sub-form-table-column {
   display: inline-block;
   //width: 200px;
 
-  ::v-deep .el-form-item {
+  :deep(.el-form-item) {
     margin-left: 4px;
     margin-right: 4px;
     margin-bottom: 0;
   }
 
-  ::v-deep .el-form-item__content {
+  :deep(.el-form-item__content) {
     margin-left: 0 !important;
   }
 }
 
 div.sub-form-table-column.hide-label {
-  ::v-deep .el-form-item__label {
+  :deep(.el-form-item__label) {
     display: none;
   }
 }
 </style>
-../../../utils/i18ns

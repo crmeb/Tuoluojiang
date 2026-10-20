@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,11 +18,11 @@ namespace App\Http\Service\Storage;
 use App\Constants\CacheEnum;
 use App\Http\Dao\Storage\StorageRecordDao;
 use App\Http\Service\Admin\AdminService;
-use App\Http\Service\BaseService;
 use App\Http\Service\Frame\FrameService;
 use Carbon\Carbon;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\traits\service\ResourceServiceTrait;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Facades\Cache;
 use Psr\Container\ContainerExceptionInterface;
@@ -56,7 +56,7 @@ class StorageRecordService extends BaseService implements ResourceServicesInterf
     public function getList(array $where, array $field = ['*'], $sort = 'id', array $with = []): array
     {
         [$page, $limit] = $this->getPageValue();
-        return Cache::tags([CacheEnum::TAG_STORAGE])->remember(md5(json_encode($where) . json_encode(sort_mode($sort)) . $page . $limit), (int) sys_config('system_cache_ttl', 3600), function () use ($where, $page, $limit, $sort, $with) {
+        return Cache::tags([CacheEnum::TAG_STORAGE])->remember(md5(json_encode($where) . json_encode(sort_mode($sort)) . $page . $limit), (int)sys_config('system_cache_ttl', 3600), function () use ($where, $page, $limit, $sort, $with) {
             if ($where['name'] || $where['cid']) {
                 $storageIds      = [];
                 $storageServices = app()->get(StorageService::class);
@@ -69,20 +69,20 @@ class StorageRecordService extends BaseService implements ResourceServicesInterf
                 $where['ids'] = $storageIds;
             }
             unset($where['name'], $where['cid']);
-            $list = $this->dao->getList($where, ['id', 'storage_id', 'operator', 'user_id', 'creater', 'frame_id', 'mark', 'info', 'price', 'num', 'status', 'types', 'created_at', 'updated_at'], $page, $limit, $sort, $with + [
-                'storage' => function ($query) {
-                    $query->select(['id', 'cid', 'name', 'units', 'specs', 'factory', 'number']);
-                },
-                'card' => function ($query) {
-                    $query->select(['id', 'name', 'avatar']);
-                },
-                'frame' => function ($query) {
-                    $query->select(['id', 'name']);
-                },
-                'creater' => function ($query) {
-                    $query->select(['id', 'name', 'avatar']);
-                },
-            ]);
+            $list  = $this->dao->getList($where, ['id', 'storage_id', 'operator', 'user_id', 'creater', 'frame_id', 'mark', 'info', 'price', 'num', 'status', 'types', 'created_at', 'updated_at'], $page, $limit, $sort, $with + [
+                    'storage' => function ($query) {
+                        $query->select(['id', 'cid', 'name', 'units', 'specs', 'factory', 'number']);
+                    },
+                    'card'    => function ($query) {
+                        $query->select(['id', 'name', 'avatar']);
+                    },
+                    'frame'   => function ($query) {
+                        $query->select(['id', 'name']);
+                    },
+                    'creater' => function ($query) {
+                        $query->select(['id', 'name', 'avatar']);
+                    },
+                ]);
             $count = $this->dao->count($where);
             return $this->listData($list, $count);
         });
@@ -90,7 +90,7 @@ class StorageRecordService extends BaseService implements ResourceServicesInterf
 
     public function resourceCreate(array $other = []): array
     {
-        // TODO: Implement resourceCreate() method.
+        return [];
     }
 
     /**
@@ -117,7 +117,7 @@ class StorageRecordService extends BaseService implements ResourceServicesInterf
         $storageService = app()->get(StorageService::class);
         switch ($data['types']) {
             case 4:
-                if (! $data['mark']) {
+                if (!$data['mark']) {
                     throw $this->exception('请填写报废原因');
                 }
                 $storage              = $storageService->get($data['storage']);
@@ -134,7 +134,7 @@ class StorageRecordService extends BaseService implements ResourceServicesInterf
                 $this->dao->create($save);
                 break;
             case 3:
-                if (! $data['mark']) {
+                if (!$data['mark']) {
                     throw $this->exception('请填写维修说明');
                 }
                 $save['storage_id']   = $data['storage'];
@@ -150,13 +150,13 @@ class StorageRecordService extends BaseService implements ResourceServicesInterf
                 $this->dao->create($save);
                 break;
             case 2:
-                if (! in_array($data['user_type'], [0, 1])) {
+                if (!in_array($data['user_type'], [0, 1])) {
                     throw $this->exception('操作用户类型不正确');
                 }
-                if (! $data['user_id']) {
+                if (!$data['user_id']) {
                     throw $this->exception('缺少人员/部门ID');
                 }
-                if (! is_array($data['storage'])) {
+                if (!is_array($data['storage'])) {
                     throw $this->exception('请选择正确的物资编号');
                 }
                 $save['info'] = '归还对象：' . $this->getLastName($save['user_id'], $save['frame_id']);
@@ -172,17 +172,17 @@ class StorageRecordService extends BaseService implements ResourceServicesInterf
                 }
                 break;
             case 1:
-                if (! in_array($data['user_type'], [0, 1])) {
+                if (!in_array($data['user_type'], [0, 1])) {
                     throw $this->exception('操作用户类型不正确');
                 }
-                if (! $data['user_id']) {
+                if (!$data['user_id']) {
                     throw $this->exception('缺少人员/部门ID');
                 }
-                if (! is_array($data['storage'])) {
+                if (!is_array($data['storage'])) {
                     throw $this->exception('请选择正确的物资信息');
                 }
-                $data['storage'] = array_filter($data['storage'], fn ($item) => isset($item['id']));
-                if (! $data['storage']) {
+                $data['storage'] = array_filter($data['storage'], fn($item) => isset($item['id']));
+                if (!$data['storage']) {
                     throw $this->exception('请至少选择一个有效的物资');
                 }
                 $save['info'] = '领取对象：' . $this->getLastName($save['user_id'], $save['frame_id']);
@@ -198,21 +198,21 @@ class StorageRecordService extends BaseService implements ResourceServicesInterf
                 }
                 break;
             case 0:
-                if (! $data['storage']) {
+                if (!$data['storage']) {
                     throw $this->exception('请选择正确的物资信息');
                 }
                 $save['storage_id']   = $data['storage'];
                 $save['storage_type'] = 0;
                 $save['num']          = $data['other'];
                 $save['price']        = $data['price'];
-                $save['total']        = bcmul((string) $data['price'], (string) $data['other'], 2);
+                $save['total']        = bcmul((string)$data['price'], (string)$data['other'], 2);
                 $this->dao->create($save);
                 break;
             case 5:
                 if ($data['price'] === '') {
                     throw $this->exception('请填写维修金额');
                 }
-                if (! $data['storage']) {
+                if (!$data['storage']) {
                     throw $this->exception('请选择正确的物资信息');
                 }
                 $save['storage_id']   = $data['storage'];
@@ -327,7 +327,7 @@ class StorageRecordService extends BaseService implements ResourceServicesInterf
 
     public function resourceEdit(int $id, array $other = []): array
     {
-        // TODO: Implement resourceEdit() method.
+        return [];
     }
 
     /**
@@ -342,9 +342,9 @@ class StorageRecordService extends BaseService implements ResourceServicesInterf
      */
     public function getRecordUsers($status, $storageId)
     {
-        return Cache::tags([CacheEnum::TAG_STORAGE])->remember(md5($status . $storageId), (int) sys_config('system_cache_ttl', 3600), function () use ($status, $storageId) {
+        return Cache::tags([CacheEnum::TAG_STORAGE])->remember(md5($status . $storageId), (int)sys_config('system_cache_ttl', 3600), function () use ($status, $storageId) {
             // 已领用物资ID
-            if (! $storageId) {
+            if (!$storageId) {
                 $storageId = app()->get(StorageService::class)->column(['entid' => 1, 'status' => 1], 'id') ?? [];
             }
             $where = ['entid' => 1, 'types' => $status, 'storage_id' => $storageId];
@@ -376,7 +376,7 @@ class StorageRecordService extends BaseService implements ResourceServicesInterf
      */
     public function getRecordHistoryUsers($where)
     {
-        return Cache::tags([CacheEnum::TAG_STORAGE])->remember(md5(json_encode($where)), (int) sys_config('system_cache_ttl', 3600), function () use ($where) {
+        return Cache::tags([CacheEnum::TAG_STORAGE])->remember(md5(json_encode($where)), (int)sys_config('system_cache_ttl', 3600), function () use ($where) {
             // 相关用户
             $userIds = $this->dao->column($where, 'user_id');
             $users   = ($users = app()->get(AdminService::class)->select(['id' => $userIds], ['id', 'name'])->each(function ($item) {
@@ -401,14 +401,14 @@ class StorageRecordService extends BaseService implements ResourceServicesInterf
     public function getRecordCensus($where)
     {
         $where['entid'] = 1;
-        if (! $where['time']) {
+        if (!$where['time']) {
             throw $this->exception('请选择查询时间');
         }
         [$start, $end] = explode('-', $where['time']);
         if ((Carbon::make($end)->timestamp - Carbon::make($start)->timestamp) > 365 * 86400) {
             throw $this->exception('超过最大可选时间范围');
         }
-        $storage_price = [
+        $storage_price  = [
             'put_price'    => $this->dao->sum(array_merge($where, ['types' => 0]), 'total'),
             'scrap_price'  => $this->dao->sum(array_merge($where, ['types' => 4]), 'total'),
             'repair_price' => $this->dao->sum(array_merge($where, ['types' => 5]), 'total'),
@@ -417,9 +417,9 @@ class StorageRecordService extends BaseService implements ResourceServicesInterf
         $storageIds1    = $storageService->column(['entid' => 1, 'types' => 0], 'id') ?? [];
         $storageIds2    = $storageService->column(['entid' => 1, 'types' => 1], 'id') ?? [];
         $storage_count  = [
-            'put_count'    => (int) $this->dao->sum(array_merge($where, ['types' => 0]), 'num'),
+            'put_count'    => (int)$this->dao->sum(array_merge($where, ['types' => 0]), 'num'),
             'fixed_count'  => $this->dao->count(array_merge($where, ['types' => 1, 'storage_id' => $storageIds2])),
-            'temp_count'   => (int) $this->dao->sum(array_merge($where, ['types' => 1, 'storage_id' => $storageIds1]), 'num'),
+            'temp_count'   => (int)$this->dao->sum(array_merge($where, ['types' => 1, 'storage_id' => $storageIds1]), 'num'),
             'repair_count' => $this->dao->count(array_merge($where, ['types' => 3])),
             'scrap_count'  => $this->dao->count(array_merge($where, ['types' => 4])),
         ];

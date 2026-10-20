@@ -19,8 +19,8 @@ use App\Constants\Crud\CrudDashboardEnum;
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Requests\Crud\SystemCrudDashboardRequest;
 use App\Http\Service\Crud\SystemCrudDashboardService;
-use crmeb\traits\SearchTrait;
-use crmeb\utils\Arr;
+use Tuoluojiang\Open\traits\SearchTrait;
+use Tuoluojiang\Open\utils\Arr;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -71,7 +71,7 @@ class CrudDashboardController extends AuthController
     public function store(SystemCrudDashboardRequest $request): mixed
     {
         $data = $request->postMore($this->getRequestFields());
-        $res  = $this->service->saveDashboard($data);
+        $res = $this->service->saveDashboard($data);
         return $this->success('common.insert.succ', ['id' => $res->id]);
     }
 
@@ -82,11 +82,11 @@ class CrudDashboardController extends AuthController
      */
     public function update($id, SystemCrudDashboardRequest $request): mixed
     {
-        if (! $id) {
+        if (!$id) {
             return $this->fail(__('common.empty.attrs'));
         }
         $data = $request->postMore($this->getRequestFields());
-        $this->service->updateDashboard((int) $id, $data);
+        $this->service->updateDashboard((int)$id, $data);
         return $this->success('common.operation.succ');
     }
 
@@ -97,10 +97,10 @@ class CrudDashboardController extends AuthController
      */
     public function destroy($id): mixed
     {
-        if (! $id) {
+        if (!$id) {
             return $this->fail(__('common.empty.attrs'));
         }
-        $this->service->deleteDashboard((int) $id);
+        $this->service->deleteDashboard((int)$id);
         return $this->success('common.delete.succ');
     }
 
@@ -112,10 +112,10 @@ class CrudDashboardController extends AuthController
     #[Get('design/{id}', '统计看板配置')]
     public function getConfigure($id): mixed
     {
-        if (! $id) {
+        if (!$id) {
             return $this->fail(__('common.empty.attrs'));
         }
-        return $this->success('ok', $this->service->getConfigure((int) $id));
+        return $this->success('ok', $this->service->getConfigure((int)$id));
     }
 
     /**
@@ -126,11 +126,11 @@ class CrudDashboardController extends AuthController
     #[Put('design/{id}', '保存统计看板配置')]
     public function setConfigure($id): mixed
     {
-        if (! $id) {
+        if (!$id) {
             return $this->fail(__('common.empty.attrs'));
         }
         $configure = $this->request->post('chartData', '');
-        $this->service->setConfigure((int) $id, $configure);
+        $this->service->setConfigure((int)$id, $configure);
         return $this->success('common.operation.succ');
     }
 
@@ -154,6 +154,10 @@ class CrudDashboardController extends AuthController
             ['indicatorList', []],
             ['noPrivileges', 0],
             ['userId', []],
+            ['search', []],
+            ['uniqued', ''],
+            ['chart_id', ''],
+            ['chartData', ''],
         ]);
         $data = $this->service->chartQuery(Arr::snake($queryWhere));
         return $this->success($data);
@@ -186,6 +190,10 @@ class CrudDashboardController extends AuthController
             ['page', 0],
             ['limit', 10],
             ['noPrivileges', 0],
+            ['search', []],
+            ['uniqued', ''],
+            ['chart_id', ''],
+            ['chartData', ''],
         ]);
         $data = $this->service->dataListQuery(Arr::snake($queryWhere));
         return $this->success($data);
@@ -199,10 +207,10 @@ class CrudDashboardController extends AuthController
     #[Get('view/{id}', '统计看板实体搜索字段')]
     public function getViewSearchField($id): mixed
     {
-        if (! $id) {
+        if (!$id) {
             return $this->fail(__('common.empty.attrs'));
         }
-        return $this->success($this->service->viewSearchField((int) $id));
+        return $this->success($this->service->viewSearchField((int)$id));
     }
 
     /**
@@ -212,6 +220,9 @@ class CrudDashboardController extends AuthController
     {
         return [
             ['name', ''],
+            ['path', []],
+            ['icon', ''],
+            ['uni_img', ''],
         ];
     }
 }

@@ -1,0 +1,37 @@
+/* 知识库二次确认弹窗
+ *
+ * MessageBox 挂在 body 上，页面的 scoped 样式够不到，
+ * 统一用 knowledge-delete-confirm 这个 customClass 限定作用范围。
+ */
+.knowledge-delete-confirm {
+  // 设计稿 480px，取 popupSize 里最接近的档位 DIALOG_SIZE.XS
+  width: 470px;
+
+  .el-message-box__header {
+    padding: 20px 20px 0;
+    // 全局 styles.scss 给 header 加了下边框，删除确认的设计稿没有分隔线
+    border-bottom: none;
+  }
+
+  .el-message-box__title {
+    // 标题里带知识库 / 文档名，名称过长时会折行并顶到右上角关闭按钮下面，
+    // 这里单行省略并为关闭按钮留出让位间距
+    display: block;
+    padding-right: 24px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: #303133;
+  }
+
+  .el-message-box__content {
+    padding: 24px 20px 0;
+    font-size: 13px;
+    color: #303133;
+  }
+
+  .el-message-box__btns {
+    // 底部 20px 间距由全局 .el-message-box 的 padding-bottom 提供，这里不再重复给
+    padding: 20px 20px 0;
+  }
+}

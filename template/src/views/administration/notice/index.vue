@@ -15,6 +15,7 @@
                   :total="total"
                   :isViewSearch="false"
                   :sortSearch="false"
+                  :isAddBtn="hasAddPermission"
                   :title="$route.meta.title"
                   btnText="新建公告"
                   @addDataFn="handleNews"
@@ -22,23 +23,27 @@
                 ></oaFromBox>
 
                 <div class="mt14">
-                  <el-table :data="tableData" :height="tableHeight" style="width: 100%" row-key="id" default-expand-all>
+                  <el-table :data="tableData" :height="TABLE_HEIGHT" style="width: 100%" row-key="id" default-expand-all>
                     <el-table-column prop="name" label="封面" min-width="80">
-                      <template slot-scope="scope">
-                        <img class="table-img" v-if="!scope.row.cover" :src="defaultImage" alt="" />
-                        <img class="table-img" v-else :src="scope.row.cover" alt="" />
+                      <template #default="scope">
+                        <el-image
+                          :src="scope.row.cover || defaultImage"
+                          fit="cover"
+                          :preview-src-list="scope.row.cover ? [scope.row.cover] : undefined" preview-teleported
+                          class="table-img"
+                        />
                       </template>
                     </el-table-column>
                     <el-table-column prop="title" label="标题" min-width="150" show-overflow-tooltip />
                     <el-table-column prop="visit" label="已读人数" min-width="80" />
                     <el-table-column prop="info" label="公告简介" min-width="200" show-overflow-tooltip>
-                      <template slot-scope="scope">
+                      <template #default="scope">
                         <div class="over-text2">{{ scope.row.info || '--' }}</div>
                       </template>
                     </el-table-column>
                     <el-table-column prop="card.name" label="创建人" min-width="80" />
                     <el-table-column prop="status" label="状态" min-width="80">
-                      <template slot-scope="scope">
+                      <template #default="scope">
                         <el-switch
                           v-model="scope.row.status"
                           active-text="开启"
@@ -50,12 +55,12 @@
                       </template>
                     </el-table-column>
                     <el-table-column prop="created_at" label="创建时间" min-width="120">
-                      <template slot-scope="scope">
-                        {{ $moment(scope.row.created_at).format('yyyy-MM-DD') }}
+                      <template #default="scope">
+                        {{ dayjs(scope.row.created_at).format('YYYY-MM-DD') }}
                       </template>
                     </el-table-column>
                     <el-table-column prop="is_top" label="置顶" width="100">
-                      <template slot-scope="scope">
+                      <template #default="scope">
                         <el-switch
                           v-model="scope.row.is_top"
                           active-text="已置顶"
@@ -67,21 +72,21 @@
                         />
                       </template>
                     </el-table-column>
-                    <el-table-column prop="describe" :label="$t('public.operation')" fixed="right" width="120">
-                      <template slot-scope="scope">
+                    <el-table-column prop="describe" label="操作" fixed="right" width="120">
+                      <template #default="scope">
                         <el-button
-                          type="text"
+                          type="primary" link
                           @click="handleEdit(scope.row)"
                           v-hasPermi="['administration:notice:edit']"
-                          >{{ $t('public.edit') }}</el-button
+                          >编辑</el-button
                         >
 
                         <el-button
-                          type="text"
+                          type="primary" link
                           @click="handleDelete(scope.row.id)"
                           v-hasPermi="['administration:notice:delete']"
                         >
-                          {{ $t('public.delete') }}
+                          删除
                         </el-button>
                       </template>
                     </el-table-column>
@@ -106,21 +111,40 @@
     </div>
     <!-- 新建公告页面 -->
 
-    <add-notice v-show="!isCheck" ref="addNotice" :form-data="noticeData" @isNotice="isNotice"></add-notice>
+    <add-notice
+      v-show="!isCheck"
+      :visible="!isCheck"
+      :is-edit="noticeData.isEdit"
+      :notice-id="noticeData.id"
+      :option-data="noticeData.optionData"
+      :default-category-id="where.cate_id"
+      @isNotice="isNotice"
+    ></add-notice>
   </div>
 </template>
 
 <script>
-import { noticeCategoryApi, noticeDeleteApi, noticeListApi, noticeStatusApi, noticeTopApi } from '@/api/administration'
+import { mapStores } from 'pinia'
+import { useUserStore } from '@/stores/user.ts'
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
+import { modalSure } from '@/libs/public.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { noticeCategoryApi, noticeDeleteApi, noticeListApi, noticeStatusApi, noticeTopApi } from '@/api/administration.ts'
+
+import noticeImg from '@/assets/images/notice.png'
+
+import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'IndexVue',
   components: {
-    left: () => import('./components/left'),
-    addNotice: () => import('./components/addNotice'),
-    oaFromBox: () => import('@/components/common/oaFromBox')
+    left: defineAsyncComponent(() => import('./components/left')),
+    addNotice: defineAsyncComponent(() => import('./components/addNotice')),
+    oaFromBox
   },
   data() {
     return {
+      TABLE_HEIGHT,
       gridl: {
         xl: 3,
         lg: 4,
@@ -152,7 +176,7 @@ export default {
         category: 0,
         optionData: []
       },
-      defaultImage: require('@/assets/images/notice.png'),
+      defaultImage: noticeImg,
       search: [
         {
           form_value: 'input',
@@ -160,6 +184,13 @@ export default {
           field_name: '标题'
         }
       ]
+    }
+  },
+  computed: {
+    ...mapStores(useUserStore),
+    dayjs: () => dayjs,
+    hasAddPermission() {
+      return this.userStore.permissions.includes('administration:notice:add')
     }
   },
   mounted() {
@@ -198,29 +229,20 @@ export default {
       this.getTargetCate()
       this.noticeData.isEdit = false
       this.isCheck = false
-      setTimeout(() => {
-        this.$refs.addNotice.form.categoryId = this.where.cate_id
-      }, 300)
     },
-    isNotice(id) {
+    // 返回列表只刷新数据，不改动左侧选中的分类
+    isNotice() {
       this.isCheck = true
       this.where.page = 1
-      this.where.cate_id = id
-      this.getTableData(id)
-      setTimeout(() => {
-        this.$refs.left.tabIndex = this.tabIndex
-      }, 300)
+      this.getTableData()
     },
     handleEdit(row) {
       this.noticeData.id = row.id
       this.noticeData.isEdit = true
       this.isCheck = false
-      setTimeout(() => {
-        this.$refs.addNotice.getNoticeCreate(row.id)
-      }, 300)
     },
     async handleDelete(id) {
-      await this.$modalSure('你确定要删除这条内容吗')
+      await modalSure('你确定要删除这条内容吗')
       await noticeDeleteApi(id)
       this.where.page = 1
       this.getTableData()
@@ -237,7 +259,7 @@ export default {
     },
     async getTargetCate() {
       const result = await noticeCategoryApi()
-      this.noticeData.optionData = result.data ? result.data : []
+      this.noticeData.optionData = result.data ? [...result.data] : []
     },
     confirmData(data) {
       if (data == 'reset') {
@@ -262,12 +284,18 @@ export default {
   height: calc(100vh - 77px);
 }
 .assess-right {
-  /deep/ .el-card__header {
+  :deep(.el-card__header) {
     border-bottom: none;
     padding: 0;
   }
 }
-// /deep/ .el-switch__label--right {
+
+.divBox {
+  position: relative;
+  // width: 100%;
+  height: 100%;
+}
+// :deep(.el-switch__label--right) {
 //   margin-left: 6px;
 // }
 
@@ -276,13 +304,13 @@ export default {
   justify-content: flex-end;
 }
 .table-img {
-  width: 39px;
-  height: 26px;
+  width: 40px;
+  height: 40px;
   border-radius: 4px;
 }
 .select-bar {
   margin-bottom: 0;
-  /deep/ .el-input-group__append {
+  :deep(.el-input-group__append) {
     top: 0;
     button {
       color: #fff;
@@ -292,14 +320,14 @@ export default {
     }
   }
 }
-/deep/.el-textarea__inner,
+:deep(.el-textarea__inner),
 .el-input__inner {
   font-size: 13px !important;
 }
-/deep/.el-input__inner {
+:deep(.el-input__inner) {
   font-size: 13px !important;
 }
-/deep/.is-top .el-switch__core {
+:deep(.is-top .el-switch__core) {
   width: 69px !important;
 }
 </style>

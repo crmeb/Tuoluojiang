@@ -1,7 +1,7 @@
 <template>
   <!-- 日历配置页面 -->
   <div class="divBox">
-    <el-card class="normal-page">
+    <el-card class="box-height">
       <div class="flex">
         <div>
           <span class="el-icon-arrow-left" @click="yearFn(1)" /><span class="year">{{ year }}年</span
@@ -14,7 +14,7 @@
         <ve-calendar
           :ref="`vc${m}`"
           mode="mini"
-          :value="selected"
+          :model-value="selected"
           :right-menu="false"
           :activate-date="{ year: year, month: m }"
           :offDays="offDays"
@@ -27,23 +27,28 @@
           :lunar="lunar"
           :min="min"
         >
-          <div
-            slot="header"
-            slot-scope="{ year, month }"
-            class="header"
-            :class="year > todayDate || m >= todayTime ? 'activeHeader' : ''"
-          >
-            <span> {{ month }}月</span>
-
-            <img
-              v-if="year > todayDate || m >= todayTime"
-              @click="openBox(year, month)"
-              src="../../../../assets/images/day.png"
-              alt=""
-              class="img"
-            />
-          </div>
-          <div slot="day-number" slot-scope="{ day }">{{ day.sDay }}</div>
+          <template #header="{ year, month }">
+            <div class="header" :class="year > todayDate || m >= todayTime ? 'activeHeader' : ''">
+              <span> {{ month }}月</span>
+              <img
+                v-if="year > todayDate || m >= todayTime"
+                @click="openBox(year, month)"
+                src="../../../../assets/images/day.png"
+                alt=""
+                class="img"
+              />
+            </div>
+          </template>
+          <template #day-number="{ day }">
+            <div>{{ day.sDay }}</div>
+          </template>
+          <template #day-lunar="{ day }">
+            <div>
+              <span v-if="day.solarTerms">{{ day.solarTerms }}</span>
+              <span v-else-if="day.lDay == 1">{{ day.lMonthChinese }}</span>
+              <span v-else>{{ day.lDayChinese }}</span>
+            </div>
+          </template>
         </ve-calendar>
       </div>
     </el-card>
@@ -53,9 +58,10 @@
 </template>
 
 <script>
+import dayjs from 'dayjs'
 import calendar from './components/calendar'
-import veCalendar from 've-calendar'
-import { calendarYearApi } from '@/api/config'
+import veCalendar from '@/components/ve-calendar'
+import { calendarYearApi } from '@/api/config.ts'
 export default {
   name: 'CrmebOaEntCalendarsetUp',
   components: {
@@ -89,10 +95,10 @@ export default {
   },
 
   mounted() {
-    var myDate = new Date()
+    const myDate = new Date()
     this.year = myDate.getFullYear()
-    this.todayTime = this.$moment().subtract('day').format('M') // 当天日期
-    this.todayDate = this.$moment().format('YYYY') // 当天日期
+    this.todayTime = dayjs().subtract('day').format('M') // 当天日期
+    this.todayDate = dayjs().format('YYYY') // 当天日期
     this.getList()
     window.onresize = () => {
       return (() => {
@@ -198,7 +204,7 @@ export default {
   display: inline-block;
 }
 
-/deep/.ve-calendar {
+:deep(.ve-calendar) {
   border: none;
   box-shadow: none;
   border-right: 43px;
@@ -209,7 +215,7 @@ export default {
     align-items: center;
   }
 }
-/deep/ .ve-calendar.mini {
+:deep(.ve-calendar.mini) {
   padding: 0;
   margin-right: 20px;
   margin-bottom: 20px;
@@ -233,11 +239,15 @@ export default {
     font-family: PingFang SC-Regular, PingFang SC;
     font-weight: 400;
     color: #606266;
+    // height: 18px;
+    //     line-height: 29px;
     margin-top: 4px;
     margin-bottom: 10px;
+    // display: flex;
+    // justify-content: center;
   }
 }
-/deep/.day-grid.mini.today {
+:deep(.day-grid.mini.today) {
   border: none;
 
   .day-number {
@@ -250,7 +260,7 @@ export default {
   }
 }
 
-/deep/ .day-grid.selected {
+:deep(.day-grid.selected) {
   background: #fff;
 
   .day-number div {
@@ -261,7 +271,7 @@ export default {
     color: #ed4014;
   }
 }
-/deep/.day-grid.mini.today.selected {
+:deep(.day-grid.mini.today.selected) {
   border: none;
 
   .day-number {

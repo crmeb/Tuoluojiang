@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,7 +17,7 @@ namespace App\Http\Service\User;
 
 use App\Http\Dao\User\UserMemorialDao;
 use App\Http\Service\BaseService;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 
 /**
@@ -93,7 +93,6 @@ class UserMemorialService extends BaseService
     /**
      * 修改备忘录详情.
      *
-     * @param mixed $id
      * @return array
      * @throws BindingResolutionException
      * @throws \ReflectionException

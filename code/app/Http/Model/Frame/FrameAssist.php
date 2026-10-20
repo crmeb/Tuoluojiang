@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -43,6 +43,19 @@ class FrameAssist extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'           => 'integer',
+        'entid'        => 'integer',
+        'frame_id'     => 'integer',
+        'user_id'      => 'integer',
+        'is_mastart'   => 'integer',
+        'is_admin'     => 'integer',
+        'superior_uid' => 'integer',
+        'created_at'   => 'datetime:Y-m-d H:i:s',
+        'deleted_at'   => 'datetime:Y-m-d H:i:s',
+        'updated_at'   => 'datetime:Y-m-d H:i:s',
+    ];
 
     /**
      * user_ids作用域

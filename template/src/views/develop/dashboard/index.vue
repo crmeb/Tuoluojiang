@@ -1,13 +1,13 @@
 <template>
-  <div class="dashboard-container">
-    <VFormRender v-if="!loading" ref="preForm" :form-json="designer" :preview-state="true"> </VFormRender>
+  <div class="dashboard-container box-height">
+    <VFormRender v-if="!loading && designer" ref="preForm" :form-json="designer" :preview-state="true"> </VFormRender>
   </div>
 </template>
 <script>
 import VFormRender from '@/components/form-render/index'
-import { getDashboardDesign } from '@/api/chart'
-import { getDatabaseApi } from '@/api/develop'
-import { addWindowResizeHandler } from '@/utils/util'
+import { getDashboardDesign } from '@/api/chart.ts'
+import { getDatabaseApi } from '@/api/develop.ts'
+import { addWindowResizeHandler } from '@/utils/formDesignerUtils'
 
 export default {
   name: 'Dashboard',
@@ -71,8 +71,9 @@ export default {
       const task2 = getDashboardDesign(this.chartId)
 
       Promise.all([task1, task2]).then(([_, res]) => {
-        let blankFormJson = JSON.parse(res.data[key])
-        this.$set(this, 'designer', blankFormJson)
+        // 仪表盘不存在或尚未设计时接口不返回配置，此时不渲染，避免 JSON.parse(undefined) 抛错
+        const json = res?.data?.[key]
+        this.designer = json ? JSON.parse(json) : null
         this.loading = false
       })
     }
@@ -82,7 +83,8 @@ export default {
 <style scoped lang="scss">
 .dashboard-container {
   margin-top: -10px;
-  /deep/ .smartwidget .widget-header .widget-header__toolbar a {
+  z-index: 99;
+  :deep(.smartwidget .widget-header .widget-header__toolbar a) {
     display: inline-block;
     text-decoration: none;
     text-align: center;
@@ -96,8 +98,27 @@ export default {
     font-family: Arial, Helvetica, sans-serif;
     border: none !important;
   }
-  /deep/ .widget-header__title {
+  :deep(.widget-header__title) {
     font-weight: 600 !important;
   }
 }
+:deep(.smartwidget) {
+  border-radius: 8px;
+  // background: transparent;
+
+  box-shadow: none;
+}
+:deep(.smartwidget.is-always-shadow) {
+  box-shadow: none;
+}
+:deep(.smartwidget.is-hover-shadow:hover) {
+  box-shadow: none;
+}
+:deep(.smartwidget.is-never-shadow) {
+  box-shadow: none;
+}
+// :deep(.vue-grid-layout > .vue-grid-item:last-child) {
+//   background: linear-gradient(154deg, #edf6ff 0%, #ffffff 50%, #ffffff 100%);
+//   border: 1px solid #fff;
+// }
 </style>

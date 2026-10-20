@@ -1,114 +1,121 @@
 <template>
   <div class="divBox">
-    <el-card>
-      <div class="header">
-        <div>
+    <div class="box-height">
+      <el-card>
+        <div class="header">
           <div>
-            当前版本:<span class="v"></span><span class="num">{{ version || 'Tuoluojiang' }}</span>
+            <div>
+              当前版本:<span class="v"></span><span class="num">{{ version || 'Tuoluojiang' }}</span>
+            </div>
+            <div class="info title mt20">
+              更新说明：
+              <span v-if="!status">已升级至最新版本，无需更新</span>
+              <ul v-if="status">
+                <li>V{{ info.first_version }}.{{ info.second_version }}.{{ info.third_version }}</li>
+              </ul>
+            </div>
           </div>
-          <div class="info title mt20">
-            更新说明：
-            <span v-if="!status">已升级至最新版本，无需更新</span>
-            <ul v-if="status">
-              <li>V{{ info.first_version }}.{{ info.second_version }}.{{ info.third_version }}</li>
-            </ul>
-          </div>
+          <el-button v-if="status" type="primary" class="primary btn update" @click="update()">立即升级</el-button>
         </div>
-        <el-button v-if="status" type="primary" class="primary btn update" @click="update()">立即升级</el-button>
-      </div>
-    </el-card>
-    <el-card class="mt20 employees-card">
-      <el-tabs v-model="activeName" @tab-click="handleClick">
-        <el-tab-pane label="系统升级" name="first">
-          <el-timeline class="ml20">
-            <el-timeline-item v-for="(item, index) in activities" :key="index" class="time-line mt20">
-              <div class="time">{{ item.release_time }}</div>
-              <el-collapse v-model="index" @change="handleChange">
-                <el-collapse-item :name="0">
-                  <div slot="title" :class="index == 0 ? 'active-line' : 'title-line'" @click="judgeActive(index)">
-                    {{ item.title }} v{{ item.first_version }}.{{ item.second_version }}.{{ item.third_version }}
-                    <i
-                      :class="activeNames === index && isActive === 2 ? 'el-icon-arrow-up' : ' el-icon-arrow-down'"
-                    ></i>
-                  </div>
-                  <ul class="content ml20">
-                    <li v-html="item.content" class="content-li"></li>
-                  </ul>
-                </el-collapse-item>
-              </el-collapse>
-            </el-timeline-item>
-          </el-timeline>
-          <!-- 缺省页 -->
-          <div class="defult" v-if="activities.length == 0">
-            <img src="@/assets/images/def2.png" alt="" class="img" />
-            <div class="text">暂无系统升级～</div>
-          </div>
-        </el-tab-pane>
-        <el-tab-pane label="升级记录" name="second">
-          <el-timeline class="ml20" v-if="logActivities.length > 0">
-            <el-timeline-item v-for="(item, index) in logActivities" :key="index" class="time-line mt20">
-              <div class="time">{{ item.upgrade_time }}</div>
-              <el-collapse v-model="index" @change="handleChange">
-                <el-collapse-item :name="0">
-                  <div slot="title" :class="index == 0 ? 'active-line' : 'title-line'" @click="judgeActive(index)">
-                    {{ item.title }} v{{ item.first_version }}.{{ item.second_version }}.{{ item.third_version }}
+      </el-card>
+      <el-card class="mt20 employees-card">
+        <el-tabs v-model="activeName" @tab-change="handleClick">
+          <el-tab-pane label="系统升级" name="first">
+            <el-timeline class="ml20">
+              <el-timeline-item v-for="(item, index) in activities" :key="index" class="time-line mt20">
+                <div class="time">{{ item.release_time }}</div>
+                <el-collapse :model-value="index" @change="handleChange">
+                  <el-collapse-item :name="0">
+                    <template #title>
+                      <div :class="index == 0 ? 'active-line' : 'title-line'" @click="judgeActive(index)">
+                        {{ item.title }} v{{ item.first_version }}.{{ item.second_version }}.{{ item.third_version }}
+                        <i
+                          :class="activeNames === index && isActive === 2 ? 'el-icon-arrow-up' : ' el-icon-arrow-down'"
+                        ></i>
+                      </div>
+                    </template>
+                    <ul class="content ml20">
+                      <li v-html="item.content" class="content-li"></li>
+                    </ul>
+                  </el-collapse-item>
+                </el-collapse>
+              </el-timeline-item>
+            </el-timeline>
+            <!-- 缺省页 -->
+            <div class="defult" v-if="activities.length == 0">
+              <img src="@/assets/images/def2.png" alt="" class="img" />
+              <div class="text">暂无系统升级～</div>
+            </div>
+          </el-tab-pane>
+          <el-tab-pane label="升级记录" name="second">
+            <el-timeline class="ml20" v-if="logActivities.length > 0">
+              <el-timeline-item v-for="(item, index) in logActivities" :key="index" class="time-line mt20">
+                <div class="time">{{ item.upgrade_time }}</div>
+                <el-collapse :model-value="index" @change="handleChange">
+                  <el-collapse-item :name="0">
+                    <template #title>
+                      <div :class="index == 0 ? 'active-line' : 'title-line'" @click="judgeActive(index)">
+                        {{ item.title }} v{{ item.first_version }}.{{ item.second_version }}.{{ item.third_version }}
 
-                    <i
-                      :class="activeNames === index && isActive === 2 ? 'el-icon-arrow-up' : ' el-icon-arrow-down'"
-                    ></i>
-                  </div>
-                  <ul class="content ml20">
-                    <li v-html="item.content" class="content-li"></li>
-                  </ul>
-                </el-collapse-item>
-              </el-collapse>
-            </el-timeline-item>
-          </el-timeline>
-          <!-- 缺省页 -->
-          <div class="defult" v-if="logActivities.length == 0">
-            <img src="@/assets/images/def2.png" alt="" class="img" />
-            <div class="text">暂无升级记录哟～</div>
-          </div>
-        </el-tab-pane>
-      </el-tabs>
-    </el-card>
+                        <i
+                          :class="activeNames === index && isActive === 2 ? 'el-icon-arrow-up' : ' el-icon-arrow-down'"
+                        ></i>
+                      </div>
+                    </template>
+                    <ul class="content ml20">
+                      <li v-html="item.content" class="content-li"></li>
+                    </ul>
+                  </el-collapse-item>
+                </el-collapse>
+              </el-timeline-item>
+            </el-timeline>
+            <!-- 缺省页 -->
+            <div class="defult" v-if="logActivities.length == 0">
+              <img src="@/assets/images/def2.png" alt="" class="img" />
+              <div class="text">暂无升级记录哟～</div>
+            </div>
+          </el-tab-pane>
+        </el-tabs>
+      </el-card>
 
-    <!-- 免责声明 -->
-    <el-dialog :visible.sync="exoneration" width="672px" :show-close="false" :close-on-click-modal="false">
-      <div class="dialog1">
-        <div class="exoneration-header">免责声明</div>
-        <div class="dialog1-content" v-html="agreemen.content">
-        </div>
-        <div class="footer">
-          <div class="btn" @click="refuse">拒绝</div>
-          <div class="btn2" @click="agree">同意</div>
-        </div>
-      </div>
-    </el-dialog>
-    <!-- 在线升级 -->
-    <el-dialog :visible.sync="upgrade" width="380px" :show-close="false" :close-on-click-modal="false">
-      <div class="dialog d-upgrade">
-        <div class="img">升级至v{{ infoUpgrade }}</div>
-        <div v-if="upgradeProgress.speed != '100.0' || this.downloadStatus != '200'">
-          <div class="progress">
-            <el-progress type="circle" :percentage="Number(upgradeProgress.speed)" :format="format"></el-progress>
-          </div>
-          <div class="flex">
-            <div class="circle">{{ upgradeProgress.speed }}%</div>
-            <div class="text">正在更新，请耐心等待 ~</div>
+      <!-- 免责声明 -->
+      <el-dialog v-model="exoneration" width="672px" :show-close="false" :close-on-click-modal="false">
+        <div class="dialog1">
+          <div class="exoneration-header">免责声明</div>
+          <div class="dialog1-content" v-html="agreemen.content"></div>
+          <div class="footer">
+            <div class="btn" @click="refuse">拒绝</div>
+            <div class="btn2" @click="agree">同意</div>
           </div>
         </div>
+      </el-dialog>
+      <!-- 在线升级 -->
+      <el-dialog v-model="upgrade" width="380px" :show-close="false" :close-on-click-modal="false">
+        <div class="dialog d-upgrade">
+          <div class="img">升级至v{{ infoUpgrade }}</div>
+          <div v-if="upgradeProgress.speed != '100.0' || this.downloadStatus != '200'">
+            <div class="progress">
+              <el-progress type="circle" :percentage="Number(upgradeProgress.speed)" :format="format"></el-progress>
+            </div>
+            <div class="flex">
+              <div class="circle">{{ upgradeProgress.speed }}%</div>
+              <div class="text">正在更新，请耐心等待 ~</div>
+            </div>
+          </div>
 
-        <template v-if="upgradeProgress.speed == '100.0'">
-          <img src="@/assets/images/ok.png" alt="" class="ok-img" />
-          <div class="ok-text">升级成功</div>
-          <el-button type="primary" round class="ok-btn mt20" @click="back">确认</el-button>
-        </template>
-      </div>
-    </el-dialog>
+          <template v-if="upgradeProgress.speed == '100.0'">
+            <img src="@/assets/images/ok.png" alt="" class="ok-img" />
+            <div class="ok-text">升级成功</div>
+            <el-button type="primary" round class="ok-btn mt20" @click="back">确认</el-button>
+          </template>
+        </div>
+      </el-dialog>
+    </div>
   </div>
 </template>
 <script>
+import { mapStores } from 'pinia'
+import { useUserStore } from '@/stores/user.ts'
 import {
   getUpgradeList,
   getUpgradeKey,
@@ -116,12 +123,15 @@ import {
   getUpgradeAgreement,
   getUpgradeStart,
   getUpgradeProgress
-} from '@/api/setting.js'
-import { logout } from '@/api//user.js'
-import { version } from '@/api/setting'
+} from '@/api/setting.ts'
+import { logout } from '@/api//user.ts'
+import { version } from '@/api/setting.ts'
 export default {
   name: '',
 
+  computed: {
+    ...mapStores(useUserStore)
+  },
   data() {
     return {
       activeName: 'first',
@@ -145,7 +155,6 @@ export default {
       one: 0
     }
   },
-  computed: {},
   watch: {
     // 'upgradeProgress.speed': {
     //   handler(newVal, oldVal) {
@@ -166,14 +175,18 @@ export default {
     //   获取在线升级列表
     getUpgradeList() {
       getUpgradeList().then((res) => {
-        this.activities = res.data.list
+        this.activities = Array.isArray(res?.data?.list) ? res.data.list : []
+      }).catch(() => {
+        this.activities = []
       })
     },
 
     // 获取版本号
     getVersion() {
       version().then((res) => {
-        this.version = res.data.version
+        this.version = res?.data?.version || ''
+      }).catch(() => {
+        this.version = ''
       })
     },
 
@@ -188,27 +201,34 @@ export default {
     // 获取在线升级数据
     getUpgradeKey() {
       getUpgradeKey().then((res) => {
-        this.info = res.data
+        this.info = res.data || {}
         this.infoUpgrade = this.info.first_version + '.' + this.info.second_version + '.' + this.info.third_version
         if (res.status == 200) {
           this.status = true
         } else {
           this.status = false
         }
+      }).catch(() => {
+        this.info = {}
+        this.status = false
       })
     },
 
     // 获取升级协议
     getUpgradeAgreement() {
       getUpgradeAgreement().then((res) => {
-        this.agreemen = res.data
+        this.agreemen = res.data || {}
+      }).catch(() => {
+        this.agreemen = {}
       })
     },
 
     // 获取升级日志
     getUpgradeLog() {
       getUpgradeLog().then((res) => {
-        this.logActivities = res.data.list
+        this.logActivities = Array.isArray(res?.data?.list) ? res.data.list : []
+      }).catch(() => {
+        this.logActivities = []
       })
     },
 
@@ -253,11 +273,9 @@ export default {
       logout()
         .then((res) => {
           this.$message.success('您已成功升级，系统将自动退出，请您重新登录')
+          this.userStore.logout()
           this.$router.replace('/admin/login')
           localStorage.clear()
-          removeCookies('token')
-          removeCookies('expires_time')
-          removeCookies('uuid')
         })
         .catch((res) => {})
     },
@@ -298,7 +316,7 @@ export default {
       }
     }
   },
-  beforeDestroy() {
+  beforeUnmount() {
     //销毁
     clearInterval(this.timer)
     this.timer = null
@@ -318,25 +336,25 @@ export default {
 .ml20 {
   margin-left: -40px;
 }
-/deep/ .el-collapse {
+:deep(.el-collapse) {
   border: none;
 }
-/deep/ .el-collapse-item__wrap {
+:deep(.el-collapse-item__wrap) {
   border: none;
 }
-/deep/ .el-collapse-item__header {
+:deep(.el-collapse-item__header) {
   border: none;
 }
-/deep/ .el-dialog__header {
+:deep(.el-dialog__header) {
   padding: 0;
 }
-/deep/ .el-icon-arrow-right:before {
+:deep(.el-icon-arrow-right:before) {
   content: '';
 }
-/deep/.el-card__body {
+:deep(.el-card__body) {
   padding: 10px 20px 0 20px;
 }
-/deep/ .active-line {
+:deep(.active-line) {
   margin-bottom: 28px;
 }
 .defult {
@@ -636,10 +654,10 @@ export default {
   font-size: 14px;
 }
 
-/deep/ .el-dialog {
+:deep(.el-dialog) {
   border-radius: 10px;
 }
-/deep/ .el-dialog__body {
+:deep(.el-dialog__body) {
   padding: 0;
 }
 </style>

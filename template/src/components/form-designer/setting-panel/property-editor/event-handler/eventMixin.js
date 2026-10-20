@@ -1,11 +1,13 @@
-import emitter from '@/utils/emitter'
+import { SETTING_PANEL_HUB } from '@/utils/eventHub'
 
 export default {
-  mixins: [emitter],
+  inject: {
+    settingPanelHub: { from: SETTING_PANEL_HUB, default: null }
+  },
   created() {},
   methods: {
     editEventHandler(eventName, eventParams) {
-      this.dispatch('SettingPanel', 'editEventHandler', [eventName, [...eventParams]])
+      this.settingPanelHub?.emit('editEventHandler', eventName, [...eventParams])
     },
 
   }

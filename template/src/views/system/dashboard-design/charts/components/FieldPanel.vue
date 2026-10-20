@@ -1,6 +1,7 @@
 <template>
+  <!-- 左侧字段面板 -->
   <div class="main" :style="{ height: scrollerHeight }">
-    <div class="title">图表组件</div>
+    <div class="title mb10">图表组件</div>
     <draggable
       class="chart-container-widget-list"
       :list="designer.chartWidgets"
@@ -9,36 +10,61 @@
       :clone="handleContainerWidgetClone"
       ghost-class="ghost"
       :sort="false"
-      :disabled="true"
+      :disabled="false"
       :move="checkContainerMove"
       @end="onContainerDragEnd"
     >
-      <div
-        v-for="element in designer.chartWidgets"
-        :key="element.key"
-        class="chart-container-widget-item"
-        :title="element.displayName"
-        @click="addChartContainerByDbClick(element)"
-      >
-        <svg-icon :icon-class="element.icon" class-name="color-svg-icon" />
-        <span>{{ getWidgetLabel(element) }}</span>
-      </div>
+      <template #item="{ element: element }">
+        <div
+          class="chart-container-widget-item"
+          :title="element.displayName"
+          @click="addChartContainerByDbClick(element)"
+        >
+          <svg-icon :icon-class="element.icon" class-name="color-svg-icon" />
+          <span>{{ getWidgetLabel(element) }} </span>
+        </div>
+      </template>
     </draggable>
-    <!-- <el-collapse v-model="activeNames" class="widget-collapse">
-      <el-collapse-item name="1" title="图表组件"> </el-collapse-item>
-    </el-collapse> -->
+
+
+    <!-- framework widgets -->
+    <div class="title mt10 mb10 ">框架组件</div>
+    <draggable
+      class="chart-container-widget-list"
+      :list="designer.chartContainers"
+      item-key="key"
+      :group="{ name: 'dragGroup', pull: 'clone', put: false }"
+      :clone="handleContainerWidgetClone"
+      ghost-class="ghost"
+      :sort="false"
+      :disabled="false"
+      :move="checkContainerMove"
+      @end="onContainerDragEnd"
+    >
+      <template #item="{ element: element }">
+        <div
+          v-show="designer.tabIsShow !== element.type"
+          class="chart-container-widget-item"
+          :title="element.displayName"
+          @click="addChartContainerByDbClick(element)"
+        >
+          <svg-icon :icon-class="element.icon" class-name="color-svg-icon" />
+          <span>{{ element.options.label }}</span>
+        </div>
+      </template>
+    </draggable>
   </div>
 </template>
 
 <script>
 import draggable from 'vuedraggable'
-import i18n from '@/utils/i18n'
+import i18n from '@/utils/i18n.ts'
 import axios from 'axios'
 import SvgIcon from '@/components/svg-icon-nc'
 import { ext_charts_widgets, dashboard_container_schema } from '../charts-schema.js'
 import { ext_chart_containers as EC_CONS, ext_charts_widgets as EC_WS } from '../charts-schema.js'
 
-import { generateId, addWindowResizeHandler } from '@/utils/util'
+import { generateId, addWindowResizeHandler, deepClone } from '@/utils/formDesignerUtils'
 import {
   containers,
   advancedFields,
@@ -79,8 +105,6 @@ export default {
       chartContainers: ext_charts_widgets,
       designerConfig: this.getDesignerConfig(),
       firstTab: 'componentLib',
-      activeNames: ['1', '2', '3', '4'],
-      metadataActiveNames: ['0', '1', '2', '3', '4'],
       containers: [],
       commonContainers: [],
       basicFields: [],
@@ -116,10 +140,27 @@ export default {
         ]
       },
       ftcKey: 'ftc' + generateId(),
-      scrollerHeight: 0
+      scrollerHeight: 0,
+      selectedWidget: []
     }
   },
+
+ 
   computed: {
+    isSelectWidget() {
+      let arr = []
+      outer: for (const item of this.designer.widgetList) {
+        if (item.widgetList) {
+          for (const item2 of item.widgetList) {
+            if (item2.type === 'tab') {
+              arr.push(item2.type)
+              break outer
+            }
+          }
+        }
+      }
+      return arr
+    },
     showComponentLib() {
       return this.designerConfig.componentLib === void 0 ? !0 : !!this.designerConfig.componentLib
     },
@@ -133,6 +174,8 @@ export default {
       return this.designerConfig.metadataLib === void 0 ? !1 : !!this.designerConfig.metadataLib
     }
   },
+
+ 
   created() {
     this.designerConfig.chartLib && (this.firstTab = 'chartLib'),
       this.designerConfig.metadataLib && (this.firstTab = 'metadataLib'),
@@ -146,6 +189,7 @@ export default {
     EC_WS.forEach((wgt) => {
       this.designer.addChartSchema(wgt)
     })
+
   },
   mounted() {
     this.scrollerHeight = window.innerHeight - 54 + 'px'
@@ -169,6 +213,9 @@ export default {
     getFTTitle(o) {
       const e = getLocale()
       return (!!o.i18n && !!o.i18n[e] && o.i18n[e].title) || o.title
+    },
+    isShowWidget(type){
+      // 根据 type 判断是否显示组件
     },
     loadWidgets() {
       ;(this.containers = containers
@@ -216,7 +263,10 @@ export default {
           .filter((o) => !this.isBanned(o.type)))
     },
     handleContainerWidgetClone(o) {
-      return this.designer.copyNewContainerWidget(o)
+      const cloned = deepClone(o)
+      delete cloned.key
+      delete cloned.displayName
+      return cloned
     },
     handleFieldWidgetClone(o) {
       return this.designer.copyNewFieldWidget(o)
@@ -290,8 +340,7 @@ export default {
   font-weight: 500;
   font-size: 13px;
   color: #303133;
-  line-height: 18px;
-  height: 32px;
+ 
 }
 .chart-container-widget-list {
   display: flex;

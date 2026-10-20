@@ -18,14 +18,18 @@
 </template>
 
 <script>
-import { assessCensusLineApi } from '@/api/enterprise'
-import Commnt from '@/components/user/accessCommon'
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
+import pickerOptions from '@/libs/pickerOptions.ts'
+import { assessCensusLineApi } from '@/api/enterprise.ts'
+import Commnt from '@/components/user/accessCommon.ts'
 import echarts from 'echarts'
+import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'AssessStatistics',
   components: {
-    manageRange: () => import('@/components/form-common/select-manageRange'),
-    oaFromBox: () => import('@/components/common/oaFromBox')
+    manageRange: defineAsyncComponent(() => import('@/components/form-common/select-manageRange')),
+    oaFromBox
   },
   props: {
     searchBtn: {
@@ -47,6 +51,10 @@ export default {
   },
   data() {
     return {
+      // Vue 3 的 prop 只读，组件内部需要改写时用本地副本
+      typeLocal: this.type,
+      // Vue 3 的 prop 只读，组件内部需要改写时用本地副本
+      planIdLocal: this.planId,
       colorList: [
         '#679AFA',
         '#6FE9EA',
@@ -60,17 +68,17 @@ export default {
         '#F0F8FF'
       ],
       periodOptions: Commnt.periodOptions,
-      frameArray: [{ label: this.$t('setting.selectdepartment'), value: '' }],
-      userArray: [{ label: this.$t('access.selectpersonnel'), value: '' }],
+      frameArray: [{ label: '选择部门', value: '' }],
+      userArray: [{ label: '选择人员', value: '' }],
       tableData: [],
       frame: [],
       period: 2,
-      time: [this.$moment().subtract(1, 'years').format('YYYY-MM-DD'), this.$moment(new Date()).format('YYYY-MM-DD')],
+      time: [dayjs().subtract(1, 'years').format('YYYY-MM-DD'), dayjs(new Date()).format('YYYY-MM-DD')],
       frame_id: 0,
       scope_frame: 'all',
       test_uid: '',
-      start: this.$moment().subtract(1, 'years').format('YYYY-MM-DD'),
-      end: this.$moment(new Date()).format('YYYY-MM-DD'),
+      start: dayjs().subtract(1, 'years').format('YYYY-MM-DD'),
+      end: dayjs(new Date()).format('YYYY-MM-DD'),
       total: 0,
       height: 420,
       styles1: {
@@ -78,7 +86,7 @@ export default {
         width: '100%'
       },
       optionData: {},
-      pickerOptions: this.$pickerOptionsTimeEle,
+      pickerOptions,
       search: [
         {
           field_name: '考核周期',
@@ -92,7 +100,8 @@ export default {
           field_name_end: '结束时间',
           field_name_en: 'time',
           form_value: 'date_picker',
-          data_dict: [this.$moment().subtract(1, 'year').format('YYYY/MM/DD'), this.$moment().format('YYYY/MM/DD')]
+          pickerOptions: this.getOnlyRangePickerOption(),
+          data_dict: [dayjs().subtract(1, 'year').format('YYYY/MM/DD'), dayjs().format('YYYY/MM/DD')]
         }
       ],
       search2: [
@@ -106,20 +115,31 @@ export default {
     }
   },
   watch: {
-    lang() {
-      this.setOptions()
-    }
+    // prop 由父组件更新时同步到本地副本（组件内部改写的是 typeLocal）
+    type(val) {
+      this.typeLocal = val
+    },
+    // prop 由父组件更新时同步到本地副本（组件内部改写的是 planIdLocal）
+    planId(val) {
+      this.planIdLocal = val
+    },
   },
   methods: {
+    getOnlyRangePickerOption() {
+      return {
+        ...pickerOptions,
+        shortcuts: pickerOptions.shortcuts.slice(2)
+      }
+    },
     confirmData(data) {
       if (data == 'reset') {
         this.scope_frame = 'all'
         this.period = 2
-        this.start = this.$moment().subtract(1, 'years').format('YYYY-MM-DD')
-        this.end = this.$moment(new Date()).format('YYYY-MM-DD')
+        this.start = dayjs().subtract(1, 'years').format('YYYY-MM-DD')
+        this.end = dayjs(new Date()).format('YYYY-MM-DD')
         this.time = [
-          this.$moment().subtract(1, 'years').format('YYYY-MM-DD'),
-          this.$moment(new Date()).format('YYYY-MM-DD')
+          dayjs().subtract(1, 'years').format('YYYY-MM-DD'),
+          dayjs(new Date()).format('YYYY-MM-DD')
         ]
         this.frame_id = 0
         this.test_uid = ''
@@ -130,22 +150,18 @@ export default {
       }
       this.getTableData()
     },
-    setOptions() {
-      this.frameArray[0].label = this.$t('setting.selectdepartment')
-      this.userArray[0].label = this.$t('access.selectpersonnel')
-    },
     reset() {
       this.period = 2
-      this.start = this.$moment().subtract(1, 'years').format('YYYY-MM-DD')
-      this.end = this.$moment(new Date()).format('YYYY-MM-DD')
+      this.start = dayjs().subtract(1, 'years').format('YYYY-MM-DD')
+      this.end = dayjs(new Date()).format('YYYY-MM-DD')
       this.time = [
-        this.$moment().subtract(1, 'years').format('YYYY-MM-DD'),
-        this.$moment(new Date()).format('YYYY-MM-DD')
+        dayjs().subtract(1, 'years').format('YYYY-MM-DD'),
+        dayjs(new Date()).format('YYYY-MM-DD')
       ]
       this.frame_id = 0
       this.scope_frame = 'all'
       this.$refs.manageRange.reset()
-      this.planId = ''
+      this.planIdLocal = ''
 
       this.getTableData()
     },
@@ -157,8 +173,8 @@ export default {
         time: this.time,
         frame_id: this.frame_id ? this.frame_id : '',
         test_uid: this.test_uid,
-        number: this.planId,
-        types: this.type,
+        number: this.planIdLocal,
+        types: this.typeLocal,
         scope_frame: this.scope_frame
       }
       assessCensusLineApi(data).then((res) => {
@@ -166,25 +182,42 @@ export default {
         this.init()
       })
     },
-   
-   
-  
+
     init() {
       this.optionData = {
         tooltip: {
           trigger: 'axis',
+          confine: true,
+          enterable: true,
+          extraCssText: 'max-height:480px;overflow-y:auto;',
           axisPointer: {
             type: 'line',
             lineStyle: {
               color: '#CCCCCC'
             }
+          },
+          formatter: (params) => {
+            if (!Array.isArray(params) || !params.length) return ''
+            const title = params[0].axisValueLabel || params[0].name
+            let rows = ''
+            params.forEach((item) => {
+              const value = item.value == null ? 0 : item.value
+              rows +=
+                `<div style="min-width:100px;break-inside:avoid">${item.marker}${item.seriesName}` +
+                `<span style="float:right;margin-left:20px;font-weight:600">${value}</span></div>`
+            })
+            // 数据量大于 20 条时改为两列展示
+            if (params.length > 20) {
+              rows = `<div style="column-count:2;column-gap:40px">${rows}</div>`
+            }
+            return `<div style="padding-left:10px">${title}${rows}</div>`
           }
         },
         legend: {
           data: [],
           show: true,
           type: 'scroll',
-           
+
           right: 10,
           top: 20
         },
@@ -244,8 +277,8 @@ export default {
         ],
         series: []
       }
-      var seriesData = []
-      var legendName = []
+      const seriesData = []
+      const legendName = []
       this.tableData.series.forEach((value, index) => {
         legendName.push(value.name)
         seriesData.push({
@@ -287,7 +320,7 @@ export default {
     handleFrame(num) {
       this.frame_id = num
       this.test_uid = ''
-      this.userArray = [{ label: this.$t('access.selectpersonnel'), value: '' }]
+      this.userArray = [{ label: '选择人员', value: '' }]
       if (num != '') {
         const index = this.getFindIndex(this.frame, 'id', num)
         this.frame[index].user.forEach((value) => {
@@ -376,8 +409,28 @@ body .el-month-table td.start-date .cell,
     }
   }
 }
-/deep/ .from-s .flex-row .el-form-item {
+:deep(.from-s .flex-row .el-form-item) {
   margin-right: 10px;
   margin-left: 0;
+}
+// 考核统计 tooltip 滚动条美化（细、半透明、悬浮）
+// echarts 4.2.1 的 tooltip.className 不生效，改用结构选择器命中 #statistics-con 内的 tooltip dom
+:deep(#statistics-con > div) {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.55);
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
 }
 </style>

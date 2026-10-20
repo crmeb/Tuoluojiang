@@ -15,7 +15,7 @@
           :disabled="tab.options.disabled"
           :name="tab.options.name"
         >
-          <template v-for="(subWidget, swIdx) in tab.widgetList">
+          <template v-for="(subWidget, swIdx) in tab.widgetList" :key="swIdx">
             <template v-if="'container' === subWidget.category">
               <component
                 :is="getComponentByContainer(subWidget)"
@@ -26,7 +26,7 @@
                 :parent-widget="widget"
               >
                 <!-- 递归传递插槽！！！ -->
-                <template v-for="slot in Object.keys($scopedSlots)" v-slot:[slot]="scope">
+                <template v-for="slot in Object.keys($slots)" :key="slot" v-slot:[slot]="scope">
                   <slot :name="slot" v-bind="scope" />
                 </template>
               </component>
@@ -41,7 +41,7 @@
                 :parent-widget="widget"
               >
                 <!-- 递归传递插槽！！！ -->
-                <template v-for="slot in Object.keys($scopedSlots)" v-slot:[slot]="scope">
+                <template v-for="slot in Object.keys($slots)" :key="slot" v-slot:[slot]="scope">
                   <slot :name="slot" v-bind="scope" />
                 </template>
               </component>
@@ -54,8 +54,8 @@
 </template>
 
 <script>
-import emitter from '@/utils/emitter'
-import i18n from '../../../utils/i18n'
+import { watchActiveField } from '@/components/form-render/activeField.ts'
+import i18n from '../../../utils/i18n.ts'
 import refMixin from '../../../components/form-render/refMixin'
 import ContainerItemWrapper from './container-item-wrapper'
 import containerItemMixin from './containerItemMixin'
@@ -63,8 +63,7 @@ import FieldComponents from '@/components/form-designer/form-widget/field-widget
 
 export default {
   name: 'tab-item',
-  componentName: 'ContainerItem',
-  mixins: [emitter, i18n, refMixin, containerItemMixin],
+  mixins: [i18n, refMixin, containerItemMixin],
   components: {
     ContainerItemWrapper,
     ...FieldComponents
@@ -86,20 +85,13 @@ export default {
     }
   },
   created() {
+    watchActiveField((field) => this.fieldShowFn(field))
     this.initRefList()
-  },
-  watch: {
-    '$store.state.user.activeField': {
-      deep: true,
-      handler: function (newVal, oldVal) {
-        this.fieldShowFn(newVal)
-      }
-    }
   },
   mounted() {
     this.initActiveTab()
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.unregisterFromRefList()
   },
   methods: {
@@ -107,11 +99,7 @@ export default {
       this.visibleTabs.forEach((el) => {
         el.widgetList.forEach((item) => {
           this.$nextTick(() => {
-            if (item.id == val.id) {
-              this.$set(item, 'isShow', true)
-            } else {
-              this.$set(item, 'isShow', false)
-            }
+            item.isShow = item.id == val.id
           })
         })
       })
@@ -133,4 +121,3 @@ export default {
 </script>
 
 <style lang="scss" scoped></style>
-../../../utils/i18ns

@@ -3,16 +3,18 @@
   <div class="oa-dialog">
     <el-dialog
       top="10%"
-      :visible.sync="show"
+      v-model="show"
       width="700px"
       append-to-body
       :show-close="false"
       :close-on-click-modal="false"
     >
-      <div slot="title" class="header flex-between">
-        <span class="title">选择引用内容</span>
-        <span class="el-icon-close" @click="handleClose"></span>
-      </div>
+      <template #header>
+        <div class="header flex-between">
+          <span class="title">选择引用内容</span>
+          <span class="el-icon-close" @click="handleClose"></span>
+        </div>
+      </template>
 
       <div class="flex mb20">
         <div class="inTotal">共 {{ total }} 项</div>
@@ -20,12 +22,11 @@
           <el-input
             v-model="where.keyword"
             prefix-icon="el-icon-search"
-            size="small"
             placeholder="请输入关键字搜索"
             clearable
             style="width: 250px"
             @change="getList"
-            @keyup.native.stop.prevent.enter="getList"
+            @keyup.stop.prevent.enter="getList"
             class="input"
           ></el-input>
         </div>
@@ -39,7 +40,7 @@
             :label="item.field_name"
             :key="index"
           >
-            <template slot-scope="scope">
+            <template #default="scope">
               <div v-if="item.form_value === 'image'" class="img-box">
                 <img
                   v-for="(val, index) in scope.row[item.field_name_en]"
@@ -58,34 +59,34 @@
               </div>
               <div v-else-if="item.form_value === 'tag' || item.form_value === 'checkbox'">
                 <el-popover v-if="scope.row[item.field_name_en].length > 2" placement="top-start" trigger="hover">
-                  <template>
-                    <div class="flex_box">
-                      <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                        <el-tag size="small">
-                          {{ val }}
-                        </el-tag>
+                  <div class="flex_box">
+                    <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
+                      <el-tag>
+                        {{ val }}
+                      </el-tag>
+                    </div>
+                  </div>
+                  <template #reference>
+                    <div>
+                      <div class="flex_box">
+                        <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
+                          <el-tag v-if="index < 2">
+                            {{ val }}
+                          </el-tag>
+                        </div>
+                        <el-tag v-if="scope.row[item.field_name_en].length > 2">...</el-tag>
                       </div>
                     </div>
                   </template>
-                  <div slot="reference">
-                    <div class="flex_box">
-                      <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                        <el-tag size="small" v-if="index < 2">
-                          {{ val }}
-                        </el-tag>
-                      </div>
-                      <el-tag v-if="scope.row[item.field_name_en].length > 2" size="small">...</el-tag>
-                    </div>
-                  </div>
                 </el-popover>
                 <template v-else>
                   <div class="flex_box">
                     <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                      <el-tag size="small" v-if="index < 2">
+                      <el-tag v-if="index < 2">
                         {{ val }}
                       </el-tag>
                     </div>
-                    <el-tag v-if="scope.row[item.field_name_en].length > 2" size="small">...</el-tag>
+                    <el-tag v-if="scope.row[item.field_name_en].length > 2">...</el-tag>
                   </div>
                 </template>
                 <span v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length == 0">--</span>
@@ -103,10 +104,12 @@
               </div>
 
               <div v-else-if="item.form_value === 'textarea'">
-                <el-popover placement="top-start" width="350" trigger="hover" :content="scope.row[item.field_name_en]">
-                  <div class="over-text" slot="reference" v-if="scope.row[item.field_name_en].length > 11">
-                    {{ scope.row[item.field_name_en] }}
-                  </div>
+                <el-popover v-if="scope.row[item.field_name_en].length > 11" placement="top-start" width="350" trigger="hover" :content="scope.row[item.field_name_en]">
+                  <template #reference>
+                    <div class="over-text">
+                      {{ scope.row[item.field_name_en] }}
+                    </div>
+                  </template>
                 </el-popover>
                 <span v-if="scope.row[item.field_name_en].length <= 11"> {{ scope.row[item.field_name_en] }} </span>
                 <span v-if="!scope.row[item.field_name_en]">--</span>
@@ -120,8 +123,8 @@
             </template>
           </el-table-column>
           <el-table-column label="操作">
-            <template slot-scope="scope">
-              <el-button type="text" @click="selectClick(scope.row)">选择</el-button>
+            <template #default="scope">
+              <el-button type="primary" link @click="selectClick(scope.row)">选择</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -142,8 +145,9 @@
 </template>
 
 <script>
-import { savecrudCateApi, dataModulerListApi, dataModulerFieldApi } from '@/api/develop'
+import { savecrudCateApi, dataModulerListApi, dataModulerFieldApi } from '@/api/develop.ts'
 export default {
+  emits: ['getSelection', 'getList'],
   name: 'CrmebOaEntApplicatDialog',
   props: {},
   data() {
@@ -184,7 +188,7 @@ export default {
       })
     },
     // 数组转成字符串
-    getValue(val) {
+    getValue(val, type) {
       let str = ''
       if (val == '') {
         str = '--'
@@ -277,16 +281,12 @@ export default {
     display: flex;
     justify-content: flex-end;
   }
-  /deep/.el-dialog {
+  :deep(.el-dialog) {
     border-radius: 6px;
   }
-  /deep/ .el-dialog__body {
+  :deep(.el-dialog__body) {
     margin-bottom: 0;
     padding: 0;
-  }
-
-  /deep/ .el-button--medium {
-    padding: 10px 15px;
   }
 }
 .el-icon-remove {

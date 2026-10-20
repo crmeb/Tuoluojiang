@@ -15,8 +15,8 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Notice;
 
-use App\Http\Dao\BaseDao;
 use App\Http\Model\Message\MessageSubscribe;
+use App\Http\Dao\BaseDao;
 
 class MessageSubscribeDao extends BaseDao
 {

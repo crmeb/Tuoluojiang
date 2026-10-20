@@ -2,22 +2,25 @@
 <template>
   <div class="oa-dialog">
     <el-dialog
-      top="10%"
-      :visible.sync="show"
+      class="form-common-dialog-form-dialog"
+      top="8%"
+      v-model="show"
       :width="fromData.width || '500px'"
       :show-close="false"
       :append-to-body="true"
       :close-on-click-modal="false"
     >
-      <div slot="title" class="header">
-        <span class="title">{{ fromData.title }} </span>
-        <span class="el-icon-close" @click="handleClose"></span>
-      </div>
+      <template #header>
+        <div class="header">
+          <span class="title">{{ fromData.title }} </span>
+          <span class="el-icon-close" @click="handleClose"></span>
+        </div>
+      </template>
       <div v-if="fromData.type == 'slot'">
         <slot></slot>
       </div>
 
-      <div class="invite" v-else>
+      <div class="invite" v-else >
         <oaForm
           ref="oaForm"
           :fromData="fromData"
@@ -27,10 +30,12 @@
           @submit="submitOk"
         ></oaForm>
       </div>
-      <span slot="footer" class="dialog-footer">
-        <el-button size="small" @click="handleClose">取消</el-button>
-        <el-button size="small" type="primary" @click="submit">{{ fromData.btnText || '确定' }}</el-button>
-      </span>
+      <template #footer>
+        <span class="dialog-footer" v-if="isFooter">
+          <el-button @click="handleClose">取消</el-button>
+          <el-button type="primary" @click="submit">{{ fromData.btnText || '确定' }}</el-button>
+        </span>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -41,6 +46,7 @@ import selectMember from '@/components/form-common/select-member'
 
 export default {
   name: 'CrmebOaEntIndex',
+  emits: ['submit', 'handleClose'],
   components: {
     oaForm,
     selectMember
@@ -50,6 +56,10 @@ export default {
     fromData: {
       type: Object,
       default: () => {}
+    },
+    isFooter: {
+      type: Boolean,
+      default: true
     },
     // 表单内容
     formConfig: {
@@ -111,6 +121,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+
 .header {
   display: flex;
   align-items: center;
@@ -137,18 +148,20 @@ export default {
     display: flex;
     justify-content: flex-end;
   }
-  /deep/.el-dialog {
+  :deep(.el-dialog) {
     border-radius: 6px;
-  }
-  /deep/ .el-dialog__footer {
-    padding-top: 0;
-  }
-  /deep/ .el-button--medium {
-    padding: 10px 15px;
   }
 }
 
-/deep/.el-dialog__body {
-  padding: 30px 20px 10px;
+</style>
+
+<style lang="scss">
+// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
+.el-dialog.form-common-dialog-form-dialog .el-dialog__footer {
+  padding-top: 0;
+}
+.el-dialog.form-common-dialog-form-dialog .el-dialog__body {
+   max-height: 550px;
+  overflow-y: auto;
 }
 </style>

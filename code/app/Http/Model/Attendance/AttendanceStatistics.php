@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,8 +16,8 @@ declare(strict_types=1);
 namespace App\Http\Model\Attendance;
 
 use App\Http\Model\Admin\Admin;
-use App\Http\Model\BaseModel;
 use App\Http\Model\Frame\Frame;
+use App\Http\Model\BaseModel;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
@@ -41,9 +41,50 @@ class AttendanceStatistics extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'shift_data'                  => 'array',
+        'id'                          => 'integer',
+        'uid'                         => 'integer',
+        'frame_id'                    => 'integer',
+        'group_id'                    => 'integer',
+        'shift_id'                    => 'integer',
+        'one_shift_time'              => 'datetime:Y-m-d H:i:s',
+        'one_shift_is_after'          => 'integer',
+        'one_shift_status'            => 'integer',
+        'one_shift_location_status'   => 'integer',
+        'one_shift_record_id'         => 'integer',
+        'two_shift_time'              => 'datetime:Y-m-d H:i:s',
+        'two_shift_is_after'          => 'integer',
+        'two_shift_status'            => 'integer',
+        'two_shift_location_status'   => 'integer',
+        'two_shift_record_id'         => 'integer',
+        'three_shift_time'            => 'datetime:Y-m-d H:i:s',
+        'three_shift_is_after'        => 'integer',
+        'three_shift_status'          => 'integer',
+        'three_shift_location_status' => 'integer',
+        'three_shift_record_id'       => 'integer',
+        'four_shift_time'             => 'datetime:Y-m-d H:i:s',
+        'four_shift_is_after'         => 'integer',
+        'four_shift_status'           => 'integer',
+        'four_shift_location_status'  => 'integer',
+        'four_shift_record_id'        => 'integer',
+        'required_work_hours'         => 'decimal:2',
+        'actual_work_hours'           => 'decimal:2',
+        'created_at'                  => 'datetime:Y-m-d H:i:s',
+        'updated_at'                  => 'datetime:Y-m-d H:i:s',
+        'deleted_at'                  => 'datetime:Y-m-d H:i:s',
+        'statistics_date'             => 'date:Y-m-d',
+        'active_flag'                 => 'integer',
+    ];
+
     protected $hidden = [
         'deleted_at',
     ];
+
+    public function scopeId($query, $value)
+    {
+        is_array($value) ? $query->whereIn('id', $value) : $query->where('id', $value);
+    }
 
     /**
      * created_at作用域
@@ -52,24 +93,17 @@ class AttendanceStatistics extends BaseModel
      */
     public function scopeDate($query, $value): void
     {
-        if ($value !== '') {
-            $query->whereDate('created_at', $value);
-        }
-    }
-
-    public function setShiftDataAttribute($value): void
-    {
-        $this->attributes['shift_data'] = json_encode($value);
-    }
-
-    public function getShiftDataAttribute($value)
-    {
-        return $value ? json_decode($value, true) : [];
+        is_array($value) ? $query->where(function ($q) use ($value) {
+            foreach ($value as $v) {
+                $q->orWhereDate('created_at', $v);
+            }
+            return $q;
+        }) : $query->whereDate('created_at', $value);
     }
 
     public function getDateAttribute(): string
     {
-        return date('Y-m-d', strtotime($this->attributes['created_at']));
+        return date('Y-m-d', datetime_timestamp($this->attributes['created_at']));
     }
 
     /**
@@ -79,9 +113,7 @@ class AttendanceStatistics extends BaseModel
      */
     public function scopeMonth($query, $value): void
     {
-        if ($value !== '') {
-            $query->where(DB::raw("DATE_FORMAT(created_at,'%Y-%m')"), $value);
-        }
+        $query->where(DB::raw("DATE_FORMAT(created_at,'%Y-%m')"), $value);
     }
 
     /**
@@ -91,11 +123,7 @@ class AttendanceStatistics extends BaseModel
      */
     public function scopeUid($query, $value): void
     {
-        if (is_array($value)) {
-            $query->whereIn('uid', $value);
-        } elseif ($value !== '') {
-            $query->where('uid', $value);
-        }
+        is_array($value) ? $query->whereIn('uid', $value) : $query->where('uid', $value);
     }
 
     /**
@@ -105,17 +133,19 @@ class AttendanceStatistics extends BaseModel
      */
     public function scopeStatus($query, $value): void
     {
-        if (is_array($value)) {
-            $query->whereIn('one_shift_status', $value)
-                ->orWhereIn('two_shift_status', $value)
-                ->orWhereIn('three_shift_status', $value)
-                ->orWhereIn('four_shift_status', $value);
-        } elseif ($value !== '') {
-            $query->where('one_shift_status', $value)
-                ->orWhere('two_shift_status', $value)
-                ->orWhere('three_shift_status', $value)
-                ->orWhere('four_shift_status', $value);
-        }
+        $query->where(function ($query) use ($value) {
+            if (is_array($value)) {
+                $query->whereIn('one_shift_status', $value)
+                    ->orWhereIn('two_shift_status', $value)
+                    ->orWhereIn('three_shift_status', $value)
+                    ->orWhereIn('four_shift_status', $value);
+            } else {
+                $query->where('one_shift_status', $value)
+                    ->orWhere('two_shift_status', $value)
+                    ->orWhere('three_shift_status', $value)
+                    ->orWhere('four_shift_status', $value);
+            }
+        });
     }
 
     /**
@@ -125,17 +155,19 @@ class AttendanceStatistics extends BaseModel
      */
     public function scopeLocationStatus($query, $value): void
     {
-        if (is_array($value)) {
-            $query->whereIn('one_shift_location_status', $value)
-                ->orWhereIn('two_shift_location_status', $value)
-                ->orWhereIn('three_shift_location_status', $value)
-                ->orWhereIn('four_shift_location_status', $value);
-        } elseif ($value !== '') {
-            $query->where('one_shift_location_status', $value)
-                ->orWhere('two_shift_location_status', $value)
-                ->orWhere('three_shift_location_status', $value)
-                ->orWhere('four_shift_location_status', $value);
-        }
+        $query->where(function ($query) use ($value) {
+            if (is_array($value)) {
+                $query->whereIn('one_shift_location_status', $value)
+                    ->orWhereIn('two_shift_location_status', $value)
+                    ->orWhereIn('three_shift_location_status', $value)
+                    ->orWhereIn('four_shift_location_status', $value);
+            } else {
+                $query->where('one_shift_location_status', $value)
+                    ->orWhere('two_shift_location_status', $value)
+                    ->orWhere('three_shift_location_status', $value)
+                    ->orWhere('four_shift_location_status', $value);
+            }
+        });
     }
 
     /**
@@ -145,12 +177,12 @@ class AttendanceStatistics extends BaseModel
      */
     public function scopeLocationStatusLt($query, $value): void
     {
-        if ($value !== '') {
+        $query->where(function ($query) use ($value) {
             $query->where('one_shift_location_status', '<', $value)
                 ->orWhere('two_shift_location_status', '<', $value)
                 ->orWhere('three_shift_location_status', '<', $value)
                 ->orWhere('four_shift_location_status', '<', $value);
-        }
+        });
     }
 
     /**
@@ -160,12 +192,12 @@ class AttendanceStatistics extends BaseModel
      */
     public function scopeLocationStatusGt($query, $value): void
     {
-        if ($value !== '') {
+        $query->where(function ($query) use ($value) {
             $query->where('one_shift_location_status', '>', $value)
                 ->orWhere('two_shift_location_status', '>', $value)
                 ->orWhere('three_shift_location_status', '>', $value)
                 ->orWhere('four_shift_location_status', '>', $value);
-        }
+        });
     }
 
     /**
@@ -184,10 +216,12 @@ class AttendanceStatistics extends BaseModel
      */
     public function scopeStatusGt($query, $value): void
     {
-        $query->where('one_shift_status', '>', $value)
-            ->orWhere('two_shift_status', '>', $value)
-            ->orWhere('three_shift_status', '>', $value)
-            ->orWhere('four_shift_status', '>', $value);
+        $query->where(function ($query) use ($value) {
+            $query->where('one_shift_status', '>', $value)
+                ->orWhere('two_shift_status', '>', $value)
+                ->orWhere('three_shift_status', '>', $value)
+                ->orWhere('four_shift_status', '>', $value);
+        });
     }
 
     /**
@@ -197,10 +231,12 @@ class AttendanceStatistics extends BaseModel
      */
     public function scopeStatusLt($query, $value): void
     {
-        $query->where('one_shift_status', '<', $value)
-            ->orWhere('two_shift_status', '<', $value)
-            ->orWhere('three_shift_status', '<', $value)
-            ->orWhere('four_shift_status', '<', $value);
+        $query->where(function ($query) use ($value) {
+            $query->where('one_shift_status', '<', $value)
+                ->orWhere('two_shift_status', '<', $value)
+                ->orWhere('three_shift_status', '<', $value)
+                ->orWhere('four_shift_status', '<', $value);
+        });
     }
 
     /**
@@ -210,9 +246,7 @@ class AttendanceStatistics extends BaseModel
      */
     public function scopeShiftIdGt($query, $value): void
     {
-        if ($value !== '') {
-            $query->where('shift_id', '>', $value);
-        }
+        $query->where('shift_id', '>', $value);
     }
 
     /**
@@ -241,9 +275,7 @@ class AttendanceStatistics extends BaseModel
      */
     public function scopeGtDate($query, $value): void
     {
-        if ($value !== '') {
-            $query->whereDate('created_at', '>', $value);
-        }
+        $query->whereDate('created_at', '>', $value);
     }
 
     /**
@@ -253,7 +285,7 @@ class AttendanceStatistics extends BaseModel
      */
     public function scopeAbnormalStatus($query, $value): void
     {
-        if ($value !== '') {
+        $query->where(function ($query) use ($value) {
             $query->where(function ($query) use ($value) {
                 $query->where('one_shift_status', '>', $value)
                     ->orWhere('two_shift_status', '>', $value)
@@ -265,6 +297,6 @@ class AttendanceStatistics extends BaseModel
                     ->orWhere('three_shift_location_status', 2)
                     ->orWhere('four_shift_location_status', 2);
             });
-        }
+        });
     }
 }

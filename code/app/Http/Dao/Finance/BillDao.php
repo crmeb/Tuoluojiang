@@ -15,20 +15,21 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Finance;
 
-use App\Http\Dao\BaseDao;
 use App\Http\Model\Finance\Bill;
 use App\Http\Service\Finance\BillCategoryService;
 use Carbon\Carbon;
-use crmeb\interfaces\ResourceDaoInterface;
-use crmeb\traits\dao\BatchSearchTrait;
-use crmeb\traits\dao\ListSearchTrait;
-use crmeb\traits\dao\TogetherSearchTrait;
-use crmeb\utils\Statistics;
+use App\Http\Dao\BaseDao;
+use Tuoluojiang\Open\interfaces\ResourceDaoInterface;
+use Tuoluojiang\Open\traits\dao\BatchSearchTrait;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
+use Tuoluojiang\Open\traits\dao\TogetherSearchTrait;
+use Tuoluojiang\Open\utils\Statistics;
 use Illuminate\Contracts\Container\BindingResolutionException;
 
 /**
  * 资金流水记录
  * Class BillDao.
+ * @mixin BaseDao
  */
 class BillDao extends BaseDao implements ResourceDaoInterface
 {
@@ -84,7 +85,7 @@ class BillDao extends BaseDao implements ResourceDaoInterface
      * @return array
      * @throws BindingResolutionException
      */
-    public function getTrend($time, $timeType, $str, $types, $entid, $cateId = [])
+    public function getTrend($time, $timeType, $str, $types, $entid, $cateId = [], array $userIds = [])
     {
         return $this->getModel()->where(function ($query) use ($time, $types) {
             if ($time[0] == $time[1]) {
@@ -95,6 +96,8 @@ class BillDao extends BaseDao implements ResourceDaoInterface
             $query->where('types', $types);
         })->when($cateId, function ($q) use ($cateId) {
             $q->whereIn('cate_id', $cateId);
+        })->when($userIds, function ($query) use ($userIds) {
+            $query->whereIn('user_id', $userIds);
         })->where('entid', $entid)->selectRaw("DATE_FORMAT(edit_time,'{$timeType}') as days,{$str} as num")
             ->groupBy('days')->get()->toArray();
     }
@@ -110,7 +113,7 @@ class BillDao extends BaseDao implements ResourceDaoInterface
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
-    public function getBillRank($time, $types, $entid, $level = 0, $sum = 0, array|int $cateId = 0, array $cateSearch = [])
+    public function getBillRank($time, $types, $entid, $level = 0, $sum = 0, array|int $cateId = 0, array $cateSearch = [], array $userIds = [])
     {
         $cateService = app()->get(BillCategoryService::class);
         $where       = ['types' => $types];
@@ -133,6 +136,8 @@ class BillDao extends BaseDao implements ResourceDaoInterface
                 }
             })->when($entid, function ($query) use ($entid) {
                 $query->where('entid', $entid);
+            })->when($userIds, function ($query) use ($userIds) {
+                $query->whereIn('user_id', $userIds);
             })->when($v['id'], function ($query) use ($cateService, $cateId, $v, $cateSearch) {
                 if ($cateId && $cateId == $v['id']) {
                     $query->where('cate_id', $cateId);
@@ -167,7 +172,7 @@ class BillDao extends BaseDao implements ResourceDaoInterface
      * @return int|mixed
      * @throws BindingResolutionException
      */
-    public function getSum($time, $types, $level = 0, int $entId, int $cateId = 0)
+    public function getSum($time, $types, $level = 0, int $entId = 0, array|int $cateId = 0, array $userIds = [])
     {
         $cateService = app()->get(BillCategoryService::class);
         return $this->getModel()->where(function ($query) use ($time) {
@@ -178,6 +183,8 @@ class BillDao extends BaseDao implements ResourceDaoInterface
             }
         })->when($entId, function ($query) use ($entId) {
             $query->where('entid', $entId);
+        })->when($userIds, function ($query) use ($userIds) {
+            $query->whereIn('user_id', $userIds);
         })->when($level, function ($query) use ($level, $cateService) {
             $query->whereIn('cate_id', $cateService->column(['gt_level' => $level], 'id'));
         })->when($cateId || ! $level, function ($query) use ($cateId, $cateService) {
@@ -187,7 +194,10 @@ class BillDao extends BaseDao implements ResourceDaoInterface
 
     /**
      * 搜索.
+     *
      * @param array|int|string $where
+     *
+     * @return BaseModel|BuildsQueries|mixed
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
@@ -205,7 +215,12 @@ class BillDao extends BaseDao implements ResourceDaoInterface
         return parent::search($where, $authWhere)->where(function ($query) use ($name, $uid, $entId) {
             $query->when($name, function ($query) use ($name, $uid, $entId) {
                 $query->orWhere('num', 'like', '%' . $name . '%')->orWhere('mark', 'like', '%' . $name . '%')
-                    ->orWhereIn('uid', $uid)->orWhereIn('cate_id', function ($query) use ($name, $entId) {
+                    ->orWhereIn('link_id', function ($q) use ($name) {
+                        $q->from('client_bill')->select('id')->where('mark', 'like', '%' . $name . '%');
+                    })
+                    ->when($uid, function ($query) use ($uid) {
+                        $query->orWhereIn('uid', $uid);
+                    })->orWhereIn('cate_id', function ($query) use ($name, $entId) {
                         $query->from('bill_category')->select(['id'])
                             ->where('entid', $entId)->where('name', 'like', '%' . $name . '%');
                     });

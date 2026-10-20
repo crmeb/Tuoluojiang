@@ -6,6 +6,13 @@
           <tree :parentTree="options" @getTypesId="getTypesId" @addType="addType"></tree>
         </el-col>
         <el-col v-bind="gridr" class="boder-left pl20">
+          <el-button
+            v-if="selectedRows.length > 0"
+            class="left-btn"
+            type="primary"
+            @click="handleBatchPush"
+            >批量设置
+          </el-button>
           <oaFromBox
             :search="searchData"
             :title="$route.meta.title"
@@ -13,20 +20,20 @@
             :isViewSearch="false"
             :sortSearch="false"
             :isAddBtn="false"
+            :dropdownList="dropdownList"
             class="mb20"
             @confirmData="confirmData"
+            @dropdownFn="handleDropdown"
           >
-            <el-button slot="rightBtn" type="primary" size="small" class="h32" @click="getMessageSync"
-              >同步数据
-            </el-button>
           </oaFromBox>
           <div class="table-box">
-            <el-table ref="table" :data="tableData" :height="tableHeight">
+            <el-table ref="table" :data="tableData" :height="TABLE_HEIGHT" @selection-change="handleSelectionChange">
+              <el-table-column type="selection" width="55" />
               <el-table-column prop="title" label="消息标题" min-width="100" show-overflow-tooltip />
               <el-table-column prop="content" label="消息内容" min-width="240" show-overflow-tooltip />
               <el-table-column prop="cate_name" label="消息类型" min-width="100" show-overflow-tooltip />
-              <el-table-column prop="verify" label="消息通知" min-width="100">
-                <template slot-scope="scope">
+              <el-table-column prop="verify" label="系统通知" min-width="100">
+                <template #default="scope">
                   <el-switch
                     v-if="scope.row.system_template"
                     v-model="scope.row.system_template.status"
@@ -39,7 +46,7 @@
                 </template>
               </el-table-column>
               <el-table-column prop="verify" label="短信" min-width="100">
-                <template slot-scope="scope">
+                <template #default="scope">
                   <el-switch
                     v-if="scope.row.sms_template"
                     v-model="scope.row.sms_template.status"
@@ -51,8 +58,21 @@
                   />
                 </template>
               </el-table-column>
+              <el-table-column prop="verify" label="企微消息" min-width="100">
+                <template #default="scope">
+                  <el-switch
+                    v-if="scope.row.wework_template"
+                    v-model="scope.row.wework_template.status"
+                    active-text="开启"
+                    inactive-text="关闭"
+                    @change="messageStatus(scope.row.id, scope.row.wework_template, 5)"
+                    :active-value="1"
+                    :inactive-value="0"
+                  />
+                </template>
+              </el-table-column>
               <el-table-column prop="verify" label="企微BOT" min-width="100">
-                <template slot-scope="scope">
+                <template #default="scope">
                   <el-switch
                     v-if="scope.row.work_template"
                     v-model="scope.row.work_template.status"
@@ -65,7 +85,7 @@
                 </template>
               </el-table-column>
               <el-table-column prop="verify" label="钉钉BOT" min-width="100">
-                <template slot-scope="scope">
+                <template #default="scope">
                   <el-switch
                     v-if="scope.row.ding_template"
                     v-model="scope.row.ding_template.status"
@@ -78,7 +98,7 @@
                 </template>
               </el-table-column>
               <el-table-column prop="verify" label="其他BOT" min-width="100">
-                <template slot-scope="scope">
+                <template #default="scope">
                   <el-switch
                     v-if="scope.row.other_template"
                     v-model="scope.row.other_template.status"
@@ -91,7 +111,7 @@
                 </template>
               </el-table-column>
               <el-table-column prop="verify" label="可取消订阅" min-width="100">
-                <template slot-scope="scope">
+                <template #default="scope">
                   <el-switch
                     v-model="scope.row.user_sub"
                     active-text="开启"
@@ -102,13 +122,13 @@
                   />
                 </template>
               </el-table-column>
-              <el-table-column :label="$t('toptable.operation')" width="190" fixed="right">
-                <template slot-scope="scope">
-                  <el-button type="text" @click="handlePush(scope.row)">推送渠道</el-button>
+              <el-table-column label="操作" width="190" fixed="right">
+                <template #default="scope">
+                  <el-button type="primary" link @click="handlePush(scope.row)">推送渠道</el-button>
                   <el-button
                     v-hasPermi="['enterprise:news:edit']"
                     v-if="scope.row.template_time === 1"
-                    type="text"
+                    type="primary" link
                     @click="handleTime(scope.row)"
                     >设置时间
                   </el-button>
@@ -118,6 +138,7 @@
           </div>
         </el-col>
       </el-row>
+
       <div class="page-fixed">
         <el-pagination
           :page-size="where.limit"
@@ -140,21 +161,25 @@
 </template>
 
 <script>
-import { messageListApi, putStatusMessageApi, messageSubscribeApi, messageSyncApi, messageCateApi } from '@/api/setting'
-import { status } from 'nprogress'
+import { defineAsyncComponent } from 'vue'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { messageListApi, putStatusMessageApi, messageSubscribeApi, messageSyncApi, messageCateApi } from '@/api/setting.ts'
 
+import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'Apply',
   components: {
-    oaFromBox: () => import('@/components/common/oaFromBox'),
-    messagePush: () => import('./components/messagePush'),
-    messageType: () => import('./components/messageType'),
-    tree: () => import('./components/tree'),
-    messageTimes: () => import('./components/messageTimes')
+    oaFromBox,
+    messagePush: defineAsyncComponent(() => import('./components/messagePush')),
+    messageType: defineAsyncComponent(() => import('./components/messageType')),
+    tree: defineAsyncComponent(() => import('./components/tree')),
+    messageTimes: defineAsyncComponent(() => import('./components/messageTimes'))
   },
   data() {
     return {
+      TABLE_HEIGHT,
       tableData: [],
+      selectedRows: [],
       options: [],
       messageData: {},
       where: {
@@ -187,7 +212,8 @@ export default {
           field_name_en: 'title',
           form_value: 'input'
         }
-      ]
+      ],
+      dropdownList: [{ label: '同步数据', value: 'sync' }]
     }
   },
   mounted() {
@@ -294,6 +320,21 @@ export default {
       }
       this.$refs.messageTimes.handleOpen()
     },
+    handleSelectionChange(rows) {
+      this.selectedRows = rows || []
+    },
+    handleBatchPush() {
+      if (!this.selectedRows.length) {
+        this.$message.warning('请先勾选需要设置的消息')
+        return
+      }
+      this.$refs.messagePush.openBatchBox(this.selectedRows.map((row) => row.id))
+    },
+    handleDropdown(item) {
+      if (item.value === 'sync') {
+        this.getMessageSync()
+      }
+    },
     //修改状态
     messageStatus(id, row, type) {
       putStatusMessageApi(id, type, { status: row.status })
@@ -327,7 +368,16 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/deep/ .el-table__row {
+:deep(.el-table__row) {
   height: 56px;
+}
+.boder-left {
+  position: relative;
+}
+.left-btn {
+  position: absolute;
+  left: 20px;
+  bottom: -54px !important;
+  z-index: 999;
 }
 </style>

@@ -3,7 +3,7 @@
     <div class="card-box">
       <el-card :body-style="{ padding: '20px 20px 0' }" class="box-card">
         <div class="setting-container">
-          <el-form ref="elForm" :model="formData" :rules="rules" size="medium">
+          <el-form ref="elForm" :model="formData" :rules="rules" size="default" label-width="125px">
             <div class="card-list">
               <div class="head">
                 <span class="line">|</span>
@@ -16,7 +16,7 @@
                   :inactive-value="0"
                   active-color="#1890ff"
                   active-text="开启"
-                  inactive-color="#909399"
+                  inactive-color="#cccccc"
                   inactive-text="关闭"
                 >
                 </el-switch>
@@ -24,8 +24,8 @@
               <template v-if="formData.follow_up_switch">
                 <el-form-item label="客户状态：" prop="follow_up_status">
                   <el-checkbox-group v-model="formData.follow_up_status" @change="handleCheckChange">
-                    <el-checkbox :label="2">未成交</el-checkbox>
-                    <el-checkbox :label="1">已成交</el-checkbox>
+                    <el-checkbox :label="2" :value="2">未成交</el-checkbox>
+                    <el-checkbox :label="1" :value="1">已成交</el-checkbox>
                     <div class="info">用于设置需要跟进提醒的客户状态</div>
                   </el-checkbox-group>
                 </el-form-item>
@@ -35,11 +35,9 @@
                     clearable
                     placeholder="请输入正整数"
                     show-word-limit
-                    size="small"
-                    style="width: 350px"
                     type="number"
                   >
-                    <template slot="suffix">天</template>
+                    <template #suffix>天</template>
                   </el-input>
                   <div class="info">用于设置暂未成交状态的客户多少天需要跟进一次</div>
                 </el-form-item>
@@ -49,26 +47,25 @@
                     clearable
                     placeholder="请输入正整数"
                     show-word-limit
-                    size="small"
-                    style="width: 350px"
                   >
-                    <template slot="suffix">天</template>
+                    <template #suffix>天</template>
                   </el-input>
                   <div class="info">用于设置已成交状态的客户多少天需要跟进一次</div>
                 </el-form-item>
               </template>
-              <el-form-item>
-                <el-button size="small" type="primary" @click="saveEvt">保存</el-button>
-              </el-form-item>
             </div>
           </el-form>
         </div>
       </el-card>
+      <div class="cr-bottom-button">
+        <el-button type="primary" @click="saveEvt">保存</el-button>
+      </div>
     </div>
   </div>
 </template>
 <script>
 export default {
+  emits: ['followData', 'saveEvt'],
   name: 'FollowRules',
   props: {
     formData: {
@@ -134,9 +131,7 @@ export default {
       this.$emit('saveEvt')
     },
     getVal(type) {
-      return (
-        typeof this.formData.follow_up_status != 'undefined' && this.formData.follow_up_status.includes(type)
-      )
+      return typeof this.formData.follow_up_status != 'undefined' && this.formData.follow_up_status.includes(type)
     }
   }
 }
@@ -149,8 +144,11 @@ export default {
   color: #303133;
 
   .box-card {
+    height: calc(100vh - 180px);
+    overflow-y: auto;
+
     .setting-container {
-      width: 300px;
+      width: 460px;
       margin: 0 auto;
       // padding-bottom: 20px;
       .head {
@@ -189,18 +187,23 @@ export default {
     }
   }
 }
-/deep/.el-card.is-always-shadow {
+.cr-bottom-button {
+  left: 14px;
+  right: 14px;
+  width: initial;
+}
+:deep(.el-card.is-always-shadow) {
   border: none;
 }
-/deep/.el-form-item__label {
+:deep(.el-form-item__label) {
   line-height: 36px;
 }
 .el-form-item::before,
 .el-form-item::after {
   display: none;
 }
-/deep/.el-form-item__content::before,
-/deep/.el-form-item__content::after {
+:deep(.el-form-item__content::before),
+:deep(.el-form-item__content::after) {
   display: none;
 }
 </style>

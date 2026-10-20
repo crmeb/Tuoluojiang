@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -33,6 +33,20 @@ class SystemCrudRole extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'         => 'integer',
+        'role_id'    => 'integer',
+        'crud_id'    => 'integer',
+        'created'    => 'integer',
+        'reade'      => 'integer',
+        'updated'    => 'integer',
+        'deleted'    => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+        'transfer'   => 'integer',
+        'share'      => 'integer',
+    ];
 
     public function setReadeFrameAttribute($value)
     {
@@ -86,8 +100,6 @@ class SystemCrudRole extends BaseModel
 
     /**
      * 角色ID作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeRoleId($query, $value)
     {

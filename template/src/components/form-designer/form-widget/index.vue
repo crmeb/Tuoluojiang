@@ -19,50 +19,35 @@
         @add="onDragAdd"
         @update="onDragUpdate"
         :move="checkMove"
+        tag="div"
+        class="form-widget-list"
+        :item-key="$draggableKey"
       >
-        <transition-group name="fade" tag="div" class="form-widget-list">
-          <template v-for="(widget, index) in designer.widgetList">
-            <template v-if="'container' === widget.category">
-              <component
-                :is="getWidgetName(widget)"
-                :widget="widget"
-                :designer="designer"
-                :key="widget.id"
-                :parent-list="designer.widgetList"
-                :index-of-parent-list="index"
-                :parent-widget="null"
-              ></component>
-            </template>
-            <template v-else>
-              <component
-                :is="getWidgetName(widget)"
-                :field="widget"
-                :designer="designer"
-                :key="widget.id"
-                :parent-list="designer.widgetList"
-                :index-of-parent-list="index"
-                :parent-widget="null"
-                :design-state="true"
-              ></component>
-            </template>
-          </template>
-        </transition-group>
+        <template #item="{ element: widget, index }">
+          <component
+            :is="getWidgetName(widget)"
+            v-bind="widget.category === 'container' ? { widget } : { field: widget, designState: true }"
+            :designer="designer"
+            :parent-list="designer.widgetList"
+            :index-of-parent-list="index"
+            :parent-widget="null"
+          ></component>
+        </template>
       </draggable>
     </el-form>
   </div>
 </template>
 
 <script>
+import { toElSize } from '@/utils/el-size.ts'
 import Draggable from 'vuedraggable'
 import '@/components/form-designer/form-widget/container-widget/index'
 import FieldComponents from '@/components/form-designer/form-widget/field-widget/index'
-import i18n from '@/utils/i18n'
+import i18n from '@/utils/i18n.ts'
 import { containers } from '@/components/form-designer/widget-panel/widgetsConfig'
-import { el } from '@fullcalendar/core/internal-common'
 
 export default {
   name: 'VFormWidget',
-  componentName: 'VFormWidget',
   mixins: [i18n],
   components: {
     Draggable,
@@ -113,10 +98,10 @@ export default {
 
     size() {
       if (!!this.designer.formConfig && !!this.designer.formConfig.size) {
-        return this.designer.formConfig.size
+        return toElSize(this.designer.formConfig.size)
       }
 
-      return 'medium'
+      return 'default'
     },
 
     customClass() {
@@ -152,7 +137,7 @@ export default {
   },
   methods: {
     getWidgetName(widget) {
-      return widget.type + '-widget'
+      return widget.type === 'tab' ? 'form-tab-widget' : widget.type + '-widget'
     },
     /* 禁用Firefox默认拖拽搜索功能!! */
     disableFirefoxDefaultDrop() {
@@ -175,6 +160,17 @@ export default {
     onDragAdd(evt) {
       const newIndex = evt.newIndex
       let widget = this.designer.widgetList[newIndex]
+
+      if (this.designer.widgetList.length > 0) {
+        this.designer.widgetList.map((item) => {
+          if (item.type === 'details' && widget.options.name.indexOf('@') !== -1) {
+            this.designer.widgetList.splice(newIndex, 1)
+            this.$message.error('从实体字段仅支持拖拽到明细组件内')
+            return false
+          }
+        })
+      }
+
       let name = this.widgetNameFilter(widget)
       if (!!this.designer.widgetList[newIndex]) {
         this.designer.setNamesList(this.designer.widgetList[newIndex])
@@ -291,8 +287,8 @@ export default {
 
 <style lang="scss" scoped>
 .container-scroll-bar {
-  ::v-deep .el-scrollbar__wrap,
-  ::v-deep .el-scrollbar__view {
+  :deep(.el-scrollbar__wrap),
+  :deep(.el-scrollbar__view) {
     overflow-x: hidden;
   }
 }
@@ -346,7 +342,7 @@ export default {
     box-shadow: 0 0 1px 10px #495060;
   }
 
-  .el-form.widget-form ::v-deep .el-row {
+  .el-form.widget-form :deep(.el-row) {
     padding: 2px;
     border: 1px dashed #dcdfe6;
   }
@@ -362,9 +358,8 @@ export default {
   transition: opacity 0.5s;
 }
 
-.fade-enter,
+.fade-enter-from,
 .fade-leave-to {
   opacity: 0;
 }
 </style>
-@/utils/i18ns

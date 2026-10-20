@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,6 +17,8 @@ namespace App\Jobs;
 
 use App\Constants\CacheEnum;
 use App\Http\Service\Schedule\ScheduleService;
+use App\Task\system\ScheduleTask;
+use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Hhxsv5\LaravelS\Swoole\Timer\CronJob;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -27,7 +29,7 @@ use Illuminate\Support\Facades\Log;
  */
 class ScheduleCronJob extends CronJob
 {
-    protected int $limit = 500;
+    protected int $limit = 100;
 
     /**
      * 频率：每1s运行一次
@@ -52,7 +54,7 @@ class ScheduleCronJob extends CronJob
                 );
                 $sumPage = ceil($sumCount / $this->limit);
                 for ($i = 1; $i <= (int) $sumPage; ++$i) {
-                    ScheduleJob::dispatch($where, $i, $this->limit);
+                    Task::deliver(new ScheduleTask($where, $i, $this->limit));
                 }
             }
         } catch (\Throwable $e) {

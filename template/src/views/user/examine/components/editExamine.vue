@@ -2,40 +2,43 @@
   <div>
     <!-- 编辑审批 -->
     <el-drawer
+      class="user-examine-edit-examine-drawer"
       size="628px"
-      :visible.sync="drawer"
+      v-model="drawer"
       :show-close="true"
       :direction="direction"
       :before-close="close"
       :append-to-body="true"
-      :wrapper-closable="false"
+      :close-on-click-modal="false"
     >
-      <div slot="title">
-        <div v-if="configData" class="headerBox acea-row row-middle row-between">
-          <div v-if="!isEdit" class="acea-row row-middle">
-            <div
-              class="portrait mr10"
-              :style="{ backgroundColor: configData.approve ? configData.approve.color : configData.color }"
-            >
-              <i class="iconfont" :class="configData.approve ? configData.approve.icon : configData.icon"></i>
+      <template #header>
+        <div>
+          <div v-if="configData" class="headerBox acea-row row-middle row-between">
+            <div v-if="!isEdit" class="acea-row row-middle">
+              <div
+                class="portrait mr10"
+                :style="{ backgroundColor: configData.approve ? configData.approve.color : configData.color }"
+              >
+                <i class="iconfont" :class="configData.approve ? configData.approve.icon : configData.icon"></i>
+              </div>
+              <div class="nameBox">
+                <span class="st1">{{ configData.approve ? configData.approve.name : configData.name }}</span>
+              </div>
             </div>
-            <div class="nameBox">
-              <span class="st1">{{ configData.approve ? configData.approve.name : configData.name }}</span>
-            </div>
-          </div>
-          <div v-else class="acea-row row-middle">
-            <div
-              class="portrait mr10"
-              :style="{ backgroundColor: configData.approve ? configData.approve.color : configData.color }"
-            >
-              <i class="iconfont" :class="configData.approve ? configData.approve.icon : configData.icon"></i>
-            </div>
-            <div class="nameBox">
-              <span class="st1">{{ configData.approve ? configData.approve.name : configData.name }}</span>
+            <div v-else class="acea-row row-middle">
+              <div
+                class="portrait mr10"
+                :style="{ backgroundColor: configData.approve ? configData.approve.color : configData.color }"
+              >
+                <i class="iconfont" :class="configData.approve ? configData.approve.icon : configData.icon"></i>
+              </div>
+              <div class="nameBox">
+                <span class="st1">{{ configData.approve ? configData.approve.name : configData.name }}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </template>
       <div class="ex-content">
         <el-scrollbar style="height: 100%">
           <div class="ex-content-con">
@@ -43,12 +46,13 @@
               <div class="shu mr10"></div>
               <span class="title">提交审批</span>
             </div>
-            <form-create
+            <component
+              :is="formCreateComponent"
+              v-if="formCreateComponent"
               class="edit-examine-form"
               ref="fc"
-              v-model="fapi"
+              v-model:api="fapi"
               :option="option"
-              size="small"
               :rule="rules"
               @change="handleChange"
             />
@@ -61,9 +65,9 @@
         </el-scrollbar>
       </div>
       <div class="button from-foot-btn fix btn-shadow">
-        <el-button size="small" @click="close">{{ $t('public.cancel') }}</el-button>
-        <el-button size="small" type="primary" :loading="loading" @click="handleConfirm('ruleForm')">
-          {{ $t('public.ok') }}
+        <el-button @click="close">取消</el-button>
+        <el-button type="primary" :loading="loading" @click="handleConfirm('ruleForm')">
+          确定
         </el-button>
       </div>
     </el-drawer>
@@ -71,19 +75,21 @@
 </template>
 
 <script>
-import request from '@/api/request'
+import { defineAsyncComponent, markRaw } from 'vue'
+import { loadApprovalForm } from '@/libs/approval-form'
+import request from '@/api/request.ts'
 import {
   approveApplyEditApi,
   approveApplyFormApi,
   approveApplyListApi,
   attendanceAbnormalDateApi,
-  attendanceAbnormalRecordApi,
   approveHolidayTypeSelectApi
-} from '@/api/business'
+} from '@/api/business.ts'
 
 export default {
+  emits: ['scheduleRecord', 'isOk'],
   components: {
-    processFrom: () => import('./process')
+    processFrom: defineAsyncComponent(() => import('./process'))
   },
   props: {
     parameterData: {
@@ -102,6 +108,7 @@ export default {
       drawer: false,
       direction: 'rtl',
       fapi: null,
+      formCreateComponent: null,
       abnormal: '', //异常日期
       record: '', //异常记录
       holiday: '', //假期类型
@@ -113,7 +120,8 @@ export default {
       calculateType: '',
       option: {
         form: {
-          labelWidth: '120px'
+          labelWidth: 'auto',
+          labelSuffix: '：'
         },
         submitBtn: false,
         global: {
@@ -122,7 +130,7 @@ export default {
               closeBtn: false,
               okBtn: false,
               onLoad: (e) => {
-                e.fApi = this.$refs.fc.$f
+                e.fApi = this.$refs.fc.fapi
               }
             }
           }
@@ -176,7 +184,8 @@ export default {
     },
     // 获取表单配置
     approveApply(id, val, type) {
-      approveApplyFormApi(id, this.parameterData).then((res) => {
+      Promise.all([loadApprovalForm(), approveApplyFormApi(id, this.parameterData)]).then(([FormCreate, res]) => {
+        this.formCreateComponent = markRaw(FormCreate)
         this.configData = res.data.info
         res.data.forms.forEach((item) => {
           if ((item.type === 'moneyFrom' || item.type === 'inputNumber') && item.props) {
@@ -201,31 +210,35 @@ export default {
             })
           }
         })
-        this.rules = []
-        res.data.forms.map((item) => {
-          if (item.children && item.type !== 'span') {
-            item.children.forEach((per) => {
-              if (per.calculateType) {
-                per.calculateType = item.type
-                this.calculateType = item.type
-                if (per.title === '异常日期' && per.calculateType === 'refillFrom') {
-                  per.options = this.tryDateOptions
-                }
-                if (per.title === '假期类型' && per.calculateType === 'leaveFrom') {
-                  per.options = this.holidayTypeOptions
-                }
+        this.rules = res.data.forms
+        // res.data.forms.map((item) => {
+        //   if (item.children && item.type !== 'span') {
+        //     item.children.forEach((per) => {
+        //       const props = per.props;
+        //       const isDisabledField = props && props.disabled;
+        //       if (!isDisabledField) {
+        //         delete per.value
+        //       }
+        //       if (per.calculateType) {
+        //         per.calculateType = item.type
+        //         this.calculateType = item.type
+        //         if (per.title === '异常日期' && per.calculateType === 'refillFrom') {
+        //           per.options = this.tryDateOptions
+        //         }
+        //         if (per.title === '假期类型' && per.calculateType === 'leaveFrom') {
+        //           per.options = this.holidayTypeOptions
+        //         }
 
-                this.rules.push(per)
-              } else {
-                this.rules.push(per)
-              }
-            })
-          } else {
-            item.calculateType = item.type
-
-            this.rules.push(item)
-          }
-        })
+        //         this.rules.push(per)
+        //       } else {
+        //         this.rules.push(per)
+        //       }
+        //     })
+        //   } else {
+        //     item.calculateType = item.type
+        //     this.rules.push(item)
+        //   }
+        // })
 
         if (!this.isEdit) {
           this.drawer = true
@@ -238,6 +251,8 @@ export default {
           if (this.configData.examine == 0) return false
           this.approveApplyEdit(this.id, { types: 0 })
         }
+      }).catch(() => {
+        this.$message.error('审批表单加载失败，请重试')
       })
     },
     // 获取人员配置表单
@@ -290,7 +305,7 @@ export default {
       let expressList = ['liaisonMan', 'telephone', 'mailingAddress']
       let timeType
       const data = this.handleFromObj()
-      this.rules.forEach((it) => {
+      this.eachFormRule(this.rules, (it) => {
         if (it.field === e && it.title == '假期类型' && this.holidayTypeOptions) {
           this.holidayTypeOptions.map((item) => {
             if (item.value == data[e]) {
@@ -300,7 +315,7 @@ export default {
         }
       })
 
-      this.rules.forEach((item) => {
+      this.eachFormRule(this.rules, (item) => {
         if (data[e] == 'express') {
           if (expressList.includes(item.symbol)) {
             item.hidden = false
@@ -329,6 +344,7 @@ export default {
           }
         }
         if (!!JSON.stringify(timeType) && item.type == 'timeFrom') {
+          if (!item.props) item.props = {}
           item.props.timeType = timeType == 0 ? 'day' : 'time'
         }
       })
@@ -393,7 +409,9 @@ export default {
     },
     // 递归回显审批内容
     calculateLevel(arr, option) {
+      if (!Array.isArray(arr)) return arr
       arr.forEach((value) => {
+        if (!value || typeof value !== 'object') return
         if (option[value.field]) {
           value.value = option[value.field]
         } else {
@@ -410,10 +428,10 @@ export default {
         var option = res.data
         this.calculateLevel(this.rules, option)
 
-        this.rules.forEach((item) => {
+        this.eachFormRule(this.rules, (item) => {
           if (item.title == '异常日期') {
             this.attendanceAbnormalDate()
-            if (item.value.abnormal_id) {
+            if (item.value && item.value.abnormal_id) {
               this.abnormal_id = item.value.abnormal_id.value
               this.abnormal_label = item.value.abnormal_id.label
             }
@@ -438,16 +456,31 @@ export default {
       })
       return attr
     },
+    // 递归遍历表单规则，嵌套容器（refillFrom、leaveFrom 等）的 children 会一并展开
+    // callback(rule, calculateType)：calculateType 为所属容器类型，顶层规则回退到自身 calculateType
+    eachFormRule(rules, callback, parentRule) {
+      if (!Array.isArray(rules)) return
+      rules.forEach((rule) => {
+        if (!rule || typeof rule !== 'object') return
+        const children = Array.isArray(rule.children) ? rule.children : null
+        const isWrapper = !!children && children.some((child) => child && typeof child === 'object' && child.field)
+        if (rule.field) callback(rule, parentRule ? parentRule.type : rule.calculateType)
+        if (isWrapper) this.eachFormRule(children, callback, rule)
+      })
+    },
     handleFromObj() {
       const obj = {}
-      var data = this.fapi ? this.fapi.rule : ''
-      for (let i = 0; i < data.length; i++) {
-        if (Object.prototype.toString.call(data[i].value) === '[object Object]') {
-          data[i].value.type = data[i].calculateType
+      if (!this.fapi) return obj
+      // 以 form-create 登记的字段为准：approvalBill 等明细组件的 children 只是行模板，
+      // 不是主表单字段（真实值在容器自身的 value 上），不能混进提交数据
+      const validFields = this.fapi.fields()
+      this.eachFormRule(this.fapi.rule, (rule, calculateType) => {
+        if (validFields.indexOf(rule.field) === -1) return
+        if (Object.prototype.toString.call(rule.value) === '[object Object]') {
+          rule.value.type = calculateType
         }
-        const keys = data[i]['field']
-        obj[keys] = data[i].value ? data[i].value : ''
-      }
+        obj[rule.field] = rule.value ? rule.value : ''
+      })
 
       return obj
     },
@@ -459,11 +492,11 @@ export default {
     // 保存
     approveApplySave(id) {
       const FromData = {
-        title: this.$t('hr.addposition'),
+        title: '添加职位',
         method: 'post',
         action: `approve/apply/save/${id}`
       }
-      this.$refs.fc.$f.submit((formData) => {
+      this.$refs.fc.fapi.submit((formData) => {
         Object.keys(formData).forEach((k) => {
           if (formData[k] === undefined) formData[k] = ''
         })
@@ -506,24 +539,28 @@ export default {
         }
         const data = {
           formInfo: formData,
-          processInfo: processInfo
+          processInfo: processInfo,
+          link_id: this.parameterData.remind_id || 0
         }
 
         if (this.isEdit) {
           data.apply_id = this.id
         }
         this.loading = true
+
         request[FromData.method.toLowerCase()](FromData.action, data)
           .then((res) => {
             this.loading = false
-            this.close()
-            this.$emit('scheduleRecord')
-            this.$emit('isOk')
+            if (res.status == 200) {
+              this.close()
+              this.$emit('scheduleRecord')
+              this.$emit('isOk')
+            }
           })
           .catch((err) => {
             this.loading = false
           })
-      })
+      }).catch(() => {}) // 校验不通过时 reject，错误已显示在表单上
     },
     // 调用接口赋值 异常日期
     attendanceAbnormalDate() {
@@ -540,21 +577,14 @@ export default {
     },
     // 异常记录
     attendanceAbnormalRecord(id) {
-      attendanceAbnormalRecordApi(id).then((res) => {
-        if (res.status == 200) {
-          this.tryYiChangOptions = res.data
-          this.tryYiChangOptions = this.tryYiChangOptions.map((it) => {
-            it.value = it.shift_number
-            it.label = it.title + ' : ' + it.time
-            return it
-          })
-          // 赋值
-          for (let i = 0; i < this.rules.length; i++) {
-            if (this.rules[i].title === '异常记录' && this.rules[i].symbol === 'attendanceExceptionRecord') {
-              this.rules[i].options = this.tryYiChangOptions
-              break
-            }
-          }
+      this.eachFormRule(this.rules, (item) => {
+        if (item.symbol == 'attendanceExceptionDate' && item.options && item.options.length > 0) {
+          const option = item.options.filter((it) => it.value == id)
+          this.tryYiChangOptions = option.length ? option[0].record : []
+        }
+        if (item.symbol == 'attendanceExceptionRecord' && this.tryYiChangOptions && this.tryYiChangOptions.length > 0) {
+          item.options = this.tryYiChangOptions
+          item.value = ''
         }
       })
     }
@@ -617,23 +647,20 @@ export default {
   font-weight: 600;
 }
 
-/deep/ .el-drawer__body {
-  padding-bottom: 40px;
-}
 .ex-content {
   padding: 20px 0 20px 20px;
   height: 100%;
   .ex-content-con {
     padding-right: 24px;
   }
-  /deep/.select-item {
+  :deep(.select-item) {
     margin-top: 0 !important;
   }
-  /deep/ .el-divider--horizontal {
+  :deep(.el-divider--horizontal) {
     margin-top: 0;
     margin-bottom: 30px;
   }
-  /deep/ .el-scrollbar__wrap {
+  :deep(.el-scrollbar__wrap) {
     overflow-x: hidden;
   }
   .shu {
@@ -648,20 +675,37 @@ export default {
     color: rgba(0, 0, 0, 0.85);
   }
 }
-/deep/ .el-input--medium {
+:deep(.el-input) {
   font-size: 12px;
 }
-/deep/.el-cascader--medium {
+:deep(.el-cascader) {
   width: 100%;
 }
-/deep/.el-form-item--mini.el-form-item {
+:deep(.el-form-item) {
   margin-bottom: 20px;
 }
 
-/deep/.el-form-item--mini.el-form-item:last-child {
+:deep(.el-form-item:last-child) {
   margin-bottom: 0px;
 }
-/deep/ .el-form-item {
+
+:deep(.el-col > .el-form-item) {
+  margin-bottom: 0;
+}
+
+:deep(.el-col + .el-col),
+:deep(.el-form-item + .el-form-item) {
+  margin-top: 20px;
+}
+
+.edit-examine-form {
   margin-bottom: 20px;
+}
+</style>
+
+<style lang="scss">
+// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
+.user-examine-edit-examine-drawer .el-drawer__body {
+  padding-bottom: 40px;
 }
 </style>

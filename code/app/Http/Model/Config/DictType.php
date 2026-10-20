@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -31,11 +31,22 @@ class DictType extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'level'      => 'integer',
+        'status'     => 'integer',
+        'is_default' => 'integer',
+        'crud_id'    => 'integer',
+        'field_id'   => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     public function scopeId($query, $value)
     {
         if (is_array($value)) {
             $query->whereIn('id', $value);
-        } elseif ($value !== '') {
+        } else {
             $query->where('id', $value);
         }
     }
@@ -44,23 +55,28 @@ class DictType extends BaseModel
     {
         if (is_array($value)) {
             $query->whereNotIn('id', $value);
-        } elseif ($value !== '') {
+        } else {
             $query->whereNot('id', $value);
+        }
+    }
+
+    public function scopeIdent($query, $value)
+    {
+        if (is_array($value)) {
+            $query->whereIn('ident', $value);
+        } else {
+            $query->where('ident', $value);
         }
     }
 
     public function scopeLinkType($query, $value)
     {
-        if ($value !== '') {
-            $query->where('link_type', $value);
-        }
+        $query->where('link_type', $value);
     }
 
     public function scopeLevel($query, $value)
     {
-        if ($value !== '') {
-            $query->where('level', $value);
-        }
+        $query->where('level', $value);
     }
 
     public function scopeNameLike($query, $value)
@@ -77,8 +93,11 @@ class DictType extends BaseModel
     {
         $query->whereIn('id', function ($query) use ($value) {
             $query->from('system_crud_field')
-                ->whereIn('crud_id', fn ($q) => $q->from('system_crud')->where('cate_ids', 'like', '%/' . $value . '/%')->select('id'))
-                ->select('data_dict_id');
+                ->whereIn('crud_id', fn ($q) => $q->from('system_crud')->where(function ($query) use ($value) {
+                    foreach ($value as $item) {
+                        $query->OrWhere('cate_ids', 'like', '%/' . $item . '/%');
+                    }
+                })->select('id'))->select('data_dict_id');
         });
     }
 

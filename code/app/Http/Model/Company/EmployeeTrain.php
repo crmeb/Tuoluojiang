@@ -34,9 +34,14 @@ class EmployeeTrain extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * Content获取器.
-     * @param mixed $value
      */
     public function getContentAttribute($value): string
     {

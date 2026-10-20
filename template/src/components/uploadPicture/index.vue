@@ -18,24 +18,26 @@
                 node-key="id"
                 @node-click="appendBtn"
               >
-                <span slot-scope="{ data }" class="custom-tree-node">
-                  <span class="file-name">
-                    <img v-if="!data.pid" class="icon" src="@/assets/images/file.jpg" />
-                    <span class="name line1">{{ data.cate_name }}</span>
+                <template #default="{ data }">
+                  <span class="custom-tree-node">
+                    <span class="file-name">
+                      <img v-if="!data.pid" class="icon" src="@/assets/images/file.jpg" />
+                      <span class="name line1">{{ data.cate_name }}</span>
+                    </span>
+                    <span>
+                      <el-dropdown @command="(command) => clickMenu(data, command)">
+                        <i class="el-icon-more el-icon--right"></i>
+                        <template #dropdown>
+                          <el-dropdown-menu>
+                            <el-dropdown-item command="1">新增子分类</el-dropdown-item>
+                            <el-dropdown-item v-if="data.id" command="2">编辑分类</el-dropdown-item>
+                            <el-dropdown-item v-if="data.id" command="3">删除</el-dropdown-item>
+                          </el-dropdown-menu>
+                        </template>
+                      </el-dropdown>
+                    </span>
                   </span>
-                  <span>
-                    <el-dropdown @command="(command) => clickMenu(data, command)">
-                      <i class="el-icon-more el-icon--right"></i>
-                      <template slot="dropdown">
-                        <el-dropdown-menu>
-                          <el-dropdown-item command="1">新增分类</el-dropdown-item>
-                          <el-dropdown-item v-if="data.id" command="2">编辑分类</el-dropdown-item>
-                          <el-dropdown-item v-if="data.id" command="3">删除</el-dropdown-item>
-                        </el-dropdown-menu>
-                      </template>
-                    </el-dropdown>
-                  </span>
-                </span>
+                </template>
               </el-tree>
             </div>
           </div>
@@ -43,11 +45,10 @@
       </div>
       <div class="conter">
         <div class="bnt acea-row row-middle df-jcsb">
-          <div>
+          <div class="bnt-left">
             <el-button
               v-if="isShow !== 0"
               :disabled="checkPicList.length === 0"
-              size="small"
               type="primary"
               @click="checkPics"
               >使用选中图片</el-button
@@ -63,15 +64,13 @@
               :on-change="fileChange"
               :on-success="uploadSuccess"
               :show-file-list="false"
-              class="upload-demo mr10 mb15 upload-btn"
+              class="upload-demo mr10 mb12 upload-btn"
             >
-              <el-button size="small" type="primary">上传图片</el-button>
+              <el-button type="primary">上传图片</el-button>
             </el-upload>
             <el-button
               :disabled="!checkPicList.length && !ids.length"
               class="mr10"
-              size="small"
-              type="error"
               @click.stop="editPicList()"
               >删除图片</el-button
             >
@@ -82,7 +81,6 @@
               class="treeSel"
               clearable
               placeholder="图片移动至"
-              size="small"
               style="width: 150px"
               @visible-change="moveImg"
             ></el-cascader>
@@ -92,16 +90,17 @@
               v-model="fileData.real_name"
               class="mr10"
               placeholder="请输入图片名"
-              size="small"
               style="width: 150px"
             >
-              <i slot="suffix" class="el-icon-search el-input__icon" @click="getFileList"></i>
+              <template #suffix>
+                <i class="el-icon-search el-input__icon" @click="getFileList"></i>
+              </template>
             </el-input>
-            <el-radio-group v-model="lietStyle" size="small" @input="radioChange">
-              <el-radio-button label="list">
+            <el-radio-group v-model="lietStyle" @change="radioChange">
+              <el-radio-button label="list" value="list">
                 <i class="el-icon-menu"></i>
               </el-radio-button>
-              <el-radio-button label="table">
+              <el-radio-button label="table" value="table">
                 <!-- <i class="el-icon-files"></i> -->
                 <span class="iconfont iconliebiao"></span>
               </el-radio-button>
@@ -136,7 +135,7 @@
                   <p v-if="!item.isEdit">
                     {{ item.editName }}
                   </p>
-                  <el-input v-else v-model="item.real_name" size="small" type="text" @blur="bindTxt(item)" />
+                  <el-input v-else v-model="item.real_name" type="text" @blur="bindTxt(item)" />
                   <div class="operate-height">
                     <span v-if="item.isShowEdit" class="operate mr10" @click="editPicList(item.id)">删除</span>
                     <span v-if="item.isShowEdit" class="operate mr10" @click="item.isEdit = !item.isEdit">改名</span>
@@ -159,16 +158,15 @@
           >
             <el-table-column :reserve-selection="true" type="selection" width="60"> </el-table-column>
             <el-table-column label="图片名称" min-width="190">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <div class="df-aic">
-                  <div v-viewer class="tabBox_img mr10">
+                  <div class="tabBox_img mr10" @click="handlePictureCardPreview(scope.row)">
                     <img v-lazy="scope.row.att_dir" />
                   </div>
                   <span v-if="!scope.row.isEdit" class="line2 real-name">{{ scope.row.real_name }}</span>
                   <el-input
                     v-else
                     v-model="scope.row.real_name"
-                    size="small"
                     style="width: 90%"
                     type="text"
                     @blur="bindTxt(scope.row)"
@@ -177,12 +175,12 @@
               </template>
             </el-table-column>
             <el-table-column label="上传时间" min-width="100">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <span>{{ scope.row.time }}</span>
               </template>
             </el-table-column>
             <el-table-column fixed="right" label="操作" width="170">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <a @click="editPicList(scope.row)">删除</a>
                 <el-divider direction="vertical"></el-divider>
                 <a @click="scope.row.isEdit = !scope.row.isEdit">{{ scope.row.isEdit ? '确定' : '重名命' }}</a>
@@ -205,11 +203,14 @@
         </div>
       </div>
     </div>
-    <el-image-viewer v-if="isImage" :initialIndex="imgIndex" :on-close="closeImageViewer" :url-list="imgList" />
+    <el-image-viewer v-if="isImage" :initialIndex="imgIndex" @close="closeImageViewer" :url-list="imgList" />
   </div>
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import modalForm from '@/libs/modal-form.ts'
 import {
   formatLstApi,
   attachmentCreateApi,
@@ -219,18 +220,14 @@ import {
   attachmentListApi,
   picDeleteApi,
   categoryApi
-} from '@/api/system'
-import { VueTreeList } from 'vue-tree-list'
-import { getToken } from '@/utils/auth'
-import SettingMer from '@/libs/settingMer'
-import Tips from '@/utils/tips'
-import compressImg from '@/utils/compressImg'
+} from '@/api/system.ts'
+import { getToken } from '@/utils/auth.ts'
+import SettingMer from '@/libs/settingMer.ts'
+import Tips from '@/utils/tips.ts'
+import compressImg from '@/utils/compressImg.ts'
 export default {
+  emits: ['changeCancel', 'getImage'],
   name: 'uploadPictures',
-  components: {
-    VueTreeList,
-    ElImageViewer: () => import('element-ui/packages/image/src/image-viewer')
-  },
   props: {
     isChoice: {
       type: String,
@@ -331,11 +328,8 @@ export default {
     async fileChange(file, fileList) {
       if (file.size >= 2097152) {
         await this.comImg(file.raw).then((res) => {
-          fileList.map((e) => {
-            if (e.uid === file.uid) {
-              e.raw = res
-            }
-          })
+          const target = fileList.find((e) => e.uid === file.uid)
+          if (target) target.raw = res
           this.ruleForm.imgList = fileList
         })
       } else {
@@ -406,6 +400,10 @@ export default {
     },
     moveImg(status) {
       if (!status) {
+        if (!this.pids) {
+          this.$message.warning('请先选择分类')
+          return
+        }
         this.getMove()
       } else {
         if (!this.ids.toString()) {
@@ -438,7 +436,7 @@ export default {
         method: 'POST',
         ids: ids
       }
-      this.$modalSure(delfromData)
+      modalSure(delfromData)
         .then((res) => {
           this.$message.success(res.msg)
           this.getFileList()
@@ -455,6 +453,10 @@ export default {
       }
       await Tips.confirm({ message: '此操作将永久删除该文件, 是否继续?' })
       await picDeleteApi(ids)
+      const deleteCount = id ? 1 : this.ids.length
+      if (deleteCount === this.pictrueList.length && this.fileData.page > 1) {
+        this.fileData.page--
+      }
       await this.getFileList()
       await this.initData()
     },
@@ -491,7 +493,7 @@ export default {
     },
     // 编辑树表单
     editPic(data) {
-      this.$modalForm(attachmentUpdateApi(data.id)).then(() => this.getList())
+      modalForm(attachmentUpdateApi(data.id)).then(() => this.getList())
     },
     // 搜索分类
     changePage() {
@@ -523,8 +525,8 @@ export default {
     },
     addFlag(treedata) {
       treedata.map((item) => {
-        this.$set(item, 'flag', false)
-        this.$set(item, 'flag2', false)
+        item.flag = false
+        item.flag2 = false
         item.children && this.addFlag(item.children)
       })
     },
@@ -561,9 +563,7 @@ export default {
       })
     },
     handlePictureCardPreview(item) {
-      this.$nextTick(() => {
-        this.imgIndex = this.pictrueList.findIndex((e) => e.att_dir === item.att_dir)
-      })
+      this.imgIndex = this.pictrueList.findIndex((e) => e.att_dir === item.att_dir)
       this.isImage = true
     },
     closeImageViewer() {
@@ -619,7 +619,7 @@ export default {
     },
     // 新建分类表单
     getFrom() {
-      this.$modalForm(attachmentCreateApi({ id: this.treeId })).then((res) => {
+      modalForm(attachmentCreateApi({ id: this.treeId })).then((res) => {
         this.getList()
       })
     },
@@ -654,31 +654,23 @@ export default {
     },
     // 选中图片
     changImage(item, index, row) {
-      let activeIndex = 0
       if (!item.isSelect) {
         item.isSelect = true
         this.checkPicList.push(item)
       } else {
         item.isSelect = false
-        this.checkPicList.map((el, index) => {
-          if (el.id == item.id) {
-            activeIndex = index
-          }
-        })
-        this.checkPicList.splice(activeIndex, 1)
+        const activeIndex = this.checkPicList.findIndex((el) => el.id === item.id)
+        if (activeIndex !== -1) {
+          this.checkPicList.splice(activeIndex, 1)
+        }
       }
 
-      this.ids = []
-      this.checkPicList.map((item, i) => {
-        this.ids.push(item.id)
-      })
-      this.pictrueList.map((el, i) => {
+      this.ids = this.checkPicList.map((item) => item.id)
+
+      this.pictrueList.forEach((el) => {
         if (el.isSelect) {
-          this.checkPicList.filter((el2, j) => {
-            if (el.id == el2.id) {
-              el.num = j + 1
-            }
-          })
+          const index = this.checkPicList.findIndex((el2) => el.id === el2.id)
+          el.num = index !== -1 ? index + 1 : 0
         } else {
           el.num = 0
         }
@@ -816,7 +808,7 @@ export default {
     right: 0;
     top: 0;
   }
-  ::v-deep .el-badge__content.is-fixed {
+  :deep(.el-badge__content.is-fixed) {
     top: 13px;
     right: 25px;
   }
@@ -842,7 +834,7 @@ export default {
     .isTree {
       min-height: 374px;
       max-height: 550px;
-      ::v-deep .file-name {
+      :deep(.file-name) {
         display: flex;
         align-items: center;
         .name {
@@ -854,17 +846,17 @@ export default {
           margin-right: 8px;
         }
       }
-      ::v-deep .el-tree-node {
+      :deep(.el-tree-node) {
         margin-right: 16px;
       }
-      ::v-deep .el-tree-node__children .el-tree-node {
+      :deep(.el-tree-node__children .el-tree-node) {
         margin-right: 0;
       }
-      ::v-deep .el-tree-node__content {
+      :deep(.el-tree-node__content) {
         width: 100%;
         height: 36px;
       }
-      ::v-deep .custom-tree-node {
+      :deep(.custom-tree-node) {
         flex: 1;
         display: flex;
         align-items: center;
@@ -875,11 +867,11 @@ export default {
         color: rgba(0, 0, 0, 0.6);
         line-height: 13px;
       }
-      ::v-deep .is-current {
+      :deep(.is-current) {
         background: #f1f9ff !important;
         color: var(--prev-color-primary) !important;
       }
-      ::v-deep .is-current .custom-tree-node {
+      :deep(.is-current .custom-tree-node) {
         color: var(--prev-color-primary) !important;
       }
     }
@@ -890,7 +882,7 @@ export default {
   }
 }
 
-.treeSel ::v-deep .ivu-select-dropdown-list {
+.treeSel :deep(.ivu-select-dropdown-list) {
   padding: 0 5px !important;
   box-sizing: border-box;
   width: 200px;
@@ -942,6 +934,12 @@ export default {
   box-sizing: border-box;
   .upload-btn {
     display: inline-block;
+    margin-bottom: 0 !important;
+  }
+  .bnt-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
 }
 
@@ -986,7 +984,7 @@ export default {
   display: inline-block;
 }
 
-.bnt ::v-deep .ivu-tree-children {
+.bnt :deep(.ivu-tree-children) {
   padding: 5px 0;
 }
 

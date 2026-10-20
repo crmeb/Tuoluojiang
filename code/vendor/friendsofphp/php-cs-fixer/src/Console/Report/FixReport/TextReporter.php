@@ -19,29 +19,25 @@ use PhpCsFixer\Differ\DiffConsoleFormatter;
 /**
  * @author Boris Gorbylev <ekho@ekho.name>
  *
+ * @readonly
+ *
  * @internal
  */
 final class TextReporter implements ReporterInterface
 {
-    /**
-     * {@inheritdoc}
-     */
     public function getFormat(): string
     {
         return 'txt';
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function generate(ReportSummary $reportSummary): string
     {
         $output = '';
 
-        $i = 0;
+        $identifiedFiles = 0;
         foreach ($reportSummary->getChanged() as $file => $fixResult) {
-            ++$i;
-            $output .= sprintf('%4d) %s', $i, $file);
+            ++$identifiedFiles;
+            $output .= \sprintf('%4d) %s', $identifiedFiles, $file);
 
             if ($reportSummary->shouldAddAppliedFixers()) {
                 $output .= $this->getAppliedFixers(
@@ -54,7 +50,13 @@ final class TextReporter implements ReporterInterface
             $output .= PHP_EOL;
         }
 
-        return $output.$this->getFooter($reportSummary->getTime(), $reportSummary->getMemory(), $reportSummary->isDryRun());
+        return $output.$this->getFooter(
+            $reportSummary->getTime(),
+            $identifiedFiles,
+            $reportSummary->getFilesCount(),
+            $reportSummary->getMemory(),
+            $reportSummary->isDryRun()
+        );
     }
 
     /**
@@ -62,7 +64,7 @@ final class TextReporter implements ReporterInterface
      */
     private function getAppliedFixers(bool $isDecoratedOutput, array $appliedFixers): string
     {
-        return sprintf(
+        return \sprintf(
             $isDecoratedOutput ? ' (<comment>%s</comment>)' : ' (%s)',
             implode(', ', $appliedFixers)
         );
@@ -74,7 +76,7 @@ final class TextReporter implements ReporterInterface
             return '';
         }
 
-        $diffFormatter = new DiffConsoleFormatter($isDecoratedOutput, sprintf(
+        $diffFormatter = new DiffConsoleFormatter($isDecoratedOutput, \sprintf(
             '<comment>      ---------- begin diff ----------</comment>%s%%s%s<comment>      ----------- end diff -----------</comment>',
             PHP_EOL,
             PHP_EOL
@@ -83,17 +85,20 @@ final class TextReporter implements ReporterInterface
         return PHP_EOL.$diffFormatter->format($diff).PHP_EOL;
     }
 
-    private function getFooter(int $time, int $memory, bool $isDryRun): string
+    private function getFooter(int $time, int $identifiedFiles, int $files, int $memory, bool $isDryRun): string
     {
         if (0 === $time || 0 === $memory) {
             return '';
         }
 
-        return PHP_EOL.sprintf(
-            '%s all files in %.3f seconds, %.3f MB memory used'.PHP_EOL,
-            $isDryRun ? 'Checked' : 'Fixed',
-            $time / 1000,
-            $memory / 1024 / 1024
+        return PHP_EOL.\sprintf(
+            '%s %d of %d %s in %.3f seconds, %.2f MB memory used'.PHP_EOL,
+            $isDryRun ? 'Found' : 'Fixed',
+            $identifiedFiles,
+            $files,
+            $isDryRun ? 'files that can be fixed' : 'files',
+            $time / 1_000,
+            $memory / 1_024 / 1_024
         );
     }
 }

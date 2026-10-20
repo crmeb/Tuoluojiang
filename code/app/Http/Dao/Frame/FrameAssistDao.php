@@ -15,9 +15,9 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Frame;
 
-use App\Http\Dao\BaseDao;
 use App\Http\Model\Frame\FrameAssist;
-use crmeb\traits\dao\BatchSearchTrait;
+use App\Http\Dao\BaseDao;
+use Tuoluojiang\Open\traits\dao\BatchSearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;

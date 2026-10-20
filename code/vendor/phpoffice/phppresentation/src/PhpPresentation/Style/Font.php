@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of PHPPresentation - A pure PHP library for reading and writing
  * presentations documents.
@@ -10,338 +11,442 @@
  * file that was distributed with this source code. For the full list of
  * contributors, visit https://github.com/PHPOffice/PHPPresentation/contributors.
  *
- * @link        https://github.com/PHPOffice/PHPPresentation
- * @copyright   2009-2015 PHPPresentation contributors
+ * @see        https://github.com/PHPOffice/PHPPresentation
+ *
  * @license     http://www.gnu.org/licenses/lgpl.txt LGPL version 3
  */
+
+declare(strict_types=1);
 
 namespace PhpOffice\PhpPresentation\Style;
 
 use PhpOffice\PhpPresentation\ComparableInterface;
+use PhpOffice\PhpPresentation\Exception\InvalidParameterException;
+use PhpOffice\PhpPresentation\Exception\NotAllowedValueException;
 
 /**
- * \PhpOffice\PhpPresentation\Style\Font
+ * \PhpOffice\PhpPresentation\Style\Font.
  */
 class Font implements ComparableInterface
 {
-    /* Underline types */
-    const UNDERLINE_NONE = 'none';
-    const UNDERLINE_DASH = 'dash';
-    const UNDERLINE_DASHHEAVY = 'dashHeavy';
-    const UNDERLINE_DASHLONG = 'dashLong';
-    const UNDERLINE_DASHLONGHEAVY = 'dashLongHeavy';
-    const UNDERLINE_DOUBLE = 'dbl';
-    const UNDERLINE_DOTHASH = 'dotDash';
-    const UNDERLINE_DOTHASHHEAVY = 'dotDashHeavy';
-    const UNDERLINE_DOTDOTDASH = 'dotDotDash';
-    const UNDERLINE_DOTDOTDASHHEAVY = 'dotDotDashHeavy';
-    const UNDERLINE_DOTTED = 'dotted';
-    const UNDERLINE_DOTTEDHEAVY = 'dottedHeavy';
-    const UNDERLINE_HEAVY = 'heavy';
-    const UNDERLINE_SINGLE = 'sng';
-    const UNDERLINE_WAVY = 'wavy';
-    const UNDERLINE_WAVYDOUBLE = 'wavyDbl';
-    const UNDERLINE_WAVYHEAVY = 'wavyHeavy';
-    const UNDERLINE_WORDS = 'words';
+    // Capitalization type
+    public const CAPITALIZATION_NONE = 'none';
+    public const CAPITALIZATION_SMALL = 'small';
+    public const CAPITALIZATION_ALL = 'all';
+
+    // Charset type
+    public const CHARSET_DEFAULT = 0x01;
+
+    // Format type
+    public const FORMAT_LATIN = 'latin';
+    public const FORMAT_EAST_ASIAN = 'ea';
+    public const FORMAT_COMPLEX_SCRIPT = 'cs';
+
+    // Strike type
+    public const STRIKE_NONE = 'noStrike';
+    public const STRIKE_SINGLE = 'sngStrike';
+    public const STRIKE_DOUBLE = 'dblStrike';
+
+    // Underline types
+    public const UNDERLINE_NONE = 'none';
+    public const UNDERLINE_DASH = 'dash';
+    public const UNDERLINE_DASHHEAVY = 'dashHeavy';
+    public const UNDERLINE_DASHLONG = 'dashLong';
+    public const UNDERLINE_DASHLONGHEAVY = 'dashLongHeavy';
+    public const UNDERLINE_DOUBLE = 'dbl';
+    public const UNDERLINE_DOTHASH = 'dotDash';
+    public const UNDERLINE_DOTHASHHEAVY = 'dotDashHeavy';
+    public const UNDERLINE_DOTDOTDASH = 'dotDotDash';
+    public const UNDERLINE_DOTDOTDASHHEAVY = 'dotDotDashHeavy';
+    public const UNDERLINE_DOTTED = 'dotted';
+    public const UNDERLINE_DOTTEDHEAVY = 'dottedHeavy';
+    public const UNDERLINE_HEAVY = 'heavy';
+    public const UNDERLINE_SINGLE = 'sng';
+    public const UNDERLINE_WAVY = 'wavy';
+    public const UNDERLINE_WAVYDOUBLE = 'wavyDbl';
+    public const UNDERLINE_WAVYHEAVY = 'wavyHeavy';
+    public const UNDERLINE_WORDS = 'words';
+
+    // Script sub and super values
+    public const BASELINE_SUPERSCRIPT = 300000;
+    public const BASELINE_SUBSCRIPT = -250000;
 
     /**
-     * Name
+     * Name.
      *
      * @var string
      */
-    private $name;
-    
-    /**
-     * Font Size
-     *
-     * @var float|int
-     */
-    private $size;
-    
-    /**
-     * Bold
-     *
-     * @var boolean
-     */
-    private $bold;
+    private $name = 'Calibri';
 
     /**
-     * Italic
-     *
-     * @var boolean
-     */
-    private $italic;
-
-    /**
-     * Superscript
-     *
-     * @var boolean
-     */
-    private $superScript;
-
-    /**
-     * Subscript
-     *
-     * @var boolean
-     */
-    private $subScript;
-
-    /**
-     * Underline
+     * Panose.
      *
      * @var string
      */
-    private $underline;
+    private $panose = '';
 
     /**
-     * Strikethrough
+     * Pitch Family.
      *
-     * @var boolean
+     * @var int
      */
-    private $strikethrough;
+    private $pitchFamily = 0;
 
     /**
-     * Foreground color
+     * Charset.
      *
-     * @var \PhpOffice\PhpPresentation\Style\Color
+     * @var int
+     */
+    private $charset = self::CHARSET_DEFAULT;
+
+    /**
+     * Font Size.
+     *
+     * @var int
+     */
+    private $size = 10;
+
+    /**
+     * Bold.
+     *
+     * @var bool
+     */
+    private $bold = false;
+
+    /**
+     * Italic.
+     *
+     * @var bool
+     */
+    private $italic = false;
+
+    /**
+     * Baseline.
+     *
+     * @var int
+     */
+    private $baseline = 0;
+
+    /**
+     * Capitalization.
+     *
+     * @var string
+     */
+    private $capitalization = self::CAPITALIZATION_NONE;
+
+    /**
+     * Underline.
+     *
+     * @var string
+     */
+    private $underline = self::UNDERLINE_NONE;
+
+    /**
+     * Strikethrough.
+     *
+     * @var string
+     */
+    private $strikethrough = self::STRIKE_NONE;
+
+    /**
+     * Foreground color.
+     *
+     * @var Color
      */
     private $color;
 
     /**
-     * Character Spacing
+     * Character Spacing.
      *
-     * @var int
+     * @var float
      */
-    private $characterSpacing;
+    private $characterSpacing = 0;
 
     /**
-     * Hash index
+     * Format.
      *
      * @var string
      */
-    private $hashIndex;
+    private $format = self::FORMAT_LATIN;
 
     /**
-     * Create a new \PhpOffice\PhpPresentation\Style\Font
+     * Hash index.
+     *
+     * @var int
      */
+    private $hashIndex;
+
     public function __construct()
     {
-        // Initialise values
-        $this->name             = 'Calibri';
-        $this->size             = 10;
-        $this->characterSpacing = 0;
-        $this->bold             = false;
-        $this->italic           = false;
-        $this->superScript      = false;
-        $this->subScript        = false;
-        $this->underline        = self::UNDERLINE_NONE;
-        $this->strikethrough    = false;
-        $this->color            = new Color(Color::COLOR_BLACK);
+        $this->color = new Color(Color::COLOR_BLACK);
     }
 
     /**
-     * Get Name
-     *
-     * @return string
+     * Get Name.
      */
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
 
     /**
-     * Set Name
-     *
-     * @param  string                   $pValue
-     * @return \PhpOffice\PhpPresentation\Style\Font
+     * Set Name.
      */
-    public function setName($pValue = 'Calibri')
+    public function setName(string $pValue = 'Calibri'): self
     {
-        if ($pValue == '') {
+        if ('' == $pValue) {
             $pValue = 'Calibri';
         }
         $this->name = $pValue;
 
         return $this;
     }
-    
+
     /**
-     * Get Character Spacing
-     *
-     * @return double
+     * Get panose.
      */
-    public function getCharacterSpacing()
+    public function getPanose(): string
     {
-        return $this->characterSpacing;
+        return $this->panose;
     }
-    
+
     /**
-     * Set Character Spacing
-     * Value in pt
-     * @param float|int $pValue
-     * @return \PhpOffice\PhpPresentation\Style\Font
+     * Set panose.
      */
-    public function setCharacterSpacing($pValue = 0)
+    public function setPanose(string $pValue): self
     {
-        if ($pValue == '') {
-            $pValue = 0;
+        if (mb_strlen($pValue) === 20) {
+            $pValue = preg_replace('/.(.)/', '$1', $pValue);
         }
-        $this->characterSpacing = $pValue * 100;
-    
+
+        if (mb_strlen($pValue) !== 10) {
+            throw new InvalidParameterException('pValue', $pValue, 'The length is not correct');
+        }
+
+        $allowedChars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'];
+        foreach (mb_str_split($pValue) as $char) {
+            if (!in_array($char, $allowedChars)) {
+                throw new InvalidParameterException(
+                    'pValue',
+                    $pValue,
+                    sprintf('The character "%s" is not allowed', $char)
+                );
+            }
+        }
+
+        $this->panose = $pValue;
+
         return $this;
     }
 
     /**
-     * Get Size
-     *
-     * @return double
+     * Get pitchFamily.
      */
-    public function getSize()
+    public function getPitchFamily(): int
+    {
+        return $this->pitchFamily;
+    }
+
+    /**
+     * Set pitchFamily.
+     */
+    public function setPitchFamily(int $pValue): self
+    {
+        $this->pitchFamily = $pValue;
+
+        return $this;
+    }
+
+    /**
+     * Get charset.
+     */
+    public function getCharset(): int
+    {
+        return $this->charset;
+    }
+
+    /**
+     * Set charset.
+     */
+    public function setCharset(int $pValue): self
+    {
+        $this->charset = $pValue;
+
+        return $this;
+    }
+
+    /**
+     * Get Character Spacing.
+     */
+    public function getCharacterSpacing(): float
+    {
+        return $this->characterSpacing;
+    }
+
+    /**
+     * Set Character Spacing
+     * Value in pt.
+     */
+    public function setCharacterSpacing(float $pValue = 0): self
+    {
+        $this->characterSpacing = $pValue * 100;
+
+        return $this;
+    }
+
+    /**
+     * Get Size.
+     */
+    public function getSize(): int
     {
         return $this->size;
     }
 
     /**
-     * Set Size
-     *
-     * @param float|int $pValue
-     * @return \PhpOffice\PhpPresentation\Style\Font
+     * Set Size.
      */
-    public function setSize($pValue = 10)
+    public function setSize(int $pValue = 10): self
     {
-        if ($pValue == '') {
-            $pValue = 10;
-        }
         $this->size = $pValue;
 
         return $this;
     }
 
     /**
-     * Get Bold
-     *
-     * @return boolean
+     * Get Bold.
      */
-    public function isBold()
+    public function isBold(): bool
     {
         return $this->bold;
     }
 
     /**
-     * Set Bold
-     *
-     * @param  boolean                  $pValue
-     * @return \PhpOffice\PhpPresentation\Style\Font
+     * Set Bold.
      */
-    public function setBold($pValue = false)
+    public function setBold(bool $pValue = false): self
     {
-        if ($pValue == '') {
-            $pValue = false;
-        }
         $this->bold = $pValue;
 
         return $this;
     }
 
     /**
-     * Get Italic
-     *
-     * @return boolean
+     * Get Italic.
      */
-    public function isItalic()
+    public function isItalic(): bool
     {
         return $this->italic;
     }
 
     /**
-     * Set Italic
-     *
-     * @param  boolean                  $pValue
-     * @return \PhpOffice\PhpPresentation\Style\Font
+     * Set Italic.
      */
-    public function setItalic($pValue = false)
+    public function setItalic(bool $pValue = false): self
     {
-        if ($pValue == '') {
-            $pValue = false;
-        }
         $this->italic = $pValue;
 
         return $this;
     }
 
     /**
-     * Get SuperScript
-     *
-     * @return boolean
+     * Set Baseline.
      */
-    public function isSuperScript()
+    public function setBaseline(int $pValue): self
     {
-        return $this->superScript;
-    }
-
-    /**
-     * Set SuperScript
-     *
-     * @param  boolean                  $pValue
-     * @return \PhpOffice\PhpPresentation\Style\Font
-     */
-    public function setSuperScript($pValue = false)
-    {
-        if ($pValue == '') {
-            $pValue = false;
-        }
-        $this->superScript = $pValue;
-        $this->subScript   = !$pValue;
+        $this->baseline = $pValue;
 
         return $this;
     }
 
     /**
-     * Get SubScript
-     *
-     * @return boolean
+     * Get Baseline.
      */
-    public function isSubScript()
+    public function getBaseline(): int
     {
-        return $this->subScript;
+        return $this->baseline;
     }
 
     /**
-     * Set SubScript
+     * Get SuperScript.
      *
-     * @param  boolean                  $pValue
-     * @return \PhpOffice\PhpPresentation\Style\Font
+     * @deprecated getBaseline() === self::BASELINE_SUPERSCRIPT
      */
-    public function setSubScript($pValue = false)
+    public function isSuperScript(): bool
     {
-        if ($pValue == '') {
-            $pValue = false;
+        return $this->getBaseline() === self::BASELINE_SUPERSCRIPT;
+    }
+
+    /**
+     * Set SuperScript.
+     *
+     * @deprecated setBaseline(self::BASELINE_SUPERSCRIPT)
+     */
+    public function setSuperScript(bool $pValue = false): self
+    {
+        return $this->setBaseline($pValue ? self::BASELINE_SUPERSCRIPT : ($this->getBaseline() == self::BASELINE_SUBSCRIPT ? $this->getBaseline() : 0));
+    }
+
+    /**
+     * Get SubScript.
+     *
+     * @deprecated getBaseline() === self::BASELINE_SUBSCRIPT
+     */
+    public function isSubScript(): bool
+    {
+        return $this->getBaseline() === self::BASELINE_SUBSCRIPT;
+    }
+
+    /**
+     * Set SubScript.
+     *
+     * @deprecated setBaseline(self::BASELINE_SUBSCRIPT)
+     */
+    public function setSubScript(bool $pValue = false): self
+    {
+        return $this->setBaseline($pValue ? self::BASELINE_SUBSCRIPT : ($this->getBaseline() == self::BASELINE_SUPERSCRIPT ? $this->getBaseline() : 0));
+    }
+
+    /**
+     * Get Capitalization.
+     */
+    public function getCapitalization(): string
+    {
+        return $this->capitalization;
+    }
+
+    /**
+     * Set Capitalization.
+     */
+    public function setCapitalization(string $pValue = self::CAPITALIZATION_NONE): self
+    {
+        if (!in_array(
+            $pValue,
+            [self::CAPITALIZATION_NONE, self::CAPITALIZATION_ALL, self::CAPITALIZATION_SMALL]
+        )) {
+            throw new NotAllowedValueException($pValue, [self::CAPITALIZATION_NONE, self::CAPITALIZATION_ALL, self::CAPITALIZATION_SMALL]);
         }
-        $this->subScript   = $pValue;
-        $this->superScript = !$pValue;
+
+        $this->capitalization = $pValue;
 
         return $this;
     }
 
     /**
-     * Get Underline
-     *
-     * @return string
+     * Get Underline.
      */
-    public function getUnderline()
+    public function getUnderline(): string
     {
         return $this->underline;
     }
 
     /**
-     * Set Underline
+     * Set Underline.
      *
-     * @param  string                   $pValue \PhpOffice\PhpPresentation\Style\Font underline type
-     * @return \PhpOffice\PhpPresentation\Style\Font
+     * @param string $pValue Underline type
      */
-    public function setUnderline($pValue = self::UNDERLINE_NONE)
+    public function setUnderline(string $pValue = self::UNDERLINE_NONE): self
     {
-        if ($pValue == '') {
+        if ('' == $pValue) {
             $pValue = self::UNDERLINE_NONE;
         }
         $this->underline = $pValue;
@@ -350,91 +455,138 @@ class Font implements ComparableInterface
     }
 
     /**
-     * Get Strikethrough
+     * Get Strikethrough.
      *
-     * @return boolean
+     * @deprecated Use `getStrikethrough`
      */
-    public function isStrikethrough()
+    public function isStrikethrough(): bool
+    {
+        return $this->strikethrough !== self::STRIKE_NONE;
+    }
+
+    /**
+     * Get Strikethrough.
+     */
+    public function getStrikethrough(): string
     {
         return $this->strikethrough;
     }
 
     /**
-     * Set Strikethrough
+     * Set Strikethrough.
      *
-     * @param  boolean                  $pValue
-     * @return \PhpOffice\PhpPresentation\Style\Font
+     * @deprecated $pValue as boolean
+     *
+     * @param bool|string $pValue
+     *
+     * @return self
      */
     public function setStrikethrough($pValue = false)
     {
-        if ($pValue == '') {
-            $pValue = false;
+        if (is_bool($pValue)) {
+            $pValue = $pValue ? self::STRIKE_SINGLE : self::STRIKE_NONE;
         }
-        $this->strikethrough = $pValue;
+        if (in_array($pValue, [
+            self::STRIKE_NONE,
+            self::STRIKE_SINGLE,
+            self::STRIKE_DOUBLE,
+        ])) {
+            $this->strikethrough = $pValue;
+        }
 
         return $this;
     }
 
     /**
-     * Get Color
-     *
-     * @return \PhpOffice\PhpPresentation\Style\Color|\PhpOffice\PhpPresentation\Style\SchemeColor
+     * Get Color.
      */
-    public function getColor()
+    public function getColor(): Color
     {
         return $this->color;
     }
 
     /**
-     * Set Color
-     *
-     * @param  \PhpOffice\PhpPresentation\Style\Color|\PhpOffice\PhpPresentation\Style\SchemeColor $pValue
-     * @throws \Exception
-     * @return \PhpOffice\PhpPresentation\Style\Font
+     * Set Color.
      */
-    public function setColor($pValue = null)
+    public function setColor(Color $pValue): self
     {
-        if (!$pValue instanceof Color) {
-            throw new \Exception('$pValue must be an instance of \PhpOffice\PhpPresentation\Style\Color');
-        }
         $this->color = $pValue;
 
         return $this;
     }
 
     /**
-     * Get hash code
-     *
-     * @return string Hash code
+     * Get format.
      */
-    public function getHashCode()
+    public function getFormat(): string
     {
-        return md5($this->name . $this->size . ($this->bold ? 't' : 'f') . ($this->italic ? 't' : 'f') . ($this->superScript ? 't' : 'f') . ($this->subScript ? 't' : 'f') . $this->underline . ($this->strikethrough ? 't' : 'f') . $this->color->getHashCode() . __CLASS__);
+        return $this->format;
     }
 
     /**
-     * Get hash index
+     * Set format.
+     */
+    public function setFormat(string $value = self::FORMAT_LATIN): self
+    {
+        if (in_array($value, [
+            self::FORMAT_COMPLEX_SCRIPT,
+            self::FORMAT_EAST_ASIAN,
+            self::FORMAT_LATIN,
+        ])) {
+            $this->format = $value;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get hash code.
+     *
+     * @return string Hash code
+     */
+    public function getHashCode(): string
+    {
+        return md5(
+            $this->name
+            . $this->size
+            . ($this->bold ? 't' : 'f')
+            . ($this->italic ? 't' : 'f')
+            . $this->baseline
+            . $this->underline
+            . ($this->strikethrough ? 't' : 'f')
+            . $this->format
+            . $this->color->getHashCode()
+            . __CLASS__
+        );
+    }
+
+    /**
+     * Get hash index.
      *
      * Note that this index may vary during script execution! Only reliable moment is
      * while doing a write of a workbook and when changes are not allowed.
      *
-     * @return string Hash index
+     * @return null|int Hash index
      */
-    public function getHashIndex()
+    public function getHashIndex(): ?int
     {
         return $this->hashIndex;
     }
 
     /**
-     * Set hash index
+     * Set hash index.
      *
      * Note that this index may vary during script execution! Only reliable moment is
      * while doing a write of a workbook and when changes are not allowed.
      *
-     * @param string $value Hash index
+     * @param int $value Hash index
+     *
+     * @return $this
      */
-    public function setHashIndex($value)
+    public function setHashIndex(int $value)
     {
         $this->hashIndex = $value;
+
+        return $this;
     }
 }

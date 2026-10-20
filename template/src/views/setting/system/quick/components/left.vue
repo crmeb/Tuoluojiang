@@ -7,7 +7,7 @@
       </el-tooltip>
     </div>
     <div class="assess-left-con">
-      <el-scrollbar style="height: 100%">
+      <el-scrollbar style="height: 100%" class="reset-scroll-bar">
         <ul class="assess-left-ul">
           <li
             v-for="(item, index) in department"
@@ -15,7 +15,7 @@
             :class="index == tabIndex ? 'active' : ''"
             @click="clickDepart(index, item.id)"
           >
-            <span>{{ item.cate_name }}</span>
+            <div class="over-text1">{{ item.cate_name }}</div>
             <el-popover
               :ref="`pop-${item.id}`"
               placement="bottom-end"
@@ -25,10 +25,12 @@
               @hide="handleHide"
             >
               <div class="right-item-list">
-                <div class="right-item" @click.stop="addDivsion(item.id)">{{ $t('public.edit') }}</div>
-                <div class="right-item" @click.stop="handleDelete(item.id)">{{ $t('public.delete') }}</div>
+                <div class="right-item" @click.stop="addDivsion(item.id)">编辑</div>
+                <div class="right-item" @click.stop="handleDelete(item.id)">删除</div>
               </div>
-              <i slot="reference" class="icon iconfont icongengduo pointer rank-icon"></i>
+              <template #reference>
+                <i class="icon iconfont icongengduo pointer rank-icon" @click.stop></i>
+              </template>
             </el-popover>
           </li>
         </ul>
@@ -38,14 +40,17 @@
 </template>
 
 <script>
+import { modalSure } from '@/libs/public.ts'
+import modalForm from '@/libs/modal-form.ts'
 import {
   configQuickCateApi,
   configQuickCateDeleteApi,
   configQuickCateEditApi,
   configQuickCateCreateApi
-} from '@/api/setting'
+} from '@/api/setting.ts'
 
 export default {
+  emits: ['eventOptionData'],
   name: 'DepartmentNot',
   data() {
     return {
@@ -88,17 +93,17 @@ export default {
       })
     },
     addCategory() {
-      this.$modalForm(configQuickCateCreateApi()).then(({ message }) => {
+      modalForm(configQuickCateCreateApi()).then(({ message }) => {
         this.getTargetCate()
       })
     },
     addDivsion(id) {
-      this.$modalForm(configQuickCateEditApi(id)).then(({ message }) => {
+      modalForm(configQuickCateEditApi(id)).then(({ message }) => {
         this.getTargetCate()
       })
     },
     async handleDelete(id) {
-      await this.$modalSure('你确定要删除这条分类吗')
+      await modalSure('你确定要删除这条分类吗')
       await configQuickCateDeleteApi(id)
       await this.getTargetCate()
     }
@@ -117,7 +122,7 @@ export default {
 }
 .assess-left {
   height: calc(100vh - 95px);
-  /deep/ .el-card__header {
+  :deep(.el-card__header) {
     border-bottom: none;
     display: flex;
     align-items: center;
@@ -130,7 +135,7 @@ export default {
   .assess-left-con {
     height: calc(100% - 50px);
   }
-  /deep/ .el-scrollbar__wrap {
+  :deep(.el-scrollbar__wrap) {
     overflow-x: hidden;
   }
   overflow: auto;
@@ -149,14 +154,13 @@ export default {
       font-family: PingFangSC-Regular, PingFang SC;
       font-weight: 400;
       cursor: pointer;
-      border-right: 2px solid transparent;
+      border-radius: 4px;
       display: flex;
       justify-content: space-between;
       &.active {
         background: rgba(24, 144, 255, 0.08);
         color: #1890ff;
         font-weight: 600;
-        border-color: #1890ff;
       }
       // &.active {
       //   background-color: rgba(24, 144, 255, 0.08);
@@ -167,7 +171,13 @@ export default {
       //   }
       // }
       .rank-icon {
+        display: none;
         font-size: 14px;
+      }
+      &:hover {
+        .rank-icon {
+          display: inline-block;
+        }
       }
     }
   }

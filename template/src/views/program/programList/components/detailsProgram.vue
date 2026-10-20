@@ -38,7 +38,7 @@
           <span>{{ formData.customer ? formData.customer.customer_name : '- -' }}</span>
         </div>
       </el-form-item>
-      <el-form-item v-if="formData.eid" label="关联合同：" prop="cid">
+      <el-form-item v-if="formData.eid" label="关联订单：" prop="cid">
         <div>
           <span>{{ formData.contract ? formData.contract.contract_name : '--' }}</span>
         </div>
@@ -79,21 +79,21 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.station /deep/.edui-editor-iframeholder {
+.station :deep(.edui-editor-iframeholder) {
   height: 300px !important;
 }
 .mb-10 {
   margin-bottom: -10px;
 }
 .station {
-  /deep/ .el-form-item__label {
+  :deep(.el-form-item__label) {
     font-family: PingFang SC, PingFang SC;
     font-weight: 400;
     font-size: 13px;
     color: #606266;
     line-height: 22px;
   }
-  /deep/ .el-form-item__content {
+  :deep(.el-form-item__content) {
     font-family: PingFang SC, PingFang SC;
     font-weight: 400;
     font-size: 13px;
@@ -102,31 +102,35 @@ export default {
   }
 }
 
-/deep/.el-cascader,
-/deep/ .el-input-number,
-/deep/ .el-select,
-/deep/ .el-date-editor {
+:deep(.el-cascader),
+:deep(.el-input-number),
+:deep(.el-select),
+:deep(.el-date-editor) {
   width: 100%;
 }
 .avatar-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   margin-right: 12px;
   background: #f7f7f7;
   padding: 5px 10px;
   border-radius: 4px;
   margin-bottom: 10px;
   img {
+    flex: none;
     width: 16px;
     height: 16px;
     border-radius: 50%;
   }
 }
 .members-box {
-  display: inline-block;
+  display: inline-flex;
 }
 .members-box-content {
-  margin: 0 3px 3px 0;
+  margin: 0 3px 0 0;
 }
-/deep/ .el-form-item {
+:deep(.el-form-item) {
   align-items: center;
   margin-bottom: 30px;
 }

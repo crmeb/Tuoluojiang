@@ -18,9 +18,9 @@ namespace App\Http\Service\Company;
 use App\Http\Model\User\UserWorkDao;
 use App\Http\Service\Admin\AdminService;
 use App\Http\Service\BaseService;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\services\FormService;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\services\FormService;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -53,7 +53,7 @@ class CompanyUserWorkService extends BaseService implements ResourceServicesInte
      */
     public function resourceCreate(array $other = []): array
     {
-        return $this->elForm('添加工作经历', $this->createWorkRule(collect($other)), '/ent/work');
+        return $this->createElementForm('添加工作经历', $this->createWorkRule(collect($other)), '/ent/work');
     }
 
     /**
@@ -67,7 +67,7 @@ class CompanyUserWorkService extends BaseService implements ResourceServicesInte
             throw $this->exception('修改的工作经历不存在');
         }
 
-        return $this->elForm('修改工作经历', $this->createWorkRule(collect($info->toArray())), '/ent/work/' . $id, 'PUT');
+        return $this->createElementForm('修改工作经历', $this->createWorkRule(collect($info->toArray())), '/ent/work/' . $id, 'PUT');
     }
 
     /**

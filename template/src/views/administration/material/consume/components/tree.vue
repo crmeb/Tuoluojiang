@@ -3,7 +3,7 @@
     <div class="el-card__header clearfix">物资分类</div>
     <div class="tree-box-con">
       <div v-height>
-        <el-scrollbar style="height: 100%">
+        <el-scrollbar style="height: 100%" class="reset-scroll-bar">
           <el-tree
             ref="tree"
             :data="parentTree"
@@ -16,11 +16,13 @@
             node-key="value"
             @node-click="handleClick"
           >
-            <div slot-scope="{ node }" class="custom-tree-node">
-              <div class="flex-box">
-                <span class="over-text">{{ node.label }}</span>
+            <template #default="{ node }">
+              <div class="custom-tree-node">
+                <div class="flex-box">
+                  <span class="over-text">{{ node.label }}</span>
+                </div>
               </div>
-            </div>
+            </template>
           </el-tree>
         </el-scrollbar>
       </div>
@@ -30,6 +32,7 @@
 
 <script>
 export default {
+  emits: ['frameId'],
   name: 'TreeVue',
   props: {
     parentTree: {
@@ -107,7 +110,7 @@ export default {
       } else {
         this.focusShow = false
         if (this.activeValue) {
-          this.$refs[`pop-${this.activeValue}`].doClose()
+          this.$refs[`pop-${this.activeValue}`].hide()
         }
         this.frame_id = node.value
         this.isShowEdit = ''
@@ -138,7 +141,7 @@ export default {
   font-size: 18px;
   color: #ffca28;
 }
-/deep/ .el-card__header {
+:deep(.el-card__header) {
   border-bottom: none;
   padding-left: 0;
   font-family: PingFang SC, PingFang SC;
@@ -146,26 +149,24 @@ export default {
   font-size: 14px;
   color: #303133;
 }
-/deep/ .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content {
+:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
   background: rgba(24, 144, 255, 0.08);
-  border-color: #1890ff;
 }
-/deep/ .el-scrollbar__wrap {
+:deep(.el-scrollbar__wrap) {
   overflow-x: hidden;
 }
-/deep/ .tree-box-con .el-tree-node__content {
+:deep(.tree-box-con .el-tree-node__content) {
   height: 40px;
-  padding-right: 15px;
-  border-right: 2px solid transparent;
+  border-radius: 4px;
 }
-/deep/ .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node,
+:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node),
 .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .right-icon {
   display: inline-block;
   color: #1890ff;
   font-weight: 800;
 }
 
-/deep/.el-tree-node > .el-tree-node__children {
+:deep(.el-tree-node > .el-tree-node__children) {
   overflow: inherit;
 }
 .custom-tree-node {
@@ -208,5 +209,9 @@ export default {
   background: rgba(24, 144, 255, 0.08) !important;
   color: #1890ff !important;
   font-weight: 800;
+}
+
+:deep(.el-tree) {
+  background-color: transparent;
 }
 </style>

@@ -18,7 +18,7 @@
         :http-request="uploadServerLog"
         :show-file-list="false"
         action="##"
-        class="upload-demo mr10 mb15"
+        class="upload-demo mr10 mb12"
         multiple
       >
         <img v-if="imageUrl" :src="imageUrl" class="img" />
@@ -26,19 +26,20 @@
       </el-upload>
     </div>
 
-    <el-dialog :before-close="handleClose" :visible.sync="dialogVisible" title="选择图片" v-bind="$attrs" width="850px">
+    <el-dialog :before-close="handleClose" v-model="dialogVisible" title="选择图片" v-bind="$attrs" width="850px">
       <upload-picture ref="uploadPicture" :check-button="true" @getImage="getImage"></upload-picture>
     </el-dialog>
-    <el-image-viewer v-if="isImage" :on-close="closeImageViewer" :url-list="srcList" />
+    <el-image-viewer v-if="isImage" @close="closeImageViewer" :url-list="srcList" />
   </div>
 </template>
 
 <script>
 import uploadPicture from '@/components/uploadPicture/index'
-import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
-import { getToken } from '@/utils/auth'
-import { uploader } from '@/utils/uploadCloud'
+import { ElImageViewer } from 'element-plus'
+import { getToken } from '@/utils/auth.ts'
+import { uploader } from '@/utils/uploadCloud.ts'
 export default {
+  emits: ['update:imageUrl', 'getImage'],
   name: 'name',
   props: {
     imageUrl: {
@@ -153,7 +154,7 @@ export default {
       display: block;
     }
   }
-  /deep/ .el-upload {
+  :deep(.el-upload) {
     width: 95px;
     height: 65px;
   }

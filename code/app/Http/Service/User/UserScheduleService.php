@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,27 +16,26 @@ declare(strict_types=1);
 namespace App\Http\Service\User;
 
 use App\Constants\CacheEnum;
-use App\Constants\ClientEnum;
+use App\Constants\CustomerNoticeEnum;
 use App\Constants\CommonEnum;
 use App\Http\Dao\User\UserScheduleDao;
 use App\Http\Service\Admin\AdminService;
-use App\Http\Service\BaseService;
-use App\Http\Service\Client\ClientFollowService;
-use App\Http\Service\Client\ClientRemindService;
-use App\Http\Service\Client\ContractService;
-use App\Http\Service\Client\CustomerService;
+use App\Http\Service\Customer\FollowUpService;
+use App\Http\Service\Customer\RemindService;
+use App\Http\Service\Customer\OrderService;
+use App\Http\Service\Customer\CustomerService;
 use App\Http\Service\Other\TaskService;
 use App\Task\message\MessageSendTask;
 use App\Task\message\StatusChangeTask;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
-use crmeb\options\TaskOptions;
-use crmeb\traits\service\ResourceServiceTrait;
-use crmeb\utils\MessageType;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\options\TaskOptions;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\utils\MessageType;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
@@ -73,7 +72,7 @@ class UserScheduleService extends BaseService
     /**
      * @var string[]
      */
-    protected array $CLIENT_RETURN = ['name' => '合同回款', 'key' => 'client_return', 'color' => '#A277FF'];
+    protected array $CLIENT_RETURN = ['name' => '订单回款', 'key' => 'client_return', 'color' => '#A277FF'];
 
     /**
      * @var array|string[]
@@ -83,7 +82,7 @@ class UserScheduleService extends BaseService
         'personal'      => '个人提醒',
         'client_track'  => '客户跟进',
         'client_renew'  => '付款提醒',
-        'client_return' => '合同回款',
+        'client_return' => '订单回款',
         'report_renew'  => '汇报待办',
     ];
 
@@ -261,9 +260,9 @@ class UserScheduleService extends BaseService
         }
 
         $clientService   = app()->get(CustomerService::class);
-        $contractService = app()->get(ContractService::class);
-        $followService   = app()->get(ClientFollowService::class);
-        $remindService   = app()->get(ClientRemindService::class);
+        $contractService = app()->get(OrderService::class);
+        $followService   = app()->get(FollowUpService::class);
+        $remindService   = app()->get(RemindService::class);
         switch ($info['types']) {
             case 'client_track':
                 $info['title'] = $clientService->value($followService->value($info['link_id'], 'eid'), 'name');
@@ -331,7 +330,7 @@ class UserScheduleService extends BaseService
                 app()->get(TaskService::class)->delete($info->uniqued, 'uniqued');
             }
             if ($res1) {
-                Task::deliver(new StatusChangeTask(ClientEnum::CLIENT_SCHEDULE_NOTICE, CommonEnum::STATUS_DELETE, 1, $info->id));
+                Task::deliver(new StatusChangeTask(CustomerNoticeEnum::CUSTOMER_SCHEDULE_NOTICE, CommonEnum::STATUS_DELETE, 1, $info->id));
             }
             return $res1;
         });
@@ -586,92 +585,6 @@ class UserScheduleService extends BaseService
     }
 
     /**
-     * 发送提醒.
-     *
-     * @param mixed $id
-     * @throws BindingResolutionException
-     * @throws \ReflectionException
-     */
-    public function createScheduleMsg($id)
-    {
-        $info = $this->dao->get($id, ['*'], ['']);
-        if (! $info) {
-            Log::error('未找到提醒记录,编号：' . $id);
-
-            return;
-        }
-        $entid    = 1;
-        $userInfo = app()->get(AdminService::class)->get(['uid' => $info['uid']], ['id', 'phone', 'name'])?->toArray();
-        if (! $userInfo) {
-            return;
-        }
-
-        switch ($info->types) {
-            case 'personal':// 个人提醒
-                $task = new MessageSendTask(
-                    entid: $entid,
-                    i: $entid,
-                    type: MessageType::DEALT_PRESON_WORK_TYPE,
-                    touid: ['to_uid' => $userInfo['id'], 'phone' => $userInfo['phone'] ?? ''],
-                    params: [
-                        '待办内容' => $info->content,
-                        '备注'     => $info->mark,
-                        '创建人'   => $userInfo['name'] ?? '',
-                        '创建时间' => $info->created_at,
-                    ],
-                    linkId: $id,
-                    linkStatus: 0
-                );
-                Task::deliver($task);
-                break;
-            case 'client_track':// 客户跟进
-                $followInfo = app()->get(ClientFollowService::class)->get($info->link_id, ['id', 'eid'], ['client']);
-                $task       = new MessageSendTask(
-                    entid: $entid,
-                    i: $entid,
-                    type: MessageType::DEALT_CLIENT_WORK_TYPE,
-                    touid: ['to_uid' => $userInfo['id'], 'phone' => $userInfo['phone'] ?? ''],
-                    params: [
-                        '待办内容' => $info->content,
-                        '备注'     => $info->mark,
-                        '创建人'   => $userInfo['name'] ?? '',
-                        '创建时间' => $info->created_at,
-                        '客户名称' => $followInfo['client']['name'] ?? '',
-                    ],
-                    other: ['id' => $info->link_id],
-                    linkId: $followInfo->eid,
-                    linkStatus: 0
-                );
-                Task::deliver($task);
-                break;
-            case 'client_renew':// 续费提醒
-                $clinetRemind = app()->get(ClientRemindService::class)->get($info->link_id, ['id', 'eid', 'cid'], ['client', 'treaty']);
-                $task         = new MessageSendTask(
-                    entid: $entid,
-                    i: $entid,
-                    type: MessageType::DEALT_MONEY_WORK_TYPE,
-                    touid: ['to_uid' => $userInfo['id'], 'phone' => $userInfo['phone'] ?? ''],
-                    params: [
-                        '待办内容'     => $info->content,
-                        '备注'         => $info->mark,
-                        '创建人'       => $userInfo['name'] ?? '',
-                        '创建时间'     => $info->created_at,
-                        '客户名称'     => $clinetRemind['client']['name'] ?? '',
-                        '关联合同名称' => $clinetRemind['treaty']['title'] ?? '',
-                        '合同金额'     => $clinetRemind['treaty']['price'] ?? '',
-                        '合同开始时间' => $clinetRemind['treaty']['start_date'] ?? '',
-                        '合同结束时间' => $clinetRemind['treaty']['end_date'] ?? '',
-                    ],
-                    other: ['id' => $info->link_id],
-                    linkId: $clinetRemind->cid,
-                    linkStatus: 0
-                );
-                Task::deliver($task);
-                break;
-        }
-    }
-
-    /**
      * 执行定时任务
      *
      * @throws BindingResolutionException
@@ -807,7 +720,7 @@ class UserScheduleService extends BaseService
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
-    public function sendMessage(int $entid, array $info)
+    public function sendMessage(int $entId, array $info)
     {
         $this->dao->update($info['id'], ['is_remind' => 1, 'last_time' => date('Y-m-d H:i:s')]);
         $userInfo = app()->get(AdminService::class)->get(['uid' => $info['uid']], ['id', 'phone', 'name'])?->toArray();
@@ -822,8 +735,8 @@ class UserScheduleService extends BaseService
         switch ($info['types']) {
             case 'personal':// 个人提醒
                 $task = new MessageSendTask(
-                    entid: $entid,
-                    i: $entid,
+                    entid: $entId,
+                    i: $entId,
                     type: MessageType::DEALT_PRESON_WORK_TYPE,
                     toUid: ['to_uid' => $userInfo['id'], 'phone' => $userInfo['phone'] ?? ''],
                     params: [
@@ -838,10 +751,10 @@ class UserScheduleService extends BaseService
                 Task::deliver($task);
                 break;
             case 'client_track':// 客户跟进
-                $followInfo = toArray(app()->get(ClientFollowService::class)->get($info['link_id'], ['id', 'eid'], ['client']));
+                $followInfo = app()->get(FollowUpService::class)->get($info['link_id'], ['id', 'eid'], ['client'])?->toArray();
                 $task       = new MessageSendTask(
-                    entid: $entid,
-                    i: $entid,
+                    entid: $entId,
+                    i: $entId,
                     type: MessageType::DEALT_CLIENT_WORK_TYPE,
                     toUid: ['to_uid' => $userInfo['id'], 'phone' => $userInfo['phone'] ?? ''],
                     params: [
@@ -859,23 +772,23 @@ class UserScheduleService extends BaseService
                 break;
             case 'client_renew':// 续费提醒
             case 'client_return':// 回款
-                $clinetRemind = toArray(app()->get(ClientRemindService::class)->get($info['link_id'], ['id', 'eid', 'cid'], ['client', 'treaty']));
+                $clinetRemind = toArray(app()->get(RemindService::class)->get($info['link_id'], ['id', 'eid', 'cid'], ['client', 'treaty']));
                 $task         = new MessageSendTask(
-                    entid: $entid,
-                    i: $entid,
+                    entid: $entId,
+                    i: $entId,
                     type: MessageType::DEALT_MONEY_WORK_TYPE,
                     toUid: ['to_uid' => $userInfo['id'], 'phone' => $userInfo['phone'] ?? ''],
                     params: [
-                        '待办内容'     => $info['content'],
-                        '待办类型'     => $info['types'] == 'client_renew' ? '续费' : '回款',
-                        '备注'         => $info['mark'],
-                        '创建人'       => $userInfo['name'] ?? '',
-                        '创建时间'     => $info['created_at'],
-                        '客户名称'     => $clinetRemind['client']['name'] ?? '',
-                        '关联合同名称' => $clinetRemind['treaty']['title'] ?? '',
-                        '合同金额'     => $clinetRemind['treaty']['price'] ?? '',
-                        '合同开始时间' => $clinetRemind['treaty']['start_date'] ?? '',
-                        '合同结束时间' => $clinetRemind['treaty']['end_date'] ?? '',
+                        '待办内容'         => $info['content'],
+                        '待办类型'         => $info['types'] == 'client_renew' ? '续费' : '回款',
+                        '备注'             => $info['mark'],
+                        '创建人'           => $userInfo['name'] ?? '',
+                        '创建时间'         => $info['created_at'],
+                        '客户名称'         => $clinetRemind['client']['name'] ?? '',
+                        '关联订单名称' => $clinetRemind['treaty']['title'] ?? '',
+                        '订单金额'     => $clinetRemind['treaty']['price'] ?? '',
+                        '订单开始时间' => $clinetRemind['treaty']['start_date'] ?? '',
+                        '订单结束时间' => $clinetRemind['treaty']['end_date'] ?? '',
                     ],
                     other: ['id' => $info['link_id']],
                     linkId: $clinetRemind['cid'],
@@ -1135,9 +1048,9 @@ class UserScheduleService extends BaseService
             return [];
         }
         $clientService   = app()->get(CustomerService::class);
-        $contractService = app()->get(ContractService::class);
-        $followService   = app()->get(ClientFollowService::class);
-        $remindService   = app()->get(ClientRemindService::class);
+        $contractService = app()->get(OrderService::class);
+        $followService   = app()->get(FollowUpService::class);
+        $remindService   = app()->get(RemindService::class);
         foreach ($list as &$val) {
             $val['color'] = $this->{strtoupper($val['types'])}['color'];
             $val['title'] = match ($val['types']) {

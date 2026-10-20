@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,13 +17,16 @@ namespace App\Http\Service\News;
 
 use App\Constants\CommonEnum;
 use App\Constants\NoticeEnum;
+use App\Constants\TodoEnum;
+use App\Events\BusinessDataChangeEvent;
 use App\Http\Dao\Notice\NoticeDao;
-use App\Http\Model\BaseModel;
-use App\Http\Service\BaseService;
 use App\Http\Service\Frame\FrameService;
+use App\Task\todo\TodoNoticeSourceSyncTask;
 use App\Task\message\NewsRemind;
 use App\Task\message\StatusChangeTask;
-use crmeb\traits\service\ResourceServiceTrait;
+use App\Http\Model\BaseModel;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
@@ -73,21 +76,26 @@ class NewsService extends BaseService
             $limit = 8;
         }
         unset($where['is_new']);
+        if (isset($where['is_read']) && $where['is_read'] !== '') {
+            if ($where['is_read']) {
+                $where['is_visit'] = auth('admin')->id();
+            } else {
+                $where['not_visit'] = auth('admin')->id();
+            }
+            unset($where['is_read']);
+        }
         $list = $this->dao->getList($where, ['id', 'title', 'cover', 'user_id', 'is_top', 'info', 'status', 'visit', 'push_time', 'created_at'], $page, $limit, $sort, [
             'card' => function ($query) {
                 $query->select(['id', 'name']);
             },
+            'isVisit' => function ($query) {
+                $query->where('user_id', auth('admin')->id())->select(['notice_id', 'user_id']);
+            },
         ]);
-        $noticeIds = app()->get(NewsVisitService::class)->dao->setDefaultSort('created_at')->column(['user_id' => auth('admin')->id()], 'notice_id');
-        if (! empty($list)) {
-            foreach ($list as &$item) {
-                if (in_array($item['id'], $noticeIds)) {
-                    $item['is_read'] = 1;
-                } else {
-                    $item['is_read'] = 0;
-                }
-            }
-        }
+        $list = array_map(function ($item) {
+            $item['is_read'] = (bool) $item['is_visit'];
+            return $item;
+        }, $list);
         $count = $this->dao->count($where);
         return $this->listData($list, $count);
     }
@@ -174,6 +182,7 @@ class NewsService extends BaseService
         $res             = $this->dao->create($data);
         // 发送提醒消息
         Task::deliver(new NewsRemind(1, (int) $res->id));
+        $this->scheduleTodoSync((int) $res->id, (string) $res->push_time);
         return $res;
     }
 
@@ -205,6 +214,9 @@ class NewsService extends BaseService
     public function resourceDelete($id, ?string $key = null)
     {
         Task::deliver(new StatusChangeTask([NoticeEnum::COMPANY_NEWS], CommonEnum::STATUS_DELETE, 1, $id));
+        foreach ((array) $id as $noticeId) {
+            BusinessDataChangeEvent::dispatch(TodoEnum::TYPE_NOTICE, (int) $noticeId, 'delete');
+        }
         return $this->dao->delete($id, $key);
     }
 
@@ -238,10 +250,12 @@ class NewsService extends BaseService
         if (! $info) {
             throw $this->exception('未找到相关通知内容');
         }
+        $userId = app()->get(FrameService::class)->uuidToUid($this->uuId(false), $where['entid']);
         if (app()->get(NewsVisitService::class)->saveVisit($id, $this->uuId(false), $where['entid'])) {
             $this->dao->inc($where, 1, 'visit');
             ++$info->visit;
         }
+        BusinessDataChangeEvent::dispatch(TodoEnum::TYPE_NOTICE, (int) $id, 'update', [(int) $userId]);
         return $info->toArray();
     }
 
@@ -258,7 +272,21 @@ class NewsService extends BaseService
         if (! $data['push_type']) {
             $data['push_time'] = now()->toDateTimeString();
         }
-        return $this->dao->update($id, $data);
+        $res = $this->dao->update($id, $data);
+        $this->scheduleTodoSync((int) $id, (string) $data['push_time']);
+        return $res;
+    }
+
+    private function scheduleTodoSync(int $id, string $pushTime): void
+    {
+        $delay = max(0, datetime_timestamp($pushTime) - time());
+        if ($delay < 1) {
+            return;
+        }
+
+        $task = new TodoNoticeSourceSyncTask($id);
+        $task->delay($delay);
+        Task::deliver($task);
     }
 
     /**

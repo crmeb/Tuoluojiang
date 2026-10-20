@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,9 +15,9 @@ declare(strict_types=1);
 
 namespace App\Http\Model\Assess;
 
-use App\Http\Model\BaseModel;
+use App\Http\Model\Admin\Admin;
 use App\Http\Model\Cloud\File;
-use App\Http\Model\User\UserEnterprise;
+use App\Http\Model\BaseModel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -48,9 +48,26 @@ class AssessScheme extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'                    => 'integer',
+        'entid'                 => 'integer',
+        'period'                => 'integer',
+        'create_month'          => 'integer',
+        'create_day'            => 'integer',
+        'own_appraise_month'    => 'integer',
+        'own_appraise_day'      => 'integer',
+        'leader_appraise_month' => 'integer',
+        'leader_appraise_day'   => 'integer',
+        'user_id'               => 'integer',
+        'user_count'            => 'integer',
+        'status'                => 'integer',
+        'delete'                => 'datetime:Y-m-d H:i:s',
+        'created_at'            => 'datetime:Y-m-d H:i:s',
+        'updated_at'            => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * other修改器.
-     * @param mixed $value
      */
     public function setOtherAttribute($value)
     {
@@ -59,7 +76,6 @@ class AssessScheme extends BaseModel
 
     /**
      * other获取器.
-     * @param mixed $value
      * @return false|string[]
      */
     public function getOtherAttribute($value)
@@ -82,9 +98,9 @@ class AssessScheme extends BaseModel
      */
     public function userEnt()
     {
-        return $this->hasOne(UserEnterprise::class, 'id', 'user_id')->with(['card' => function ($query) {
+        return $this->hasOne(Admin::class, 'id', 'user_id')->with(['card' => function ($query) {
             $query->select(['id', 'name']);
-        }])->select(['id', 'card_id']);
+        }])->select(['id', 'uid']);
     }
 
     /**
@@ -99,7 +115,6 @@ class AssessScheme extends BaseModel
     /**
      * name作用域
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeNameLike($query, $value)
     {

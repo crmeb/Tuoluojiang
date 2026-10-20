@@ -14,14 +14,14 @@
 
         <!-- 表格数据 -->
         <div v-loading="loading" class="table-box mt10">
-          <el-table :data="tableData" :height="tableHeight" row-key="id" style="width: 100%">
+          <el-table :data="tableData" :height="TABLE_HEIGHT" row-key="id" style="width: 100%">
             <el-table-column label="密钥名称" prop="title" min-width="100px">
               <template #default="{ row }">
                 <span>{{ row.title || '--' }}</span>
               </template>
             </el-table-column>
             <el-table-column label="API Key" prop="ak" min-width="200px">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <div class="flex">
                   <div class="over-text w-180">{{ scope.row.ak || '--' }}</div>
                   <span class="iconfont iconfuzhi-01" @click="copy(scope.row.ak)"></span>
@@ -29,7 +29,7 @@
               </template>
             </el-table-column>
             <el-table-column label="Secret Key" prop="info" min-width="220px">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <div v-if="!ids.includes(scope.row.id)" class="flex">
                   <div class="over-text w-180 mr10">***********************************</div>
                   <span class="iconfont iconyincang pointer" @click="isShow(scope.row)"></span>
@@ -43,12 +43,12 @@
               </template>
             </el-table-column>
             <el-table-column label="最后登录时间" prop="last_time">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <span>{{ scope.row.last_time || '--' }}</span>
               </template>
             </el-table-column>
             <el-table-column label="状态" prop="status">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <el-switch
                   v-model="scope.row.status"
                   :active-value="1"
@@ -62,9 +62,9 @@
             </el-table-column>
             <el-table-column label="创建时间" prop="created_at" min-width="110px"> </el-table-column>
             <el-table-column fixed="right" label="操作" min-width="80px">
-              <template slot-scope="scope">
-                <el-button type="text" @click="editFn(scope.row.id)">编辑</el-button>
-                <el-button type="text" @click="deleteFn(scope.row.id)">删除</el-button>
+              <template #default="scope">
+                <el-button type="primary" link @click="editFn(scope.row.id)">编辑</el-button>
+                <el-button type="primary" link @click="deleteFn(scope.row.id)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -85,19 +85,24 @@
     <!-- 新建授权信息 -->
     <addForeign ref="addForeign" @submitOk="getList"></addForeign>
     <!-- 复制密钥 -->
-    <el-dialog title="查看密钥" :visible.sync="dialogVisible" width="30%" :before-close="handleClose">
+    <el-dialog title="查看密钥" v-model="dialogVisible" width="30%" :before-close="handleClose">
       <span>{{ sk || '--' }}</span>
-      <span slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="copy()">点击复制</el-button>
-      </span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="primary" @click="copy()">点击复制</el-button>
+        </span>
+      </template>
     </el-dialog>
   </div>
 </template>
 
 <script>
+import { modalSure } from '@/libs/public.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
 import oaFromBox from '@/components/common/oaFromBox'
 import addForeign from './components/addForeign'
-import { deleteOpenKeyApi, getOpenKeyApi, getOpenKeyStatusApi, getFindskApi } from '@/api/develop'
+import { deleteOpenKeyApi, getOpenKeyApi, getOpenKeyStatusApi, getFindskApi } from '@/api/develop.ts'
+import { writeClipboard } from '@/utils/clipboard'
 export default {
   name: 'FinanceList',
   components: {
@@ -106,6 +111,7 @@ export default {
   },
   data() {
     return {
+      TABLE_HEIGHT,
       dialogVisible: false,
       search: [
         {
@@ -161,8 +167,9 @@ export default {
     },
 
     copy(val) {
-      clipboard.writeText(val)
-      this.$message.success('复制成功')
+      writeClipboard(val).then((isOk) => {
+        isOk ? this.$message.success('复制成功') : this.$message.error('复制失败')
+      })
     },
 
     // 修改状态
@@ -174,7 +181,7 @@ export default {
 
     // 删除触发器
     deleteFn(id) {
-      this.$modalSure('您确定要删除此数据吗').then(() => {
+      modalSure('您确定要删除此数据吗').then(() => {
         deleteOpenKeyApi(id).then((res) => {
           let totalPage = Math.ceil((this.total - 1) / this.where.limit)
           let currentPage = this.where.page > totalPage ? totalPage : this.where.page
@@ -205,7 +212,7 @@ export default {
       this.total = data.data.count
       this.tableData = data.data.list
       this.loading = false
-      if(!this.tableData0) return
+      if (!this.tableData0) return
       this.tableData.forEach((item) => {
         item.show = false
       })
@@ -227,7 +234,7 @@ export default {
 .w-180 {
   min-width: 180px;
 }
-/deep/ el-tag {
+:deep(el-tag) {
   border: none;
 }
 .iconfuzhi-01 {

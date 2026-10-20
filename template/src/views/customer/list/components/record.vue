@@ -3,23 +3,15 @@
   <div class="followUpRecord">
     <div class="btn-box1 mb10">
       <div class="title-16">跟进记录</div>
-      <el-button
-        type="primary"
-        size="small"
-        v-if="formInfo.types == 2 || (formInfo.types == 1 && userId == formInfo.data.salesman.id)"
-        @click="addRecord"
-        >添加跟进记录</el-button
-      >
     </div>
-    <record-upload v-if="addRecordShow" :form-info="formInfo" @change="uploadChange"></record-upload>
+    <record-upload :form-info="formInfo" @change="uploadChange"></record-upload>
     <div class="recordContent">
       <el-timeline>
         <el-timeline-item
           v-for="(activity, index) in liaisonData"
           :key="index"
-          :type="activity.type"
           color="#1890FF"
-          :icon="activity.icon"
+          :icon="$icon(activity.icon)"
           :size="activity.size"
         >
           <div v-if="activity.types === 1">
@@ -31,10 +23,12 @@
               </div>
               <el-dropdown class="more">
                 <i class="el-icon-more" />
-                <el-dropdown-menu style="width: 100px; text-align: center">
-                  <el-dropdown-item @click.native="handleContract(activity)">编辑 </el-dropdown-item>
-                  <el-dropdown-item @click.native="handleDelete(activity)"> 删除 </el-dropdown-item>
-                </el-dropdown-menu>
+                <template #dropdown>
+                  <el-dropdown-menu style="width: 100px; text-align: center">
+                    <el-dropdown-item @click="handleContract(activity)">编辑 </el-dropdown-item>
+                    <el-dropdown-item @click="handleDelete(activity)"> 删除 </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
               </el-dropdown>
             </div>
             <div class="record">
@@ -54,18 +48,20 @@
                 </div>
                 <el-dropdown class="more">
                   <i class="el-icon-more" />
-                  <el-dropdown-menu style="width: 100px; text-align: center">
-                    <el-dropdown-item @click.native="handleEdit(activity, index)"> 编辑 </el-dropdown-item>
-                    <el-dropdown-item @click.native="handleDelete(activity)"> 删除 </el-dropdown-item>
-                  </el-dropdown-menu>
+                  <template #dropdown>
+                    <el-dropdown-menu style="width: 100px; text-align: center">
+                      <el-dropdown-item @click="handleEdit(activity, index)"> 编辑 </el-dropdown-item>
+                      <el-dropdown-item @click="handleDelete(activity)"> 删除 </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
                 </el-dropdown>
               </div>
               <div class="record">
                 {{ activity.content }}
               </div>
               <div v-for="(fileItem, g) in activity.attachs" :key="g" class="flex">
-                <div class="fileItem" @click="filePreview(fileItem)">
-                  <span class="file" v-if="toSrcIcon(fileItem.name) !== 'img'">
+                <div class="fileItem" @click="filePreview(fileItem, { list: activity.attachs })">
+                  <span class="file backgrImg" v-if="toSrcIcon(fileItem.name) !== 'img'">
                     {{ getFileTypeFn(fileItem.name) }}
                   </span>
                   <img :src="fileItem.url" class="file" alt="" v-else />
@@ -75,37 +71,30 @@
               </div>
             </div>
 
-            <record-upload v-if="editIndex === index" :form-info="formInfo" @change="uploadChange"></record-upload>
+            <record-upload v-if="editIndex === index" :form-info="editFormInfo" @change="uploadChange"></record-upload>
           </div>
         </el-timeline-item>
       </el-timeline>
     </div>
-    <div v-if="liaisonData.length == 0" class="default">
-      <img src="../../../../assets/images/genjin.png" alt="" class="img" />
-      <span class="text">{{ $t('public.message14') + '~' }}</span>
-    </div>
-    <!-- 查看图片 -->
-    <!-- 打开文件 -->
-    <fileDialog ref="viewFile"></fileDialog>
 
     <remind-dialog ref="remindDialog" :config="remindConfig" @change="remindChange"></remind-dialog>
   </div>
 </template>
 
 <script>
-import { clientFollowDeleteApi, clientFollowListApi } from '@/api/enterprise'
-import { getFileType, getFileExtension } from '@/libs/public'
-import { toSrcFn } from '@/utils/format'
-import { roterPre } from '@/settings'
-import file from '@/utils/file'
-import Vue from 'vue'
-Vue.use(file)
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { getStorageJson } from '@/utils/storage.ts'
+import { getClientFollowApi, delClientFollowApi } from '@/api/client.ts'
+import { toSrcFn } from '@/utils/format.ts'
+import { fileLinkDownLoad, getFileExtension, getFileType } from '@/utils/file.ts'
+import { filePreview } from '@/utils/filePreview.ts'
 export default {
+  emits: ['refresh-detail'],
   name: 'Record',
   components: {
-    recordUpload: () => import('./recordUpload'),
-    fileDialog: () => import('@/components/openFile/previewDialog '), // 图片、MP3，MP4弹窗
-    remindDialog: () => import('./remindDialog')
+    recordUpload: defineAsyncComponent(() => import('./recordUpload')),
+    remindDialog: defineAsyncComponent(() => import('./remindDialog'))
   },
   props: {
     formInfo: {
@@ -118,10 +107,8 @@ export default {
   data() {
     return {
       liaisonData: [],
-      liaison: {},
-      addRecordShow: false,
       isTitle: '添加跟进记录',
-      userId: JSON.parse(localStorage.getItem('userInfo')).id,
+      userId: getStorageJson('userInfo', {}).id,
       id: '',
       form: {
         content: '',
@@ -129,22 +116,47 @@ export default {
         types: 0,
         time: ''
       },
+      editFormInfo: {},
       editIndex: -1,
       remindConfig: {}
     }
   },
+  mounted() {
+    // this.getTableData()
+    this.addRecord()
+  },
+  computed: {
+    liaison() {
+      return {
+        eid: this.formInfo.eid || this.formInfo.data?.eid || this.formInfo.data?.id || '',
+        link_type: this.formInfo.link_type || ''
+      };
+    }
+  },
+  watch: {
+    liaison: {
+      handler(newVal, oldVal) {
+        const { eid, link_type } = newVal;
+        if (eid && link_type) {
+          this.getTableData();
+        }
+      },
+      deep: true,
+      immediate: false
+    }
+  },
   methods: {
+    filePreview,
     getFileTypeFn(name) {
       return getFileExtension(name)
     },
     toSrcIcon(name) {
       return getFileType(name)
     },
-
     getTableData() {
+      this.editIndex = -1
       this.liaisonData = []
-      this.liaison.eid = this.formInfo.data.eid
-      clientFollowListApi(this.liaison).then((res) => {
+      getClientFollowApi(this.liaison).then((res) => {
         this.liaisonTotal = res.data.count
         res.data.list.map((item, index) => {
           if (index == 0) {
@@ -157,22 +169,25 @@ export default {
 
     uploadChange(e) {
       if (e.type === 'add') {
-        this.addRecordShow = false
+        this.addRecord()
       } else {
         this.editIndex = -1
       }
       this.getTableData()
+      if (e.type === 'add') {
+        this.$emit('refresh-detail')
+      }
     },
 
     // 下载文件
     downloadFile(row, name) {
-      this.fileLinkDownLoad(row, name)
+      fileLinkDownLoad(row, name)
     },
 
     // 添加
     addRecord() {
+      this.editIndex = -1
       this.formInfo.type = 'add'
-      this.addRecordShow = !this.addRecordShow
       this.isTitle = '添加跟进记录'
     },
 
@@ -188,23 +203,26 @@ export default {
 
     remindChange() {
       this.getTableData()
+      this.addRecord()
     },
 
     // 编辑
     handleEdit(row, index) {
-      this.formInfo.type = 'edit'
-      this.formInfo.editData = row
+      this.editFormInfo = JSON.parse(JSON.stringify(this.formInfo))
+      this.editFormInfo.type = 'edit'
+      this.editFormInfo.editData = row
       this.editIndex = index
     },
 
     // 删除
     async handleDelete(row, index) {
-      await this.$modalSure(this.$t('customer.placeholder63'))
-      await clientFollowDeleteApi(row.id)
+      await modalSure('你确定要删除该数据吗')
+      await delClientFollowApi(row.id)
       if (this.liaison.page > 1 && this.liaisonData.length <= 1) {
         this.liaison.page--
       }
       this.getTableData()
+      this.$emit('refresh-detail')
     },
 
     // 判断上传的文件格式文件是否有无图片，无图则为默认
@@ -218,10 +236,9 @@ export default {
 <style lang="scss" scoped>
 .file {
   display: flex;
-  width: 30px;
-  height: 38px;
-  background: url('../../../../assets/images/cloud/file-box.png') no-repeat;
-  background-size: 30px 38px;
+  width: 35px;
+  height: 35px;
+  background-size: 35px 35px;
   color: #fff !important;
   justify-content: center;
   line-height: 38px;
@@ -302,9 +319,6 @@ export default {
   padding: 0px;
   margin-right: 16px;
 }
-.el-button--medium {
-  padding: 10px 15px !important;
-}
 .recordContent {
   padding-top: 38px;
 }
@@ -322,16 +336,12 @@ export default {
   .el-icon-more {
     color: #909399;
   }
-  .head-portrait {
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-  }
+
   .head-right {
     margin-left: 10px;
     display: flex;
-    flex-direction: column;
-    justify-content: center;
+    // flex-direction: column;
+    // justify-content: center;
     .head-name {
       font-size: 14px;
 
@@ -339,6 +349,7 @@ export default {
       color: #303133;
     }
     .head-time {
+      margin-left: 6px;
       font-size: 13px;
       line-height: 17px;
       font-weight: 400;
@@ -404,30 +415,41 @@ export default {
 .iconfont {
   color: #1890ff;
 }
-/deep/ .el-timeline-item__tail {
+:deep(.el-timeline-item__tail) {
   position: absolute;
   left: 4px;
   height: 100%;
 
   border-left: 1px solid #dfe4ed;
 }
-/deep/.el-timeline-item__node--normal {
+:deep(.el-timeline-item__node--normal) {
   left: 0px;
   width: 10px;
   height: 10px;
 }
-/deep/ .el-timeline-item__wrapper {
+:deep(.el-timeline-item__wrapper) {
   position: relative;
   top: -12px;
 }
-/deep/ .el-textarea__inner {
+:deep(.el-textarea__inner) {
   min-height: 96px;
   border: none;
+  box-shadow: none;
   font-size: 12px;
 }
-/deep/ .icondangqian {
+:deep(.icondangqian) {
   font-size: 16px;
   color: #1890ff;
   background-color: none;
+}
+.backgrImg {
+  background: url('../../../../assets/images/cloud/file-box.png') no-repeat;
+  background-size: 30px 38px;
+}
+.head-portrait {
+  flex-shrink: 0;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
 }
 </style>

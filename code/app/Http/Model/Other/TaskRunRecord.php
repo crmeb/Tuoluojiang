@@ -34,4 +34,13 @@ class TaskRunRecord extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'         => 'integer',
+        'task_id'    => 'integer',
+        'line'       => 'integer',
+        'status'     => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
 }

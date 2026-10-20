@@ -40,6 +40,17 @@ class ApproveRule extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'          => 'integer',
+        'user_id'     => 'integer',
+        'card_id'     => 'integer',
+        'approve_id'  => 'integer',
+        'abnormal'    => 'integer',
+        'recall'      => 'integer',
+        'is_transfer' => 'integer',
+        'is_sign'     => 'integer',
+    ];
+
     protected $hidden = [
         'range',
     ];
@@ -102,11 +113,7 @@ class ApproveRule extends BaseModel
      */
     public function scopeId($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereIn('id', $value);
-        } elseif ($value !== '') {
-            $query->where('id', $value);
-        }
+        is_array($value) ? $query->whereIn('id', $value) : $query->where('id', $value);
     }
 
     /**
@@ -140,9 +147,7 @@ class ApproveRule extends BaseModel
      */
     public function scopeApproveId($query, $value)
     {
-        if ($value !== '') {
-            $query->where('approve_id', $value);
-        }
+        is_array($value) ? $query->whereIn('approve_id', $value) : $query->where('approve_id', $value);
     }
 
     /**

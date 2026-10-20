@@ -19,8 +19,8 @@ use PhpCsFixer\Fixer\WhitespacesAwareFixerInterface;
 use PhpCsFixer\FixerDefinition\CodeSample;
 use PhpCsFixer\FixerDefinition\FixerDefinition;
 use PhpCsFixer\FixerDefinition\FixerDefinitionInterface;
+use PhpCsFixer\Tokenizer\Analyzer\WhitespacesAnalyzer;
 use PhpCsFixer\Tokenizer\CT;
-use PhpCsFixer\Tokenizer\Token;
 use PhpCsFixer\Tokenizer\Tokens;
 use PhpCsFixer\Tokenizer\TokensAnalyzer;
 
@@ -35,9 +35,6 @@ final class BlankLineBetweenImportGroupsFixer extends AbstractFixer implements W
 
     private const IMPORT_TYPE_FUNCTION = 'function';
 
-    /**
-     * {@inheritdoc}
-     */
     public function getDefinition(): FixerDefinitionInterface
     {
         return new FixerDefinition(
@@ -98,17 +95,11 @@ use Bar;
         return -40;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function isCandidate(Tokens $tokens): bool
     {
         return $tokens->isTokenKindFound(T_USE);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function applyFix(\SplFileInfo $file, Tokens $tokens): void
     {
         $tokensAnalyzer = new TokensAnalyzer($tokens);
@@ -120,7 +111,7 @@ use Bar;
     }
 
     /**
-     * @param int[] $uses
+     * @param list<int> $uses
      */
     private function walkOverUses(Tokens $tokens, array $uses): void
     {
@@ -163,12 +154,9 @@ use Bar;
         }
 
         $index = $this->getInsertIndex($tokens, $index);
+        $indent = WhitespacesAnalyzer::detectIndent($tokens, $index);
 
-        if ($tokens[$index]->isWhitespace()) {
-            $tokens[$index] = new Token([T_WHITESPACE, $lineEnding]);
-        } else {
-            $tokens->insertSlices([$index + 1 => [new Token([T_WHITESPACE, $lineEnding])]]);
-        }
+        $tokens->ensureWhitespaceAtIndex($index, 1, $lineEnding.$indent);
     }
 
     private function getInsertIndex(Tokens $tokens, int $index): int

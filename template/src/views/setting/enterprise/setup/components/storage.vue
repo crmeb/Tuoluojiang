@@ -3,7 +3,7 @@
     <div class="message">
       <el-card :body-style="{ padding: '0 20px 20px' }">
         <div class="">
-          <el-tabs v-model="currentTab" @tab-click="changeTab">
+          <el-tabs v-model="currentTab" @tab-change="changeTab">
             <el-tab-pane
               v-for="(item, index) in headerList"
               :key="index"
@@ -13,13 +13,13 @@
           </el-tabs>
         </div>
         <el-alert v-if="parseInt(currentTab) === 1" closable>
-          <template slot="title">
+          <template #title>
             <p>上传图片时会生成缩略图</p>
             <p>未设置按照系统默认生成，系统默认：大图800*800，中图300*300，小图150*150</p>
           </template>
         </el-alert>
         <el-alert v-else closable>
-          <template slot="title">
+          <template #title>
             <p v-if="parseInt(currentTab) === 2">
               七牛云开通方法：<a href="https://doc.crmeb.com/single/v5/7792" target="_blank">点击查看</a>
             </p>
@@ -58,13 +58,13 @@
           <el-col :span="24">
             <span class="save-type"> 存储方式： </span>
             <el-radio-group v-model="upload_type" @change="changeSave">
-              <el-radio label="1">本地存储</el-radio>
-              <el-radio label="2">七牛云存储</el-radio>
-              <el-radio label="3">阿里云存储</el-radio>
-              <el-radio label="4">腾讯云存储</el-radio>
-              <el-radio label="5">京东云存储</el-radio>
-              <el-radio label="6">华为云存储</el-radio>
-              <el-radio label="7">天翼云存储</el-radio>
+              <el-radio label="1" value="1">本地存储</el-radio>
+              <el-radio label="2" value="2">七牛云存储</el-radio>
+              <el-radio label="3" value="3">阿里云存储</el-radio>
+              <el-radio label="4" value="4">腾讯云存储</el-radio>
+              <el-radio label="5" value="5">京东云存储</el-radio>
+              <el-radio label="6" value="6">华为云存储</el-radio>
+              <el-radio label="7" value="7">天翼云存储</el-radio>
             </el-radio-group>
             <!-- <el-switch :active-value="1"  :inactive-value="0"
               v-model="localStorage"
@@ -96,7 +96,9 @@
                       placeholder="请输入宽度"
                       type="number"
                     >
-                      <span slot="append">px</span>
+                      <template #append>
+                        <span>px</span>
+                      </template>
                     </el-input>
                   </el-form-item>
                   <el-form-item label="高：">
@@ -106,7 +108,9 @@
                       placeholder="请输入高度"
                       type="number"
                     >
-                      <span slot="append">px</span>
+                      <template #append>
+                        <span>px</span>
+                      </template>
                     </el-input>
                   </el-form-item>
                 </div>
@@ -126,7 +130,9 @@
                       placeholder="请输入宽度"
                       type="number"
                     >
-                      <span slot="append">px</span>
+                      <template #append>
+                        <span>px</span>
+                      </template>
                     </el-input>
                   </el-form-item>
                   <el-form-item label="高：">
@@ -136,7 +142,9 @@
                       placeholder="请输入高度"
                       type="number"
                     >
-                      <span slot="append">px</span>
+                      <template #append>
+                        <span>px</span>
+                      </template>
                     </el-input>
                   </el-form-item>
                 </div>
@@ -156,7 +164,9 @@
                       placeholder="请输入宽度"
                       type="number"
                     >
-                      <span slot="append">px</span>
+                      <template #append>
+                        <span>px</span>
+                      </template>
                     </el-input>
                   </el-form-item>
                   <el-form-item label="高：">
@@ -166,7 +176,9 @@
                       placeholder="请输入高度"
                       type="number"
                     >
-                      <span slot="append">px</span>
+                      <template #append>
+                        <span>px</span>
+                      </template>
                     </el-input>
                   </el-form-item>
                 </div>
@@ -187,8 +199,8 @@
               <div v-if="formValidate.image_watermark_status === 1">
                 <el-form-item label="水印类型：" label-width="160px">
                   <el-radio-group v-model="formValidate.watermark_type">
-                    <el-radio :label="1">图片</el-radio>
-                    <el-radio :label="2">文字</el-radio>
+                    <el-radio :label="1" :value="1">图片</el-radio>
+                    <el-radio :label="2" :value="2">文字</el-radio>
                   </el-radio-group>
                 </el-form-item>
                 <div v-if="formValidate.watermark_type === 1">
@@ -247,7 +259,9 @@
                         style="width: 240px"
                         type="number"
                       >
-                        <span slot="append">px</span>
+                        <template #append>
+                          <span>px</span>
+                        </template>
                       </el-input>
                     </el-form-item>
                     <el-form-item class="contentIput" label="水印纵坐标偏移量：" label-width="160px" prop="mail">
@@ -258,7 +272,9 @@
                         style="width: 240px"
                         type="number"
                       >
-                        <span slot="append">px</span>
+                        <template #append>
+                          <span>px</span>
+                        </template>
                       </el-input>
                     </el-form-item>
                   </div>
@@ -316,7 +332,9 @@
                         placeholder="请输入水印横坐标偏移量"
                         type="number"
                       >
-                        <span slot="append">px</span>
+                        <template #append>
+                          <span>px</span>
+                        </template>
                       </el-input>
                     </el-form-item>
                   </div>
@@ -327,7 +345,9 @@
                       placeholder="请输入水印横坐纵偏移量"
                       type="number"
                     >
-                      <span slot="append">px</span>
+                      <template #append>
+                        <span>px</span>
+                      </template>
                     </el-input>
                   </el-form-item>
                 </div>
@@ -346,15 +366,17 @@
         <el-row class="mb20">
           <el-col :span="24">
             <div class="btn-box">
-              <el-button type="primary" size="mini" @click="addStorageBtn">添加存储空间</el-button>
+              <el-button type="primary" @click="addStorageBtn">添加存储空间</el-button>
               <!-- <el-button style="margin-left: 20px" type="success" @click="synchro">同步存储空间</el-button>
               <el-button style="float: right" @click="addConfigBtn">修改配置信息</el-button> -->
               <el-dropdown @command="handleCommand">
                 <span class="iconfont icongengduo2 pointer ml10"></span>
-                <el-dropdown-menu slot="dropdown">
-                  <el-dropdown-item :command="1">同步存储空间</el-dropdown-item>
-                  <el-dropdown-item :command="2">修改配置信息</el-dropdown-item>
-                </el-dropdown-menu>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item :command="1">同步存储空间</el-dropdown-item>
+                    <el-dropdown-item :command="2">修改配置信息</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
               </el-dropdown>
             </div>
           </el-col>
@@ -369,27 +391,27 @@
           no-userFrom-text="暂无数据"
         >
           <el-table-column label="储存空间名称" min-width="120">
-            <template slot-scope="scope">
+            <template #default="scope">
               <span>{{ scope.row.name }}</span>
             </template>
           </el-table-column>
           <el-table-column label="区域" min-width="90">
-            <template slot-scope="scope">
+            <template #default="scope">
               <span>{{ scope.row._region }}</span>
             </template>
           </el-table-column>
           <el-table-column label="空间域名" min-width="130">
-            <template slot-scope="scope">
+            <template #default="scope">
               <span>{{ scope.row.domain }}</span>
             </template>
           </el-table-column>
           <el-table-column label="使用状态" min-width="90">
-            <template slot-scope="scope">
+            <template #default="scope">
               <el-switch
                 v-model="scope.row.status"
                 :active-value="1"
                 :inactive-value="0"
-                :value="scope.row.status"
+                :model-value="scope.row.status"
                 active-text="开启"
                 class="defineSwitch"
                 inactive-text="关闭"
@@ -400,17 +422,17 @@
             </template>
           </el-table-column>
           <el-table-column label="创建时间" min-width="130">
-            <template slot-scope="scope">
+            <template #default="scope">
               <span>{{ scope.row._add_time }}</span>
             </template>
           </el-table-column>
           <el-table-column label="更新时间" min-width="130">
-            <template slot-scope="scope">
+            <template #default="scope">
               <span>{{ scope.row._update_time }}</span>
             </template>
           </el-table-column>
           <el-table-column fixed="right" label="操作" width="220">
-            <template slot-scope="scope">
+            <template #default="scope">
               <template v-if="scope.row.domain && scope.row.domain != scope.row.cname">
                 <span class="btn" @click="config(scope.row)">CNAME配置</span>
                 <el-divider direction="vertical"></el-divider>
@@ -435,7 +457,7 @@
         </div>
       </el-card>
     </div>
-    <el-dialog :visible.sync="configuModal" width="550px">
+    <el-dialog v-model="configuModal" width="550px">
       <el-descriptions :column="1" title="CNAME配置">
         <el-descriptions-item label="主机记录">{{ configData.domain }}</el-descriptions-item>
         <el-descriptions-item label="记录类型">CNAME</el-descriptions-item>
@@ -451,6 +473,7 @@
 </template>
 
 <script>
+import modalForm from '@/libs/modal-form.ts'
 import ClipboardJS from 'clipboard'
 
 import {
@@ -465,8 +488,8 @@ import {
   positionPostApi,
   saveType,
   storageDelApi
-} from '@/api/setting'
-import Tips from '@/utils/tips'
+} from '@/api/setting.ts'
+import Tips from '@/utils/tips.ts'
 export default {
   name: 'storages',
   data() {
@@ -573,7 +596,7 @@ export default {
     async changeSave(type) {
       const res = await saveType(type)
       if (res.status == 200) {
-        this.$set(this, 'upload_type', type)
+        this.upload_type = type
       }
     },
     bindbox(item) {
@@ -618,19 +641,19 @@ export default {
     },
     // 添加存储空间
     addStorageBtn() {
-      this.$modalForm(addStorageApi(this.currentTab)).then(() => {
+      modalForm(addStorageApi(this.currentTab)).then(() => {
         this.getlist()
       })
     },
     // 修改配置信息
     addConfigBtn() {
-      this.$modalForm(addConfigApi(this.currentTab)).then(() => {
+      modalForm(addConfigApi(this.currentTab)).then(() => {
         this.getlist()
       })
     },
     //修改空间域名
     edit(row) {
-      this.$modalForm(editStorageApi(row.id)).then(() => {
+      modalForm(editStorageApi(row.id)).then(() => {
         this.getlist()
       })
     },
@@ -666,7 +689,7 @@ export default {
       this.formValidate.upload_type = res.data.upload_type.toString()
       this.upload_type = res.data.upload_type.toString()
       this.positionId = res.data.watermark_position
-      for (var i = 0; i < this.boxs.length; i++) {
+      for (let i = 0; i < this.boxs.length; i++) {
         if (this.boxs[i].id == res.data.watermark_position) {
           that.bindbox(this.boxs[i])
         }
@@ -704,22 +727,22 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-::v-deep .el-card {
+:deep(.el-card) {
   border: none;
 }
-::v-deep .el-tabs__item {
+:deep(.el-tabs__item) {
   height: 54px !important;
   line-height: 54px !important;
 }
 .ivu-input-group > .ivu-input:last-child,
-::v-deep .ivu-input-group-append {
+:deep(.ivu-input-group-append) {
   background: none;
   color: #999999;
 }
-::v-deep .ivu-input-group .ivu-input {
+:deep(.ivu-input-group .ivu-input) {
   border-right: 0px !important;
 }
-.content ::v-deep .ivu-form .ivu-form-item-label {
+.content :deep(.ivu-form .ivu-form-item-label) {
   width: 133px;
 }
 .topIput {
@@ -763,7 +786,7 @@ export default {
     }
   }
   .content {
-    ::v-deep .ivu-form-item-label {
+    :deep(.ivu-form-item-label) {
       width: 120px;
     }
     .flex {
@@ -804,14 +827,14 @@ export default {
 }
 </style>
 <style scoped>
-.message ::v-deep .ivu-table-header thead tr th {
+.message :deep(.ivu-table-header thead tr th) {
   padding: 8px 16px;
 }
 .ivu-radio-wrapper {
   margin-right: 15px;
   font-size: 12px !important;
 }
-.message ::v-deep .ivu-tabs-tab {
+.message :deep(.ivu-tabs-tab) {
   border-radius: 0 !important;
 }
 .table-box {
@@ -862,6 +885,8 @@ export default {
 }
 .picBox {
   display: inline-block;
+  /* 豁免全局表单内容区 div 占满整行的规则，点击区域只覆盖图片 */
+  width: auto;
   cursor: pointer;
 }
 .picBox .pictrue {
@@ -892,7 +917,7 @@ h3 {
 .save-type {
   font-size: 13px;
 }
-::v-deep .el-descriptions-item__container {
+:deep(.el-descriptions-item__container) {
   display: inline-block;
 }
 .btn-box {

@@ -1,5 +1,4 @@
 <?php
-
 /**
  *  +----------------------------------------------------------------------
  *  | CRMEB [ CRMEB赋能开发者，助力企业发展 ]
@@ -17,7 +16,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -52,6 +51,30 @@ class SystemCrudEvent extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'                              => 'integer',
+        'crud_id'                         => 'integer',
+        'sort'                            => 'integer',
+        'timer'                           => 'integer',
+        'timer_type'                      => 'integer',
+        'target_crud_id'                  => 'integer',
+        'crud_approve_id'                 => 'integer',
+        'curl_id'                         => 'integer',
+        'send_type'                       => 'integer',
+        'additional_search_boolean'       => 'integer',
+        'aggregate_target_search_boolean' => 'integer',
+        'aggregate_data_search_boolean'   => 'integer',
+        'other_webhook_status'            => 'integer',
+        'ding_webhook_status'             => 'integer',
+        'work_webhook_status'             => 'integer',
+        'sms_status'                      => 'integer',
+        'system_status'                   => 'integer',
+        'status'                          => 'integer',
+        'created_at'                      => 'datetime:Y-m-d H:i:s',
+        'updated_at'                      => 'datetime:Y-m-d H:i:s',
+        'deleted_at'                      => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * 关联实体.
      * @return HasOne
@@ -66,7 +89,6 @@ class SystemCrudEvent extends BaseModel
     /**
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
      */
     public function setOptionsAttribute($value)
     {
@@ -74,10 +96,9 @@ class SystemCrudEvent extends BaseModel
     }
 
     /**
+     * @return mixed
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
-     * @return mixed
      */
     public function getUpdateFieldOptionsAttribute($value)
     {
@@ -87,7 +108,6 @@ class SystemCrudEvent extends BaseModel
     /**
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
      */
     public function setUpdateFieldOptionsAttribute($value)
     {
@@ -95,10 +115,9 @@ class SystemCrudEvent extends BaseModel
     }
 
     /**
+     * @return mixed
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
-     * @return mixed
      */
     public function getOptionsAttribute($value)
     {
@@ -108,7 +127,6 @@ class SystemCrudEvent extends BaseModel
     /**
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
      */
     public function setFieldOptionsAttribute($value)
     {
@@ -116,10 +134,9 @@ class SystemCrudEvent extends BaseModel
     }
 
     /**
+     * @return mixed
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
-     * @return mixed
      */
     public function getFieldOptionsAttribute($value)
     {
@@ -129,7 +146,6 @@ class SystemCrudEvent extends BaseModel
     /**
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
      */
     public function setAdditionalSearchAttribute($value)
     {
@@ -137,10 +153,9 @@ class SystemCrudEvent extends BaseModel
     }
 
     /**
+     * @return mixed
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
-     * @return mixed
      */
     public function getAdditionalSearchAttribute($value)
     {
@@ -150,7 +165,6 @@ class SystemCrudEvent extends BaseModel
     /**
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
      */
     public function setActionAttribute($value)
     {
@@ -158,10 +172,9 @@ class SystemCrudEvent extends BaseModel
     }
 
     /**
+     * @return mixed
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
-     * @return mixed
      */
     public function getActionAttribute($value)
     {
@@ -171,7 +184,6 @@ class SystemCrudEvent extends BaseModel
     /**
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
      */
     public function setAggregateTargetSearchAttribute($value)
     {
@@ -179,10 +191,9 @@ class SystemCrudEvent extends BaseModel
     }
 
     /**
+     * @return mixed
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
-     * @return mixed
      */
     public function getAggregateTargetSearchAttribute($value)
     {
@@ -192,7 +203,6 @@ class SystemCrudEvent extends BaseModel
     /**
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
      */
     public function setAggregateDataSearchAttribute($value)
     {
@@ -200,10 +210,9 @@ class SystemCrudEvent extends BaseModel
     }
 
     /**
+     * @return mixed
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
-     * @return mixed
      */
     public function getAggregateDataSearchAttribute($value)
     {
@@ -213,7 +222,6 @@ class SystemCrudEvent extends BaseModel
     /**
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
      */
     public function setAggregateFieldRuleAttribute($value)
     {
@@ -221,10 +229,9 @@ class SystemCrudEvent extends BaseModel
     }
 
     /**
+     * @return mixed
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
-     * @return mixed
      */
     public function getAggregateFieldRuleAttribute($value)
     {
@@ -234,8 +241,6 @@ class SystemCrudEvent extends BaseModel
     /**
      * @email 136327134@qq.com
      * @date 2024/3/22
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeName($query, $value)
     {
@@ -247,8 +252,6 @@ class SystemCrudEvent extends BaseModel
     /**
      * @email 136327134@qq.com
      * @date 2024/4/16
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeCrudId($query, $value)
     {
@@ -268,7 +271,6 @@ class SystemCrudEvent extends BaseModel
     /**
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
      */
     public function setAggregateDataFieldAttribute($value)
     {
@@ -276,10 +278,9 @@ class SystemCrudEvent extends BaseModel
     }
 
     /**
+     * @return mixed
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
-     * @return mixed
      */
     public function getAggregateDataFieldAttribute($value)
     {
@@ -289,7 +290,6 @@ class SystemCrudEvent extends BaseModel
     /**
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
      */
     public function setSendUserAttribute($value)
     {
@@ -297,10 +297,9 @@ class SystemCrudEvent extends BaseModel
     }
 
     /**
+     * @return mixed
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
-     * @return mixed
      */
     public function getSendUserAttribute($value)
     {
@@ -311,7 +310,6 @@ class SystemCrudEvent extends BaseModel
      * 发送类型.
      * @email 136327134@qq.com
      * @date 2024/4/12
-     * @param mixed $value
      */
     public function setNotifyTypeAttribute($value)
     {
@@ -319,10 +317,9 @@ class SystemCrudEvent extends BaseModel
     }
 
     /**
+     * @return mixed
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
-     * @return mixed
      */
     public function getNotifyTypeAttribute($value)
     {
@@ -335,10 +332,9 @@ class SystemCrudEvent extends BaseModel
     }
 
     /**
+     * @return mixed
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
-     * @return mixed
      */
     public function getTimerOptionsAttribute($value)
     {

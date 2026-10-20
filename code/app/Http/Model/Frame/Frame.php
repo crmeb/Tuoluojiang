@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,7 +17,7 @@ namespace App\Http\Model\Frame;
 
 use App\Http\Model\Admin\Admin;
 use App\Http\Model\BaseModel;
-use crmeb\traits\model\PathAttrTrait;
+use Tuoluojiang\Open\traits\model\PathAttrTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
@@ -41,6 +41,23 @@ class Frame extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'                => 'integer',
+        'value'       => 'integer',
+        'user_id'           => 'integer',
+        'entid'             => 'integer',
+        'pid'               => 'integer',
+        'role_id'           => 'integer',
+        'sort'              => 'integer',
+        'user_count'        => 'integer',
+        'user_single_count' => 'integer',
+        'is_show'           => 'integer',
+        'level'             => 'integer',
+        'created_at'        => 'datetime:Y-m-d H:i:s',
+        'updated_at'        => 'datetime:Y-m-d H:i:s',
+        'deleted_at'        => 'datetime:Y-m-d H:i:s',
+    ];
 
     /**
      * introduce 修改器.

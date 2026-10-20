@@ -1,30 +1,38 @@
 <template>
+  <!-- 右侧设置面板 -->
   <el-scrollbar class="setting-scrollbar" :style="{ height: scrollerHeight }">
-    <template v-if="designer.selectedWidget && designer.selectedWidget.type">
-      <el-form
-        :model="optionModel"
-        size="mini"
-        label-position="left"
-        label-width="120px"
-        class="setting-form"
-        @submit.native.prevent
-      >
-        <el-collapse v-model="widgetActiveCollapseNames" class="setting-collapse">
-          <el-collapse-item name="1" v-if="showCollapse(commonProps)" :title="i18nt('designer.setting.commonSetting')">
-            <template v-for="(A, R) in commonProps">
-              <!-- {{ A }} -->
 
-              <component
-                v-if="hasPropEditor(R, A)"
-                :is="getPropEditor(R, A)"
-                :designer="designer"
-                :selected-widget="selectedWidget"
-                :option-model.sync="optionModel"
-                @clearSearch="clearSearch"
-                @optionModelChange="optionModelChange"
-              />
+    <template v-if="designer.selectedWidget && designer.selectedWidget.type">
+      <el-form :model="optionModel" label-position="left" label-width="120px" class="setting-form"
+        @submit.prevent>
+        <el-collapse v-model="widgetActiveCollapseNames" class="setting-collapse has-left-border">
+
+          <el-collapse-item name="1"
+            v-if="showCollapse(commonProps) && !['search', 'tab'].includes(designer.selectedWidget.type)"
+            :title="i18nt('designer.setting.commonSetting')">
+            <template v-for="(A, R) in commonProps" :key="R">
+
+              <component v-if="hasPropEditor(R, A)" :is="getPropEditor(R, A)" :designer="designer"
+                :selected-widget="selectedWidget" v-model:option-model="optionModel" @clearSearch="clearSearch"
+                @optionModelChange="optionModelChange" />
             </template>
           </el-collapse-item>
+
+          <el-collapse-item name="1" v-else-if="designer.selectedWidget.type === 'search'" title=" 筛选设置">
+
+            <search-editor :designer="designer" :selected-widget="selectedWidget" v-model:option-model="optionModel"
+              @clearSearch="clearSearch" @optionModelChange="optionModelChange"></search-editor>
+          </el-collapse-item>
+          <el-collapse-item name="1" v-else-if="designer.selectedWidget.type === 'tab'" title="标签样式">
+            <tab-style-editor :designer="designer" :selected-widget="selectedWidget" v-model:option-model="optionModel"
+              @optionModelChange="optionModelChange"></tab-style-editor>
+          </el-collapse-item>
+          <el-collapse-item name="3" v-if="designer.selectedWidget.type === 'tab'" title="标签设置">
+            <tab-editor :designer="designer" :selected-widget="selectedWidget" v-model:option-model="optionModel"
+              @clearSearch="clearSearch" @optionModelChange="optionModelChange"></tab-editor>
+          </el-collapse-item>
+
+
         </el-collapse>
       </el-form>
     </template>
@@ -38,10 +46,13 @@
 </template>
 
 <script>
-import i18n, { changeLocale } from '@/utils/i18n'
-import emitter from '@/utils/emitter'
+import i18n, { changeLocale } from '@/utils/i18n.ts'
+import { createEventHub, SETTING_PANEL_HUB } from '@/utils/eventHub.ts'
 import { COMMON_PROPERTIES$1, ADVANCED_PROPERTIES$1, EVENT_PROPERTIES$1 } from '../configData'
 import CodeEditor from '@/components/code-editor/index'
+import SearchEditor from '../property-editor/search-editor.vue'
+import TabEditor from '../property-editor/tab-editor.vue'
+import TabStyleEditor from '../property-editor/tab-style-editor.vue'
 import FormSetting from '@/components/form-designer/setting-panel/form-setting.vue'
 import { propertyRegistered } from '../../utils'
 import { addWindowResizeHandler } from '@/utils/util'
@@ -49,9 +60,8 @@ import comp from '../property-editor/export'
 import PropertyEditors from '@/components/form-designer/setting-panel/property-editor/index'
 export default {
   name: 'SettingPanel',
-  componentName: 'SettingPanel',
-  mixins: [i18n, emitter],
-  components: { CodeEditor, FormSetting, ...PropertyEditors, ...comp },
+  mixins: [i18n],
+  components: { CodeEditor, FormSetting, ...PropertyEditors, ...comp, SearchEditor, TabEditor, TabStyleEditor },
   props: {
     designer: Object,
     selectedWidget: Object,
@@ -60,6 +70,8 @@ export default {
   },
   provide() {
     return {
+      // 属性编辑器（eventMixin）通过它请求打开事件编辑弹窗
+      [SETTING_PANEL_HUB]: this.panelHub,
       isSubFormChildWidget: () => this.subFormChildWidgetFlag,
       getGlobalDsv: () => this.globalDsv
     }
@@ -111,16 +123,19 @@ export default {
       }
     }
   },
+  beforeCreate() {
+    this.panelHub = createEventHub()
+  },
   created() {
-    this.on$('editEventHandler', (o) => {
-      this.editEventHandler(o[0], o[1])
-    }),
-      this.designer.handleEvent('form-css-updated', (o) => {
-        this.designer.setCssClassList(o)
-      }),
-      this.designer.handleEvent('field-selected', (o) => {
-        this.subFormChildWidgetFlag = !!o && o.type === 'sub-form'
-      })
+    this.panelHub.on('editEventHandler', (eventName, eventParams) => {
+      this.editEventHandler(eventName, eventParams)
+    })
+    this.designer.handleEvent('form-css-updated', (o) => {
+      this.designer.setCssClassList(o)
+    })
+    this.designer.handleEvent('field-selected', (o) => {
+      this.subFormChildWidgetFlag = !!o && o.type === 'sub-form'
+    })
   },
   mounted() {
     this.designer.selectedWidget ? (this.activeTab = '1') : (this.activeTab = '2')
@@ -186,12 +201,12 @@ export default {
       return e
     },
     editEventHandler(o, e) {
-      ;(this.curEventName = o),
+      ; (this.curEventName = o),
         (this.eventHeader = `${this.optionModel.name}.${o}(${e.join(', ')}) {`),
         (this.eventHandlerCode = this.selectedWidget.options[o] || ''),
         o === 'onValidate' &&
-          !this.optionModel.onValidate &&
-          (this.eventHandlerCode = `  /* sample code */
+        !this.optionModel.onValidate &&
+        (this.eventHandlerCode = `  /* sample code */
   /*
   if ((value > 100) || (value < 0)) {
     callback(new Error('error message'))  //fail
@@ -210,20 +225,20 @@ export default {
         (o.forEach((n) => {
           n.type === 'error' && (e = !0)
         }),
-        e)
+          e)
       ) {
         this.$confirm(this.i18nt('designer.setting.syntaxCheckWarning'), this.i18nt('render.hint.prompt'), {
           confirmButtonText: this.i18nt('render.hint.forcedSave'),
           cancelButtonText: this.i18nt('render.hint.cancel')
         })
           .then(() => {
-            ;(this.selectedWidget.options[this.curEventName] = this.eventHandlerCode),
+            ; (this.selectedWidget.options[this.curEventName] = this.eventHandlerCode),
               (this.showWidgetEventDialogFlag = !1)
           })
-          .catch((n) => {})
+          .catch((n) => { })
         return
       }
-      ;(this.selectedWidget.options[this.curEventName] = this.eventHandlerCode), (this.showWidgetEventDialogFlag = !1)
+      ; (this.selectedWidget.options[this.curEventName] = this.eventHandlerCode), (this.showWidgetEventDialogFlag = !1)
     }
   }
 }
@@ -233,32 +248,54 @@ export default {
   border-left: 1px solid #f2f6fc;
   background-color: #fff;
   width: 310px;
-  /deep/.el-switch__core {
+
+  :deep(.el-switch__core) {
     width: 40px !important;
-    min-width: auto;
+    // min-width: auto;
   }
 }
+:deep(.el-collapse-item__wrap) {
+  border-bottom: none;
+}
+
 .el-collapse {
   border: none;
 }
+
 .setting-form {
   padding: 0px 20px 20px 20px;
 }
-.el-form-item--mini.el-form-item {
+
+.el-form-item {
   margin-bottom: 14px;
 }
+
 .no-widget-selected {
   width: 100%;
   margin: 20px auto;
+
   .no-widget-selected-img {
     width: 120px;
     margin: 30px auto;
     display: block;
   }
+
   .no-widget-selected-text {
     text-align: center;
     font-size: 12px;
     color: #999;
+  }
+}
+
+:deep(.has-left-border) {
+  .el-collapse-item__header {
+    &::before {
+      content: "";
+      width: 3px;
+      height: 14px;
+      background: #1890FF;
+      margin-right: 10px;
+    }
   }
 }
 </style>

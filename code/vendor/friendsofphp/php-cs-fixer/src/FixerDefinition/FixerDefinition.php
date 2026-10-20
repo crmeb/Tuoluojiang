@@ -16,6 +16,8 @@ namespace PhpCsFixer\FixerDefinition;
 
 /**
  * @author Dariusz Rumiński <dariusz.ruminski@gmail.com>
+ *
+ * @readonly
  */
 final class FixerDefinition implements FixerDefinitionInterface
 {
@@ -26,8 +28,14 @@ final class FixerDefinition implements FixerDefinitionInterface
      */
     private array $codeSamples;
 
+    /**
+     * Description of Fixer and benefit of using it.
+     */
     private ?string $description;
 
+    /**
+     * Description why Fixer is risky.
+     */
     private ?string $riskyDescription;
 
     /**

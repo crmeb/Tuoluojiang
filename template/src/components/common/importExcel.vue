@@ -8,15 +8,16 @@
       accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
       @change="exportData"
     />
-    <el-button v-show="false" size="small" @click="btnClick">{{
-      distinguish == 2 ? '导入' : $t('finance.batchupload')
+    <el-button v-show="false" @click="btnClick">{{
+      distinguish == 2 ? '导入' : '导入'
     }}</el-button>
   </div>
 </template>
 
 <script>
-import XLSX from 'xlsx'
+import { readFirstSheetRows } from '@/utils/excel/readSheet.ts'
 export default {
+  emits: ['importExcelData'],
   name: 'ImportExcel',
   props: {
     columnNumber: {
@@ -42,50 +43,23 @@ export default {
       // 点击事件
       document.querySelector('.input-file').click()
     },
-    exportData(event) {
-      if (!event.currentTarget.files.length) {
+    async exportData(event) {
+      const input = event.currentTarget
+      if (!input.files.length) {
         return
       }
-      const that = this
-      // 拿取文件对象
-      var f = event.currentTarget.files[0]
-      // 用FileReader来读取
-      var reader = new FileReader()
-      // 重写FileReader上的readAsBinaryString方法
-      FileReader.prototype.readAsBinaryString = function (f) {
-        var binary = ''
-        var wb // 读取完成的数据
-        var outdata // 你需要的数据
-        var reader = new FileReader()
-        reader.onload = function () {
-          // 读取成Uint8Array，再转换为Unicode编码（Unicode占两个字节）
-          var bytes = new Uint8Array(reader.result)
-          var length = bytes.byteLength
-          for (var i = 0; i < length; i++) {
-            binary += String.fromCharCode(bytes[i])
-          }
-          // 接下来就是xlsx了，具体可看api
-          wb = XLSX.read(binary, {
-            type: 'binary',
-            cellDates: true
-          })
-          outdata = XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]])
-          const arrData = outdata.split('\n')
-          const arrRes = []
-          for (let i = that.columnNumber; i < arrData.length; i++) {
-            if (arrData[i] === '') {
-              continue
-            } else {
-              arrRes.push(arrData[i].split(','))
-            }
-          }
-          document.getElementById('referenceUpload').value = null
-          // 自定义方法向父组件传递数据
-          that.$emit('importExcelData', arrRes)
-        }
-        reader.readAsArrayBuffer(f)
+      const f = input.files[0]
+      try {
+        const rows = await readFirstSheetRows(f)
+        const arrRes = rows.slice(this.columnNumber)
+        // 自定义方法向父组件传递数据
+        this.$emit('importExcelData', arrRes, f.name)
+      } catch (error) {
+        this.$message.error('文件解析失败，请检查文件格式')
+      } finally {
+        // 清空选择，保证再次选择同一文件时仍会触发 change
+        input.value = null
       }
-      reader.readAsBinaryString(f)
     }
   }
 }

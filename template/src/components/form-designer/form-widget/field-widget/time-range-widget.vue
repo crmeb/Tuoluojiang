@@ -18,10 +18,10 @@
       class="full-width-input"
       :disabled="field.options.disabled"
       :readonly="field.options.readonly"
-      :size="field.options.size"
+      :size="toElSize(field.options.size)"
       :clearable="field.options.clearable"
       :editable="field.options.editable"
-      :format="field.options.format"
+      :format="toDayjsFormat(field.options.format)"
       value-format="HH:mm:ss"
       :start-placeholder="field.options.startPlaceholder || i18nt('render.hint.startTimePlaceholder')"
       :end-placeholder="field.options.endPlaceholder || i18nt('render.hint.endTimePlaceholder')"
@@ -34,15 +34,14 @@
 </template>
 
 <script>
+import { toDayjsFormat } from '@/utils/date-format.ts'
 import FormItemWrapper from './form-item-wrapper'
-import emitter from '@/utils/emitter'
-import i18n, { translate } from '@/utils/i18n'
+import i18n, { translate } from '@/utils/i18n.ts'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
 
 export default {
   name: 'time-range-widget',
-  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
-  mixins: [emitter, fieldMixin, i18n],
+  mixins: [fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -99,19 +98,20 @@ export default {
     this.handleOnMounted()
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     this.unregisterFromRefList()
   },
 
-  methods: {}
+  methods: {
+    toDayjsFormat
+  }
 }
 </script>
 
 <style lang="scss" scoped>
 @import '../../../../styles/global.scss'; //* form-item-wrapper已引入，还需要重复引入吗？ *//
 
-.full-width-input {
+:deep(.full-width-input) {
   width: 100% !important;
 }
 </style>
-@/utils/i18ns

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,7 +16,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\enterprise;
 
 use App\Http\Requests\ApiValidate;
-use crmeb\utils\Regex;
+use Tuoluojiang\Open\utils\Regex;
 
 /**
  * 企业验证器
@@ -48,12 +48,12 @@ class EnterpriseRequest extends ApiValidate
 
     /**
      * 验证场景.
-     * @var string[][]
+     * @var \string[][]
      */
     protected $scene = [
         'register' => ['enterprise_name', 'lead', 'address', 'business_license', 'phone', 'verification_code'],
         'create'   => ['enterprise_name', 'lead', 'address', 'business_license', 'phone'],
-        'update'   => ['enterprise_name', 'address', 'phone', 'short_name'],
+        'update'   => ['enterprise_name', 'phone'],
     ];
 
     /**

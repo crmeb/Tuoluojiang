@@ -1,8 +1,8 @@
-import uniqueId from '@form-create/utils/lib/unique';
-import { makeRequiredRule } from '../../utils';
+import uniqueId from '@form-create/utils/lib/unique'
+import { makeRequiredRule } from '../../utils'
 
-const label = '附件';
-const name = 'upload';
+const label = '附件'
+const name = 'upload'
 
 export default {
   icon: 'iconfont iconfujian1',
@@ -17,15 +17,13 @@ export default {
       props: {
         action: '',
         onSuccess(res, file) {
-          file.url = res.data.url;
-        },
-      },
-    };
+          file.url = res.data.url
+        }
+      }
+    }
   },
   props() {
-    return [makeRequiredRule()];
+    return [makeRequiredRule()]
   },
-  basic () {
-
-  }
-};
+  basic() {}
+}

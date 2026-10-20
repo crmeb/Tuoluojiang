@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace App\Task\customer;
 
-use App\Http\Service\Client\CustomerService;
+use App\Http\Service\Customer\CustomerService;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Support\Facades\Log;
 

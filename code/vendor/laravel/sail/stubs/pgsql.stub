@@ -1,5 +1,5 @@
 pgsql:
-    image: 'postgres:17'
+    image: 'postgres:18-alpine'
     ports:
         - '${FORWARD_DB_PORT:-5432}:5432'
     environment:
@@ -8,7 +8,7 @@ pgsql:
         POSTGRES_USER: '${DB_USERNAME}'
         POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
     volumes:
-        - 'sail-pgsql:/var/lib/postgresql/data'
+        - 'sail-pgsql:/var/lib/postgresql'
         - './vendor/laravel/sail/database/pgsql/create-testing-database.sql:/docker-entrypoint-initdb.d/10-create-testing-database.sql'
     networks:
         - sail

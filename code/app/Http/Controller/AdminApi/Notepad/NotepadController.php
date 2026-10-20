@@ -18,8 +18,8 @@ namespace App\Http\Controller\AdminApi\Notepad;
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Requests\user\UserMemorialRequest;
 use App\Http\Service\Notepad\NotepadService;
-use crmeb\interfaces\ResourceControllerInterface;
-use crmeb\traits\ResourceControllerTrait;
+use Tuoluojiang\Open\interfaces\ResourceControllerInterface;
+use Tuoluojiang\Open\traits\ResourceControllerTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -64,7 +64,18 @@ class NotepadController extends AuthController implements ResourceControllerInte
             ['title', ''],
             ['uid', $this->uuid],
         ]);
-        return $this->success($this->service->groupList($where, false));
+        // 最近笔记与列表保持一致：启用正文截断（cutContent 默认 true），避免该接口下发全量 content
+        return $this->success($this->service->groupList($where));
+    }
+
+    /**
+     * 笔记详情（正文按需加载，列表接口不再携带 content）.
+     * @throws BindingResolutionException
+     */
+    #[Get('info/{id}', '获取备忘录详情接口')]
+    public function info($id): mixed
+    {
+        return $this->success($this->service->memorialInfo((int) $id, $this->uuid));
     }
 
     /**
@@ -90,7 +101,8 @@ class NotepadController extends AuthController implements ResourceControllerInte
     public function update($id)
     {
         $this->service->resourceUpdate($id, $this->request->postMore($this->getRequestFields()));
-        return $this->success('保存成功');
+        // 回传服务端写入的更新时间：前端据此更新乐观锁基准，避免下一次保存被误判为冲突
+        return $this->success('保存成功', ['updated_at' => (string) $this->service->value(['id' => (int) $id], 'updated_at')]);
     }
 
     /**
@@ -124,6 +136,8 @@ class NotepadController extends AuthController implements ResourceControllerInte
             ['title', ''],
             ['content', ''],
             ['uid', $this->uuid],
+            // 客户端读取时的时间戳：服务端据此做乐观锁校验（不带则跳过校验）
+            ['updated_at', ''],
         ];
     }
 }

@@ -39,7 +39,7 @@ final class ControlCaseStructuresAnalyzer
 
         foreach ($types as $type) {
             if (!\in_array($type, $typesWithCaseOrDefault, true)) {
-                throw new \InvalidArgumentException(sprintf('Unexpected type "%d".', $type));
+                throw new \InvalidArgumentException(\sprintf('Unexpected type "%d".', $type));
             }
         }
 
@@ -48,6 +48,17 @@ final class ControlCaseStructuresAnalyzer
         }
 
         $depth = -1;
+
+        /**
+         * @var list<array{
+         *     kind: int|null,
+         *     index: int,
+         *     brace_count: int,
+         *     cases: list<array{index: int, open: int}>,
+         *     default: array{index: int, open: int}|null,
+         *     alternative_syntax: bool,
+         * }> $stack
+         */
         $stack = [];
         $isTypeOfInterest = false;
 
@@ -172,12 +183,21 @@ final class ControlCaseStructuresAnalyzer
         }
     }
 
+    /**
+     * @param array{
+     *     kind: int,
+     *     index: int,
+     *     open: int,
+     *     end: int,
+     *     cases: list<array{index: int, open: int}>,
+     *     default: null|array{index: int, open: int},
+     * } $analysis
+     */
     private static function buildControlCaseStructureAnalysis(array $analysis): AbstractControlCaseStructuresAnalysis
     {
         $default = null === $analysis['default']
             ? null
-            : new DefaultAnalysis($analysis['default']['index'], $analysis['default']['open'])
-        ;
+            : new DefaultAnalysis($analysis['default']['index'], $analysis['default']['open']);
 
         $cases = [];
 
@@ -215,7 +235,7 @@ final class ControlCaseStructuresAnalyzer
             );
         }
 
-        throw new \InvalidArgumentException(sprintf('Unexpected type "%d".', $analysis['kind']));
+        throw new \InvalidArgumentException(\sprintf('Unexpected type "%d".', $analysis['kind']));
     }
 
     private static function findCaseOpen(Tokens $tokens, int $kind, int $index): int
@@ -253,7 +273,7 @@ final class ControlCaseStructuresAnalyzer
             return $tokens->getNextTokenOfKind($index, ['=', ';']);
         }
 
-        throw new \InvalidArgumentException(sprintf('Unexpected case for type "%d".', $kind));
+        throw new \InvalidArgumentException(\sprintf('Unexpected case for type "%d".', $kind));
     }
 
     private static function findDefaultOpen(Tokens $tokens, int $kind, int $index): int
@@ -266,7 +286,7 @@ final class ControlCaseStructuresAnalyzer
             return $tokens->getNextTokenOfKind($index, [[T_DOUBLE_ARROW]]);
         }
 
-        throw new \InvalidArgumentException(sprintf('Unexpected default for type "%d".', $kind));
+        throw new \InvalidArgumentException(\sprintf('Unexpected default for type "%d".', $kind));
     }
 
     /**

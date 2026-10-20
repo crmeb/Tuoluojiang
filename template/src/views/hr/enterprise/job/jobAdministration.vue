@@ -1,4 +1,4 @@
-﻿<!-- 人事-职位管理-职位管理 -->
+<!-- 人事-职位管理-职位管理 -->
 <template>
   <div class="divBox">
     <div>
@@ -20,42 +20,42 @@
           <div class="mt10 table-box" v-loading="loading">
             <el-table
               :data="tableData"
-              :height="tableHeight"
+              :height="TABLE_HEIGHT"
               default-expand-all
               row-key="id"
               style="width: 100%"
               @selection-change="handleSelectionChange"
             >
               <el-table-column type="selection" width="55"></el-table-column>
-              <el-table-column :label="$t('hr.jobtitle')" min-width="150" prop="name" />
-              <el-table-column :label="$t('hr.immediatesuperior')" min-width="150" prop="cate.name" />
-              <el-table-column :label="$t('hr.positionlevel')" min-width="100" prop="rank.alias" />
+              <el-table-column label="职位名称" min-width="150" prop="name" />
+              <el-table-column label="职位类别" min-width="150" prop="cate.name" />
+              <el-table-column label="职位级别" min-width="100" prop="rank.alias" />
               <el-table-column label="职位简介" min-width="240" prop="describe" show-overflow-tooltip>
-                <template slot-scope="scope">
+                <template #default="scope">
                   <div class="line1">{{ scope.row.describe || '--' }}</div>
                 </template>
               </el-table-column>
 
-              <el-table-column :label="$t('hr.founder')" min-width="120" prop="card.name" />
-              <el-table-column :label="$t('public.operation')" prop="describe" show-overflow-tooltip width="200">
-                <template slot-scope="scope">
+              <el-table-column label="创建人" min-width="120" prop="card.name" />
+              <el-table-column label="操作" prop="describe" show-overflow-tooltip width="200">
+                <template #default="scope">
                   <el-button
                     v-hasPermi="['hr:enterprise:job:jobAdministration:check']"
-                    type="text"
+                    type="primary" link
                     @click="handleDetail(scope.row)"
-                    >{{ $t('public.check') }}</el-button
+                    >查看</el-button
                   >
                   <el-button
                     v-hasPermi="['hr:enterprise:job:jobAdministration:edit']"
-                    type="text"
+                    type="primary" link
                     @click="handleEdit(scope.row)"
-                    >{{ $t('public.edit') }}</el-button
+                    >编辑</el-button
                   >
                   <el-button
                     v-hasPermi="['hr:enterprise:job:jobAdministration:delete']"
-                    type="text"
+                    type="primary" link
                     @click="handleDelete(scope.row, scope.$index)"
-                    >{{ $t('public.delete') }}</el-button
+                    >删除</el-button
                   >
                 </template>
               </el-table-column>
@@ -78,31 +78,30 @@
           <el-drawer
             :before-close="handleDrawerClose"
             :modal="true"
-            :title="$t('hr.joboetails')"
-            :visible.sync="drawer"
-            :wrapper-closable="true"
+            title="职位详情"
+            v-model="drawer"
             direction="rtl"
             size="60%"
           >
             <div v-if="detailData" class="detail-box">
               <div class="item-box">
-                <span>{{ $t('hr.jobtitle') }}:</span>
+                <span>职位名称:</span>
                 <div>{{ detailData.name || '--' }}</div>
               </div>
               <div class="item-box">
-                <span>{{ $t('hr.numberPosts') }}:</span>
+                <span>职位人数:</span>
                 <div>{{ detailData.job_count || '--' }}</div>
               </div>
               <div class="item-box">
-                <span>{{ $t('hr.jobdescriptiones') }}:</span>
+                <span>职位简介:</span>
                 <div>{{ detailData.describe || '--' }}</div>
               </div>
               <div class="item-box">
-                <span>{{ $t('hr.creationtime') }}:</span>
+                <span>创建时间:</span>
                 <div>{{ detailData.created_at || '--' }}</div>
               </div>
               <div class="item-box">
-                <span>{{ $t('hr.jobresponsibilities') }}:</span>
+                <span>职位职责:</span>
                 <div v-if="detailData.duty == '<p><br></p>'">--</div>
               </div>
 
@@ -129,10 +128,12 @@
 </template>
 
 <script>
+import { modalSure } from '@/libs/public.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
 import oaFromBox from '@/components/common/oaFromBox'
 import draweForm from '@/components/form-common/drawer-form'
-import { endJobApi, endJobStatusApi, endJobInfoApi, endJobDeleteApi, enterpriseEntInfoApi } from '@/api/enterprise'
-import { rankCateListApi, rankListApi, rankJobsPutApi, rankJobsApi, rankJobsAddApi } from '@/api/setting'
+import { endJobApi, endJobStatusApi, endJobInfoApi, endJobDeleteApi, enterpriseEntInfoApi } from '@/api/enterprise.ts'
+import { rankCateListApi, rankListApi, rankJobsPutApi, rankJobsApi, rankJobsAddApi } from '@/api/setting.ts'
 export default {
   name: 'JobManage',
   components: {
@@ -141,6 +142,7 @@ export default {
   },
   data() {
     return {
+      TABLE_HEIGHT,
       drawer: false,
       input: '',
       fromData: {
@@ -253,7 +255,7 @@ export default {
           form_value: 'input'
         },
         {
-          field_name: '职级类别',
+          field_name: '职位类别',
           field_name_en: 'cate_id',
           form_value: 'select',
           data_dict: this.rankDataList
@@ -359,12 +361,12 @@ export default {
           this.$refs.draweForm.openBox()
         }, 300)
       } catch (e) {
-        this.$messgae.error(e.message)
+        this.$message.error(e.message)
       }
     },
     // 删除
     handleDelete(item, index) {
-      this.$modalSure(this.$t('hr.message3')).then(() => {
+      modalSure('删除该职位吗').then(() => {
         this.endJobDelete(item.id)
       })
     },
@@ -372,11 +374,11 @@ export default {
       if (this.multipleSelection.length <= 0) {
         this.$message.error('至少选择一项要删除的内容')
       } else {
-        var ids = []
+        const ids = []
         this.multipleSelection.forEach((value) => {
           ids.push(value.id)
         })
-        this.$modalSure('确定要全部删除已选择的内容吗').then(() => {
+        modalSure('确定要全部删除已选择的内容吗').then(() => {
           this.endJobDelete(ids.join(','))
         })
       }
@@ -411,32 +413,32 @@ export default {
     span {
       font-size: 14px;
     }
-    /deep/ table {
+    :deep(table) {
       border: 1px solid #ccc;
     }
 
-    /deep/ table th {
+    :deep(table th) {
       border: 1px solid #ccc;
     }
-    /deep/ table td {
+    :deep(table td) {
       padding: 10px 5px;
       border: 1px solid #ccc;
     }
 
-    /deep/ p img {
+    :deep(p img) {
       max-width: 800px;
     }
   }
   .content {
-    /deep/ p {
+    :deep(p) {
       font-size: 16px;
     }
-    /deep/ td {
+    :deep(td) {
       border: 1px solid;
     }
   }
 }
-/deep/ .el-drawer__body {
+:deep(.el-drawer__body) {
   height: 100%;
   overflow-y: auto;
 }

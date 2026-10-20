@@ -4,14 +4,13 @@
     <div class="mb10 btn-box1">
       <div class="title-16">附件列表</div>
       <el-upload
-        v-if="formInfo.types == 2 || (formInfo.types == 1 && userId == formInfo.data.salesman.id)"
         :headers="myHeaders"
         :http-request="uploadServerLog"
         :show-file-list="false"
         action="##"
         class="mr10 upload-real"
       >
-        <el-button v-if="!percentShow" size="small" type="primary">
+        <el-button v-if="!percentShow" type="primary">
           <i class="el-icon-plus"></i>
           添加文件
         </el-button>
@@ -21,53 +20,54 @@
       </el-upload>
     </div>
     <el-table :data="fileData">
-      <el-table-column :label="$t('hr.documentcover')" prop="name" width="80">
-        <template slot-scope="scope">
+      <el-table-column label="文件封面" prop="name" width="80">
+        <template #default="scope">
           <span class="file" v-if="toSrcIcon(scope.row.name) !== 'img'">
             {{ getFileTypeFn(scope.row.name) }}
           </span>
 
-          <img v-else :src="scope.row.att_dir" alt="" class="img" @click="filePreview(scope.row)" />
+          <img v-else :src="scope.row.att_dir" alt="" class="img" @click="filePreview(scope.row, { list: fileData })" />
         </template>
       </el-table-column>
-      <el-table-column :label="$t('customer.filename')" min-width="180" prop="real_name">
-        <template slot-scope="scope">
+      <el-table-column label="文件名称" min-width="180" prop="real_name">
+        <template #default="scope">
           <span class="over-text">{{ scope.row.real_name }}</span>
         </template>
       </el-table-column>
       <el-table-column label="附件大小" min-width="180" prop="att_size">
-        <template slot-scope="scope">
+        <template #default="scope">
           <span class="over-text">{{ formatBytesFn(scope.row.att_size) }}</span>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('customer.uploaduser')" min-width="100" prop="card.name" />
-      <el-table-column :label="$t('customer.uploaddate')" min-width="130" prop="created_at">
-        <template slot-scope="scope">
-          <span class="over-text">{{ $moment(scope.row.created_at).format('YYYY-MM-DD') }}</span>
+      <el-table-column label="上传用户" min-width="100" prop="card.name" />
+      <el-table-column label="上传时间" min-width="130" prop="created_at">
+        <template #default="scope">
+          <span class="over-text">{{ dayjs(scope.row.created_at).format('YYYY-MM-DD') }}</span>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('public.operation')" fixed="right" prop="address" width="180">
-        <template slot-scope="scope">
-          <el-button type="text" @click="filePreview(scope.row)">
-            {{ $t('public.check') }}
+      <el-table-column label="操作" fixed="right" prop="address" width="180">
+        <template #default="scope">
+          <el-button type="primary" link @click="filePreview(scope.row, { list: fileData })">
+            查看
           </el-button>
 
-          <el-button type="text" @click="getFileLinkDownLoad(scope.row.att_dir, scope.row.name)">
-            {{ $t('public.download') }}
+          <el-button type="primary" link @click="getFileLinkDownLoad(scope.row.att_dir, scope.row.name)">
+            下载
           </el-button>
 
           <el-dropdown>
-            <span class="el-dropdown-link el-button--text el-button ml10">
-              {{ $t('hr.more') }}
+            <el-button type="primary" link class="el-dropdown-link ml10">
+              更多
               <i class="el-icon-arrow-down" />
-            </span>
-            <el-dropdown-menu style="text-align: center">
-              <el-dropdown-item @click.native="handleLabel(scope.row)"> 重命名 </el-dropdown-item>
-
-              <el-dropdown-item @click.native="handleFileDelete(scope.row, scope.$index)">
-                {{ $t('public.delete') }}</el-dropdown-item
-              >
-            </el-dropdown-menu>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu style="text-align: center">
+                <el-dropdown-item @click="handleLabel(scope.row)"> 重命名 </el-dropdown-item>
+                <el-dropdown-item @click="handleFileDelete(scope.row, scope.$index)">
+                  删除</el-dropdown-item
+                >
+              </el-dropdown-menu>
+            </template>
           </el-dropdown>
         </template>
       </el-table-column>
@@ -84,27 +84,32 @@
     </div>
 
     <!-- 重命名弹窗 -->
-    <el-dialog :append-to-body="true" :visible.sync="dialogFormVisible" title="修改文件名" width="40%">
+    <el-dialog :append-to-body="true" v-model="dialogFormVisible" title="修改文件名" width="40%">
       <el-form>
         <el-form-item label="重命名：" label-width="100px">
           <el-input v-model="real_name" autocomplete="off"></el-input>
         </el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="dialogFormVisible = false">取 消</el-button>
-        <el-button type="primary" @click="putRealName">确 定</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="dialogFormVisible = false">取 消</el-button>
+          <el-button type="primary" @click="putRealName">确 定</el-button>
+        </div>
+      </template>
     </el-dialog>
-    <!-- 打开文件 -->
-    <fileDialog ref="viewFile"></fileDialog>
   </div>
 </template>
 
 <script>
-import { uploader } from '@/utils/uploadCloud'
-import { clientFileDeleteApi, clientFileListApi, putRealName } from '@/api/enterprise'
-import { fileLinkDownLoad, formatBytes, getFileType, isTypeImage, getFileExtension } from '@/libs/public'
+import dayjs from 'dayjs'
+import { getStorageJson } from '@/utils/storage.ts'
+import { uploader } from '@/utils/uploadCloud.ts'
+import { fileIsImage, fileLinkDownLoad, formatBytes, getFileExtension, getFileType } from '@/utils/file.ts'
+import { clientFileDeleteApi, clientFileListApi, putRealName } from '@/api/client.ts'
+import { modalSure } from '@/libs/public.ts'
+import { filePreview } from '@/utils/filePreview.ts'
 export default {
+  emits: ['refresh-detail'],
   name: 'File',
   props: {
     formInfo: {
@@ -114,15 +119,15 @@ export default {
       }
     }
   },
-  components: {
-    fileDialog: () => import('@/components/openFile/previewDialog ') // 图片、MP3，MP4弹窗
+  computed: {
+    dayjs: () => dayjs
   },
   data() {
     return {
       real_name: '',
       fileName: '',
       RealNameId: '',
-      userId: JSON.parse(localStorage.getItem('userInfo')).id,
+      userId: getStorageJson('userInfo', {}).id,
       dialogFormVisible: false,
       fileData: [],
       where: {
@@ -152,6 +157,7 @@ export default {
     this.where.cid = this.formInfo.data.cid
   },
   methods: {
+    filePreview,
     getFileTypeFn(name) {
       return getFileExtension(name)
     },
@@ -165,7 +171,7 @@ export default {
         this.total = res.data.count
         if (this.fileData.length > 0) {
           this.fileData.map((value) => {
-            if (this.fileIsImage(value.att_type)) {
+            if (fileIsImage(value.att_type)) {
               this.srcList.push(value.att_dir)
             }
           })
@@ -194,6 +200,7 @@ export default {
           if (res.data) {
             this.getTableData()
             this.percentShow = false
+            this.$emit('refresh-detail')
           }
         })
         .catch((err) => {
@@ -208,7 +215,7 @@ export default {
     getFileLinkDownLoad(url, name) {
       fileLinkDownLoad(url, name)
     },
-  
+
     // 重命名
     handleLabel(row) {
       this.RealNameId = row.id
@@ -226,13 +233,14 @@ export default {
     },
     // 删除附件
     handleFileDelete(row, index) {
-      this.$modalSure('附件删除后，不可恢复，确认要删除吗').then(() => {
+      modalSure('附件删除后，不可恢复，确认要删除吗').then(() => {
         clientFileDeleteApi(row.id).then((res) => {
           this.fileData.splice(index, 1)
           if (this.where.page > 1 && this.fileData.length <= 0) {
             this.where.page--
           }
           this.getTableData()
+          this.$emit('refresh-detail')
         })
       })
     }
@@ -264,7 +272,7 @@ export default {
   width: 30px;
   height: 30px;
 }
-/deep/ .el-input__inner {
+:deep(.el-input__inner) {
   text-align: left;
 }
 .icon-cover {
@@ -282,5 +290,8 @@ export default {
 
 .ml10 {
   margin-left: 10px;
+}
+:deep(.el-dropdown-menu__item) {
+  font-size: 13px !important;
 }
 </style>

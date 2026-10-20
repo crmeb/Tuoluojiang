@@ -15,8 +15,8 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Frame;
 
-use App\Http\Dao\BaseDao;
 use App\Http\Model\Frame\FrameScope;
+use App\Http\Dao\BaseDao;
 
 /**
  * 管理范围.

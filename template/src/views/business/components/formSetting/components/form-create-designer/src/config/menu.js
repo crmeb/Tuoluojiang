@@ -40,6 +40,7 @@ import tripFrom from './rule/tripFrom'
 import city from './rule/city'
 import contractPayment from './rule/contractPayment'
 import contracTrenewal from './rule/contractRenewal'
+import contractSigning from './rule/contractSigning'
 import contractExpenditure from './rule/contractExpenditure'
 import issueInvoice from './rule/issueInvoice'
 import voidedInvoice from './rule/voidedInvoice'
@@ -68,7 +69,7 @@ export default function createMenu() {
         city
       ],
       group: [leaveFrom, overtimeFrom, outFrom, refillFrom, tripFrom],
-      contract: [contractPayment, contracTrenewal, contractExpenditure, issueInvoice, voidedInvoice]
+      contract: [contractPayment, contracTrenewal, contractExpenditure, issueInvoice, voidedInvoice,contractSigning]
     }
   ]
 }

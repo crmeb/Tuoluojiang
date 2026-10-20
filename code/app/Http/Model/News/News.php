@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,7 +17,7 @@ namespace App\Http\Model\News;
 
 use App\Http\Model\Admin\Admin;
 use App\Http\Model\BaseModel;
-use crmeb\traits\model\TimeDataTrait;
+use Tuoluojiang\Open\traits\model\TimeDataTrait;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Query\Builder;
 
@@ -40,6 +40,23 @@ class News extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'user_id'    => 'integer',
+        'cate_id'    => 'integer',
+        'card_id'    => 'integer',
+        'entid'      => 'integer',
+        'is_top'     => 'integer',
+        'push_type'  => 'integer',
+        'push_time'  => 'datetime:Y-m-d H:i:s',
+        'status'     => 'integer',
+        'sort'       => 'integer',
+        'visit'      => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+        'deleted_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * 一对一关联创建人.
      * @return HasOne
@@ -49,20 +66,19 @@ class News extends BaseModel
         return $this->hasOne(Admin::class, 'id', 'user_id')->select(['id', 'uid', 'name', 'avatar', 'phone']);
     }
 
+    public function isVisit()
+    {
+        return $this->hasOne(NewsVisit::class, 'notice_id', 'id');
+    }
+
     public function scopeCardId($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereIn('card_id', $value);
-        } elseif ($value !== '') {
-            $query->where('card_id', $value);
-        }
+        is_array($value) ? $query->whereIn('card_id', $value) : $query->where('card_id', $value);
     }
 
     public function scopeTitleLike($query, $value)
     {
-        if ($value !== '') {
-            $query->where('title', 'like', '%' . $value . '%');
-        }
+        $query->where('title', 'like', '%' . $value . '%');
     }
 
     /**
@@ -86,9 +102,7 @@ class News extends BaseModel
 
     public function scopePushType($query, $value)
     {
-        if ($value !== '') {
-            $query->where('push_type', $value);
-        }
+        $query->where('push_type', $value);
     }
 
     /**
@@ -97,9 +111,7 @@ class News extends BaseModel
      */
     public function scopeIsPush($query, $value)
     {
-        if ($value !== '') {
-            $query->where('push_time', '<', now()->toDateTimeString());
-        }
+        $query->where('push_time', '<', now()->toDateTimeString());
     }
 
     /**
@@ -108,9 +120,7 @@ class News extends BaseModel
      */
     public function scopeStatus($query, $value)
     {
-        if ($value !== '') {
-            $query->where('status', $value);
-        }
+        $query->where('status', $value);
     }
 
     /**
@@ -119,9 +129,7 @@ class News extends BaseModel
      */
     public function scopeCateId($query, $value)
     {
-        if ($value !== '') {
-            $query->where('cate_id', $value);
-        }
+        $value && $query->where('cate_id', $value);
     }
 
     /**
@@ -130,9 +138,7 @@ class News extends BaseModel
      */
     public function scopeEntid($query, $value)
     {
-        if ($value !== '') {
-            $query->where('entid', $value);
-        }
+        $query->where('entid', $value);
     }
 
     /**
@@ -141,11 +147,7 @@ class News extends BaseModel
      */
     public function scopeNotId($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereNotIn('id', $value);
-        } elseif ($value !== '') {
-            $query->whereNotIn('id', [$value]);
-        }
+        is_array($value) ? $query->whereNotIn('id', $value) : $query->where('id', '<>', $value);
     }
 
     /**
@@ -154,31 +156,35 @@ class News extends BaseModel
      */
     public function scopeId($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereIn('id', $value);
-        } elseif ($value !== '') {
-            $query->where('id', $value);
-        }
+        is_array($value) ? $query->whereIn('id', $value) : $query->where('id', $value);
+    }
+
+    public function scopeIsVisit($query, $value)
+    {
+        $query->whereHas('isVisit', function ($q) use ($value) {
+            $q->where('user_id', $value); // 这里就是你要的 uid 查询
+        });
+    }
+
+    public function scopeNotVisit($query, $value)
+    {
+        $query->whereDoesntHave('isVisit', function ($q) use ($value) {
+            $q->where('user_id', $value);
+        });
     }
 
     public function scopePushTime($query, $value)
     {
-        if ($value !== '') {
-            $query->whereTime('push_time', '<', $value);
-        }
+        $query->whereTime('push_time', '<', $value);
     }
 
     public function scopeDay($query, $value)
     {
-        if ($value !== '') {
-            $query->whereDate('created_at', $value);
-        }
+        $query->whereDate('created_at', $value);
     }
 
     public function scopeEqualPushTime($query, $value)
     {
-        if ($value !== '') {
-            $query->whereDate('push_time', $value);
-        }
+        $query->whereDate('push_time', $value);
     }
 }

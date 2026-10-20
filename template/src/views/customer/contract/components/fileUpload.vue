@@ -1,4 +1,4 @@
-<!-- 合同-添加合同记录附件弹窗组件 -->
+<!-- 订单-添加订单记录附件弹窗组件 -->
 <template>
   <div class="followUpRecord">
     <div class="addContent">
@@ -39,15 +39,15 @@
               :headers="myHeaders"
               :http-request="uploadServerLog"
             >
-              <div class="addText" v-if="!percentShow"><span class="iconfont iconfujian"></span> 添加文件</div>
+              <div class="addText" v-if="!percentShow"><span class="iconfont iconfujian"></span> 添加附件</div>
               <div class="addText" v-else>
                 <img src="../../../../assets/images/loading.gif" alt="" class="l_gif" />
               </div>
             </el-upload>
           </el-col>
           <el-col :span="12" class="text-right">
-            <el-button size="small" v-if="formInfo.type === 'edit'" @click="clientCancel">取消</el-button>
-            <el-button type="primary" size="small" @click="clientFollowSave">确定</el-button>
+            <el-button v-if="formInfo.type === 'edit'" @click="clientCancel">取消</el-button>
+            <el-button type="primary" @click="clientFollowSave">确定</el-button>
           </el-col>
         </el-row>
       </div>
@@ -56,16 +56,14 @@
 </template>
 
 <script>
-import { contracFileEditApi, contracFileSaveApi } from '@/api/enterprise'
-import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
-import { uploader } from '@/utils/uploadCloud'
-import file from '@/utils/file'
-import { toSrcFn } from '@/utils/format'
-import Vue from 'vue'
-
-Vue.use(file)
+import { contracFileEditApi, contracFileSaveApi } from '@/api/client.ts'
+import { ElImageViewer } from 'element-plus'
+import { uploader } from '@/utils/uploadCloud.ts'
+import { toSrcFn } from '@/utils/format.ts'
+import { getStorageJson } from '@/utils/storage.ts'
 export default {
   name: 'Record',
+  emits: ['change'],
   components: {
     ElImageViewer
   },
@@ -86,7 +84,7 @@ export default {
       fileName: '',
       iframeIsShow: false,
       percentShow: false,
-      avatar: JSON.parse(localStorage.getItem('userInfo')).avatar,
+      avatar: getStorageJson('userInfo', {}).avatar || '',
       id: '',
       form: {
         content: '',
@@ -165,7 +163,7 @@ export default {
     toSrc(e) {
       return toSrcFn(e)
     },
-    // 合同资料
+    // 订单资料
     clientFollowSave() {
       this.form.attach_ids = []
       if (!this.form.content) {
@@ -184,7 +182,7 @@ export default {
         this.contractFileEdit(this.formInfo.editData.id, this.form)
       }
     },
-    // 合同资料--添加
+    // 订单资料--添加
     contractFileSave(data) {
       this.loading = true
       contracFileSaveApi(data)
@@ -200,7 +198,7 @@ export default {
           this.loading = false
         })
     },
-    // 合同资料--修改
+    // 订单资料--修改
     contractFileEdit(id, data) {
       this.loading = true
       contracFileEditApi(id, data)
@@ -309,9 +307,6 @@ export default {
   padding: 0px;
   margin-right: 16px;
 }
-.el-button--medium {
-  padding: 10px 15px !important;
-}
 .recordContent {
   padding-top: 38px;
 }
@@ -397,7 +392,7 @@ export default {
 .mt10 {
   margin-top: 20px;
 }
-/deep/ .el-timeline-item__tail {
+:deep(.el-timeline-item__tail) {
   position: absolute;
   left: 4px;
   height: 100%;
@@ -405,10 +400,11 @@ export default {
   border-left: 1px solid #dfe4ed;
 }
 
-/deep/ .el-textarea__inner {
+:deep(.el-textarea__inner) {
   min-height: 96px;
   // word-break: break-all;
   border: none;
+  box-shadow: none;
   font-size: 12px;
 }
 </style>

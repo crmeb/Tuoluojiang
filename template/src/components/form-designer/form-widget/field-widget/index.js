@@ -1,9 +1,9 @@
-const requireComponent = require.context('./', false, /\w+\.vue$/)
+const requireComponent = import.meta.glob('./*.vue', { eager: true })
 
 let comps = {}
 
-requireComponent.keys().map(fileName => {
-  let comp = requireComponent(fileName).default;
+Object.keys(requireComponent).forEach(fileName => {
+  let comp = requireComponent[fileName].default;
   comps[comp.name] = comp
 })
 

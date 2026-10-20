@@ -17,27 +17,24 @@ namespace App\Http\Controller\AdminApi\Open;
 
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Middleware\AuthOpenApi;
-use App\Http\Requests\enterprise\client\ClientBillRequest;
-use App\Http\Requests\enterprise\client\ClientRemindRequest;
+use App\Http\Requests\Customer\RemindRequest;
+use App\Http\Requests\Customer\PaymentRequest;
 use App\Http\Service\Admin\AdminService;
-use App\Http\Service\Client\ClientBillService;
-use App\Http\Service\Client\ClientRemindService;
+use App\Http\Service\Customer\PaymentService;
+use App\Http\Service\Customer\RemindService;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
-use Spatie\RouteAttributes\Attributes\Middleware;
-use Spatie\RouteAttributes\Attributes\Prefix;
-use Spatie\RouteAttributes\Attributes\Post;
-use Spatie\RouteAttributes\Attributes\Get;
-use Spatie\RouteAttributes\Attributes\Put;
 use Spatie\RouteAttributes\Attributes\Delete;
-use Spatie\RouteAttributes\Attributes\Resource;
+use Spatie\RouteAttributes\Attributes\Middleware;
+use Spatie\RouteAttributes\Attributes\Post;
+use Spatie\RouteAttributes\Attributes\Prefix;
 
 #[Prefix('open/bill')]
 #[Middleware([AuthOpenApi::class])]
 class OpenBillController extends AuthController
 {
-    public function __construct(ClientBillService $service)
+    public function __construct(PaymentService $service)
     {
         parent::__construct();
         $this->service = $service;
@@ -45,7 +42,7 @@ class OpenBillController extends AuthController
 
     /**
      * 回款
-     * @param ClientBillRequest $request
+     * @param PaymentRequest $request
      * @param AdminService $adminService
      * @return mixed
      * @throws BindingResolutionException
@@ -54,7 +51,7 @@ class OpenBillController extends AuthController
      * @throws \Illuminate\Validation\ValidationException
      */
     #[Post('/payment', '保存付款接口')]
-    public function payment(ClientBillRequest $request, AdminService $adminService): mixed
+    public function payment(PaymentRequest $request, AdminService $adminService): mixed
     {
         $request->scene('payment')->check();
         $uid = (int)$this->request->post('uid', 0);
@@ -69,7 +66,7 @@ class OpenBillController extends AuthController
 
     /**
      * 续费
-     * @param ClientBillRequest $request
+     * @param PaymentRequest $request
      * @param AdminService $adminService
      * @return mixed
      * @throws BindingResolutionException
@@ -78,7 +75,7 @@ class OpenBillController extends AuthController
      * @throws \Illuminate\Validation\ValidationException
      */
     #[Post('/renewal', '保存续费接口')]
-    public function renewal(ClientBillRequest $request, AdminService $adminService): mixed
+    public function renewal(PaymentRequest $request, AdminService $adminService): mixed
     {
         $request->scene('renewal')->check();
         $uid = (int)$this->request->post('uid', 0);
@@ -93,7 +90,7 @@ class OpenBillController extends AuthController
 
     /**
      * 支出
-     * @param ClientBillRequest $request
+     * @param PaymentRequest $request
      * @param AdminService $adminService
      * @return mixed
      * @throws BindingResolutionException
@@ -102,7 +99,7 @@ class OpenBillController extends AuthController
      * @throws \Illuminate\Validation\ValidationException
      */
     #[Post('/expend', '保存支出接口')]
-    public function expend(ClientBillRequest $request, AdminService $adminService): mixed
+    public function expend(PaymentRequest $request, AdminService $adminService): mixed
     {
         $request->scene('expend')->check();
         $uid = (int)$this->request->post('uid', 0);
@@ -136,14 +133,14 @@ class OpenBillController extends AuthController
 
     /**
      * 保存付款提醒.
-     * @param ClientRemindRequest $request
-     * @param ClientRemindService $clientRemindService
+     * @param RemindRequest $request
+     * @param RemindService $clientRemindService
      * @return mixed
      * @throws BindingResolutionException
      * @throws \Illuminate\Validation\ValidationException
      */
     #[Post('/remind', '保存付款提醒接口')]
-    public function remind(ClientRemindRequest $request, ClientRemindService $clientRemindService): mixed
+    public function remind(RemindRequest $request, RemindService $clientRemindService): mixed
     {
         $request->scene('store')->check();
         $data = $this->request->postMore([
@@ -164,7 +161,7 @@ class OpenBillController extends AuthController
      */
     protected function getRequestClassName(): string
     {
-        return ClientBillRequest::class;
+        return PaymentRequest::class;
     }
 
     /**

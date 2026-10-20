@@ -1,138 +1,150 @@
-<!-- 客户-合同收支 -->
+<!-- 客户-订单收支 -->
 <template>
   <div class="divBox">
-    <el-card class="mb14 normal-page" :body-style="{ padding: '20px 20px 20px 20px' }">
+    <el-card :body-style="{ padding: '20px 20px 20px 20px' }" class="normal-page el-card-flex whole-card">
       <oaFromBox
         ref="oaFromBox"
-        :search="search"
-        :isViewSearch="false"
-        :sortSearch="false"
-        :total="total"
-        :timeVal="timeValue"
-        :title="`合同收支`"
-        btnText="导出"
         :btnIcon="false"
+        :isViewSearch="false"
+        :search="search"
+        :sortSearch="false"
+        :timeVal="timeValue"
+        :title="`订单收支`"
+        :total="total"
+        btnText="导出"
         @addDataFn="getExportData"
         @confirmData="confirmData"
       ></oaFromBox>
-      <div class="mt10" v-loading="loading">
-        <el-table
-          :data="tableData"
-          :height="tableHeight"
-          style="width: 100%"
-          row-key="id"
-          default-expand-all
-          @sort-change="sortChange"
-        >
-          <el-table-column prop="date" min-width="150" sortable label="付款时间" />
-          <el-table-column prop="bill_types" label="记录类型" min-width="90">
-            <template v-slot:default="scope">
-              <el-tag class="bill-types-tag" :type="scope.row.types === 2 ? 'warning' : 'success'">
-                {{ scope.row.types === 2 ? '支出' : '收入' }}
-              </el-tag>
-            </template>
-          </el-table-column>
 
-          <el-table-column prop="num" min-width="100" label="付款金额(元)" />
-          <el-table-column prop="pay_type" min-width="100" label="支付方式">
-            <template v-slot:default="scope">
-              <span>{{ scope.row.pay_type !== '' ? scope.row.pay_type : '--' }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="client.name" label="客户名称" min-width="120">
-            <template v-slot:default="scope">
-              <span class="pointer default-color" @click="clientCheck(scope.row)">
-                {{ scope.row.client ? scope.row.client.customer_name : '--' }}
-              </span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="contract.contract_name" label="合同名称" min-width="120">
-            <template v-slot:default="scope">
-              <span class="pointer default-color" @click="treatyCheck(scope.row)">
-                {{ scope.row.contract ? scope.row.contract.contract_name : '--' }}
-              </span>
-            </template>
-          </el-table-column>
+      <div class="flex-layout-table">
+        <div class="mt10 table-box">
+          <div class="table-wrapper">
+            <div class="table-content">
+              <el-table
+                v-loading="loading"
+                :data="tableData"
+                height="100%"
+                default-expand-all
+                row-key="id"
+                style="width: 100%"
+                @sort-change="sortChange"
+              >
+                <el-table-column label="付款时间" min-width="150" prop="date" sortable />
+                <el-table-column label="记录类型" min-width="90" prop="bill_types">
+                  <template v-slot:default="scope">
+                    <el-tag :type="scope.row.types === 2 ? 'warning' : 'success'" class="bill-types-tag">
+                      {{ scope.row.types === 2 ? '支出' : '收入' }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
 
-          <el-table-column prop="status" label="审核状态" min-width="140">
-            <template v-slot:default="scope">
-              <el-tag class="status-tag" type="success" v-if="scope.row.status === 1">已通过</el-tag>
-              <el-tag class="status-tag" type="info" v-else-if="scope.row.status === -1">已撤销</el-tag>
-              <el-tag class="status-tag" type="warning" v-else-if="scope.row.status === 0">待审核</el-tag>
-              <el-tag class="status-tag" type="danger" v-else>未通过</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="业务员" min-width="140">
-            <template slot-scope="scope">
-              <img
-                :src="scope.row.card.avatar"
-                alt=""
-                style="width: 24px; height: 24px; border-radius: 50%; margin-right: 7px; vertical-align: bottom"
-              />
-              {{ scope.row.card.name }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="created_at" label="申请时间" min-width="140"> </el-table-column>
+                <el-table-column label="付款金额(元)" min-width="100" prop="num" />
+                <el-table-column label="支付方式" min-width="100" prop="pay_type">
+                  <template v-slot:default="scope">
+                    <span>{{ scope.row.pay_type !== '' ? scope.row.pay_type : '--' }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="客户名称" min-width="120" prop="client.name">
+                  <template v-slot:default="scope">
+                    <span class="pointer default-color" @click="clientCheck(scope.row)">
+                      {{ scope.row.client ? scope.row.client.customer_name : '--' }}
+                    </span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="订单编号" min-width="120" prop="contract.contract_no">
+                  <template v-slot:default="scope">
+                    <span class="pointer default-color" @click="treatyCheck(scope.row)">
+                      {{ scope.row.contract ? scope.row.contract.contract_no : '--' }}
+                    </span>
+                  </template>
+                </el-table-column>
 
-          <el-table-column prop="address" fixed="right" :label="$t('public.operation')" width="100">
-            <template v-slot:default="scope">
-              <el-button type="text" @click="handleCheck(scope.row)">查看</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-        <div class="page-fixed">
-          <el-pagination
-            :page-size="where.limit"
-            :current-page="where.page"
-            :page-sizes="[15, 20, 30]"
-            layout="total, sizes,prev, pager, next, jumper"
-            :total="total"
-            @size-change="handleSizeChange"
-            @current-change="pageChange"
-          />
-        </div>
-        <div class="footer-expend">
-          <div class="expend">
-            <span class="mr14"
-              >累计收款金额(元): <span class="income">{{ census.income || '0' }} </span>
-            </span>
+                <el-table-column label="审核状态" min-width="140" prop="status">
+                  <template v-slot:default="scope">
+                    <el-tag v-if="scope.row.status === 1" class="status-tag" type="success">已通过</el-tag>
+                    <el-tag v-else-if="scope.row.status === -1" class="status-tag" type="info">已撤销</el-tag>
+                    <el-tag v-else-if="scope.row.status === 0" class="status-tag" type="warning">待审核</el-tag>
+                    <el-tag v-else class="status-tag" type="danger">未通过</el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column label="业务员" min-width="140">
+                  <template #default="{ row }">
+                    <div
+                      style="display: flex; align-items: center; gap: 6px"
+                    >
+                      <el-avatar :size="24" :src="row.card.avatar"></el-avatar>
+                      <span>{{ row.card.name || '--' }}</span>
+                    </div>
+                  </template>
+                </el-table-column>
+                <el-table-column label="申请时间" min-width="140" prop="created_at"> </el-table-column>
 
-            <span class="mr14">
-              累计支出金额(元): <span class="expend-color">{{ census.expend || '0' }} </span>
-            </span>
-
-            <span>
-              审核中金额(元): <span class="income">{{ census.review_income || '0' }}（收入）</span>
-              <span class="expend-color">{{ census.review_expend || '0' }}（支出）</span></span
-            >
+                <el-table-column label="操作" fixed="right" prop="address" width="100">
+                  <template v-slot:default="scope">
+                    <el-button type="primary" link @click="handleCheck(scope.row)">查看</el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
           </div>
+          <div class="page-fixed">
+            <el-pagination
+              :current-page="where.page"
+              :page-size="where.limit"
+              :page-sizes="[15, 20, 30]"
+              :total="total"
+              layout="total, sizes,prev, pager, next, jumper"
+              @size-change="handleSizeChange"
+              @current-change="pageChange"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-expend">
+        <div class="expend">
+          <span class="mr14"
+            >累计收款金额(元): <span class="income">{{ census.income || '0' }} </span>
+          </span>
+
+          <span class="mr14">
+            累计支出金额(元): <span class="expend-color">{{ census.expend || '0' }} </span>
+          </span>
+
+          <span>
+            审核中金额(元): <span class="income">{{ census.review_income || '0' }}（收入）</span>
+            <span class="expend-color">{{ census.review_expend || '0' }}（支出）</span></span
+          >
         </div>
       </div>
     </el-card>
     <!-- 查看客户详情侧滑 -->
     <edit-customer ref="editCustomer" :form-data="clientFromData"></edit-customer>
-    <!-- 查看合同详情侧滑 -->
+    <!-- 查看订单详情侧滑 -->
     <edit-contract ref="editContract" :form-data="contractFromData"></edit-contract>
     <!-- 查看详情 -->
     <detail-examine ref="detailExamine" @getList="getTableData" />
     <!-- 导出组件 -->
-    <export-excel :template="false" :save-name="saveName" :export-data="exportData" ref="exportExcel" />
+    <export-excel ref="exportExcel" :export-data="exportData" :save-name="saveName" :template="false" />
   </div>
 </template>
 
 <script>
-import { clientBillListApi, getbillCate } from '@/api/enterprise'
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
+import { clientBillListApi, getbillCate, getSalesman } from '@/api/enterprise.ts'
 
+import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'Index',
   components: {
-    detailExamine: () => import('@/views/user/examine/components/detailExamine'),
-    editCustomer: () => import('@/views/customer/list/components/editCustomer'),
-    editContract: () => import('@/views/customer/contract/components/editContract'),
-    exportExcel: () => import('@/components/common/exportExcel'),
-    applyForPayment: () => import('@/views/customer/list/components/applyForPayment'),
-    expendDialog: () => import('@/views/customer/list/components/expendDialog'),
-    oaFromBox: () => import('@/components/common/oaFromBox')
+    detailExamine: defineAsyncComponent(() => import('@/views/user/examine/components/detailExamine')),
+    editCustomer: defineAsyncComponent(() => import('@/views/customer/list/components/editCustomer')),
+    editContract: defineAsyncComponent(() => import('@/views/customer/contract/components/editContract')),
+    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel')),
+    applyForPayment: defineAsyncComponent(() => import('@/views/customer/list/components/applyForPayment')),
+    expendDialog: defineAsyncComponent(() => import('@/views/customer/list/components/expendDialog')),
+    oaFromBox
   },
   props: {
     activeName: {
@@ -165,8 +177,8 @@ export default {
       census: {},
       catePath: [],
       timeValue: [
-        this.$moment().startOf('month').format('YYYY/MM/DD'),
-        this.$moment().endOf('month').format('YYYY/MM/DD')
+        dayjs().startOf('month').format('YYYY/MM/DD'),
+        dayjs().endOf('month').format('YYYY/MM/DD')
       ],
       where: {
         types: '',
@@ -178,7 +190,8 @@ export default {
         limit: 15,
         no_withdraw: 1,
         sort: 'created_at desc',
-        scope_frame: 'all'
+        scope_frame: 'all',
+        salesman_id: []
       },
       total: 0,
       contractFromData: {},
@@ -190,13 +203,20 @@ export default {
           form_value: 'select',
           data_dict: [
             { name: '全部', id: '' },
-            { name: '合同回款', id: 0 },
-            { name: '合同续费', id: 1 },
-            { name: '合同支出', id: 2 }
+            { name: '订单回款', id: 0 },
+            { name: '订单续费', id: 1 },
+            { name: '订单支出', id: 2 }
           ]
         },
         {
           form_value: 'manage'
+        },
+        {
+          field_name: '业务员',
+          field_name_en: 'salesman_id',
+          form_value: 'salesman_id',
+          // 可选人员白名单：null 表示尚未加载完成，加载后收敛为客户模块有权限查看的人员
+          enableIds: null
         },
         {
           field_name: '审核状态',
@@ -205,34 +225,19 @@ export default {
           data_dict: [
             {
               id: '',
-              name: this.$t('toptable.all')
+              name: '全部'
             },
             {
               id: 0,
-              name: this.$t('customer.audit')
+              name: '待审核'
             },
             {
               id: 1,
-              name: this.$t('customer.passed')
+              name: '已通过'
             },
             {
               id: 2,
-              name: this.$t('customer.fail')
-            }
-          ]
-        },
-        {
-          field_name: '时间类型',
-          field_name_en: 'time_field',
-          form_value: 'select',
-          data_dict: [
-            {
-              value: 'date',
-              name: '付款日期'
-            },
-            {
-              value: 'time',
-              name: '申请日期'
+              name: '未通过'
             }
           ]
         },
@@ -240,11 +245,22 @@ export default {
           field_name: '开始时间',
           field_name_end: '结束时间',
           field_name_en: 'time',
-          form_value: 'date_picker',
+          form_value: 'date_type_picker',
+          type_field: 'time_field',
+          type_default: 'date',
+          type_options: [
+            { value: 'date', name: '付款日期' },
+            { value: 'time', name: '申请日期' }
+          ],
           data_dict: [
-            this.$moment().startOf('month').format('YYYY/MM/DD'),
-            this.$moment().endOf('month').format('YYYY/MM/DD')
+            dayjs().startOf('month').format('YYYY/MM/DD'),
+            dayjs().endOf('month').format('YYYY/MM/DD')
           ]
+        },
+        {
+          field_name: '客户名称/订单编号',
+          field_name_en: 'name',
+          form_value: 'input'
         }
       ],
       dropdownList: [
@@ -257,6 +273,7 @@ export default {
   },
   created() {
     this.where.time = this.timeValue[0] + '-' + this.timeValue[1]
+    this.getSalesmanRange()
     this.getTableData()
   },
   methods: {
@@ -270,10 +287,11 @@ export default {
       val.cid = val.cid
       if (val) {
         this.clientFromData = {
-          title: this.$t('customer.editcustomer'),
-          width: '1000px',
+          title: '编辑客户',
+          width: '1100px',
           data: val,
-          types: this.types
+          types: this.types,
+          link_type: 'customer'
         }
 
         this.$refs.editCustomer.tabIndex = '1'
@@ -281,13 +299,13 @@ export default {
         this.$refs.editCustomer.openBox(val.eid, this.types)
       }
     },
-    // 查看合同详情
+    // 查看订单详情
     async treatyCheck(item) {
       item.cid = item.contract.id
       item.contract_name = item.contract.contract_name
       item.eid = item.eid
       this.contractFromData = {
-        title: '查看合同',
+        title: '查看订单',
         width: '1000px',
         data: item,
         isClient: false,
@@ -326,7 +344,7 @@ export default {
     // 导出
     getExportData() {
       this.$refs.oaFromBox.loading = true
-      this.saveName = '导出付款审核_' + this.$moment(new Date()).format('MM_DD_HH_mm_ss') + '.xlsx'
+      this.saveName = '导出付款审核_' + dayjs(new Date()).format('MM_DD_HH_mm_ss') + '.xlsx'
 
       let where = {
         types: this.where.types,
@@ -336,23 +354,27 @@ export default {
         name: this.where.name,
         time_field: this.where.time_field,
         limit: 0,
-        no_withdraw: this.where.no_withdraw
+        no_withdraw: this.where.no_withdraw,
+        scope_frame: this.where.scope_frame,
+        salesman_id: this.where.salesman_id
       }
       clientBillListApi(where).then((res) => {
         let data = res.data.list
         let aoaData = [
-          ['付款时间', '付款金额', '支付方式', '备注', '业务类型', '客户名称', '合同名称', '合同编号', '业务员']
+          ['付款时间', '付款金额', '支付方式', '备注', '业务类型', '客户名称', '订单编号', '订单编号', '业务员']
         ]
         if (data.length > 0) {
           data.forEach((value) => {
             if (value.types == 0) {
               value.types = '回款记录'
-            } else {
+            } else if (value.types == 1) {
               if (value.renew && value.renew.title) {
                 value.types = '续费记录' + '-' + value.renew.title
               } else {
                 value.types = '续费记录'
               }
+            } else {
+              value.types = '支出记录'
             }
 
             aoaData.push([
@@ -362,12 +384,11 @@ export default {
               value.mark,
               value.types,
               value.client ? value.client.customer_name : '',
-              value.contract ? value.contract.contract_name : '',
+              value.contract ? value.contract.contract_no : '',
               value.treaty ? value.treaty.contract_no : '',
               value.card ? value.card.name : ''
             ])
           })
-
           this.exportData.data = aoaData
           this.$refs.exportExcel.exportExcel()
           this.$refs.oaFromBox.loading = false
@@ -375,6 +396,18 @@ export default {
       })
 
       // this.getTableData()
+    },
+
+    // 获取当前账号在客户模块有权限查看的人员，作为业务员筛选的可选范围
+    async getSalesmanRange() {
+      const salesmanSearch = this.search.find((item) => item.field_name_en === 'salesman_id')
+      if (!salesmanSearch) return
+      try {
+        const res = await getSalesman()
+        salesmanSearch.enableIds = (res.data || []).map((item) => item.id)
+      } catch (e) {
+        salesmanSearch.enableIds = []
+      }
     },
 
     async getbillCate(id) {
@@ -391,7 +424,7 @@ export default {
       this.total = result.data.count
       this.loading = false
     },
-    confirmData(data) {
+    confirmData(data, resetState) {
       if (data == 'reset') {
         this.where = {
           types: '',
@@ -403,10 +436,16 @@ export default {
           limit: 15,
           no_withdraw: 1,
           sort: 'created_at desc',
-          scope_frame: 'all'
+          scope_frame: 'all',
+          salesman_id: [],
+          // 排序等由搜索栏维护的默认参数，重置后需一并带回
+          ...resetState
         }
 
-        this.search[4].data_dict = this.timeValue
+        const timeSearch = this.search.find((item) => item.field_name_en === 'time')
+        if (timeSearch) {
+          timeSearch.data_dict = this.timeValue
+        }
         this.where.time = this.timeValue[0] + '-' + this.timeValue[1]
       } else {
         this.where = { ...this.where, ...data }
@@ -509,7 +548,7 @@ export default {
   }
 }
 
-/deep/ .el-drawer__body {
+:deep(.el-drawer__body) {
   height: 100%;
   overflow-y: auto;
 }
@@ -526,16 +565,16 @@ export default {
 }
 
 .dialog {
-  /deep/ .el-dialog {
+  :deep(.el-dialog) {
     border-radius: 6px;
     height: 249px;
   }
 
-  /deep/ .el-dialog__body {
+  :deep(.el-dialog__body) {
     padding: 0;
   }
 
-  /deep/ .el-textarea__inner {
+  :deep(.el-textarea__inner) {
     width: 400px;
     height: 90px;
     font-size: 13px;
@@ -597,9 +636,15 @@ export default {
   background-color: transparent !important;
 }
 
+.whole-card {
+  position: relative;
+}
+
 .footer-expend {
+  position: absolute;
+  bottom: 30px;
+  left: 20px;
   display: flex;
-  justify-content: start;
-  margin-top: 34px;
+  justify-content: flex-start;
 }
 </style>

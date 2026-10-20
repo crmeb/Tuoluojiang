@@ -8,7 +8,7 @@
         </div>
         <div class="right">
           <span class="title">{{ info.name || '--' }}</span>
-          <el-tabs v-model="activeName" class="tab" @tab-click="tabChange">
+          <el-tabs v-model="activeName" class="tab" @tab-change="tabChange">
             <el-tab-pane label="任务详情" name="1" />
             <el-tab-pane label="项目资料" name="2" />
             <el-tab-pane label="项目动态" name="3" />
@@ -19,7 +19,7 @@
 
       <!-- 我的任务 -->
       <div v-if="activeName == 1">
-        <task ref="taskDrawerRef" :programId="Number(id)" :isDrawer="true"></task>
+        <task none-bg ref="taskDrawerRef" :programId="Number(id)" :isDrawer="true"></task>
       </div>
       <!-- 项目资料 -->
       <div v-if="activeName == 2">
@@ -27,7 +27,7 @@
       </div>
       <!-- 项目动态 -->
       <div v-if="activeName == 3">
-        <dynamics :programId="info.id"></dynamics>
+        <dynamics none-bg :programId="info.id"></dynamics>
       </div>
       <!-- 项目设置 -->
       <div v-if="activeName == 4">
@@ -38,15 +38,16 @@
   </div>
 </template>
 <script>
-import { roterPre } from '@/settings'
-import { getProgramInfoApi } from '@/api/program'
+import { defineAsyncComponent } from 'vue'
+import { roterPre } from '@/settings.ts'
+import { getProgramInfoApi } from '@/api/program.ts'
 export default {
   name: '',
   components: {
-    task: () => import('../programTask/index'),
-    dynamics: () => import('./dynamics'),
-    files: () => import('./components/files'),
-    addProgram: () => import('./components/addProgram')
+    task: defineAsyncComponent(() => import('../programTask/index')),
+    dynamics: defineAsyncComponent(() => import('./dynamics')),
+    files: defineAsyncComponent(() => import('./components/files')),
+    addProgram: defineAsyncComponent(() => import('./components/addProgram'))
   },
 
   data() {
@@ -95,7 +96,7 @@ export default {
 }
 .divBox {
   padding: 0;
-  background-color: #fff;
+  // background-color: #fff;
 
   .header {
     width: 100%;
@@ -123,6 +124,10 @@ export default {
     .right {
       padding: 11px 0 11px 0px;
       margin-left: 13px;
+      :deep(.el-tabs__active-bar) {
+        position: absolute;
+        bottom: 2px;
+      }
       .title {
         font-family: PingFang SC, PingFang SC;
         font-weight: 500;
@@ -133,17 +138,17 @@ export default {
         text-transform: none;
       }
       .tab {
-        /deep/ .el-tabs__nav-wrap::after {
+        :deep(.el-tabs__nav-wrap::after) {
           height: 0;
         }
-        /deep/ .el-tabs__item {
+        :deep(.el-tabs__item) {
           line-height: 37px;
           font-family: PingFang SC, PingFang SC;
           font-weight: 400;
           font-size: 13px;
           color: #606266;
         }
-        /deep/ .el-tabs__item.is-active {
+        :deep(.el-tabs__item.is-active) {
           color: #1890ff;
         }
       }

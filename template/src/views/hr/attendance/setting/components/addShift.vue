@@ -3,25 +3,25 @@
     <!-- 新建班次页面 -->
     <el-drawer
       :title="title"
-      :visible.sync="drawer"
+      v-model="drawer"
       size="700px"
-      :wrapperClosable="type == 'check' ? true : false"
+      :close-on-click-modal="type == 'check' ? true : false"
       :before-close="handleCloseFn"
     >
       <div class="box" ref="scrollRef">
         <el-form :model="formData" ref="ruleForm" :rules="rules" label-width="100px" class="demo-ruleForm">
           <el-form-item label="班次名称：" prop="name" class="form-item">
             <div class="flex" v-if="type !== 'check'">
-              <el-input size="small" v-model="formData.name" placeholder="请输入班次名称" style="width: 90%"></el-input>
+              <el-input v-model="formData.name" placeholder="请输入班次名称" style="width: 90%"></el-input>
 
               <el-color-picker v-model="formData.color" class="ml14"></el-color-picker>
             </div>
             <span v-else>{{ formData.name }}</span>
           </el-form-item>
           <el-form-item label="上下班次数：" prop="number" class="form-item">
-            <el-radio-group v-model="formData.number" @input="radioFn" v-if="type !== 'check'">
-              <el-radio label="1">一次上下班</el-radio>
-              <el-radio label="2">两次上下班</el-radio>
+            <el-radio-group v-model="formData.number" @change="radioFn" v-if="type !== 'check'">
+              <el-radio label="1" value="1">一次上下班</el-radio>
+              <el-radio label="2" value="2">两次上下班</el-radio>
             </el-radio-group>
             <span v-else>{{ formData.number == 1 ? '一次上下班' : '两次上下班' }}</span>
           </el-form-item>
@@ -31,7 +31,7 @@
           <el-table :data="tableData" style="width: 100%" class="mb20">
             <el-table-column prop="name" label="班次" width="140"> </el-table-column>
             <el-table-column prop="rule" label="规则">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <!-- 第一次上班 -->
                 <div v-if="scope.row.rule == 1">
                   <div class="item">
@@ -39,7 +39,6 @@
                     <el-select
                       v-model="formData.number1.first_day_after"
                       disabled
-                      size="small"
                       placeholder="请选择"
                       style="width: 150px"
                       v-if="type !== 'check'"
@@ -50,7 +49,6 @@
                     <el-time-picker
                       :clearable="false"
                       class="ml10"
-                      size="small"
                       format="H:mm"
                       v-model="formData.number1.work_hours"
                       style="width: 150px"
@@ -61,43 +59,46 @@
                     </el-time-picker>
                     <span v-else
                       >{{ formData.number1.first_day_after == 0 ? '当日' : '次日'
-                      }}{{ $moment(formData.number1.work_hours).format('H:mm') }}</span
+                      }}{{ dayjs(formData.number1.work_hours).format('HH:mm') }}</span
                     >
                   </div>
-                  <div class="item" v-for="(item, index) in goToWork1" :key="index" v-if="type !== 'check'">
-                    {{ item.premise }}
+                  <template v-for="(item, index) in goToWork1" :key="index">
+                    <div v-if="type !== 'check'" :key="index" class="item">
+                      {{ item.premise }}
 
-                    <div class="mo-input--number">
-                      <el-input-number v-model="form[item.hour]" controls-position="right" size="small" :min="0">
-                      </el-input-number>
-                      <div class="define-append">小时</div>
-                    </div>
+                      <div class="mo-input--number">
+                        <el-input-number v-model="form[item.hour]" controls-position="right" :min="0">
+                        </el-input-number>
+                        <div class="define-append">小时</div>
+                      </div>
 
-                    <div class="mo-input--number">
-                      <el-input-number
-                        v-model="form[item.minute]"
-                        controls-position="right"
-                        size="small"
-                        :min="0"
-                      ></el-input-number>
-                      <div class="define-append">分钟</div>
+                      <div class="mo-input--number">
+                        <el-input-number
+                          v-model="form[item.minute]"
+                          controls-position="right"
+                          :min="0"
+                        ></el-input-number>
+                        <div class="define-append">分钟</div>
+                      </div>
+                      &nbsp;
+                      {{ item.suffix }}
                     </div>
-                    &nbsp;
-                    {{ item.suffix }}
-                  </div>
-                  <div v-if="type == 'check'" class="item" v-for="(item, index) in goToWork1" :key="index">
-                    {{ item.premise }} {{ form[item.hour] }} 小时{{ form[item.minute] }} 分钟{{ item.suffix }}
-                  </div>
+                  </template>
+                  <template v-for="(item, index) in goToWork1" :key="index">
+                    <div v-if="type == 'check'" :key="index" class="item">
+                      {{ item.premise }} {{ form[item.hour] }} 小时{{ form[item.minute] }} 分钟{{ item.suffix }}
+                    </div>
+                  </template>
                 </div>
 
                 <!-- 第一次下班 -->
                 <div v-if="scope.row.rule == 2">
                   <div class="item">
-                    下班时间&nbsp;
+                    下班时间
                     <el-select
                       v-model="formData.number1.second_day_after"
                       v-if="type !== 'check'"
-                      size="small"
+                      class="ml6"
                       placeholder="请选择"
                       style="width: 150px"
                       @change="changeTime"
@@ -108,7 +109,6 @@
                     <el-time-picker
                       :clearable="false"
                       class="ml10"
-                      size="small"
                       format="H:mm"
                       v-model="formData.number1.off_hours"
                       placeholder="选择时间"
@@ -119,46 +119,49 @@
                     </el-time-picker>
                     <span v-else
                       >{{ formData.number1.second_day_after == 0 ? '当日' : '次日'
-                      }}{{ $moment(formData.number1.off_hours).format('H:mm') }}</span
+                      }}{{ dayjs(formData.number1.off_hours).format('HH:mm') }}</span
                     >
                   </div>
-                  <div class="item" v-for="(item, index) in goToWork2" :key="index" v-if="type !== 'check'">
-                    {{ item.premise }}
-                    <div class="mo-input--number">
-                      <el-input-number v-model="form[item.hour]" controls-position="right" size="small" :min="0">
-                      </el-input-number>
-                      <div class="define-append">小时</div>
-                    </div>
+                  <template v-for="(item, index) in goToWork2" :key="index">
+                    <div v-if="type !== 'check'" :key="index" class="item">
+                      {{ item.premise }}
+                      <div class="mo-input--number">
+                        <el-input-number v-model="form[item.hour]" controls-position="right" :min="0">
+                        </el-input-number>
+                        <div class="define-append">小时</div>
+                      </div>
 
-                    <div class="mo-input--number">
-                      <el-input-number
-                        v-model="form[item.minute]"
-                        controls-position="right"
-                        size="small"
-                        :min="0"
-                      ></el-input-number>
-                      <div class="define-append">分钟</div>
+                      <div class="mo-input--number">
+                        <el-input-number
+                          v-model="form[item.minute]"
+                          controls-position="right"
+                          :min="0"
+                        ></el-input-number>
+                        <div class="define-append">分钟</div>
+                      </div>
+                      &nbsp; {{ item.suffix }}
                     </div>
-                    &nbsp; {{ item.suffix }}
-                  </div>
+                  </template>
                   <el-checkbox v-model="form.free_clock" v-if="type !== 'check'">下班可免打卡</el-checkbox>
 
-                  <div v-if="type == 'check'" class="item" v-for="(item, index) in goToWork2" :key="index">
-                    {{ item.premise }} <span v-if="form[item.hour] !== 0">{{ form[item.hour] }} 小时</span>
-                    <span v-if="form[item.minute] !== 0">{{ form[item.minute] }} 分钟</span>{{ item.suffix }}
-                  </div>
+                  <template v-for="(item, index) in goToWork2" :key="index">
+                    <div v-if="type == 'check'" :key="index" class="item">
+                      {{ item.premise }} <span v-if="form[item.hour] !== 0">{{ form[item.hour] }} 小时</span>
+                      <span v-if="form[item.minute] !== 0">{{ form[item.minute] }} 分钟</span>{{ item.suffix }}
+                    </div>
+                  </template>
                   <span v-if="type == 'check'">{{ form.free_clock ? '下班可免打卡' : '下班不可免打卡' }}</span>
                 </div>
 
                 <div v-if="scope.row.rule == 3">
                   <!-- 第二次上班 -->
                   <div class="item">
-                    上班时间&nbsp;
+                    上班时间
                     <el-select
                       v-model="formData.number2.first_day_after"
                       v-if="type !== 'check'"
                       placeholder="请选择"
-                      size="small"
+                      class="ml6"
                       :disabled="formData.number1.second_day_after == 1"
                       style="width: 150px"
                       @change="changeTime"
@@ -168,7 +171,6 @@
                     </el-select>
                     <el-time-picker
                       class="ml10"
-                      size="small"
                       :clearable="false"
                       format="H:mm"
                       v-model="formData.number2.work_hours"
@@ -180,41 +182,44 @@
                     </el-time-picker>
                     <span v-else
                       >{{ formData.number2.first_day_after == 0 ? '当日' : '次日'
-                      }}{{ $moment(formData.number2.work_hours).format('H:mm') }}</span
+                      }}{{ dayjs(formData.number2.work_hours).format('HH:mm') }}</span
                     >
                   </div>
-                  <div class="item" v-for="(item, index) in goToWork1" :key="index" v-if="type !== 'check'">
-                    {{ item.premise }}
-                    <div class="mo-input--number">
-                      <el-input-number v-model="form1[item.hour]" controls-position="right" size="small" :min="0">
-                      </el-input-number>
-                      <div class="define-append">小时</div>
-                    </div>
+                  <template v-for="(item, index) in goToWork1" :key="index">
+                    <div v-if="type !== 'check'" :key="index" class="item">
+                      {{ item.premise }}
+                      <div class="mo-input--number">
+                        <el-input-number v-model="form1[item.hour]" controls-position="right" :min="0">
+                        </el-input-number>
+                        <div class="define-append">小时</div>
+                      </div>
 
-                    <div class="mo-input--number">
-                      <el-input-number
-                        v-model="form1[item.minute]"
-                        controls-position="right"
-                        size="small"
-                        :min="0"
-                      ></el-input-number>
-                      <div class="define-append">分钟</div>
+                      <div class="mo-input--number">
+                        <el-input-number
+                          v-model="form1[item.minute]"
+                          controls-position="right"
+                          :min="0"
+                        ></el-input-number>
+                        <div class="define-append">分钟</div>
+                      </div>
+                      &nbsp;{{ item.suffix }}
                     </div>
-                    &nbsp;{{ item.suffix }}
-                  </div>
-                  <div v-if="type == 'check'" class="item" v-for="(item, index) in goToWork1" :key="index">
-                    {{ item.premise }} {{ form1[item.hour] }} 小时{{ form1[item.minute] }} 分钟{{ item.suffix }}
-                  </div>
+                  </template>
+                  <template v-for="(item, index) in goToWork1" :key="index">
+                    <div v-if="type == 'check'" :key="index" class="item">
+                      {{ item.premise }} {{ form1[item.hour] }} 小时{{ form1[item.minute] }} 分钟{{ item.suffix }}
+                    </div>
+                  </template>
                 </div>
                 <!-- 第二次下班 -->
                 <div v-if="scope.row.rule == 4">
                   <div class="item">
-                    下班时间 &nbsp;
+                    下班时间
                     <el-select
                       v-model="formData.number2.second_day_after"
+                      class="ml6"
                       v-if="type !== 'check'"
                       placeholder="请选择"
-                      size="small"
                       :disabled="formData.number2.first_day_after == 1"
                       style="width: 150px"
                       @change="changeTime"
@@ -224,7 +229,6 @@
                     </el-select>
                     <el-time-picker
                       class="ml10"
-                      size="small"
                       :clearable="false"
                       format="H:mm"
                       v-model="formData.number2.off_hours"
@@ -236,32 +240,35 @@
                     </el-time-picker>
                     <span v-else
                       >{{ formData.number2.second_day_after == 0 ? '当日' : '次日'
-                      }}{{ $moment(formData.number2.off_hours).format('H:mm') }}</span
+                      }}{{ dayjs(formData.number2.off_hours).format('HH:mm') }}</span
                     >
                   </div>
-                  <div class="item" v-for="(item, index) in goToWork2" :key="index" v-if="type !== 'check'">
-                    {{ item.premise }}
-                    <div class="mo-input--number">
-                      <el-input-number v-model="form1[item.hour]" controls-position="right" size="small" :min="0">
-                      </el-input-number>
-                      <div class="define-append">小时</div>
-                    </div>
+                  <template v-for="(item, index) in goToWork2" :key="index">
+                    <div v-if="type !== 'check'" :key="index" class="item">
+                      {{ item.premise }}
+                      <div class="mo-input--number">
+                        <el-input-number v-model="form1[item.hour]" controls-position="right" :min="0">
+                        </el-input-number>
+                        <div class="define-append">小时</div>
+                      </div>
 
-                    <div class="mo-input--number">
-                      <el-input-number
-                        v-model="form1[item.minute]"
-                        controls-position="right"
-                        size="small"
-                        :min="0"
-                      ></el-input-number>
-                      <div class="define-append">分钟</div>
+                      <div class="mo-input--number">
+                        <el-input-number
+                          v-model="form1[item.minute]"
+                          controls-position="right"
+                          :min="0"
+                        ></el-input-number>
+                        <div class="define-append">分钟</div>
+                      </div>
+                      &nbsp;{{ item.suffix }}
                     </div>
-                    &nbsp;{{ item.suffix }}
-                  </div>
+                  </template>
                   <el-checkbox v-model="form1.free_clock" v-if="type !== 'check'">下班可免打卡</el-checkbox>
-                  <div v-if="type == 'check'" class="item" v-for="(item, index) in goToWork2" :key="index">
-                    {{ item.premise }} {{ form[item.hour] }} 小时{{ form[item.minute] }} 分钟{{ item.suffix }}
-                  </div>
+                  <template v-for="(item, index) in goToWork2" :key="index">
+                    <div v-if="type == 'check'" :key="index" class="item">
+                      {{ item.premise }} {{ form[item.hour] }} 小时{{ form[item.minute] }} 分钟{{ item.suffix }}
+                    </div>
+                  </template>
                   <span v-if="type == 'check'">{{ form1.free_clock ? '下班可免打卡' : '下班不可免打卡' }}</span>
                 </div>
               </template>
@@ -269,12 +276,13 @@
           </el-table>
 
           <el-form-item v-if="formData.number == 1 && type !== 'check'">
-            <el-checkbox slot="label" v-model="formData.rest_time" @change="changeTime">中途休息时间：</el-checkbox>
+            <template #label>
+              <el-checkbox v-model="formData.rest_time" @change="changeTime">中途休息时间：</el-checkbox>
+            </template>
             <el-select
               v-model="formData.rest_start_after"
               v-if="type !== 'check'"
               placeholder="请选择"
-              size="small"
               class="ml20"
               :disabled="formData.number1.second_day_after == 0"
               style="width: 100px"
@@ -285,8 +293,8 @@
 
             <el-time-picker
               :clearable="false"
+              class="ml10"
               format="H:mm"
-              size="small"
               v-model="formData.rest_start"
               placeholder="开始时间"
               style="width: 130px"
@@ -297,7 +305,6 @@
             <el-select
               v-model="formData.rest_end_after"
               v-if="type !== 'check'"
-              size="small"
               placeholder="请选择"
               :disabled="formData.rest_start_after == 1 || formData.number1.second_day_after == 0"
               style="width: 100px"
@@ -308,7 +315,7 @@
             <el-time-picker
               :clearable="false"
               format="H:mm"
-              size="small"
+              class="ml10"
               v-model="formData.rest_end"
               @change="changeTime"
               style="width: 130px"
@@ -322,7 +329,7 @@
             v-if="formData.number == 1 && type == 'check' && formData.rest_time == 1"
           >
             <span
-              >{{ $moment(formData.rest_start).format('H:mm') }}-{{ $moment(formData.rest_end).format('H:mm') }}</span
+              >{{ dayjs(formData.rest_start).format('HH:mm') }}-{{ dayjs(formData.rest_end).format('HH:mm') }}</span
             >
             <div class="tips ml25">休息时间不计入工时</div></el-form-item
           >
@@ -330,7 +337,7 @@
             <div class="item" v-if="type !== 'check'">
               最后班次下班
               <div class="mo-input--number">
-                <el-input-number v-model="form.overtimeH" controls-position="right" size="small" :min="0">
+                <el-input-number v-model="form.overtimeH" controls-position="right" :min="0">
                 </el-input-number>
                 <div class="define-append">小时</div>
               </div>
@@ -338,7 +345,6 @@
                 <el-input-number
                   v-model="form.overtimeM"
                   controls-position="right"
-                  size="small"
                   :min="0"
                 ></el-input-number>
                 <div class="define-append">分钟</div>
@@ -349,8 +355,8 @@
           </el-form-item>
         </el-form>
         <div class="button from-foot-btn fix btn-shadow" v-if="type !== 'check'">
-          <el-button @click="handleClose(1)" size="small">取消</el-button>
-          <el-button type="primary" :loading="loading" size="small" @click="submitForm">保存</el-button>
+          <el-button @click="handleClose(1)">取消</el-button>
+          <el-button type="primary" :loading="loading" @click="submitForm">保存</el-button>
         </div>
       </div>
     </el-drawer>
@@ -358,11 +364,16 @@
 </template>
 
 <script>
-import { saveAttendanceShiftApi, detailShiftListApi, putShiftListApi } from '@/api/config'
-import { getInervalHour, getInervalTwoHour, getHour } from '@/libs/public'
+import dayjs from 'dayjs'
+import { saveAttendanceShiftApi, detailShiftListApi, putShiftListApi } from '@/api/config.ts'
+import { getInervalHour, getInervalTwoHour, getHour } from '@/libs/public.ts'
 export default {
+  emits: ['getList'],
   name: 'CrmebOaEntAddShift',
 
+  computed: {
+    dayjs: () => dayjs
+  },
   data() {
     return {
       drawer: false,
@@ -785,13 +796,13 @@ export default {
         if (this.formData.number2.early_leave > this.formData.number2.early_lack_card) {
           return this.$message.error('半天缺卡要大于早退值要大于严重迟到')
         }
-        this.formData.number2.work_hours = this.$moment(this.formData.number2.work_hours).format('H:mm')
-        this.formData.number2.off_hours = this.$moment(this.formData.number2.off_hours).format('H:mm')
+        this.formData.number2.work_hours = dayjs(this.formData.number2.work_hours).format('HH:mm')
+        this.formData.number2.off_hours = dayjs(this.formData.number2.off_hours).format('HH:mm')
       }
-      this.formData.number1.work_hours = this.$moment(this.formData.number1.work_hours).format('H:mm')
-      this.formData.number1.off_hours = this.$moment(this.formData.number1.off_hours).format('H:mm')
-      this.formData.rest_start = this.$moment(this.formData.rest_start).format('H:mm')
-      this.formData.rest_end = this.$moment(this.formData.rest_end).format('H:mm')
+      this.formData.number1.work_hours = dayjs(this.formData.number1.work_hours).format('HH:mm')
+      this.formData.number1.off_hours = dayjs(this.formData.number1.off_hours).format('HH:mm')
+      this.formData.rest_start = dayjs(this.formData.rest_start).format('HH:mm')
+      this.formData.rest_end = dayjs(this.formData.rest_end).format('HH:mm')
       this.formData.rest_time = this.formData.rest_time ? 1 : 0
       this.formData.number1.free_clock = this.form.free_clock ? 1 : 0
       this.formData.number2.free_clock = this.form1.free_clock ? 1 : 0
@@ -952,7 +963,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/deep/ .el-icon-arrow-down {
+:deep(.el-icon-arrow-down) {
   margin-left: 0;
 }
 .box {
@@ -974,35 +985,42 @@ export default {
   color: #303133;
 }
 
-/deep/.el-checkbox__label {
+:deep(.el-checkbox__label) {
   font-size: 13px;
   font-family: PingFangSC-Regular, PingFang SC;
   font-weight: 400;
   color: #303133;
 }
-/deep/.el-color-picker__trigger {
+:deep(.el-color-picker__trigger) {
   border: none;
 }
-/deep/.el-radio__label {
+:deep(.el-radio__label) {
   font-size: 13px;
   font-family: PingFangSC-Regular, PingFang SC;
   font-weight: 400;
   color: #303133;
 }
-/deep/ .el-input--small .el-input__inner {
-  height: 28px;
+:deep(.el-input-number) {
+  .el-input-number__decrease,
+  .el-input-number__increase {
+    visibility: hidden;
+  }
+
+  &:hover {
+    .el-input-number__decrease,
+    .el-input-number__increase {
+      visibility: visible;
+    }
+  }
 }
 
 .mo-input--number {
-  height: 32px;
   margin-left: 6px;
   width: 130px;
-  border: 1px solid #dcdfe6;
   display: flex;
-  border-radius: 4px;
 
-  ::v-deep .el-input__inner {
-    border: none !important;
+  & + .mo-input--number {
+    margin-left: 10px;
   }
 }
 .form-item {
@@ -1018,8 +1036,8 @@ export default {
   font-size: 12px;
   width: 40px;
   display: inline-block;
-  background: #f5f7fa;
-  padding: 0px 3px;
+  // background: #f5f7fa;
+  margin-left: 10px;
   border-left: none;
   height: 32px;
   line-height: 32px;
@@ -1027,7 +1045,7 @@ export default {
   font-size: 12px;
   text-align: center;
 }
-/deep/ .el-drawer__body {
+:deep(.el-drawer__body) {
   padding-bottom: 70px;
 }
 </style>

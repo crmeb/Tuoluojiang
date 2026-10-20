@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,10 +18,10 @@ namespace App\Http\Service\User;
 use App\Constants\CommonEnum;
 use App\Http\Dao\User\UserEnterpriseApplyDao;
 use App\Http\Service\Admin\AdminService;
-use App\Http\Service\BaseService;
 use App\Task\message\EnterprisePersonnelJoinRemind;
 use App\Task\message\EnterprisePersonnelRefuseRemind;
 use App\Task\message\StatusChangeTask;
+use App\Http\Service\BaseService;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Contracts\Container\BindingResolutionException;
 
@@ -62,7 +62,7 @@ class UserApplyService extends BaseService
         } else {
             $restore = false;
         }
-        $res = $this->transaction(function () use ($info) {
+        $res = $this->transaction(function () use ($info, $restore) {
             if (! $info->save()) {
                 throw $this->exception('保存处理信息失败');
             }

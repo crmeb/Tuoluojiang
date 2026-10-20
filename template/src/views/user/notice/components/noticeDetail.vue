@@ -4,13 +4,15 @@
       <el-card :body-style="{ padding: '20px' }">
         <el-row>
           <el-col>
-            <el-page-header content="文章详情" @click.native="handleEmit">
-              <div slot="title">返回</div>
+            <el-page-header content="文章详情" @click="handleEmit">
+              <template #title>
+                <div>返回</div>
+              </template>
             </el-page-header>
           </el-col>
         </el-row>
       </el-card>
-      <el-card class="mt14 employees-card">
+      <el-card v-loading="loading" class="mt14 employees-card">
         <div class="card-box" style="margin-top: 20px">
           <div>
             <div class="main">
@@ -39,10 +41,12 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 export default {
+  emits: ['handleNoticeDetail'],
   name: 'NoticeDetail',
   components: {
-    imageViewer: () => import('@/components/common/imageViewer')
+    imageViewer: defineAsyncComponent(() => import('@/components/common/imageViewer'))
   },
   props: {
     data: {
@@ -50,6 +54,10 @@ export default {
       default: () => {
         return {}
       }
+    },
+    loading: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -111,16 +119,16 @@ export default {
 .p60 {
   padding: 40px 60px;
 }
-/deep/ .el-page-header__content {
+:deep(.el-page-header__content) {
   font-size: 15px;
   font-weight: 600;
 }
-/deep/ .el-page-header__left::after {
+:deep(.el-page-header__left::after) {
   position: absolute;
   right: -10px;
 }
 
-/deep/ .el-page-header__left {
+:deep(.el-page-header__left) {
   margin-right: 20px;
 }
 
@@ -131,26 +139,26 @@ export default {
   margin-top: 30px;
   margin-bottom: 20px;
   word-break: break-all;
-  /deep/ img {
+  :deep(img) {
     cursor: pointer;
   }
-  /deep/ table {
+  :deep(table) {
     width: 100%;
     border: 1px solid #ccc;
   }
 
-  /deep/ table th {
+  :deep(table th) {
     border: 1px solid #ccc;
   }
-  /deep/ table td {
+  :deep(table td) {
     padding: 10px 5px;
     border: 1px solid #ccc;
   }
 
-  /deep/ p img {
+  :deep(p img) {
     max-width: 800px;
   }
-  /deep/ p {
+  :deep(p) {
     margin: 0;
     padding: 0;
   }

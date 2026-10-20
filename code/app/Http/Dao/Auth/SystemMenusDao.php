@@ -15,11 +15,11 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Auth;
 
-use App\Http\Dao\BaseDao;
 use App\Http\Model\System\Menus;
-use crmeb\traits\dao\ListSearchTrait;
-use crmeb\traits\dao\PathUpdateTrait;
-use crmeb\traits\dao\TogetherSearchTrait;
+use App\Http\Dao\BaseDao;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
+use Tuoluojiang\Open\traits\dao\PathUpdateTrait;
+use Tuoluojiang\Open\traits\dao\TogetherSearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 
 /**
@@ -59,7 +59,7 @@ class SystemMenusDao extends BaseDao
 
     public function getModelMenusName($key = 'list', $other = [])
     {
-        $menuPaths  = $this->getModel()->where('menu_path', 'like', '/crud/module/%/' . $key)->select(['menu_path'])->get()->toArray();
+        $menuPaths  = $this->getModel()->where('menu_path', 'like', '/crud/module/%/' . $key)->select(['menu_path'])->get()?->toArray();
         $tableNames = [];
         foreach ($menuPaths as $path) {
             $tableNames[] = str_replace(['/admin/crud/module/', '/list', ''], '', $path['menu_path']);

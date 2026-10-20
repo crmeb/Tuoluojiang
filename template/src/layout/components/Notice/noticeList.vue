@@ -1,17 +1,20 @@
 <template>
   <div class="box-container">
-    <el-drawer :visible.sync="drawer" direction="rtl" :before-close="handleClose" size="75%" :append-to-body="true"
-      :modal="true" :wrapper-closable="true">
-      <slot slot="title">
-        <div class="tabsEdit">
-          <div class="tabs">
-            <el-tabs v-model="tabsName" class="cr-header-tabs" @tab-click="handleClick">
-              <el-tab-pane label="未读" name="1" />
-              <el-tab-pane label="全部" name="2" />
-            </el-tabs>
+    <el-drawer
+      class="notice-list-drawer" v-model="drawer" direction="rtl" :before-close="handleClose" size="75%" :append-to-body="true"
+      :modal="true">
+      <template #header>
+        <slot>
+          <div class="tabsEdit">
+            <div class="tabs">
+              <el-tabs v-model="tabsName" class="cr-header-tabs" @tab-change="handleClick">
+                <el-tab-pane label="未读" name="1" />
+                <el-tab-pane label="全部" name="2" />
+              </el-tabs>
+            </div>
           </div>
-        </div>
-      </slot>
+        </slot>
+      </template>
       <div class="flex">
         <div class="left">
           <!-- <div class="title mb15">消息类型</div> -->
@@ -19,36 +22,36 @@
             全部类型
           </div>
           <div class="type" v-for="(item, index) in options" :key="index" @click="handleTypes(item)"
-            :class="activeId == item.value ? 'active' : ''">
-            {{ item.cate_name }} <span class="num" v-if="item.count != 0">{{ item.count }}</span>
+            :class="activeId == item.value ? 'active' : ''"  v-show="(tabsName==1&&item.count > 0)||tabsName==2">
+            {{ item.cate_name }} <span class="num" v-if="item.count != 0">{{ item.count>99?'99+':item.count }}</span>
           </div>
+
+          <div class="dingyue" @click="toSubscribe">
+
+            <span class="iconfont icondingyuexiaoxi"></span>订阅信息</div>
         </div>
         <div class="right">
           <div class="mt20">
-            <el-input v-model="where.name" prefix-icon="el-icon-search" clearable size="small" @change="getList"
-              @keyup.native.stop.prevent.enter="getList" placeholder="请输入标题/内容" style="width: 250px"></el-input>
+            <el-input v-model="where.title" prefix-icon="el-icon-search" clearable @change="getList"
+              @keyup.stop.prevent.enter="getList" placeholder="请输入标题/内容" style="width: 250px"></el-input>
           </div>
-
           <!-- 消息列表 -->
           <div class="mt10">
             <el-table ref="table" :data="tableData" :height="height" v-loading="loading"
               @selection-change="handleSelectionChange">
               <el-table-column type="selection" width="35" />
               <el-table-column label="查看" width="50">
-                <template slot-scope="scope">
-                  <el-image :src="scope.row.is_read === 0
-                    ? require('@/assets/images/unread-icon.png')
-                    : require('@/assets/images/read-icon.png')
-                    "></el-image>
+                <template #default="scope">
+                  <el-image :src="scope.row.is_read === 0 ? unreadIcon : readIcon"></el-image>
                 </template>
               </el-table-column>
               <el-table-column prop="title" label="消息标题" min-width="80"></el-table-column>
               <el-table-column prop="message" label="消息内容" min-width="360" />
               <el-table-column prop="cate_name" label="类型" min-width="80" />
               <el-table-column prop="created_at" label="发送时间" min-width="120"></el-table-column>
-              <el-table-column :label="$t('toptable.operation')" width="100" fixed="right">
-                <template slot-scope="scope">
-                  <el-button type="text" v-for="(item, index) in scope.row.buttons" :key="index"
+              <el-table-column label="操作" width="100" fixed="right">
+                <template #default="scope">
+                  <el-button type="primary" link v-for="(item, index) in scope.row.buttons" :key="index"
                     :disabled="selectedType.includes(item.action)" @click="handleDetails(scope.row, item)">
                     <span v-if="scope.row.cate_name !== '考勤'"> {{ item.title }}</span>
                   </el-button>
@@ -58,10 +61,10 @@
             <div class="footer">
               <div class="isSelect">
                 <div class="flex" style="display: inline-block">
-                  <el-button size="small" @click="handleRead()">全部已读</el-button>
-                  <el-button size="small" :disabled="multipleSelection.length == 0"
+                  <el-button @click="handleRead()">全部已读</el-button>
+                  <el-button :disabled="multipleSelection.length == 0"
                     @click="handleRead(1)">标记为已读</el-button>
-                  <el-button size="small" @click="handleDelete"
+                  <el-button @click="handleDelete"
                     :disabled="multipleSelection.length == 0">批量删除</el-button>
                 </div>
                 <!-- <span v-if="multipleSelection.length !== 0">已选中{{ multipleSelection.length }} 条</span> -->
@@ -78,19 +81,37 @@
       </div>
     </el-drawer>
     <message-handle-popup ref="messageHandlePopup" :detail="detail" @handleClose="handleClose"></message-handle-popup>
+
+    <!-- 日程详情弹窗 -->
+    <CalendarDetails ref="calendarDetailsRef" appendToBody />
   </div>
 </template>
 <script>
-import { noticeMessageListApi, noticeMessageDeleteApi, noticeMessageReadApi } from '@/api/user'
-import { messageCateApi } from '@/api/setting'
-import { messageListApi } from '@/api/public'
+import { mapStores } from 'pinia'
+import { useUserStore } from '@/stores/user.ts'
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { noticeMessageListApi, noticeMessageDeleteApi, noticeMessageReadApi, scheduleInfoApi } from '@/api/user.ts'
+import { messageCateApi } from '@/api/setting.ts'
+import { messageListApi } from '@/api/public.ts'
+import  { roterPre } from '@/settings.ts'
+
+import unreadIcon from '@/assets/images/unread-icon.png';
+import readIcon from '@/assets/images/read-icon.png';
+
 export default {
   name: 'noticeList',
   components: {
-    messageHandlePopup: () => import('@/components/common/messageHandlePopup')
+    messageHandlePopup: defineAsyncComponent(() => import('@/components/common/messageHandlePopup')),
+    CalendarDetails: defineAsyncComponent(() => import("@/views/user/calendar/components/calendarDetails.vue"))
+  },
+  computed: {
+    ...mapStores(useUserStore)
   },
   data() {
     return {
+      unreadIcon,
+      readIcon,
       drawer: false,
       loading: false,
       tabsName: '1',
@@ -107,7 +128,6 @@ export default {
         limit: 15,
         title: '',
         cate_id: '',
-        name: '',
         is_read: '0'
       }
     }
@@ -132,7 +152,7 @@ export default {
           }
           this.tableData = res.data.list
           this.total = res.data.messageNum
-          // this.$store.commit('user/SET_MESSAGE', this.total)
+          // this.userStore.setMessageCount(this.total)
         })
         .catch((error) => {
           if (type === 1) {
@@ -153,21 +173,21 @@ export default {
 
         })
       } else {
-        if(this.where.cate_id){
-          noticeMessageReadApi(1, {cate_id:this.where.cate_id}).then(res => {
+        // if(this.where.cate_id){
+          noticeMessageReadApi(1, {cate_id:this.where.cate_id||'all'}).then(res => {
           this.getList()
           this.getMessageCate()
         })
 
-        } else {
-          noticeMessageReadApi(1, {}).then(res => {
-          this.getList()
-          this.getMessageCate()
-        })
-        }
-     
+        // } else {
+        //   noticeMessageReadApi(1, {}).then(res => {
+        //   this.getList()
+        //   this.getMessageCate()
+        // })
+        // }
+
       }
-     
+
     },
 
     handleTypes(item) {
@@ -184,7 +204,7 @@ export default {
       if (this.multipleSelection.length <= 0) {
         this.$message.error('至少选择一项内容')
       } else {
-        this.$modalSure('删除后不可恢复,您确认要删除吗').then(() => {
+        modalSure('删除后不可恢复,您确认要删除吗').then(() => {
           const ids = []
           this.multipleSelection.map((value) => {
             ids.push(value.id)
@@ -211,12 +231,31 @@ export default {
     async handleDetails(row, item) {
       this.detail = row
       await this.$nextTick()
-      this.$refs.messageHandlePopup.openMessage(item, row)
+      const scheduleId = row.other?.id || row.link_id
+      if (row.template_type === 'dealt_person_work' && scheduleId) {
+        let { start_time, end_time } = row.other || {}
+        // 部分历史/非个人类型的待办消息 other 只有 id，按日程详情补齐时间段，避免走模板 url 跳转
+        if (!start_time || !end_time) {
+          const res = await scheduleInfoApi(scheduleId, {}).catch(() => null)
+          start_time = res?.data?.start_time
+          end_time = res?.data?.end_time
+        }
+        if (start_time && end_time) {
+          this.$refs.calendarDetailsRef.openBox({ itemId: scheduleId, start_time, end_time })
+        }
+      } else {
+        this.$refs.messageHandlePopup.openMessage(item, row)
+      }
 
       if (row.is_read === 0) {
         this.handleRead(1, { ids: [row.id] })
 
       }
+    },
+    // 去订阅消息
+    toSubscribe() {
+      this.$router.push(`${roterPre}/user/news/subscribe`)
+      this.handleClose()
     },
 
     pageChange(page) {
@@ -231,7 +270,7 @@ export default {
       this.drawer = false
       messageListApi({page:1,limit:1}).then((res) => {
         let count = res.data.messageNum ? res.data.messageNum : 0
-        this.$store.commit('user/SET_MESSAGE', count)
+        this.userStore.setMessageCount(count)
       })
     },
     handleClick() {
@@ -248,27 +287,13 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/deep/ .el-drawer__body {
-  padding-bottom: 0;
-}
 
-/deep/ .el-drawer__header {
-  padding: 0;
-  border-bottom: 1px solid #eeeeee;
-  padding-left: 30px;
-}
-
-/deep/ .el-tabs__item {
+:deep(.el-tabs__item) {
   height: 56px;
   line-height: 56px;
   font-weight: 500;
   z-index: 9999;
 }
-
-/deep/ .el-drawer__close-btn {
-  width: 50px;
-}
-
 
 .tabsEdit {
   display: flex;
@@ -293,8 +318,32 @@ export default {
 .left {
   width: 167px;
   height: calc(100vh - 60px);
-  padding: 18px 0;
+  padding: 18px 10px;
   background-color: #f8f9fa;
+  position: relative;
+  .dingyue {
+    cursor: pointer;
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 36px;
+    padding-left: 20px;
+    height: 40px;
+    font-family: PingFang SC, PingFang SC;
+    font-weight: 400;
+    font-size: 14px;
+    color: #303133;
+    line-height: 40px;
+    border-radius: 4px;
+    .icondingyuexiaoxi {
+      margin-right: 6px;
+    }
+
+  }
+  .dingyue:hover {
+    background-color: #f1f9ff;
+    color: #1890ff;
+  }
 
   .title {
     margin-left: 20px;
@@ -314,7 +363,7 @@ export default {
     font-size: 14px;
     color: #303133;
     line-height: 40px;
-    border-right: 2px solid #f8f9fa;
+    border-radius: 4px;
 
     .num {
       position: absolute;
@@ -337,7 +386,6 @@ export default {
   .active {
     background-color: #f1f9ff;
     color: #1890ff;
-    border-right: 2px solid #1890ff;
   }
 }
 
@@ -355,16 +403,31 @@ export default {
   justify-content: flex-end;
 }
 
-/deep/ .el-image {
+:deep(.el-image) {
   width: 23px !important;
   height: 23px !important;
 }
 
-// /deep/ .el-table th {
+// :deep(.el-table th) {
 //   background-color: #f7fbff;
 // }
 
-/deep/ .el-table-column--selection .cell {
+:deep(.el-table-column--selection .cell) {
   padding: 0 10px;
+}
+</style>
+
+<style lang="scss">
+// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
+.notice-list-drawer .el-drawer__body {
+  padding-bottom: 0;
+}
+.notice-list-drawer .el-drawer__header {
+  padding: 0;
+  border-bottom: 1px solid #eeeeee;
+  padding-left: 30px;
+}
+.notice-list-drawer .el-drawer__close-btn {
+  width: 50px;
 }
 </style>

@@ -4,15 +4,33 @@
     <el-drawer
       :direction="direction"
       :title="initData.type !== 'edit' ? '个人档案' : ''"
-      :visible.sync="drawerIsShow"
+      v-model="drawerIsShow"
       size="65%"
       @close="handleClose"
     >
-      <slot v-if="initData.type === 'add'" slot="title">
-        <div class="tabsEdit">
-          <div class="tabs">员工档案</div>
-        </div>
-      </slot>
+      <template #header>
+        <slot>
+          <div v-if="initData.type === 'add'" class="tabsEdit">
+            <div class="tabs">员工档案</div>
+          </div>
+          <template v-else-if="initData.type === 'edit'">
+            <div class="tabsEdit">
+              <div class="tabs">
+                <el-tabs v-model="tabsName" class="cr-header-tabs" @tab-click="handleClick">
+                  <el-tab-pane label="个人档案" name="personalFile" />
+                  <el-tab-pane label="个人经历" name="personalExperience" />
+                  <el-tab-pane v-if="tabtypes !== 0" label="人事异动" name="personnelChange" />
+                  <el-tab-pane v-if="tabtypes !== 0" label="调薪记录" name="salaryAdjustmentRecord" />
+                </el-tabs>
+              </div>
+
+              <div v-if="tabtypes == 1 && userInfo.uid !== ''" class="invitationUrl" @click="perfectFn">
+                <el-link underline="never"> <i class="iconfont icongerenjianli-yaoqing"></i> 邀请完善档案</el-link>
+              </div>
+            </div>
+          </template>
+        </slot>
+      </template>
       <!--------- 添加的页面 ----------->
       <div v-if="initData.type === 'add'" class="drawer-body">
         <!-- 左边菜单组件 -->
@@ -39,28 +57,12 @@
 
         <!-- 底部保存 -->
         <div class="button from-foot-btn fix btn-shadow">
-          <el-button size="small" @click="cancel">取消</el-button>
-          <el-button size="small" type="primary" @click="protect">保存</el-button>
+          <el-button @click="cancel">取消</el-button>
+          <el-button type="primary" @click="protect">保存</el-button>
         </div>
       </div>
 
       <!--------- 编辑的页面 ----------->
-      <slot v-if="initData.type === 'edit'" slot="title">
-        <div class="tabsEdit">
-          <div class="tabs">
-            <el-tabs v-model="tabsName" class="cr-header-tabs" @tab-click="handleClick">
-              <el-tab-pane label="个人档案" name="personalFile" />
-              <el-tab-pane label="个人经历" name="personalExperience" />
-              <el-tab-pane v-if="tabtypes !== 0" label="人事异动" name="personnelChange" />
-              <el-tab-pane v-if="tabtypes !== 0" label="调薪记录" name="salaryAdjustmentRecord" />
-            </el-tabs>
-          </div>
-
-          <div v-if="tabtypes == 1 && userInfo.uid !== ''" class="invitationUrl" @click="perfectFn">
-            <el-link :underline="false"> <i class="iconfont icongerenjianli-yaoqing"></i> 邀请完善档案</el-link>
-          </div>
-        </div>
-      </slot>
       <div v-if="initData.type === 'edit'" class="drawer-body">
         <!-- tabs: 个人档案 -->
         <template v-if="tabsName === 'personalFile'">
@@ -89,8 +91,8 @@
 
           <!-- 编辑底部保存按钮 -->
           <div v-if="actionType" class="button from-foot-btn fix btn-shadow">
-            <el-button size="small" @click="cancel">取消</el-button>
-            <el-button :loading="isLoading" size="small" type="primary" @click="inDuction(actionType)">{{
+            <el-button @click="cancel">取消</el-button>
+            <el-button :loading="isLoading" type="primary" @click="inDuction(actionType)">{{
               actionType == '入职' ? '入职' : '重新入职'
             }}</el-button>
           </div>
@@ -113,7 +115,7 @@
         <template v-if="tabsName === 'salaryAdjustmentRecord'">
           <div style="padding: 20px; width: 100%">
             <personnelChange
-              v-if="list && list.lenght !== 0"
+              v-if="list && list.length !== 0"
               :list="list"
               :tabsName="tabsName"
               @deleteSalaryList="deleteSalaryList"
@@ -128,9 +130,12 @@
   </div>
 </template>
 <script>
-import { getSalaryList, deleteSalaryList, changeCard, entryCard, perfectCard } from '@/api/enterprise'
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { getSalaryList, deleteSalaryList, changeCard, entryCard, perfectCard } from '@/api/enterprise.ts'
 import formOptions from '../mixins/index.js'
 export default {
+  emits: ['getList'],
   name: 'userDetails',
   mixins: [formOptions],
   props: {
@@ -209,11 +214,11 @@ export default {
 
     // 编辑：切换Tabs
     handleClick(tab) {
-      if (tab.label == '个人经历') {
+      if (tab.props.label == '个人经历') {
         this.getlist()
-      } else if (tab.label == '调薪记录') {
+      } else if (tab.props.label == '调薪记录') {
         this.getSalaryList()
-      } else if (tab.label == '人事异动') {
+      } else if (tab.props.label == '人事异动') {
         this.changeCard()
       } else {
         setTimeout(() => {
@@ -290,7 +295,7 @@ export default {
 
     // 编辑: 删除调薪记录
     deleteSalaryList(id) {
-      this.$modalSure('确定永久删除该记录吗').then(() => {
+      modalSure('确定永久删除该记录吗').then(() => {
         deleteSalaryList(id).then((res) => {
           this.getSalaryList()
         })
@@ -353,22 +358,25 @@ export default {
         }, 100)
       }
       this.$emit('getList')
+      if (this.$refs.formItemDataList) {
+        this.$refs.formItemDataList.defaultFn()
+      }
     }
   },
 
   components: {
     // 左边菜单
-    LeftNavigation: () => import('./LeftNavigation.vue'),
+    LeftNavigation: defineAsyncComponent(() => import('./LeftNavigation.vue')),
     // 工作经历/教育经历
-    tableBox: () => import('./tableBox.vue'),
+    tableBox: defineAsyncComponent(() => import('./tableBox.vue')),
     // 上传图片
-    UploadImage: () => import('../components/UploadImage.vue'),
+    UploadImage: defineAsyncComponent(() => import('../components/UploadImage.vue')),
     // 右边表单
-    formItemDataList: () => import('./formItemDataList.vue'),
+    formItemDataList: defineAsyncComponent(() => import('./formItemDataList.vue')),
     // 人事异动
-    personnelChange: () => import('./personnelChange.vue'),
+    personnelChange: defineAsyncComponent(() => import('./personnelChange.vue')),
     // 调薪记录
-    salaryAdjustmentRecord: () => import('./record.vue')
+    salaryAdjustmentRecord: defineAsyncComponent(() => import('./record.vue'))
   }
 }
 </script>
@@ -392,20 +400,20 @@ export default {
   width: 0;
 }
 
-/deep/ .el-drawer__body {
+:deep(.el-drawer__body) {
   overflow-y: hidden;
 }
-// /deep/ .el-drawer {
+// :deep(.el-drawer) {
 //   padding: 0px 0px 20px 0;
 // }
 
-/deep/ .el-drawer__header {
+:deep(.el-drawer__header) {
   height: 56px;
   line-height: 56px;
 
   // padding: 0 20px;
 }
-/deep/ .el-tabs__item {
+:deep(.el-tabs__item) {
   font-weight: 700;
   z-index: 9999;
 }
@@ -483,44 +491,44 @@ export default {
   .form-item {
     width: 48%;
 
-    /deep/ .el-form-item__content {
+    :deep(.el-form-item__content) {
       width: calc(100% - 90px);
     }
 
-    /deep/ .el-input {
+    :deep(.el-input) {
       width: 95%;
     }
 
-    /deep/ .el-select {
+    :deep(.el-select) {
       width: 100%;
     }
 
-    /deep/ .el-form-item {
+    :deep(.el-form-item) {
       margin-bottom: 24px;
     }
 
-    /deep/ .el-textarea__inner {
+    :deep(.el-textarea__inner) {
       resize: none;
     }
   }
 }
 
-/deep/ .head-portrait .avatar-uploader-icon {
+:deep(.head-portrait .avatar-uploader-icon) {
   width: 90px !important;
   height: 110px !important;
   line-height: 110px !important;
 }
-/deep/ .avatar-uploader .el-upload:hover {
+:deep(.avatar-uploader .el-upload:hover) {
   border-color: #409eff;
 }
 
-/deep/ .avatar-uploader-icon {
+:deep(.avatar-uploader-icon) {
   font-size: 28px;
   color: #8c939d;
   text-align: center;
 }
 
-/deep/ .el-upload--picture-card {
+:deep(.el-upload--picture-card) {
   width: 160px;
   height: 100px;
   border: 1px dashed #d9d9d9;
@@ -551,7 +559,7 @@ export default {
   color: gray;
 }
 
-/deep/ .avatar {
+:deep(.avatar) {
   width: 160px;
   height: 100px;
   display: block;
@@ -564,7 +572,7 @@ export default {
     height: 56px;
   }
 }
-/deep/.el-drawer__close-btn {
+:deep(.el-drawer__close-btn) {
   display: flex;
   justify-content: space-between;
   color: #c0c4cc;

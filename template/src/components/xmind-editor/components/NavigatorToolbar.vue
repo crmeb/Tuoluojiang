@@ -40,11 +40,12 @@
 </template>
 
 <script>
+import { EventBus } from '@/libs/bus.ts'
 import Scale from './Scale.vue'
 import Fullscreen from './Fullscreen.vue'
 import MouseAction from './MouseAction.vue'
 import Demonstrate from './Demonstrate.vue'
-import { SHOW_SEARCH, TOGGLE_MINI_MAP } from '../event-constant';
+import { SHOW_SEARCH, TOGGLE_MINI_MAP } from '../event-constant.ts';
 
 
 export default {
@@ -74,12 +75,12 @@ export default {
 
     toggleMiniMap() {
       this.openMiniMap = !this.openMiniMap
-      this.$bus.$emit(TOGGLE_MINI_MAP, this.openMiniMap)
+      EventBus.$emit(TOGGLE_MINI_MAP, this.openMiniMap)
     },
 
 
     showSearch() {
-      this.$bus.$emit(SHOW_SEARCH)
+      EventBus.$emit(SHOW_SEARCH)
     },
 
     backToRoot() {

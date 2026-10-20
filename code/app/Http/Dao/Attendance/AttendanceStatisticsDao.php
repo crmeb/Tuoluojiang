@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,11 +16,13 @@ declare(strict_types=1);
 namespace App\Http\Dao\Attendance;
 
 use App\Constants\AttendanceClockEnum;
-use App\Http\Dao\BaseDao;
 use App\Http\Model\Attendance\AttendanceStatistics;
-use crmeb\traits\dao\ListSearchTrait;
-use crmeb\traits\dao\TogetherSearchTrait;
+use App\Http\Dao\BaseDao;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
+use Tuoluojiang\Open\traits\dao\TogetherSearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 
 /**
  * 考勤统计Dao
@@ -30,6 +32,51 @@ class AttendanceStatisticsDao extends BaseDao
 {
     use ListSearchTrait;
     use TogetherSearchTrait;
+
+    /**
+     * 按用户和考勤归属日期获取统计记录，不走自动数据权限过滤.
+     *
+     * 打卡流程查询的是当前登录人的考勤基础数据，不能被后台数据权限拦截。
+     *
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    public function getByUidDate(int $uid, string $date, array $field = ['*']): mixed
+    {
+        return $this->getModel(false)
+            ->where('uid', $uid)
+            ->whereDate('created_at', $date)
+            ->select($field ?: ['*'])
+            ->first();
+    }
+
+    /**
+     * 判断用户指定考勤日期统计是否存在，不走自动数据权限过滤.
+     *
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    public function existsByUidDate(int $uid, string $date): bool
+    {
+        return $this->getModel(false)
+            ->where('uid', $uid)
+            ->whereDate('created_at', $date)
+            ->exists();
+    }
+
+    /**
+     * 删除用户指定考勤日期统计，不走自动数据权限过滤.
+     *
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    public function deleteByUidDate(int $uid, string $date): mixed
+    {
+        return $this->getModel(false)
+            ->where('uid', $uid)
+            ->whereDate('created_at', $date)
+            ->delete();
+    }
 
     /**
      *  团队列表.
@@ -43,7 +90,7 @@ class AttendanceStatisticsDao extends BaseDao
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
-    public function getStatisticsMemberList(array $where = [], array $field = ['*'], array $with = [], int $page = 0, int $limit = 0, null|array|string $sort = null): mixed
+    public function getStatisticsMemberList(array $where = [], array $field = ['*'], array $with = [], int $page = 0, int $limit = 0, array|string|null $sort = null): mixed
     {
         return $this->search($where)->groupBy('uid')->when(count($with), function ($query) use ($with) {
             $query->with($with);
@@ -76,9 +123,12 @@ class AttendanceStatisticsDao extends BaseDao
 
     /**
      * 搜索.
+     *
      * @param array|int|string $where
+     *
+     * @return BaseModel|BuildsQueries|mixed
+     * @throws \ReflectionException*@throws BindingResolutionException
      * @throws BindingResolutionException
-     * @throws \ReflectionException
      */
     public function search($where, ?bool $authWhere = null): mixed
     {
@@ -176,6 +226,11 @@ class AttendanceStatisticsDao extends BaseDao
                 $query->whereDate('created_at', $holidayTime);
             }
         });
+    }
+
+    public function getRepeatId()
+    {
+        return $this->getModel()->selectRaw('MAX(id) as keep_id')->groupBy(['uid', 'created_at'])->havingRaw('COUNT(*) > 1')->pluck('keep_id')->toArray();
     }
 
     /**

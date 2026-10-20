@@ -12,13 +12,13 @@
     :sub-form-row-id="subFormRowId"
   >
     <el-input
-      v-show="!getReadMode() || field.isShow"
+      v-if="isInputVisable"
       type="textarea"
       ref="fieldEditor"
       v-model="fieldModel"
       :disabled="field.options.disabled"
       :readonly="field.options.readonly"
-      :size="field.options.size"
+      :size="toElSize(field.options.size)"
       :placeholder="field.options.placeholder"
       :rows="field.options.rows"
       :minlength="field.options.minLength"
@@ -30,22 +30,20 @@
       @change="handleChangeEvent"
     >
     </el-input>
-    <template v-if="getReadMode() && !field.isShow">
-      <div class="readonly-mode-field" @click="isShowFn">{{ contentForReadMode || '--' }}</div>
+    <template v-else>
+      <div class="readonly-mode-field" @click="isShowFn" v-html="contentForReadMode"></div>
     </template>
   </form-item-wrapper>
 </template>
 
 <script>
 import FormItemWrapper from './form-item-wrapper'
-import emitter from '@/utils/emitter'
-import i18n, { translate } from '@/utils/i18n'
+import i18n, { translate } from '@/utils/i18n.ts'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
 
 export default {
   name: 'textarea-widget',
-  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
-  mixins: [emitter, fieldMixin, i18n],
+  mixins: [fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -82,9 +80,23 @@ export default {
       rules: []
     }
   },
+  watch: {
+    isInputVisable(val) {
+      val && this.$nextTick(() => {
+        this.isInputVisable && this.$refs.fieldEditor.focus();
+      });
+    }
+  },
   computed: {
+    isInputVisable() {
+      return !this.getReadMode() || this.field.isShow;
+    },
     contentForReadMode() {
-      return this.fieldModel ? this.fieldModel : '--'
+      if (!this.fieldModel) return '--'
+      // 处理换行和空格，确保正确展示
+      return this.fieldModel
+        .replace(/\n/g, '<br>') // 将换行符替换为 HTML 换行标签
+        .replace(/\s/g, '&nbsp;') // 将空格替换为 HTML 空格实体
     }
   },
   beforeCreate() {
@@ -105,7 +117,7 @@ export default {
     this.handleOnMounted()
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     this.unregisterFromRefList()
   },
 
@@ -116,4 +128,3 @@ export default {
 <style lang="scss" scoped>
 @import '../../../../styles/global.scss'; //* form-item-wrapper已引入，还需要重复引入吗？ *//
 </style>
-@/utils/i18ns

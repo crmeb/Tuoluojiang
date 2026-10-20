@@ -39,14 +39,14 @@
       <div class="drag-handler background-opacity" v-if="designer.selectedId === field.id">
         <i class="el-icon-rank" :title="i18nt('designer.hint.dragHandler')"></i>
         <i>{{ i18n2t(`designer.widgetLabel.${field.type}`, `extension.widgetLabel.${field.type}`) }}</i>
-        <i v-if="field.options.hidden === true" class="iconfont icon-hide"></i>
+        <i v-if="field.options.hidden === true" class="designer-icon icon-hide"></i>
       </div>
     </template>
   </div>
 </template>
 
 <script>
-import i18n from '@/utils/i18n'
+import i18n from '@/utils/i18n.ts'
 
 export default {
   name: 'static-content-wrapper',
@@ -117,10 +117,9 @@ export default {
     },
 
     removeFieldWidget() {
-      console.log('removeFieldWidget', this.designer.selectedWidgetName)
-
       if (!!this.parentList) {
-        const fieldRefName = this.designer.selectedWidgetName
+        // 保存要删除的字段名称
+        const fieldRefName = this.field.options.name
         let nextSelected = null
         if (this.parentList.length === 1) {
           if (!!this.parentWidget) {
@@ -134,11 +133,11 @@ export default {
 
         this.$nextTick(() => {
           this.parentList.splice(this.indexOfParentList, 1)
-          //if (!!nextSelected) {
           this.designer.setSelected(nextSelected)
-          //}
-
-          this.designer.formWidget.deleteWidgetRef(fieldRefName) //删除组件ref！！！
+          // 确保从selectNames数组中移除要删除的字段名称
+          if (fieldRefName) {
+            this.designer.formWidget.deleteWidgetRef(fieldRefName)
+          }
           this.designer.emitHistoryChange()
         })
       }
@@ -205,7 +204,7 @@ export default {
   display: flex; /* 垂直居中 */
   align-items: center; /* 垂直居中 */
 
-  ::v-deep .el-divider--horizontal {
+  :deep(.el-divider--horizontal) {
     margin: 0;
   }
 }
@@ -214,4 +213,4 @@ export default {
 .static-content-item.selected {
   outline: 2px solid #409eff;
 }
-</style>@/utils/i18ns
+</style>

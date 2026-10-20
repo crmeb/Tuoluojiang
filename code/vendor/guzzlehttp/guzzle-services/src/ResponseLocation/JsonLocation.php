@@ -5,6 +5,7 @@ namespace GuzzleHttp\Command\Guzzle\ResponseLocation;
 use GuzzleHttp\Command\Guzzle\Parameter;
 use GuzzleHttp\Command\Result;
 use GuzzleHttp\Command\ResultInterface;
+use GuzzleHttp\Exception\InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
 
 /**
@@ -35,7 +36,13 @@ class JsonLocation extends AbstractLocation
     ) {
         $body = (string) $response->getBody();
         $body = $body ?: '{}';
-        $this->json = \GuzzleHttp\json_decode($body, true);
+        $json = \json_decode($body, true);
+        if (\JSON_ERROR_NONE !== \json_last_error()) {
+            throw new InvalidArgumentException('json_decode error: '.\json_last_error_msg());
+        }
+
+        $this->json = $json;
+
         // relocate named arrays, so that they have the same structure as
         //  arrays nested in objects and visit can work on them in the same way
         if ($model->getType() === 'array' && ($name = $model->getName())) {
@@ -55,7 +62,7 @@ class JsonLocation extends AbstractLocation
     ) {
         // Handle additional, undefined properties
         $additional = $model->getAdditionalProperties();
-        if (!($additional instanceof Parameter)) {
+        if (!$additional instanceof Parameter) {
             return $result;
         }
 
@@ -63,7 +70,7 @@ class JsonLocation extends AbstractLocation
         $addLocation = $additional->getLocation() ?: $model->getLocation();
         if ($addLocation == $this->locationName) {
             foreach ($this->json as $prop => $val) {
-                if (!isset($result[$prop])) {
+                if (!array_key_exists($prop, $result->toArray())) {
                     // Only recurse if there is a type specified
                     $result[$prop] = $additional->getType()
                         ? $this->recurse($additional, $val)
@@ -93,7 +100,7 @@ class JsonLocation extends AbstractLocation
             // Treat as javascript array
             if ($name) {
                 // name provided, store it under a key in the array
-                $subArray = isset($this->json[$key]) ? $this->json[$key] : null;
+                $subArray = $key !== null && array_key_exists($key, $this->json) ? $this->json[$key] : null;
                 $result[$name] = $this->recurse($param, $subArray);
             } else {
                 // top-level `array` or an empty name
@@ -102,7 +109,7 @@ class JsonLocation extends AbstractLocation
                     $this->recurse($param, $this->json)
                 ));
             }
-        } elseif (isset($this->json[$key])) {
+        } elseif ($key !== null && array_key_exists($key, $this->json)) {
             $result[$name] = $this->recurse($param, $this->json[$key]);
         }
 

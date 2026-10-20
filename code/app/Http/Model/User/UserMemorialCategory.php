@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,7 +16,7 @@ declare(strict_types=1);
 namespace App\Http\Model\User;
 
 use App\Http\Model\BaseModel;
-use crmeb\traits\model\PathAttrTrait;
+use Tuoluojiang\Open\traits\model\PathAttrTrait;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Query\Builder;
 
@@ -39,6 +39,15 @@ class UserMemorialCategory extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'         => 'integer',
+        'value'       => 'integer',
+        'pid'        => 'integer',
+        'types'      => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
 
     /**
      * @return HasOne
@@ -139,6 +148,17 @@ class UserMemorialCategory extends BaseModel
         if ($value !== '') {
             return $query->where('id', $value);
         }
+    }
+
+    /**
+     * types作用域
+     * @param Builder $query
+     * @param mixed $value
+     * @return mixed
+     */
+    public function scopeTypes($query, $value)
+    {
+        $query->where('types', $value);
     }
 
     /**

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,9 +18,9 @@ namespace App\Http\Service\Assess;
 use App\Http\Dao\Access\EnterpriseTemplateDao;
 use App\Http\Model\BaseModel;
 use App\Http\Service\BaseService;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\services\synchro\Company;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\services\synchro\Company;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 
@@ -191,9 +191,6 @@ class AssessTemplateService extends BaseService implements ResourceServicesInter
 
     /**
      * 收藏模板
-     * @param mixed $id
-     * @param mixed $uid
-     * @param mixed $entid
      * @return BaseModel|int|Model
      * @throws BindingResolutionException
      * @throws \ReflectionException
@@ -206,11 +203,6 @@ class AssessTemplateService extends BaseService implements ResourceServicesInter
 
     /**
      * 修改模板封面.
-     * @param mixed $id
-     * @param mixed $uid
-     * @param mixed $entid
-     * @param mixed $cover
-     * @param mixed $color
      * @return int
      * @throws BindingResolutionException
      * @throws \ReflectionException
@@ -263,7 +255,6 @@ class AssessTemplateService extends BaseService implements ResourceServicesInter
 
     /**
      * 修改状态
-     * @param mixed $id
      * @return mixed
      */
     public function resourceShowUpdate($id, array $data)
@@ -273,10 +264,6 @@ class AssessTemplateService extends BaseService implements ResourceServicesInter
 
     /**
      * 保存模板信息.
-     * @param mixed $name
-     * @param mixed $info
-     * @param mixed $uid
-     * @param mixed $entid
      * @return BaseModel|Model
      * @throws BindingResolutionException
      */

@@ -9,8 +9,16 @@ export default {
       this.designer.appendTableCol(widget)
     },
 
-    onContainerDragAdd(evt, subList) {
+    onContainerDragAdd(evt, subList,type) {
+    
       const newIndex = evt.newIndex
+      let addedItem = subList[newIndex]
+
+      if (type==='details'&&(addedItem.category === 'container' || addedItem.options?.crud_id === 0)) {
+        this.widget.widgetList.splice(newIndex, 1)
+        this.$message.error('明细表仅支持添加明细实体字段')
+        return false
+      }
       if (!!subList[newIndex]) {
         this.designer.setSelected(subList[newIndex])
         this.designer.setNamesList(subList[newIndex])

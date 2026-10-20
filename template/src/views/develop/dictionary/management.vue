@@ -1,7 +1,10 @@
 <template>
   <div class="divBox">
     <el-card class="card-box" v-loading="loadingBox">
-      <div>
+      <el-empty v-if="!query.id" description="请先选择一个数据字典">
+        <el-button type="primary" @click="backFn">前往数据字典</el-button>
+      </el-empty>
+      <div v-else>
         <oaFromBox
           v-if="search.length > 0"
           :search="search"
@@ -12,10 +15,12 @@
           @dropdownFn="batchDelete"
           @confirmData="confirmData"
         >
-          <div slot="title" class="station-header" @click="backFn">
-            <i class="el-icon-arrow-left"></i>
-            数据管理列表
-          </div>
+          <template #title>
+            <div class="station-header" @click="backFn">
+              <i class="el-icon-arrow-left"></i>
+              数据管理列表
+            </div>
+          </template>
         </oaFromBox>
 
         <!-- 表格 -->
@@ -33,8 +38,13 @@
             <el-table-column type="selection" width="55" v-if="is_Show !== 1"> </el-table-column>
             <el-table-column prop="name" label="数据名称" show-overflow-tooltip> </el-table-column>
             <el-table-column prop="value" label="数据值" show-overflow-tooltip></el-table-column>
+            <el-table-column prop="value" label="数据颜色">
+              <template #default="scope">
+                <div class="color-box" :style="{ background: scope.row.color }"></div>
+              </template>
+            </el-table-column>
             <el-table-column prop="status" label="状态">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <el-switch
                   v-model="scope.row.status"
                   active-text="启用"
@@ -47,27 +57,23 @@
               </template>
             </el-table-column>
             <el-table-column prop="mark" label="备注" show-overflow-tooltip>
-              <template slot-scope="scope">
+              <template #default="scope">
                 <span>{{ scope.row.mark || '--' }}</span>
               </template>
             </el-table-column>
             <el-table-column prop="sort" label="排序"> </el-table-column>
             <el-table-column prop="created_at" label="创建时间">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <span>{{ scope.row.created_at || '--' }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="address" :label="$t('public.operation')" width="250">
-              <template slot-scope="scope">
-                <el-button type="text" v-if="scope.row.level < level" @click="childLevel(scope.row)"
+            <el-table-column prop="address" label="操作" width="250">
+              <template #default="scope">
+                <el-button type="primary" link v-if="scope.row.level < level" @click="childLevel(scope.row)"
                   >添加子级</el-button
                 >
-                <el-button type="text" @click="editFn(scope.row)" v-if="scope.row.is_default !== 1">编辑</el-button>
-                <template>
-                  <el-button type="text" @click="handleDelete(scope.row)" v-if="scope.row.is_default !== 1">{{
-                    $t('public.delete')
-                  }}</el-button>
-                </template>
+                <el-button type="primary" link @click="editFn(scope.row)" >编辑</el-button>
+                <el-button type="primary" link @click="handleDelete(scope.row)" >删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -78,7 +84,9 @@
 </template>
 
 <script>
-import { roterPre } from '@/settings'
+import { modalSure } from '@/libs/public.ts'
+import modalForm from '@/libs/modal-form.ts'
+import { roterPre } from '@/settings.ts'
 import {
   getDictDataListApi,
   getDictDataCreateApi,
@@ -86,7 +94,7 @@ import {
   getDictDataPutApi,
   getDictDataDeleteApi,
   getDictDatainfoApi
-} from '@/api/form'
+} from '@/api/form.ts'
 import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'CrmebOaEntManagement',
@@ -128,7 +136,9 @@ export default {
 
   mounted() {
     this.query.id = this.$route.query.id
-    this.getInfo(this.query.id)
+    if (this.query.id) {
+      this.getInfo(this.query.id)
+    }
   },
 
   methods: {
@@ -160,14 +170,14 @@ export default {
         return this.$message.error('请先选择要删除的数据')
       }
       let id = this.ids.join(',')
-      await this.$modalSure('你确定要批量删除这条内容吗')
+      await modalSure('你确定要批量删除这条内容吗')
       await getDictDataDeleteApi(id)
       await this.getList(true)
     },
 
     // 新增
     addFinance() {
-      this.$modalForm(getDictDataCreateApi({ type_id: this.query.id })).then(({ message }) => {
+      modalForm(getDictDataCreateApi({ type_id: this.query.id })).then(({ message }) => {
         this.getList(true)
       })
     },
@@ -177,21 +187,21 @@ export default {
         type_id: this.query.id,
         pid: row.value
       }
-      this.$modalForm(getDictDataCreateApi(data)).then(({ message }) => {
+      modalForm(getDictDataCreateApi(data)).then(({ message }) => {
         this.getList(true)
       })
     },
 
     // 编辑
     editFn(row) {
-      this.$modalForm(getDictDataEditeApi(row.id)).then(({ message }) => {
+      modalForm(getDictDataEditeApi(row.id)).then(({ message }) => {
         this.getList(true)
       })
     },
 
     // 删除
     async handleDelete(row) {
-      await this.$modalSure('你确定要删除这条内容吗')
+      await modalSure('你确定要删除这条内容吗')
       await getDictDataDeleteApi(row.id)
       await this.getList(true)
     },
@@ -270,5 +280,11 @@ export default {
 }
 .p20 {
   padding: 0 20px;
+}
+.color-box {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
 }
 </style>

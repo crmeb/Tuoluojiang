@@ -24,6 +24,7 @@
 </template>
 
 <script>
+
 import scEcharts from './index.vue'
 
 export default {

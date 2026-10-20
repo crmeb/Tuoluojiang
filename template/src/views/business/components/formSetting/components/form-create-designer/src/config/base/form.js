@@ -14,12 +14,12 @@ export default function form() {
     {
       type: 'radio',
       field: 'size',
-      value: 'mini',
+      value: 'small',
       title: '标签位置',
       options: [
-        { value: 'medium', label: 'medium' },
+        { value: 'large', label: 'large' },
+        { value: 'default', label: 'default' },
         { value: 'small', label: 'small' },
-        { value: 'mini', label: 'mini' },
       ],
     },
     {

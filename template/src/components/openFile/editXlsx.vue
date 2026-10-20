@@ -1,21 +1,27 @@
 <template>
   <div class="main-page">
+    <div v-if="loading" class="loading-mask">
+      <i class="el-icon-loading"></i>
+      <span>正在加载 Excel 编辑器...</span>
+    </div>
     <div
       id="luckysheet"
+      v-show="!loading"
       style="margin: 0px; padding: 0px; position: absolute; width: 100%; height: 100%; left: 0px; top: 0px"
     ></div>
-    <!-- <div class="export-box"> -->
-    <!-- <el-button class="export" size="small" type="primary" @click.stop="exportData(1)">保存</el-button> -->
-    <!-- <el-button class="export" size="small" @click="exportData(0)">导出</el-button> -->
-    <!-- </div> -->
   </div>
 </template>
 <script>
-import { roterPre } from '@/settings'
+import { roterPre } from '@/settings.ts'
 import LuckyExcel from 'luckyexcel'
 import { exportExcel } from './export'
-import { fileUpload } from '@/api/public'
+import { fileUpload } from '@/api/public.ts'
+import { loadLuckysheet } from '@/utils/luckysheetLoader.ts'
+import { processResourceUrl } from '@/utils/resourceUtil.ts'
+import { normalizeLuckySheetCellValue, normalizeLuckySheetFormula } from './excelFormula.ts'
+
 export default {
+  emits: ['closeLoading'],
   name: 'excelEdit',
   props: {
     url: {
@@ -32,23 +38,37 @@ export default {
     }
   },
   data() {
-    return {}
+    return {
+      loading: true
+    }
   },
-  mounted() {
-    this.loadExcel(this.$processResourceUrl(this.url))
+  async mounted() {
+    try {
+      // 按需加载 luckysheet 资源
+      await loadLuckysheet()
+      this.loading = false
+      // 等待 DOM 更新后再加载 Excel
+      this.$nextTick(() => {
+        this.loadExcel(processResourceUrl(this.url))
+      })
+    } catch (error) {
+      console.error('Luckysheet 加载失败:', error)
+      this.$message.error('Excel 编辑器加载失败')
+    }
   },
   methods: {
-    normalizeFormula(formula) {
-      return formula.replace(/^=+/, '=')
-    },
     exportData(type) {
       let index = this.url.lastIndexOf('/')
       let filename = this.file.name + '.' + this.file.file_ext
+      if (typeof luckysheet === 'undefined' || !luckysheet.getAllSheets) {
+        console.error('Luckysheet is not loaded')
+        return
+      }
       const sheetData = luckysheet.getAllSheets().map((sheet) => {
         const cells = sheet.data.map((row) => {
           return row.map((cell) => {
             if (cell && cell.f) {
-              cell.f = this.normalizeFormula(cell.f)
+              cell.f = normalizeLuckySheetFormula(cell.f)
             }
             return cell
           })
@@ -63,10 +83,8 @@ export default {
           })
           const formData = new FormData()
           formData.append('content', newFile)
-          fileUpload(this.fid, this.file.id, formData).then((res) => {
-            if (res.status === 200) {
-              this.$emit('closeLoading')
-            }
+          fileUpload(this.fid, this.file.id, formData).finally(() => {
+            this.$emit("closeLoading");
           })
         })
       } else {
@@ -85,18 +103,22 @@ export default {
 
         exportJson.sheets.forEach((sheet) => {
           sheet.celldata.forEach((cell) => {
-            if (cell.v && cell.v.f) {
-              cell.v.f = cell.v.f.replace(/^=+/, '=')
-            }
+            // 纠正 ==公式，并把数字从文本还原为 n 格式，避免公式无法计算
+            normalizeLuckySheetCellValue(cell.v)
           })
         })
 
+        if (typeof luckysheet === 'undefined' || !luckysheet.destroy || !luckysheet.create) {
+          console.error('Luckysheet is not loaded properly')
+          return
+        }
         luckysheet.destroy()
         luckysheet.create({
           container: 'luckysheet', //luckysheet is the container id
           showinfobar: false,
           data: exportJson.sheets,
-
+          // 打开后强制按公式重算，避免沿用错误缓存值
+          forceCalculation: true,
           title: name,
           cellFormula: {
             autoFormat: false
@@ -144,7 +166,9 @@ export default {
             sheetMouseup: (tabl, nowData) => {
               var text = $('.textmove').html()
               if (text) {
-                luckysheet.setCellValue(nowData.r, nowData.c, `#{'${text}','${server_fun}'}`)
+                if (typeof luckysheet !== 'undefined' && luckysheet.setCellValue) {
+                  luckysheet.setCellValue(nowData.r, nowData.c, `#{'${text}','${server_fun}'}`)
+                }
                 $('.textmove').html('')
               }
             }
@@ -161,10 +185,34 @@ export default {
   position: relative;
   width: 100vw;
   height: calc(100vh - 65px);
-  /deep/ .luckysheet-icon-img-container.luckyiconfont {
+  
+  .loading-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: #fff;
+    z-index: 100;
+    
+    i {
+      font-size: 32px;
+      color: #409eff;
+      margin-bottom: 10px;
+    }
+    span {
+      color: #666;
+    }
+  }
+  
+  :deep(.luckysheet-icon-img-container.luckyiconfont) {
     font-size: 24px;
   }
-  /deep/.luckysheet-toolbar-menu-button {
+  :deep(.luckysheet-toolbar-menu-button) {
     font-size: 14px;
   }
   .export-box {

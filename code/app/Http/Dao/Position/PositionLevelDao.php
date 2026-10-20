@@ -15,10 +15,10 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Position;
 
-use App\Http\Dao\BaseDao;
 use App\Http\Model\Position\Level;
-use crmeb\interfaces\ResourceDaoInterface;
-use crmeb\traits\dao\ListSearchTrait;
+use App\Http\Dao\BaseDao;
+use Tuoluojiang\Open\interfaces\ResourceDaoInterface;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
 
 class PositionLevelDao extends BaseDao implements ResourceDaoInterface
 {

@@ -32,23 +32,23 @@
               <el-table-column prop="name" label="指标名称" min-width="200" />
               <el-table-column prop="content" label="指标内容" min-width="300" />
               <el-table-column prop="status" label="状态" min-width="100">
-                <template slot-scope="scope">
+                <template #default="scope">
                   <el-switch
                     v-model="scope.row.status"
-                    :active-text="$t('hr.display')"
-                    :inactive-text="$t('hr.hide')"
+                    active-text="显示"
+                    inactive-text="隐藏"
                     :active-value="1"
                     :inactive-value="0"
                     @change="handleStatus(scope.row)"
                   />
                 </template>
               </el-table-column>
-              <el-table-column prop="address" :label="$t('public.operation')" fixed="right" width="180">
-                <template slot-scope="scope">
-                  <el-button type="text" @click="handleEdit(scope.row)">{{ $t('public.edit') }}</el-button>
+              <el-table-column prop="address" label="操作" fixed="right" width="180">
+                <template #default="scope">
+                  <el-button type="primary" link @click="handleEdit(scope.row)">编辑</el-button>
 
-                  <el-button type="text" @click="handleDelete(scope.row, scope.$index)">
-                    {{ $t('public.delete') }}
+                  <el-button type="primary" link @click="handleDelete(scope.row, scope.$index)">
+                    删除
                   </el-button>
                 </template>
               </el-table-column>
@@ -68,23 +68,25 @@
       </el-col>
     </el-card>
     <!-- 通用弹窗表单   -->
-    <dialogForm ref="dialogForm" :roles-config="rolesConfig" :form-data="formBoxConfig" @isOk="getTableData()" />
+    <dialogForm ref="dialogForm" :roles-config="rolesConfig" :form-data="formBoxConfig" :hide-textarea="false" @isOk="getTableData()" />
   </div>
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
 import {
   assessTargetCreateApi,
   assessTargetDeleteApi,
   assessTargetEditApi,
   assessTargetListApi,
   assessTargetStatusApi
-} from '@/api/enterprise'
+} from '@/api/enterprise.ts'
 export default {
   name: 'AssessQuota',
   components: {
-    dialogForm: () => import('./components/index'),
-    departmentNot: () => import('@/components/user/department')
+    dialogForm: defineAsyncComponent(() => import('../check/components/index')),
+    departmentNot: defineAsyncComponent(() => import('@/components/user/department'))
   },
   data() {
     return {
@@ -162,7 +164,7 @@ export default {
       })
     },
     handleDelete(item, index) {
-      this.$modalSure('你确定要删除这条指标模板吗').then(() => {
+      modalSure('你确定要删除这条指标模板吗').then(() => {
         assessTargetDeleteApi(item.id).then((res) => {
           this.tableData.splice(index, 1)
         })

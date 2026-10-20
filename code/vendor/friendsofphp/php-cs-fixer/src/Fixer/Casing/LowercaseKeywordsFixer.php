@@ -28,14 +28,6 @@ use PhpCsFixer\Tokenizer\Tokens;
  */
 final class LowercaseKeywordsFixer extends AbstractFixer
 {
-    /**
-     * @var int[]
-     */
-    private static array $excludedTokens = [T_HALT_COMPILER];
-
-    /**
-     * {@inheritdoc}
-     */
     public function getDefinition(): FixerDefinitionInterface
     {
         return new FixerDefinition(
@@ -59,21 +51,15 @@ final class LowercaseKeywordsFixer extends AbstractFixer
         );
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function isCandidate(Tokens $tokens): bool
     {
         return $tokens->isAnyTokenKindsFound(Token::getKeywords());
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function applyFix(\SplFileInfo $file, Tokens $tokens): void
     {
         foreach ($tokens as $index => $token) {
-            if ($token->isKeyword() && !$token->isGivenKind(self::$excludedTokens)) {
+            if ($token->isKeyword() && !$token->isGivenKind([T_HALT_COMPILER])) {
                 $tokens[$index] = new Token([$token->getId(), strtolower($token->getContent())]);
             }
         }

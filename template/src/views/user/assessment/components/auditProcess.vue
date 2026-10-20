@@ -1,95 +1,107 @@
 <template>
-  <div class="v-height-flag">
-    <!-- 绩效考核页面 -->
-    <el-card v-if="isHeader" class="mb14">
-      <div class="flex-box" v-if="isHeader">
-        <div class="header">
-          <div class="left">
-            <i class="el-icon-arrow-left" @click="clickReturn"></i>
-            <div class="invoice-logo"><i class="icon iconfont iconchuanjainkaohe"></i></div>
-          </div>
-          <div class="right">
-            <span class="title">{{
-              rowData && rowData.test && rowData.test.name ? rowData.test.name + '的考核' : '绩效考核'
-            }}</span>
-            <div class="process-left-list">
-              <div v-for="(item, index) in tableData" :key="index" class="process-list">
-                <span class="text" :class="index == processIndex ? 'active' : ''" round>{{ item.name }}</span>
-                <i v-if="index != tableData.length - 1" class="el-icon-arrow-right" />
+  <div>
+    <div class="box-height is-fit-height">
+      <!-- 绩效考核页面 -->
+      <el-card v-if="isHeader" class="background-card mb14">
+        <div class="flex-box" v-if="isHeader">
+          <div class="header">
+            <div class="left">
+              <i class="el-icon-arrow-left" @click="clickReturn"></i>
+              <img v-if="localRowData && localRowData.test" :src="localRowData.test.avatar" alt="" class="invoice-logo" />
+              <div class="invoice-logo" v-else><i class="icon iconfont iconchuanjainkaohe"></i></div>
+            </div>
+            <div class="right">
+              <span class="title"
+                >{{
+                  localRowData && localRowData.test && localRowData.test.name ? localRowData.test.name : '绩效考核'
+                }}·
+                {{ getJobName() }}
+              </span>
+              <div class="process-left-list">
+                <div v-for="(item, index) in tableData" :key="index" class="process-list">
+                  <span class="text" :class="index == processIndexLocal ? 'active' : ''" round>{{ item.name }}</span>
+                  <i v-if="index != tableData.length - 1" class="el-icon-arrow-right" />
+                </div>
               </div>
             </div>
           </div>
+          <div class="process-right">
+            <el-button v-if="isShow && strType !== 'check'" @click="onlySaveSubmit">仅保存</el-button>
+            <el-button v-if="isShow && strType !== 'check'" type="primary" @click="addSaveSubmit">{{
+              isShowButton
+            }}</el-button>
+          </div>
         </div>
-        <div class="process-right">
-          <el-button v-if="isShow && strType !== 'check'" size="small" @click="onlySaveSubmit">仅保存</el-button>
-          <el-button v-if="isShow && strType !== 'check'" type="primary" size="small" @click="addSaveSubmit">{{
-            isShowButton
-          }}</el-button>
+      </el-card>
+      <el-card class="content-card" :body-style="{ padding: '0 20px 20px 20px' }">
+        <div v-if="localTips" class="tips-wrap">
+          <div
+            v-if="processIndexLocal == 3"
+            v-show="appeal.user_id != undefined && assessInfo.verify && assessInfo.verify.id == userId"
+            class="tips-box mb15 tActive"
+          >
+            <i class="el-icon-close" @click="closeTips" />
+            <p>绩效申诉: {{ appeal.content }}</p>
+          </div>
+          <div v-else class="mb14">
+            <el-alert v-if="tipsBoxContent" class="cr-alert" title="" :closable="true" type="info" :show-icon="false">
+              <template #title>
+                <p>{{ tipsBoxContent }}</p>
+              </template>
+            </el-alert>
+          </div>
         </div>
-      </div>
-    </el-card>
-    <el-card :body-style="{ padding: '0 20px 20px 20px' }">
-      <div v-if="isTips">
-        <div
-          v-if="processIndex == 3"
-          v-show="appeal.user_id != undefined && assessInfo.verify && assessInfo.verify.id == userId"
-          class="tips-box mb15 tActive"
-        >
-          <i class="el-icon-close" @click="closeTips" />
-          <p>绩效申诉: {{ appeal.content }}</p>
-        </div>
-        <div v-else class="mb14">
-          <el-alert v-if="tipsBoxContent" class="cr-alert" title="" :closable="true" type="info" :show-icon="false">
-            <template slot="title">
-              <p>{{ tipsBoxContent }}</p>
-            </template>
-          </el-alert>
-        </div>
-      </div>
 
-      <goalSetting
-        v-if="processIndex == 0 || processIndex == 5"
-        :id="id"
-        ref="goalSetting"
-        :rowData="rowData"
-        :strType="strType"
-        :add-button="addButton"
-        @handleGoal="handleGoal"
-      />
+        <goalSetting
+          v-if="processIndexLocal == 0 || processIndexLocal == 5"
+          :id="id"
+          ref="goalSetting"
+          :rowData="localRowData"
+          :strType="strType"
+          :add-button="addButton"
+          :fit-height="true"
+          @handleGoal="handleGoal"
+        />
 
-      <!-- 上级评价 -->
-      <execution
-        v-if="[1, 2, 3, 4].includes(processIndex)"
-        :id="id"
-        ref="execution"
-        :strType="strType"
-        :reply="reply"
-        :isShow="isShowProps"
-        :processIndex="processIndex"
-        :appeal="appeal"
-        :marks="mark"
-        @saveOk="saveOk"
-        @handleExecution="handleExecution"
-      />
-    </el-card>
+        <!-- 上级评价 -->
+        <execution
+          v-if="[1, 2, 3, 4].includes(processIndexLocal)"
+          :id="id"
+          ref="execution"
+          :strType="strType"
+          :reply="reply"
+          :isShow="isShowProps"
+          :processIndex="processIndexLocal"
+          :appeal="appeal"
+          :marks="mark"
+          @saveOk="saveOk"
+          @handleExecution="handleExecution"
+        />
+      </el-card>
+    </div>
   </div>
 </template>
 
 <script>
-import { userAssessExplain, userAssessInfo } from '@/api/user'
+import { mapStores } from 'pinia'
+import { useUserStore } from '@/stores/user.ts'
+import { defineAsyncComponent } from 'vue'
+import { userAssessExplain, userAssessInfo } from '@/api/user.ts'
+import { getStorageJson } from '@/utils/storage.ts'
 export default {
+  emits: ['auditProcess', 'saveOk'],
   name: 'AuditProcess',
   components: {
-    goalSetting: () => import('./goalSetting'),
-    execution: () => import('./execution')
+    goalSetting: defineAsyncComponent(() => import('./goalSetting')),
+    execution: defineAsyncComponent(() => import('./execution'))
   },
   props: {
     processIndex: {
-      type: Number | String,
+      type: [Number, String],
       default: 0
     },
     id: {
-      type: Number | String,
+      type: [Number, String],
       default: 0
     },
     strType: {
@@ -97,7 +109,7 @@ export default {
       default: ''
     },
     isShowProps: {
-      type: Number | String | Boolean,
+      type: [Number, String, Boolean],
       default: false
     },
     isTips: {
@@ -114,17 +126,31 @@ export default {
     },
     rowData: {
       type: [Object, Array],
-      default: () => {}
+      default: () => ({})
+    },
+    // 父级已预取的 userAssessInfo 结果，传入后首次加载直接复用，不再重复请求
+    presetInfo: {
+      type: Object,
+      default: null
     }
+  },
+  computed: {
+    ...mapStores(useUserStore)
   },
   data() {
     return {
+      // Vue 3 的 prop 只读，组件内部需要改写时用本地副本
+      processIndexLocal: this.processIndex,
+      // prop 的本地副本，接口返回的详情只写入副本，避免直接修改 props
+      localRowData: this.rowData,
+      localTips: this.isTips,
+      presetConsumed: false,
       tableData: [
-        { id: 1, name: this.$t('access.goalsetting') },
-        { id: 2, name: this.$t('access.executionphase') },
-        { id: 3, name: this.$t('access.higherevaluation') },
-        { id: 4, name: this.$t('access.performancereview') },
-        { id: 5, name: this.$t('access.end') }
+        { id: 1, name: '目标制定' },
+        { id: 2, name: '执行期' },
+        { id: 3, name: '上级评价' },
+        { id: 4, name: '绩效审核' },
+        { id: 5, name: '结束' }
       ],
       from: {
         return: 0
@@ -141,27 +167,45 @@ export default {
       isShowButton: ''
     }
   },
-  computed: {
-    lang: function () {
-      return this.$store.getters.lang
-    }
-  },
   watch: {
-    lang() {
-      this.setOptions()
+    // prop 由父组件更新时同步到本地副本（组件内部改写的是 processIndexLocal）
+    processIndex(val) {
+      this.processIndexLocal = val
     },
-    id() {
-      this.getAssessExplain()
-      this.getTableData()
+    rowData(val) {
+      this.localRowData = val
+    },
+    isTips(val) {
+      this.localTips = val
+    },
+    id(val) {
+      if (val > 0) {
+        this.getAssessExplain()
+        this.loadAssessInfo()
+      } else {
+        // 新建考核（id 归零）不会走详情接口，需手动清空上一条记录的残留并重算按钮显隐
+        this.assessInfo = []
+        this.tipsBoxContent = ''
+        this.reply = []
+        this.appeal = {}
+        this.mark = {}
+        this.showSaveSubmit()
+      }
+    },
+    // 父级用 v-show 复用本组件时，阶段切换后必须重算，否则上一条记录的按钮状态会残留
+    processIndexLocal() {
+      this.showSaveSubmit()
     }
   },
+
   mounted() {
-    let info = JSON.parse(localStorage.getItem('userInfo'))
-    this.userId = info.userId
+    let info = getStorageJson('userInfo', {})
+    this.userId = info.userId || ''
     if (this.addButton) this.showSaveSubmit()
+
     if (this.id > 0) {
       this.getAssessExplain()
-      this.getTableData()
+      this.loadAssessInfo()
     }
   },
   methods: {
@@ -169,17 +213,18 @@ export default {
     goBack() {
       this.$router.go(-1)
     },
-    setOptions() {
-      this.tableData = [
-        { id: 1, name: this.$t('access.goalsetting') },
-        { id: 2, name: this.$t('access.executionphase') },
-        { id: 3, name: this.$t('access.higherevaluation') },
-        { id: 4, name: this.$t('access.performancereview') },
-        { id: 5, name: this.$t('access.end') }
-      ]
+
+    getJobName() {
+      if (this.assessInfo && this.assessInfo.test && this.assessInfo.test.job) {
+        return this.assessInfo.test.job.name
+      } else if (this.localRowData && this.localRowData.test && this.localRowData.test.job) {
+        return this.localRowData.test.job.name
+      } else {
+        return '暂无职位'
+      }
     },
     closeTips() {
-      this.isTips = false
+      this.localTips = false
     },
     clickReturn() {
       this.from.return = 1
@@ -194,20 +239,34 @@ export default {
     handleExecution() {
       // 自评提交成功后
       this.clickReturn()
-      // this.processIndex = 2
+      // this.processIndexLocal = 2
       this.getAssessExplain()
+    },
+    // 首次加载优先消费父级预取的详情，其余情况仍走接口
+    loadAssessInfo() {
+      if (this.presetInfo && !this.presetConsumed) {
+        this.presetConsumed = true
+        this.applyAssessInfo(this.presetInfo)
+        return
+      }
+      this.getTableData()
     },
     async getTableData() {
       const result = await userAssessInfo(this.id)
+      this.applyAssessInfo(result)
+    },
+    applyAssessInfo(result) {
+      this.localRowData = result.data.assessInfo
       this.resultData = result
       this.assessInfo = result.data.assessInfo
       this.showSaveSubmit()
-      this.$store.state.user.userInfo.uid === this.assessInfo.check.uid
+      this.userStore.userInfo.uid === this.assessInfo.check.uid
         ? (this.testAccess = false)
         : (this.testAccess = true)
     },
     async getAssessExplain() {
       const result = await userAssessExplain(this.id)
+
       this.tipsBoxContent = result.data.explain
       this.reply = result.data.reply
       this.appeal = result.data.appeal.user_id ? result.data.appeal : {}
@@ -218,7 +277,7 @@ export default {
       this.getAssessExplain()
     },
     onlySaveSubmit() {
-      if (this.processIndex === 0) {
+      if (this.processIndexLocal === 0) {
         // 目标制定
         if (this.addButton) {
           this.$refs.goalSetting.addPreserve(1, 'only')
@@ -230,7 +289,7 @@ export default {
       }
     },
     addSaveSubmit() {
-      if (this.processIndex === 0) {
+      if (this.processIndexLocal === 0) {
         // 目标制定
         if (this.addButton) {
           this.$refs.goalSetting.addPreserve(1)
@@ -243,29 +302,29 @@ export default {
     },
     showSaveSubmit() {
       this.isShowButton = '保存提交'
-      if (this.processIndex === 0) {
+      if (this.processIndexLocal === 0) {
         if (this.addButton) {
-          this.isShowButton = this.$t('public.enable')
+          this.isShowButton = '启用'
           this.isShow = false
         } else {
           if (this.assessInfo.is_show !== 1) {
-            this.isShowButton = this.$t('public.enable')
+            this.isShowButton = '启用'
             this.isShow = false
           } else {
             this.isShow = false
           }
         }
-      } else if (this.processIndex === 1) {
+      } else if (this.processIndexLocal === 1) {
         this.isShow = true
-      } else if (this.processIndex === 2) {
+      } else if (this.processIndexLocal === 2) {
         this.isShow = true
-      } else if (this.processIndex === 3) {
+      } else if (this.processIndexLocal === 3) {
         this.isShow = true
-      } else if (this.processIndex === 4) {
+      } else if (this.processIndexLocal === 4) {
         this.isShow = true
       } else {
         this.isShow = false
-        this.isShowButton = this.$t('public.enable')
+        this.isShowButton = '启用'
       }
     }
   }
@@ -277,6 +336,46 @@ export default {
   background-color: #f7f7f7;
   border-color: transparent;
   color: #000000;
+}
+.background-card {
+  border: 1px solid #fff;
+  border-radius: 8px !important;
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.53) 7%, #ffffff 100%);
+}
+
+.content-card {
+  background: #fff;
+  border-radius: 8px;
+  overflow: auto;
+}
+
+// 目标制定阶段：整页不滚动，内容卡占满剩余高度，滚动交给卡片内部的表格区
+.box-height.is-fit-height {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  > .background-card {
+    flex-shrink: 0;
+  }
+
+  > .content-card {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+
+    :deep(.el-card__body) {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+
+      > .tips-wrap {
+        flex-shrink: 0;
+      }
+    }
+  }
 }
 .flex-box {
   display: flex;
@@ -295,7 +394,7 @@ export default {
   height: 70px;
   display: flex;
   .left {
-    padding: 11px 0 11px 20px;
+    padding: 11px 0 11px 0;
     display: flex;
     align-items: center;
 
@@ -303,8 +402,9 @@ export default {
       width: 48px;
       height: 48px;
       background: #1890ff;
-      border-radius: 4px;
+      border-radius: 50%;
       line-height: 48px;
+
       text-align: center;
       .iconchuanjainkaohe {
         font-size: 24px;
@@ -313,41 +413,41 @@ export default {
     }
   }
   .right {
-    padding: 11px 0 11px 0px;
+    padding: 14px 0 11px 0px;
     margin-left: 13px;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    // justify-content: space-between;
     .title {
       font-family: PingFang SC, PingFang SC;
       font-weight: 500;
-      font-size: 17px;
+      font-size: 16px;
       color: #303133;
       text-align: left;
       font-style: normal;
       text-transform: none;
     }
     .tab {
-      /deep/ .el-tabs__nav-wrap::after {
+      :deep(.el-tabs__nav-wrap::after) {
         height: 0;
       }
-      /deep/ .el-tabs__item {
+      :deep(.el-tabs__item) {
         line-height: 37px;
         font-family: PingFang SC, PingFang SC;
         font-weight: 400;
         font-size: 13px;
         color: #606266;
       }
-      /deep/ .el-tabs__item.is-active {
+      :deep(.el-tabs__item.is-active) {
         color: #1890ff;
       }
     }
   }
 }
-/deep/ .el-tabs__header {
+:deep(.el-tabs__header) {
   margin-bottom: 0;
 }
-/deep/ .el-tabs__nav-wrap::after {
+:deep(.el-tabs__nav-wrap::after) {
   display: none;
 }
 .right-box {
@@ -391,42 +491,45 @@ export default {
   display: flex;
   width: 80%;
   align-items: center;
+  margin-top: 8px;
   .process-list {
     display: flex;
     align-items: center;
     flex-wrap: nowrap;
-    /deep/ .el-button {
+    :deep(.el-button) {
       cursor: default;
     }
   }
   .text {
     white-space: nowrap;
+    font-family: PingFang SC, PingFang SC;
+    font-weight: 400;
+    font-size: 13px;
     color: #606266;
   }
   .active {
     color: #1890ff;
+    font-weight: 500;
   }
-  .el-button--medium {
+  .el-button {
     padding: 8px 0;
     width: 100px;
     font-size: 13px;
     cursor: auto;
   }
   i {
-    font-size: 12px;
-    color: #999999;
+    font-size: 13px;
+    color: #606266;
     margin: 0 10px;
-    background: linear-gradient(-180deg, #dedede, #999999);
-    background: -webkit-linear-gradient(-180deg, #dedede, #999999);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    height: 13px;
+    line-height: 16px;
   }
 }
 .process-right {
   width: 20%;
   text-align: right;
 }
-.v-height-flag .mb14 /deep/ .el-card__body {
+.v-height-flag .mb14 :deep(.el-card__body) {
   padding: 0px;
 }
 </style>

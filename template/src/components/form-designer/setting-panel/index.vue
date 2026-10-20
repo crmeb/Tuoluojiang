@@ -2,17 +2,16 @@
 
 <template>
   <el-container class="panel-container">
-    <el-tabs :active-name="activeTab" style="height: 100%; overflow: hidden">
+    <el-tabs v-model="activeTab" style="height: 100%; overflow: hidden">
       <el-tab-pane :label="i18nt('designer.hint.widgetSetting')" name="1">
         <el-scrollbar class="setting-scrollbar" :style="{ height: scrollerHeight }">
           <template v-if="!!designer.selectedWidget && !designer.selectedWidget.category">
             <el-form
               :model="optionModel"
-              size="mini"
               label-position="left"
               label-width="120px"
               class="setting-form"
-              @submit.native.prevent
+              @submit.prevent
             >
               <el-collapse v-model="widgetActiveCollapseNames" class="setting-collapse">
                 <el-collapse-item
@@ -20,7 +19,7 @@
                   v-if="showCollapse(commonProps)"
                   :title="i18nt('designer.setting.commonSetting')"
                 >
-                  <template v-for="(editorName, propName) in commonProps">
+                  <template v-for="(editorName, propName) in commonProps" :key="propName">
                     <component
                       v-if="hasPropEditor(propName, editorName)"
                       :is="getPropEditor(propName, editorName)"
@@ -36,7 +35,7 @@
                   v-if="showCollapse(advProps)"
                   :title="i18nt('designer.setting.advancedSetting')"
                 >
-                  <template v-for="(editorName, propName) in advProps">
+                  <template v-for="(editorName, propName) in advProps" :key="propName">
                     <component
                       v-if="hasPropEditor(propName, editorName)"
                       :is="getPropEditor(propName, editorName)"
@@ -58,11 +57,10 @@
           <template v-if="!!designer.selectedWidget && !!designer.selectedWidget.category">
             <el-form
               :model="optionModel"
-              size="mini"
               label-position="left"
               label-width="120px"
               class="setting-form"
-              @submit.native.prevent
+              @submit.prevent
             >
               <el-collapse v-model="widgetActiveCollapseNames" class="setting-collapse">
                 <el-collapse-item
@@ -70,7 +68,7 @@
                   v-if="showCollapse(commonProps)"
                   :title="i18nt('designer.setting.commonSetting')"
                 >
-                  <template v-for="(editorName, propName) in commonProps">
+                  <template v-for="(editorName, propName) in commonProps" :key="propName">
                     <component
                       v-if="hasPropEditor(propName, editorName)"
                       :is="getPropEditor(propName, editorName)"
@@ -86,7 +84,7 @@
                   v-if="showCollapse(advProps)"
                   :title="i18nt('designer.setting.advancedSetting')"
                 >
-                  <template v-for="(editorName, propName) in advProps">
+                  <template v-for="(editorName, propName) in advProps" :key="propName">
                     <component
                       v-if="hasPropEditor(propName, editorName)"
                       :is="getPropEditor(propName, editorName)"
@@ -111,22 +109,24 @@
 
     <el-dialog
       :title="i18nt('designer.setting.editWidgetEventHandler')"
-      :visible.sync="showWidgetEventDialogFlag"
+      v-model="showWidgetEventDialogFlag"
       v-if="showWidgetEventDialogFlag"
       :show-close="true"
       class="small-padding-dialog"
       append-to-body
-      v-dialog-drag
+      draggable
       :close-on-click-modal="false"
       :close-on-press-escape="false"
       :destroy-on-close="true"
     >
       <el-alert type="info" :closable="false" :title="eventHeader"></el-alert>
       <el-alert type="info" :closable="false" title="}"></el-alert>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="showWidgetEventDialogFlag = false"> 取消</el-button>
-        <el-button type="primary" @click="saveEventHandler"> {{ i18nt('designer.hint.confirm') }}</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="showWidgetEventDialogFlag = false"> 取消</el-button>
+          <el-button type="primary" @click="saveEventHandler"> {{ i18nt('designer.hint.confirm') }}</el-button>
+        </div>
+      </template>
     </el-dialog>
   </el-container>
 </template>
@@ -135,15 +135,16 @@
 import PropertyEditors from './property-editor/index'
 import FormSetting from './form-setting'
 import WidgetProperties from './propertyRegister'
-import { addWindowResizeHandler } from '@/utils/util'
-import i18n from '@/utils/i18n'
+import { addWindowResizeHandler } from '@/utils/formDesignerUtils'
+import i18n from '@/utils/i18n.ts'
+import { createEventHub, SETTING_PANEL_HUB } from '@/utils/eventHub.ts'
+import { getAppContext } from '@/app-context.ts'
 import { propertyRegistered } from '@/components/form-designer/setting-panel/propertyRegister'
 
 const { COMMON_PROPERTIES, ADVANCED_PROPERTIES, EVENT_PROPERTIES } = WidgetProperties
 
 export default {
   name: 'SettingPanel',
-  componentName: 'SettingPanel',
   mixins: [i18n],
   components: {
     FormSetting,
@@ -160,6 +161,8 @@ export default {
   },
   provide() {
     return {
+      // 属性编辑器（eventMixin）通过它请求打开事件编辑弹窗
+      [SETTING_PANEL_HUB]: this.panelHub,
       isSubFormChildWidget: () => this.subFormChildWidgetFlag
     }
   },
@@ -221,8 +224,11 @@ export default {
       }
     }
   },
+  beforeCreate() {
+    this.panelHub = createEventHub()
+  },
   created() {
-    this.$on('editEventHandler', function (eventName, eventParams) {
+    this.panelHub.on('editEventHandler', (eventName, eventParams) => {
       this.editEventHandler(eventName, eventParams)
     })
 
@@ -233,7 +239,6 @@ export default {
     //监听字段组件选中事件
     this.designer.handleEvent('field-selected', (parentWidget) => {
       this.subFormChildWidgetFlag = !!parentWidget && parentWidget.type === 'sub-form'
-      //console.log('subFormChildWidgetFlag', this.subFormChildWidgetFlag)
     })
   },
   mounted() {
@@ -271,13 +276,12 @@ export default {
     getPropEditor(propName, editorName) {
       let originalPropName = propName.replace(this.selectedWidget.type + '-', '') //去掉组件名称前缀-，如果有的话！！
       let ownPropEditorName = `${this.selectedWidget.type}-${originalPropName}-editor`
-      //console.log(ownPropEditorName, this.$options.components[ownPropEditorName])
       if (!!this.$options.components[ownPropEditorName]) {
         //局部注册的属性编辑器组件
         return ownPropEditorName
       }
 
-      return !!this.$root.$options.components[ownPropEditorName] ? ownPropEditorName : editorName //全局注册的属性编辑器组件
+      return getAppContext()?.components?.[ownPropEditorName] ? ownPropEditorName : editorName
     },
 
     showCollapse(propsObj) {
@@ -341,59 +345,54 @@ export default {
 
 .setting-scrollbar {
   padding-right: 11px;
-  ::v-deep .el-scrollbar__wrap {
+  :deep(.el-scrollbar__wrap) {
     overflow-x: hidden; /* IE浏览器隐藏水平滚动条箭头！！ */
     overflow-y: auto;
   }
 }
 .setting-collapse {
-  ::v-deep .el-collapse-item__content {
+  :deep(.el-collapse-item__content) {
     padding-bottom: 6px;
   }
 
-  ::v-deep .el-collapse-item__header {
+  :deep(.el-collapse-item__header) {
     font-weight: bold;
   }
 }
 
 .setting-form {
-  ::v-deep .el-form-item__label {
+  :deep(.el-form-item__label) {
     font-size: 13px;
     //text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
   }
 
-  ::v-deep .el-form-item--mini.el-form-item {
-    margin-bottom: 6px;
+  :deep(.el-form-item) {
+    margin-bottom: 14px;
   }
 }
 
 /* 隐藏Chrome浏览器中el-input数字输入框右侧的上下调整小箭头 */
-::v-deep .hide-spin-button input::-webkit-outer-spin-button,
-::v-deep .hide-spin-button input::-webkit-inner-spin-button {
+:deep(.hide-spin-button input::-webkit-outer-spin-button),
+:deep(.hide-spin-button input::-webkit-inner-spin-button) {
   -webkit-appearance: none !important;
 }
 
 /* 隐藏Firefox浏览器中el-input数字输入框右侧的上下调整小箭头 */
-::v-deep .hide-spin-button input[type='number'] {
+:deep(.hide-spin-button input[type='number']) {
   -moz-appearance: textfield;
 }
 
-::v-deep .custom-divider.el-divider--horizontal {
+:deep(.custom-divider.el-divider--horizontal) {
   margin: 10px 0;
 }
 
-::v-deep .custom-divider-margin-top.el-divider--horizontal {
+:deep(.custom-divider-margin-top.el-divider--horizontal) {
   margin: 20px 0;
 }
-::v-deep.el-tabs {
+:deep(.el-tabs) {
   width: 100% !important;
-}
-.small-padding-dialog {
-  ::v-deep .el-dialog__body {
-    padding: 6px 15px 12px 15px;
-  }
 }
 .no-widget-selected {
   width: 100%;
@@ -410,4 +409,12 @@ export default {
   }
 }
 </style>
-@/utils/i18ns
+
+<style lang="scss">
+// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
+.el-dialog.small-padding-dialog {
+  .el-dialog__body {
+    padding: 6px 15px 12px 15px;
+  }
+}
+</style>

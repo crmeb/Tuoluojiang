@@ -15,9 +15,9 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Train;
 
-use App\Http\Dao\BaseDao;
 use App\Http\Model\Company\HayGroupData;
-use crmeb\traits\dao\ListSearchTrait;
+use App\Http\Dao\BaseDao;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
 
 /**
  * 评估表数据Dao.

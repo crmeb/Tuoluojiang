@@ -3,7 +3,10 @@
   <div class="divBox">
     <el-card class="employees-card-bottom">
       <oaFromBox
+        :treeData="treeDataGroup"
         :search="search"
+        :isCategory="false"
+        category="invoice"
         :isViewSearch="false"
         :sortSearch="false"
         :total="total"
@@ -23,61 +26,62 @@
           <span class="text"> 暂无发票数据</span>
         </div>
         <div class="" v-else>
-          <div style="width: 100%; overflow: auto" :style="{ height: tableHeight }">
+          <div style="width: 100%; overflow: auto" :style="{ height: TABLE_HEIGHT }">
             <!-- 发票页面 -->
-            <div class="table-box" v-for="(item, index) in tableData" :key="index">
+            <div class="table-box" v-for="item in tableData" :key="item.id">
               <!-- 企业专用票 -->
               <div>
                 <div class="header">
                   <el-checkbox-group v-model="checkList">
-                    <el-checkbox :label="item.id" class="header-left">
-                      {{ item.types | titleTypeFn }}·{{ item.collect_type === 'mail' ? '电子' : '纸质' }}
+                    <el-checkbox :label="item.id" :value="item.id" class="header-left">
+                      {{ titleTypeFn(item.types) }}·{{ item.collect_type === 'mail' ? '电子' : '纸质' }}
                       <el-tag v-if="item.status === 0">待审核</el-tag>
                       <el-tag v-else-if="item.status === 1" type="warning">待开票</el-tag>
                       <el-tag v-else-if="item.status === 2" type="danger">已拒绝</el-tag>
                       <el-tag v-else-if="item.status === 3" type="info">撤回开票</el-tag>
-                      <el-tag v-else-if="item.status === 4" type="danger">申请作废</el-tag>
+                      <el-tag v-else-if="item.status === 4" type="danger">申请冲红</el-tag>
                       <el-tag v-else-if="item.status === 5" type="success">已开票</el-tag>
-                      <el-tag v-else>已作废</el-tag>
+                      <el-tag v-else type="danger">已冲红</el-tag>
                     </el-checkbox>
                   </el-checkbox-group>
                   <div class="left">
-                    <el-button type="text" @click="handleCheck(item)">
-                      {{ $t('public.check') }}
+                    <el-button type="primary" link @click="handleCheck(item)">
+                      查看
                     </el-button>
-                    <el-button @click="invoiceWithdrawal(item)" type="text" v-if="item.status === 0">
+                    <el-button @click="invoiceWithdrawal(item)" type="primary" link v-if="item.status === 0">
                       撤回开票
                     </el-button>
                     <el-button
                       v-if="item.status === 5"
                       @click="handleBuild(item, buildData.void_invoice_switch, 'void_invoice_switch')"
-                      type="text"
+                      type="primary" link
                     >
-                      申请作废
+                      申请冲红
                     </el-button>
                     <el-dropdown
                       v-if="buildData.length > 1"
                       trigger="click"
-                      size="small"
                       placement="bottom-start"
                       @command="handleBuild($event, 6, item)"
                     >
-                      <el-button type="text" size="small"> 申请作废 </el-button>
-                      <el-dropdown-menu slot="dropdown" class="build-dropdown">
-                        <el-dropdown-item
-                          v-for="(item, index) in buildData"
-                          :key="item.id"
-                          class="over-text"
-                          placement="top-end"
-                          :command="index"
-                        >
-                          <i class="iconfont" :class="item.icon" :style="{ color: item.color }"></i>
-                          {{ item.name }}
-                        </el-dropdown-item>
-                      </el-dropdown-menu>
+                      <el-button type="primary" link> 申请冲红 </el-button>
+                      <template #dropdown>
+                        <el-dropdown-menu class="build-dropdown">
+                          <el-dropdown-item
+                            v-for="(item, index) in buildData"
+                            :key="item.id"
+                            class="over-text"
+                            placement="top-end"
+                            :command="index"
+                          >
+                            <i class="iconfont" :class="item.icon" :style="{ color: item.color }"></i>
+                            {{ item.name }}
+                          </el-dropdown-item>
+                        </el-dropdown-menu>
+                      </template>
                     </el-dropdown>
-                    <el-button v-if="item.status === 4" @click="invoiceWithdrawal(item, 1)" type="text">
-                      作废撤回
+                    <el-button v-if="item.status === 4" @click="invoiceWithdrawal(item, 1)" type="primary" link>
+                      冲红撤回
                     </el-button>
                   </div>
                 </div>
@@ -290,7 +294,7 @@
       top="25vh"
       class="addBox"
       :append-to-body="true"
-      :visible.sync="dialogVisible"
+      v-model="dialogVisible"
       width="540px"
     >
       <div class="line" />
@@ -299,8 +303,8 @@
           <el-input type="textarea" v-model="form.remarks" placeholder="请填写原因"></el-input>
         </el-form-item>
         <div class="footer">
-          <el-button size="small" class="btn" @click="cancelFn">取消</el-button>
-          <el-button size="small" type="primary" @click="submitFn" class="btn">确定</el-button>
+          <el-button class="btn" @click="cancelFn">取消</el-button>
+          <el-button type="primary" @click="submitFn" class="btn">确定</el-button>
         </div>
       </el-form>
     </el-dialog>
@@ -309,43 +313,40 @@
 </template>
 
 <script>
+import { mapStores } from 'pinia'
+import { useAppStore } from '@/stores/app.ts'
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
 import {
-  clientInvoiceDeleteApi,
-  clientInvoiceListApi,
-  putInvoice,
-  invalidApply,
-  recallStatus,
   getSalesman,
   uninvoicedListApi
-} from '@/api/enterprise'
+} from '@/api/enterprise.ts'
+import { clientInvoiceDeleteApi, clientInvoiceListApi, putInvoice, invalidApply, recallStatus } from '@/api/client.ts'
 import ClipboardJS from 'clipboard'
-import { getInvoiceClassName, getInvoiceText, getInvoiceType } from '@/libs/customer'
-import { approveApplyRevokeApi } from '@/api/business'
-import { configRuleApproveApi } from '@/api/config'
+import { getInvoiceType } from '@/libs/customer.ts'
+import { approveApplyRevokeApi } from '@/api/business.ts'
+import { configRuleApproveApi } from '@/api/config.ts'
+import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'FinanceList',
   components: {
-    oaFromBox: () => import('@/components/common/oaFromBox'),
-    invoiceApply: () => import('@/components/invoice/invoiceApply'),
-    invoiceDetails: () => import('@/components/invoice/invoiceDetails'),
-    markDialog: () => import('@/views/customer/contract/components/markDialog'),
-    transferDialog: () => import('@/views/customer/list/components/transferDialog'),
-    mergeInvoice: () => import('@/components/invoice/mergeInvoice'),
-    invoiceView: () => import('@/views/customer/invoice/components/invoiceView'),
-    editExamine: () => import('@/views/user/examine/components/editExamine')
+    oaFromBox,
+    invoiceApply: defineAsyncComponent(() => import('@/components/invoice/invoiceApply')),
+    invoiceDetails: defineAsyncComponent(() => import('@/components/invoice/invoiceDetails')),
+    markDialog: defineAsyncComponent(() => import('@/views/customer/contract/components/markDialog')),
+    transferDialog: defineAsyncComponent(() => import('@/views/customer/list/components/transferDialog')),
+    mergeInvoice: defineAsyncComponent(() => import('@/components/invoice/mergeInvoice')),
+    invoiceView: defineAsyncComponent(() => import('@/views/customer/invoice/components/invoiceView')),
+    editExamine: defineAsyncComponent(() => import('@/views/user/examine/components/editExamine'))
   },
-  props: {
-    activeName: {
-      type: String,
-      default: '1'
-    },
-    types: {
-      type: Number,
-      default: 1
-    }
+
+  computed: {
+    ...mapStores(useAppStore)
   },
   data() {
     return {
+      TABLE_HEIGHT,
       formBoxConfig: {},
       parameterData: {
         contract_id: '',
@@ -362,6 +363,17 @@ export default {
       reason: '',
       dialogFormVisible: false,
       dialogVisible: false,
+      treeDataGroup: [
+        {
+          id: 1,
+          label: '我负责的'
+        },
+        {
+          id: 2,
+          label: '下属负责的',
+          default: true
+        }
+      ],
       where: {
         page: 1,
         limit: 15,
@@ -369,10 +381,7 @@ export default {
         time_field: '',
         time: '',
         status: '',
-        types: '',
-        way: 1,
-        salesman_id: '',
-        scope_frame: this.activeName === '2' ? 'all' : 'self'
+        view_search: 1
       },
       withdrawId: '',
       rules: {
@@ -416,35 +425,16 @@ export default {
     }
   },
   created() {
-    this.where.way = this.types
+    // this.where.way = this.types
     this.getSalesman()
     this.getConfigApprove(0)
   },
   mounted() {
     this.getTableData()
   },
-  filters: {
-    statusTypeFn(val) {
-      return getInvoiceText(val)
-    },
-    bgcFn(val) {
-      return getInvoiceClassName(val)
-    },
+  methods: {
     titleTypeFn(val) {
       return getInvoiceType(val)
-    }
-  },
-  methods: {
-    tabClick() {
-      if (this.activeName == 1) {
-        this.where.way = 1
-      } else {
-        this.where.way = 0
-      }
-      this.tooltipTrue = true
-      this.where.page = 1
-      this.tableData = []
-      this.getTableData()
     },
     async getConfigApprove(type) {
       const result = await configRuleApproveApi(0)
@@ -476,7 +466,7 @@ export default {
     // 发票撤回
     invoiceWithdrawal(val, type) {
       let id = type === 1 ? val.revoke_id : val.link_id
-      this.$modalSure(this.$t('你确定要撤销申请吗')).then(() => {
+      modalSure('你确定要撤销申请吗').then(() => {
         this.getApplyRevoke(id)
       })
     },
@@ -484,10 +474,10 @@ export default {
       await approveApplyRevokeApi(id)
       this.getTableData()
     },
-    // 申请作废
+    // 申请冲红
     apply(val) {
-      this.title = '发票申请作废'
-      this.reason = '作废原因'
+      this.title = '发票申请冲红'
+      this.reason = '冲红原因'
       this.dialogVisible = true
       this.withdrawId = val.id
     },
@@ -496,7 +486,7 @@ export default {
       let data = {
         remark: this.form.remarks
       }
-      if (this.title == '发票申请作废') {
+      if (this.title == '发票申请冲红') {
         data.invalid = 1
         await invalidApply(this.withdrawId, data)
         this.cancelFn()
@@ -512,9 +502,9 @@ export default {
       this.form.remarks = ''
     },
 
-    // 作废撤回
+    // 冲红撤回
     async withdraw(val) {
-      await this.$modalSure(this.$t('customer.message08'))
+      await modalSure('你确定要撤回申请冲红吗')
       let data = {
         invalid: -1
       }
@@ -591,21 +581,21 @@ export default {
     // 转移
     handleTransfer(type, row = []) {
       if (this.checkList.length <= 0 && type === 1) {
-        this.$message.error(this.$t('customer.placeholder22'))
+        this.$message.error('至少选择一项')
       } else {
         this.transferData = {
-          title: type === 1 ? this.$t('customer.batchtransfersettings') : this.$t('customer.transfersettings'),
+          title: type === 1 ? '批量转移设置' : '转移设置',
           width: '520px',
           type: 3,
           ids: this.checkList
         }
 
-        this.$refs.transferDialog.handleOpen()
+        this.$refs.transferDialog.handleOpen(this.types)
       }
     },
     setRemarks(row) {
       this.configMark = {
-        title: this.$t('customer.remarkinformation'),
+        title: '备注信息',
         width: '480px',
         id: row.id,
         type: 2,
@@ -616,17 +606,17 @@ export default {
     // 批量删除
     handleBatchDelete() {
       if (this.ids.length <= 0) {
-        this.$message.error(this.$t('customer.placeholder22'))
+        this.$message.error('至少选择一项')
       } else {
-        this.$modalSure(this.$t('customer.placeholder78')).then(() => {
-          var ids = []
+        modalSure('确定要批量删除发票记录吗').then(() => {
+          const ids = []
           this.ids.forEach((value, index) => {
             if (value.status !== 1) {
               ids.push(value.id)
             }
           })
           if (ids.length <= 0) {
-            this.$message.error(this.$t('customer.placeholder67'))
+            this.$message.error('不能删除审核已通过的内容')
           } else {
             const id = ids.join(',')
             this.clientInvoiceDelete(id)
@@ -636,7 +626,7 @@ export default {
     },
     // 删除
     handleDelete(item) {
-      this.$modalSure(this.$t('customer.placeholder23')).then(() => {
+      modalSure('请确定要撤回该记录吗').then(() => {
         this.clientInvoiceDelete(item.id)
       })
     },
@@ -670,18 +660,17 @@ export default {
           time_field: '',
           time: '',
           status: '',
-          types: '',
-          way: 1,
-          salesman_id: '',
-          scope_frame: this.activeName === '2' ? 'all' : 'self'
+          view_search: 1
         }
       } else {
         this.where.name = data.keyword_default
         this.where.time_field = data.time_field
         this.where.time = data.time
-        this.where.types = data.types
+        if (data.view_search) {
+          this.where.view_search = data.view_search
+        }
+
         this.where.status = data.status
-        this.where.salesman_id = data.salesman_id
         this.where.scope_frame = data.scope_frame
       }
       this.where.page = 1
@@ -701,10 +690,10 @@ export default {
       this.$nextTick(() => {
         const clipboard = new ClipboardJS('.copy')
         clipboard.on('success', () => {
-          this.$message.success(this.$t('setting.copytitle'))
+          this.$message.success('复制成功')
           clipboard.destroy()
         })
-        this.$store.commit('app/SET_CLICK_TAB', false)
+        this.appStore.setClickTab(false)
       })
     }
   }
@@ -712,9 +701,6 @@ export default {
 </script>
 
 <style scoped>
-.el-tooltip__popper {
-  max-width: 300px;
-}
 .inTotal {
   margin-top: 0px;
 }
@@ -755,11 +741,6 @@ export default {
   margin: 0 24px;
 }
 
-.addBox /deep/ .el-textarea__inner {
-  width: 400px;
-  height: 90px;
-  font-size: 13px;
-}
 
 .defaultPage {
   display: flex;
@@ -786,13 +767,6 @@ export default {
   margin-bottom: 20px;
   margin-top: 10px;
 }
-.addBox /deep/ .el-dialog__body {
-  padding: 0;
-}
-.addBox /deep/ .el-dialog {
-  border-radius: 6px;
-  height: 249px;
-}
 
 .el-button--primary.is-plain:hover {
   color: #1890ff;
@@ -804,7 +778,7 @@ export default {
   width: 100%;
   border: 1px solid #eaf4ff;
   margin-bottom: 20px;
-  /deep/ .el-checkbox__label {
+  :deep(.el-checkbox__label) {
     font-size: 13px;
   }
   .header {
@@ -821,7 +795,7 @@ export default {
       font-weight: 600;
       color: #303133;
     }
-    .left .el-button--medium {
+    .left .el-button {
       font-size: 13px;
     }
     .left {
@@ -855,17 +829,18 @@ export default {
     .right {
       flex: 1;
     }
-    /deep/ .el-form-item__label {
+    :deep(.el-form-item__label) {
       font-size: 12px !important;
       font-family: PingFang SC-常规体, PingFang SC;
       font-weight: normal;
       color: #909399;
       line-height: 12px;
+      height: auto;
     }
-    /deep/ .el-form-item {
+    :deep(.el-form-item) {
       margin-bottom: 20px;
     }
-    /deep/ .el-form-item--medium .el-form-item__content {
+    :deep(.el-form-item .el-form-item__content) {
       line-height: 12px;
     }
 
@@ -916,10 +891,26 @@ export default {
     color: #999999;
   }
 }
-.from-box /deep/ .el-cascader {
+.from-box :deep(.el-cascader) {
   width: 160px !important;
 }
-.from-box /deep/.el-select {
+.from-box :deep(.el-select) {
   width: 160px;
+}
+</style>
+
+<style lang="scss">
+// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
+.el-dialog.addBox .el-textarea__inner {
+  width: 400px;
+  height: 90px;
+  font-size: 13px;
+}
+.el-dialog.addBox .el-dialog__body {
+  padding: 0;
+}
+.el-dialog.addBox {
+  border-radius: 6px;
+  height: 249px;
 }
 </style>

@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace App\Task\customer;
 
-use App\Http\Service\Client\ClientInvoiceLogService;
+use App\Http\Service\Customer\InvoiceLogService;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Support\Facades\Log;
 
@@ -33,7 +33,7 @@ class InvoiceRecordTask extends Task
     public function handle()
     {
         try {
-            app()->get(ClientInvoiceLogService::class)->saveRecord($this->entId, $this->id, $this->uid, $this->type, $this->param);
+            app()->get(InvoiceLogService::class)->saveRecord($this->entId, $this->id, $this->uid, $this->type, $this->param);
         } catch (\Throwable $e) {
             Log::error(__CLASS__ . ':' . $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine(), 'trace' => $e->getTrace()]);
         }

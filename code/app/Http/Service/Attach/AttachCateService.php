@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,9 +17,9 @@ namespace App\Http\Service\Attach;
 
 use App\Http\Dao\Category\CategoryDao;
 use App\Http\Service\BaseService;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\services\FormService as Form;
-use crmeb\traits\service\CategoryTrait;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\services\FormService as Form;
+use Tuoluojiang\Open\traits\service\CategoryTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 
 class AttachCateService extends BaseService implements ResourceServicesInterface
@@ -57,7 +57,7 @@ class AttachCateService extends BaseService implements ResourceServicesInterface
         if (! $data) {
             throw $this->exception('没有查询到数据！');
         }
-        return $this->elForm('修改分类', $this->createFormRule($data->toArray()), $this->saveUrl . '/' . $id, 'PUT', []);
+        return $this->createElementForm('修改分类', $this->createFormRule($data->toArray()), $this->saveUrl . '/' . $id, 'PUT', []);
     }
 
     /**
@@ -65,7 +65,7 @@ class AttachCateService extends BaseService implements ResourceServicesInterface
      */
     public function resourceCreate(array $other = []): array
     {
-        return $this->elForm('创建分类', $this->createFormRule(), $this->saveUrl);
+        return $this->createElementForm('创建分类', $this->createFormRule(), $this->saveUrl);
     }
 
     /**
@@ -131,10 +131,11 @@ class AttachCateService extends BaseService implements ResourceServicesInterface
             'lt_level' => $this->getLevel(),
         ];
         return [
-            $this->getLevel() == 1
-                ? Form::select($this->tableField['pid'], '父级分类', $data[$this->tableField['pid']] ?? 0)
+            $this->getLevel() == 1 ?
+                Form::select($this->tableField['pid'], '父级分类', $data[$this->tableField['pid']] ?? 0)
                     ->options(array_merge([['value' => 0, 'label' => '顶级分类']], $this->menus($where)))
-                : Form::cascader($this->tableField['path'], '父级分类')
+                :
+                Form::cascader($this->tableField['path'], '父级分类')
                     ->options($this->menus($where))
                     ->value($data[$this->tableField['path']] ?? [])
                     ->props(['props' => ['checkStrictly' => true]]),

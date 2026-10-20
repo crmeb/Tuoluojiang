@@ -24,11 +24,11 @@ export default {
         field: 'size',
         title: '尺寸',
         options: [
-          { label: 'medium', value: 'medium' },
-          { label: 'small', value: 'small' },
+          { label: 'large', value: 'large' },
+          { label: 'default', value: 'default' },
           {
-            label: 'mini',
-            value: 'mini',
+            label: 'small',
+            value: 'small',
           },
         ],
       },

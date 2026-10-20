@@ -1,6 +1,6 @@
 <template>
   <!--  新建文件或文件夹弹窗-->
-  <el-dialog :before-close="handleClose" :title="config.title" :visible.sync="dialogVisible" width="480px">
+  <el-dialog :before-close="handleClose" :title="config.title" v-model="dialogVisible" width="480px">
     <div class="mt15">
       <div v-if="config.command !== 5" class="current-dialog mb15">
         <span>文件类型：</span>
@@ -18,15 +18,18 @@
         />
       </div>
     </div>
-    <div slot="footer" class="dialog-footer">
-      <el-button :loading="loading" size="small" type="primary" @click="handleAdd">确定</el-button>
-    </div>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button :loading="loading" type="primary" @click="handleAdd">确定</el-button>
+      </div>
+    </template>
   </el-dialog>
 </template>
 
 <script>
-import { folderCreateApi, folderMakeApi, folderSpaceEntCreateApi, folderSpaceEntMakeApi } from '@/api/cloud'
+import { folderCreateApi, folderMakeApi, folderSpaceEntCreateApi, folderSpaceEntMakeApi } from '@/api/cloud.ts'
 export default {
+  emits: ['handleIsOK', 'handleCreateXmindFile'],
   name: 'MyFileDialog',
   props: {
     config: {
@@ -46,7 +49,7 @@ export default {
       options: [
         { label: '文档', value: 'word' },
         { label: '表格', value: 'excel' },
-        { label: '思维导图', value: 'mindmap' },
+        { label: '思维导图', value: 'mindmap' }
         // { label: '幻灯片', value: 'ppt' }
       ],
       loading: false
@@ -129,8 +132,8 @@ export default {
               error: () => {
                 this.loading = false
               }
-            });
-            return;
+            })
+            return
           }
 
           if (this.config.switch === 6) {
@@ -183,7 +186,7 @@ export default {
     width: auto;
     top: 12px;
   }
-  >>> .el-input__inner {
+  :deep(.el-input__inner) {
     text-align: left;
   }
 }

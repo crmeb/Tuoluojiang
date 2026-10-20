@@ -16,8 +16,8 @@ declare(strict_types=1);
 namespace App\Http\Model\Attendance;
 
 use App\Http\Model\Admin\Admin;
-use App\Http\Model\BaseModel;
 use App\Http\Model\Frame\Frame;
+use App\Http\Model\BaseModel;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -39,6 +39,19 @@ class AttendanceClockRecord extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'          => 'integer',
+        'frame_id'    => 'integer',
+        'group_id'    => 'integer',
+        'shift_id'    => 'integer',
+        'clock_type'  => 'integer',
+        'uid'         => 'integer',
+        'is_external' => 'integer',
+        'created_at'  => 'datetime:Y-m-d H:i:s',
+        'updated_at'  => 'datetime:Y-m-d H:i:s',
+        'deleted_at'  => 'datetime:Y-m-d H:i:s',
+    ];
 
     protected $hidden = [
         'deleted_at',
@@ -87,11 +100,7 @@ class AttendanceClockRecord extends BaseModel
      */
     public function scopeId($query, $value): void
     {
-        if (is_array($value)) {
-            $query->whereIn('id', $value);
-        } elseif ($value !== '') {
-            $query->where('id', $value);
-        }
+        is_array($value) ? $query->whereIn('id', $value) : $query->where('id', $value);
     }
 
     /**
@@ -120,10 +129,12 @@ class AttendanceClockRecord extends BaseModel
      */
     public function scopeUid($query, $value): void
     {
-        if (is_array($value)) {
-            $query->whereIn('uid', $value);
-        } elseif ($value !== '') {
-            $query->where('uid', $value);
-        }
+        is_array($value) ? $query->whereIn('uid', $value) : $query->where('uid', $value);
     }
+
+    public function scopeDate($query, $value)
+    {
+        is_array($value) ? $query->whereBetween('created_at', $value) : $query->whereDate('created_at', $value);
+    }
+
 }

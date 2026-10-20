@@ -18,8 +18,8 @@ namespace App\Http\Controller\AdminApi\Assess;
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Requests\enterprise\assess\PlanRequest;
 use App\Http\Service\Assess\AssessPlanService;
-use crmeb\interfaces\ResourceControllerInterface;
-use crmeb\traits\ResourceControllerTrait;
+use Tuoluojiang\Open\interfaces\ResourceControllerInterface;
+use Tuoluojiang\Open\traits\ResourceControllerTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -32,8 +32,7 @@ use Spatie\RouteAttributes\Attributes\Resource;
  * 考核计划控制器.
  */
 #[Prefix('ent/assess/plan')]
-#[Resource('/', false, except: ['create', 'show'], names: [
-    'index'   => '获取考核计划列表接口',
+#[Resource('/', false, except: ['create', 'show', 'index'], names: [
     'store'   => '保存考核计划接口',
     'edit'    => '获取考核计划信息接口',
     'update'  => '修改考核计划接口',
@@ -121,7 +120,7 @@ class PlanController extends AuthController implements ResourceControllerInterfa
             ['eval_day', ''],
             ['verify_type', 'after'],
             ['verify_day', ''],
-            ['test', []],
+            ['test', [],'test_user'],
             ['test_frame', []],
             ['assess_type', 0],
             ['status', 0],

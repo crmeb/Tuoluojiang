@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,8 +18,8 @@ namespace App\Http\Controller\AdminApi\Storage;
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Requests\enterprise\storage\StorageRequest;
 use App\Http\Service\Storage\StorageService;
-use crmeb\interfaces\ResourceControllerInterface;
-use crmeb\traits\ResourceControllerTrait;
+use Tuoluojiang\Open\interfaces\ResourceControllerInterface;
+use Tuoluojiang\Open\traits\ResourceControllerTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Spatie\RouteAttributes\Attributes\Middleware;
 use Spatie\RouteAttributes\Attributes\Post;
@@ -63,6 +63,24 @@ class StorageController extends AuthController implements ResourceControllerInte
         return $this->success('修改成功');
     }
 
+    /**
+     * 添加.
+     * @return mixed
+     * @throws BindingResolutionException
+     */
+    public function store()
+    {
+        $data = $this->request()->postMore($this->getRequestFields());
+        $res  = $this->service->resourceSave($data);
+        if ($res) {
+            if (is_object($res)) {
+                return $this->success(__('common.operation.succ'), ['id' => $res->id]);
+            }
+
+            return $this->success(__('common.operation.succ'), is_array($res) ? $res : []);
+        }
+        return $this->fail(__('common.operation.fail'));
+    }
     protected function getRequestClassName(): string
     {
         return StorageRequest::class;

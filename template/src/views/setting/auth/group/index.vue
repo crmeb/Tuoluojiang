@@ -8,14 +8,13 @@
             <div class="clearfix el-card__header">
               <el-input
                 v-model="filterText"
-                size="small"
                 prefix-icon="el-icon-search"
                 clearable
                 placeholder="搜索部门"
               />
             </div>
             <el-tree
-              class="mt14"
+              style="margin: 10px 10px 0"
               ref="tree"
               :data="treeData"
               :props="defaultProps"
@@ -26,12 +25,14 @@
               node-key="value"
               @node-click="handleNodeClick"
             >
-              <div slot-scope="{ node, data }" class="custom-tree-node">
-                <span class="flex-box">
-                  <i class="tree-icon iconfont iconwenjianjia" />
-                  {{ node.label }}
-                </span>
-              </div>
+              <template #default="{ node, data }">
+                <div class="custom-tree-node">
+                  <span class="flex-box">
+                    <i class="tree-icon iconfont iconwenjianjia" />
+                    {{ node.label }}
+                  </span>
+                </div>
+              </template>
             </el-tree>
           </div>
         </el-col>
@@ -53,15 +54,15 @@
               <el-table
                 ref="multipleTable"
                 :data="tableData"
-                :height="tableHeight"
+                :height="TABLE_HEIGHT"
                 tooltip-effect="dark"
                 style="width: 100%"
               >
                 <el-table-column type="index" width="50"> </el-table-column>
-                <el-table-column prop="name" :label="$t('toptable.name')" min-width="100" />
-                <el-table-column prop="job.name" :label="$t('toptable.post')" min-width="120" />
+                <el-table-column prop="name" label="姓名" min-width="100" />
+                <el-table-column prop="job.name" label="职位" min-width="120" />
                 <el-table-column prop="frame.name" label="部门" min-width="160" show-overflow-tooltip>
-                  <template slot-scope="scope">
+                  <template #default="scope">
                     <div v-for="(item, index) in scope.row.frames" :key="index">
                       <span class="icon-h"
                         >{{ item.name }}
@@ -71,24 +72,24 @@
                   </template>
                 </el-table-column>
 
-                <el-table-column prop="phone" :label="$t('toptable.phone')" min-width="110" show-overflow-tooltip />
-                <el-table-column prop="join_time" :label="$t('toptable.jointime')" min-width="100" />
-                <el-table-column :label="$t('public.operation')" width="180">
-                  <template slot-scope="scope">
-                    <el-button type="text" @click="onPassword(scope.row)" v-hasPermi="['auth:group:password']">
+                <el-table-column prop="phone" label="手机号码" min-width="110" show-overflow-tooltip />
+                <el-table-column prop="join_time" label="加入时间" min-width="100" />
+                <el-table-column label="操作" width="180">
+                  <template #default="scope">
+                    <el-button type="primary" link @click="onPassword(scope.row)" v-hasPermi="['auth:group:password']">
                       修改密码
                     </el-button>
 
-                    <el-button type="text" @click="onEdit(scope.row.id)" v-hasPermi="['auth:group:edit']">
-                      {{ $t('public.edit') }}
+                    <el-button type="primary" link @click="onEdit(scope.row.id)" v-hasPermi="['auth:group:edit']">
+                      编辑
                     </el-button>
 
                     <el-button
-                      type="text"
+                      type="primary" link
                       @click="onDelete(scope.row.id, scope.$index)"
                       v-hasPermi="['auth:group:delete']"
                     >
-                      {{ $t('public.delete') }}
+                      删除
                     </el-button>
                   </template>
                 </el-table-column>
@@ -111,7 +112,7 @@
     </el-card>
 
     <!--  编辑用户  -->
-    <editUser ref="editUser" :user-id="userId" />
+    <editUser ref="editUser" :user-id="userId" @closed="userId = ''" @saved="getList" />
     <!-- 修改密码 -->
     <oa-dialog
       ref="oaDialog"
@@ -125,24 +126,30 @@
 </template>
 
 <script>
-import { configFrameApi } from '@/api/setting'
-import { loginRegex } from '@/utils/format'
-import { userListApi } from '@/api/user'
-import { enterpriseCardDeleteApi, userPwdPut } from '@/api/enterprise'
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { configFrameApi } from '@/api/setting.ts'
+import { loginRegex } from '@/utils/format.ts'
+import { userListApi } from '@/api/user.ts'
+import { enterpriseCardDeleteApi, userPwdPut } from '@/api/enterprise.ts'
+import { getStorageJson } from '@/utils/storage.ts'
 
+import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'Index',
   components: {
-    oaDialog: () => import('@/components/form-common/dialog-form'),
-    editUser: () => import('./components/editUser'),
-    oaFromBox: () => import('@/components/common/oaFromBox')
+    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form')),
+    editUser: defineAsyncComponent(() => import('./components/editUser')),
+    oaFromBox
   },
   data() {
-    var sitedata = JSON.parse(localStorage.getItem('sitedata'))
-    var { val, text } = loginRegex(sitedata.password_type, Number(sitedata.password_length))
-    var uPattern = new RegExp(val)
+    const sitedata = getStorageJson('sitedata', {})
+    const { val, text } = loginRegex(sitedata.password_type ?? 0, Number(sitedata.password_length || 6))
+    const uPattern = new RegExp(val)
 
     return {
+      TABLE_HEIGHT,
       fromData: {
         with: '400px',
         title: '修改密码',
@@ -184,11 +191,12 @@ export default {
       ],
       formRules: {
         password: {
+          required: true,
           pattern: uPattern,
           message: text,
           trigger: 'blur'
         },
-        password_confirm: { pattern: uPattern, message: text, trigger: 'blur' }
+        password_confirm: { required: true, pattern: uPattern, message: text, trigger: 'blur' }
       },
       treeData: [],
       tableData: [],
@@ -219,17 +227,8 @@ export default {
       ]
     }
   },
-  beforeDestroy() {
-    this.$bus.$off()
-  },
-
   created() {
     this.getList()
-  },
-  mounted() {
-    this.$bus.$on('getList', () => {
-      this.getList()
-    })
   },
 
   watch: {
@@ -337,7 +336,7 @@ export default {
 
     //  删除人员
     async onDelete(id, index) {
-      await this.$modalSure(this.$t('setting.group.deletitle'))
+      await modalSure('确定删除该人员吗')
       await enterpriseCardDeleteApi(id)
       this.tableData.splice(index, 1)
     },
@@ -363,7 +362,7 @@ export default {
 .divBox {
   height: 100%;
 }
-/deep/ .el-card__body {
+:deep(.el-card__body) {
   padding: 0;
 }
 .icon-h {
@@ -372,27 +371,25 @@ export default {
     color: #1890ff;
   }
 }
-/deep/ .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content {
+:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
   background: rgba(240, 250, 254, 0.6);
-  border-color: #1890ff;
   .flex-box {
     color: #1890ff;
     font-weight: 600;
   }
 }
 
-/deep/.el-tree-node__content {
+:deep(.el-tree-node__content) {
   height: 40px;
-  padding-right: 15px;
-  border-right: 2px solid transparent;
+  border-radius: 4px;
 }
-/deep/ .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node,
+:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node),
 .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .right-icon {
   display: inline-block;
   color: #1890ff;
   font-weight: 600;
 }
-/deep/.el-tree-node > .el-tree-node__children {
+:deep(.el-tree-node > .el-tree-node__children) {
   overflow: inherit;
 }
 .right {
@@ -409,7 +406,9 @@ export default {
 }
 .tree-box {
   width: 100%;
-  background: #fff;
+}
+:deep(.el-tree) {
+  background-color: transparent;
 }
 .tree-icon {
   margin-right: 5px;
@@ -419,10 +418,10 @@ export default {
 .iconzhuyaobumen {
   color: #ff9900;
 }
-/deep/ .el-tag.el-tag--info {
+:deep(.el-tag.el-tag--info) {
   margin-top: 3px;
 }
-.department /deep/ .el-input__inner {
+.department :deep(.el-input__inner) {
   color: #c0c4cc;
 }
 
@@ -438,7 +437,7 @@ export default {
 }
 .flex-box {
   display: block;
-  width: 98%;
+  width: 85%;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -448,7 +447,7 @@ export default {
   color: #303133;
 }
 .right-btn {
-  /deep/ .el-input-group__append {
+  :deep(.el-input-group__append) {
     top: 0;
     button {
       color: #fff;

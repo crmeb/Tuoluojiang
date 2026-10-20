@@ -2,12 +2,11 @@
   <div>
     <el-drawer
       :title="this.id > 0 ? '编辑' : '新增'"
-      :visible.sync="drawer"
+      v-model="drawer"
       direction="rtl"
       :show-close="true"
-      :wrapper-closable="true"
       :append-to-body="true"
-      :wrapperClosable="false"
+      :close-on-click-modal="false"
       :before-close="handleClose"
       :size="`55%`"
     >
@@ -17,15 +16,15 @@
           ref="preForm"
           :form-json="importTemplate"
           :form-data="testFormData"
-          :preview-state="true"
+          :preview-state="false"
           :option-data="testOptionData"
           :global-dsv="designerDsv"
         >
         </VFormRender>
 
         <div class="button from-foot-btn fix btn-shadow">
-          <el-button size="small" class="el-btn" @click="handleClose">取消</el-button>
-          <el-button size="small" type="primary" :loading="loading" @click="saveFn">保存</el-button>
+          <el-button class="el-btn" @click="handleClose">取消</el-button>
+          <el-button type="primary" :loading="loading" @click="saveFn">保存</el-button>
         </div>
       </div>
       <div v-else>
@@ -37,9 +36,10 @@
 <script>
 import VFormRender from '@/components/form-render/index'
 import defaultPage from '@/components/common/defaultPage'
-import { crudModuleCreateApi, crudModuleSaveDataApi, crudModuleUpdateApi } from '@/api/develop'
+import { crudModuleCreateApi, crudModuleSaveDataApi, crudModuleUpdateApi } from '@/api/develop.ts'
 
 export default {
+  emits: ['getList'],
   name: '',
   components: { VFormRender, defaultPage },
   props: {
@@ -90,7 +90,7 @@ export default {
       if (id) {
         this.id = id
       } else {
-        this.$set(this, 'testFormData', {})
+        this.testFormData = {}
       }
       let obj = {}
       if (this.crud) {
@@ -100,14 +100,25 @@ export default {
         obj = {}
       }
       obj.id = this.id
-
       const res = await crudModuleCreateApi(this.keyName, obj)
       if (res.data.form_info && res.data.form_info.global_options) {
-        this.$set(this.importTemplate, 'formConfig', res.data.form_info.global_options)
+        this.importTemplate.formConfig = res.data.form_info.global_options
       }
-      this.$set(this.importTemplate, 'widgetList', res.data.form_info.options)
+      const { form_info = {} } = res.data
+      const { options = [] } = form_info // 提供默认空数组，避免后续使用时出错
+
+      // 检查目标对象是否存在
+      if (this.importTemplate) {
+        this.importTemplate.widgetList = options
+        this.importTemplate.widgetList.forEach((item) => {
+          if (item.type == 'details') {
+            item.children_table_name_en = res.data.form_info.children_table_name_en || ''
+            item.table_name_en = res.data.form_info.table_name_en || ''
+          }
+        })
+      }
       if (data) {
-        this.$set(this, 'testFormData', data.module_info)
+        this.testFormData = data.module_info
       }
       this.drawer = true
     },
@@ -174,7 +185,7 @@ export default {
 }
 </script>
 <style scoped lang="scss">
-/deep/.el-drawer__body {
+:deep(.el-drawer__body) {
   padding: 10px 20px 50px 20px;
 }
 .p10 {

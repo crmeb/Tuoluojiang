@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,17 +18,20 @@ namespace App\Http\Service\Open;
 use App\Constants\Crud\CrudFormEnum;
 use App\Constants\CustomEnum\CustomEnum;
 use App\Http\Dao\Open\OpenapiRuleDao;
-use App\Http\Service\BaseService;
 use App\Http\Service\Config\FormService;
 use App\Http\Service\Crud\CrudModuleService;
 use App\Http\Service\Crud\SystemCrudCateService;
 use App\Http\Service\Crud\SystemCrudService;
+use App\Http\Service\BaseService;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
+/**
+ * @mixin OpenapiRuleDao
+ */
 class OpenapiRuleService extends BaseService
 {
     public function __construct(OpenapiRuleDao $dao)
@@ -130,7 +133,7 @@ class OpenapiRuleService extends BaseService
         $cateList = $noCateIdCrud = [];
 
         if ($crudIds) {
-            $crudList = app()->make(SystemCrudService::class)->crudIdByCateIds($crudIds);
+            $crudList = app()->get(SystemCrudService::class)->crudIdByCateIds($crudIds);
             $cateIds  = [];
             foreach ($crudList as $item) {
                 if ($item['cate_ids']) {
@@ -148,7 +151,7 @@ class OpenapiRuleService extends BaseService
 
             if ($cateIds) {
                 $cateIds  = array_merge(array_unique($cateIds));
-                $cateList = app()->make(SystemCrudCateService::class)->idsByNameColumn($cateIds);
+                $cateList = app()->get(SystemCrudCateService::class)->idsByNameColumn($cateIds);
             }
         }
 
@@ -219,7 +222,7 @@ class OpenapiRuleService extends BaseService
      */
     public function getCrudApiDoc(array $crudData)
     {
-        $moduleService = app()->make(CrudModuleService::class);
+        $moduleService = app()->get(CrudModuleService::class);
         switch ($crudData['method']) {
             case 'GET':
                 $crudData['path_prams'] = [
@@ -670,28 +673,28 @@ class OpenapiRuleService extends BaseService
                 ],
             ],
             CustomEnum::CONTRACT => [
-                'name'    => '合同',
+                'name'    => '订单',
                 'crud_id' => 0,
                 'method'  => '',
                 'url'     => '',
                 'type'    => 0,
                 'child'   => [
                     [
-                        'name'    => '新增合同',
+                        'name'    => '新增订单',
                         'crud_id' => 0,
                         'method'  => 'POST',
                         'url'     => 'open/contract',
                         'type'    => 1,
                     ],
                     [
-                        'name'    => '修改合同',
+                        'name'    => '修改订单',
                         'crud_id' => 0,
                         'method'  => 'PUT',
                         'url'     => 'open/contract/{id}',
                         'type'    => 1,
                     ],
                     [
-                        'name'    => '删除合同',
+                        'name'    => '删除订单',
                         'crud_id' => 0,
                         'method'  => 'DELETE',
                         'url'     => 'open/contract/{id}',
@@ -739,7 +742,7 @@ class OpenapiRuleService extends BaseService
         try {
             $this->transaction(function () use ($rule, $types) {
                 $field  = ['id', 'key', 'key_name', 'type', 'input_type', 'required'];
-                $option = app()->make(FormService::class)->getCustomDataByTypes($types, $field);
+                $option = app()->get(FormService::class)->getCustomDataByTypes($types, $field);
                 $pid    = $this->dao->value(['name' => $rule['name'], 'crud_id' => 0], 'id');
                 if (! $pid) {
                     $parent = $this->dao->create(['name' => $rule['name'], 'crud_id' => 0, 'type' => 0]);

@@ -68,7 +68,6 @@ export default {
 
     onDragAdd(evt, subList) {
       //重复代码，可合并
-      debugger
       const newIndex = evt.newIndex
       if (!!subList[newIndex]) {
         this.designer.setSelected(subList[newIndex])
@@ -85,7 +84,6 @@ export default {
     onDragCallback(x, y) {
       this.widget.options.x = x
       this.widget.options.y = y
-      console.error('x, y', x + ', ' + y)
       this.designer.emitHistoryChange()
     },
 
@@ -94,7 +92,6 @@ export default {
       this.widget.options.y = y
       this.widget.options.w = width
       this.widget.options.h = height
-      console.error('w, h', width + ', ' + height)
       this.designer.emitHistoryChange()
     }
   }

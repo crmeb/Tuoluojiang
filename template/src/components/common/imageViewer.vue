@@ -1,12 +1,12 @@
 <!-- @FileDescription: 公共-预览图片组件 -->
 <template>
   <div>
-    <el-image-viewer v-if="isImage" :on-close="closeImageViewer" :url-list="srcList" />
+    <el-image-viewer v-if="isImage" @close="closeImageViewer" :url-list="srcList" />
   </div>
 </template>
 
 <script>
-import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
+import { ElImageViewer } from 'element-plus'
 export default {
   name: 'ImageViewer',
   props: {
@@ -29,11 +29,10 @@ export default {
     openImageViewer(url) {
       this.isImage = true
       if (this.srcList.length > 0) {
-        this.srcList.map((value, index) => {
-          if (value === url) {
-            this.srcList.splice(index, 1)
-          }
-        })
+        const index = this.srcList.indexOf(url)
+        if (index !== -1) {
+          this.srcList.splice(index, 1)
+        }
         this.srcList.unshift(url)
       }
     },
@@ -44,4 +43,3 @@ export default {
 }
 </script>
 
-<style lang="scss" scoped></style>

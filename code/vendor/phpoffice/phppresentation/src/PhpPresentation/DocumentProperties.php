@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of PHPPresentation - A pure PHP library for reading and writing
  * presentations documents.
@@ -10,123 +11,143 @@
  * file that was distributed with this source code. For the full list of
  * contributors, visit https://github.com/PHPOffice/PHPPresentation/contributors.
  *
- * @link        https://github.com/PHPOffice/PHPPresentation
- * @copyright   2009-2015 PHPPresentation contributors
+ * @see        https://github.com/PHPOffice/PHPPresentation
+ *
  * @license     http://www.gnu.org/licenses/lgpl.txt LGPL version 3
  */
 
+declare(strict_types=1);
+
 namespace PhpOffice\PhpPresentation;
 
-/**
- * \PhpOffice\PhpPresentation\DocumentProperties
- */
 class DocumentProperties
 {
+    public const PROPERTY_TYPE_BOOLEAN = 'b';
+    public const PROPERTY_TYPE_INTEGER = 'i';
+    public const PROPERTY_TYPE_FLOAT = 'f';
+    public const PROPERTY_TYPE_DATE = 'd';
+    public const PROPERTY_TYPE_STRING = 's';
+    public const PROPERTY_TYPE_UNKNOWN = 'u';
+
     /**
-     * Creator
+     * Creator.
      *
      * @var string
      */
-    private $creator;
+    private $creator = 'Unknown Creator';
 
     /**
-     * LastModifiedBy
+     * LastModifiedBy.
      *
      * @var string
      */
-    private $lastModifiedBy;
+    private $lastModifiedBy = 'Unknown Creator';
 
     /**
-     * Created
+     * Created.
      *
      * @var int
      */
     private $created;
 
     /**
-     * Modified
+     * Modified.
      *
      * @var int
      */
     private $modified;
 
     /**
-     * Title
+     * Title.
      *
      * @var string
      */
-    private $title;
+    private $title = 'Untitled Presentation';
 
     /**
-     * Description
+     * Description.
      *
      * @var string
      */
-    private $description;
+    private $description = '';
 
     /**
-     * Subject
+     * Subject.
      *
      * @var string
      */
-    private $subject;
+    private $subject = '';
 
     /**
-     * Keywords
+     * Keywords.
      *
      * @var string
      */
-    private $keywords;
+    private $keywords = '';
 
     /**
-     * Category
+     * Category.
      *
      * @var string
      */
-    private $category;
+    private $category = '';
 
     /**
-     * Company
+     * Company.
      *
      * @var string
      */
-    private $company;
+    private $company = 'Unknown Company';
 
     /**
-     * Create a new \PhpOffice\PhpPresentation\DocumentProperties
+     * Revision.
+     *
+     * @var string
+     */
+    private $revision = '';
+
+    /**
+     * Status.
+     *
+     * @var string
+     */
+    private $status = '';
+
+    /**
+     * Custom Properties.
+     *
+     * @var array<string, array<string, mixed>>
+     */
+    private $customProperties = [];
+
+    /**
+     * Generator.
+     *
+     * @var string
+     */
+    private $generator = '';
+
+    /**
+     * Create a new \PhpOffice\PhpPresentation\DocumentProperties.
      */
     public function __construct()
     {
-        // Initialise values
-        $this->creator        = 'Unknown Creator';
-        $this->lastModifiedBy = $this->creator;
-        $this->created        = time();
-        $this->modified       = time();
-        $this->title          = "Untitled Presentation";
-        $this->subject        = '';
-        $this->description    = '';
-        $this->keywords       = '';
-        $this->category       = '';
-        $this->company        = 'Microsoft Corporation';
+        $this->created = time();
+        $this->modified = time();
     }
 
     /**
-     * Get Creator
-     *
-     * @return string
+     * Get Creator.
      */
-    public function getCreator()
+    public function getCreator(): string
     {
         return $this->creator;
     }
 
     /**
-     * Set Creator
-     *
-     * @param  string                           $pValue
-     * @return \PhpOffice\PhpPresentation\DocumentProperties
+     * Set Creator.
      */
-    public function setCreator($pValue = '')
+    public function setCreator(string $pValue = ''): self
     {
         $this->creator = $pValue;
 
@@ -134,22 +155,17 @@ class DocumentProperties
     }
 
     /**
-     * Get Last Modified By
-     *
-     * @return string
+     * Get Last Modified By.
      */
-    public function getLastModifiedBy()
+    public function getLastModifiedBy(): string
     {
         return $this->lastModifiedBy;
     }
 
     /**
-     * Set Last Modified By
-     *
-     * @param  string                           $pValue
-     * @return \PhpOffice\PhpPresentation\DocumentProperties
+     * Set Last Modified By.
      */
-    public function setLastModifiedBy($pValue = '')
+    public function setLastModifiedBy(string $pValue = ''): self
     {
         $this->lastModifiedBy = $pValue;
 
@@ -157,24 +173,19 @@ class DocumentProperties
     }
 
     /**
-     * Get Created
-     *
-     * @return int
+     * Get Created.
      */
-    public function getCreated()
+    public function getCreated(): int
     {
         return $this->created;
     }
 
     /**
-     * Set Created
-     *
-     * @param int $pValue
-     * @return \PhpOffice\PhpPresentation\DocumentProperties
+     * Set Created.
      */
-    public function setCreated($pValue = null)
+    public function setCreated(?int $pValue = null): self
     {
-        if (is_null($pValue)) {
+        if (null === $pValue) {
             $pValue = time();
         }
         $this->created = $pValue;
@@ -183,24 +194,19 @@ class DocumentProperties
     }
 
     /**
-     * Get Modified
-     *
-     * @return int
+     * Get Modified.
      */
-    public function getModified()
+    public function getModified(): int
     {
         return $this->modified;
     }
 
     /**
-     * Set Modified
-     *
-     * @param  int                         $pValue
-     * @return \PhpOffice\PhpPresentation\DocumentProperties
+     * Set Modified.
      */
-    public function setModified($pValue = null)
+    public function setModified(?int $pValue = null): self
     {
-        if (is_null($pValue)) {
+        if (null === $pValue) {
             $pValue = time();
         }
         $this->modified = $pValue;
@@ -209,22 +215,17 @@ class DocumentProperties
     }
 
     /**
-     * Get Title
-     *
-     * @return string
+     * Get Title.
      */
-    public function getTitle()
+    public function getTitle(): string
     {
         return $this->title;
     }
 
     /**
-     * Set Title
-     *
-     * @param  string                           $pValue
-     * @return \PhpOffice\PhpPresentation\DocumentProperties
+     * Set Title.
      */
-    public function setTitle($pValue = '')
+    public function setTitle(string $pValue = ''): self
     {
         $this->title = $pValue;
 
@@ -232,22 +233,17 @@ class DocumentProperties
     }
 
     /**
-     * Get Description
-     *
-     * @return string
+     * Get Description.
      */
-    public function getDescription()
+    public function getDescription(): string
     {
         return $this->description;
     }
 
     /**
-     * Set Description
-     *
-     * @param  string                           $pValue
-     * @return \PhpOffice\PhpPresentation\DocumentProperties
+     * Set Description.
      */
-    public function setDescription($pValue = '')
+    public function setDescription(string $pValue = ''): self
     {
         $this->description = $pValue;
 
@@ -255,22 +251,17 @@ class DocumentProperties
     }
 
     /**
-     * Get Subject
-     *
-     * @return string
+     * Get Subject.
      */
-    public function getSubject()
+    public function getSubject(): string
     {
         return $this->subject;
     }
 
     /**
-     * Set Subject
-     *
-     * @param  string                           $pValue
-     * @return \PhpOffice\PhpPresentation\DocumentProperties
+     * Set Subject.
      */
-    public function setSubject($pValue = '')
+    public function setSubject(string $pValue = ''): self
     {
         $this->subject = $pValue;
 
@@ -278,22 +269,17 @@ class DocumentProperties
     }
 
     /**
-     * Get Keywords
-     *
-     * @return string
+     * Get Keywords.
      */
-    public function getKeywords()
+    public function getKeywords(): string
     {
         return $this->keywords;
     }
 
     /**
-     * Set Keywords
-     *
-     * @param  string                           $pValue
-     * @return \PhpOffice\PhpPresentation\DocumentProperties
+     * Set Keywords.
      */
-    public function setKeywords($pValue = '')
+    public function setKeywords(string $pValue = ''): self
     {
         $this->keywords = $pValue;
 
@@ -301,22 +287,17 @@ class DocumentProperties
     }
 
     /**
-     * Get Category
-     *
-     * @return string
+     * Get Category.
      */
-    public function getCategory()
+    public function getCategory(): string
     {
         return $this->category;
     }
 
     /**
-     * Set Category
-     *
-     * @param  string                           $pValue
-     * @return \PhpOffice\PhpPresentation\DocumentProperties
+     * Set Category.
      */
-    public function setCategory($pValue = '')
+    public function setCategory(string $pValue = ''): self
     {
         $this->category = $pValue;
 
@@ -324,24 +305,155 @@ class DocumentProperties
     }
 
     /**
-     * Get Company
-     *
-     * @return string
+     * Get Company.
      */
-    public function getCompany()
+    public function getCompany(): string
     {
         return $this->company;
     }
 
     /**
-     * Set Company
-     *
-     * @param  string                           $pValue
-     * @return \PhpOffice\PhpPresentation\DocumentProperties
+     * Set Company.
      */
-    public function setCompany($pValue = '')
+    public function setCompany(string $pValue = ''): self
     {
         $this->company = $pValue;
+
+        return $this;
+    }
+
+    /**
+     * Get a List of Custom Property Names.
+     *
+     * @return array<int, string>
+     */
+    public function getCustomProperties(): array
+    {
+        return array_keys($this->customProperties);
+    }
+
+    /**
+     * Check if a Custom Property is defined.
+     */
+    public function isCustomPropertySet(string $propertyName): bool
+    {
+        return isset($this->customProperties[$propertyName]);
+    }
+
+    /**
+     * Get a Custom Property Value.
+     *
+     * @return null|mixed
+     */
+    public function getCustomPropertyValue(string $propertyName)
+    {
+        if ($this->isCustomPropertySet($propertyName)) {
+            return $this->customProperties[$propertyName]['value'];
+        }
+
+        return null;
+    }
+
+    /**
+     * Get a Custom Property Type.
+     */
+    public function getCustomPropertyType(string $propertyName): ?string
+    {
+        if ($this->isCustomPropertySet($propertyName)) {
+            return $this->customProperties[$propertyName]['type'];
+        }
+
+        return null;
+    }
+
+    /**
+     * Set a Custom Property.
+     *
+     * @param mixed $propertyValue
+     * @param null|string $propertyType
+     *                                  'i' : Integer
+     *                                  'f' : Floating Point
+     *                                  's' : String
+     *                                  'd' : Date/Time
+     *                                  'b' : Boolean
+     */
+    public function setCustomProperty(string $propertyName, $propertyValue = '', ?string $propertyType = null): self
+    {
+        if (!in_array($propertyType, [
+            self::PROPERTY_TYPE_INTEGER,
+            self::PROPERTY_TYPE_FLOAT,
+            self::PROPERTY_TYPE_STRING,
+            self::PROPERTY_TYPE_DATE,
+            self::PROPERTY_TYPE_BOOLEAN,
+        ])) {
+            if (is_float($propertyValue)) {
+                $propertyType = self::PROPERTY_TYPE_FLOAT;
+            } elseif (is_int($propertyValue)) {
+                $propertyType = self::PROPERTY_TYPE_INTEGER;
+            } elseif (is_bool($propertyValue)) {
+                $propertyType = self::PROPERTY_TYPE_BOOLEAN;
+            } else {
+                $propertyType = self::PROPERTY_TYPE_STRING;
+            }
+        }
+        $this->customProperties[$propertyName] = [
+            'value' => $propertyValue,
+            'type' => $propertyType,
+        ];
+
+        return $this;
+    }
+
+    /**
+     * Get Revision.
+     */
+    public function getRevision(): string
+    {
+        return $this->revision;
+    }
+
+    /**
+     * Set Revision.
+     */
+    public function setRevision(string $pValue = ''): self
+    {
+        $this->revision = $pValue;
+
+        return $this;
+    }
+
+    /**
+     * Get Status.
+     */
+    public function getStatus(): string
+    {
+        return $this->status;
+    }
+
+    /**
+     * Set Status.
+     */
+    public function setStatus(string $pValue = ''): self
+    {
+        $this->status = $pValue;
+
+        return $this;
+    }
+
+    /**
+     * Get Generator.
+     */
+    public function getGenerator(): string
+    {
+        return $this->generator;
+    }
+
+    /**
+     * Set Generator.
+     */
+    public function setGenerator(string $pValue = ''): self
+    {
+        $this->generator = $pValue;
 
         return $this;
     }

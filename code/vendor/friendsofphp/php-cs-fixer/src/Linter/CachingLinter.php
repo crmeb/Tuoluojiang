@@ -24,7 +24,7 @@ final class CachingLinter implements LinterInterface
     private LinterInterface $sublinter;
 
     /**
-     * @var array<int, LintingResultInterface>
+     * @var array<string, LintingResultInterface>
      */
     private array $cache = [];
 
@@ -33,39 +33,22 @@ final class CachingLinter implements LinterInterface
         $this->sublinter = $linter;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function isAsync(): bool
     {
         return $this->sublinter->isAsync();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function lintFile(string $path): LintingResultInterface
     {
-        $checksum = crc32(file_get_contents($path));
+        $checksum = md5(file_get_contents($path));
 
-        if (!isset($this->cache[$checksum])) {
-            $this->cache[$checksum] = $this->sublinter->lintFile($path);
-        }
-
-        return $this->cache[$checksum];
+        return $this->cache[$checksum] ??= $this->sublinter->lintFile($path);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function lintSource(string $source): LintingResultInterface
     {
-        $checksum = crc32($source);
+        $checksum = md5($source);
 
-        if (!isset($this->cache[$checksum])) {
-            $this->cache[$checksum] = $this->sublinter->lintSource($source);
-        }
-
-        return $this->cache[$checksum];
+        return $this->cache[$checksum] ??= $this->sublinter->lintSource($source);
     }
 }

@@ -10,10 +10,11 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 export default {
   name: 'FixedList',
   components: {
-    log: () => import('./components/log')
+    log: defineAsyncComponent(() => import('./components/log'))
   }
 }
 </script>
@@ -23,7 +24,7 @@ export default {
   min-height: calc(100vh - 77px);
 }
 .table-box {
-  /deep/ .el-table th {
+  :deep(.el-table th) {
     background-color: rgba(247, 251, 255, 1);
   }
 }

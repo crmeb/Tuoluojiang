@@ -16,7 +16,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\user;
 
 use App\Http\Requests\ApiValidate;
-use crmeb\utils\Regex;
+use Tuoluojiang\Open\utils\Regex;
 
 class UserResumeRequest extends ApiValidate
 {
@@ -91,7 +91,7 @@ class UserResumeRequest extends ApiValidate
             'password.required'                  => '请填写密码',
             'password.min'                       => '密码长度不正确,最少' . sys_config('login_password_length', 5) . '个字符',
             'password.regex'                     => '密码格式不正确,请输入' . get_password_message() . '的组合',
-            'password.password_confirm_api'      => '两次输入的密码不正确',
+            'password.password_confirm_api'      => '两次输入的密码不一致',
             'password_confirm.required'          => '请填写确认密码',
             'password_confirm.regex'             => '确认密码格式不正确,请输入' . get_password_message() . '的组合',
             'avatar.dimensions'                  => '头像尺寸不符合规则,请上传宽大于100高大于200的头像',

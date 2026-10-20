@@ -1,0 +1,151 @@
+/**
+ * @description 数组转
+ * @param {Array} data  数据
+ * @param {Object} props `{ parent: 'pid', children: 'children' }`
+ */
+
+import { cloneDeep } from 'lodash-es'
+import dayjs from 'dayjs'
+import CryptoJS from 'crypto-js'
+
+
+export function getAccount(phone: string, uuid: string) {
+  let plaintext = {
+    phone: phone,
+    uuid: uuid
+  }
+  let key = CryptoJS.enc.Hex.parse('47a0715f25197583c9eec4d503602b62')
+  let iv = CryptoJS.enc.Hex.parse('b515e18aa3fbe7d264d7ca5a95ef73e1')
+  let encrypted = CryptoJS.AES.encrypt(JSON.stringify(plaintext), key, {
+    iv: iv,
+    mode: CryptoJS.mode.CBC,
+    padding: CryptoJS.pad.Pkcs7
+  }).toString()
+
+  return btoa(encrypted)
+}
+
+
+export function loginRegex(type: string | number, length: number | string) {
+  const regexObj: Record<string, { text: string; val: string }> = {
+    0: {
+      text: '纯数字至少'+length+'位',
+      val: '^[0-9]{'+length+',}$'
+    },
+    // /^(?=.*?[a-z])(?=.*?[A-Z])(?=.*?\d)(?=.*?[!#@*&.])[a-zA-Z\d!#@*&.]{8,}$/
+    '01': {
+      text: '数字+大写字母至少'+length+'位',
+      val: '^(?=.*[0-9])(?=.*[A-Z]).{'+length+',}$'
+    },
+    '02': {
+      text: '数字+小写字母至少'+length+'位',
+      val: '^(?=.*[0-9])(?=.*[a-z]).{'+length+',}$'
+    },
+    '03': {
+      text: '数字+特殊字符至少'+length+'位',
+      val: '^(?=.*[0-9])(?=.*?[!#@*&$%.]).{'+length+',}$'
+    },
+    12: {
+      text: '大写字母+小写字母至少'+length+'位',
+      val: '^(?=.*[a-z])(?=.*[A-Z])[a-zA-Z]{' + length + ',}$'
+    },
+    13: {
+      text: '大写字母+特殊字符至少'+length+'位',
+      val: '^(?=.*[A-Z])(?=.*?[!#@*&$%.])[A-Z!#@*&$%.].{' + length + ',}$'
+    },
+    23: {
+      text: '小写字母+特殊字符至少'+length+'位',
+      val:  '^(?=.*[a-z])(?=.*?[!#@*&$%.])[a-z!#@*&$%.].{' + length + ',}$'
+    },
+    '012': {
+      text: '数字加小写字母加大写字母至少'+length+'位',
+      val: '^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])[a-zA-Z0-9]{' + length + ',}$'
+    },
+    '0123': {
+      text: '数字+小写字母+大写字母+特殊字符至少'+length+'位',
+      val:
+      '^(?=.*?[a-z])(?=.*?[A-Z])(?=.*[0-9])(?=.*?[!#@*&%$.])[a-zA-Z0-9!#@*&$%.]{'+length +',}$'
+    },
+    
+    '013': {
+      text: '数字+大写字母+特殊字符至少'+length+'位',
+      val: '^(?=.*[A-Z])(?=.*[0-9])(?=.*?[!#@*&$%.])[A-Z0-9!#@*&$%.]{' + length + ',}$'
+    },
+    '023': {
+      text: '数字+小写字母+特殊字符至少'+length+'位',
+      val: '^(?=.*[a-z])(?=.*[0-9])(?=.*?[!#@*&%$.])[a-z0-9!#@*&$%.]{' + length + ',}$'
+    },
+
+    123: {
+      text: '小写字母+大写字母+特殊字符至少'+length+'位',
+      val: '^(?=.*[a-z])(?=.*[A-Z])(?=.*[!#@*&$%.])[A-Za-z!#@*&$%.]{' + length + ',}'
+    }
+  }
+
+
+  return regexObj[type]
+}
+
+// 客户-订单 上传文件格式类型判断
+export function toSrcFn(e: string | null | undefined) {
+  if (!e) return false
+  const index = e.lastIndexOf('.')
+  const type = e.substring(index + 1, e.length)
+  // 文档
+  if (['doc', 'dot', 'wps', 'wpt', 'docx', 'dotx', 'docm', 'dotm', 'rtf'].includes(type)) {
+    return 1
+  }
+  // ppt
+  if (['ppt', 'pptx', 'pptm', 'ppsx', 'ppsm', 'pps', 'potx', 'potm', 'dpt', 'dps'].includes(type)) {
+    return 2
+  }
+  // 表
+  if (['xls', 'xlt', 'et', 'xlsx', 'xltx', 'csv', 'xlsm', 'xltm'].includes(type)) {
+    return 3
+  }
+  // 图片
+  if (['jpg', 'png', 'gif', 'jpeg', 'PNG'].includes(type)) {
+    return 4
+  }
+  // pdf
+  if (type == 'pdf') {
+    return 5
+  }
+}
+
+// 颜色转为带有透明度rgba背景颜色
+export function getColor(thisColor: string, thisOpacity: number | string) {
+  var theColor = thisColor.toLowerCase()
+  var r = /^#([0-9a-fA-f]{3}|[0-9a-fA-f]{6})$/
+  if (theColor && r.test(theColor)) {
+    if (theColor.length === 4) {
+      var sColorNew = '#'
+      for (var i = 1; i < 4; i += 1) {
+        sColorNew += theColor.slice(i, i + 1).concat(theColor.slice(i, i + 1))
+      }
+      theColor = sColorNew
+    }
+    var sColorChange: number[] = []
+    for (var i = 1; i < 7; i += 2) {
+      sColorChange.push(parseInt('0x' + theColor.slice(i, i + 2)))
+    }
+    return 'rgba(' + sColorChange.join(',') + ',' + thisOpacity + ')'
+  }
+}
+
+
+
+export function toGetWeek(date: dayjs.ConfigType) {
+  // 参数时间戳
+  let week = dayjs(date).day()
+  const isWeek: Record<number, string> = {
+    1: '周一',
+    2: '周二',
+    3: '周三',
+    4: '周四',
+    5: '周五',
+    6: '周六',
+    0: '周日'
+  }
+  return isWeek[week]
+}

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -19,18 +19,18 @@ use App\Constants\CacheEnum;
 use App\Constants\System\ConfigEnum;
 use App\Http\Contract\Company\CompanyInterface;
 use App\Http\Dao\Company\CompanyDao;
-use App\Http\Model\BaseModel;
 use App\Http\Service\Admin\AdminService;
-use App\Http\Service\BaseService;
 use App\Http\Service\Cloud\CloudFileService;
 use App\Http\Service\Config\SystemConfigService;
 use App\Http\Service\Frame\FrameAssistService;
 use App\Http\Service\Frame\FrameService;
 use App\Http\Service\System\RolesService;
-use App\Jobs\InitRoleJob;
-use crmeb\services\FormService as Form;
-use crmeb\services\synchro\Company;
-use crmeb\traits\service\ResourceServiceTrait;
+use App\Http\Model\BaseModel;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\services\FormService as Form;
+use Tuoluojiang\Open\services\synchro\Company;
+use Tuoluojiang\Open\services\WeatherService;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Concerns\BuildsQueries;
 use Illuminate\Database\Eloquent\Model;
@@ -95,7 +95,7 @@ class CompanyService extends BaseService implements CompanyInterface
      */
     public function resourceCreate(array $other = []): array
     {
-        return $this->elForm('企业入驻申请', $this->createFormRule(collect($other)), '/ent/enterprise');
+        return $this->createElementForm('企业入驻申请', $this->createFormRule(collect($other)), '/ent/enterprise');
     }
 
     /**
@@ -138,7 +138,7 @@ class CompanyService extends BaseService implements CompanyInterface
             throw $this->exception('修改的申请不存在');
         }
 
-        return $this->elForm('修改企业入驻信息', $this->createFormRule(collect($rankInfo->toArray())), '/ent/enterprise/' . $id, 'put');
+        return $this->createElementForm('修改企业入驻信息', $this->createFormRule(collect($rankInfo->toArray())), '/ent/enterprise/' . $id, 'put');
     }
 
     /**
@@ -242,7 +242,7 @@ class CompanyService extends BaseService implements CompanyInterface
             $phone    = $envData['MANAGE_ACCOUNT'] ?: '13888888888';
             $password = $envData['MANAGE_PASSWORD'] ?: password_hash('888888', PASSWORD_BCRYPT);
             $res      = app()->get(AdminService::class)->create([
-                'avatar'   => 'https://shmily-album.oss-cn-shenzhen.aliyuncs.com/admin_face/face' . rand(1, 10) . '.png',
+                'avatar'   => link_file('/static/admin_face/face' . rand(1, 6) . '.png'),
                 'phone'    => $phone,
                 'name'     => '企业创始人',
                 'password' => $password,
@@ -264,8 +264,15 @@ class CompanyService extends BaseService implements CompanyInterface
      */
     public function getEntInfo(int $entId, $field = ['*'])
     {
-        $entInfo = $this->dao->get($entId, $field);
-        return $entInfo ? $entInfo->makeHidden(['delete'])->toArray() : [];
+        $fieldKey = is_array($field) ? implode(',', $field) : (string) $field;
+        return Cache::tags([CacheEnum::TAG_FRAME])->remember(
+            md5('ent_info_' . $entId . '_' . $fieldKey),
+            (int) sys_config('system_cache_ttl', 3600),
+            function () use ($entId, $field) {
+                $entInfo = $this->dao->get($entId, $field);
+                return $entInfo ? $entInfo->makeHidden(['delete'])->toArray() : [];
+            }
+        );
     }
 
     /**
@@ -367,10 +374,9 @@ class CompanyService extends BaseService implements CompanyInterface
                 // 创建文档文件夹
                 app()->get(CloudFileService::class)->create(['entid' => $entId, 'name' => $entInfo['enterprise_name']]);
                 // 用户加入部门
-                app()->get(FrameAssistService::class)->setUserFrame($frameId, $adminId, $frameId, true, $adminId);
+                app()->get(FrameAssistService::class)->setUserFrame($frameId, $adminId, $frameId, true, $adminId, [$frameId]);
                 return true;
             });
-            InitRoleJob::dispatch($entId)->onQueue('init_role');
         } catch (\Throwable $e) {
             Log::error('企业后置事件执行失败:' . $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine(), 'trace' => $e->getTrace()]);
         }
@@ -465,6 +471,29 @@ class CompanyService extends BaseService implements CompanyInterface
             $ent = toArray($this->dao->get(['id' => 1], ['enterprise_name', 'short_name', 'logo']));
             return array_merge($ent, ['address' => sys_config('site_url', config('app.url')), 'version' => getVersion('version_num') ?? '1.6.0']);
         });
+    }
+
+    /**
+     * 获取当前IP的天气信息.
+     */
+    public function getCurrentWeather(): array
+    {
+        $request = request();
+        $ips     = array_merge(
+            explode(',', (string) $request->header('X-Forwarded-For')),
+            [(string) $request->header('X-Real-IP'), (string) $request->server('HTTP_X_REAL_IP'), (string) $request->ip()]
+        );
+
+        $ip = '127.0.0.1';
+        foreach ($ips as $item) {
+            $item = trim($item);
+            if (filter_var($item, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                $ip = $item;
+                break;
+            }
+        }
+
+        return app(WeatherService::class)->getWeatherByIp($ip)->toArray();
     }
 
     /**

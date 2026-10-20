@@ -36,9 +36,17 @@ class Group extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'cate_id'    => 'integer',
+        'entid'      => 'integer',
+        'sort'       => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * 格式化fields字段.
-     * @param mixed $value
      * @return false|string[]
      */
     public function setFieldsAttribute($value)
@@ -48,7 +56,6 @@ class Group extends BaseModel
 
     /**
      * 格式化fields字段.
-     * @param mixed $value
      * @return false|string[]
      */
     public function getFieldsAttribute($value)
@@ -59,7 +66,6 @@ class Group extends BaseModel
     /**
      * entid作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeEntid($query, $value)
@@ -72,7 +78,6 @@ class Group extends BaseModel
     /**
      * group_key作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeGroupKey($query, $value)

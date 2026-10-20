@@ -57,21 +57,21 @@ export const toJSON = function (val) {
 
 const _toJSON = {
   object: function (val) {
-    var json = [];
-    for (var i in val) {
+    let json = [];
+    for (let i in val) {
       if (!hasProperty(val, i)) continue;
       json.push(toJSON(i) + ': ' + (val[i] != null ? toJSON(val[i]) : 'null'));
     }
     return '{\n ' + json.join(',\n ') + '\n}';
   },
   array: function (val) {
-    for (var i = 0, json = []; i < val.length; i++) json[i] = val[i] != null ? toJSON(val[i]) : 'null';
+    for (let i = 0, json = []; i < val.length; i++) json[i] = val[i] != null ? toJSON(val[i]) : 'null';
     return '[' + json.join(', ') + ']';
   },
   string: function (val) {
-    var tmp = val.split('');
-    for (var i = 0; i < tmp.length; i++) {
-      var c = tmp[i];
+    let tmp = val.split('');
+    for (let i = 0; i < tmp.length; i++) {
+      let c = tmp[i];
       c >= ' '
         ? c === '\\'
           ? (tmp[i] = '\\\\')

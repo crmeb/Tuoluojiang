@@ -5,6 +5,8 @@
 }
 .content{
     display: flex;
+    height: 430px;
+    box-sizing: border-box;
 }
 
 .menu {
@@ -64,6 +66,7 @@
 }
 .config-list{
     width: 485px;
+    min-height: 0;
 }
 /*
 ===================
@@ -71,17 +74,22 @@
 ===================
 */
 .server{
-    height: 430px;
+    height: 100%;
     padding:0px 20px 3px 35px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
 }
 .server table{
     margin-bottom:20px;
+    table-layout: fixed;
 }
 .server td{
     padding:6px 5px;
     color: #fff;
     font-size: 12px;
     align-items: center;
+    word-break: break-word;
 }
 .server .td1{
     color:rgba(255,255,255, 0.6);
@@ -152,6 +160,7 @@
 }
 .bottom-btn{
     display: flex;
+    justify-content: center;
 }
 .bottom-btn .up-btn{
     color: rgba(255,255,255,0.6);

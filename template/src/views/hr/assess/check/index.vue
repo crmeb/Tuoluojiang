@@ -32,13 +32,11 @@
               <el-table-column prop="name" label="模板名称" min-width="200" />
               <el-table-column prop="info" label="模板内容" min-width="200" />
               <el-table-column prop="user.name" label="创建人" min-width="160" />
-              <el-table-column prop="address" :label="$t('public.operation')" fixed="right" width="200">
-                <template slot-scope="scope">
-                  <el-button type="text" @click="handleEdit(scope.row)">{{ $t('public.edit') }}</el-button>
-                  <el-button type="text" @click="handleImage(scope.row)">编辑封面</el-button>
-                  <el-button type="text" @click="handleDelete(scope.row, scope.$index)">{{
-                    $t('public.delete')
-                  }}</el-button>
+              <el-table-column prop="address" label="操作" fixed="right" width="200">
+                <template #default="scope">
+                  <el-button type="primary" link @click="handleEdit(scope.row)">编辑</el-button>
+                  <el-button type="primary" link @click="handleImage(scope.row)">编辑封面</el-button>
+                  <el-button type="primary" link @click="handleDelete(scope.row, scope.$index)">删除</el-button>
                 </template>
               </el-table-column>
             </el-table>
@@ -67,14 +65,16 @@
 </template>
 
 <script>
-import { assessTemplateListApi, templateDeleteApi } from '@/api/enterprise'
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { assessTemplateListApi, templateDeleteApi } from '@/api/enterprise.ts'
 export default {
   name: 'AssessCheck',
   components: {
-    dialogForm: () => import('./components/index'),
-    preview: () => import('./components/preview'),
-    departmentNot: () => import('@/components/user/department'),
-    GoalSetting: () => import('@/views/user/assessment/components/goalSetting')
+    dialogForm: defineAsyncComponent(() => import('./components/index')),
+    preview: defineAsyncComponent(() => import('./components/preview')),
+    departmentNot: defineAsyncComponent(() => import('@/components/user/department')),
+    GoalSetting: defineAsyncComponent(() => import('@/views/user/assessment/components/goalSetting'))
   },
   data() {
     return {
@@ -142,7 +142,7 @@ export default {
       this.$refs.preview.openDialog()
     },
     handleDelete(item, index) {
-      this.$modalSure('你确定要删除这条考核模板吗').then(() => {
+      modalSure('你确定要删除这条考核模板吗').then(() => {
         templateDeleteApi(item.id).then((res) => {
           this.tableData.splice(index, 1)
         })

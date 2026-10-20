@@ -1,12 +1,11 @@
 <?php
-namespace PhpOffice\Common\Adapter\Zip;
 
-use PclZip;
+namespace PhpOffice\Common\Adapter\Zip;
 
 class PclZipAdapter implements ZipInterface
 {
     /**
-     * @var PclZip
+     * @var \PclZip
      */
     protected $oPclZip;
 
@@ -17,8 +16,9 @@ class PclZipAdapter implements ZipInterface
 
     public function open($filename)
     {
-        $this->oPclZip = new PclZip($filename);
+        $this->oPclZip = new \PclZip($filename);
         $this->tmpDir = sys_get_temp_dir();
+
         return $this;
     }
 
@@ -27,19 +27,33 @@ class PclZipAdapter implements ZipInterface
         return $this;
     }
 
-    public function addFromString($localname, $contents)
+    public function addFromString(string $localname, string $contents, bool $withCompression = true)
     {
         $pathData = pathinfo($localname);
 
-        $hFile = fopen($this->tmpDir.'/'.$pathData['basename'], "wb");
-        fwrite($hFile, $contents);
-        fclose($hFile);
-
-        $res = $this->oPclZip->add($this->tmpDir.'/'.$pathData['basename'], PCLZIP_OPT_REMOVE_PATH, $this->tmpDir, PCLZIP_OPT_ADD_PATH, $pathData['dirname']);
-        if ($res == 0) {
-            throw new \Exception("Error zipping files : " . $this->oPclZip->errorInfo(true));
+        $hFile = fopen($this->tmpDir . '/' . $pathData['basename'], 'wb');
+        if ($hFile !== false) {
+            fwrite($hFile, $contents);
+            fclose($hFile);
         }
-        unlink($this->tmpDir.'/'.$pathData['basename']);
+
+        $params = [
+            $this->tmpDir . '/' . $pathData['basename'],
+            PCLZIP_OPT_REMOVE_PATH,
+            $this->tmpDir,
+            PCLZIP_OPT_ADD_PATH,
+            dirname($localname),
+        ];
+        if (!$withCompression) {
+            $params[] = PCLZIP_OPT_NO_COMPRESSION;
+        }
+
+        $res = $this->oPclZip->add(...$params);
+        if ($res == 0) {
+            throw new \Exception('Error zipping files : ' . $this->oPclZip->errorInfo(true));
+        }
+        unlink($this->tmpDir . '/' . $pathData['basename']);
+
         return $this;
     }
 }

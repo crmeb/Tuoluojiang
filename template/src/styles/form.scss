@@ -1,0 +1,16 @@
+.view-box {
+  cursor: pointer;
+  padding: 0 10px;
+  width: 100px;
+  flex-shrink: 0;
+  height: 32px;
+  background: #fff;
+  border-radius: 4px;
+  font-family: PingFang SC, PingFang SC;
+  font-weight: 400;
+  font-size: 13px;
+  color: #1e2128;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}

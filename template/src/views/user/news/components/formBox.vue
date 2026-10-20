@@ -1,8 +1,17 @@
 <template>
   <el-form :inline="true" class="from-s">
-    <el-row class="flex-row">
+    <div class="flex-row">
       <el-form-item label="" class="select-bar">
-        <el-cascader
+        <el-select
+          v-model="tableFrom.types"
+          placeholder="请选择消息类型"
+          @change="handleTypes"
+          style="width: 220px"
+          clearable
+        >
+          <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value"></el-option>
+        </el-select>
+        <!-- <el-cascader
           v-model="types"
           :options="options"
           placeholder="请选择消息类型"
@@ -10,7 +19,7 @@
           :props="{ checkStrictly: true }"
           clearable
           @change="handleTypes"
-        ></el-cascader>
+        ></el-cascader> -->
       </el-form-item>
 
       <el-form-item class="select-bar">
@@ -18,9 +27,8 @@
           v-model="tableFrom.name"
           prefix-icon="el-icon-search"
           clearable
-          size="small"
           @change="handleConfirm"
-          @keyup.native.stop.prevent.enter="handleConfirm"
+          @keyup.stop.prevent.enter="handleConfirm"
           placeholder="请输入标题/内容"
         ></el-input>
       </el-form-item>
@@ -33,16 +41,17 @@
 
       <!-- <el-col :span="8">
           <el-button type="primary" size="small" @click="handleConfirm">搜索</el-button>
-          <el-button size="small" @click="reset">{{ $t('public.reset') }}</el-button>
+          <el-button size="small" @click="reset">重置</el-button>
         </el-col> -->
-    </el-row>
+    </div>
   </el-form>
 </template>
 
 <script>
-import { messageCateApi } from '@/api/setting'
+import { messageCateApi } from '@/api/setting.ts'
 
 export default {
+  emits: ['confirmData'],
   name: 'FormBox',
   data() {
     return {
@@ -66,11 +75,6 @@ export default {
       this.options = result.data
     },
     handleTypes(e) {
-      if (e.length === 0) {
-        this.tableFrom.types = ''
-      } else {
-        this.tableFrom.types = e[e.length - 1]
-      }
       this.confirmData()
     },
     // 重置
@@ -97,7 +101,7 @@ export default {
 .from-s {
   display: inline-block;
 }
-/deep/ .el-form-item {
-  margin-bottom: 20px;
+:deep(.el-form-item) {
+  margin-bottom: 0;
 }
 </style>

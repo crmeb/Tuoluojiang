@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -24,8 +24,9 @@ use App\Http\Middleware\CheckRuleCompany;
 use App\Http\Requests\system\SystemAdminRequest;
 use App\Http\Requests\system\SystemRoleRequest;
 use App\Http\Service\Admin\AdminService;
+use App\Http\Service\System\ModulePermissionService;
 use App\Http\Service\System\RolesService;
-use App\Http\Service\System\SystemMenusService;
+use App\Http\Service\System\MenusService;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Validation\ValidationException;
 use Psr\Container\ContainerExceptionInterface;
@@ -53,10 +54,13 @@ use Spatie\RouteAttributes\Attributes\Resource;
 #[Middleware(['auth.admin', 'ent.auth', 'ent.log'])]
 class RoleController extends AuthController
 {
-    public function __construct(RolesInterface $services)
+    protected ModulePermissionService $permissionService;
+
+    public function __construct(RolesInterface $services, ModulePermissionService $permissionService)
     {
         parent::__construct();
-        $this->service = $services;
+        $this->service           = $services;
+        $this->permissionService = $permissionService;
         $this->middleware([AuthAdmin::class, AuthEnterprise::class, CheckRuleCompany::class]);
     }
 
@@ -72,7 +76,7 @@ class RoleController extends AuthController
             ['role_name', ''],
             ['entid', 1],
         ]);
-        $role = $this->service->getRolesList($where, ['id', 'role_name', 'user_count', 'status', 'data_level', 'directly', 'frame_id']);
+        $role = $this->service->getRolesList($where, ['id', 'role_name', 'user_count', 'status', 'module_permissions']);
         return $this->success($role);
     }
 
@@ -92,18 +96,19 @@ class RoleController extends AuthController
     public function store(SystemRoleRequest $request): mixed
     {
         $request->check();
-        [$role_name, $rules, $apis, $status, $dataLevel, $directly, $frameId,$crud] = $request->postMore([
+        [$role_name, $rules, $apis, $status, $crud, $modulePermission] = $request->postMore([
             ['role_name', ''],
             ['rules', []],
             ['apis', []],
             ['status', 0],
-            ['data_level', 1],
-            ['directly', 0],
-            ['frame_id', []],
             ['crud', []],
+            ['module_permission', []],
         ], true);
-        $res = $this->service->saveRole($this->entId, $role_name, $rules, $apis, (int) $status, (int) $dataLevel, (int) $directly, $frameId, $crud);
-        return $res ? $this->success('common.insert.succ') : $this->fail('common.insert.fail');
+        $roleId = $this->service->saveRole($role_name, $rules, $apis, (int) $status, $modulePermission, $crud);
+        if (! $roleId) {
+            return $this->fail('common.insert.fail');
+        }
+        return $this->success('common.insert.succ');
     }
 
     /**
@@ -113,7 +118,7 @@ class RoleController extends AuthController
      */
     public function show($id)
     {
-        if ($this->service->changeRole($this->entId, (int) $id, (int) $this->request->post('status', 1))) {
+        if ($this->service->changeRole($this->entId, (int) $id, (int) $this->request->get('status', 1))) {
             return $this->success('common.update.succ');
         }
         return $this->fail('common.update.fail');
@@ -129,7 +134,8 @@ class RoleController extends AuthController
         if (! $id) {
             return $this->fail('角色ID不能为空');
         }
-        return $this->success($this->service->getRoleInfo($this->entId, (int) $id));
+        $roleInfo = $this->service->getRoleInfo($this->entId, (int) $id);
+        return $this->success($roleInfo);
     }
 
     /**
@@ -141,20 +147,18 @@ class RoleController extends AuthController
     public function update(SystemRoleRequest $request, $id)
     {
         $request->check();
-        [$role_name, $rules, $apis, $status, $dataLevel, $directly, $frameId,$crud] = $request->postMore([
+        [$role_name, $rules, $apis, $status, $crud, $modulePermission] = $request->postMore([
             ['role_name', ''],
             ['rules', []],
             ['apis', []],
             ['status', 0],
-            ['data_level', 1],
-            ['directly', 0],
-            ['frame_id', []],
             ['crud', []],
+            ['module_permission', []],
         ], true);
         if (! $id) {
             return $this->fail('修改的角色ID不能为空');
         }
-        $this->service->updateRole((int) $id, $this->entId, $role_name, $rules, $apis, (int) $status, (int) $dataLevel, (int) $directly, $frameId, $crud);
+        $this->service->updateRole((int) $id, $role_name, $rules, $apis, (int) $status, $modulePermission, $crud);
         return $this->success('common.update.succ');
     }
 
@@ -195,7 +199,7 @@ class RoleController extends AuthController
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
-    public function getSuperRole(SystemMenusService $services): mixed
+    public function getSuperRole(MenusService $services): mixed
     {
         [$name] = $this->request->getMore([
             ['menu_name', ''],
@@ -209,7 +213,7 @@ class RoleController extends AuthController
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
-    public function getMenusRule(SystemMenusService $services, $pid): mixed
+    public function getMenusRule(MenusService $services, $pid): mixed
     {
         if (! $pid) {
             return $this->fail('上级id必须填写');
@@ -300,7 +304,7 @@ class RoleController extends AuthController
     /**
      * 删除角色成员.
      */
-    #[Delete('del_user', '删除角色成员')]
+    #[Post('del_user', '删除角色成员')]
     public function deleteUser(): mixed
     {
         [$uid, $roleId] = $this->request->postMore([
@@ -335,5 +339,16 @@ class RoleController extends AuthController
         ], true);
         $userService->updatePasswordFromUid((string) $uid, $password);
         return $this->success('修改成功');
+    }
+
+    /**
+     * 获取用户在指定模块的权限.
+     */
+    #[Get('user/{uid}/module/{module}', '获取用户指定模块权限')]
+    public function getUserModulePermission(int $uid, string $module): mixed
+    {
+        $permission = $this->permissionService->getUserModulePermission($uid, $module);
+
+        return $this->success($permission);
     }
 }

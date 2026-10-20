@@ -1,18 +1,17 @@
-<!-- 合同-账目记录页面组件 -->
+<!-- 订单-账目记录页面组件 -->
 <template>
   <div class="station">
     <div class="mb10 btn-box1">
       <div class="title-16">账目记录列表</div>
       <div>
-        <el-button size="small" @click="handleBuild(0, buildData.contract_renew_switch, 'contract_renew_switch')">
+        <el-button @click="handleBuild(0, buildData.contract_renew_switch, 'contract_renew_switch')">
           添加续费
         </el-button>
-        <el-button size="small" @click="handleBuild(0, buildData.contract_disburse_switch, 'contract_disburse_switch')">
+        <el-button @click="handleBuild(0, buildData.contract_disburse_switch, 'contract_disburse_switch')">
           添加支出
         </el-button>
         <el-button
           type="primary"
-          size="small"
           @click="handleBuild(0, buildData.contract_refund_switch, 'contract_refund_switch')"
         >
           添加回款
@@ -22,7 +21,7 @@
     <el-row class="flex">
       <el-col :span="20" class="amount">
         <div class="status-span">
-          <span class="amount-label">{{ $t('customer.paymentstatus') }}：</span>
+          <span class="amount-label">付款状态：</span>
 
           <span v-if="parseFloat(formInfo.data.surplus) === 0" class="color-success">已结清</span>
           <span v-else class="color-danger"> 未结清</span>
@@ -44,7 +43,7 @@
     <el-table :data="debtData" style="width: 100%">
       <el-table-column prop="date" label="付款时间" min-width="180"> </el-table-column>
       <el-table-column prop="bill_types" label="记录类型" min-width="110">
-        <template slot-scope="scope">
+        <template #default="scope">
           <el-tag :type="scope.row.types == 2 ? 'warning' : 'success'">{{
             scope.row.types == 2 ? '支出' : '收入'
           }}</el-tag>
@@ -52,45 +51,48 @@
       </el-table-column>
       <el-table-column prop="num" label="付款金额(元)" min-width="130"> </el-table-column>
       <el-table-column prop="pay_type" label="支付方式" min-width="120">
-        <template slot-scope="scope">
+        <template #default="scope">
           <span>{{ scope.row.pay_type !== '' ? scope.row.pay_type : '--' }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="bill_no" label="付款单号" min-width="120"> </el-table-column>
       <el-table-column prop="status" label="付款审核状态" min-width="100">
-        <template slot-scope="scope">
-          <el-tag v-if="scope.row.status === 0" type="warning" size="mini"> 待审核</el-tag>
-          <el-tag v-if="scope.row.status === 1 && !scope.row.recall" type="info" size="mini"> 已通过</el-tag>
-          <el-tag v-if="scope.row.status === 1 && scope.row.recall" type="info" size="mini"> 撤销中</el-tag>
-          <el-tag v-if="scope.row.status === -1" type="info" size="mini"> 已撤销</el-tag>
+        <template #default="scope">
+          <el-tag size="small" v-if="scope.row.status === 0" type="warning"> 待审核</el-tag>
+          <el-tag size="small" v-if="scope.row.status === 1 && !scope.row.recall" type="info"> 已通过</el-tag>
+          <el-tag size="small" v-if="scope.row.status === 1 && scope.row.recall" type="info"> 撤销中</el-tag>
+          <el-tag size="small" v-if="scope.row.status === -1" type="info"> 已撤销</el-tag>
           <el-popover v-if="scope.row.status === 2" trigger="hover" placement="top">
-            <p>{{ $t('customer.reason') }}:</p>
+            <p>原因:</p>
             <p>{{ scope.row.fail_msg }}</p>
-            <div slot="reference">
-              <el-tag type="danger" size="mini"> {{ $t('customer.fail') }}</el-tag>
-            </div>
+            <template #reference>
+              <div>
+                <el-tag size="small" type="danger"> 未通过</el-tag>
+              </div>
+            </template>
           </el-popover>
         </template>
       </el-table-column>
 
-      <el-table-column prop="address" fixed="right" min-width="180" :label="$t('public.operation')">
-        <template slot-scope="scope">
-          <el-button type="text" @click="handleCheck(scope.row)">查看</el-button>
+      <el-table-column prop="address" fixed="right" min-width="180" label="操作">
+        <template #default="scope">
+          <el-button type="primary" link @click="handleCheck(scope.row)">查看</el-button>
 
           <template v-if="userId == scope.row.card.id">
             <el-button
-              type="text"
+              type="primary" link
               v-if="
                 (scope.row.status == 1 &&
                   scope.row.approve_rule &&
                   scope.row.approve_rule.recall == 1 &&
                   !scope.row.recall) ||
-                scope.row.status === 0
+                scope.row.status === 0 ||
+                (!scope.row.approve_rule && scope.row.status != -1)
               "
               @click="withdraw(scope.row)"
               >撤销</el-button
             >
-            <el-button @click="handleDelete(scope.row)" v-if="scope.row.status === -1" type="text">删除 </el-button>
+            <el-button @click="handleDelete(scope.row)" v-if="scope.row.status === -1" type="primary" link>删除 </el-button>
           </template>
         </template>
       </el-table-column>
@@ -125,12 +127,15 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
-import { clientBillDeleteApi, clientBillListApi, getContractStatisticsApi } from '@/api/enterprise'
-import { approveApplyRevokeApi } from '@/api/business'
-import { configRuleApproveApi } from '@/api/config'
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { useUserStore } from '@/stores/user.ts'
+import { clientBillDeleteApi, clientBillListApi, getContractStatisticsApi } from '@/api/enterprise.ts'
+import { approveApplyRevokeApi } from '@/api/business.ts'
+import { configRuleApproveApi } from '@/api/config.ts'
 
 export default {
+  emits: ['refresh-detail'],
   name: 'ContractRecord',
   props: {
     formInfo: {
@@ -141,19 +146,16 @@ export default {
     }
   },
   components: {
-    oaDialog: () => import('@/components/form-common/dialog-form'),
-    applyForPayment: () => import('@/views/customer/list/components/applyForPayment'),
-    editExamine: () => import('@/views/user/examine/components/editExamine'),
-    detailExamine: () => import('@/views/user/examine/components/detailExamine')
-  },
-  computed: {
-    ...mapGetters(['userInfo'])
+    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form')),
+    applyForPayment: defineAsyncComponent(() => import('@/views/customer/list/components/applyForPayment')),
+    editExamine: defineAsyncComponent(() => import('@/views/user/examine/components/editExamine')),
+    detailExamine: defineAsyncComponent(() => import('@/views/user/examine/components/detailExamine'))
   },
   data() {
     return {
       fromData: {},
       paymentPrice: {},
-      userId: this.$store.state.user.userInfo.id,
+      userId: useUserStore().userInfo.id,
       debtData: [],
       debtTotal: 0,
       where: {
@@ -212,7 +214,7 @@ export default {
     withdraw(row) {
       this.rowData = row
       if (row.status === 0) {
-        this.$modalSure(this.$t('你确定要撤销申请吗')).then(() => {
+        modalSure('你确定要撤销申请吗').then(() => {
           this.getApplyRevoke()
         })
       } else {
@@ -225,6 +227,7 @@ export default {
         this.$refs.oaDialog.handleClose()
       }
       this.getTableData()
+      this.$emit('refresh-detail')
     },
 
     async getConfigApprove() {
@@ -251,7 +254,7 @@ export default {
     // 查看
     async handleCheck(item) {
       this.fromData = {
-        title: this.$t('customer.viewcustomer'),
+        title: '查看客户',
         width: '500px',
         data: item,
         isClient: false,
@@ -276,18 +279,20 @@ export default {
       this.where.types = ''
       setTimeout(() => {
         this.getTableData()
+        this.$emit('refresh-detail')
       }, 300)
     },
 
     // 删除
     handleDelete(item) {
-      this.$modalSure('您确定要删除这条付款记录吗').then(() => {
+      modalSure('您确定要删除这条付款记录吗').then(() => {
         clientBillDeleteApi(item.id).then((res) => {
           if (this.where.page > 1 && this.debtData.length <= 1) {
             this.where.page--
           }
 
           this.getTableData()
+          this.$emit('refresh-detail')
         })
       })
     }
@@ -340,7 +345,7 @@ export default {
   }
 }
 
-/deep/ .el-input__inner {
+:deep(.el-input__inner) {
   text-align: left;
 }
 

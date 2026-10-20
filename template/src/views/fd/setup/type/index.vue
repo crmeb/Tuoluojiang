@@ -12,31 +12,31 @@
       ></oaFromBox>
 
       <div class="table-box mt10">
-        <el-table :data="tableData" :height="tableHeight" style="width: 100%" row-key="id" default-expand-all>
+        <el-table :data="tableData" :height="TABLE_HEIGHT" style="width: 100%" row-key="id" default-expand-all>
           <el-table-column prop="name" label="支付名称" min-width="100" />
           <el-table-column prop="info" label="支付简介" min-width="140">
-            <template slot-scope="scope">
+            <template #default="scope">
               {{ scope.row.info || '--' }}
             </template>
           </el-table-column>
           <el-table-column prop="status" label="开启状态" min-width="140">
-            <template slot-scope="scope">
+            <template #default="scope">
               <el-tag v-if="scope.row.status == 1" type="success">开启</el-tag>
               <el-tag v-else type="danger">关闭</el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="sort" label="排序" min-width="140" />
-          <el-table-column prop="info" :label="$t('public.operation')" fixed="right" width="120">
-            <template slot-scope="scope">
-              <el-button type="text" @click="handleEdit(scope.row)" v-hasPermi="['fd:setup:type:edit']">
-                {{ $t('public.edit') }}
+          <el-table-column prop="info" label="操作" fixed="right" width="120">
+            <template #default="scope">
+              <el-button type="primary" link @click="handleEdit(scope.row)" v-hasPermi="['fd:setup:type:edit']">
+                编辑
               </el-button>
               <el-button
-                type="text"
+                type="primary" link
                 @click="handleDelete(scope.row, scope.$index)"
                 v-hasPermi="['fd:setup:type:delete']"
               >
-                {{ $t('public.delete') }}
+                删除
               </el-button>
             </template>
           </el-table-column>
@@ -58,13 +58,16 @@
 </template>
 
 <script>
+import { modalSure } from '@/libs/public.ts'
+import modalForm from '@/libs/modal-form.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
 import {
   enterprisePayTypeApi,
   enterprisePayTypeCreateApi,
   enterprisePayTypeDeleteApi,
   enterprisePayTypeEditApi,
   enterprisePayTypeStatusApi
-} from '@/api/enterprise'
+} from '@/api/enterprise.ts'
 import oaFromBox from '@/components/common/oaFromBox'
 
 export default {
@@ -74,6 +77,7 @@ export default {
   },
   data() {
     return {
+      TABLE_HEIGHT,
       tableData: [],
       where: {
         page: 1,
@@ -99,7 +103,7 @@ export default {
       })
     },
     addFinance() {
-      this.$modalForm(enterprisePayTypeCreateApi()).then(({ message }) => {
+      modalForm(enterprisePayTypeCreateApi()).then(({ message }) => {
         this.getTableData()
       })
     },
@@ -112,12 +116,12 @@ export default {
       this.getTableData(1)
     },
     handleEdit(row) {
-      this.$modalForm(enterprisePayTypeEditApi(row.id)).then(({ message }) => {
+      modalForm(enterprisePayTypeEditApi(row.id)).then(({ message }) => {
         this.getTableData()
       })
     },
     handleDelete(row) {
-      this.$modalSure('你确定要删除这条分类吗').then(() => {
+      modalSure('你确定要删除这条分类吗').then(() => {
         enterprisePayTypeDeleteApi(row.id).then((res) => {
           if (this.tableData.length == 1) {
             this.getTableData(1)
@@ -128,7 +132,7 @@ export default {
       })
     },
     async setPayStatus(row, status) {
-      var data = {
+      const data = {
         id: row.id,
         name: row.name,
         status

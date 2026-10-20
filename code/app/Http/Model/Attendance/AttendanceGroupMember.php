@@ -37,6 +37,17 @@ class AttendanceGroupMember extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'group_id'   => 'integer',
+        'entid'      => 'integer',
+        'member'     => 'integer',
+        'type'       => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+        'deleted_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * member 作用域
      * @param mixed $query

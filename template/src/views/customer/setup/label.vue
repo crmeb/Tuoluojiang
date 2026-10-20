@@ -1,80 +1,65 @@
 ﻿<template>
   <div class="divBox">
     <el-card class="normal-page">
-      <oaFromBox
-        :title="$route.meta.title"
-        btnText="添加标签组"
-        :search="search"
-        :total="total"
-        :isViewSearch="false"
-        :sortSearch="false"
-        @addDataFn="addFinance"
-      ></oaFromBox>
+      <div class="flex-between">
+        <div class="title-16">{{ $route.meta.title }}</div>
+        <div>
+          <el-button @click="synchronizeTags">同步标签</el-button>
+          <el-button icon="el-icon-plus" type="primary" @click="addFinance">添加标签组</el-button>
+        </div>
+      </div>
       <div>
         <div>
           <el-table
+            ref="table"
             :data="tableData"
-            :height="tableHeight"
+            height="calc(100vh - 170px)"
             style="width: 100%"
             row-key="id"
             :tree-props="{ hasChildren: 'hasChildren', children: 'child' }"
             class="mt10"
           >
-            <el-table-column prop="name" :label="$t('customer.labelename')" min-width="150"></el-table-column>
-            <el-table-column prop="cate.name" :label="$t('customer.label')" min-width="520">
-              <template slot-scope="scope">
+            <el-table-column prop="name" min-width="30">
+              <template #default="scope">
+                <span class="iconfont icontuodong tuozhuai" title="拖拽排序"></span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="name" label="标签组名称" min-width="100"></el-table-column>
+            <el-table-column prop="group_type" label="标签组类型" min-width="100">
+              <template #default="scope">
+                <status-tag
+                  :theme="groupTypeConf(scope.row.group_type).theme"
+                  :variant="groupTypeConf(scope.row.group_type).variant"
+                >
+                  {{ groupTypeConf(scope.row.group_type).label }}
+                </status-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="cate.name" label="标签" min-width="440">
+              <template #default="scope">
                 <div class="label-list">
-                  <div class="label-name">
-                    <div class="el-badge item label-hover" v-for="item in scope.row.children" :key="item.id">
-                      <el-button plain size="mini" type="primary" @click="handlePlus(scope.$index, item, 'edit')">{{
-                        item.name
-                      }}</el-button>
-                      <i class="el-icon-error icon-error" @click="handleDelete(item, 2)"></i>
-                    </div>
-                    <!--操作-->
-                    <div class="el-badge item" v-if="tabIndex === scope.$index">
-                      <el-input
-                        type="text"
-                        maxlength="16"
-                        size="mini"
-                        v-model="label"
-                        v-focus
-                        @blur="handleSubmit(scope.$index, scope.row)"
-                        @keyup.enter.native="handleSubmit(scope.$index, scope.row)"
-                        :placeholder="$t('customer.placeholder76')"
-                      ></el-input>
-                    </div>
-                    <div class="el-badge item">
-                      <el-button
-                        plain
-                        size="mini"
-                        type="primary"
-                        icon="el-icon-plus"
-                        @click="handlePlus(scope.$index, scope.row)"
-                      ></el-button>
-                    </div>
+                  <div v-for="item in scope.row.children" :key="item.id" class="item">
+                    {{ item.name }}
                   </div>
                 </div>
               </template>
             </el-table-column>
-            <el-table-column prop="sort" :label="$t('toptable.sort')" min-width="60" />
-            <el-table-column prop="address" :label="$t('public.operation')" fixed="right" width="120">
-              <template slot-scope="scope">
-                <el-button type="text" v-hasPermi="['customer:setup:label:edit']" @click="handleEdit(scope.row)">{{
-                  $t('public.edit')
-                }}</el-button>
+
+            <el-table-column prop="address" label="操作" fixed="right" width="120">
+              <template #default="scope">
+                <el-button type="primary" link v-hasPermi="['customer:setup:label:edit']" @click="handleEdit(scope.row)">编辑</el-button>
 
                 <el-button
-                  type="text"
+                  type="primary" link
                   v-hasPermi="['customer:setup:label:delete']"
                   @click="handleDelete(scope.row, 1)"
-                  >{{ $t('public.delete') }}</el-button
+                  >删除</el-button
                 >
               </template>
             </el-table-column>
           </el-table>
 
-          <div class="page-fixed">
+          <!-- <div class="page-fixed">
             <el-pagination
               :page-size="where.limit"
               :current-page="where.page"
@@ -84,49 +69,112 @@
               @size-change="handleSizeChange"
               @current-change="pageChange"
             />
-          </div>
+          </div> -->
         </div>
+
+        <!-- 替换标签 -->
+        <el-dialog title="标签替换" v-model="dialogTableVisible" width="560px" class="replaceDialog">
+          <el-form :model="form" :rules="rules" label-width="90px" ref="dynamicValidateForm">
+            <el-form-item label="是否替换：">
+              <el-radio-group v-model="radio">
+                <el-radio :label="1" :value="1">替换标签</el-radio>
+                <el-radio :label="2" :value="2">不替换</el-radio>
+              </el-radio-group>
+              <div class="tips" v-if="radio == 1">标签替换之后陀螺匠系统与企业微信标签同步替换！</div>
+              <div class="tips" v-if="radio == 2">不替换标签则直接删除该标签，请谨慎操作！</div>
+            </el-form-item>
+            <el-form-item label="替换标签：" v-if="radio == 1" prop="labelId">
+              <el-cascader
+                v-model="form.labelId"
+                :options="tableData"
+                placeholder="请选择替换标签"
+                :props="{ label: 'name', value: 'id' }"
+                style="width: 100%"
+              ></el-cascader>
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <span class="dialog-footer">
+              <el-button @click="dialogTableVisible = false">取消</el-button>
+              <el-button type="primary" @click="deleteSubmit()">确定</el-button>
+            </span>
+          </template>
+        </el-dialog>
       </div>
     </el-card>
 
-    <!-- 通用弹窗表单   -->
-    <dialog-form ref="repeatDialog" :repeat-data="repeatData" @isOk="getTableData()" />
+    <!-- 添加标签组 -->
+    <add-group-dialog ref="addGroupDialog" @isOk="getTableData()" />
+    <!-- 编辑标签 -->
+    <add-label
+      ref="addLabel"
+      @openLable="openLable"
+      @getTableData="getTableData"
+      @handleDelete="handleDelete"
+    ></add-label>
   </div>
 </template>
 
 <script>
-import dialogForm from './type/components/addDialog'
+import { modalSure } from '@/libs/public.ts'
+import Sortable from 'sortablejs'
+import addGroupDialog from './components/addGroupDialog'
+import addLabel from './addLabel'
+import StatusTag from '@/components/common/statusTag.vue'
+import { LABEL_GROUP_TYPE_MAP } from '@/constants/labelGroupType.ts'
+import { clientWorkLabelApi, clientSortLabelsApi } from '@/api/client.ts'
 import {
   clientConfigLabelApi,
   clientConfigLabelDeleteApi,
   clientConfigLabelSaveApi,
   putcLientLabel
-} from '@/api/enterprise'
+} from '@/api/enterprise.ts'
+
+// 未知标签组类型时退化为普通文本占位
+const UNKNOWN_GROUP_TYPE = { label: '--', theme: '', variant: 'filled' }
 
 export default {
-  name: 'FinanceList',
+  name: 'CustomerLabel',
   components: {
-    dialogForm,
-    oaFromBox: () => import('@/components/common/oaFromBox')
+    addGroupDialog,
+    addLabel,
+    StatusTag
   },
   directives: {
     // 注册一个局部的自定义指令v-focus
     focus: {
       // 指令的定义
-      inserted: function (el) {
+      mounted: function (el) {
         // 聚焦元素
         el.querySelector('input').focus()
       }
     }
   },
   data() {
+    const validCascader = (rule, value, callback) => {
+      if (this.form.labelId.length == 0) {
+        callback(new Error('请选择替换标签'))
+      } else {
+        callback()
+      }
+    }
+
     return {
-      repeatData: {},
+      dialogTableVisible: false,
       tableData: [],
       where: {
         page: 1,
-        limit: 15
+        limit: 999
       },
+      form: {
+        labelId: []
+      },
+      rules: {
+        labelId: [{ required: true, validator: validCascader, trigger: 'change' }]
+      },
+      radio: 1,
+
+      rowData: {},
       editData: {},
       editType: 'add',
       total: 0,
@@ -138,8 +186,19 @@ export default {
   created() {
     this.getTableData()
   },
-  mounted() {},
+  mounted() {
+    setTimeout(() => {
+      this.rowDrop()
+    }, 500)
+  },
   methods: {
+    // 标签组类型 -> 标签展示配置
+    groupTypeConf(value) {
+      return LABEL_GROUP_TYPE_MAP[value] || UNKNOWN_GROUP_TYPE
+    },
+    synchronizeTags() {
+      clientWorkLabelApi().then((res) => {})
+    },
     pageChange(page) {
       this.where.page = page
       this.getTableData()
@@ -147,6 +206,34 @@ export default {
     handleSizeChange(val) {
       this.where.limit = val
       this.getTableData()
+    },
+    // 打开替换弹窗
+    openLable(data) {
+      this.tableData.forEach((item) => {
+        item.children.forEach((val) => {
+          if (val.id == data.id) {
+            val.disabled = true
+          }
+        })
+      })
+      this.dialogTableVisible = true
+      this.form.labelId = []
+      this.rowData = data
+    },
+
+    deleteSubmit() {
+      let data = {
+        label_id: this.form.labelId[1]
+      }
+      this.$refs.dynamicValidateForm.validate((valid) => {
+        if (valid) {
+          clientConfigLabelDeleteApi(this.rowData.id, data).then((res) => {
+            this.dialogTableVisible = false
+            this.$refs.addLabel.delFn()
+            this.getTableData()
+          })
+        }
+      })
     },
     // 获取表格数据
     getTableData(val) {
@@ -156,36 +243,22 @@ export default {
         limit: this.where.limit
       }
       clientConfigLabelApi(data).then((res) => {
-        this.tableData = res.data.list
+        this.tableData = res.data.list.reverse();
         this.total = res.data.count
       })
     },
     // 添加标签组
-    async addFinance() {
-      this.repeatData = {
-        title: this.$t('customer.addlabel'),
-        width: '480px',
-        label: 2,
-        type: 1,
-        data: []
-      }
-      this.$refs.repeatDialog.dialogVisible = true
+    addFinance() {
+      this.$refs.addGroupDialog.openBox()
     },
     // 编辑分类
-    async handleEdit(item) {
-      this.repeatData = {
-        title: this.$t('customer.editlabel'),
-        width: '480px',
-        label: 2,
-        type: 2,
-        data: item
-      }
-      this.$refs.repeatDialog.dialogVisible = true
+    handleEdit(item) {
+      this.$refs.addLabel.openBox(item)
     },
     // 删除
     handleDelete(item, type) {
-      const mes = type === 1 ? this.$t('customer.message03') : this.$t('customer.message04')
-      this.$modalSure(mes).then(() => {
+      const mes = type === 1 ? '你确定要删除该客户标签吗' : '该标签可能已经关联客户，您确认要删除吗'
+      modalSure(mes).then(() => {
         clientConfigLabelDeleteApi(item.id).then((res) => {
           if (this.where.page > 1 && this.tableData.length <= 1) {
             this.where.page--
@@ -213,12 +286,13 @@ export default {
       }
     },
     handlePlus(index, row, type) {
-      this.tabIndex = index
       if (type === 'edit') {
+        this.tabIndex = row.id
         this.label = row.name
         this.editType = type
         this.editData = row
       } else {
+        this.tabIndex = index + 'add'
         if (this.label !== '') {
           this.labelSave({ name: this.label, pid: row.id }, 1)
         }
@@ -242,48 +316,73 @@ export default {
       } else {
         this.labelSave({ name: this.label, pid: row.id }, 2)
       }
+    },
+    // 表格拖拽排序
+    rowDrop() {
+      const tbody = this.$refs.table?.$el?.querySelector('.el-table__body-wrapper tbody')
+      if (!tbody) return
+
+      Sortable.create(tbody, {
+        animation: 200,
+        handle: '.icontuodong',
+        onEnd: (e) => {
+          // 调整数据顺序
+          const movedItem = this.tableData.splice(e.oldIndex, 1)[0]
+          this.tableData.splice(e.newIndex, 0, movedItem)
+          this.$refs.table.doLayout()
+          let ids = []
+          this.tableData.forEach((item) => {
+            ids.push(item.id)
+          })
+          clientSortLabelsApi({ label: ids }).then((res) => {})
+        }
+      })
     }
   }
 }
 </script>
 
 <style lang="scss" scoped>
-/deep/ .el-scrollbar__wrap {
+:deep(.el-scrollbar__wrap) {
   overflow-x: hidden;
 }
 .label-list {
-  padding: 0 0 10px 0;
   display: flex;
   align-items: center;
-  /deep/ .el-button--primary.is-plain:hover,
-  .el-button--primary.is-plain:focus {
-    color: #1890ff;
-    background: #e8f4ff;
-    border-color: #a3d3ff;
-  }
-  button {
-    outline: none;
-  }
-  /deep/ .el-input {
-    width: 150px;
-  }
-  .label-name {
-    margin-right: 10px;
-    /deep/ .el-badge {
-      margin-right: 6px;
-      margin-top: 10px;
-    }
-    .label-hover:hover .icon-error {
-      display: block;
-    }
-    .icon-error {
-      color: #f5222d;
-      font-size: 14px;
-      position: absolute;
-      right: -7px;
-      top: -7px;
-      display: none;
-    }
+  width: 100%;
+  overflow-x: auto;
+}
+.tips {
+  line-height: 18px;
+  flex-shrink: 0;
+  font-family: PingFang SC, PingFang SC;
+  font-weight: 400;
+  font-size: 12px;
+  color: red;
+}
+.tuozhuai {
+  cursor: move;
+  color: #909399;
+}
+.item {
+  // width: 100%;
+  padding: 3px 8px;
+  white-space: nowrap;
+  border-radius: 4px 4px 4px 4px;
+  border: 1px solid #dddddd;
+  font-family: PingFang SC, PingFang SC;
+  font-weight: 400;
+  font-size: 13px;
+  color: #303133;
+  margin-right: 10px;
+}
+</style>
+
+<style lang="scss">
+// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
+.el-dialog.replaceDialog {
+  .el-dialog__body {
+    padding-bottom: 0px;
   }
 }
 </style>

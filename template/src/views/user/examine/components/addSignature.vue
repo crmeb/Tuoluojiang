@@ -3,7 +3,7 @@
   <div>
     <el-dialog
       :title="status == 0 ? '加签' : '转审'"
-      :visible.sync="visible"
+      v-model="visible"
       width="600px"
       :before-close="handleClose"
       :append-to-body="true"
@@ -19,7 +19,7 @@
               :only-one="status == 0 ? false : true"
             >
               <template v-slot:custom>
-                <div class="flex-user">
+                <div class="flex-user pointer">
                   <div
                     class="btn"
                     @click="handlesuperiorOpen"
@@ -41,8 +41,8 @@
           <el-form-item label="加签方式：" prop="type" v-if="status == 0">
             <div>
               <el-radio-group v-model="formData.types">
-                <el-radio :label="1">在我之前</el-radio>
-                <el-radio :label="0">在我之后</el-radio>
+                <el-radio :label="1" :value="1">在我之前</el-radio>
+                <el-radio :label="0" :value="0">在我之后</el-radio>
               </el-radio-group>
               <div class="tips" v-if="formData.types == 1">加签后，流程先经过加签审批人，再由我审批。</div>
               <div class="tips" v-if="formData.types == 0">在我之后加签，即表示同意该申请并增加审核人员。</div>
@@ -50,9 +50,9 @@
           </el-form-item>
           <el-form-item label="多人审核方式：" prop="examineType" v-if="status == 0 && userList.length > 1">
             <el-radio-group v-model="formData.examine_mode">
-              <el-radio :label="1">或签</el-radio>
-              <el-radio :label="2">会签</el-radio>
-              <el-radio :label="3">依次审批</el-radio>
+              <el-radio :label="1" :value="1">或签</el-radio>
+              <el-radio :label="2" :value="2">会签</el-radio>
+              <el-radio :label="3" :value="3">依次审批</el-radio>
             </el-radio-group>
           </el-form-item>
           <el-form-item :label="status == 0 ? '加签意见：' : '转审意见：'" prop="opinion">
@@ -60,27 +60,30 @@
               type="textarea"
               v-model="formData.info"
               :rows="3"
-              size="small"
               :placeholder="status == 0 ? '请输入加签意见' : '请输入转审意见'"
             />
           </el-form-item>
         </el-form>
       </div>
-      <div slot="footer" class="dialog-footer">
-        <div class="footer-tips">
-          {{ status == 0 && !formData.types ? '点击按钮，即表示同意该申请并增加审批人员' : '' }}
+      <template #footer>
+        <div class="dialog-footer">
+          <div class="footer-tips">
+            {{ status == 0 && !formData.types ? '点击按钮，即表示同意该申请并增加审批人员' : '' }}
+          </div>
+          <el-button type="primary" @click="submit"> 确认{{ status == 0 ? '加签' : '转审' }} </el-button>
         </div>
-        <el-button size="small" type="primary" @click="submit"> 确认{{ status == 0 ? '加签' : '转审' }} </el-button>
-      </div>
+      </template>
     </el-dialog>
   </div>
 </template>
 <script>
-import { extractArrayIds } from '@/libs/public'
+import { defineAsyncComponent } from 'vue'
+import { extractArrayIds } from '@/libs/public.ts'
 export default {
   name: '',
+  emits: ['submit'],
   components: {
-    selectMember: () => import('@/components/form-common/select-member')
+    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member'))
   },
   props: {},
   data() {
@@ -185,7 +188,7 @@ export default {
   color: #909399;
 }
 
-/deep/.textarea .el-textarea__inner {
+:deep(.textarea .el-textarea__inner) {
   font-size: 12px;
 }
 .btn {
@@ -194,7 +197,9 @@ export default {
   font-size: 13px;
   width: 73px;
   height: 32px;
-  line-height: 22px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   background: rgba(24, 144, 255, 0.07);
   border-radius: 4px;
   color: #1890ff;

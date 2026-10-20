@@ -15,11 +15,13 @@ declare(strict_types=1);
 
 namespace App\Http\Service\Approve;
 
+use App\Constants\AttachEnum;
 use App\Constants\CacheEnum;
 use App\Http\Dao\Approve\ApproveReplyDao;
+use App\Http\Service\Attach\AttachService;
 use App\Http\Model\BaseModel;
 use App\Http\Service\BaseService;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
@@ -44,8 +46,14 @@ class ApproveReplyService extends BaseService
     public function resourceSave(array $data)
     {
         $data['card_id'] = $data['user_id'] = auth('admin')->id();
+        $fileId          = $data['files'];
+        unset($data['files']);
+        $saved = $this->dao->create($data);
+        if ($saved && $fileId) {
+            app()->get(AttachService::class)->saveRelation($fileId, uid_to_uuid($data['user_id']), $saved->id, AttachEnum::RELATION_TYPE_APPROVE_REPLY);
+        }
         Cache::tags([CacheEnum::TAG_APPROVE])->flush();
-        return $this->dao->create($data);
+        return $saved;
     }
 
     /**
@@ -60,7 +68,6 @@ class ApproveReplyService extends BaseService
         if (auth('admin')->id() != $this->dao->value(['id' => $id], 'user_id')) {
             throw $this->exception('仅可删除自己的评价！');
         }
-        Cache::tags([CacheEnum::TAG_APPROVE])->flush();
-        return $this->dao->delete($id);
+        return $this->dao->delete($id) && app()->get(AttachService::class)->delRelationFiles((int) $id, AttachEnum::RELATION_TYPE[AttachEnum::RELATION_TYPE_APPROVE_REPLY]) && Cache::tags([CacheEnum::TAG_APPROVE])->flush();
     }
 }

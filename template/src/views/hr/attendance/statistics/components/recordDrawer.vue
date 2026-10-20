@@ -1,19 +1,19 @@
 <template>
   <div>
-    <el-drawer title="打卡结果处理记录" :visible.sync="drawer" size="800px" :before-close="handleClose">
+    <el-drawer title="打卡结果处理记录" v-model="drawer" size="800px" :before-close="handleClose">
       <div class="box">
         <el-table ref="multipleTable" :data="tableData" tooltip-effect="dark" style="width: 100%;">
           <el-table-column prop="shift_number" label="班次信息" width="80">
-            <template slot-scope="{ row }">
+            <template #default="{ row }">
               {{ getShift(row.shift_number) }}
             </template>
           </el-table-column>
           <el-table-column prop="result" label="打卡结果" width="150"> </el-table-column>
           <el-table-column prop="name" label="备注" width="210" show-overflow-tooltip>
-            <template slot-scope="{ row }"> {{ row.remark }}</template>
+            <template #default="{ row }"> {{ row.remark }}</template>
           </el-table-column>
           <el-table-column prop="name" label="数据来源" width="90">
-            <template slot-scope="{ row }">
+            <template #default="{ row }">
               {{ row.source == 0 ? '手动修改' : '补卡申请' }}
             </template>
           </el-table-column>
@@ -37,7 +37,7 @@
 </template>
 
 <script>
-import { clockRecordApi } from '@/api/config'
+import { clockRecordApi } from '@/api/config.ts'
 export default {
   name: 'CrmebOaEntChangeResult',
   data() {

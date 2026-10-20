@@ -45,6 +45,7 @@ import contractRenewal from './contractRenewal'
 import contractExpenditure from './contractExpenditure'
 import issueInvoice from './issueInvoice'
 import voidedInvoice from './voidedInvoice'
+import contractSigning from './contractSigning' 
 
 const ruleList = {
   [radio.name]: radio,
@@ -93,7 +94,8 @@ const ruleList = {
   [contractRenewal.name]: contractRenewal,
   [contractExpenditure.name]: contractExpenditure,
   [issueInvoice.name]: issueInvoice,
-  [voidedInvoice.name]: voidedInvoice
+  [voidedInvoice.name]: voidedInvoice,
+  [contractSigning.name]: contractSigning,
 }
 
 export default ruleList

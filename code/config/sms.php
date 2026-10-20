@@ -51,6 +51,8 @@ return [
                 'PRICE_REVISION_CODE' => 528288,
                 // 订单未支付
                 'ORDER_PAY_FALSE' => 528116,
+                // 管理员订单处理
+                'ADMIN_ORDER_UID' => 596678,
             ],
         ],
         // 云信

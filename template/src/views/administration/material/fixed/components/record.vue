@@ -2,52 +2,53 @@
 <template>
   <div class="station">
     <el-drawer
+      class="administration-material-fixed-record-drawer"
       :title="formData.title"
-      :visible.sync="drawer"
+      v-model="drawer"
       :direction="direction"
       :modal="true"
-      :wrapper-closable="true"
       :before-close="handleClose"
       :append-to-body="true"
       :size="formData.width"
     >
-      <div slot="title" class="invoice-title">
-        <el-row class="invoice-header">
-          <el-col class="invoice-left">
-            <div class="invoice-logo"><i class="icon iconfont iconhetong"></i></div>
-          </el-col>
-          <el-col v-if="drawer" class="invoice-right">
-            <div class="txt1 over-text">
-              {{ formData.title }}
+      <template #header>
+        <div class="invoice-title">
+          <div class="invoice-header">
+            <div class="invoice-left">
+              <div class="invoice-logo"><i class="icon iconfont iconhetong"></i></div>
             </div>
-            <div class="txt2">
-              <span class="title">物资名称：</span>
-              <span>{{ formData.data.name || '-' }}</span>
+            <div v-if="drawer" class="invoice-right">
+              <div class="txt1 over-text">
+                {{ formData.title }}
+              </div>
+              <div class="txt2">
+                <span class="title">物资名称：</span>
+                <span>{{ formData.data.name || '-' }}</span>
 
-              <span class="title">规格型号：</span> <span>{{ formData.data.units || '--' }}</span>
-              <span class="title">物资分类：</span><span>{{ formData.data.cate.cate_name || '--' }}</span>
-              <span class="title">计量单位：</span><span>{{ formData.data.specs || '--' }}</span>
+                <span class="title">规格型号：</span> <span>{{ formData.data.units || '--' }}</span>
+                <span class="title">物资分类：</span><span>{{ formData.data.cate.cate_name || '--' }}</span>
+                <span class="title">计量单位：</span><span>{{ formData.data.specs || '--' }}</span>
+              </div>
             </div>
-          </el-col>
-        </el-row>
-      </div>
+          </div>
+        </div>
+      </template>
 
       <div class="invoice v-height-flag">
         <el-form ref="form" class="mt14" label-width="80px">
           <el-row :gutter="14">
             <el-col :span="9">
               <el-form-item label="业务类型：">
-                <el-select v-model="where.types" @change="getSearch" size="small" clearable placeholder="业务类型">
+                <el-select v-model="where.types" @change="getSearch" clearable placeholder="业务类型">
                   <el-option v-for="(item, index) in option" :key="index" :label="item.label" :value="item.value" />
                 </el-select>
               </el-form-item>
             </el-col>
             <el-col :span="9">
-              <el-form-item label="部门人员：">
+              <el-form-item label="部门/人员：">
                 <el-select
                   v-model="index"
                   filterable
-                  size="small"
                   clearable
                   placeholder="请选择部门/人员"
                   @change="getSearch"
@@ -71,10 +72,10 @@
         <div class="table-box v-height-flag">
           <el-table :data="tableData" style="width: 100%" row-key="id" default-expand-all>
             <el-table-column prop="id" label="序号" min-width="45">
-              <template slot-scope="scope">{{ scope.$index + 1 }}</template>
+              <template #default="scope">{{ scope.$index + 1 }}</template>
             </el-table-column>
             <el-table-column prop="types" label="业务类型" min-width="80">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <span v-if="scope.row.types === 0">入库</span>
                 <span v-if="scope.row.types === 1">领用</span>
                 <span v-if="scope.row.types === 2">归还</span>
@@ -88,7 +89,7 @@
             <el-table-column prop="creater.name" label="操作人" min-width="80" />
             <el-table-column prop="created_at" label="操作时间" min-width="130" />
             <el-table-column prop="mark" label="备注" min-width="130">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <span>{{ scope.row.mark || '--' }}</span>
               </template>
             </el-table-column>
@@ -109,7 +110,7 @@
 </template>
 
 <script>
-import { storageRecordApi, storageRecordUsersApi } from '@/api/administration'
+import { storageRecordApi, storageRecordUsersApi } from '@/api/administration.ts'
 
 export default {
   name: 'Record',
@@ -241,9 +242,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.station /deep/.el-drawer__body {
-  padding: 20px 20px 50px 20px;
-}
 .btn {
   width: 54px;
   height: 32px;
@@ -262,7 +260,7 @@ export default {
     margin: 0 -20px;
     padding-bottom: 14px;
     border-bottom: 1px solid rgba(216, 216, 216, 0.3);
-    /deep/ .el-row {
+    :deep(.el-row) {
       padding: 0 20px;
       font-size: 13px;
       font-weight: 600;
@@ -272,23 +270,14 @@ export default {
 .table-box {
   height: calc(100% - 130px);
 }
-/deep/ .el-select,
-/deep/ .el-input-number {
+:deep(.el-select),
+:deep(.el-input-number) {
   width: 100%;
 }
-/deep/ .el-form-item {
+:deep(.el-form-item) {
   margin-bottom: 14px;
 }
-/deep/ .el-drawer__header {
-  border-bottom: none;
-  padding-bottom: 10px;
-  padding-top: 10px;
-  border-bottom: 1px solid #dcdfe6;
-}
-/deep/ .el-drawer__body {
-  padding-bottom: 20px;
-}
-/deep/ .el-pagination {
+:deep(.el-pagination) {
   display: flex;
   flex-pack: end;
   justify-content: flex-end;
@@ -349,7 +338,20 @@ export default {
     }
   }
 }
-/deep/ .el-drawer__header {
+</style>
+
+<style lang="scss">
+// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
+.administration-material-fixed-record-drawer .el-drawer__header {
+  border-bottom: none;
+  padding-bottom: 10px;
+  padding-top: 10px;
+  border-bottom: 1px solid #dcdfe6;
+}
+.administration-material-fixed-record-drawer .el-drawer__body {
+  padding-bottom: 20px;
+}
+.administration-material-fixed-record-drawer .el-drawer__header {
   height: 80px !important;
   line-height: none !important;
 }

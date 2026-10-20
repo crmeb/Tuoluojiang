@@ -1,17 +1,17 @@
 <!-- 行政-新建公告页面 -->
 <template>
-  <div>
+  <div class="add-notice">
     <el-card class="card-box notice" :body-style="{ padding: '0' }">
       <div class="header">
         <i class="el-icon-arrow-left onHand" @click="handleEmit"></i>
-        <span>{{ formData.isEdit ? '修改通知公告' : '添加通知公告' }}</span>
+        <span>{{ isEdit ? '修改通知公告' : '添加通知公告' }}</span>
       </div>
       <div ref="notice" class="pl20 mt20">
         <el-form ref="form" :model="form" :rules="rules" label-width="100px">
           <el-form-item label="公告标题" class="input" prop="title">
             <el-input
+              style="width: 350px"
               v-model="form.title"
-              size="small"
               maxlength="50"
               clearable
               show-word-limit
@@ -19,9 +19,14 @@
             ></el-input>
           </el-form-item>
           <el-form-item label="公告分类" prop="categoryId">
-            <el-select v-model="form.categoryId" size="small" clearable placeholder="请选择公告分类">
+            <el-select
+              v-model="form.categoryId"
+              clearable
+              placeholder="请选择分类"
+              style="width: 350px"
+            >
               <el-option
-                v-for="item in formData.optionData"
+                v-for="item in optionData"
                 :key="item.id"
                 :label="item.cate_name"
                 :value="item.id"
@@ -30,6 +35,7 @@
           </el-form-item>
           <el-form-item label="公告简介" class="input">
             <el-input
+              style="width: 80%"
               v-model="form.info"
               type="textarea"
               :rows="4"
@@ -59,14 +65,14 @@
             </div>
           </el-form-item>
           <el-form-item label="是否置顶">
-            <el-switch v-model="form.delivery"></el-switch>
+            <el-switch v-model="form.delivery" active-text="是" inactive-text="否"></el-switch>
           </el-form-item>
           <el-row class="resource-content">
             <el-col class="resource-left">
               <el-form-item label="发布时间">
-                <el-radio-group v-model="form.resource" size="small">
-                  <el-radio :label="0" class="resource">立即发布</el-radio>
-                  <el-radio :label="1">定时发布</el-radio>
+                <el-radio-group v-model="form.resource">
+                  <el-radio :label="0" :value="0" class="resource">立即发布</el-radio>
+                  <el-radio :label="1" :value="1">定时发布</el-radio>
                 </el-radio-group>
               </el-form-item>
             </el-col>
@@ -75,10 +81,9 @@
               <el-date-picker
                 class="date"
                 v-model="form.date"
-                size="small"
                 prefix-icon="el-icon-date"
                 type="datetime"
-                :picker-options="expireTimeOption"
+                v-bind="$pickerProps(expireTimeOption)"
                 clearable
                 placeholder="选择日期时间"
               ></el-date-picker>
@@ -89,53 +94,77 @@
       </div>
     </el-card>
     <div class="cr-bottom-button">
-      <el-button type="primary" size="small" :loading="loading" @click="handleConfirm()">
-        {{ $t('public.save') }}
+      <el-button type="primary" :loading="loading" @click="handleConfirm()">
+        保存
       </el-button>
     </div>
-    <el-dialog title="选择图片" :visible.sync="dialogVisible" width="850px" :before-close="handleClose">
+    <el-dialog title="选择图片" v-model="dialogVisible" width="850px" :before-close="handleClose">
       <upload-picture ref="uploadPicture" :check-button="true" @getImage="getImage"></upload-picture>
     </el-dialog>
-    <el-image-viewer v-if="isImage" :on-close="closeImageViewer" :url-list="srcList" />
+    <el-image-viewer v-if="isImage" @close="closeImageViewer" :url-list="srcList" />
   </div>
 </template>
 
 <script>
-import { noticeEditApi, noticeEditCreateApi, noticeSaveApi } from '@/api/administration'
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
+import { noticeEditApi, noticeEditCreateApi, noticeSaveApi } from '@/api/administration.ts'
+
+// 表单默认值，打开页面时用它重置，避免上一次的内容残留
+function createForm() {
+  return {
+    title: '',
+    categoryId: '',
+    info: '',
+    imageUrl: '',
+    content: '',
+    delivery: false,
+    resource: 0,
+    date: '',
+    contents: ''
+  }
+}
+
 export default {
+  emits: ['isNotice'],
   name: 'AddNotice',
   props: {
-    formData: {
-      type: Object,
+    // 页面是否处于打开状态，由父级控制，每次打开都会重新初始化表单
+    visible: {
+      type: Boolean,
+      default: false
+    },
+    isEdit: {
+      type: Boolean,
+      default: false
+    },
+    // 编辑模式下要回填的公告 id
+    noticeId: {
+      type: [Number, String],
+      default: 0
+    },
+    // 公告分类下拉数据
+    optionData: {
+      type: Array,
       default() {
-        return {}
+        return []
       }
     },
-    cateId: {
-      type: Number,
-      default: 0
+    // 新建模式下默认选中的分类，为空表示不选中任何分类
+    defaultCategoryId: {
+      type: [Number, String],
+      default: ''
     }
   },
   components: {
-    ueditorFrom: () => import('@/components/form-common/oa-wangeditor'),
-    uploadPicture: () => import('@/components/uploadPicture/index'),
-    ElImageViewer: () => import('element-ui/packages/image/src/image-viewer')
+    ueditorFrom: defineAsyncComponent(() => import('@/components/form-common/oa-wangeditor')),
+    uploadPicture: defineAsyncComponent(() => import('@/components/uploadPicture/index')),
   },
   data() {
     return {
       loading: false,
       dialogVisible: false,
-      form: {
-        title: '',
-        categoryId: '',
-        info: '',
-        imageUrl: '',
-        content: '',
-        delivery: false,
-        resource: 0,
-        date: '',
-        contents: ''
-      },
+      form: createForm(),
       expireTimeOption: {
         disabledDate(date) {
           // disabledDate 文档上：设置禁用状态，参数为当前日期，要求返回 Boolean
@@ -151,15 +180,27 @@ export default {
       srcList: []
     }
   },
-  mounted() {
-    this.$erd.listenTo(this.$refs.notice, (element) => {
-      let h = document.documentElement.clientHeight
-      h = h - 28 - 54 - 58
-      element.style.height = h + 'px'
-    })
+  watch: {
+    // 页面每次打开都重新初始化，immediate 兼容组件加载完成时已处于打开状态的情况
+    visible: {
+      immediate: true,
+      handler(val) {
+        if (!val) return
+        this.$nextTick(this.initForm)
+      }
+    }
   },
-  watch: {},
   methods: {
+    // 打开页面时的初始化：编辑模式拉详情回填，新建模式按父级传入的分类预选
+    initForm() {
+      this.reset()
+      if (this.isEdit) {
+        this.getNoticeCreate(this.noticeId)
+      } else {
+        // defaultCategoryId 为空（左侧选中「全部」）时保持未选中
+        this.form.categoryId = this.defaultCategoryId || ''
+      }
+    },
     beforeUpload() {
       this.dialogVisible = true
     },
@@ -177,19 +218,10 @@ export default {
       this.form.imageUrl = ''
     },
     reset() {
-      this.form = {
-        title: '',
-        categoryId: '',
-        info: '',
-        imageUrl: '',
-        content: '',
-        delivery: false,
-        resource: 0,
-        date: '',
-        contents: ''
-      }
-      this.$refs.ueditorFrom.clear()
-      this.$refs.form.resetFields()
+      this.form = createForm()
+      // 富文本、表单都是异步组件/子组件，初始化时可能尚未挂载，取不到就跳过
+      if (this.$refs.ueditorFrom) this.$refs.ueditorFrom.clear()
+      if (this.$refs.form) this.$refs.form.clearValidate()
     },
     // 监听编辑器
     ueditorEdit(e) {
@@ -201,12 +233,6 @@ export default {
     handleEmit() {
       this.$emit('isNotice', this.form.categoryId)
       this.reset()
-      this.form.contents = ''
-    
-    },
-    handleCancel() {
-      this.handleEmit()
-      this.$refs.ueditorFrom.clear()
     },
     handleConfirm() {
       if (this.form.resource == 1 && !this.form.date) {
@@ -221,7 +247,7 @@ export default {
       }
       this.$refs.form.validate((valid) => {
         if (valid) {
-          var data = {
+          const data = {
             cate_id: this.form.categoryId,
             title: this.form.title,
             info: this.form.info,
@@ -229,10 +255,10 @@ export default {
             content: this.form.contents,
             is_top: this.form.delivery ? 1 : 0,
             push_type: this.form.resource,
-            push_time: this.$moment(this.form.date).format('YYYY-MM-DD HH:mm:ss')
+            push_time: dayjs(this.form.date).format('YYYY-MM-DD HH:mm:ss')
           }
-          if (this.formData.isEdit) {
-            this.getNoticeEdit(this.formData.id, data)
+          if (this.isEdit) {
+            this.getNoticeEdit(this.noticeId, data)
           } else {
             this.getNoticeSave(data)
           }
@@ -265,6 +291,7 @@ export default {
           this.loading = false
         })
     },
+    // 编辑模式回填详情，正文通过 :content 传给富文本组件，无需操作其内部状态
     getNoticeCreate(id) {
       noticeEditCreateApi(id).then((res) => {
         const data = res.data
@@ -272,7 +299,6 @@ export default {
         this.form.title = data.title
         this.form.info = data.info
         this.form.imageUrl = data.cover
-        this.$refs.ueditorFrom.tabButton = true
         this.form.content = data.content
         this.form.contents = data.content
         this.form.delivery = data.is_top === 1
@@ -297,27 +323,26 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/deep/ .el-icon-back {
+:deep(.el-icon-back) {
   display: none;
 }
-/deep/ .w-e-text-container p {
+:deep(.w-e-text-container p) {
   margin: 24px 0;
 }
-/deep/ .el-page-header__content {
+:deep(.el-page-header__content) {
   font-size: 15px;
   font-weight: 600;
 }
-/deep/ .el-scrollbar__wrap {
+:deep(.el-scrollbar__wrap) {
   overflow-x: hidden;
 }
 .card-box {
-  height: calc(100vh - 120px) !important;
-  overflow-y: scroll;
+  height: calc(100vh - 132px) !important;
+  overflow-y: auto;
   font-size: 13px;
   font-family: PingFangSC-Regular, PingFang SC;
   font-weight: 400;
   color: #303133;
-  // margin-bottom: 30px;
   padding-bottom: 30px;
 }
 .header {
@@ -332,37 +357,38 @@ export default {
 }
 
 .notice {
-  .input {
-    /deep/ .el-input,
-    /deep/ .el-textarea {
-      width: 50%;
-    }
-  }
-  /deep/ .el-select {
-    width: 50%;
-    /deep/ .el-input--medium {
-      width: 100%;
-      .el-input__inner {
-        width: 100%;
-      }
-    }
-  }
+  // .input {
+  // :deep(.el-input),
+  // :deep(.el-textarea) {
+  //     width: 50%;
+  //   }
+  // }
+  // :deep(.el-select) {
+  //   width: 50%;
+  // :deep(.el-input--medium) {
+  //     width: 100%;
+  //     .el-input__inner {
+  //       width: 100%;
+  //     }
+  //   }
+  // }
   .resource-content {
     display: flex;
     align-items: flex-end;
-    /deep/ .el-form-item {
+    :deep(.el-form-item) {
       margin-bottom: 0px;
     }
     .resource-left {
       width: 130px;
-      /deep/ .resource {
+      :deep(.resource) {
         display: block;
         margin-bottom: 5px;
       }
     }
     .resource-right {
       width: calc(100% - 130px);
-      .date {
+      // 日期选择器为多根组件，不带 scoped 属性
+      :deep(.date) {
         margin-left: 90px;
         margin-bottom: 6px;
       }
@@ -418,11 +444,17 @@ export default {
     cursor: pointer;
   }
 }
+// .add-notice {
+//   position: relative;
+//   width: 100%;
+//   height: 100%;
+// }
 .cr-bottom-button {
-  position: fixed;
-  left: -20px;
+  // box-sizing: border-box;
+  position: absolute;
+  left: 0px;
   right: 0;
-  bottom: 0;
-  width: calc(100% + 220px);
+  bottom: -54px !important;
+  width: calc(100% + 0px);
 }
 </style>

@@ -16,10 +16,10 @@ declare(strict_types=1);
 namespace App\Http\Model\Company;
 
 use App\Http\Model\Admin\Admin;
-use App\Http\Model\BaseModel;
 use App\Http\Model\Frame\Frame;
 use App\Http\Model\Position\Job;
 use Carbon\Carbon;
+use App\Http\Model\BaseModel;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
@@ -39,6 +39,23 @@ class UserChange extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'           => 'integer',
+        'uid'          => 'integer',
+        'entid'        => 'integer',
+        'card_id'      => 'integer',
+        'types'        => 'integer',
+        'date'         => 'date:Y-m-d',
+        'new_frame'    => 'integer',
+        'old_frame'    => 'integer',
+        'new_position' => 'integer',
+        'old_position' => 'integer',
+        'link_id'      => 'integer',
+        'user_id'      => 'integer',
+        'created_at'   => 'datetime:Y-m-d H:i:s',
+        'updated_at'   => 'datetime:Y-m-d H:i:s',
+    ];
 
     /**
      * @return HasOne

@@ -1,26 +1,15 @@
 <?php
 
-declare(strict_types=1);
-/**
- *  +----------------------------------------------------------------------
- *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
- *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
- *  +----------------------------------------------------------------------
- *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
- *  +----------------------------------------------------------------------
- *  | Author: 陀螺匠 Team <admin@tuoluojiang.com>
- *  +----------------------------------------------------------------------
- */
-
 namespace App\Http\Controller\AdminApi\Open;
 
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Middleware\AuthOpenApi;
 use App\Http\Service\Crud\CrudModuleService;
 use App\Http\Service\Crud\SystemCrudService;
-use crmeb\traits\SearchTrait;
+use Tuoluojiang\Open\exceptions\ApiException;
+use Tuoluojiang\Open\traits\SearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Psr\Container\ContainerExceptionInterface;
@@ -33,7 +22,7 @@ use Spatie\RouteAttributes\Attributes\Prefix;
 use Spatie\RouteAttributes\Attributes\Put;
 
 /**
- * 对外接口.
+ * 对外接口
  */
 #[Prefix('open/module')]
 #[Middleware([AuthOpenApi::class, 'ent.crud'])]
@@ -41,6 +30,9 @@ class OpenModuleController extends AuthController
 {
     use SearchTrait;
 
+    /**
+     * @param CrudModuleService $service
+     */
     public function __construct(CrudModuleService $service)
     {
         parent::__construct();
@@ -62,10 +54,10 @@ class OpenModuleController extends AuthController
     {
         $crudInfo = $this->request->crudInfo;
 
-        $postOrderBy       = $request->post('order_by', []);
-        $viewSearch        = $request->post('view_search', []);
+        $postOrderBy = $request->post('order_by', []);
+        $viewSearch = $request->post('view_search', []);
         $viewSearchBoolean = $request->post('view_search_boolean', 0);
-        $keywordDefault    = $request->post('keyword_default');
+        $keywordDefault = $request->post('keyword_default');
 
         $orderBy = [];
         if ($postOrderBy) {
@@ -93,7 +85,7 @@ class OpenModuleController extends AuthController
         }
         $viewSearch = $viewNewSearch;
 
-        return $this->success($this->service->getModuleList($request, $crudInfo, [], $orderBy, (array) $viewSearch, (string) $keywordDefault, (int) $viewSearchBoolean));
+        return $this->success($this->service->getModuleList($request, $crudInfo, [], $orderBy, (array)$viewSearch, (string)$keywordDefault, (int)$viewSearchBoolean));
     }
 
     /**
@@ -109,10 +101,10 @@ class OpenModuleController extends AuthController
     #[Get('{name}/create', '创建表单')]
     public function create(Request $request)
     {
-        $crudId    = $request->get('crud_id', 0);
+        $crudId = $request->get('crud_id', 0);
         $crudValue = $request->get('crud_value', 0);
-        $id        = $request->get('id', 0);
-        return $this->success($this->service->getCreateForm($this->request->crudInfo, (int) $crudId, (int) $crudValue, (int) $id));
+        $id = $request->get('id', 0);
+        return $this->success($this->service->getCreateForm($this->request->crudInfo, (int)$crudId, (int)$crudValue, (int)$id));
     }
 
     /**
@@ -137,21 +129,21 @@ class OpenModuleController extends AuthController
 
         $data = $validatorData = $rule = $message = [];
 
-        $crudId    = $request->post('crud_id', 0);
+        $crudId = $request->post('crud_id', 0);
         $crudValue = $request->post('crud_value', 0);
 
         foreach ($crudList as $item) {
-            $fieldName = $item['crud']['id'] === $crudInfo->id
-                ? $item['field_name_en']
-                : $item['crud']['table_name_en'] . '.' . $item['field_name_en'];
+            $fieldName = $item['crud']['id'] === $crudInfo->id ?
+                $item['field_name_en'] :
+                $item['crud']['table_name_en'] . '.' . $item['field_name_en'];
 
-            $default     = '';
+            $default = '';
             $association = false;
             if ($item['association_crud_id']) {
-                $default     = [];
+                $default = [];
                 $association = true;
             } elseif (in_array($item['field_name_en'], ['user_id', 'update_user_id', 'frame_id', 'owner_user_id'])) {
-                $default     = [];
+                $default = [];
                 $association = true;
             }
 
@@ -165,10 +157,10 @@ class OpenModuleController extends AuthController
             [$itemMsg, $ruleData] = $this->service->getValidationRule($item, $fieldName);
 
             if ($ruleData) {
-                $validatorFieldName                 = str_replace('.', '_', $fieldName);
+                $validatorFieldName = str_replace('.', '_', $fieldName);
                 $validatorData[$validatorFieldName] = $value;
-                $rule[$validatorFieldName]          = implode('|', $ruleData);
-                $message                            = array_merge($message, $itemMsg);
+                $rule[$validatorFieldName] = implode('|', $ruleData);
+                $message = array_merge($message, $itemMsg);
             }
 
             $data[$fieldName] = [
@@ -189,7 +181,7 @@ class OpenModuleController extends AuthController
 
         $this->service->saveModule($crudInfo, $data, [
             'uid' => $request->authSkInfo['uid'],
-        ], (int) $crudId, (int) $crudValue);
+        ], (int)$crudId, (int)$crudValue);
 
         return $this->success('添加成功');
     }
@@ -207,27 +199,27 @@ class OpenModuleController extends AuthController
     #[Put('{name}/update/{id}', '更新数据')]
     public function update(Request $request)
     {
-        $id       = $this->request->route()->parameter('id', 0);
+        $id = $this->request->route()->parameter('id', 0);
         $crudInfo = $this->request->crudInfo;
         if (in_array($crudInfo->table_name_en, app()->get(SystemCrudService::class)->notAllowOperateTable())) {
             return $this->fail('系统默认数据不允许更新');
         }
-        if (! $id) {
+        if (!$id) {
             return $this->fail('缺少参数');
         }
         $crudList = $this->service->getFormField($crudInfo->id);
-        $data     = $validatorData = $rule = $message = [];
+        $data = $validatorData = $rule = $message = [];
         foreach ($crudList as $item) {
-            $fieldName = $item['crud']['id'] === $crudInfo->id
-                ? $item['field_name_en']
-                : $item['crud']['table_name_en'] . '.' . $item['field_name_en'];
-            $default     = '';
+            $fieldName = $item['crud']['id'] === $crudInfo->id ?
+                $item['field_name_en'] :
+                $item['crud']['table_name_en'] . '.' . $item['field_name_en'];
+            $default = '';
             $association = false;
             if ($item['association_crud_id']) {
-                $default     = [];
+                $default = [];
                 $association = true;
             } elseif (in_array($item['field_name_en'], ['user_id', 'update_user_id', 'frame_id', 'owner_user_id'])) {
-                $default     = [];
+                $default = [];
                 $association = true;
             }
             $postValue = $request->post(str_replace('.', '@', $fieldName), $default);
@@ -238,10 +230,10 @@ class OpenModuleController extends AuthController
             }
             [$itemMsg, $ruleData] = $this->service->getValidationRule($item, $fieldName);
             if ($ruleData) {
-                $validatorFieldName                 = str_replace('.', '_', $fieldName);
+                $validatorFieldName = str_replace('.', '_', $fieldName);
                 $validatorData[$validatorFieldName] = $value;
-                $rule[$validatorFieldName]          = implode('|', $ruleData);
-                $message                            = array_merge($message, $itemMsg);
+                $rule[$validatorFieldName] = implode('|', $ruleData);
+                $message = array_merge($message, $itemMsg);
             }
             $data[$fieldName] = [
                 'value' => $value,
@@ -257,7 +249,7 @@ class OpenModuleController extends AuthController
                 return $this->fail($validator->errors()->first());
             }
         }
-        $this->service->updateModule($crudInfo, (int) $id, $data, [
+        $this->service->updateModule($crudInfo, (int)$id, $data, [
             'uid' => $request->authSkInfo['uid'],
         ]);
         return $this->success('修改成功');
@@ -277,10 +269,10 @@ class OpenModuleController extends AuthController
     public function find()
     {
         $id = $this->request->route()->parameter('id', 0);
-        if (! $id) {
+        if (!$id) {
             return $this->fail('缺少参数');
         }
-        return $this->success($this->service->getFindModule($this->request->crudInfo, (int) $id));
+        return $this->success($this->service->getFindModule($this->request->crudInfo, (int)$id));
     }
 
     /**
@@ -296,18 +288,18 @@ class OpenModuleController extends AuthController
     #[Delete('{name}/delete/{id}', '删除数据')]
     public function delete()
     {
-        $id       = $this->request->route()->parameter('id', 0);
+        $id = $this->request->route()->parameter('id', 0);
         $crudInfo = $this->request->crudInfo;
 
         if (in_array($crudInfo->table_name_en, app()->get(SystemCrudService::class)->notAllowOperateTable())) {
             return $this->fail('系统默认数据不允许删除');
         }
 
-        if (! $id) {
+        if (!$id) {
             return $this->fail('缺少参数');
         }
 
-        $this->service->deleteModule($crudInfo, (int) $id);
+        $this->service->deleteModule($crudInfo, (int)$id);
 
         return $this->success('删除成功');
     }

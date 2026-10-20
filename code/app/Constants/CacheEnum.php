@@ -84,4 +84,14 @@ final class CacheEnum
      * 缓存标签：socket.
      */
     public const TAG_SOCKET = 'socket';
+
+    /**
+     * 缓存标签：media.
+     */
+    public const TAG_MEDIA = 'media';
+
+    /**
+     * 缓存标签：MCP.
+     */
+    public const TAG_MCP = 'mcp';
 }

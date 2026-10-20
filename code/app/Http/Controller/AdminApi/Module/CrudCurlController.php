@@ -22,8 +22,8 @@ use App\Http\Middleware\LogEnterprise;
 use App\Http\Requests\ApiRequest;
 use App\Http\Requests\Crud\SystemCrudCurlRequest;
 use App\Http\Service\Crud\SystemCrudCurlService;
-use crmeb\interfaces\ResourceControllerInterface;
-use crmeb\traits\ResourceControllerTrait;
+use Tuoluojiang\Open\interfaces\ResourceControllerInterface;
+use Tuoluojiang\Open\traits\ResourceControllerTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Spatie\RouteAttributes\Attributes\Middleware;
 use Spatie\RouteAttributes\Attributes\Post;
@@ -42,6 +42,7 @@ use Spatie\RouteAttributes\Attributes\Resource;
     names: [
         'index'   => '获取接口数据列表接口',
         'store'   => '保存接口数据接口',
+        'edit'    => '编辑接口数据接口',
         'update'  => '修改接口数据接口',
         'destroy' => '删除接口数据接口',
     ],
@@ -63,7 +64,7 @@ class CrudCurlController extends AuthController implements ResourceControllerInt
      */
     public function index()
     {
-        $where = app()->make(ApiRequest::class)->getMore($this->getSearchField());
+        $where = app()->get(ApiRequest::class)->getMore($this->getSearchField());
         $order = $where['order'] ?? '';
         unset($where['order']);
 

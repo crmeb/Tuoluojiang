@@ -19,7 +19,7 @@ use App\Http\Contract\Attendance\RosterCycleInterface;
 use App\Http\Dao\Attendance\RosterCycleDao;
 use App\Http\Dao\Attendance\RosterCycleShiftDao;
 use App\Http\Service\BaseService;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -56,18 +56,18 @@ class RosterCycleService extends BaseService implements RosterCycleInterface
     /**
      * 保存.
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function saveCycle(array $data): mixed
+    public function saveCycle(array $data, int $userId): mixed
     {
         $this->checkShift((int) $data['cycle'], (int) $data['group_id'], $data['shifts']);
-        return $this->transaction(function () use ($data) {
+        return $this->transaction(function () use ($data, $userId) {
             $res = $this->dao->create(['group_id' => $data['group_id'], 'cycle' => $data['cycle'], 'name' => $data['name']]);
             if (! $res) {
                 throw $this->exception(__('common.insert.fail'));
             }
-
-            $userId = uuid_to_uid($this->uuId(false));
             foreach ($data['shifts'] as $key => $shiftId) {
                 $this->shiftDao->create([
                     'number'   => $key + 1,
@@ -105,17 +105,17 @@ class RosterCycleService extends BaseService implements RosterCycleInterface
     /**
      * 修改.
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function updateCycle(int $id, array $data): mixed
+    public function updateCycle(int $id, array $data, int $userId): mixed
     {
         $info = $this->dao->get($id);
         if (! $info) {
             throw $this->exception(__('common.operation.noExists'));
         }
-
         $this->checkShift((int) $data['cycle'], (int) $info->group_id, $data['shifts']);
-        $userId = uuid_to_uid($this->uuId(false));
         return $this->transaction(function () use ($info, $data, $userId) {
             $info->name  = $data['name'];
             $info->cycle = $data['cycle'];
@@ -129,7 +129,6 @@ class RosterCycleService extends BaseService implements RosterCycleInterface
                     'uid'      => $userId,
                 ]);
             }
-
             return true;
         });
     }
@@ -137,6 +136,8 @@ class RosterCycleService extends BaseService implements RosterCycleInterface
     /**
      * 删除.
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
     public function deleteCycle(array|int $id): bool
@@ -153,6 +154,8 @@ class RosterCycleService extends BaseService implements RosterCycleInterface
     /**
      * 批量删除考勤周期
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
     public function deleteByGroupId(int $groupId): bool
@@ -161,13 +164,14 @@ class RosterCycleService extends BaseService implements RosterCycleInterface
         if ($ids) {
             return $this->dao->delete(['id' => $ids]) && $this->shiftDao->delete(['cycle_id' => $ids]);
         }
-
         return true;
     }
 
     /**
      * 周期详情.
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
     public function getInfo(int $groupId, int $id): array
@@ -183,6 +187,9 @@ class RosterCycleService extends BaseService implements RosterCycleInterface
     /**
      * 检测班次是否使用.
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
      */
     public function checkShiftExist(int $shiftId): bool
     {

@@ -16,8 +16,8 @@ declare(strict_types=1);
 namespace App\Http\Model\Company;
 
 use App\Http\Model\Admin\Admin;
-use App\Http\Model\BaseModel;
 use App\Http\Model\Position\Job;
+use App\Http\Model\BaseModel;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
@@ -36,6 +36,26 @@ class HayGroupData extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'         => 'integer',
+        'group_id'   => 'integer',
+        'uid'        => 'integer',
+        'col1'       => 'integer',
+        'col2'       => 'integer',
+        'col3'       => 'integer',
+        'col4'       => 'integer',
+        'col5'       => 'integer',
+        'col6'       => 'integer',
+        'col7'       => 'integer',
+        'col8'       => 'integer',
+        'col9'       => 'integer',
+        'col10'      => 'integer',
+        'col12'      => 'integer',
+        'sort'       => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
 
     /**
      * 一对一关联职位.

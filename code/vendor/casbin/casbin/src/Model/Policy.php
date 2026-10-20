@@ -7,8 +7,8 @@ namespace Casbin\Model;
 use ArrayAccess;
 use Casbin\Constant\Constants;
 use Casbin\Exceptions\CasbinException;
-use Casbin\Log\Log;
-use Casbin\Rbac\RoleManager;
+use Casbin\Log\Logger;
+use Casbin\Rbac\{ConditionalRoleManager, RoleManager};
 use Casbin\Util\Util;
 
 /**
@@ -31,7 +31,14 @@ abstract class Policy implements ArrayAccess
      *
      * @var array<string, array<string, Assertion>>
      */
-    protected $items = [];
+    protected array $items = [];
+
+    /**
+     * $logger.
+     *
+     * @var Logger|null
+     */
+    protected ?Logger $logger = null;
 
     /**
      * BuildIncrementalRoleLinks provides incremental build the role inheritance relations.
@@ -45,7 +52,7 @@ abstract class Policy implements ArrayAccess
      */
     public function buildIncrementalRoleLinks(array $rmMap, int $op, string $sec, string $ptype, array $rules): void
     {
-        if ($sec == "g") {
+        if ($sec == "g" && isset($rmMap[$ptype]) && isset($this->items[$sec][$ptype])) {
             $this->items[$sec][$ptype]->buildIncrementalRoleLinks($rmMap[$ptype], $op, $rules);
         }
     }
@@ -58,13 +65,54 @@ abstract class Policy implements ArrayAccess
      */
     public function buildRoleLinks(array $rmMap): void
     {
+        $this->printPolicy();
         if (!isset($this->items['g'])) {
             return;
         }
 
         foreach ($this->items['g'] as $ptype => $ast) {
-            $rm = $rmMap[$ptype];
-            $ast->buildRoleLinks($rm);
+            if (isset($rmMap[$ptype])) {
+                $rm = $rmMap[$ptype];
+                $ast->buildRoleLinks($rm);
+            }
+        }
+    }
+
+    /**
+     * BuildIncrementalConditionalRoleLinks provides incremental build the role inheritance relations.
+     *
+     * @param ConditionalRoleManager[] $condRmMap
+     * @param integer $op
+     * @param string $sec
+     * @param string $ptype
+     * @param string[][] $rules
+     * @return void
+     */
+    public function buildIncrementalConditionalRoleLinks(array $condRmMap, int $op, string $sec, string $ptype, array $rules): void
+    {
+        if ($sec == "g" && isset($condRmMap[$ptype]) && isset($this->items[$sec][$ptype])) {
+            $this->items[$sec][$ptype]->buildIncrementalConditionalRoleLinks($condRmMap[$ptype], $op, $rules);
+        }
+    }
+
+    /**
+     * Initializes the roles in RBAC with conditions.
+     *
+     * @param ConditionalRoleManager[] $condRmMap
+     * @throws CasbinException
+     */
+    public function buildConditionalRoleLinks(array $condRmMap): void
+    {
+        $this->printPolicy();
+        if (!isset($this->items['g'])) {
+            return;
+        }
+
+        foreach ($this->items['g'] as $ptype => $ast) {
+            if (isset($condRmMap[$ptype])) {
+                $rm = $condRmMap[$ptype];
+                $ast->buildConditionalRoleLinks($rm);
+            }
         }
     }
 
@@ -73,16 +121,25 @@ abstract class Policy implements ArrayAccess
      */
     public function printPolicy(): void
     {
-        Log::logPrint('Policy:');
+        if (!$this->getLogger()?->isEnabled()) {
+            return;
+        }
 
+        $policy = [];
         foreach (['p', 'g'] as $sec) {
             if (!isset($this->items[$sec])) {
-                return;
+                continue;
             }
-            foreach ($this->items[$sec] as $key => $ast) {
-                Log::logPrint($key, ': ', $ast->value, ': ', $ast->policy);
+
+            foreach ($this->items[$sec] as $ptype => $ast) {
+                $policy[$ptype] = array_merge(
+                    $policy[$ptype] ?? [],
+                    $ast->policy
+                );
             }
         }
+
+        $this->getLogger()->logPolicy($policy);
     }
 
     /**
@@ -507,18 +564,23 @@ abstract class Policy implements ArrayAccess
         if (isset($assertion->fieldIndexMap[$field])) {
             return $assertion->fieldIndexMap[$field];
         }
+
         $pattern = $ptype . '_' . $field;
         $index = -1;
+
         foreach ($assertion->tokens as $i => $token) {
             if ($token == $pattern) {
                 $index = $i;
                 break;
             }
         }
+
         if ($index == -1) {
             throw new CasbinException($field . ' index is not set, please use enforcer.SetFieldIndex() to set index');
         }
+
         $assertion->fieldIndexMap[$field] = $index;
+
         return $index;
     }
 
@@ -533,6 +595,32 @@ abstract class Policy implements ArrayAccess
     {
         $assertion = &$this->items['p'][$ptype];
         $assertion->fieldIndexMap[$field] = $index;
+    }
+
+    /**
+     * Sets the current logger.
+     *
+     * @param Logger $logger
+     *
+     * @return void
+     */
+    public function setLogger(Logger $logger): void
+    {
+        array_walk($this->items, function (array $astMap) use ($logger) {
+            array_walk($astMap, fn(Assertion $ast) => $ast->setLogger($logger));
+        });
+
+        $this->logger = $logger;
+    }
+
+    /**
+     * Returns the current logger.
+     *
+     * @return Logger|null
+     */
+    public function getLogger(): ?Logger
+    {
+        return $this->logger;
     }
 
     /**

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,9 +18,9 @@ namespace App\Http\Service\System;
 use App\Http\Dao\Config\GroupDao;
 use App\Http\Model\BaseModel;
 use App\Http\Service\BaseService;
-use crmeb\interfaces\ConfigInterface;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\interfaces\ConfigInterface;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 
@@ -97,12 +97,12 @@ class SystemGroupService extends BaseService implements ConfigInterface, Resourc
 
     public function resourceEdit(int $id, array $other = []): array
     {
-        // TODO: Implement resourceEdit() method.
+        return [];
     }
 
     public function resourceCreate(array $other = []): array
     {
-        // TODO: Implement resourceCreate() method.
+        return [];
     }
 
     /**
@@ -170,7 +170,6 @@ class SystemGroupService extends BaseService implements ConfigInterface, Resourc
 
     /**
      * 删除组合数据分类.
-     * @param mixed $id
      * @return int|mixed
      * @throws BindingResolutionException
      * @throws \ReflectionException

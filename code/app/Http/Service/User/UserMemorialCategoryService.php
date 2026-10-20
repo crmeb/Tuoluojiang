@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,8 +18,8 @@ namespace App\Http\Service\User;
 use App\Http\Dao\User\UserMemorialCategoryDao;
 use App\Http\Model\BaseModel;
 use App\Http\Service\BaseService;
-use crmeb\services\FormService as Form;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\services\FormService as Form;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -109,7 +109,7 @@ class UserMemorialCategoryService extends BaseService
     {
         $where['uid'] = $this->uuId(false);
         if ($id) {
-            $where['not_id'] = $id;
+            $where['not_id'] = array_merge([(int) $id], $this->dao->column(['uid' => $where['uid'], 'path' => $id], 'id'));
         }
         $list = ($list = $this->dao->getList($where, ['name as label', 'id as value', 'pid'], 0, 0, 'id')) ? $list->toArray() : [];
 
@@ -129,7 +129,7 @@ class UserMemorialCategoryService extends BaseService
             throw $this->exception('修改的备忘录文件夹不存在');
         }
 
-        return $this->elForm('修改备忘录文件夹', $this->getBillCateFormRule(collect($rankCateInfo->toArray())), '/ent/user/memorial_cate/' . $id, 'PUT');
+        return $this->createElementForm('修改备忘录文件夹', $this->getBillCateFormRule(collect($rankCateInfo->toArray())), '/ent/user/memorial_cate/' . $id, 'PUT');
     }
 
     /**
@@ -142,10 +142,8 @@ class UserMemorialCategoryService extends BaseService
     {
         if (isset($other['pid'])) {
             if ($other['pid']) {
-                $path = $this->dao->value(['id' => $other['pid']], 'path');
-                if (is_array($path)) {
-                    $path[] = (int) $other['pid'];
-                }
+                $path   = $this->normalizePath($this->dao->value(['id' => $other['pid']], 'path'));
+                $path[] = (int) $other['pid'];
             } else {
                 $path[] = (int) $this->dao->value(['uid' => $other['uid'], 'types' => 0], 'id');
             }
@@ -153,7 +151,7 @@ class UserMemorialCategoryService extends BaseService
             $path = [];
         }
 
-        return $this->elForm('添加备忘录文件夹', $this->getBillCateFormRule(collect([]), $path), '/ent/user/memorial_cate');
+        return $this->createElementForm('添加备忘录文件夹', $this->getBillCateFormRule(collect([]), $path), '/ent/user/memorial_cate');
     }
 
     /**
@@ -195,7 +193,6 @@ class UserMemorialCategoryService extends BaseService
     /**
      * 删除备忘录文件夹.
      *
-     * @param mixed $id
      * @return int|mixed
      * @throws BindingResolutionException
      * @throws \ReflectionException
@@ -216,7 +213,6 @@ class UserMemorialCategoryService extends BaseService
     /**
      * 删除备忘录文件夹.
      *
-     * @param mixed $id
      * @return int|mixed
      * @throws BindingResolutionException
      * @throws \ReflectionException
@@ -275,12 +271,12 @@ class UserMemorialCategoryService extends BaseService
      */
     public function getData(array $data): array
     {
-        $path        = $data['path'] ?? [];
+        $path        = $this->normalizePath($data['path'] ?? []);
         $data['pid'] = (int) $data['pid'];
-        $path        = array_filter($path);
         if ($path) {
             $parent      = $this->checkParent($data['uid'], intval($path[count($path) - 1]));
             $data['pid'] = $parent->id;
+            $data['path'] = $path;
         } else {
             $parent = $this->checkParent($data['uid'], $data['pid']);
             if ($parent->types) {
@@ -293,7 +289,7 @@ class UserMemorialCategoryService extends BaseService
             $data['path'] = $path;
         }
 
-        if (count($path) > 2) {
+        if (count($this->getBusinessPath($path, $data['uid'])) > 2) {
             throw $this->exception('文件夹最多可添加三级');
         }
         return $data;
@@ -430,12 +426,64 @@ class UserMemorialCategoryService extends BaseService
      */
     protected function getBillCateFormRule(Collection $collection, $path = [])
     {
+        $path = $this->getParentPath(
+            $path ?: (array) ($collection->get('path', []) ?? []),
+            (int) $collection->get('pid', 0),
+            $collection->get('uid') ?: $this->uuId(false)
+        );
+
         return [
             Form::cascader('path', '前置文件夹')
-                ->options($this->getBillCateTree($collection->get('id')))->value($path ?: ($collection->get('path', []) ?? []))
+                ->options($this->getBillCateTree($collection->get('id')))->value($path)->appendRule('value', $path)
                 ->props(['props' => ['checkStrictly' => true]])->placeholder('请选择前置文件夹')
                 ->clearable(true),
             Form::input('name', '文件夹名称', $collection->get('name'))->required()->maxlength(15)->showWordLimit(true)->placeholder('请输入文件夹名称'),
         ];
+    }
+
+    /**
+     * 获取表单前置文件夹回显路径.
+     */
+    protected function getParentPath($path, int $pid = 0, string $uid = ''): array
+    {
+        $path = $this->normalizePath($path);
+        if ($pid && ! in_array($pid, $path, true)) {
+            $path[] = $pid;
+        }
+
+        $topId = $uid ? (int) $this->getTopCateIdByUid($uid)->id : 0;
+        if ($topId && ! in_array($topId, $path, true)) {
+            array_unshift($path, $topId);
+        }
+
+        return $path;
+    }
+
+    /**
+     * 标准化文件夹路径.
+     */
+    protected function normalizePath($path): array
+    {
+        if (is_string($path)) {
+            $path = explode('/', $path);
+        }
+        if (! is_array($path)) {
+            $path = [$path];
+        }
+
+        return array_values(array_filter(array_map('intval', $path)));
+    }
+
+    /**
+     * 去掉默认根文件夹后的业务路径.
+     */
+    protected function getBusinessPath(array $path, string $uid): array
+    {
+        $topId = (int) $this->getTopCateIdByUid($uid)->id;
+        if ($topId) {
+            $path = array_values(array_filter($path, fn ($id) => (int) $id !== $topId));
+        }
+
+        return $path;
     }
 }

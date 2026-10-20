@@ -18,7 +18,7 @@
         <div class="table-box mt10">
           <el-table
             :data="tableData"
-            :height="tableHeight"
+            :height="TABLE_HEIGHT"
             @selection-change="handleSelectionChange"
             style="width: 100%"
             row-key="id"
@@ -27,7 +27,7 @@
             <el-table-column prop="id" label="ID" width="55" type=""></el-table-column>
             <el-table-column prop="name" label="字典名称" min-width="100" show-overflow-tooltip> </el-table-column>
             <el-table-column prop="crud_name" min-width="100" label="关联实体">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <div v-if="scope.row.crud_name.length > 0">
                   <span v-for="(item, index) in scope.row.crud_name">{{ item }}</span>
                 </div>
@@ -38,17 +38,17 @@
             <el-table-column prop="level" label="层级" min-width="80" />
 
             <el-table-column prop="mark" label="备注" min-width="150" show-overflow-tooltip>
-              <template slot-scope="scope">
+              <template #default="scope">
                 <span>{{ scope.row.mark || '--' }}</span>
               </template>
             </el-table-column>
             <el-table-column prop="created_at" label="创建时间" min-width="150" show-overflow-tooltip>
-              <template slot-scope="scope">
+              <template #default="scope">
                 <span>{{ scope.row.created_at || '--' }}</span>
               </template>
             </el-table-column>
             <el-table-column prop="type" label="状态">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <el-switch
                   :disabled="scope.row.is_default === 1"
                   v-model="scope.row.status"
@@ -61,11 +61,11 @@
                 />
               </template>
             </el-table-column>
-            <el-table-column prop="address" :label="$t('public.operation')" width="200">
-              <template slot-scope="scope">
-                <el-button type="text" v-if="scope.row.is_default !== 1" @click="editFn(scope.row.id)">编辑</el-button>
-                <el-button type="text" @click="dataFn(scope.row)">数据管理</el-button>
-                <el-button type="text" v-if="scope.row.is_default !== 1" @click="handleDelete(scope.row)"
+            <el-table-column prop="address" label="操作" width="200">
+              <template #default="scope">
+                <el-button type="primary" link v-if="scope.row.is_default !== 1" @click="editFn(scope.row.id)">编辑</el-button>
+                <el-button type="primary" link @click="dataFn(scope.row)">数据管理</el-button>
+                <el-button type="primary" link v-if="scope.row.is_default !== 1" @click="handleDelete(scope.row)"
                   >删除</el-button
                 >
               </template>
@@ -89,15 +89,19 @@
 </template>
 
 <script>
-import { roterPre } from '@/settings'
+import { modalSure } from '@/libs/public.ts'
+import modalForm from '@/libs/modal-form.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { roterPre } from '@/settings.ts'
 import oaFromBox from '@/components/common/oaFromBox'
-import { getcrudCateListApi, getDatabaseApi } from '@/api/develop'
-import { getDictListApi, getDictCreateApi, getDictEditApi, getDictPutShowApi, getDictDeleteShowApi } from '@/api/form'
+import { getcrudCateListApi, getDatabaseApi } from '@/api/develop.ts'
+import { getDictListApi, getDictCreateApi, getDictEditApi, getDictPutShowApi, getDictDeleteShowApi } from '@/api/form.ts'
 export default {
   components: { oaFromBox },
   name: 'FinanceList',
   data() {
     return {
+      TABLE_HEIGHT,
       search: [
         {
           field_name: '关键字',
@@ -123,6 +127,7 @@ export default {
           field_name: '关联实体',
           field_name_en: 'crud_id',
           form_value: 'cascaderSelect',
+          data_type: 1,
           data_dict: []
         }
       ],
@@ -201,7 +206,7 @@ export default {
         return this.$message.error('请先选择要删除的数据')
       }
       let id = this.ids.join(',')
-      await this.$modalSure('你确定要批量删除这条内容吗')
+      await modalSure('你确定要批量删除这条内容吗')
       await getDictDeleteShowApi(id)
       let totalPage = Math.ceil((this.total - this.ids.length) / this.where.limit)
       let currentPage = this.where.page > totalPage ? totalPage : this.where.page
@@ -222,14 +227,14 @@ export default {
 
     // 新增
     addFinance() {
-      this.$modalForm(getDictCreateApi()).then(({ message }) => {
+      modalForm(getDictCreateApi()).then(({ message }) => {
         this.getList()
       })
     },
 
     // 编辑
     editFn(id) {
-      this.$modalForm(getDictEditApi(id)).then(({ message }) => {
+      modalForm(getDictEditApi(id)).then(({ message }) => {
         this.getList()
       })
     },
@@ -242,7 +247,7 @@ export default {
 
     // 删除
     async handleDelete(row) {
-      await this.$modalSure('你确定要删除这条内容吗')
+      await modalSure('你确定要删除这条内容吗')
       await getDictDeleteShowApi(row.id)
       let totalPage = Math.ceil((this.total - 1) / this.where.limit)
       let currentPage = this.where.page > totalPage ? totalPage : this.where.page

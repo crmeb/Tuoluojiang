@@ -7,30 +7,31 @@
       </el-col>
       <el-col v-bind="gridr">
         <div class="v-height-flag">
+     
           <oaFromBox
             v-if="search.length > 0"
             :search="search"
-            :viewSearch="viewSearch"
             :total="total"
             :title="`物资记录`"
             :btnText="`导出`"
             :btnIcon="false"
             :isAddBtn="true"
+            :isViewSearch="false"
             @addDataFn="handleExport"
             @confirmData="confirmData"
           ></oaFromBox>
 
           <div class="table-box mt10 v-height-flag">
-            <el-table :data="tableData" :height="tableHeight" style="width: 100%" row-key="id" default-expand-all>
+            <el-table :data="tableData" :height="TABLE_HEIGHT" style="width: 100%" row-key="id" default-expand-all>
               <el-table-column prop="id" label="领取部门 / 人员" min-width="100">
-                <template slot-scope="scope">
+                <template #default="scope">
                   <span v-if="scope.row.frame"> {{ scope.row.frame ? scope.row.frame.name : '--' }}</span>
                   <span v-else>{{ scope.row.card ? scope.row.card.name : '--' }}</span>
                 </template>
               </el-table-column>
               <el-table-column prop="storage.name" label="物资名称" min-width="100" />
               <el-table-column prop="storage.units" label="规格型号" min-width="100">
-                <template slot-scope="scope">
+                <template #default="scope">
                   {{ scope.row.storage.units ? scope.row.storage.units : '--' }}
                 </template>
               </el-table-column>
@@ -38,8 +39,8 @@
               <el-table-column prop="storage.specs" label="计量单位" min-width="80" />
               <el-table-column prop="num" label="领用数量" min-width="80" />
               <el-table-column prop="updated_at" label="领用时间" min-width="120">
-                <template slot-scope="scope">
-                  {{ $moment(scope.row.updated_at).format('yyyy-MM-DD') }}
+                <template #default="scope">
+                  {{ dayjs(scope.row.updated_at).format('YYYY-MM-DD') }}
                 </template>
               </el-table-column>
             </el-table>
@@ -63,18 +64,26 @@
 </template>
 
 <script>
-import { storageCateApi, storageRecordApi, storageRecordUsersApi } from '@/api/administration'
-import { values } from 'xe-utils'
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
+import pickerOptions from '@/libs/pickerOptions.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { storageCateApi, storageRecordApi, storageRecordUsersApi } from '@/api/administration.ts'
+import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'Consume',
   components: {
-    tree: () => import('./tree'),
-    exportExcel: () => import('@/components/common/exportExcel'),
-    oaFromBox: () => import('@/components/common/oaFromBox')
+    tree: defineAsyncComponent(() => import('./tree')),
+    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel')),
+    oaFromBox
+  },
+  computed: {
+    dayjs: () => dayjs
   },
   data() {
     return {
-      pickerOptions: this.$pickerOptionsTimeEle,
+      TABLE_HEIGHT,
+      pickerOptions,
       gridl: {
         xl: 3,
         lg: 4,
@@ -107,16 +116,22 @@ export default {
           field_name_en: 'frame_id',
           form_value: 'frame_id',
           data_dict: []
-        }
-      ],
-      viewSearch: [
+        },
         {
-          field: 'card_id',
-          title: '人员',
-          type: 'card_id',
-          options: []
-        }
+          field_name: '人员',
+         field_name_en: 'card_id',
+          form_value: 'card_id',
+          data_dict: []
+        },
       ],
+      // viewSearch: [
+      //   {
+      //     field: 'card_id',
+      //     title: '人员',
+      //     type: 'card_id',
+      //     options: []
+      //   }
+      // ],
       where: {
         page: 1,
         limit: 15,
@@ -188,11 +203,11 @@ export default {
       // 先将对象变为字符串，然后再变为json对象，防止对象的指针指向问题，为深拷贝
       let where = JSON.parse(JSON.stringify(this.where))
       where.limit = 0
-      this.saveName = '导出消耗物资记录_' + this.$moment(new Date()).format('MM_DD_HH_mm_ss') + '.xlsx'
+      this.saveName = '导出消耗物资记录_' + dayjs(new Date()).format('MM_DD_HH_mm_ss') + '.xlsx'
       storageRecordApi(where).then((res) => {
         let data = res.data.list
         if (data.length <= 0) {
-          this.$message.error(this.$t('access.placeholder24'))
+          this.$message.error('暂无内容可导出')
         } else {
           const aoaData = [['领取部门/人员', '物资名称', '规格型号', '物资分类', '计量单位', '领用数量', '领用时间']]
 
@@ -212,7 +227,7 @@ export default {
               value.storage.cate.cate_name,
               value.storage.specs,
               value.num,
-              this.$moment(value.updated_at).format('yyyy-MM-DD')
+              dayjs(value.updated_at).format('YYYY-MM-DD')
             ])
           })
           this.exportData.data = aoaData
@@ -256,12 +271,12 @@ export default {
   padding: 0;
   border-bottom: none;
 }
-/deep/ .el-form-item {
+:deep(.el-form-item) {
   margin-bottom: 10px;
   margin-right: 10px;
 }
 .table-box {
-  /deep/ .el-table th {
+  :deep(.el-table th) {
     background-color: rgba(247, 251, 255, 1);
   }
 }

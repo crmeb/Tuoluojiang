@@ -15,7 +15,7 @@
       <table class="table-layout">
         <tbody>
           <tr v-for="(row, rowIdx) in widget.rows" :key="row.id">
-            <template v-for="(colWidget, colIdx) in row.cols">
+            <template v-for="(colWidget, colIdx) in row.cols" :key="colIdx">
               <table-cell-widget
                 v-if="!colWidget.merged"
                 :widget="colWidget"
@@ -39,7 +39,7 @@
 </template>
 
 <script>
-import i18n from '@/utils/i18n'
+import i18n from '@/utils/i18n.ts'
 import containerMixin from '@/components/form-designer/form-widget/container-widget/containerMixin'
 import ContainerWrapper from '@/components/form-designer/form-widget/container-widget/container-wrapper'
 import TableCellWidget from '@/components/form-designer/form-widget/container-widget/table-cell-widget'
@@ -47,7 +47,6 @@ import refMixinDesign from '@/components/form-designer/refMixinDesign'
 
 export default {
   name: 'table-widget',
-  componentName: 'ContainerWidget',
   mixins: [i18n, containerMixin, refMixinDesign],
   inject: ['refList'],
   components: {
@@ -96,7 +95,7 @@ div.table-container {
     border-collapse: collapse;
     table-layout: fixed;
 
-    ::v-deep td {
+    :deep(td) {
       height: 48px;
       border: 1px dashed #336699;
       padding: 3px;
@@ -113,4 +112,4 @@ div.table-container {
 .table-container.selected {
   outline: 2px solid #409eff !important;
 }
-</style>@/utils/i18ns
+</style>

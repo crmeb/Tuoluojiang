@@ -23,24 +23,26 @@
 </template>
 
 <script>
-import file from '@/utils/file'
-import Vue from 'vue'
-Vue.use(file)
-import { billCateApi, billImportApi, enterprisePayTypeApi } from '@/api/enterprise'
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
+import { fileLinkDownLoad } from '@/utils/file.ts'
+import { billCateApi, billImportApi, enterprisePayTypeApi } from '@/api/enterprise.ts'
 
+import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'FormBox',
+  emits: ['addFinance', 'confirmData', 'exportTemplate', 'getExportData', 'importExcelDFn'],
   props: ['total'],
   components: {
-    importExcel: () => import('@/components/common/importExcel'),
-    exportExcel: () => import('@/components/common/exportExcel'),
-    oaFromBox: () => import('@/components/common/oaFromBox')
+    importExcel: defineAsyncComponent(() => import('@/components/common/importExcel')),
+    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel')),
+    oaFromBox
   },
   data() {
     return {
       timeVal: [
-        this.$moment().startOf('months').format('YYYY/MM/DD'),
-        this.$moment().endOf('months').format('YYYY/MM/DD')
+        dayjs().startOf('months').format('YYYY/MM/DD'),
+        dayjs().endOf('months').format('YYYY/MM/DD')
       ],
       gettime: '',
       tableFrom: {
@@ -55,11 +57,11 @@ export default {
       payData: [],
       exportFileUrl: '',
       sexOptions: [
-        { label: this.$t('finance.all'), value: '' },
-        { label: this.$t('finance.income'), value: '1' },
-        { label: this.$t('finance.pay'), value: '0' }
+        { label: '全部', value: '' },
+        { label: '收入', value: '1' },
+        { label: '支出', value: '0' }
       ],
-      statusOptions: [{ label: this.$t('toptable.all'), value: '' }],
+      statusOptions: [{ label: '全部', value: '' }],
       saveName: '',
       exportData: {
         data: [],
@@ -92,8 +94,8 @@ export default {
           field_name_en: 'time',
           form_value: 'date_picker',
           data_dict: [
-            this.$moment().startOf('months').format('YYYY/MM/DD'),
-            this.$moment().endOf('months').format('YYYY/MM/DD')
+            dayjs().startOf('months').format('YYYY/MM/DD'),
+            dayjs().endOf('months').format('YYYY/MM/DD')
           ]
         },
         {
@@ -133,16 +135,6 @@ export default {
       ]
     }
   },
-  computed: {
-    lang: function () {
-      return this.$store.getters.lang
-    }
-  },
-  watch: {
-    lang() {
-      this.setOptions()
-    }
-  },
   created() {
     this.tableFrom.time = `${this.timeVal[0]}-${this.timeVal[1]}`
     this.getBillCate()
@@ -168,28 +160,6 @@ export default {
           break
       }
     },
-    setOptions() {
-      this.sexOptions = [
-        {
-          label: this.$t('finance.all'),
-          value: ''
-        },
-        {
-          label: this.$t('finance.income'),
-          value: '0'
-        },
-        {
-          label: this.$t('finance.pay'),
-          value: '1'
-        }
-      ]
-      this.statusOptions = [
-        {
-          label: this.$t('toptable.all'),
-          value: ''
-        }
-      ]
-    },
     addFinance() {
       this.$emit('addFinance')
     },
@@ -199,7 +169,7 @@ export default {
       const data = {
         types: type
       }
-      const list = [{ label: this.$t('toptable.all'), value: '' }]
+      const list = [{ label: '全部', value: '' }]
       billCateApi(data).then((res) => {
         res.data === undefined ? (res.data = []) : res.data
         this.statusOptions = res.data
@@ -209,7 +179,7 @@ export default {
     },
 
     getPayType() {
-      var data = {
+      const data = {
         page: 1,
         limit: 0
       }
@@ -217,7 +187,7 @@ export default {
         const data = res.data.list ? res.data.list : []
         this.exportFileUrl = res.data.import_temp
         this.payData = data
-        this.payData.unshift({ name: this.$t('toptable.all'), id: '' })
+        this.payData.unshift({ name: '全部', id: '' })
         this.setDataDict('type_id', this.payData)
       })
     },
@@ -269,7 +239,7 @@ export default {
       if (data[0][0] == '示例：收入') {
         data.splice(0, 1)
       }
-      var res = []
+      const res = []
       if (data.length <= 0) {
         this.$message.error('批量导出内容为空')
       } else {
@@ -282,12 +252,12 @@ export default {
               cate_id: data[i][1],
               num: data[i][2],
               pay_type: data[i][3],
-              edit_time: this.$moment(data[i][4], 'YYYY-MM-DD HH:mm:ss').format('YYYY-MM-DD HH:mm:ss'),
+              edit_time: dayjs(data[i][4], 'YYYY-MM-DD HH:mm:ss').format('YYYY-MM-DD HH:mm:ss'),
               mark: data[i][5]
             })
           }
         }
-        var data_s = {
+        const data_s = {
           data: res
         }
         billImportApi(data_s)
@@ -299,11 +269,11 @@ export default {
       }
     },
     exportTemplate() {
-      this.gettime = this.$moment().format('YYYY-MM-DD HH:mm:ss')
+      this.gettime = dayjs().format('YYYY-MM-DD HH:mm:ss')
       if (!this.exportFileUrl) {
         this.$message.error('暂无导入模板,请联系管理员')
       } else {
-        this.fileLinkDownLoad(this.exportFileUrl, '收支记账导入模板' + this.gettime + '.xlsx')
+        fileLinkDownLoad(this.exportFileUrl, '收支记账导入模板' + this.gettime + '.xlsx')
       }
     },
     exportExcelData() {
@@ -329,10 +299,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/deep/.el-cascader__tags {
+:deep(.el-cascader__tags) {
   flex-wrap: nowrap;
 }
-/deep/ .el-cascader__search-input {
+:deep(.el-cascader__search-input) {
   cursor: pointer;
 }
 </style>

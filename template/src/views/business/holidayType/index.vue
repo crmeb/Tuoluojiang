@@ -1,40 +1,38 @@
 <template>
-  <div class="divBox">
+  <div :class="checkBtn ? 'divBox' : ''">
     <!-- 假期类型表格 -->
     <div v-if="checkBtn">
       <el-card class="normal-page p20">
         <div>
           <div class="flex-between">
             <div class="title-16">假期类型</div>
-            <el-button type="primary" icon="el-icon-plus" size="small" @click="addType()">新增</el-button>
+            <el-button type="primary" icon="el-icon-plus" @click="addType()">新增</el-button>
           </div>
           <div class="total-16 mt20">共有 {{ total }} 条</div>
           <div class="mt14" v-if="tableData.length > 0">
-            <el-table :data="tableData" :height="tableHeight">
+            <el-table :data="tableData" :height="TABLE_HEIGHT">
               <el-table-column prop="name" label="假期类型" min-width="120">
-                <template slot-scope="scope">
+                <template #default="scope">
                   <div class="flex">
                     <div class="ml10">{{ scope.row.name }}</div>
                   </div>
                 </template>
               </el-table-column>
               <el-table-column prop="refuse" label="请假单位" min-width="100">
-                <template slot-scope="scope">
+                <template #default="scope">
                   <span>{{ scope.row.duration_type == 1 ? '按小时' : '按天' }}</span>
                 </template>
               </el-table-column>
               <el-table-column prop="sort" label="排序"></el-table-column>
               <el-table-column label="操作" width="200">
-                <template slot-scope="scope">
-                  <el-button type="text" @click="handleEdit(scope.row)" v-hasPermi="['business:examine:index:edit']">{{
-                    $t('public.edit')
-                  }}</el-button>
+                <template #default="scope">
+                  <el-button type="primary" link @click="handleEdit(scope.row)" v-hasPermi="['business:examine:index:edit']">编辑</el-button>
 
                   <el-button
-                    type="text"
+                    type="primary" link
                     @click="handleDelete(scope.row)"
                     v-hasPermi="['business:examine:index:delete']"
-                    >{{ $t('public.delete') }}</el-button
+                    >删除</el-button
                   >
                 </template>
               </el-table-column>
@@ -60,34 +58,22 @@
     </div>
 
     <!-- 假期类型配置 -->
-    <div v-if="!checkBtn" class="examineBox">
-      <!-- <div> -->
-      <el-card :body-style="{ padding: '14px' }" class="station-header">
-        <el-row>
-          <el-col :span="24">
-            <el-page-header :content="this.id > 0 ? '编辑假期类型' : '添加假期类型'">
-              <div slot="title" @click="back">
-                <i class="el-icon-arrow-left"></i>
-                返回
-              </div>
-            </el-page-header>
-          </el-col>
-        </el-row>
-      </el-card>
+    <BaseContainer v-if="!checkBtn" class="holiday-form none-padding">
+      <!-- 顶部：返回 + 标题 -->
+      <FormPageHeader :title="id > 0 ? '编辑假期类型' : '添加假期类型'" @back="back" />
 
-      <el-card class="box-card mt14">
-        <div class="setting-container mt14">
+      <div class="holiday-form__body">
+        <div class="setting-container">
           <el-row>
             <el-col v-bind="grid1">&nbsp;</el-col>
             <el-col v-bind="grid2">
-              <el-form ref="elForm" :model="form" :rules="rules" label-width="100px" size="medium">
+              <el-form ref="elForm" :model="form" :rules="rules" label-width="100px" size="default">
                 <div class="card-list">
                   <div class="head">
                     <span class="title">基础信息设置</span>
                   </div>
                   <el-form-item label="假期类型：" prop="name">
                     <el-input
-                      size="small"
                       style="width: 350px"
                       v-model="form.name"
                       show-word-limit
@@ -97,7 +83,7 @@
                     </el-input>
                   </el-form-item>
                   <el-form-item style="margin-bottom: 0" label="新员工请假：" prop="new_employee_limit">
-                    <el-select v-model="form.new_employee_limit" style="width: 350px" size="small">
+                    <el-select v-model="form.new_employee_limit" style="width: 350px">
                       <el-option label="限制" :value="1"></el-option>
                       <el-option label="不限制" :value="0"></el-option>
                     </el-select>
@@ -106,7 +92,7 @@
                     <span v-if="form.new_employee_limit == 0" class="info">入职即可请假</span>
                     <div v-else class="info">
                       入职时长小于
-                      <el-select v-model="form.new_employee_limit_month" style="width: 100px" size="small">
+                      <el-select v-model="form.new_employee_limit_month" style="width: 100px">
                         <el-option v-for="month in months" :key="month" :label="month" :value="month"></el-option>
                       </el-select>
                       个月时，不可申请此假期
@@ -119,7 +105,7 @@
                     <span class="title">请假时长核算规则</span>
                   </div>
                   <el-form-item label="请假时长：" prop="duration_type">
-                    <el-select v-model="form.duration_type" style="width: 350px" size="small">
+                    <el-select v-model="form.duration_type" style="width: 350px">
                       <el-option label="按天" :value="0"></el-option>
                       <el-option label="按小时" :value="1"></el-option>
                     </el-select>
@@ -136,7 +122,6 @@
                       :min="0"
                       controls-position="right"
                       style="width: 350px"
-                      size="small"
                     ></el-input-number>
                   </el-form-item>
                 </div>
@@ -144,31 +129,42 @@
             </el-col>
           </el-row>
         </div>
-      </el-card>
-      <!-- </div> -->
-    </div>
-    <div class="cr-bottom-button btn-shadow" v-if="!checkBtn">
-      <el-button size="small" @click="checkBtn = true">取消</el-button>
-      <el-button type="primary" size="small" @click="save">保存</el-button>
-    </div>
+      </div>
+
+      <!-- 底部按钮 -->
+      <FormPageFooter>
+        <el-button @click="checkBtn = true">取消</el-button>
+        <el-button type="primary" @click="save">保存</el-button>
+      </FormPageFooter>
+    </BaseContainer>
   </div>
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
 import {
   saveHolidayTypeApi,
   approveHolidayTypeApi,
   putHolidayTypeApi,
   approveHolidayTypeInfoApi,
   holidayTypeDeleteApi
-} from '@/api/business'
+} from '@/api/business.ts'
+import BaseContainer from '@/components/BaseContainer/index.vue'
+import FormPageHeader from '@/components/FormPageHeader/index.vue'
+import FormPageFooter from '@/components/FormPageFooter/index.vue'
 export default {
   name: 'HolidayType',
   components: {
-    defaultPage: () => import('@/components/common/defaultPage')
+    BaseContainer,
+    FormPageHeader,
+    FormPageFooter,
+    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage'))
   },
   data() {
     return {
+      TABLE_HEIGHT,
       checkBtn: true,
       tableData: [],
       where: {
@@ -191,9 +187,9 @@ export default {
       repeatData: {},
       key: 'cate',
       tabArray: [
-        { label: this.$t('business.formConfiguration'), value: 'formSetting', number: 2 },
-        { label: this.$t('business.processSetting'), value: 'processSetting', number: 3 },
-        { label: this.$t('business.ruleConfiguration'), value: 'ruleSetting', number: 4 }
+        { label: '表单配置', value: 'formSetting', number: 2 },
+        { label: '流程配置', value: 'processSetting', number: 3 },
+        { label: '规则配置', value: 'ruleSetting', number: 4 }
       ],
       id: 0,
       grid1: {
@@ -273,7 +269,7 @@ export default {
     },
     // 获取假期类型列表
     async getTableData() {
-      var data = {
+      const data = {
         page: this.where.page,
         limit: this.where.limit
       }
@@ -291,7 +287,7 @@ export default {
     },
     // 删除
     handleDelete(item) {
-      this.$modalSure('你确定要删除该假期类型吗').then(() => {
+      modalSure('你确定要删除该假期类型吗').then(() => {
         holidayTypeDeleteApi(item.id)
           .then((res) => {
             if (this.where.page > 1 && this.tableData.length <= 1) {
@@ -313,36 +309,32 @@ export default {
     margin-bottom: 20px;
   }
 }
-.box-card {
-  height: calc(100vh - 200px);
-  overflow-y: scroll;
+.holiday-form__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px;
 }
 
 .p20 {
   padding: 20px;
 }
-/deep/ .el-card {
+:deep(.el-card) {
   transition: 0s;
 }
-/deep/ .from-foot-btn {
+:deep(.from-foot-btn) {
   // width: calc(100% - 29px);
   width: 100%;
 }
-/deep/ .el-tabs__header {
+:deep(.el-tabs__header) {
   margin: 0;
 }
-/deep/.el-page-header {
-  margin-top: 4px;
-}
 
-/deep/ .el-table th {
+:deep(.el-table th) {
   background-color: #f7fbff;
 }
-/deep/ .el-icon-back {
-  display: none;
-}
 .examineTabs {
-  /deep/ .el-tabs__nav-wrap::after {
+  :deep(.el-tabs__nav-wrap::after) {
     background-color: #fff;
   }
   .sp1 {
@@ -355,11 +347,11 @@ export default {
     line-height: 14px;
     font-size: 12px;
   }
-  /deep/.el-tabs__nav-scroll {
+  :deep(.el-tabs__nav-scroll) {
     display: flex;
     justify-content: left;
   }
-  /deep/ .el-tabs__item {
+  :deep(.el-tabs__item) {
     color: #999999;
     font-weight: 600;
     &.is-active {
@@ -372,11 +364,8 @@ export default {
     }
   }
 }
-.examineBox {
-  // padding: 14px;
-}
 .card-box {
-  height: calc(100vh - 150px);
+  height: calc(100vh - 100px);
   // overflow-y: scroll;
   font-size: 13px;
   font-family: PingFangSC-Regular, PingFang SC;
@@ -428,18 +417,15 @@ export default {
   font-size: 13px;
   color: #fff;
 }
-/deep/.el-card__body {
+:deep(.el-card__body) {
   padding: 0;
 }
-/deep/.el-form-item {
+:deep(.el-form-item) {
   margin: 0;
 }
-.cr-bottom-button {
-  position: fixed;
-  left: -20px;
-  right: 0;
-  bottom: 0;
-  width: calc(100% + 220px);
+.divBox {
+  position: relative;
+  height: 100%;
 }
 .setting-container {
   padding-bottom: 20px;
@@ -486,13 +472,13 @@ export default {
   margin-left: 8px;
 }
 
-/deep/.el-form-item {
+:deep(.el-form-item) {
   // display: flex;
   // align-items: center;
   // justify-content: flex-start;
   margin-bottom: 20px;
 }
-/deep/.el-form-item__content {
+:deep(.el-form-item__content) {
   margin-left: 0 !important;
 }
 .infos {

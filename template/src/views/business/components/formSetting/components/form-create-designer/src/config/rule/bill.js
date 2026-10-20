@@ -13,11 +13,13 @@ export default {
     return {
       type: name,
       field: uniqueId(),
+      
       title: label,
       info: '',
       props: {
         member: false,
       },
+      symbol: 'approvalBill',
       children: [],
     };
   },

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,8 +15,8 @@ declare(strict_types=1);
 
 namespace App\Http\Model\User;
 
-use App\Http\Model\BaseModel;
 use App\Http\Model\Company\Company;
+use App\Http\Model\BaseModel;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Query\Builder;
 
@@ -44,10 +44,17 @@ class UserEnterpriseApply extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'entid'      => 'integer',
+        'frame_id'   => 'integer',
+        'status'     => 'integer',
+        'verify'     => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * status作用域
-     * @param mixed $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeStatusApply($query, $value)
@@ -78,7 +85,6 @@ class UserEnterpriseApply extends BaseModel
     /**
      * entids作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeEntids($query, $value)
@@ -89,7 +95,6 @@ class UserEnterpriseApply extends BaseModel
     /**
      * verify作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeVerify($query, $value)
@@ -104,7 +109,6 @@ class UserEnterpriseApply extends BaseModel
     /**
      * id作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeId($query, $value)
@@ -117,7 +121,6 @@ class UserEnterpriseApply extends BaseModel
     /**
      * entid作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeEntid($query, $value)
@@ -129,7 +132,6 @@ class UserEnterpriseApply extends BaseModel
 
     /**
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeStatus($query, $value)

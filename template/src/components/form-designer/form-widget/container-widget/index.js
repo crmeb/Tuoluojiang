@@ -1,10 +1,11 @@
-import Vue from 'vue'
+import { registerGlobalComponent } from '@/app-context'
 
-const requireComponent = require.context('./', false, /\w+\.vue$/)
+const requireComponent = import.meta.glob('./*.vue', { eager: true })
 /* 全局注册！！ */
-requireComponent.keys().map(fileName => {
-  let comp = requireComponent(fileName).default;
-  Vue.component(comp.name, comp)
+Object.keys(requireComponent).forEach(fileName => {
+  let comp = requireComponent[fileName].default;
+
+  if (comp.name !== 'card-item') registerGlobalComponent(comp.name, comp)
 })
 
 /**
@@ -21,4 +22,3 @@ requireComponent.keys().map(fileName => {
 export default comps;
 
 end */
-

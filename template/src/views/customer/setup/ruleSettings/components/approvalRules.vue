@@ -3,31 +3,28 @@
     <div class="card-box">
       <el-card :body-style="{ padding: '20px 20px 0' }" class="box-card">
         <div class="setting-container">
-          <el-row>
-            <el-col v-bind="grid1">&nbsp;</el-col>
-            <el-col v-bind="grid2">
-              <el-form ref="elForm" :rules="rules" label-width="280px" size="medium">
-                <div class="card-list">
-                  <form-create
-                    v-if="fromData"
-                    :option="fromData.rule.options"
-                    :rule="fromData.rule"
-                    @submit="onSubmit"
-                  />
-                </div>
-              </el-form>
-            </el-col>
-          </el-row>
+          <!-- <el-col v-bind="grid1">&nbsp;</el-col> -->
+
+          <div class="card-list">
+            <div class="tips mb20">请前往人事>审批设置中增加审批流程，请关联对应控件组进行添加</div>
+            <form-create
+              v-if="fromData"
+              :option="fromData.rule"
+              :rule="fromData.rule"
+              @submit="onSubmit"
+              class="form-base"
+            />
+          </div>
         </div>
       </el-card>
     </div>
   </div>
 </template>
 <script>
-import request from '@/api/request'
+import request from '@/api/request.ts'
 import formCreate from '@form-create/element-ui'
 export default {
-  name: 'FollowRules',
+  name: 'ApprovalRules',
   props: {
     ruleForm: {
       default: () => {},
@@ -43,20 +40,6 @@ export default {
   },
   data() {
     return {
-      grid1: {
-        xl: 2,
-        lg: 4,
-        md: 2,
-        sm: 24,
-        xs: 24
-      },
-      grid2: {
-        xl: 20,
-        lg: 18,
-        md: 20,
-        sm: 24,
-        xs: 24
-      },
       rules: {}
     }
   },
@@ -75,35 +58,30 @@ export default {
   color: #303133;
 
   .box-card {
+    height: calc(100vh - 137px);
     .setting-container {
-      // padding-bottom: 20px;
-
       .card-list {
-        //border-spacing: 2px;
         .info {
           font-size: 12px;
           color: #909399;
           margin-left: 8px;
         }
       }
-      .dash-line {
-        // width: 100%;
-        // height: 1px;
-        // background-image: linear-gradient(to right, #dcdfe6 0%, #dcdfe6 50%, transparent 50%);
-        // background-size: 12px 0.5px; //第一个值（20px）越大线条越长间隙越大
-        // background-repeat: repeat-x;
-        // margin-top: 20px;
-      }
     }
   }
 }
-/deep/.el-card.is-always-shadow {
-  border: none;
+
+.tips {
+  font-family: PingFang SC, PingFang SC;
+  font-weight: 400;
+  font-size: 12px;
+  color: #909399;
+  transform: translateX(54px);
 }
-/deep/.el-select {
-  width: 85%;
-}
-/deep/.el-input--medium .el-input__inner {
-  font-size: 13px;
+
+.tips,
+.form-base {
+  width: 460px;
+  margin-inline: auto;
 }
 </style>

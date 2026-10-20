@@ -17,9 +17,9 @@ namespace App\Http\Controller\AdminApi\Company;
 
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Service\User\UserSalaryService;
-use crmeb\interfaces\ResourceControllerInterface;
-use crmeb\traits\ResourceControllerTrait;
-use crmeb\traits\SearchTrait;
+use Tuoluojiang\Open\interfaces\ResourceControllerInterface;
+use Tuoluojiang\Open\traits\ResourceControllerTrait;
+use Tuoluojiang\Open\traits\SearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,19 +16,19 @@ declare(strict_types=1);
 namespace App\Http\Controller\AdminApi\Package;
 
 use App\Http\Controller\AdminApi\AuthController;
+use App\Http\Service\Admin\AdminService;
 use App\Http\Service\File\FileAuthService;
 use App\Http\Service\File\FilePermissionsService;
 use App\Http\Service\File\FileService;
 use App\Http\Service\File\FolderHistoryService;
-use App\Http\Service\User\UserService;
 use App\Task\message\CloudFileReadRemind;
-use crmeb\exceptions\ServicesException;
-use crmeb\interfaces\OptionsInterface;
-use crmeb\services\synchro\Company;
-use crmeb\services\wps\options\OfficeCommonOptions;
-use crmeb\services\wps\options\OfficeFileInfoOptions;
-use crmeb\services\wps\options\OfficeFileNewOptions;
-use crmeb\services\wps\WebOffice as WebOfficeService;
+use Tuoluojiang\Open\exceptions\ServicesException;
+use Tuoluojiang\Open\interfaces\OptionsInterface;
+use Tuoluojiang\Open\services\synchro\Company;
+use Tuoluojiang\Open\services\wps\options\OfficeCommonOptions;
+use Tuoluojiang\Open\services\wps\options\OfficeFileInfoOptions;
+use Tuoluojiang\Open\services\wps\options\OfficeFileNewOptions;
+use Tuoluojiang\Open\services\wps\WebOffice as WebOfficeService;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Http\JsonResponse;
@@ -98,7 +98,7 @@ class WebOfficeController extends AuthController
             $options->version      = (int) $file['version'];
             $options->size         = (int) $file['size'];
             $options->creator      = '1';
-            $options->createTime   = strtotime($file['created_at']);
+            $options->createTime   = datetime_timestamp($file['created_at']);
             $options->download_url = $file['url'];
             $options->name         = $name . '.' . $fileExt;
             $options->modifier     = '1';
@@ -147,7 +147,7 @@ class WebOfficeController extends AuthController
                 $options->version      = (int) $folder->version;
                 $options->size         = (int) $folder->size;
                 $options->creator      = $folder->uid;
-                $options->createTime   = strtotime($folder->created_at);
+                $options->createTime   = datetime_timestamp($folder->created_at);
                 $options->download_url = get_download_url($this->fileId, ['folder' => 1]);
                 $options->user['id']   = $folder->uid;
 
@@ -177,7 +177,7 @@ class WebOfficeController extends AuthController
                 $options->version      = (int) $info->version;
                 $options->size         = (int) $info->size;
                 $options->creator      = $info->uid;
-                $options->createTime   = strtotime($info->created_at);
+                $options->createTime   = datetime_timestamp($info->created_at);
                 $options->download_url = get_download_url($this->fileId);
                 $options->user['id']   = $info->uid;
             }
@@ -203,7 +203,7 @@ class WebOfficeController extends AuthController
      * 当前协作用户信息.
      * @return JsonResponse|mixed
      */
-    public function infoUser(OfficeCommonOptions $options, UserService $services): mixed
+    public function infoUser(OfficeCommonOptions $options, AdminService $services): mixed
     {
         [$ids] = $this->request->postMore([
             ['ids', []],
@@ -300,6 +300,7 @@ class WebOfficeController extends AuthController
 
     /**
      * 获取特定版本的文件信息.
+     * @param mixed $version
      * @return JsonResponse|mixed
      * @throws BindingResolutionException
      * @throws ContainerExceptionInterface
@@ -324,9 +325,9 @@ class WebOfficeController extends AuthController
                 'name'         => $folder->name,
                 'version'      => (int) $version,
                 'size'         => (int) $folder->file_size,
-                'create_time'  => strtotime($folder->created_at),
+                'create_time'  => datetime_timestamp($folder->created_at),
                 'creator'      => $folder->uid,
-                'modify_time'  => strtotime($history->created_at),
+                'modify_time'  => datetime_timestamp($history->created_at),
                 'modifier'     => $history->uid,
                 'download_url' => get_download_url($this->fileId, ['version' => $version, 'folder' => 1]),
             ];
@@ -342,9 +343,9 @@ class WebOfficeController extends AuthController
                 'name'         => $fileInfo->name,
                 'version'      => (int) $version,
                 'size'         => (int) $fileInfo->size,
-                'create_time'  => strtotime($fileInfo->created_at),
+                'create_time'  => datetime_timestamp($fileInfo->created_at),
                 'creator'      => $fileInfo->uid,
-                'modify_time'  => strtotime($fileInfo->updated_at),
+                'modify_time'  => datetime_timestamp($fileInfo->updated_at),
                 'modifier'     => $fileInfo->edit_uid,
                 'download_url' => get_download_url($fileInfo->file_id, ['version' => $version]),
             ];

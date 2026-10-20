@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,9 +18,9 @@ namespace App\Http\Service\Approve;
 use App\Constants\ApproveEnum;
 use App\Constants\CacheEnum;
 use App\Http\Dao\Approve\ApproveDao;
-use App\Http\Service\BaseService;
 use App\Http\Service\Frame\FrameService;
-use crmeb\traits\service\ResourceServiceTrait;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Facades\Cache;
 use Psr\Container\ContainerExceptionInterface;
@@ -48,12 +48,14 @@ class ApproveService extends BaseService
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function getList(array $where, array $field = ['*'], $sort = 'id', array $with = []): array
+    public function getList(array $where, array $field = ['*'], $sort = ['sort', 'id'], array $with = []): array
     {
-        $uid = auth('admin')->id();
         if ($where['types']) {
             $this->getCardId();
+            $uid         = auth('admin')->id();
             $where['id'] = $this->getUsableApprove($uid);
+        } else {
+            $where['not_types'] = [ApproveEnum::APPROVE_REVOKE];
         }
         unset($where['types']);
         return parent::getList($where, $field, $sort, [
@@ -81,21 +83,21 @@ class ApproveService extends BaseService
     {
         switch ($types) {
             case 3:
-                $where['id'] = app()->get(ApproveApplyService::class)->column(['user_id' => $uid], 'approve_id');
-                $list        = $this->dao->setTrashed()->getList($where, ['*'], 0, 0, 'id');
+                $where['id'] = array_unique(app()->get(ApproveApplyService::class)->column(['user_id' => $uid], 'approve_id'));
+                $list        = $this->dao->setTrashed()->getList($where, ['*'], 0, 0, ['sort', 'id']);
                 break;
             case 2:
-                $where['id'] = app()->get(ApproveApplyService::class)->column([], 'approve_id');
-                $list        = $this->dao->setTrashed()->getList($where, ['*'], 0, 0, 'id');
+                $where['id'] = array_unique(app()->get(ApproveApplyService::class)->column([], 'approve_id'));
+                $list        = $this->dao->setTrashed()->getList($where, ['*'], 0, 0, ['sort', 'id']);
                 break;
             case 1:
-                $where['id'] = app()->get(ApproveUserService::class)->column(['user_id' => $uid], 'approve_id');
-                $list        = $this->dao->setTrashed()->getList($where, ['*'], 0, 0, 'id');
+                $where['id'] = array_unique(app()->get(ApproveUserService::class)->column(['user_id' => $uid], 'approve_id'));
+                $list        = $this->dao->setTrashed()->getList($where, ['*'], 0, 0, ['sort', 'id']);
                 break;
             default:
                 $where['id']        = $this->getUsableApprove($uid);
                 $where['not_types'] = ApproveEnum::CUSTOMER_TYPES;
-                $list               = $this->dao->getList($where, ['*'], 0, 0, 'id');
+                $list               = $this->dao->getList($where, ['*'], 0, 0, ['sort', 'id']);
         }
         return $list;
     }
@@ -110,7 +112,7 @@ class ApproveService extends BaseService
         $this->getCardId();
         $baseConfig    = $this->checkBaseConfig($data);
         $formConfig    = $this->checkFormConfig($data);
-        $processConfig = $this->checkProcessConfig($data);
+        $processConfig = $this->checkProcessConfig($data, auth('admin')->id());
         $ruleConfig    = $this->checkRuleConfig($data);
         $res           = $this->transaction(function () use ($baseConfig, $formConfig, $processConfig, $ruleConfig) {
             $res1 = $this->dao->create($baseConfig);
@@ -153,11 +155,20 @@ class ApproveService extends BaseService
                     'form'  => $formService->value(['approve_id' => $id], 'config'),
                 ];
                 $processConfig = app()->get(ApproveProcessService::class)->value(['approve_id' => $id, 'is_initial' => 1], 'info');
+                $processConfig = app()->get(ApproveProcessService::class)->enrichProcessConfigInfo($processConfig);
                 $ruleConfig    = app()->get(ApproveRuleService::class)->get(['approve_id' => $id], ['*'], [
                     'abCard' => function ($query) {
-                        $query->select(['id', 'name', 'avatar']);
+                        // 指定异常处理人离职后仍需回显姓名，不按在职状态过滤
+                        $query->withTrashed()->select(['id', 'name', 'avatar', 'status']);
                     },
                 ]);
+                if ($ruleConfig) {
+                    $ruleConfig = $ruleConfig->toArray();
+                    if (empty($ruleConfig['ab_card']) && (int) ($ruleConfig['abnormal'] ?? 0) > 0) {
+                        $ruleConfig['ab_card'] = app()->get(ApproveProcessService::class)
+                            ->getProcessUserProfile((int) $ruleConfig['abnormal']);
+                    }
+                }
             } else {
                 $formConfig = [
                     'props' => [],
@@ -187,7 +198,7 @@ class ApproveService extends BaseService
         $baseConfig = $this->checkBaseConfig($data);
         $this->checkBindBusiness($info->toArray(), $baseConfig['types']);
         $formConfig    = $this->checkFormConfig($data);
-        $processConfig = $this->checkProcessConfig($data);
+        $processConfig = $this->checkProcessConfig($data, auth('admin')->id());
         $ruleConfig    = $this->checkRuleConfig($data);
         $res           = $this->transaction(function () use ($id, $baseConfig, $formConfig, $processConfig, $ruleConfig) {
             // 保存基础配置
@@ -205,7 +216,7 @@ class ApproveService extends BaseService
                 }
             }
             // 保存流程配置
-            $processService = app()->get(ApproveProcessService::class);
+            $processService = app(ApproveProcessService::class);
             $processService->delete(['not_uniqued' => array_column($processConfig, 'uniqued'), 'approve_id' => $id]);
             if ($processConfig) {
                 $res3 = $processService->saveMore($processConfig, $id);
@@ -237,19 +248,26 @@ class ApproveService extends BaseService
             throw $this->exception('删除的记录不存在');
         }
         $this->checkBindBusiness($info, $info['types'], isDel: true);
-        Cache::tags([CacheEnum::TAG_APPROVE])->flush();
-        return $this->dao->delete($id, $key);
+        return $this->dao->delete($id, $key) && Cache::tags([CacheEnum::TAG_APPROVE])->flush();
     }
 
     /**
      * 修改状态
      * @param mixed $id
      * @return mixed
+     * @throws BindingResolutionException
      */
     public function resourceShowUpdate($id, array $data)
     {
-        Cache::tags([CacheEnum::TAG_APPROVE])->flush();
-        return $this->showUpdate($id, $data);
+        // 停用前拦截：被业务开关绑定的审批一旦停用，业务侧发起流程会直接失败
+        if (isset($data['status']) && ! (int) $data['status']) {
+            $info = toArray($this->dao->get(['id' => $id, 'entid' => 1]));
+            if (! $info) {
+                throw $this->exception('修改的记录不存在，请确认后重试');
+            }
+            $this->checkBindBusiness($info, $info['types'], isDisable: true);
+        }
+        return $this->showUpdate($id, $data) && Cache::tags([CacheEnum::TAG_APPROVE])->flush();
     }
 
     /**
@@ -269,6 +287,7 @@ class ApproveService extends BaseService
             'entid'   => 1,
             'card_id' => $this->cardId,
             'user_id' => $this->cardId,
+            'sort'    => $data[$type]['sort'] ?? 1,
             'examine' => $data[$type]['examine'] ?? 1,
         ];
     }
@@ -311,12 +330,12 @@ class ApproveService extends BaseService
      * @param mixed $type
      * @return mixed
      */
-    public function checkProcessConfig($data, $type = 'processConfig')
+    public function checkProcessConfig($data, int $userId, $type = 'processConfig')
     {
         if (! isset($data[$type]) || ! $data[$type]) {
             return [];
         }
-        return $this->getSerializeData($data[$type]);
+        return $this->getSerializeData($data[$type], $userId);
     }
 
     /**
@@ -326,24 +345,23 @@ class ApproveService extends BaseService
      * @param int $is_initial
      * @param mixed $group
      * @param mixed $data
+     * @param mixed $userId
      * @return array
      */
-    public function getSerializeData($data, $level = 0, $onlyValue = '', $is_initial = 1, $group = 0)
+    public function getSerializeData($data, $userId, $level = 0, $onlyValue = '', $is_initial = 1, $group = 0)
     {
-        $info[] = $this->getInfo($data, $onlyValue, $level, $is_initial, $group);
+        $info[] = $this->getInfo($data, $userId, $onlyValue, $level, $is_initial, $group);
         if ($data['childNode']) {
             ++$level;
-            if (isset($data['childNode'])) {
-                $info = array_merge($info, $this->getSerializeData($data['childNode'], $level, $data['onlyValue'], 0, $group));
-            }
+            $info = array_merge($info, $this->getSerializeData($data['childNode'], $userId, $level, $data['onlyValue'], 0, $group));
         }
         if (isset($data['conditionNodes']) && $data['conditionNodes']) {
             foreach ($data['conditionNodes'] as $v) {
                 ++$group;
                 ++$level;
-                $info[] = $this->getInfo($v, $data['onlyValue'], $level, 0, $group);
+                $info[] = $this->getInfo($v, $userId, $data['onlyValue'], $level, 0, $group);
                 if ($v['childNode']) {
-                    $info = array_merge($info, $this->getSerializeData($v['childNode'], $level, $v['onlyValue'], 0, $group));
+                    $info = array_merge($info, $this->getSerializeData($v['childNode'], $userId, $level, $v['onlyValue'], 0, $group));
                 }
             }
         }
@@ -357,9 +375,10 @@ class ApproveService extends BaseService
      * @param int $is_initial
      * @param int $group
      * @param mixed $data
+     * @param mixed $userId
      * @return array
      */
-    public function getInfo($data, $parent = '', $level = 0, $is_initial = 0, $group = 0)
+    public function getInfo($data, $userId, $parent = '', $level = 0, $is_initial = 0, $group = 0)
     {
         return [
             // 节点名称（申请人、审核人、抄送人）
@@ -383,6 +402,7 @@ class ApproveService extends BaseService
             'select_mode' => isset($data['selectMode']) && $data['selectMode'] ? $data['selectMode'] : 0,
             // 多人审批方式：1、或签；2、会签；3、依次审批；(0、无此条件)
             'examine_mode' => isset($data['examineMode']) && $data['examineMode'] ? $data['examineMode'] : '',
+            'pass_ratio'   => isset($data['passRatio']) ? (int) $data['passRatio'] : ($data['pass_ratio'] ?? 0),
             // 条件优先级
             'priority'       => isset($data['priorityLevel']) && $data['priorityLevel'] ? $data['priorityLevel'] : 0,
             'parent'         => $parent, // 父级唯一值
@@ -391,8 +411,8 @@ class ApproveService extends BaseService
             'is_initial'     => $is_initial,
             'is_child'       => $data['childNode'] ? 1 : 0,
             'is_condition'   => isset($data['conditionNodes']) && $data['conditionNodes'] ? 1 : 0,
-            'card_id'        => $this->cardId,
-            'user_id'        => $this->cardId,
+            'card_id'        => $userId,
+            'user_id'        => $userId,
             'groups'         => $group,
             'entid'          => 1,
             'condition_list' => $data['conditionList'] ?? [],
@@ -412,13 +432,15 @@ class ApproveService extends BaseService
     public function checkRuleConfig($data, $type = 'ruleConfig')
     {
         return [
-            'abnormal' => $data[$type]['abnormal'] ?: 0,
-            'auto'     => $data[$type]['auto'] !== '' ? $data[$type]['auto'] : 2,
-            'edit'     => isset($data[$type]['edit']) ? $data[$type]['edit'] : '',
-            'recall'   => $data[$type]['recall'],
-            'refuse'   => isset($data[$type]['refuse']) ? $data[$type]['refuse'] : 0,
-            'card_id'  => $this->cardId,
-            'user_id'  => $this->cardId,
+            'abnormal'    => $data[$type]['abnormal'] ?: 0,
+            'auto'        => $data[$type]['auto'] !== '' ? $data[$type]['auto'] : 2,
+            'edit'        => $data[$type]['edit'] ?? '',
+            'recall'      => $data[$type]['recall'],
+            'refuse'      => $data[$type]['refuse'] ?? 0,
+            'card_id'     => $this->cardId,
+            'user_id'     => $this->cardId,
+            'is_transfer' => $data[$type]['is_transfer'] ?? 1,
+            'is_sign'     => $data[$type]['is_sign'] ?? 0,
         ];
     }
 
@@ -431,37 +453,46 @@ class ApproveService extends BaseService
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function getUsableApprove($userId)
+    public function getUsableApprove(int $userId)
     {
-        return Cache::tags([CacheEnum::TAG_APPROVE])->remember($userId . '_approve_ids', (int) sys_config('system_cache_ttl', 3600), function () use ($userId) {
-            $ids       = app()->get(ApproveService::class)->column(['entid' => 1, 'status' => 1], 'id') ?? [];
-            $processes = app()->get(ApproveProcessService::class)->select(['entid' => 1, 'is_initial' => 1, 'approve_id' => $ids], ['approve_id', 'info']);
-            $approveId = [];
-            if ($processes) {
-                $frameServce = app()->get(FrameService::class);
-                foreach ($processes as $process) {
-                    $nodeUserList = $process->info['nodeUserList'];
-                    if (isset($nodeUserList['depList']) && $nodeUserList['depList']) {
-                        foreach ($nodeUserList['depList'] as $node) {
-                            if ($frameServce->checkFrameUser($userId, $node['id'])) {
-                                $approveId[] = $process->approve_id;
-                            }
-                        }
-                    }
-                    if (isset($nodeUserList['userList']) && $nodeUserList['userList']) {
-                        foreach ($nodeUserList['userList'] as $node) {
-                            if ($userId == $node['value']) {
-                                $approveId[] = $process->approve_id;
-                            }
-                        }
-                    }
-                    if (isset($nodeUserList['userList'], $nodeUserList['depList']) && ! $nodeUserList['depList'] && ! $nodeUserList['userList']) {
-                        $approveId[] = $process->approve_id;
-                    }
+        return Cache::tags([CacheEnum::TAG_APPROVE])->remember(
+            $userId . '_approve_ids',
+            (int) sys_config('system_cache_ttl', 3600),
+            function () use ($userId) {
+                // 获取有效的审批ID列表
+                $ids = app(ApproveService::class)->column(['status' => 1], 'id') ?? [];
+                if (empty($ids)) {
+                    return [];
                 }
+                // 获取审批流程数据并转换为集合
+                $processes = collect(app(ApproveProcessService::class)->select(
+                    ['is_initial' => 1, 'approve_id' => $ids],
+                    ['approve_id', 'info']
+                ));
+                $frameService = app(FrameService::class);
+                $approveIds   = [];
+                // 遍历流程集合，筛选符合条件的审批ID
+                $processes->each(function ($process) use ($userId, $frameService, &$approveIds) {
+                    $nodeUserList = $process->info['nodeUserList'] ?? [];
+                    $depList      = $nodeUserList['depList'] ?? [];
+                    $userList     = $nodeUserList['userList'] ?? [];
+                    $approveId    = $process->approve_id;
+                    $isInDep      = ! empty($depList) && $frameService->checkFrameUser(
+                        $userId,
+                        collect($depList)->pluck('id')->all()
+                    );
+                    $isInUserList = ! empty($userList) && collect($userList)->contains(function ($node) use ($userId) {
+                        return $node['value'] == $userId;
+                    });
+                    $isAllEmpty = empty($depList) && empty($userList);
+                    // 满足任一条件则添加审批ID
+                    if ($isInDep || $isInUserList || $isAllEmpty) {
+                        $approveIds[] = $approveId;
+                    }
+                });
+                return collect($approveIds)->unique()->all();
             }
-            return $approveId;
-        });
+        );
     }
 
     /**
@@ -501,6 +532,38 @@ class ApproveService extends BaseService
     }
 
     /**
+     * 获取审批配置.
+     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
+     */
+    public function getApproveConfig(string $key): array
+    {
+        $value = sys_config($key, 0);
+        if (! $value) {
+            $types = match ($key) {
+                'contract_refund_switch'   => ApproveEnum::CUSTOMER_CONTRACT_PAYMENT,
+                'contract_renew_switch'    => ApproveEnum::CUSTOMER_CONTRACT_RENEWAL,
+                'contract_disburse_switch' => ApproveEnum::CUSTOMER_CONTRACT_EXPENSES,
+                'invoicing_switch'         => ApproveEnum::CUSTOMER_INVOICE_ISSUANCE,
+                'void_invoice_switch'      => ApproveEnum::CUSTOMER_INVOICE_CANCELLATION,
+                'contract_sign_switch'     => ApproveEnum::CUSTOMER_CONTRACT_SIGN,
+            };
+            $value = (int) $this->dao->value(['types' => $types, 'examine' => 0], 'id') ?: 0;
+        }
+        if (! $value) {
+            throw $this->exception('尚未配置相关审批流程，请前往 人事->办公审批->审批设置 中配置');
+        }
+
+        $form = app()->get(ApproveFormService::class)->get(['approve_id' => $value], ['id', 'content', 'uniqued']);
+        if (! $form || ! $form?->content) {
+            throw $this->exception('尚未配置相关审批表单，请前往 人事->办公审批->审批设置 中配置');
+        }
+        return [$value, $form->content];
+    }
+
+    /**
      * 获取用户名片ID.
      * @return $this
      * @throws BindingResolutionException
@@ -536,25 +599,35 @@ class ApproveService extends BaseService
 
     /**
      * 判断是否与业务绑定.
-     * @param mixed $isDel
-     * @param mixed $approve
-     * @param mixed $types
-     * @param mixed $from
+     * @param mixed $approve 审批配置信息
+     * @param mixed $types 变更后的控件组类型
+     * @param mixed $from 业务来源
+     * @param bool $isDel 是否为删除操作
+     * @param bool $isDisable 是否为停用操作
      * @throws BindingResolutionException
      */
-    private function checkBindBusiness($approve, $types, $from = 'customer', $isDel = false)
+    private function checkBindBusiness($approve, $types, $from = 'customer', $isDel = false, $isDisable = false)
     {
         $keys = match ($from) {
-            'customer' => ['contract_refund_switch', 'contract_renew_switch', 'contract_disburse_switch', 'invoicing_switch', 'void_invoice_switch'],
+            'customer' => ['contract_refund_switch', 'contract_renew_switch', 'contract_disburse_switch', 'invoicing_switch', 'void_invoice_switch', 'contract_sign_switch'],
             default    => []
         };
-        if (in_array($types, ApproveEnum::CUSTOMER_TYPES) && in_array($types, array_values(sys_more($keys)))) {
-            if ($isDel) {
-                throw $this->exception('该审批流程与业务绑定，无法删除');
-            }
-            if ($types != $approve['types']) {
-                throw $this->exception('该审批流程与业务绑定，无法修改指定控件组');
-            }
+        if (! $keys) {
+            return;
+        }
+        // 业务开关中保存的是绑定的审批ID，未配置时为 0 或空，需要先剔除
+        $bindIds = array_filter(array_map('intval', array_values(sys_more($keys))));
+        if (! in_array((int) $approve['id'], $bindIds, true)) {
+            return;
+        }
+        if ($isDel) {
+            throw $this->exception('该审批流程与业务绑定，无法删除');
+        }
+        if ($isDisable) {
+            throw $this->exception('该审批流程与业务绑定，无法停用；如需停用请先解除对应的业务审批配置');
+        }
+        if ($types != $approve['types']) {
+            throw $this->exception('该审批流程与业务绑定，无法修改指定控件组');
         }
     }
 }

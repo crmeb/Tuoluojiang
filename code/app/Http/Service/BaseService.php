@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,8 +16,11 @@ declare(strict_types=1);
 namespace App\Http\Service;
 
 use App\Http\Dao\BaseDao;
-use crmeb\exceptions\ServicesException;
-use crmeb\traits\service\ServicesTrait;
+use Tuoluojiang\Open\exceptions\ServicesException;
+use Tuoluojiang\Open\services\FormService;
+use Tuoluojiang\Open\traits\service\ServicesTrait;
+use FormBuilder\Exception\FormBuilderException;
+use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
@@ -84,7 +87,7 @@ abstract class BaseService
         }
         $limitMax     = Config::get('database.page.limitMax');
         $defaultLimit = Config::get('database.page.defaultLimit', 10);
-        if ($limit > $limitMax && $isRelieve) {
+        if (($limit > $limitMax || $limit == 0) && $isRelieve) {
             $limit = $limitMax;
         }
         return [(int) $page, (int) $limit, (int) $defaultLimit];
@@ -98,6 +101,36 @@ abstract class BaseService
     public function transaction(callable $closure, $isTran = true)
     {
         return $isTran ? DB::transaction($closure) : $closure();
+    }
+
+    /**
+     * 创建Element ui 表单.
+     * @param mixed $rule
+     * @return array
+     * @throws FormBuilderException
+     * @throws BindingResolutionException
+     */
+    public function createElementForm(string $title, $rule, string $url, string $method = 'POST', array $confing = [])
+    {
+        $methodData = ['POST', 'PUT', 'GET', 'DELETE'];
+        if (! in_array(strtoupper($method), $methodData)) {
+            throw new ServicesException(__('request.error'));
+        }
+        /** @var FormService $formService */
+        $formService = app()->get(FormService::class);
+
+        if ($rule instanceof \Closure) {
+            $field = $rule($formService);
+        } elseif (is_array($rule)) {
+            $field = $rule;
+        } else {
+            throw new ServicesException(__('data.typeError'));
+        }
+
+        $form   = $formService->createForm($url)->setMethod($method)->setTitle($title)->setRule($field);
+        $rule   = $form->formRule();
+        $action = $form->getAction();
+        return compact('rule', 'title', 'action', 'method', 'confing');
     }
 
     /**

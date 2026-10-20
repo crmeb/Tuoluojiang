@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace App\Listeners\socket;
 
-use crmeb\socket\Ping;
+use Tuoluojiang\Open\socket\Ping;
 use Swoole\Timer;
 
 /**

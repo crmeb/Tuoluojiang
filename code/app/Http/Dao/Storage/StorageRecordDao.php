@@ -15,15 +15,14 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Storage;
 
-use App\Http\Dao\BaseDao;
 use App\Http\Model\Storage\StorageRecord;
-use crmeb\traits\dao\ListSearchTrait;
-use crmeb\traits\dao\TogetherSearchTrait;
+use App\Http\Dao\BaseDao;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
+use Tuoluojiang\Open\traits\dao\TogetherSearchTrait;
 
 /**
  * 物资记录Dao.
  * Class StorageDao.
- * @method float sum(array $where, string $field, bool $search = false) 求和
  */
 class StorageRecordDao extends BaseDao
 {

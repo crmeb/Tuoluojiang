@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -19,14 +19,13 @@ use App\Constants\ApproveEnum;
 use App\Constants\AttendanceClockEnum;
 use App\Constants\AttendanceGroupEnum;
 use App\Constants\NoticeEnum;
+use App\Events\SystemMessageEvent;
 use App\Http\Dao\Attendance\AttendanceRemindDao;
 use App\Http\Dao\Attendance\AttendanceShortRemindDao;
 use App\Http\Service\Admin\AdminService;
-use App\Http\Service\BaseService;
 use App\Http\Service\Company\CompanyService;
 use App\Http\Service\Message\MessageService;
-use App\Task\message\MessageSendTask;
-use Hhxsv5\LaravelS\Swoole\Task\Task;
+use App\Http\Service\BaseService;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -164,58 +163,42 @@ class AttendanceRemindService extends BaseService
     public function sendClockRemindMessage(Carbon $dateObj, string $tz, array $remind, array $clockRemindMessage, array $afterRemindMessage): void
     {
         $arrangeService = app()->get(AttendanceArrangeService::class);
-
-        $dateString = $dateObj->toDateString();
-
+        $dateString     = $dateObj->toDateString();
         // 根据班次ID获取用户数据
-        $members   = $arrangeService->getMemberIdsByShiftId($remind['shift_id'], $dateString);
-        $phoneData = app()->get(AdminService::class)->column(['id' => $members], 'phone');
-
-        $shifts = AttendanceClockEnum::SHIFT_CLASS;
-
+        $members            = $arrangeService->getMemberIdsByShiftId($remind['shift_id'], $dateString);
+        $shifts             = AttendanceClockEnum::SHIFT_CLASS;
         $applyRecordService = app()->get(AttendanceApplyRecordService::class);
-
         foreach (['one_shift_remind', 'two_shift_remind', 'three_shift_remind', 'four_shift_remind'] as $key => $field) {
             $remindTime = $remind[$field] ?? '';
             if (! $remindTime) {
                 continue;
             }
-
             if (! $clockRemindMessage && in_array($field, ['one_shift_remind', 'three_shift_remind'])) {
                 continue;
             }
-
             if (! $afterRemindMessage && in_array($field, ['two_shift_remind', 'four_shift_remind'])) {
                 continue;
             }
-
             $type     = NoticeEnum::CLOCK_REMIND;
             $workType = '上班时间';
-
             if (in_array($field, ['two_shift_remind', 'four_shift_remind'])) {
                 $type     = NoticeEnum::CLOCK_REMIND_AFTER_WORK;
                 $workType = '下班时间';
             }
             $compareTime = $remind[$shifts[$key] . '_shift_time'];
-            foreach ($members as $member) {
+            $members     = collect($members ?: [])->each(function ($member) use ($compareTime, $applyRecordService) {
                 $applyRecordService->updateAbnormalShiftStatusByApplyRecord($member, $compareTime);
-                // no need to push
-                if ($applyRecordService->getCountByApplyType($member, $compareTime, ApproveEnum::PERSONNEL_HOLIDAY)
-                    || $arrangeService->dayIsRest($member, $dateString)) {
-                    continue;
-                }
-                $task = new MessageSendTask(
-                    entid: 1,
-                    i: 1,
-                    type: $type,
-                    toUid: ['to_uid' => $member, 'phone' => $phoneData[$member] ?? ''],
-                    params: [$workType => $remindTime, ''],
-                    linkId: $remind['id'],
-                    linkStatus: 0,
-                );
-                Task::deliver($task);
-            }
-
+            })->filter(function ($member) use ($applyRecordService, $compareTime, $arrangeService, $dateString) {
+                return ! $applyRecordService->getCountByApplyType($member, $compareTime, ApproveEnum::PERSONNEL_HOLIDAY) && ! $arrangeService->dayIsRest($member, $dateString);
+            })->all();
+            event(new SystemMessageEvent(
+                type: $type,
+                params: [$workType => $remindTime, ''],
+                receiverIds: $members,
+                other: ['id' => $remind['id']],
+                linkId: $remind['id'],
+                linkStatus: 0,
+            ));
             $this->dao->update(['id' => $remind['id'], $field => $remindTime], [$field . '_push' => 1]);
         }
     }
@@ -355,15 +338,12 @@ class AttendanceRemindService extends BaseService
         $params     = $this->getTeamPushParam($members, $date, $timeType);
         $timeField  = $timeType == 'date' ? '日期' : '日期范围';
         $timeFormat = $this->getDateFormat($date, $timeType);
-        $task       = new MessageSendTask(
-            entid: 1,
-            i: 1,
+        event(new SystemMessageEvent(
             type: match ($timeType) {
                 'month' => NoticeEnum::TEAM_ATTENDANCE_MONTHLY_REMIND,
                 'time'  => NoticeEnum::TEAM_ATTENDANCE_WEEKLY_REMIND,
                 default => NoticeEnum::TEAM_ATTENDANCE_DAILY_REMIND,
             },
-            toUid: ['to_uid' => $admin, 'phone' => app()->get(AdminService::class)->value($admin, 'phone') ?? ''],
             params: [
                 $timeField => $timeFormat, '企业名称' => $this->getEnterpriseName(),
                 '迟到人数' => $params['lateNum'], '平均工时' => $params['workHours'],
@@ -374,9 +354,9 @@ class AttendanceRemindService extends BaseService
                 '请假人次' => $params['holidayTime'], '缺卡人次' => $params['lackCardTime'],
                 '迟到人次' => $params['lateTime'], '旷工人次' => $params['absenteeismTime'],
                 '早退人次' => $params['leaveEarlyTime'], '加班打卡人次' => $params['overTimeTime'],
-            ]
-        );
-        Task::deliver($task);
+            ],
+            receiverIds: $admin
+        ));
     }
 
     /**
@@ -437,22 +417,18 @@ class AttendanceRemindService extends BaseService
         $timeFormat   = $this->getDateFormat($date, 'time');
         $groupService = app()->get(AttendanceGroupService::class);
         $members      = array_diff(app()->get(AdminService::class)->column(['status' => 1], 'id'), $groupService->getWhiteListMemberIds());
-        $phoneData    = app()->get(AdminService::class)->column($members, 'phone');
         foreach ($members as $member) {
             $params = $this->getTeamPushParam($member, $date, $timeType);
-            $task   = new MessageSendTask(
-                entid: 1,
-                i: 1,
+            event(new SystemMessageEvent(
                 type: $type,
-                toUid: ['to_uid' => $member, 'phone' => $phoneData[$member] ?? ''],
                 params: [
                     '日期范围' => $timeFormat, '迟到次数' => $params['lateTime'], '平均工时' => $params['workHours'],
                     '请假次数' => $params['holidayTime'], '加班打卡次数' => $params['overTimeTime'],
                     '早退次数' => $params['leaveEarlyTime'], '缺卡次数' => $params['lackCardTime'],
                     '旷工次数' => $params['absenteeismTime'], '外勤卡次数' => $params['externalTime'],
-                ]
-            );
-            Task::deliver($task);
+                ],
+                receiverIds: (int) $member
+            ));
         }
     }
 
@@ -540,21 +516,19 @@ class AttendanceRemindService extends BaseService
                     }
 
                     $timeObj = Carbon::parse($remindData['work_time'], $tz);
-                    $task    = new MessageSendTask(
-                        entid: 1,
-                        i: 1,
+                    event(new SystemMessageEvent(
                         type: $remindData['short_type'] == 0 ? NoticeEnum::REMIND_WORK_CARD_SHORT : NoticeEnum::REMIND_AFTER_WORK_CARD_SHORT,
-                        toUid: ['to_uid' => $remindData['uid'], 'phone' => $phoneData[$remindData['uid']] ?? ''],
                         params: [
                             '缺卡日期'     => $timeObj->format($this->dateFormat),
                             '缺卡班次'     => $shortType == 0 ? '上班卡' : '下班卡',
                             '上班时间'     => $timeObj->format($this->timeFormat),
                             '累计缺卡次数' => $statisticsService->getCountByUid(array_merge(['uid' => $remindData['uid']], $statisticsWhere)),
                         ],
+                        receiverIds: (int) $remindData['uid'],
+                        other: ['id' => $shortRemind->id],
                         linkId: $shortRemind->id,
                         linkStatus: 0
-                    );
-                    Task::deliver($task);
+                    ));
                     ! $isFlush && $isFlush = true;
                 }
             }

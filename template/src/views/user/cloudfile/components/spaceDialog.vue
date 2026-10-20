@@ -1,17 +1,16 @@
 <template>
   <!--  新建企业空间-->
   <div>
-    <el-dialog :before-close="handleClose" :title="fromData.title" :visible.sync="dialogVisible" width="680px">
+    <el-dialog :before-close="handleClose" :title="fromData.title" v-model="dialogVisible" width="680px">
       <div class="body">
         <div class="add-button">
-          <p>空间名称</p>
+          <span>空间名称：</span>
           <el-input
             v-model="name"
             :disabled="fromData.edit === 2 && !spaceButton"
-            :placeholder="$t('file.placeholder03')"
+            placeholder="输入空间名称"
             class="search-input"
             maxlength="20"
-            size="small"
           />
         </div>
         <div class="content">
@@ -23,7 +22,7 @@
                     <el-button
                       :disabled="fromData.edit === 2 && !spaceButton"
                       icon="el-icon-plus"
-                      type="text"
+                      type="primary" link
                       @click.stop="openDepartment(1)"
                     >
                       添加成员</el-button
@@ -33,7 +32,7 @@
               </p>
               <p>
                 <el-checkbox v-model="lookCheck" :disabled="true" @change="handleChange(1)" />
-                {{ $t('public.check') }}
+                查看
               </p>
 
               <p>
@@ -41,7 +40,7 @@
                   v-model="createCheck"
                   :disabled="userList.length <= 0 || (fromData.edit === 2 && !spaceButton)"
                   @change="handleChange(2)"
-                />{{ $t('public.establish') }}
+                />创建
               </p>
               <p>
                 <el-checkbox
@@ -49,7 +48,7 @@
                   :disabled="userList.length <= 0 || (fromData.edit === 2 && !spaceButton)"
                   @change="handleChange(3)"
                 />
-                {{ $t('public.edit') }}
+                编辑
               </p>
               <p>
                 <el-checkbox
@@ -57,7 +56,7 @@
                   :disabled="userList.length <= 0 || (fromData.edit === 2 && !spaceButton)"
                   @change="handleChange(4)"
                 />
-                {{ $t('public.download') }}
+                下载
               </p>
               <p>
                 <el-checkbox
@@ -65,10 +64,10 @@
                   :disabled="userList.length <= 0 || (fromData.edit === 2 && !spaceButton)"
                   @change="handleChange(5)"
                 />
-                {{ $t('public.delete') }}
+                删除
               </p>
               <p>
-                {{ $t('public.operation') }}
+                操作
               </p>
             </li>
           </ul>
@@ -82,20 +81,20 @@
                 <p><el-checkbox v-model="item.lookCheck" :disabled="true" /></p>
                 <template v-if="index === 0">
                   <p>
-                    <el-checkbox v-model="item.createCheck" :disabled="fromData.edit === 2" :label="item.createCheck" />
+                    <el-checkbox v-model="item.createCheck" :disabled="fromData.edit === 2" :label="item.createCheck" :value="item.createCheck" />
                   </p>
                   <p>
-                    <el-checkbox v-model="item.editCheck" :disabled="fromData.edit === 2" :label="item.editCheck" />
+                    <el-checkbox v-model="item.editCheck" :disabled="fromData.edit === 2" :label="item.editCheck" :value="item.editCheck" />
                   </p>
                   <p>
                     <el-checkbox
                       v-model="item.downloadCheck"
                       :disabled="fromData.edit === 2"
-                      :label="item.downloadCheck"
+                      :label="item.downloadCheck" :value="item.downloadCheck"
                     />
                   </p>
                   <p>
-                    <el-checkbox v-model="item.deleteCheck" :disabled="fromData.edit === 2" :label="item.deleteCheck" />
+                    <el-checkbox v-model="item.deleteCheck" :disabled="fromData.edit === 2" :label="item.deleteCheck" :value="item.deleteCheck" />
                   </p>
                 </template>
 
@@ -104,28 +103,28 @@
                     <el-checkbox
                       v-model="item.createCheck"
                       :disabled="fromData.edit === 2 && !spaceButton"
-                      :label="item.createCheck"
+                      :label="item.createCheck" :value="item.createCheck"
                     />
                   </p>
                   <p>
                     <el-checkbox
                       v-model="item.editCheck"
                       :disabled="fromData.edit === 2 && !spaceButton"
-                      :label="item.editCheck"
+                      :label="item.editCheck" :value="item.editCheck"
                     />
                   </p>
                   <p>
                     <el-checkbox
                       v-model="item.downloadCheck"
                       :disabled="fromData.edit === 2 && !spaceButton"
-                      :label="item.downloadCheck"
+                      :label="item.downloadCheck" :value="item.downloadCheck"
                     />
                   </p>
                   <p>
                     <el-checkbox
                       v-model="item.deleteCheck"
                       :disabled="fromData.edit === 2 && !spaceButton"
-                      :label="item.deleteCheck"
+                      :label="item.deleteCheck" :value="item.deleteCheck"
                     />
                   </p>
                 </template>
@@ -140,15 +139,13 @@
                       @getSelectList="getSelectList($event, 2)"
                     >
                       <template v-slot:custom>
-                        <el-button type="text" @click="openDepartment(2)">转让管理员</el-button>
+                        <el-button type="primary" link @click="openDepartment(2)">转让管理员</el-button>
                       </template>
                     </select-member>
                     <span v-if="!spaceButton" type="text">管理员</span>
                   </template>
                   <template v-else>
-                    <el-button v-if="spaceButton" type="text" @click="deleteShare(index)">{{
-                      $t('public.delete')
-                    }}</el-button>
+                    <el-button v-if="spaceButton" type="primary" link @click="deleteShare(index)">删除</el-button>
                   </template>
                 </p>
               </li>
@@ -156,25 +153,32 @@
           </el-scrollbar>
         </div>
       </div>
-      <div slot="footer" class="dialog-footer text-right">
-        <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
-        <el-button size="small" type="primary" @click="handleAdd">{{ $t('public.ok') }}</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer text-right">
+          <el-button @click="handleClose">取消</el-button>
+          <el-button type="primary" @click="handleAdd">确定</el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>
 <script>
+import { mapStores } from 'pinia'
+import { useUserStore } from '@/stores/user.ts'
+import { defineAsyncComponent } from 'vue'
 import {
   folderSpaceAddApi,
   folderSpaceEntTransferApi,
   folderSpaceRenameApi,
   folderSpaceShareEditApi,
   folderSpaceShareRuleApi
-} from '@/api/cloud'
+} from '@/api/cloud.ts'
+import { getStorageJson } from '@/utils/storage.ts'
 export default {
+  emits: ['isOk'],
   name: 'SpaceDialog',
   components: {
-    selectMember: () => import('@/components/form-common/select-member')
+    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member'))
   },
   props: {
     fromData: {
@@ -183,6 +187,9 @@ export default {
         return {}
       }
     }
+  },
+  computed: {
+    ...mapStores(useUserStore)
   },
   data() {
     return {
@@ -210,7 +217,7 @@ export default {
       handler(nVal) {
         if (nVal.edit === 2) {
           this.name = nVal.data.name
-          this.spaceButton = nVal.data.uid === this.$store.state.user.userInfo.uid
+          this.spaceButton = nVal.data.uid === this.userStore.userInfo.uid
           this.getFolderShareRule(nVal.data.id)
         }
       },
@@ -232,11 +239,11 @@ export default {
         if (this.userList.length > 0) {
           this.userList.map((value) => {
             if (value.isCheck) {
-              this.$set(value, 'lookCheck', true)
-              this.$set(value, 'createCheck', false)
-              this.$set(value, 'downloadCheck', false)
-              this.$set(value, 'editCheck', false)
-              this.$set(value, 'deleteCheck', false)
+              value.lookCheck = true
+              value.createCheck = false
+              value.downloadCheck = false
+              value.editCheck = false
+              value.deleteCheck = false
             }
           })
         }
@@ -262,7 +269,7 @@ export default {
     },
     handleAdd() {
       if (this.name == '') {
-        this.$message.error(this.$t('file.placeholder03'))
+        this.$message.error('输入空间名称')
       } else {
         var list = []
         var data = {}
@@ -305,7 +312,7 @@ export default {
     // 全选
     checkAll(items) {
       this.userList.forEach((item, index) => {
-        if (this.fromData.edit === 2 && item.id === this.$store.state.user.userInfo.uid) {
+        if (this.fromData.edit === 2 && item.id === this.userStore.userInfo.uid) {
         } else {
           item[items] = true
         }
@@ -314,14 +321,14 @@ export default {
     // 反选
     checkNone(items) {
       this.userList.forEach((item) => {
-        if (this.fromData.edit === 2 && item.id === this.$store.state.user.userInfo.uid) {
+        if (this.fromData.edit === 2 && item.id === this.userStore.userInfo.uid) {
         } else {
           item[items] = false
         }
       })
     },
     resetCheck() {
-      this.lookCheck = false
+      this.lookCheck = true
       this.downloadCheck = false
       this.editCheck = false
       this.createCheck = false
@@ -399,13 +406,13 @@ export default {
           })
         }
         // 生成第一个为管理的数据
-        let card_id = JSON.parse(localStorage.getItem('userInfo'))
+        let card_id = getStorageJson('userInfo', {})
         const m = {
           card: this.fromData.data.user,
           isDelete: true,
           id: this.fromData.data.user.uid,
           uid: this.fromData.data.user.uid,
-          value: card_id.id,
+          value: card_id.id || '',
           isCheck: false,
           lookCheck: true,
           createCheck: true,
@@ -423,11 +430,17 @@ export default {
 <style lang="scss" scoped>
 .body {
   .add-button {
+    display: flex;
+    align-items: center;
     padding-bottom: 16px;
     border-bottom: 1px solid #f2f2f2;
+    span {
+      display: inline-block;
+      width: 80px;
+    }
   }
   .content {
-    /deep/ .el-scrollbar__wrap {
+    :deep(.el-scrollbar__wrap) {
       overflow-x: hidden;
     }
     margin-right: -24px;
@@ -458,12 +471,12 @@ export default {
       text-align: left;
     }
     .content-title {
-      /deep/ .el-checkbox {
+      :deep(.el-checkbox) {
         margin-right: 4px;
       }
     }
     .content-body {
-      /deep/ .el-checkbox__label {
+      :deep(.el-checkbox__label) {
         display: none;
       }
       .username {

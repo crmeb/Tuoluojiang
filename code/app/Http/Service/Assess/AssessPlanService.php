@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,21 +16,22 @@ declare(strict_types=1);
 namespace App\Http\Service\Assess;
 
 use App\Constants\CacheEnum;
+use App\Constants\ModuleEnum;
+use App\Constants\NoticeEnum;
+use App\Events\SystemMessageEvent;
 use App\Http\Dao\Access\AssessPlanDao;
-use App\Http\Dao\BaseDao;
 use App\Http\Service\Admin\AdminInfoService;
 use App\Http\Service\Admin\AdminService;
-use App\Http\Service\BaseService;
 use App\Http\Service\Frame\FrameAssistService;
 use App\Http\Service\Frame\FrameService;
 use App\Http\Service\Message\MessageService;
 use App\Http\Service\Other\TaskService;
+use App\Http\Service\System\ModulePermissionService;
 use App\Http\Service\User\UserRemindLogService;
-use App\Task\message\MessageSendTask;
-use crmeb\options\TaskOptions;
-use crmeb\utils\MessageType;
-use crmeb\utils\Regex;
-use Hhxsv5\LaravelS\Swoole\Task\Task;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\options\TaskOptions;
+use Tuoluojiang\Open\utils\MessageType;
+use Tuoluojiang\Open\utils\Regex;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -41,43 +42,13 @@ use Psr\SimpleCache\InvalidArgumentException;
 /**
  * 考核计划
  * Class AssessPlanService.
- * @method BaseDao setDefaultWhere(array $where)
+ * @mixin AssessPlanDao
  */
 class AssessPlanService extends BaseService
 {
     public function __construct(AssessPlanDao $dao)
     {
         $this->dao = $dao;
-    }
-
-    /**
-     * 考核计划列表.
-     * @param array|string[] $field
-     * @param null $sort
-     * @throws BindingResolutionException
-     */
-    public function getList(array $where, array $field = ['*'], $sort = null, array $with = []): array
-    {
-        $planUserService = app()->get(AssessPlanUserService::class);
-        if (count($where['check_uid'])) {
-            $where['check_uid'] = $planUserService->column(['check_uid' => $where['check_uid'], 'entid' => 1], 'planid');
-        } else {
-            unset($where['check_uid']);
-        }
-        if (count($where['test_uid'])) {
-            $where['test_uid'] = $planUserService->column(['test_uid' => $where['test_uid'], 'entid' => 1], 'planid');
-        } else {
-            unset($where['test_uid']);
-        }
-        return parent::getList($where, $field, $sort, $with + [
-            'test' => function ($query) {
-                $query->select(['test_uid', 'planid', 'card_id'])->with([
-                    'card' => function ($query) {
-                        $query->select(['name', 'id']);
-                    },
-                ]);
-            },
-        ]);
     }
 
     /**
@@ -88,26 +59,25 @@ class AssessPlanService extends BaseService
      */
     public function getEnablePeriod(int $uid)
     {
-        return $this->dao->select(['entid' => 1, 'status' => 1], ['period', 'id'])->each(function ($item) use ($uid) {
-            switch ($item['period']) {
-                case 1:
-                    $item['name'] = '周考核';
-                    break;
-                case 2:
-                    $item['name'] = '月考核';
-                    break;
-                case 3:
-                    $item['name'] = '年考核';
-                    break;
-                case 4:
-                    $item['name'] = '半年考核';
-                    break;
-                case 5:
-                    $item['name'] = '季度考核';
-                    break;
-            }
-            $item['test'] = $this->dao->getPlanUser($item['id'], $uid);
-        })?->toArray() ?: [];
+        $adminService = app(AdminService::class);
+        $uids         = app(ModulePermissionService::class)->getAccessibleUserIds($uid, ModuleEnum::ASSESS);
+
+        // 周期名称映射
+        $periodMap = [1 => '周考核', 2 => '月考核', 3 => '年考核', 4 => '半年考核', 5 => '季度考核'];
+
+        return $this->dao->select(['entid' => 1, 'status' => 1], ['period', 'id', 'assess_type', 'test_user', 'test_frame'])
+            ->each(function (&$item) use ($uids, $adminService, $periodMap) {
+                $item['name'] = $periodMap[$item['period']] ?? '';
+                // 筛选有效UID
+                $testUids = $this->getPlanUid((int) $item['id']);
+                $testUids = collect($testUids)->intersect($uids)->all();
+
+                // 获取用户信息
+                $item['test'] = $adminService->select(['id' => $testUids], ['id', 'name', 'avatar', 'phone'])?->toArray() ?? [];
+
+                // 移除不需要的字段
+                unset($item['test_frame'], $item['test_user']);
+            })->toArray() ?? [];
     }
 
     /**
@@ -119,29 +89,29 @@ class AssessPlanService extends BaseService
     public function resourceEdit(int $id, array $other = []): array
     {
         $entid    = 1;
-        $planInfo = $this->dao->get(['period' => $id, 'entid' => $entid], ['*'], [
-            'test', 'testFrame',
-        ]);
-        if (! $planInfo) {
-            $planInfo = $this->dao->create([
-                'period'       => $id,
-                'entid'        => $entid,
-                'make_type'    => 'before',
-                'make_day'     => 3,
-                'eval_type'    => 'before',
-                'eval_day'     => 2,
-                'verify_type'  => 'after',
-                'verify_day'   => 7,
-                'status'       => 1,
-                'assess_type'  => 0,
-                'create_time'  => 1,
-                'create_month' => 0,
-            ]);
-            return $planInfo->load([
-                'test' => fn ($q) => $q->where('assess_plan_user.entid', $entid), 'testFrame',
-            ])->toArray();
+        $planInfo = $this->dao->firstOrCreate(['period' => $id, 'entid' => $entid], [
+            'period'       => $id,
+            'entid'        => $entid,
+            'make_type'    => 'before',
+            'make_day'     => 3,
+            'eval_type'    => 'before',
+            'eval_day'     => 2,
+            'verify_type'  => 'after',
+            'verify_day'   => 7,
+            'status'       => 1,
+            'assess_type'  => 0,
+            'create_time'  => 1,
+            'create_month' => 0,
+            'test_frame'   => null,
+            'test_user'    => null,
+        ])?->toArray();
+        if ($planInfo['test_frame']) {
+            $planInfo['test_frame'] = app(FrameService::class)->select(['ids' => $planInfo['test_frame']])?->toArray();
         }
-        return $planInfo->toArray();
+        if ($planInfo['test_user']) {
+            $planInfo['test'] = app(AdminService::class)->select(['id' => $planInfo['test_user']], ['id', 'name', 'avatar', 'phone', 'uid'])?->toArray();
+        }
+        return $planInfo;
     }
 
     /**
@@ -153,60 +123,14 @@ class AssessPlanService extends BaseService
      */
     public function resourceUpdate($id, array $data)
     {
-        $testUser   = $data['test'];
-        $testFrame  = $data['test_frame'];
-        $entId      = 1;
-        $assessType = $data['assess_type']; // 类型：1、部门；0、人员
-        unset($data['test'], $data['test_frame']);
-        $plan = $this->dao->get(['id' => $id, 'entid' => $entId]);
-        if (! $plan) {
-            $plan = $this->dao->create([
-                'period' => $data['period'],
-                'entid'  => 1,
-                'status' => $data['status'],
-            ]);
-        }
-        if ($assessType) {
-            if (! $testFrame) {
-                $testFrame = app()->get(FrameService::class)->column(['entid' => $entId, 'pid' => 0], 'id');
-            }
-            $res = $this->transaction(function () use ($testFrame, $plan, $entId, $data) {
-                $res1        = $this->dao->update($plan->id, $data);
-                $assessFrame = app()->get(AssessFrameService::class);
-                $assessFrame->delete(['entid' => $entId, 'planid' => $plan->id]);
-                $frames = [];
-                foreach ($testFrame as $item) {
-                    $frames[] = [
-                        'planid'        => $plan->id,
-                        'test_frame_id' => $item,
-                        'entid'         => $entId,
-                        'created_at'    => now()->toDateTime(),
-                    ];
-                }
-                $res2 = $assessFrame->insert($frames);
-                return $res1 && $res2;
-            });
+        if ($data['assess_type']) {
+            $data['test_frame'] = $data['test_frame'] ?: [];
+            $data['test_user']  = null;
         } else {
-            if (! $testUser) {
-                $testUser = app()->get(AdminService::class)->column(['status' => 1], 'id');
-            }
-            $res = $this->transaction(function () use ($testUser, $plan, $entId, $data) {
-                $res1       = $this->dao->update($plan->id, $data);
-                $assessUser = app()->get(AssessPlanUserService::class);
-                $assessUser->delete(['entid' => $entId, 'planid' => $plan->id]);
-                $user = [];
-                foreach ($testUser as $item) {
-                    $user[] = [
-                        'test_uid'   => $item,
-                        'planid'     => $plan->id,
-                        'entid'      => $entId,
-                        'created_at' => now()->toDateTime(),
-                    ];
-                }
-                $res2 = $assessUser->insert($user);
-                return $res1 && $res2;
-            });
+            $data['test_user']  = $data['test_user'] ?: [];
+            $data['test_frame'] = null;
         }
+        $res = $this->dao->updateOrCreate(['id' => $id, 'entid' => 1], $data);
         $res && Cache::tags([CacheEnum::TAG_ASSESS])->flush();
         return true;
     }
@@ -243,22 +167,23 @@ class AssessPlanService extends BaseService
      */
     public function getPlanUserList(int $id, array $where)
     {
-        $normalUid = app()->get(AdminInfoService::class)->column(['type' => [1, 2, 3]], 'id');
-        $planUid   = $this->getPlanUid($id, $normalUid);
+        $normalUid = $this->getNormalUid();
+        $planUid   = $this->getPlanUid($id);
         if ($where['uni']) {
             if ($where['frame_id']) {
                 $frameUid    = app()->get(FrameAssistService::class)->column(['frame_id' => $where['frame_id']], 'user_id');
-                $where['id'] = array_intersect($planUid, $frameUid);
+                $where['id'] = array_values(array_intersect($planUid, $frameUid));
             } else {
-                $where['id'] = $planUid;
+                $where['id'] = array_values($planUid);
             }
         } else {
-            $where['id'] = array_diff($normalUid, $planUid);
+            $where['id'] = array_values(array_diff($normalUid, $planUid));
             if ($where['frame_id']) {
                 $frameUid    = app()->get(FrameAssistService::class)->column(['frame_id' => $where['frame_id']], 'user_id');
-                $where['id'] = array_intersect($frameUid, $where['id']);
+                $where['id'] = array_values(array_intersect($frameUid, $where['id']));
             }
         }
+        $where['id'] = array_values(array_intersect($where['id'], $normalUid));
         unset($where['frame_id'], $where['uni']);
         $listData = app()->get(AdminService::class)->getList(
             $where,
@@ -279,30 +204,35 @@ class AssessPlanService extends BaseService
     /**
      * 获取参与绩效用户ID.
      * @param mixed $id
-     * @param mixed $normalUid
+     * @return array|mixed
      * @throws BindingResolutionException
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function getPlanUid($id, $normalUid = [])
+    public function getPlanUid($id)
     {
         $plan = $this->dao->get($id)?->toArray();
         if (! $plan || ! $plan['status']) {
             return [];
         }
+        $normalUid = $this->getNormalUid();
+        $planUid   = $plan['assess_type']
+            ? ($plan['test_frame'] ? app(FrameAssistService::class)->column(['frame_id' => $plan['test_frame']], 'user_id') : $normalUid)
+            : ($plan['test_user'] ?: $normalUid);
 
-        if ($plan['assess_type']) {
-            $planFrameIds = app()->get(AssessFrameService::class)->column(['planid' => $id], 'test_frame_id');
-            $planUid      = app()->get(FrameService::class)->scopeUser($planFrameIds);
-        } else {
-            $planUid = app()->get(AssessPlanUserService::class)->column(['planid' => $id], 'test_uid');
-            if (! $normalUid) {
-                $normalUid = app()->get(AdminService::class)->column(['status' => 1], 'id');
-            }
-            $planUid = array_intersect($planUid, $normalUid);
-        }
-        return $planUid;
+        return array_values(array_intersect($planUid, $normalUid));
+    }
+
+    /**
+     * 获取在职用户ID.
+     */
+    private function getNormalUid(): array
+    {
+        return app()->get(AdminInfoService::class)
+            ->getAssessPlanModel(['type' => [1, 2, 3]], 0)
+            ->pluck('admin.id')
+            ->all();
     }
 
     /**
@@ -515,7 +445,7 @@ class AssessPlanService extends BaseService
     public function entAssessRemind(int $id, string $type, int $entid, int $year, int $month = 0, int $week = 0, int $day = 0, int $quarter = 0, int $period = 1, $time = null)
     {
         // 获取当前被考核的成员
-        $testUid = app()->get(AssessPlanUserService::class)->setEntValue($entid)->column(['planid' => $id], 'test_uid');
+        $testUid = $this->getPlanUid($id);
         if (! $testUid) {
             return;
         }
@@ -585,20 +515,17 @@ class AssessPlanService extends BaseService
         $remind = [];
 
         foreach ($toUsers as $item) {
-            $task = new MessageSendTask(
-                entid: $entid,
-                i: $entid,
+            event(new SystemMessageEvent(
                 type: $type,
-                toUid: $item['to_uid'],
                 params: [
                     '负责部门' => $item['frame_name'],
                     '考核类型' => $timeStr . '考核',
                     '时间1'    => $timeStr,
                     '时间2'    => $timeStr,
                     '时间3'    => $timeStr,
-                ]
-            );
-            Task::deliver($task);
+                ],
+                receiverIds: (int) $item['to_uid']['to_uid'],
+            ));
 
             $remind[] = [
                 'remind_type' => $type,
@@ -646,18 +573,7 @@ class AssessPlanService extends BaseService
         if (! $planid) {
             return;
         }
-        $userAssessList = app()->get(UserAssessService::class)->select([
-            'test_uid' => $userIds,
-            'entid'    => $entId,
-            'period'   => $period,
-            'time'     => 'year',
-        ])?->toArray();
 
-        /** @var UserRemindLogService $service */
-        $service = app()->get(UserRemindLogService::class);
-        /** @var FrameService $frameService */
-        $frameService = app()->get(FrameService::class);
-        $userService  = app()->get(AdminService::class);
         /** @var MessageService $messageService */
         $messageService = app()->get(MessageService::class);
         $message        = $messageService->getMessageContent($entId, MessageType::ASSESS_ABNORMAK_TYPE);
@@ -687,6 +603,23 @@ class AssessPlanService extends BaseService
                 }
                 break;
         }
+
+        if (! $remind) {
+            return;
+        }
+
+        $userAssessList = app()->get(UserAssessService::class)->select([
+            'test_uid' => $userIds,
+            'entid'    => $entId,
+            'period'   => $period,
+            'time'     => 'year',
+        ])?->toArray();
+
+        /** @var UserRemindLogService $service */
+        $service = app()->get(UserRemindLogService::class);
+        /** @var FrameService $frameService */
+        $frameService = app()->get(FrameService::class);
+        $userService  = app()->get(AdminService::class);
 
         $timeStr = match ($period) {
             1       => '周',
@@ -747,11 +680,10 @@ class AssessPlanService extends BaseService
                         $boole = ! $res && ! $service->exists(['relation_id' => $item['planid'], 'entid' => $entId, 'user_id' => $item['test_uid'], 'time' => $startTime . '-' . $endTime, 'year' => now()->year, 'remind_type' => MessageType::ASSESS_ABNORMAK_TYPE]);
                         break;
                 }
-
                 // 提醒消息
                 if ($remind && $boole) {
                     [$start, $end] = get_start_and_end_time($item['period']);
-                    $prames        = [
+                    $params        = [
                         '被考核人部门' => $item['frame']['name'] ?? '',
                         '被考核人'     => $item['user_ent']['name'] ?? '',
                         '考核类型'     => $timeStr . '考核',
@@ -760,21 +692,11 @@ class AssessPlanService extends BaseService
                         '开始时间'     => $start,
                         '结束时间'     => $end,
                     ];
-
-                    $phone = $userService->value($userId, 'phone');
-
-                    $task = new MessageSendTask(
-                        entid: $entId,
-                        i: $entId,
-                        type: MessageType::ASSESS_ABNORMAK_TYPE,
-                        toUid: ['to_uid' => $userId, 'phone' => $phone],
-                        params: $prames
-                    );
-                    Task::deliver($task);
+                    event(new SystemMessageEvent(type: NoticeEnum::ASSESS_ABNORMAK_TYPE, params: $params, receiverIds: (int) $userId));
 
                     $service->create([
                         'relation_id' => $item['planid'],
-                        'remind_type' => MessageType::ASSESS_ABNORMAK_TYPE,
+                        'remind_type' => NoticeEnum::ASSESS_ABNORMAK_TYPE,
                         'user_id'     => $item['test_uid'],
                         'entid'       => $entId,
                         'year'        => now()->year,
@@ -893,11 +815,8 @@ class AssessPlanService extends BaseService
             [$start, $end] = get_start_and_end_time($period);
             $remindLog     = [];
             foreach ($messageUser as $item) {
-                $task = new MessageSendTask(
-                    entid: $entId,
-                    i: $entId,
-                    type: MessageType::ASSESS_ABNORMAK_TYPE,
-                    toUid: ['to_uid' => $item['to_uid'], 'phone' => $item['phone']],
+                event(new SystemMessageEvent(
+                    type: NoticeEnum::ASSESS_ABNORMAK_TYPE,
                     params: [
                         '被考核人部门' => $item['frameName'] ?? '',
                         '被考核人'     => $item['name'] ?? '',
@@ -906,9 +825,9 @@ class AssessPlanService extends BaseService
                         '时间1'        => $timeStr,
                         '开始时间'     => $start,
                         '结束时间'     => $end,
-                    ]
-                );
-                Task::deliver($task);
+                    ],
+                    receiverIds: (int) $item['to_uid'],
+                ));
                 $remindLog[] = [
                     'remind_type' => MessageType::ASSESS_ABNORMAK_TYPE,
                     'user_id'     => $item['test_uid'],

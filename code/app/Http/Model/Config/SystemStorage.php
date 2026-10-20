@@ -27,6 +27,18 @@ class SystemStorage extends BaseModel
 
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'          => 'integer',
+        'type'        => 'integer',
+        'is_ssl'      => 'integer',
+        'status'      => 'integer',
+        'is_delete'   => 'integer',
+        'add_time'    => 'integer',
+        'update_time' => 'integer',
+        'created_at'  => 'datetime:Y-m-d H:i:s',
+        'updated_at'  => 'datetime:Y-m-d H:i:s',
+    ];
+
     public function scopeNameAttr($query, $value)
     {
         $query->where('name', $value);
@@ -34,8 +46,6 @@ class SystemStorage extends BaseModel
 
     /**
      * 类型搜索器.
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeTypeAttr($query, $value)
     {
@@ -46,8 +56,6 @@ class SystemStorage extends BaseModel
 
     /**
      * 状态搜索器.
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeStatusAttr($query, $value)
     {

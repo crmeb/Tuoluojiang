@@ -2,7 +2,10 @@
   <div>
     <div class="flex-between">
       <div class="title-16">字段列表</div>
-      <oa-popover :list="typesList" title="新建字段" @handleClick="handleClick"></oa-popover>
+      <div class="flex">
+        <el-button @click="handleAdd" class="mr10">AI生成字段</el-button>
+        <field-popover  title="新建字段" :infoData="infoData" :typesObj="typesList" @getInfo="getList" ></field-popover>
+      </div>
     </div>
     <!-- 筛选 -->
     <div class="flex mb10 h32">
@@ -11,12 +14,11 @@
         <el-input
           v-model="where.name"
           prefix-icon="el-icon-search"
-          size="small"
           placeholder="请输入关键字"
           clearable
           style="width: 250px"
           @change="getList"
-          @keyup.native.stop.prevent.enter="getList"
+          @keyup.stop.prevent.enter="getList"
           class="input"
         ></el-input>
       </div>
@@ -25,39 +27,39 @@
     <div class="table-box" v-loading="loading">
       <el-table row-key="id" :data="tableData" style="width: 100%">
         <el-table-column prop="field_name_en" label="字段名称" :min-width="150">
-          <template slot-scope="scope">
+          <template #default="scope">
             <span class="mr10"> {{ scope.row.field_name_en }}</span>
-            <el-tooltip class="item" effect="dark" content="主键字段" placement="top-start">
-              <el-tag class="ml4" size="mini" v-if="scope.row.field_name_en == 'id'">主</el-tag>
+            <el-tooltip v-if="scope.row.field_name_en == 'id'" class="item" effect="dark" content="主键字段" placement="top-start">
+              <el-tag size="small" class="ml4">主</el-tag>
             </el-tooltip>
-            <el-tooltip class="item" effect="dark" content="系统字段" placement="top-start">
-              <el-tag class="ml4" size="mini" type="warning" v-if="scope.row.is_default == 1">系</el-tag>
+            <el-tooltip v-if="scope.row.is_default == 1" class="item" effect="dark" content="系统字段" placement="top-start">
+              <el-tag size="small" class="ml4" type="warning">系</el-tag>
             </el-tooltip>
-            <el-tooltip class="item" effect="dark" content="主从字段" placement="top-start">
-              <el-tag class="ml4" size="mini" type="info" v-if="scope.row.is_re_table > 0">从</el-tag>
+            <el-tooltip v-if="scope.row.is_re_table > 0" class="item" effect="dark" content="主从字段" placement="top-start">
+              <el-tag size="small" class="ml4" type="info">从</el-tag>
             </el-tooltip>
           </template>
         </el-table-column>
         <el-table-column prop="field_name" label="显示名称" />
         <el-table-column prop="form_value" label="字段类型" />
         <el-table-column prop="is_default_value_not_null" label="是否必填">
-          <template slot-scope="scope">
+          <template #default="scope">
             {{ scope.row.is_default_value_not_null > 0 ? '--' : '是' }}
           </template>
         </el-table-column>
         <el-table-column prop="data_dict_name" label="关联字典">
-          <template slot-scope="scope">
+          <template #default="scope">
             {{ scope.row.data_dict_name || '--' }}
           </template>
         </el-table-column>
         <el-table-column prop="association_crud_table_name" label="引用实体">
-          <template slot-scope="scope">
+          <template #default="scope">
             {{ getValue(scope.row.association_crud_table_name) }}
           </template>
         </el-table-column>
 
         <el-table-column prop="is_main" label="主字段展示">
-          <template slot-scope="scope">
+          <template #default="scope">
             <el-switch
               v-if="scope.row.form_value == 'input'"
               :width="60"
@@ -74,15 +76,13 @@
         </el-table-column>
 
         <el-table-column prop="address" label="操作" fixed="right" width="170">
-          <template slot-scope="scope">
-            <el-button v-if="scope.row.is_default !== 1" type="text" @click="editFn(scope.row)">编辑</el-button>
-            <el-button v-if="scope.row.is_default !== 1" type="text" @click="deleteFn(scope.row)">删除</el-button>
+          <template #default="scope">
+            <el-button v-if="scope.row.is_default !== 1" type="primary" link @click="editFn(scope.row)">编辑</el-button>
+            <el-button v-if="scope.row.is_default !== 1" type="primary" link @click="deleteFn(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
     </div>
-
-    <!-- 新建字段弹窗 -->
     <oa-dialog
       ref="oaDialog"
       :fromData="fromData"
@@ -91,27 +91,30 @@
       :formDataInit="formDataInit"
       @submit="submit"
     ></oa-dialog>
+    <!-- ai新建字段 -->
+    <fieldsettingAi ref="fieldsettingAi" :info="info" :typesList="addTypesList" @getList="getList"></fieldsettingAi>
   </div>
 </template>
 <script>
+import { modalSure } from '@/libs/public.ts'
 import Commnt from '@/components/develop/commonData'
 import oaDialog from '@/components/form-common/dialog-form'
-import oaPopover from '@/components/form-common/oa-popover'
-import { getDictListApi } from '@/api/form'
+import fieldPopover from './fieldPopover'
+import fieldsettingAi from './fieldsettingAi'
+import { getDictListApi } from '@/api/form.ts'
 
 import {
   dataFieldTypeApi,
   dataFieldListApi,
-  dataFieldSaveApi,
   dataFieldDeleteApi,
   dataFieldInfoApi,
   dataFieldUpdateApi,
   dataFieldMainApi
-} from '@/api/develop'
+} from '@/api/develop.ts'
 
 export default {
   name: '',
-  components: { oaDialog, oaPopover },
+  components: { oaDialog, fieldPopover, fieldsettingAi },
   props: {
     infoData: {
       type: Object,
@@ -139,9 +142,11 @@ export default {
       formConfig: [],
       formRules: Commnt.fieldRules,
       formDataInit: Commnt.fieldDataInit,
-      typesList: [], // 字段数据
+      typesList: {}, // 新增字段数据
+      addTypesList: [], // 编辑字段数据
       tableData: [], // 表格数据
       dictList: [], // 字典数据
+      
       valueItem: [
         'crud_id',
         'value',
@@ -154,6 +159,8 @@ export default {
         'update_modify', // 更新时修改
         'comment',
         'data_dict_id',
+        'data_type', // 数据选项
+        'customizeItems',
         'association_crud_id',
         'association_field_names',
         'association_field_names_list'
@@ -175,6 +182,7 @@ export default {
         form_value: this.rowData.value
       }
       const result = await getDictListApi(data)
+    
       if (result.data.list.length > 0) {
         this.dictList = result.data.list.filter((item) => {
           return item.status == 1
@@ -182,6 +190,7 @@ export default {
       } else {
         this.dictList = []
       }
+     
     },
     // 数组转成字符串
     getValue(val) {
@@ -196,10 +205,24 @@ export default {
       return str || '--'
     },
 
+    // 打开ai生成字段弹窗
+    handleAdd() {
+      this.$refs.fieldsettingAi.openBox()
+    },
+
     // 获取全部字段类型
     async getTypeList() {
-      const data = await dataFieldTypeApi()
-      this.typesList = data.data
+      const {data} = await dataFieldTypeApi()
+      this.addTypesList = data
+      this.typesList = {
+        text: data[0].options,
+        number: data[1].options,
+        select: [...data[2].options, ...data[3].options],
+        date: data[4].options,
+        image:[data[5].options[0]],
+        file:[data[5].options[1]],
+        oneToOne: data[6].options,
+      }
     },
 
     // 获取字段列表
@@ -211,12 +234,26 @@ export default {
     },
 
     // 获取字段详情
-    editFn(row) {
+   async editFn(row) {
+      this.rowData = row
+       if (['radio', 'cascader_radio', 'checkbox', 'cascader', 'tag'].includes(row.form_value)) {
+       await this.getDictList()
+         
+       }
       this.rowId = row.id
       this.type = 'edit'
-      if (['radio', 'cascader_radio', 'checkbox', 'cascader', 'tag'].includes(row.form_value)) {
-        this.getDictList()
+      let fieldList = []
+      this.addTypesList.forEach((item) => {
+        fieldList.push(...item.options)
+      })
+
+      let typeObj = {
+        type: 'select',
+        label: '字段类型：',
+        key: 'value',
+        options: fieldList
       }
+
       // 编辑回显数据
       dataFieldInfoApi(row.id).then((res) => {
         let obj = res.data.options
@@ -245,13 +282,13 @@ export default {
         let config = JSON.parse(JSON.stringify(Commnt.fieldConfig))
         config.splice(2, 0, ...dynamicList)
         this.formConfig = config
+        this.formConfig.splice(2, 0, typeObj)
         this.$refs.oaDialog.openBox()
       })
     },
-
     // 删除字段
     deleteFn(row) {
-      this.$modalSure('您确定要删除此字段数据吗').then(() => {
+      modalSure('您确定要删除此字段数据吗').then(() => {
         dataFieldDeleteApi(row.id).then((res) => {
           this.getList()
         })
@@ -267,84 +304,13 @@ export default {
       }
     },
 
-    // 新建字段弹窗
-    handleClick(val) {
-      this.type = 'add'
-      this.rowData = val
-
-      if (val.value == 'tag') {
-        this.formRules.data_dict_id[0].required = false
-      } else {
-        this.formRules.data_dict_id[0].required = true
-      }
-
-      if (['radio', 'cascader_radio', 'checkbox', 'cascader', 'tag'].includes(val.value)) {
-        this.getDictList()
-      }
-
-      this.formDataInit = {
-        crud_id: 0,
-        value: '',
-        field_name: '',
-        field_name_en: '',
-        isShow: false,
-        is_default_value_not_null: 1, // 允许空值
-        is_table_show_row: 1, // 列表默认显示
-        create_modify: 1, // 新增时修改
-        update_modify: 1, // 更新时修改
-        comment: '',
-        data_dict_id: '',
-        association_crud_id: '', // 关联表id
-        association_field_names: [],
-        association_field_names_list: null
-      }
-      this.fromData.title = `新建字段-${val.label}`
-      this.fromData.type = ''
-      let dynamicList = Commnt.keyValue[val.value]
-
-      setTimeout(() => {
-        if (dynamicList) {
-          dynamicList.forEach((item) => {
-            item.form_value = val.value
-            if (item.sign == 'dict') {
-              item.options = this.dictList
-            }
-          })
-        } else {
-          dynamicList = []
-        }
-      }, 300)
-      this.formConfig = []
-      // 深拷贝是为了不修改原数组
-      let config = JSON.parse(JSON.stringify(Commnt.fieldConfig))
-      config.splice(2, 0, ...dynamicList)
-      this.formConfig = config
-
-      if (['image', 'file'].includes(val.value)) {
-        this.formDataInit.max = 1
-        this.formDataInit.size = 5
-      }
-      this.$refs.oaDialog.openBox()
-    },
+   
 
     // 新建/编辑字段弹窗回调
     submit(data) {
-      data.value = this.rowData.value
       data.crud_id = this.infoData.id
-      let oldData = {}
-      let newData = {}
-      for (let key in data) {
-        if (this.valueItem.includes(key)) {
-          oldData[key] = data[key]
-        } else {
-          newData[key] = data[key]
-        }
-      }
-      const submitData = oldData
-      submitData.options = newData
-
       if (this.type == 'edit') {
-        dataFieldUpdateApi(this.rowId, submitData)
+        dataFieldUpdateApi(this.rowId, data)
           .then((res) => {
             if (res.status == 200) {
               this.$refs.oaDialog.handleClose()
@@ -354,18 +320,7 @@ export default {
           .catch((err) => {
             this.$message.error(err.message)
           })
-      } else {
-        dataFieldSaveApi(submitData)
-          .then((res) => {
-            if (res.status == 200) {
-              this.$refs.oaDialog.handleClose()
-              this.getList()
-            }
-          })
-          .catch((err) => {
-            this.$message.error(err.message)
-          })
-      }
+      } 
     },
     pageChange(page) {
       this.where.page = page

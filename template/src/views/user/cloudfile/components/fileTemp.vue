@@ -2,11 +2,12 @@
   <!--  在线模版选择弹窗-->
   <div>
     <el-dialog
+      class="user-cloudfile-file-temp-dialog"
       :append-to-body="true"
       :before-close="handleClose"
       :fullscreen="true"
       :title="fromData.title"
-      :visible.sync="dialogVisible"
+      v-model="dialogVisible"
       :width="fromData.width"
       top="0"
     >
@@ -16,12 +17,11 @@
 </template>
 
 <script>
-import { tempDownloadApi } from '@/api/enterprise'
-import file from '@/utils/file'
-import Vue from 'vue'
-import { getAccount, toSrcFn } from '@/utils/format'
-Vue.use(file)
+import { tempDownloadApi } from '@/api/enterprise.ts'
+import { getAccount, toSrcFn } from '@/utils/format.ts'
+import { getStorageJson } from '@/utils/storage.ts'
 export default {
+  emits: ['handleTemplate'],
   name: 'FileTemp',
   components: {},
   props: {
@@ -32,7 +32,7 @@ export default {
       }
     },
     wps_type: {
-      type: String | Number,
+      type: [String, Number],
       default: '0'
     }
   },
@@ -45,17 +45,20 @@ export default {
   },
   watch: {},
   mounted() {
-    let uniquedId = JSON.parse(localStorage.getItem('enterprise')).uniqued
-    let accountNum = getAccount(JSON.parse(localStorage.getItem('userInfo')).phone, uniquedId)
+    let uniquedId = getStorageJson('enterprise', {}).uniqued
+    let accountNum = getAccount(getStorageJson('userInfo', {}).phone, uniquedId)
     let type = 'iframe'
     let host = window.location.host
     this.fileUrl = `https://www.tuoluojiang.com/files?account=${accountNum}&uniqued=${uniquedId}&type=${type}&host=${host}`
     this.getLoad()
   },
+  beforeUnmount() {
+    window.removeEventListener('message', this._handleMessage)
+  },
   methods: {
     getLoad() {
       // 在父页面添加事件监听器来接收消息
-      window.addEventListener('message', async (event) => {
+      this._handleMessage = async (event) => {
         // 处理接收到的数据
         if (event.data && typeof event.data === 'number' && this.fromData.fid) {
           let data = {
@@ -66,7 +69,8 @@ export default {
           this.handleClose()
           this.handleEmit()
         }
-      })
+      }
+      window.addEventListener('message', this._handleMessage)
     },
 
     handleClose() {
@@ -93,11 +97,12 @@ export default {
   height: 100%;
   border: none;
 }
-/deep/ .el-dialog__body {
+</style>
+
+<style lang="scss">
+// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
+.el-dialog.user-cloudfile-file-temp-dialog .el-dialog__body {
   height: calc(100% - 55px);
   padding: 0 !important;
-}
-/deep/ .el-input--small {
-  width: 50%;
 }
 </style>

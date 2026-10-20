@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,11 +15,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controller\AdminApi\Config;
 
-use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Requests\system\DIctTypeRequest;
 use App\Http\Service\Config\DictTypeService;
-use crmeb\interfaces\ResourceControllerInterface;
-use crmeb\traits\ResourceControllerTrait;
+use App\Http\Controller\BaseController;
+use Tuoluojiang\Open\interfaces\ResourceControllerInterface;
+use Tuoluojiang\Open\traits\ResourceControllerTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Spatie\RouteAttributes\Attributes\Get;
 use Spatie\RouteAttributes\Attributes\Middleware;
@@ -40,7 +40,7 @@ use Spatie\RouteAttributes\Attributes\Resource;
     'destroy' => '删除字典接口',
 ], parameters: ['' => 'id'])]
 #[Middleware(['auth.admin', 'ent.auth', 'ent.log'])]
-class DictTypeController extends AuthController implements ResourceControllerInterface
+class DictTypeController extends BaseController implements ResourceControllerInterface
 {
     use ResourceControllerTrait;
 

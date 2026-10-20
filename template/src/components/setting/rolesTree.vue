@@ -2,9 +2,9 @@
 <template>
   <div class="container">
     <div class="tree-wrapper">
-      <div class="tree-box">
+      <div class="tree-box" :class="{ 'is-admin': isAdmin }">
         <div class="tree-con">
-          <span class="text">菜单权限</span>
+          <!-- <span class="text">菜单权限</span> -->
           <el-tree
             ref="tree"
             class="blue-theme"
@@ -24,13 +24,12 @@
         <div class="check-box">
           <div class="check_list">
             <span class="text"> 按钮/接口权限</span>
-
             <div class="list">
               <el-checkbox-group v-model="checkValue">
                 <el-row :gutter="20">
                   <el-col v-for="(item, index) in checkList" :key="index" :lg="24" :xl="8">
                     <el-checkbox
-                      :label="item.value"
+                      :label="item.value" :value="item.value"
                       class="check-item"
                       :disabled="isAdmin"
                       :checked="item.is_default"
@@ -44,12 +43,18 @@
             </div>
           </div>
         </div>
+
+        <!-- 模块权限 -->
+        <div v-if="!isAdmin" class="module-box">
+          <modulePermissions ref="modulePermissions" :tree-data="tableData"></modulePermissions>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 export default {
   name: 'RolesTree',
   props: {
@@ -60,6 +65,12 @@ export default {
       }
     },
     defaultCheckedKeys: {
+      type: Array,
+      default: () => {
+        return []
+      }
+    },
+    tableData: {
       type: Array,
       default: () => {
         return []
@@ -85,6 +96,9 @@ export default {
       },
       deep: true
     }
+  },
+  components: {
+    modulePermissions: defineAsyncComponent(() => import('@/components/setting/modulePermissions'))
   },
   data() {
     return {
@@ -181,13 +195,13 @@ export default {
         })
       }
     },
-    getNodeValue() {
-      return new Promise((resolve, reject) => {
-        const obj = {}
-        obj.rules = this.$refs.tree.getCheckedKeys(true)
-        obj.apis = this.listOne
-        resolve(obj)
-      })
+    async getNodeValue() {
+      const modulePermissions = await this.$refs.modulePermissions.getData()
+      return {
+        rules: this.$refs.tree.getCheckedKeys(true),
+        apis: this.listOne,
+        module_permission: modulePermissions
+      }
     }
   }
 }
@@ -197,6 +211,7 @@ export default {
 .container {
   padding: 0 20px;
   height: 100%;
+  border-top: 1px solid #eeeeee;
 }
 
 .tree-wrapper {
@@ -206,13 +221,27 @@ export default {
     flex: 1;
     display: flex;
 
+    &.is-admin {
+      .tree-con {
+        flex: 1;
+      }
+      .check-box {
+        flex: 1;
+        border-right: none;
+      }
+    }
+
     .tree-con {
-      height: calc(100vh - 300px);
-      // width: 260px;
+      padding-top: 10px;
+      height: 100%;
+      min-height: 0;
+      width: 282px;
       overflow-y: auto;
+      scrollbar-width: none; /* firefox */
+      -ms-overflow-style: none; /* IE 10+ */
       border-right: 1px solid #eeeeee;
       padding-bottom: 20px;
-      // padding-left: 20px;
+      padding-right: 20px;
       &::-webkit-scrollbar-thumb {
         -webkit-box-shadow: inset 0 0 6px #ccc;
       }
@@ -220,26 +249,35 @@ export default {
         width: 4px !important; /*对垂直流动条有效*/
       }
     }
-  }
-}
-.check-box {
-  height: 100%;
-  display: flex;
-  flex: 1;
-  .check_list {
-    padding-left: 26px;
-    overflow-y: auto;
-    height: 100%;
-    width: 290px;
-    &::-webkit-scrollbar-thumb {
-      -webkit-box-shadow: inset 0 0 6px #ccc;
+
+    .check-box {
+      height: 100%;
+      display: flex;
+      width: 287px;
+      border-right: 1px solid #eeeeee;
+
+      .check_list {
+        padding-left: 26px;
+        overflow-y: auto;
+        height: 100%;
+        width: 290px;
+        &::-webkit-scrollbar-thumb {
+          -webkit-box-shadow: inset 0 0 6px #ccc;
+        }
+        &::-webkit-scrollbar {
+          width: 4px !important; /*对垂直流动条有效*/
+        }
+      }
+      .check-item {
+        margin-bottom: 20px;
+      }
     }
-    &::-webkit-scrollbar {
-      width: 4px !important; /*对垂直流动条有效*/
+
+    .module-box {
+      flex: 1;
+      padding: 10px 20px 20px;
+      overflow-y: auto;
     }
-  }
-  .check-item {
-    margin-bottom: 20px;
   }
 }
 .label-txt {
@@ -249,21 +287,42 @@ export default {
 .list {
   width: 1px;
 }
-/deep/ .el-scrollbar__wrap {
+:deep(.el-scrollbar__wrap) {
   overflow-y: scroll;
   overflow-x: hidden !important;
 }
-/deep/ .el-scrollbar__thumb {
+:deep(.el-scrollbar__thumb) {
   height: 100px !important;
 }
 .text {
   display: inline-block;
-  font-size: 14px;
-  color: #333;
-  font-weight: 600;
-  margin: 20px 0;
+  font-family: PingFang SC, PingFang SC;
+  font-weight: 500;
+  font-size: 13px;
+  color: #303133;
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
-/deep/.el-tree-node__content {
-  padding-right: 0;
+:deep(.el-tree) {
+  .el-tree-node__content {
+    padding-right: 0;
+    height: 40px;
+    line-height: 40px;
+    border-radius: 6px 6px 6px 6px;
+    .el-tree-node__label {
+      font-family: PingFang SC, PingFang SC;
+      font-weight: 400;
+      font-size: 14px;
+      color: #303133;
+    }
+  }
+
+  .el-tree-node__content:hover {
+    background-color: #edf6ff !important;
+    border-radius: 6px 6px 6px 6px;
+    .el-tree-node__label {
+      color: #1890ff;
+    }
+  }
 }
 </style>

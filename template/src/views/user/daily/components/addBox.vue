@@ -1,27 +1,18 @@
 <template>
   <div>
     <el-drawer
-      :append-to-body="true"
-      :before-close="handleClose"
-      :modal="true"
-      :title="newTitle"
-      :visible.sync="drawer"
-      :wrapper-closable="true"
-      :wrapperClosable="editType == 'check' ? true : false"
-      direction="rtl"
-      size="920px"
-    >
-      <div slot="title" class="invoice-title">
-        <span>{{ newTitle }}</span>
-        <div class="time">{{ editData.created_at || '' }}</div>
-      </div>
+      class="user-daily-add-box-drawer" :append-to-body="true" :before-close="handleClose" :modal="true" :title="newTitle" v-model="drawer"
+      :close-on-click-modal="editType == 'check' ? true : false" direction="rtl" size="920px">
+      <template #header>
+        <div class="invoice-title">
+          <span>{{ newTitle }}</span>
+          <span class="sub-title" v-if="subTitle">{{ subTitle }}</span>
+          <div class="time">{{ editId ? editData.created_at || '' : '' }}</div>
+        </div>
+      </template>
 
-      <div
-        ref="rollBottom"
-        :class="isShow ? 'pb-120' : ''"
-        :style="'height:' + rollHeight + 'px;'"
-        class="form-box mt20"
-      >
+      <div ref="rollBottom" :class="isShow ? 'pb-120' : ''" :style="'height:' + rollHeight + 'px;'"
+        class="form-box mt20">
         <!-- 汇报人 -->
         <div class="report">
           <div class="title">汇报给</div>
@@ -46,24 +37,10 @@
           <el-row :gutter="20">
             <el-col :span="report_show ? 24 : 12">
               <div :class="!disabled ? 'border' : ''" class="today-work">
-                <el-form-item
-                  v-if="needList.length > 0 && editType !== 'check'"
-                  :label="todayLable"
-                  class="item-bar today-bar-list"
-                  prop="finish"
-                >
-                  <el-input
-                    ref="finish"
-                    v-model="ruleForm.finish"
-                    :disabled="disabled"
-                    :maxlength="2000"
-                    autosize
-                    resize="none"
-                    show-word-limit
-                    type="textarea"
-                    @change="changeSize"
-                    @input="changeSize"
-                  />
+                <el-form-item v-if="needList.length > 0 && editType !== 'check'" :label="todayLable"
+                  class="item-bar today-bar-list oa-input-borderless" prop="finish">
+                  <el-input ref="finish" v-model="ruleForm.finish" :disabled="disabled" :maxlength="2000" autosize
+                    resize="none" show-word-limit type="textarea" @change="changeSize" @input="changeSize" />
                   <div class="todo">
                     <div class="title">
                       未完成待办
@@ -71,82 +48,43 @@
                     </div>
                     <div class="todo-list">
                       <div v-for="(item, index) in needList" :key="index" class="item">
-                        <i
-                          v-if="item.finish === 0 || item.finish === 1 || item.finish === -1"
-                          :class="item.checked ? 'checked el-icon-check' : 'square'"
-                          class="dealt-icon"
-                          @click="setScheduleRecord(item, 3, index)"
-                        ></i>
+                        <i v-if="item.finish === 0 || item.finish === 1 || item.finish === -1"
+                          :class="item.checked ? 'checked el-icon-check' : 'square'" class="dealt-icon"
+                          @click="setScheduleRecord(item, 3, index)"></i>
                         <span>{{ item.title }}</span>
                       </div>
                     </div>
                   </div>
                 </el-form-item>
-                <el-form-item v-else :label="todayLable" class="item-bar today-bar" prop="finish">
-                  <el-input
-                    ref="finish"
-                    v-model="ruleForm.finish"
-                    :disabled="disabled"
-                    :maxlength="2000"
-                    autosize
-                    resize="none"
-                    show-word-limit
-                    type="textarea"
-                    @change="changeSize"
-                    @input="changeSize"
-                  />
+                <el-form-item v-else :label="todayLable" class="item-bar today-bar oa-input-borderless" prop="finish">
+                  <el-input ref="finish" v-model="ruleForm.finish" :disabled="disabled" :maxlength="2000" autosize
+                    resize="none" show-word-limit type="textarea" @change="changeSize" @input="changeSize" />
                 </el-form-item>
               </div>
             </el-col>
             <el-col v-if="!report_show" :span="12">
               <div :class="!disabled ? 'border' : ''" class="item-bar-box">
-                <el-form-item :label="planLable" class="item-bar" prop="plan">
-                  <el-input
-                    ref="plan"
-                    v-model="ruleForm.plan"
-                    :disabled="disabled"
-                    :maxlength="2000"
-                    autosize
-                    resize="none"
-                    show-word-limit
-                    type="textarea"
-                    @change="changeSize"
-                    @input="changeSize"
-                  />
+                <el-form-item :label="planLable" class="item-bar oa-input-borderless" prop="plan">
+                  <el-input ref="plan" v-model="ruleForm.plan" :disabled="disabled" :maxlength="2000" autosize
+                    resize="none" show-word-limit type="textarea" @change="changeSize" @input="changeSize" />
                 </el-form-item>
               </div>
             </el-col>
           </el-row>
           <!-- 备注 -->
-          <el-form-item :label="$t('public.remarks')" class="m-b-30 m-t-20">
-            <el-input
-              v-model="ruleForm.mark"
-              :disabled="disabled"
-              :rows="4"
-              resize="none"
-              type="textarea"
-              @change="updateValue"
-            />
+          <el-form-item label="备注" class="m-b-30 m-t-20">
+            <el-input v-model="ruleForm.mark" :disabled="disabled" :rows="4" resize="none" type="textarea"
+              @change="updateValue" />
           </el-form-item>
           <el-form-item :label="attachList.length || !attachList.length ? '附件' : ''" class="m-b-30">
             <!-- 附件上传-->
-            <upload-file
-              v-model="attachList"
-              :maxLength="9"
-              :disabled="editType == 'check' ? true : false"
-              :options="fileParams"
-              :only-image="false"
-              :value="attachList"
-            ></upload-file>
+            <upload-file v-model="attachList" :maxLength="9" :disabled="editType == 'check' ? true : false"
+              :options="fileParams" :only-image="false"></upload-file>
           </el-form-item>
         </el-form>
         <div v-if="replyList.length > 0" class="list">
-          <div
-            v-for="(item, index) in replyList"
-            :key="index"
-            :class="item.paent_user ? 'parent-replay' : ''"
-            class="item acea-row row-between"
-          >
+          <div v-for="(item, index) in replyList" :key="index" :class="item.paent_user ? 'parent-replay' : ''"
+            class="item acea-row row-between">
             <el-avatar v-if="item.card.avatar" :size="38" :src="item.card.avatar" />
             <el-avatar v-else :size="38" icon="el-icon-user-solid" />
             <div :class="{ 'parent-replay-text': item.paent_user }" class="pictxt">
@@ -154,7 +92,7 @@
                 <div v-if="item.paent_user">
                   {{ item.card.name }}<span class="created-at">{{ item.created_at }}</span>
                   <div class="acea-row reply">
-                    <span class="keyword">{{ $t('public.reply') }}{{ item.paent_user.card.name }}:</span>
+                    <span class="keyword">回复{{ item.paent_user.card.name }}:</span>
                     <span class="reply-text">{{ item.content }}</span>
                   </div>
                 </div>
@@ -162,12 +100,12 @@
                   {{ item.card.name }}<span class="created-at">{{ item.created_at }}</span>
                 </div>
               </div>
-              <div class="text acea-row row-between-wrapper">
+              <div class="text acea-row between-box">
                 <div v-if="!item.paent_user" class="textCon">{{ item.content }}</div>
                 <div v-if="item.card.uid === uid" class="reply" @click="deleteReply(item.id, item.daily_id, index)">
-                  {{ $t('public.delete') }}
+                  删除
                 </div>
-                <div v-else class="reply" @click="replyBnt(item)">{{ $t('public.reply') }}</div>
+                <div v-else class="reply" @click="replyBnt(item)">回复</div>
               </div>
             </div>
           </div>
@@ -175,30 +113,27 @@
       </div>
       <div class="from-foot-btn fix btn-shadow">
         <div v-if="isShow" class="flex">
+          
           <img :src="avatar" alt="" class="avatar" />
+          
           <div class="replyCon">
-            <el-input
-              ref="replyInput"
-              v-model="reply.content"
-              :placeholder="textPla"
-              class="replyText"
-              resize="none"
-              type="textarea"
-            />
+            
+            <el-input ref="replyInput" v-model="reply.content" :placeholder="textPla" class="replyText oa-input-borderless" resize="none"
+              type="textarea" />
             <div class="bnt">
-              <el-button size="small" @click="cancel">{{ $t('public.cancel') }}</el-button>
-              <el-button size="small" type="primary" @click="submitReply">提交</el-button>
+              <el-button @click="cancel">取消</el-button>
+              <el-button type="primary" @click="submitReply">提交</el-button>
             </div>
           </div>
         </div>
         <template v-else>
-          <el-button v-if="!disabled" size="small" @click="closeBtn">{{ $t('public.cancel') }}</el-button>
+          <el-button v-if="!disabled" @click="closeBtn">取消</el-button>
           <div v-if="editId && disabled" class="flex" @click="evaluate">
             <img :src="avatar" alt="" class="avatar" />
             <div class="replyCon-no">添加评论</div>
           </div>
-          <el-button v-else :loading="saveLoading" size="small" type="primary" @click="submitForm('ruleForm')">
-            {{ $t('public.save') }}
+          <el-button v-else :loading="saveLoading" type="primary" @click="submitForm('ruleForm')">
+            保存
           </el-button>
         </template>
       </div>
@@ -206,13 +141,21 @@
   </div>
 </template>
 <script>
-import { enterpriseDaily, getEnterpriseEdit, dailyReply, dailydel, getDailyEdit, getCompleted } from '@/api/enterprise'
-import file from '@/utils/file'
-import { dailyReportMemberApi } from '@/api/business'
-import { scheduleStatusApi } from '@/api/user'
-import Vue from 'vue'
-Vue.use(file)
+import { useUserStore } from '@/stores/user.ts'
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { enterpriseDaily, getEnterpriseEdit, dailyReply, dailydel, getDailyEdit, getCompleted } from '@/api/enterprise.ts'
+import { dailyReportMemberApi } from '@/api/business.ts'
+import { scheduleStatusApi } from '@/api/user.ts'
+
+const SUB_TITLE_MAP = {
+  0: "日报填写仅支持当天编辑",
+  1: "周报填写仅支持当周编辑",
+  2: "月报填写仅支持当月编辑",
+};
+
 export default {
+  emits: ['updateValue', 'getDailyTodoInfo', 'tableList'],
   props: {
     editData: {
       type: Object,
@@ -230,6 +173,83 @@ export default {
     finishList: {
       type: String,
       default: ''
+    }
+  },
+  components: {
+    uploadFile: defineAsyncComponent(() => import('@/components/form-common/oa-upload')),
+    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member'))
+  },
+
+  data() {
+    const checkFinish = (rule, value, callback) => {
+      if (!value && this.dailyId === 1) {
+        return callback(new Error('请填写今日工作'))
+      } else if (!value && this.dailyId === 2) {
+        return callback(new Error('请填写本周工作'))
+      } else if (!value && this.dailyId === 3) {
+        return callback(new Error('请填写本月工作'))
+      } else {
+        callback()
+      }
+    }
+    const checkPlan = (rule, value, callback) => {
+      if (!value && this.dailyId === 1) {
+        return callback(new Error('请填写明日计划'))
+      } else if (!value && this.dailyId === 2) {
+        return callback(new Error('请填写下周计划'))
+      } else if (!value && this.dailyId === 3) {
+        return callback(new Error('请填写下月计划'))
+      } else {
+        callback()
+      }
+    }
+    return {
+      drawer: false,
+      dailyId: 0,
+      examineData: [], // 参与人
+      ruleForm: {
+        finish: [],
+        plan: [],
+        mark: '',
+        attach_ids: '',
+        types: 0
+      },
+      rules: {
+        finish: [{ required: true, validator: checkFinish, trigger: 'blur' }],
+        plan: [{ required: true, validator: checkPlan, trigger: 'blur' }]
+      },
+      reply: {
+        content: '',
+        daily_id: '',
+        pid: 0
+      },
+      editId: 0,
+      memberLoaded: false, // 人员配置是否已拉取，保证只请求一次
+      isShow: false,
+      replyList: [],
+      uid: useUserStore().userInfo.uid,
+      avatar: useUserStore().userInfo.avatar,
+      id: 0,
+      ids: [],
+      rollHeight: '',
+      editType: 'add', // 是否可以编辑
+      textPla: '请填写内容',
+      disabled: false,
+      minHeight: 420,
+      loading: false,
+      report_show: false,
+      attachList: [],
+      saveLoading: false,
+      newTitle: '',
+      todayLable: '',
+      planLable: '',
+      fileParams: {
+        relation_type: 'daily',
+        relation_id: 0,
+        way: 3,
+        eid: 0
+      },
+      checkedList: ''
     }
   },
   watch: {
@@ -251,84 +271,12 @@ export default {
       }
     }
   },
-  components: {
-    uploadFile: () => import('@/components/form-common/oa-upload'),
-    selectMember: () => import('@/components/form-common/select-member')
-  },
-  data() {
-    const checkFinish = (rule, value, callback) => {
-      if (!value && this.dailyId === 1) {
-        return callback(new Error(this.$t('user.work.title')))
-      } else if (!value && this.dailyId === 2) {
-        return callback(new Error('请填写本周工作'))
-      } else if (!value && this.dailyId === 3) {
-        return callback(new Error('请填写本月工作'))
-      } else {
-        callback()
-      }
-    }
-    const checkPlan = (rule, value, callback) => {
-      if (!value && this.dailyId === 1) {
-        return callback(new Error(this.$t('user.work.tilte1')))
-      } else if (!value && this.dailyId === 2) {
-        return callback(new Error('请填写下周计划'))
-      } else if (!value && this.dailyId === 3) {
-        return callback(new Error('请填写下月计划'))
-      } else {
-        callback()
-      }
-    }
-    return {
-      drawer: false,
-      examineData: [], // 参与人
-      ruleForm: {
-        finish: [],
-        plan: [],
-        mark: '',
-        attach_ids: '',
-        types: 0
-      },
-      rules: {
-        finish: [{ required: true, validator: checkFinish, trigger: 'blur' }],
-        plan: [{ required: true, validator: checkPlan, trigger: 'blur' }]
-      },
-      reply: {
-        content: '',
-        daily_id: '',
-        pid: 0
-      },
-      editId: 0,
-      isShow: false,
-      replyList: [],
-      uid: this.$store.state.user.userInfo.uid,
-      avatar: this.$store.state.user.userInfo.avatar,
-      id: 0,
-      ids: [],
-      rollHeight: '',
-      editType: 'add', // 是否可以编辑
-      textPla: this.$t('user.work.title2'),
-      disabled: false,
-      minHeight: 420,
-      loading: false,
-      report_show: false,
-      attachList: [],
-      saveLoading: false,
-      newTitle: '',
-      todayLable: '',
-      planLable: '',
-      fileParams: {
-        relation_type: 'daily',
-        relation_id: 0,
-        way: 3,
-        eid: 0
-      },
-      checkedList: ''
+  computed: {
+    subTitle() {
+      return SUB_TITLE_MAP[this.dailyId];
     }
   },
-
   mounted() {
-
-    this.approveApplyList()
     this.rollHeight = `${document.documentElement.clientHeight}` - 66 - 50
     const that = this
     window.onresize = function () {
@@ -375,7 +323,15 @@ export default {
     },
 
     openBox(editId, type, data) {
+      // 人员配置改为首次打开弹窗时再拉取：本组件被 messageHandlePopup 等公共弹窗无条件挂载，
+      // 放在 mounted 里会让每个挂载点在页面首屏就发一次 daily/report_member 请求
+      if (!this.memberLoaded) {
+        this.memberLoaded = true
+        this.approveApplyList()
+      }
+
       let types = 0
+
       let objTitle = {
         0: '日报',
         1: '周报',
@@ -387,27 +343,30 @@ export default {
         this.newTitle = '填写' + objTitle[type]
         this.editId = 0
         types = type
+        this.editType = 'add'
         this.disabled = false
+        this.getCompletedFn(types)
       } else if (type === 'check') {
         this.newTitle = data.name + '的汇报'
         types = data.types
         this.editType = type
         this.disabled = true
         this.editId = editId
-        this.getInfo(editId)
+
+        this.getInfo(this.editId)
       } else if (type === 'edit') {
         this.newTitle = '编辑' + objTitle[data.types]
         this.editId = editId
         types = data.types
         this.editType = type
         this.disabled = false
-        this.getInfo(editId)
+        this.getInfo(this.editId)
       }
-     
+
       this.dailyId = types
-  
+
       this.getLable(types)
-      this.getCompletedFn(types)
+
       this.drawer = true
     },
 
@@ -477,17 +436,17 @@ export default {
       let pH = this.$refs.plan.$el.clientHeight
       if (fH > this.minHeight || pH > this.minHeight) {
         if (fH > pH) {
-          this.$refs.plan.$el.firstChild.style.height = fH + 'px'
-          this.$refs.finish.$el.firstChild.style.height = fH + 'px'
+          this.$refs.plan.textarea.style.height = fH + 'px'
+          this.$refs.finish.textarea.style.height = fH + 'px'
         }
         if (fH < pH) {
-          this.$refs.finish.$el.firstChild.style.height = pH + 'px'
-          this.$refs.plan.$el.firstChild.style.height = pH + 'px'
+          this.$refs.finish.textarea.style.height = pH + 'px'
+          this.$refs.plan.textarea.style.height = pH + 'px'
         }
       }
     },
     deleteReply(id, dailyId, index) {
-      this.$modalSure(this.$t('user.work.title4')).then(() => {
+      modalSure('删除该条评论').then(() => {
         dailydel(id, dailyId).then((res) => {
           this.replyList.splice(index, 1)
         })
@@ -495,8 +454,8 @@ export default {
     },
 
     // 评论
-    replyBnt(item) {
-      this.textPla = this.$t('public.reply') + ': ' + `${item.name}`
+    replyBnt(item) {  
+      this.textPla = '回复' + ': ' + `${item.card.name}`
       this.reply.content = ''
       this.id = item.id
       this.isShow = true
@@ -509,7 +468,7 @@ export default {
       this.reply.content = ''
       this.id = 0
       this.isShow = true
-      this.textPla = this.$t('user.work.writecomment')
+      this.textPla = '填写评论'
       this.$nextTick(() => {
         this.$refs.rollBottom.scroll(0, this.rollHeight)
       })
@@ -521,13 +480,14 @@ export default {
     cancel() {
       this.isShow = false
       this.report_show = false
-      this.textPla = this.$t('user.work.writedaily')
+      this.textPla = '填写日报'
     },
 
     handleClose() {
       this.resetForm()
       this.drawer = false
       this.report_show = false
+      this.replyList = []
       this.$refs.ruleForm.clearValidate()
       this.editId = 0
     },
@@ -604,7 +564,7 @@ export default {
     },
     resetForm() {
       this.isShow = false
-      this.textPla = this.$t('user.work.writedaily')
+      this.textPla = '填写日报'
       this.ruleForm = {
         finish: '',
         plan: '',
@@ -640,21 +600,37 @@ export default {
 ::-webkit-scrollbar-thumb {
   -webkit-box-shadow: inset 0 0 6px #ccc;
 }
+
 ::-webkit-scrollbar {
-  width: 4px !important; /*对垂直流动条有效*/
+  width: 4px !important;
+  /*对垂直流动条有效*/
 }
+
 .invoice-title {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  align-items: baseline;
 }
+
+.sub-title {
+  margin-left: 12px;
+  font-size: 13px;
+  color: #909399;
+}
+
+.between-box {
+  display: flex;
+  justify-content: space-between;
+}
+
 .time {
   // position: absolute;
   // top: 22px;
   // right: 54px;
+  margin-left: auto;
   font-size: 13px;
   color: #606266;
 }
+
 .line {
   width: 100%;
   height: 1px;
@@ -662,97 +638,111 @@ export default {
   background: #f5f5f5;
   transform: translateX(25px);
 }
-/deep/ .el-avatar > img {
+
+:deep(.el-avatar>img) {
   width: 100%;
 }
-/deep/ .el-drawer__body {
-  overflow: inherit !important;
-  padding-bottom: 0;
-}
-/deep/ .el-form-item {
+
+:deep(.el-form-item) {
   margin-bottom: 0;
 }
+
 .item-bar-box {
   border-radius: 4px;
 }
+
 .item-bar {
-  /deep/ .el-form-item__label {
+  :deep(.el-form-item__label) {
     background: #eaf5ff;
     border-bottom: none;
     padding-left: 20px;
     border-radius: 4px 4px 0 0;
   }
-  /deep/ .el-textarea__inner {
+
+  :deep(.el-textarea__inner) {
     padding-top: 14px;
     min-height: 420px !important;
-    border: none;
     padding-bottom: 36px;
     border-radius: 0 0 4px 4px;
   }
 }
+
 .today-bar-list {
-  /deep/ .el-textarea__inner {
+  :deep(.el-textarea__inner) {
     min-height: 245px !important;
+  }
+
+  :deep(.el-form-item__label) {
     border: none;
   }
-  /deep/.el-form-item__label {
-    border: none;
-  }
-  /deep/ .el-form-item__error {
+
+  :deep(.el-form-item__error) {
     // top: 121% !important;
   }
 }
+
 .today-bar {
-  /deep/ .el-textarea__inner {
+  :deep(.el-textarea__inner) {
     min-height: 420px !important;
-    border: none;
   }
-  /deep/.el-form-item__label {
+
+  :deep(.el-form-item__label) {
     border: none;
   }
 }
+
 .today-work {
   min-height: 458px;
   position: relative;
   border-radius: 4px;
-  /deep/ .el-form-item__error {
+
+  :deep(.el-form-item__error) {
     top: 100%;
   }
 }
+
 .border {
   border: 1px solid #dcdfe6;
 }
+
 .todo {
   // max-height: 224px;
   height: 175px;
 
   margin: 0 14px;
+
   .title {
     font-size: 12px;
+
     span {
       color: #909399;
       font-size: 12px;
     }
   }
 }
+
 .todo-list {
   max-height: 132px;
   overflow-y: auto;
+
   .item {
     position: relative;
     height: 32px;
     background: #f2f3f3;
     margin-bottom: 8px;
   }
+
   span {
     margin-left: 30px;
   }
+
   .dealt-icon {
     position: absolute;
     top: 9px;
     left: 8px;
     cursor: pointer;
   }
+
   .square {
     display: inline-block;
     background: #fff;
@@ -760,11 +750,13 @@ export default {
     height: 14px;
     border: 1px solid #999;
   }
+
   .el-icon-check {
     vertical-align: bottom;
     font-size: 13px;
     color: #fff;
   }
+
   .checked {
     background: #1890ff;
     display: inline-block;
@@ -772,6 +764,7 @@ export default {
     height: 14px;
   }
 }
+
 .flex {
   display: flex;
   width: 100%;
@@ -785,6 +778,7 @@ export default {
     object-fit: cover;
   }
 }
+
 .replyCon-no {
   cursor: pointer;
   flex: 1;
@@ -796,20 +790,24 @@ export default {
   font-size: 13px;
   color: rgba(0, 0, 0, 0.25);
 }
+
 // 动画高度 从40px 到 120px
 @keyframes show {
   0% {
     height: 40px;
   }
+
   100% {
     height: 120px;
   }
 }
+
 // 动画高度 从120px 到 40px
 @keyframes hide {
   0% {
     height: 120px;
   }
+
   100% {
     height: 40px;
   }
@@ -825,30 +823,36 @@ export default {
   font-size: 13px;
 
   animation: show 0.3s ease-in-out forwards;
+
   .bnt {
     text-align: right;
     margin: 10px 10px 0 0;
   }
+
   .replyText {
-    /deep/.el-textarea__inner {
-      border: 0;
+    :deep(.el-textarea__inner) {
       padding: 0 10px;
     }
   }
-  /deep/.el-textarea__inner {
+
+  :deep(.el-textarea__inner) {
     height: 55px;
   }
 }
+
 .form-box {
   padding: 0 20px 50px 20px;
   overflow-y: auto;
+
   .attach {
     color: #1890ff;
     text-align: left;
     cursor: pointer;
   }
+
   .list {
     margin-top: 30px;
+
     .parent-replay {
       margin-left: 52px;
       background: #f7f7f7;
@@ -856,43 +860,65 @@ export default {
       padding: 18px 20px 22px 20px;
       margin-bottom: 0 !important;
     }
+
     .item {
       margin-bottom: 14px;
+
       .pictxt.parent-replay-text {
         display: flex;
         justify-content: space-between;
       }
+
       .pictxt {
         width: calc(100% - 50px);
+
         .name {
           color: #303133;
           font-size: 13px;
+          font-family: PingFang SC, PingFang SC;
+          font-weight: 500;
+
           .created-at {
             font-size: 11px;
             color: #909399;
             margin-left: 6px;
           }
+
           .keyword {
             color: #909399;
             margin: 0 5px 0 0;
           }
+
           .reply {
             margin-top: 6px;
             color: #909399;
+
             .reply-text {
+              font-family: PingFang SC, PingFang SC;
+              font-weight: 400;
+              font-size: 13px;
               color: #303133;
+              display: inline-block;
+              width: 100%;
+              margin-top: 6px;
             }
           }
         }
+
         .text {
           font-size: 13px;
           color: rgba(0, 0, 0, 0.85);
           margin-top: 5px;
           line-height: 18px;
+
           .textCon {
-            width: 364px;
+            font-family: PingFang SC, PingFang SC;
+            font-weight: 400;
+            width: calc(100% - 50px);
             font-size: 13px;
+
           }
+
           .reply {
             color: #1890ff;
             cursor: pointer;
@@ -902,22 +928,24 @@ export default {
       }
     }
   }
-  /deep/.el-form-item__label {
-    float: right;
-    text-align: left;
+
+  :deep(.el-form-item__label) {
+    justify-content: flex-start;
     width: 100% !important;
     font-weight: 400 !important;
   }
-  /deep/.el-form-item__content {
+
+  :deep(.el-form-item__content) {
     margin-left: 0 !important;
   }
-  /deep/.el-textarea.is-disabled .el-textarea__inner {
-    border: 0;
+
+  :deep(.el-textarea.is-disabled .el-textarea__inner) {
     background-color: #f7f7f7;
     color: #606266;
   }
 }
-/deep/ .el-form .el-textarea__inner {
+
+:deep(.el-form .el-textarea__inner) {
   width: 100%;
 }
 
@@ -926,10 +954,12 @@ export default {
     margin-bottom: 14px;
     font-size: 14px;
   }
+
   .flex-user {
     display: flex;
     flex-wrap: wrap;
     margin-bottom: 20px;
+
     .user {
       padding: 0 8px 0 4px;
       height: 32px;
@@ -946,6 +976,7 @@ export default {
       position: relative;
       margin-bottom: 10px;
       border-radius: 4px;
+
       .img {
         display: block;
         width: 26px;
@@ -954,6 +985,7 @@ export default {
         margin-right: 5px;
         object-fit: cover;
       }
+
       .iconcha {
         cursor: pointer;
         position: absolute;
@@ -963,6 +995,7 @@ export default {
         color: #c0c4cc;
       }
     }
+
     .addPeople {
       cursor: pointer;
       height: 32px;
@@ -976,6 +1009,7 @@ export default {
       border-radius: 6px;
       margin-right: 14px;
       padding: 0 8px;
+
       .icontianjia {
         font-size: 12px;
         margin-right: 4px;
@@ -983,6 +1017,7 @@ export default {
     }
   }
 }
+
 .dividing-line {
   width: 100%;
   height: 1px;
@@ -992,16 +1027,28 @@ export default {
   margin-bottom: 10px;
   margin-top: 30px;
 }
+
 .upload-file {
   display: inline-block;
 }
+
 .m-b-30 {
   margin-bottom: 30px;
 }
+
 .m-t-20 {
   margin-top: 20px;
 }
+
 .pb-120 {
   padding-bottom: 120px;
+}
+</style>
+
+<style lang="scss">
+// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
+.user-daily-add-box-drawer .el-drawer__body {
+  overflow: inherit !important;
+  padding-bottom: 0;
 }
 </style>

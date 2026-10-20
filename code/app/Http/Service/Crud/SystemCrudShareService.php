@@ -34,7 +34,7 @@ class SystemCrudShareService extends BaseService
      */
     public function shareList(int $crudId, int $dataId)
     {
-        $ids = app()->make(SystemCrudDataShareService::class)->column(['crud_id' => $crudId, 'data_id' => $dataId], 'share_id');
+        $ids = app()->get(SystemCrudDataShareService::class)->column(['crud_id' => $crudId, 'data_id' => $dataId], 'share_id');
         if (! $ids) {
             $ids = [0];
         }

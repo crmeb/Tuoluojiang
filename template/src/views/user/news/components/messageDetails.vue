@@ -1,47 +1,49 @@
 <template>
   <div>
     <el-dialog
-      class="message-details"
-      :visible.sync="dialogVisible"
       :append-to-body="true"
-      :width="messageData.width"
       :before-close="beforeClose"
+      v-model="dialogVisible"
+      :width="messageData.width"
+      class="message-details"
     >
       <template v-if="messageData.data">
-        <div class="details" :class="messageData.data.button_template ? '' : 'mb14'">
+        <div :class="messageData.data.button_template ? '' : 'mb14'" class="details">
           <el-row>
             <el-col class="left">
-              <img v-if="messageData.data.image" class="image" :src="messageData.data.image" alt="" />
+              <img v-if="messageData.data.image" :src="messageData.data.image" alt="" class="image" />
               <div v-else class="left-icon">
                 <i class="iconfont iconxiaoxi"></i>
               </div>
             </el-col>
             <el-col class="right">
               <div class="top">
-                <el-tag size="small" effect="dark">{{ messageData.data.cate_name }}</el-tag>
+                <el-tag effect="dark">{{ messageData.data.cate_name }}</el-tag>
               </div>
               <div
-                class="pointer"
                 v-if="messageData.data.buttons.length > 0"
+                class="pointer"
                 @click="handleConfirm(messageData.data.buttons[0])"
               >
                 <div class="mt10 content over-text">{{ messageData.data.title }}</div>
                 <div class="mt10 bottom">{{ messageData.data.message }}</div>
               </div>
-              <div class="pointer" v-else>
+              <div v-else class="pointer">
                 <div class="mt10 content over-text">{{ messageData.data.title }}</div>
                 <div class="mt10 bottom">{{ messageData.data.message }}</div>
               </div>
             </el-col>
           </el-row>
         </div>
-        <div slot="footer" class="dialog-footer" v-if="messageData.data.buttons.length > 0">
+      </template>
+      <template #footer>
+        <div v-if="messageData.data && messageData.data.buttons.length > 0" class="dialog-footer">
           <template v-if="messageData.data.cate_name !== '考勤'">
             <el-button
-              type="primary"
-              size="small"
               v-for="(item, index) in messageData.data.buttons"
+              :key="index"
               :disabled="selectedType.includes(item.action)"
+              type="primary"
               @click="handleConfirm(item)"
               >{{ item.title }}</el-button
             >
@@ -54,12 +56,15 @@
 </template>
 
 <script>
-import noticeHandle from '@/libs/noticeHandle'
-import { noticeMessageReadApi } from '@/api/user'
-import { messageListApi } from '@/api/public'
-import { roterPre } from '@/settings'
+import { mapStores } from 'pinia'
+import { useUserStore } from '@/stores/user.ts'
+import noticeHandle from '@/libs/noticeHandle.ts'
+import { noticeMessageReadApi } from '@/api/user.ts'
+import { messageListApi } from '@/api/public.ts'
+import { roterPre } from '@/settings.ts'
 import messageHandlePopup from '@/components/common/messageHandlePopup'
 export default {
+  emits: ['isOk'],
   name: 'MessageDetails',
   components: {
     messageHandlePopup
@@ -71,6 +76,9 @@ export default {
         return {}
       }
     }
+  },
+  computed: {
+    ...mapStores(useUserStore)
   },
   data() {
     return {
@@ -131,23 +139,14 @@ export default {
     getMessage() {
       messageListApi({ page: 1, limit: 5 }).then((res) => {
         const num = res.data.messageNum ? res.data.messageNum : 0
-        this.$store.commit('user/SET_MESSAGE', num)
+        this.userStore.setMessageCount(num)
       })
     }
   }
 }
 </script>
 
-<style scoped lang="scss">
-.message-details {
-  /deep/ .el-dialog__header {
-    padding: 20px;
-  }
-  /deep/ .el-dialog__headerbtn {
-    position: absolute;
-    top: 14px;
-  }
-}
+<style lang="scss" scoped>
 .details {
   .left {
     width: 72px;
@@ -172,7 +171,7 @@ export default {
   .right {
     width: calc(100% - 72px);
     padding-left: 14px;
-    /deep/ .el-tag {
+    :deep(.el-tag) {
       border-radius: 2px;
     }
     .content {
@@ -185,6 +184,19 @@ export default {
       color: #606266;
       line-height: 1.5;
     }
+  }
+}
+</style>
+
+<style lang="scss">
+// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
+.el-dialog.message-details {
+  .el-dialog__header {
+    padding: 20px;
+  }
+  .el-dialog__headerbtn {
+    position: absolute;
+    top: 14px;
   }
 }
 </style>

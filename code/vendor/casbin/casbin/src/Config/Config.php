@@ -24,7 +24,7 @@ final class Config implements ConfigContract
     /**
      * @var array<string, array<string, string>>
      */
-    public $data = [];
+    public array $data = [];
 
     /**
      * Create an empty configuration representation from file.
@@ -36,7 +36,7 @@ final class Config implements ConfigContract
      */
     public static function newConfig(string $confName): ConfigContract
     {
-        $c = new static();
+        $c = new Config();
         $c->parse($confName);
 
         return $c;
@@ -93,7 +93,7 @@ final class Config implements ConfigContract
     {
         $buf = file_get_contents($fname);
 
-        return $buf === false ? false : $this->parseBuffer($buf);
+        return !($buf === false) && $this->parseBuffer($buf);
     }
 
     /**
@@ -111,17 +111,19 @@ final class Config implements ConfigContract
         $canWrite = null;
 
         $buf = preg_replace('/[\r\n]+/', PHP_EOL, $buf);
-        $buf = explode(PHP_EOL, $buf == null ? "" : $buf);
+        $buf = explode(PHP_EOL, $buf ?? '');
 
-        for ($i = 0, $len = \count($buf); $i <= $len; ++$i) {
+        $len = count($buf);
+
+        for ($i = 0; $i <= $len; ++$i) {
             if ($canWrite) {
                 $this->write($section, $lineNum, $buffer);
                 $canWrite = false;
             }
 
             ++$lineNum;
-            $line = isset($buf[$i]) ? $buf[$i] : '';
-            if ($i == \count($buf)) {
+            $line = $buf[$i] ?? '';
+            if ($i == $len) {
                 if (\strlen($buffer) > 0) {
                     $this->write($section, $lineNum, $buffer);
                 }
@@ -132,9 +134,10 @@ final class Config implements ConfigContract
 
             if ('' == $line || self::DEFAULT_COMMENT == substr($line, 0, 1) || self::DEFAULT_COMMENT_SEM == substr($line, 0, 1)) {
                 $canWrite = true;
-
                 continue;
-            } elseif ('[' == substr($line, 0, 1) && ']' == substr($line, -1)) {
+            }
+
+            if (str_starts_with($line, '[') && str_ends_with($line, ']')) {
                 if (\strlen($buffer) > 0) {
                     $this->write($section, $lineNum, $buffer);
                     $canWrite = false;
@@ -170,7 +173,7 @@ final class Config implements ConfigContract
 
         $optionVal = explode('=', $b, 2);
 
-        if (2 != \count($optionVal)) {
+        if (2 != count($optionVal)) {
             throw new CasbinException(sprintf('parse the content error : line %d , %s = ?', $lineNum, current($optionVal)));
         }
 
@@ -229,7 +232,7 @@ final class Config implements ConfigContract
         $section = '';
 
         $keys = explode('::', strtolower($key));
-        if (\count($keys) >= 2) {
+        if (count($keys) >= 2) {
             $section = $keys[0];
             $option = $keys[1];
         } else {
@@ -248,7 +251,7 @@ final class Config implements ConfigContract
     public function get(string $key): string
     {
         $keys = explode('::', $key);
-        if (\count($keys) >= 2) {
+        if (count($keys) >= 2) {
             $section = $keys[0];
             $option = $keys[1];
         } else {
@@ -256,6 +259,6 @@ final class Config implements ConfigContract
             $option = $keys[0];
         }
 
-        return isset($this->data[$section][$option]) ? $this->data[$section][$option] : '';
+        return $this->data[$section][$option] ?? '';
     }
 }

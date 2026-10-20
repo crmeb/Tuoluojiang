@@ -36,6 +36,18 @@ class CloudAuth extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'user_id'    => 'integer',
+        'folder_id'  => 'integer',
+        'create'     => 'integer',
+        'read'       => 'integer',
+        'update'     => 'integer',
+        'download'   => 'integer',
+        'delete'     => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     public function scopeFolderId($query, $value)
     {
         is_array($value) ? $query->whereIn('folder_id', $value) : $query->where('folder_id', $value);

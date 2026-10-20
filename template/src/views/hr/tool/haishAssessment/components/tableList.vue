@@ -13,10 +13,10 @@
       ></oaFromBox>
 
       <div class="table-box mt10">
-        <el-table :data="tableData" :height="tableHeight" style="width: 100%">
+        <el-table :data="tableData" :height="TABLE_HEIGHT" style="width: 100%">
           <el-table-column prop="name" label="评估表名称" width="180"> </el-table-column>
           <el-table-column prop="position" label="关联职位" width="180">
-            <template slot-scope="scope">
+            <template #default="scope">
               <span v-for="(item, index) in scope.row.positions" :key="index">{{ item.name }},</span>
             </template>
           </el-table-column>
@@ -24,12 +24,12 @@
           <el-table-column prop="created_at" label="创建时间"> </el-table-column>
           <el-table-column prop="updated_at" label="更新时间"> </el-table-column>
           <el-table-column label="操作" width="180" fixed="right">
-            <template slot-scope="scope">
-              <el-button type="text" @click="editFn(scope.row)" v-hasPermi="['hr:training:haishAssessment:edit']"
+            <template #default="scope">
+              <el-button type="primary" link @click="editFn(scope.row)" v-hasPermi="['hr:training:haishAssessment:edit']"
                 >编辑</el-button
               >
 
-              <el-button type="text" @click="deleteFn(scope.row)" v-hasPermi="['hr:training:haishAssessment:delete']"
+              <el-button type="primary" link @click="deleteFn(scope.row)" v-hasPermi="['hr:training:haishAssessment:delete']"
                 >删除</el-button
               >
             </template>
@@ -52,13 +52,17 @@
 </template>
 
 <script>
-import { getHayGroupListApi, deleteHayGroupApi } from '@/api/config.js'
+import { modalSure } from '@/libs/public.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { getHayGroupListApi, deleteHayGroupApi } from '@/api/config.ts'
 import oaFromBox from '@/components/common/oaFromBox'
 export default {
+  emits: ['addType', 'editType'],
   name: 'CrmebOaEntTabelList',
   components: { oaFromBox },
   data() {
     return {
+      TABLE_HEIGHT,
       total: 0,
       where: {
         page: 1,
@@ -87,7 +91,7 @@ export default {
     },
 
     deleteFn(val) {
-      this.$modalSure('你确定要删除这条数据吗').then(() => {
+      modalSure('你确定要删除这条数据吗').then(() => {
         deleteHayGroupApi(val.id).then((res) => {
           let totalPage = Math.ceil((this.total - 1) / this.where.limit)
           let currentPage = this.where.page > totalPage ? totalPage : this.where.page

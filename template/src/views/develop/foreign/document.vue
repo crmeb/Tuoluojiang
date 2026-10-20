@@ -24,7 +24,7 @@
                 <el-table-column prop="form_type" label="字段类型"> </el-table-column>
                 <!-- <el-table-column prop="default" label="默认值"> </el-table-column> -->
                 <el-table-column prop="is_must" label="必填">
-                  <template slot-scope="scope">
+                  <template #default="scope">
                     {{ scope.row.is_must ? '是' : '否' }}
                   </template>
                 </el-table-column>
@@ -39,7 +39,7 @@
                 <el-table-column prop="name" label="字段名称"> </el-table-column>
                 <el-table-column prop="form_type" label="字段类型"> </el-table-column>
                 <el-table-column prop="is_must" label="必填">
-                  <template slot-scope="scope">
+                  <template #default="scope">
                     {{ scope.row.is_must ? '是' : '否' }}
                   </template>
                 </el-table-column>
@@ -52,7 +52,7 @@
                 <el-table-column prop="form_type" label="字段类型"> </el-table-column>
                 <!-- <el-table-column prop="default" label="默认值"> </el-table-column> -->
                 <el-table-column prop="is_must" label="必填">
-                  <template slot-scope="scope">
+                  <template #default="scope">
                     {{ scope.row.is_must ? '是' : '否' }}
                   </template>
                 </el-table-column>
@@ -65,7 +65,7 @@
                 <el-table-column prop="form_type" label="字段类型"> </el-table-column>
 
                 <el-table-column prop="is_must" label="必填">
-                  <template slot-scope="scope">
+                  <template #default="scope">
                     {{ scope.row.is_must ? '是' : '否' }}
                   </template>
                 </el-table-column>
@@ -92,7 +92,7 @@
           <div class="mt30">
             <div class="name">5.请求数据示例</div>
             <div class="mt10">
-              <json-viewer :value="jsonData.request_json" :expand-depth="8" copyable></json-viewer>
+              <json-viewer :value="jsonData.request_json ?? {}" :expand-depth="8" copyable></json-viewer>
             </div>
           </div>
           <div class="mt30">
@@ -100,7 +100,7 @@
             <div class="mt10">
               <json-viewer
                 style="height: 300px; width: 100%"
-                :value="jsonData.response_json"
+                :value="jsonData.response_json ?? {}"
                 :expand-depth="8"
                 copyable
               ></json-viewer>
@@ -112,12 +112,14 @@
   </div>
 </template>
 <script>
-import { getDocsApi } from '@/api/develop'
-import JsonViewer from 'vue-json-viewer'
+import { defineAsyncComponent } from 'vue'
+import { getDocsApi } from '@/api/develop.ts'
+import JsonViewer from '@/components/common/jsonViewer.ts'
+import { writeClipboard } from '@/utils/clipboard'
 export default {
   name: '',
   components: {
-    tree: () => import('./components/tree'),
+    tree: defineAsyncComponent(() => import('./components/tree')),
     JsonViewer
   },
   props: {},
@@ -172,8 +174,9 @@ export default {
       }
     },
     copy(val) {
-      clipboard.writeText(val)
-      this.$message.success('复制成功')
+      writeClipboard(val).then((isOk) => {
+        isOk ? this.$message.success('复制成功') : this.$message.error('复制失败')
+      })
     },
     async getData() {
       const res = await getDocsApi()
@@ -206,10 +209,10 @@ export default {
     font-size: 14px;
   }
 }
-/deep/ .el-table .warning-row {
+:deep(.el-table .warning-row) {
   display: none;
 }
-/deep/.jv-container.jv-light {
+:deep(.jv-container.jv-light) {
   background: #eeeeee;
 }
 </style>

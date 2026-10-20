@@ -14,10 +14,10 @@
       ></oaFromBox>
 
       <div class="table-box mt10">
-        <el-table :data="tableData" :height="tableHeight" style="width: 100%">
+        <el-table :data="tableData" :height="TABLE_HEIGHT" style="width: 100%">
           <el-table-column prop="name" label="班次名称" width="200"> </el-table-column>
           <el-table-column prop="position" label="考勤时间" width="340">
-            <template slot-scope="scope">
+            <template #default="scope">
               {{ scope.row.times[0].first_day_after == 0 ? '当日' : '次日' }} {{ scope.row.times[0].work_hours }} -
               {{ scope.row.times[0].second_day_after == 0 ? '当日' : '次日' }}{{ scope.row.times[0].off_hours }}
               <span v-if="scope.row.times.length > 1"
@@ -28,22 +28,22 @@
             </template>
           </el-table-column>
           <el-table-column prop="card.name" label="创建人">
-            <template slot-scope="scope">{{ scope.row.card ? scope.row.card.name : '--' }}</template>
+            <template #default="scope">{{ scope.row.card ? scope.row.card.name : '--' }}</template>
           </el-table-column>
           <el-table-column prop="created_at" label="创建时间"> </el-table-column>
           <el-table-column prop="updated_at" label="最后更新时间"> </el-table-column>
           <el-table-column label="操作" width="180" fixed="right">
-            <template slot-scope="scope">
-              <el-button type="text" @click="checkFn(scope.row)" v-hasPermi="['hr:attendance:shift:check']"
+            <template #default="scope">
+              <el-button type="primary" link @click="checkFn(scope.row)" v-hasPermi="['hr:attendance:shift:check']"
                 >查看</el-button
               >
 
-              <el-button type="text" @click="editFn(scope.row)" v-hasPermi="['hr:attendance:shift:edit']"
+              <el-button type="primary" link @click="editFn(scope.row)" v-hasPermi="['hr:attendance:shift:edit']"
                 >编辑</el-button
               >
 
               <el-button
-                type="text"
+                type="primary" link
                 v-if="scope.row.id !== 2"
                 @click="deleteFn(scope.row)"
                 v-hasPermi="['hr:attendance:shift:delete']"
@@ -71,12 +71,16 @@
 </template>
 
 <script>
-import { attendanceShiftListApi, deleteShiftListApi } from '@/api/config'
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { attendanceShiftListApi, deleteShiftListApi } from '@/api/config.ts'
 import oaFromBox from '@/components/common/oaFromBox'
 export default {
-  components: { addShift: () => import('./components/addShift'), oaFromBox },
+  components: { addShift: defineAsyncComponent(() => import('./components/addShift')), oaFromBox },
   data() {
     return {
+      TABLE_HEIGHT,
       type: 'add',
       total: 0,
       where: {
@@ -120,7 +124,7 @@ export default {
     },
 
     deleteFn(val) {
-      this.$modalSure('你确定要删除这条数据吗').then(() => {
+      modalSure('你确定要删除这条数据吗').then(() => {
         deleteShiftListApi(val.id).then((res) => {
           this.getList()
         })

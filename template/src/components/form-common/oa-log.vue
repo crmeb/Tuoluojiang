@@ -4,15 +4,18 @@
     <!-- 任务操作日志 -->
     <el-table v-if="!type" :data="list" style="width: 100%" :row-class-name="iconHadler">
       <el-table-column prop="desc">
-        <template slot-scope="scope">
+        <template #default="scope">
           【{{ scope.row.action_type == 1 ? '创建' : '编辑' }}】{{ scope.row.operator }}
           <span style="max-width: 550px" v-html="scope.row.title" @click="previewPicture($event)"></span>
           <span class="created-time">{{ scope.row.created_at }}</span>
         </template>
       </el-table-column>
       <el-table-column type="expand">
-        <template slot-scope="scope">
-          <div class="flex expand-describe">
+        <template #default="scope">
+          <div
+            class="flex expand-describe"
+            v-if="scope.row.describe[0].value != '空' && scope.row.describe[1].value != '空'"
+          >
             <div class="flex expand-left">
               <span>{{ scope.row.describe[0].title }}</span>
               <p v-html="scope.row.describe[0].value"></p>
@@ -29,7 +32,7 @@
     <!-- 低代码操作日志 -->
     <el-table v-else :data="list" style="width: 100%" :row-class-name="iconShow" class="tableBox">
       <el-table-column prop="desc">
-        <template slot-scope="scope">
+        <template #default="scope">
           <div v-if="!formValueType.includes(scope.row.form_value)" class="flex align-center">
             <span class="name-text"> 【{{ getLogType(scope.row.log_type) }}】{{ scope.row.user.name }}</span>
 
@@ -78,7 +81,7 @@
         </template>
       </el-table-column>
       <el-table-column type="expand">
-        <template slot-scope="scope">
+        <template #default="scope">
           <div class="flex expand-describe">
             <div class="flex expand-left">
               <span class="modify-text">修改前：</span>
@@ -86,7 +89,12 @@
               <!-- 图片 -->
               <template v-if="scope.row.form_value == 'image'">
                 <div class="flex" v-for="(item, index) in scope.row.before_value">
-                  <img :src="item.url" alt="" class="img" @click="filePreview(item)" />
+                  <img
+                    :src="item.url"
+                    alt=""
+                    class="img"
+                    @click="filePreview(item, { list: scope.row.before_value })"
+                  />
                 </div>
               </template>
               <div
@@ -98,7 +106,7 @@
                 <oaUploadList :fileList="scope.row.before_value"></oaUploadList>
               </div>
               <div v-else-if="scope.row.form_value === 'tag'">
-                <el-tag size="small" class="mb5" v-for="(val, index) in scope.row.before_value" :key="index">
+                <el-tag class="mb5" v-for="(val, index) in scope.row.before_value" :key="index">
                   {{ val }}
                 </el-tag>
               </div>
@@ -109,7 +117,12 @@
               <span class="modify-text">修改后：</span>
               <template v-if="scope.row.form_value == 'image'">
                 <div class="flex" v-for="(item, index) in scope.row.after_value">
-                  <img :src="item.url" alt="" class="img" @click="filePreview(item)" />
+                  <img
+                    :src="item.url"
+                    alt=""
+                    class="img"
+                    @click="filePreview(item, { list: scope.row.after_value })"
+                  />
                 </div>
               </template>
               <div
@@ -121,7 +134,7 @@
                 <oaUploadList :fileList="scope.row.after_value"></oaUploadList>
               </div>
               <div v-else-if="scope.row.form_value === 'tag'">
-                <el-tag size="small" class="mb5" v-for="(val, index) in scope.row.after_value" :key="index">
+                <el-tag class="mb5" v-for="(val, index) in scope.row.after_value" :key="index">
                   {{ val }}
                 </el-tag>
               </div>
@@ -131,16 +144,14 @@
         </template>
       </el-table-column>
     </el-table>
-
-    <!-- 打开文件 -->
-    <fileDialog ref="viewFile"></fileDialog>
   </div>
 </template>
 <script>
 import oaUploadList from '@/components/form-common/oa-uploadList'
+import { filePreview } from '@/utils/filePreview.ts'
 export default {
   name: '',
-  components: { oaUploadList, fileDialog: () => import('@/components/openFile/previewDialog ') },
+  components: { oaUploadList },
   props: {
     list: {
       type: Array,
@@ -162,6 +173,7 @@ export default {
   },
 
   methods: {
+    filePreview,
     iconHadler({ row }) {
       if (row.describe || row.describe.length == 0) {
         return 'icon-no'
@@ -213,10 +225,10 @@ export default {
 }
 </script>
 <style scoped lang="scss">
-/deep/.icon-no .el-table__expand-icon {
+:deep(.icon-no .el-table__expand-icon) {
   display: none;
 }
-/deep/.el-table__header-wrapper {
+:deep(.el-table__header-wrapper) {
   display: none;
 }
 .align-center {
@@ -259,20 +271,20 @@ export default {
   .expand-left {
     width: 50%;
     align-items: flex-start;
-    /deep/ table {
+    :deep(table) {
       border: 1px solid #ccc;
     }
 
-    /deep/ table th {
+    :deep(table th) {
       border: 1px solid #ccc;
     }
-    /deep/ table td {
+    :deep(table td) {
       padding: 10px 5px;
       border: 1px solid #ccc;
     }
   }
   .rich_text {
-    /deep/ p {
+    :deep(p) {
       img {
         width: 90%;
       }
@@ -282,14 +294,14 @@ export default {
     width: 50%;
     margin-left: 20px;
     align-items: flex-start;
-    /deep/ table {
+    :deep(table) {
       border: 1px solid #ccc;
     }
 
-    /deep/ table th {
+    :deep(table th) {
       border: 1px solid #ccc;
     }
-    /deep/ table td {
+    :deep(table td) {
       padding: 10px 5px;
       border: 1px solid #ccc;
     }
@@ -304,7 +316,7 @@ export default {
     line-height: 16px;
     margin-right: 36px;
     margin-bottom: 0;
-    /deep/p {
+    :deep(p) {
       font-size: 14px;
       margin: 0;
     }
@@ -328,7 +340,7 @@ export default {
   margin-right: 6px;
 }
 .tableBox {
-  /deep/ .el-table td.el-table__cell div {
+  :deep(.el-table td.el-table__cell div) {
     display: flex;
     align-items: center;
   }

@@ -17,9 +17,9 @@ namespace App\Http\Service\Other;
 
 use App\Constants\CacheEnum;
 use App\Http\Service\Config\SystemStorageService;
-use crmeb\exceptions\UploadException;
-use crmeb\services\upload\Upload;
-use crmeb\utils\DownloadImage;
+use Tuoluojiang\Open\exceptions\UploadException;
+use Tuoluojiang\Open\services\upload\Upload;
+use Tuoluojiang\Open\utils\DownloadImage;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -28,9 +28,19 @@ use Illuminate\Support\Facades\Cache;
 class UploadService
 {
     /**
-     * @var array
+     * 上传驱动实例缓存（按 type 复用）.
+     *
+     * @var array<string, Upload>
      */
     protected static $upload = [];
+
+    /**
+     * 清空静态上传实例缓存，供 Swoole 请求间隙释放驱动持有的缓冲.
+     */
+    public static function resetUploadCache(): void
+    {
+        self::$upload = [];
+    }
 
     /**
      * @param null $type
@@ -40,9 +50,6 @@ class UploadService
     {
         if (is_null($type)) {
             $type = (int) sys_config('upload_type', 1);
-        }
-        if (isset(self::$upload['upload_' . $type])) {
-            return self::$upload['upload_' . $type];
         }
         $type   = (int) $type;
         $config = [];
@@ -75,8 +82,9 @@ class UploadService
                 break;
             case 6:// 华为云
                 $config = [
-                    'accessKey' => sys_config('hw_accessKey'),
-                    'secretKey' => sys_config('hw_secretKey'),
+                    'accessKey'     => sys_config('hw_accessKey'),
+                    'secretKey'     => sys_config('hw_secretKey'),
+                    'storageRegion' => sys_config('hw_storage_region'),
                 ];
                 break;
             case 7:// 天翼云
@@ -146,7 +154,7 @@ class UploadService
         if ($is_remote_down) {
             try {
                 /** @var DownloadImage $down */
-                $down     = app()->make(DownloadImage::class);
+                $down     = app()->get(DownloadImage::class);
                 $data     = $down->path('thumb_water')->downloadImage($filePath);
                 $filePath = $data['path'] ?? '';
             } catch (\Throwable $e) {

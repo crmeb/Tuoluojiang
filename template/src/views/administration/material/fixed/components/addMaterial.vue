@@ -3,13 +3,13 @@
   <div class="station">
     <el-drawer
       :title="formData.title"
-      :visible.sync="drawer"
+      v-model="drawer"
       :direction="direction"
       :modal="true"
       :before-close="handleClose"
       :append-to-body="true"
       :size="formData.width"
-      :wrapperClosable="false"
+      :close-on-click-modal="false"
     >
       <div class="invoice">
         <el-form ref="form" :model="rules" label-width="100px" :rules="rule">
@@ -19,12 +19,13 @@
           <div class="form-box">
             <div class="form-item">
               <el-form-item prop="name">
-                <span slot="label">物资名称:</span>
+                <template #label>
+                  <span>物资名称:</span>
+                </template>
                 <el-select
                   v-model="rules.name"
                   v-if="!formData.edit"
                   allow-create
-                  size="small"
                   filterable
                   clearable
                   placeholder="请选择(输入)物资名称"
@@ -38,16 +39,17 @@
                     :value="index"
                   />
                 </el-select>
-                <el-input v-else v-model="rules.name" clearable size="small" placeholder="请输入物资名称" />
+                <el-input v-else v-model="rules.name" clearable placeholder="请输入物资名称" />
               </el-form-item>
             </div>
             <div class="form-item">
               <el-form-item prop="cid">
-                <span slot="label">物资分类:</span>
+                <template #label>
+                  <span>物资分类:</span>
+                </template>
                 <el-cascader
                   v-model="rules.cid"
                   :options="formData.treeData"
-                  size="small"
                   placeholder="请选择物资分类"
                   :props="{ checkStrictly: true }"
                   clearable
@@ -56,24 +58,26 @@
             </div>
             <div class="form-item overflow">
               <el-form-item>
-                <span slot="label">规格型号:</span>
+                <template #label>
+                  <span>物资型号:</span>
+                </template>
                 <el-input
                   v-model="rules.units"
                   clearable
-                  size="small"
                   :maxlength="20"
                   show-word-limit
-                  placeholder="请输入规格型号"
+                  placeholder="请输入物资型号"
                 />
               </el-form-item>
             </div>
             <div class="form-item">
               <el-form-item prop="amount">
-                <span slot="label">计量单位:</span>
+                <template #label>
+                  <span>计量单位:</span>
+                </template>
                 <el-input
                   v-model="rules.specs"
                   clearable
-                  size="small"
                   :maxlength="8"
                   show-word-limit
                   placeholder="请输入计量单位"
@@ -82,40 +86,44 @@
             </div>
             <div class="form-item" v-if="this.formData.edit && formData.type === 1" style="width: 100%">
               <el-form-item prop="price">
-                <span slot="label">单价(元):</span>
+                <template #label>
+                  <span>单价(元):</span>
+                </template>
                 <el-input-number
                   v-model="rules.price"
                   :controls="false"
                   :min="0"
                   :precision="2"
-                  size="small"
                   placeholder="请输入单价"
                 ></el-input-number>
               </el-form-item>
             </div>
             <div class="form-item" style="width: 100%">
               <el-form-item>
-                <span slot="label">生产厂家:</span>
+                <template #label>
+                  <span>生产厂家:</span>
+                </template>
                 <el-input
                   v-model="rules.factory"
                   :maxlength="50"
                   show-word-limit
                   clearable
-                  size="small"
                   placeholder="请输入生产厂家"
                 />
               </el-form-item>
             </div>
             <div class="form-item" style="width: 100%">
               <el-form-item>
-                <span slot="label">{{ $t('public.remarks') }}:</span>
+                <template #label>
+                  <span>备注:</span>
+                </template>
                 <el-input
                   type="textarea"
                   maxlength="200"
                   show-word-limit
                   :rows="3"
                   v-model.trim="rules.mark"
-                  :placeholder="$t('customer.placeholder18')"
+                  placeholder="请填写备注信息"
                 />
               </el-form-item>
             </div>
@@ -128,41 +136,45 @@
             <div class="form-box">
               <div class="form-item">
                 <el-form-item prop="number">
-                  <span slot="label">入库数量:</span>
+                  <template #label>
+                    <span>入库数量:</span>
+                  </template>
                   <el-input-number
                     v-model="rules.number"
                     :controls="false"
                     :min="0"
                     :max="1000"
                     :precision="0"
-                    size="small"
                     placeholder="请输入入库数量"
                   ></el-input-number>
                 </el-form-item>
               </div>
               <div class="form-item">
                 <el-form-item prop="price">
-                  <span slot="label">单价(元):</span>
+                  <template #label>
+                    <span>单价(元):</span>
+                  </template>
                   <el-input-number
                     v-model="rules.price"
                     :controls="false"
                     :min="0"
                     :precision="2"
-                    size="small"
                     placeholder="请输入单价"
                   ></el-input-number>
                 </el-form-item>
               </div>
               <div class="form-item" style="width: 100%">
                 <el-form-item>
-                  <span slot="label">入库说明:</span>
+                  <template #label>
+                    <span>入库说明:</span>
+                  </template>
                   <el-input
                     type="textarea"
                     maxlength="200"
                     show-word-limit
                     :rows="3"
                     v-model.trim="rules.remark"
-                    :placeholder="$t('customer.placeholder18')"
+                    placeholder="请填写备注信息"
                   />
                 </el-form-item>
               </div>
@@ -170,9 +182,9 @@
           </template>
         </el-form>
         <div class="button from-foot-btn fix btn-shadow">
-          <el-button @click="handleClose" size="small">{{ $t('public.cancel') }}</el-button>
-          <el-button :loading="loading" size="small" type="primary" @click="handleConfirm('ruleForm')">
-            {{ $t('public.ok') }}
+          <el-button @click="handleClose">取消</el-button>
+          <el-button :loading="loading" type="primary" @click="handleConfirm('ruleForm')">
+            确定
           </el-button>
         </div>
       </div>
@@ -181,9 +193,10 @@
 </template>
 
 <script>
-import { storageListSaveApi } from '@/api/administration'
+import { storageListSaveApi } from '@/api/administration.ts'
 
 export default {
+  emits: ['isOk'],
   name: 'AddMaterial',
   props: {
     formData: {
@@ -231,11 +244,6 @@ export default {
         number: [{ required: true, validator: checkNumber, trigger: 'blur' }],
         price: [{ required: true, validator: checkPrice, trigger: 'blur' }]
       }
-    }
-  },
-  computed: {
-    lang: function () {
-      return this.$store.getters.lang
     }
   },
   watch: {
@@ -379,14 +387,17 @@ export default {
     countriesSelect() {
       this.$nextTick(() => {
         const countriesSelect = document.querySelector('.countries-select input')
-        countriesSelect.addEventListener('input', (val) => {
-          let unm = countriesSelect.value.length
-          let max = 20
-          if (unm > max) {
-            countriesSelect.value = countriesSelect.value.substring(0, max)
-            this.$message.error('最多可以输入' + max + '字符')
+        if (countriesSelect) {
+          this.handleCountriesInput = () => {
+            let unm = countriesSelect.value.length
+            let max = 20
+            if (unm > max) {
+              countriesSelect.value = countriesSelect.value.substring(0, max)
+              this.$message.error('最多可以输入' + max + '字符')
+            }
           }
-        })
+          countriesSelect.addEventListener('input', this.handleCountriesInput)
+        }
       })
     },
     getJudgeInfo() {
@@ -396,18 +407,21 @@ export default {
       let factoryStatus = data.factory === '' || (data.factory !== '' && this.rules.factory === data.factory)
       return unitsStatus && specsStatus && factoryStatus
     }
+  },
+  beforeUnmount() {
+    const countriesSelect = document.querySelector('.countries-select input')
+    if (countriesSelect && this.handleCountriesInput) {
+      countriesSelect.removeEventListener('input', this.handleCountriesInput)
+    }
   }
 }
 </script>
 
 <style lang="scss" scoped>
-.station /deep/.el-drawer__body {
-  padding: 20px 20px 50px 20px;
-}
-/deep/ .el-form--inline .el-form-item {
+:deep(.el-form--inline .el-form-item) {
   display: flex;
 }
-/deep/ .el-input-number {
+:deep(.el-input-number) {
   width: 100%;
   .el-input__inner {
     text-align: left;
@@ -415,13 +429,13 @@ export default {
 }
 
 .overflow {
-  /deep/ .el-input--suffix .el-input__inner {
+  :deep(.el-input--suffix .el-input__inner) {
     padding-right: 62px;
   }
 }
-/deep/ .el-date-editor,
-/deep/ .el-select,
-/deep/ .el-cascader {
+:deep(.el-date-editor),
+:deep(.el-select),
+:deep(.el-cascader) {
   width: 100%;
 }
 .invoice {
@@ -432,7 +446,7 @@ export default {
   }
 }
 .from-item-title {
-  border-left: 5px solid #1890ff;
+  border-left: 3px solid #1890ff;
   span {
     padding-left: 10px;
     font-weight: bold;
@@ -445,13 +459,13 @@ export default {
   justify-content: space-between;
   .form-item {
     width: 49%;
-    /deep/ .el-form-item__content {
+    :deep(.el-form-item__content) {
       width: calc(100% - 110px);
     }
-    /deep/ .el-select--medium {
+    :deep(.el-select) {
       width: 100%;
     }
-    /deep/ .el-textarea__inner {
+    :deep(.el-textarea__inner) {
       resize: none;
     }
   }
@@ -461,7 +475,7 @@ export default {
   border-top: 1px solid #e6ebf5;
   text-align: right;
 }
-/deep/ .countries-select .el-input__suffix {
+:deep(.countries-select .el-input__suffix) {
   position: absolute;
   top: -2px;
 }

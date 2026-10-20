@@ -2,7 +2,7 @@
   <div>
     <el-dialog
       :title="repeatData.title"
-      :visible.sync="dialogVisible"
+      v-model="dialogVisible"
       :width="repeatData.width"
       :before-close="handleClose"
     >
@@ -15,34 +15,35 @@
         </el-row>
         <p>待办内容：{{ repeatData.data.content }}</p>
         <p v-if="['client_renew', 'client_track', 'client_return'].includes(repeatData.data.types)">
-          <span>{{ repeatData.data.types === 'client_track' ? '客户名称' : '合同名称' }}：</span>
+          <span>{{ repeatData.data.types === 'client_track' ? '客户名称' : '订单名称' }}：</span>
           <span @click="toRouterLink()" class="default-color pointer">{{ repeatData.data.title }}</span>
         </p>
         <p v-if="repeatData.data.types === 'personal'">待办备注：{{ repeatData.data.mark }}</p>
       </div>
-      <div slot="footer" class="dialog-footer" v-if="repeatData.data !== undefined">
-        <el-button
-          size="small"
-          @click="handleEdit"
-          v-if="repeatData.data.types === 'personal' || repeatData.data.types === 'report_renew'"
-          >{{ $t('public.edit') }}</el-button
-        >
-        <el-button
-          size="small"
-          v-if="(!deleteBtn && repeatData.data.types === 'personal') || repeatData.data.types === 'report_renew'"
-          type="primary"
-          @click="handleConfirm"
-          >{{ $t('public.delete') }}</el-button
-        >
-        <el-button size="small" v-if="deleteBtn" type="primary" @click="handleOk">{{ $t('login.ok') }}</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer" v-if="repeatData.data !== undefined">
+          <el-button
+            @click="handleEdit"
+            v-if="repeatData.data.types === 'personal' || repeatData.data.types === 'report_renew'"
+            >编辑</el-button
+          >
+          <el-button
+            v-if="(!deleteBtn && repeatData.data.types === 'personal') || repeatData.data.types === 'report_renew'"
+            type="primary"
+            @click="handleConfirm"
+            >删除</el-button
+          >
+          <el-button v-if="deleteBtn" type="primary" @click="handleOk">完成</el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>
 <script>
-import { roterPre } from '@/settings'
-import { dealtScheduleDeleteApi, dealtScheduleTypesApi } from '@/api/user'
+import { roterPre } from '@/settings.ts'
+import { dealtScheduleDeleteApi, dealtScheduleTypesApi } from '@/api/user.ts'
 export default {
+  emits: ['handleRepeatData'],
   name: 'CheckDialog',
   props: {
     repeatData: {

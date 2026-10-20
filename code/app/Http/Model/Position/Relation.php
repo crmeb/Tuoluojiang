@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -43,6 +43,17 @@ class Relation extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'       => 'integer',
+        'value'       => 'integer',
+        'entid'    => 'integer',
+        'level_id' => 'integer',
+        'cate_id'  => 'integer',
+        'rank_id'  => 'integer',
+        'number'   => 'integer',
+        'status'   => 'integer',
+    ];
+
     /**
      * 一对一关联职级.
      * @return HasOne
@@ -63,8 +74,6 @@ class Relation extends BaseModel
 
     /**
      * level_id作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeLevelId($query, $value)
     {
@@ -77,8 +86,6 @@ class Relation extends BaseModel
 
     /**
      * cate_id作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeCateId($query, $value)
     {
@@ -89,8 +96,6 @@ class Relation extends BaseModel
 
     /**
      * rank_id作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeRankId($query, $value)
     {
@@ -101,8 +106,6 @@ class Relation extends BaseModel
 
     /**
      * ent_id作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeEntid($query, $value)
     {

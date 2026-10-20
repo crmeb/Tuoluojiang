@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,13 +17,13 @@ namespace App\Http\Model\Storage;
 
 use App\Constants\CacheEnum;
 use App\Http\Model\Admin\Admin;
-use App\Http\Model\BaseModel;
 use App\Http\Model\Frame\Frame;
 use App\Http\Service\Admin\AdminService;
 use App\Http\Service\Frame\FrameService;
 use App\Http\Service\Storage\StorageService;
-use crmeb\exceptions\ApiException;
-use crmeb\traits\model\TimeDataTrait;
+use App\Http\Model\BaseModel;
+use Tuoluojiang\Open\exceptions\ApiException;
+use Tuoluojiang\Open\traits\model\TimeDataTrait;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -40,6 +40,25 @@ class StorageRecord extends BaseModel
     use TimeDataTrait;
 
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'           => 'integer',
+        'user_id'      => 'integer',
+        'operator'     => 'integer',
+        'storage_id'   => 'integer',
+        'storage_type' => 'integer',
+        'entid'        => 'integer',
+        'card_id'      => 'integer',
+        'frame_id'     => 'integer',
+        'price'        => 'decimal:2',
+        'total'        => 'decimal:2',
+        'num'          => 'integer',
+        'types'        => 'integer',
+        'status'       => 'integer',
+        'created_at'   => 'datetime:Y-m-d H:i:s',
+        'updated_at'   => 'datetime:Y-m-d H:i:s',
+        'deleted_at'   => 'datetime:Y-m-d H:i:s',
+    ];
 
     protected $table = 'storage_record';
 
@@ -194,7 +213,7 @@ class StorageRecord extends BaseModel
                         if ($data->frame_id) {
                             $name = app()->get(FrameService::class)->value($data->frame_id, 'name');
                         }
-                        $remark = '领用对象：' . $name . '、领用时间：' . now()->toDateString();
+                        $remark = '领用对象：' . $name . '，领用时间：' . now()->toDateString();
                         $services->update($data->storage_id, ['status' => 1, 'remark' => $remark]);
                     } else {
                         if ($storage['stock'] < $data->num) {

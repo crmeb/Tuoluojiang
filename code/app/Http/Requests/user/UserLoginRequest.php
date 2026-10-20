@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,7 +16,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\user;
 
 use App\Http\Requests\ApiValidate;
-use crmeb\utils\Regex;
+use Tuoluojiang\Open\utils\Regex;
 
 /**
  * Class UserLoginRequest.
@@ -25,14 +25,15 @@ class UserLoginRequest extends ApiValidate
 {
     /**
      * 场景.
-     * @var \string[][]
+     * @var string[][]
      */
     protected $scene = [
-        'login'          => ['account', 'password', 'captcha'],
-        'phoneLogin'     => ['phone', 'verification_code'],
-        'updatePassword' => ['phone', 'password', 'password_confirm'],
-        'phone'          => ['phone'],
-        'registerUser'   => ['phone', 'verification_code', 'password', 'password_confirm'],
+        'login'                => ['account', 'password', 'captcha'],
+        'phoneLogin'           => ['phone', 'verification_code'],
+        'updatePassword'       => ['phone', 'password', 'password_confirm'],
+        'commonUpdatePassword' => ['phone', 'password', 'verification_code'],
+        'phone'                => ['phone'],
+        'registerUser'         => ['phone', 'verification_code', 'password', 'password_confirm'],
     ];
 
     /**
@@ -75,7 +76,7 @@ class UserLoginRequest extends ApiValidate
             'password.regex'                        => '输入的密码不符合规则,请输入' . get_password_message() . '的密码组合',
             'password_confirm.required'             => '确认密码必须填写',
             'password_confirm.regex'                => '确认密码不符合规则,请输入' . get_password_message() . '的密码组合',
-            'password_confirm.password_confirm_api' => '两次输入的密码不正确',
+            'password_confirm.password_confirm_api' => '两次输入的密码不一致',
             'captcha.required'                      => '验证码必须填写',
             'captcha.captcha_api'                   => '验证码不正确',
             'phone.size'                            => '手机号码超出限制最大11位',

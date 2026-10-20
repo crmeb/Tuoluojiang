@@ -5,7 +5,7 @@
     top="25vh"
     class="addBox"
     :append-to-body="true"
-    :visible.sync="dialogVisible"
+    v-model="dialogVisible"
     width="500px"
   >
     <div class="line" />
@@ -14,7 +14,7 @@
         <el-date-picker
           class="picker-time"
           type="datetime"
-          default-time="09:00:00"
+          :default-time="new Date(2000, 0, 1, 9, 0, 0)"
           v-model="form.time"
           placeholder="请选择日期"
         >
@@ -24,17 +24,19 @@
         <el-input type="textarea" maxlength="200" v-model="form.content" placeholder="请输入提醒内容"></el-input>
       </el-form-item>
       <div class="dialog-footer">
-        <el-button size="small" class="btn" @click="handleClose">取消</el-button>
-        <el-button size="small" type="primary" @click="handleConfirm" class="btn">确定</el-button>
+        <el-button class="btn" @click="handleClose">取消</el-button>
+        <el-button type="primary" @click="handleConfirm" class="btn">确定</el-button>
       </div>
     </el-form>
   </el-dialog>
 </template>
 
 <script>
-import { clientFollowEditApi, clientFollowSaveApi } from '@/api/enterprise'
+import dayjs from 'dayjs'
+import { clientFollowEditApi, clientFollowSaveApi } from '@/api/client.ts'
 export default {
   name: 'LiaisonDialog',
+  emits: ['change'],
   props: {
     config: {
       type: Object,
@@ -64,7 +66,7 @@ export default {
       handler(nVal) {
         if (nVal.isEdit) {
           this.form.content = nVal.data.content
-          this.form.time = this.$moment(nVal.data.time).format('YYYY-MM-DD HH:mm:ss')
+          this.form.time = dayjs(nVal.data.time).format('YYYY-MM-DD HH:mm:ss')
         }
       },
       deep: true
@@ -92,10 +94,11 @@ export default {
       this.$refs.form.validate((valid) => {
         if (valid) {
           let data = {
-            time: this.$moment(this.form.time).format('YYYY-MM-DD HH:mm:ss'),
+            time: dayjs(this.form.time).format('YYYY-MM-DD HH:mm:ss'),
             content: this.form.content,
             eid: this.config.eid,
-            types: 1
+            types: 1,
+            link_type: this.config.link_type
           }
 
           if (this.config.isEdit) {
@@ -140,20 +143,19 @@ export default {
   margin-top: 20px;
 }
 
-/deep/ .el-date-editor {
+:deep(.el-date-editor) {
   width: 100%;
 }
-/deep/ .el-textarea__inner {
+:deep(.el-textarea__inner) {
   resize: none;
-  border: 1px solid #dcdfe6 !important;
 }
-/deep/ .el-input-number--medium {
+:deep(.el-input-number) {
   width: 100%;
 }
-/deep/ .el-select--medium {
+:deep(.el-select) {
   width: 100%;
 }
-/deep/ .el-form-item:last-of-type {
+:deep(.el-form-item:last-of-type) {
   margin-bottom: 0;
 }
 .dialog-footer {

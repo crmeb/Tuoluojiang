@@ -7,28 +7,28 @@
       </div>
       <!-- 表格 -->
       <div class="table-box mt10">
-        <el-table :data="tableData" v-loading="loading" style="width: 100%" :height="tableHeight">
+        <el-table :data="tableData" v-loading="loading" style="width: 100%" :height="TABLE_HEIGHT">
           <el-table-column prop="card.name" label="姓名"> </el-table-column>
           <el-table-column prop="frame.name" label="部门"> </el-table-column>
           <el-table-column prop="group" label="考勤组">
-            <template slot-scope="{ row }">
+            <template #default="{ row }">
               {{ row.group || '--' }}
             </template>
           </el-table-column>
           <el-table-column prop="date" label="日期">
-            <template slot-scope="{ row }">
-              {{ $moment(row.created_at).format('YYYY-MM-DD') }}
+            <template #default="{ row }">
+              {{ dayjs(row.created_at).format('YYYY-MM-DD') }}
             </template>
           </el-table-column>
           <el-table-column prop="date" label="星期">
-            <template slot-scope="{ row }">
+            <template #default="{ row }">
               {{ getWeek(row.created_at) }}
             </template>
           </el-table-column>
           <el-table-column prop="created_at" label="打卡时间"> </el-table-column>
           <el-table-column prop="date" label="操作">
-            <template slot-scope="{ row }">
-              <el-button type="text" @click="openDetails(row)">查看</el-button>
+            <template #default="{ row }">
+              <el-button type="primary" link @click="openDetails(row)">查看</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -53,18 +53,25 @@
 </template>
 
 <script>
-import { clockRecordList } from '@/api/config'
-import { toGetWeek } from '@/utils/format'
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { clockRecordList } from '@/api/config.ts'
+import { toGetWeek } from '@/utils/format.ts'
 export default {
   name: 'CrmebOaEntDaily',
   components: {
-    formBox: () => import('./components/formBox'),
-    detailsDrawer: () => import('./components/detailsDrawer'),
-    exportExcel: () => import('@/components/common/exportExcel')
+    formBox: defineAsyncComponent(() => import('./components/formBox')),
+    detailsDrawer: defineAsyncComponent(() => import('./components/detailsDrawer')),
+    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel'))
   },
 
+  computed: {
+    dayjs: () => dayjs
+  },
   data() {
     return {
+      TABLE_HEIGHT,
       total: 0,
       loading: false,
       saveName: '人员打卡_记录_统计日期范围.xlsx',
@@ -75,7 +82,7 @@ export default {
         frame_id: '',
         group_id: '',
         user_id: [],
-        time: `${this.$moment().format('YYYY/MM/DD')}-${this.$moment().format('YYYY/MM/DD')}`
+        time: `${dayjs().format('YYYY/MM/DD')}-${dayjs().format('YYYY/MM/DD')}`
       },
       exportData: {
         data: [],
@@ -129,7 +136,7 @@ export default {
           item.card.name,
           item.frame.name,
           item.group,
-          this.$moment(item.created_at).format('YYYY-MM-DD'),
+          dayjs(item.created_at).format('YYYY-MM-DD'),
           this.getWeek(item.created_at),
           item.created_at
         ])
@@ -154,11 +161,11 @@ export default {
 .mb50 {
   margin-bottom: 50px;
 }
-/deep/ .el-table thead.is-group th {
+:deep(.el-table thead.is-group th) {
   background-color: rgba(247, 251, 255, 1);
-  border-color: #fff;
+  border-color: #f5f5f5;
 }
-/deep/ .el-table {
+:deep(.el-table) {
   border: none;
 }
 .box {

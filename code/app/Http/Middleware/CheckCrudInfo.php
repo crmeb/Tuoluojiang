@@ -16,8 +16,8 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Http\Service\Crud\SystemCrudService;
-use crmeb\interfaces\ApiMiddlewareInterface;
-use crmeb\traits\MiddlewareTrait;
+use Tuoluojiang\Open\interfaces\ApiMiddlewareInterface;
+use Tuoluojiang\Open\traits\MiddlewareTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Http\Request;
 
@@ -37,7 +37,7 @@ class CheckCrudInfo implements ApiMiddlewareInterface
     {
         $name = $request->route()->parameter('name');
         if ($name) {
-            $request->crudInfo = app()->make(SystemCrudService::class)->getCrudInfoCache($name);
+            $request->crudInfo = app()->get(SystemCrudService::class)->getCrudInfoCache($name);
         }
     }
 

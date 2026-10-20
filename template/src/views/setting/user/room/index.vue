@@ -1,7 +1,7 @@
 <template>
   <div class="room-content">
     <el-form ref="ruleForm" :model="ruleForm" class="form-box" label-width="140px">
-      <el-form-item :label="$t('setting.headportrait') + '：'" prop="business_license">
+      <el-form-item :label="'头像' + '：'" prop="business_license">
         <el-row class="upload-content">
           <el-col :span="8" class="left">
             <el-upload
@@ -31,58 +31,56 @@
           >
         </el-row>
       </el-form-item>
-      <el-form-item :label="$t('setting.name') + '：'" prop="enterprise_name">
-        <el-input v-model="ruleForm.name" :placeholder="$t('setting.title')" clearable size="small" />
+      <el-form-item :label="'姓名' + '：'" prop="enterprise_name">
+        <el-input v-model="ruleForm.name" placeholder="请填姓名" clearable />
       </el-form-item>
-      <el-form-item :label="$t('setting.userid') + '：'" prop="enterprise_name">
+      <el-form-item :label="'用户ID' + '：'" prop="enterprise_name">
         <div class="flex-item">
-          <el-input v-model="ruleForm.uid" :placeholder="$t('setting.useridtitle')" disabled size="small" />
-          <el-button :data-clipboard-text="ruleForm.uid" class="btns copy-data" type="text" @click="copy">
-            {{ $t('setting.copy') }}
+          <el-input v-model="ruleForm.uid" placeholder="请填写用户ID" disabled />
+          <el-button :data-clipboard-text="ruleForm.uid" class="btns text-action copy-data" type="primary" link @click="copy">
+            复制
           </el-button>
         </div>
       </el-form-item>
-      <el-form-item :label="$t('setting.phone') + '：'" prop="enterprise_name">
+      <el-form-item :label="'手机号码' + '：'" prop="enterprise_name">
         <div v-show="isEditPhone" class="flex-item">
-          <el-input v-model="ruleForm.phone" :placeholder="$t('setting.phonetitle')" disabled size="small" />
-          <el-link :underline="false" class="btns" type="primary" @click="isEditPhone = false">
-            {{ $t('setting.changephone') }}
-          </el-link>
+          <el-input v-model="ruleForm.phone" placeholder="请填写手机号码" disabled />
+          <el-button class="btns text-action" type="primary" link @click="isEditPhone = false">
+            更换手机号
+          </el-button>
         </div>
         <div v-show="isEditPhone === false" class="flex-item">
-          <el-input v-model="newPhone" :placeholder="$t('setting.phonetitle')" size="small" />
-          <el-button :disabled="disabled" class="button ml10" size="small" type="primary" @click="getCode">{{
+          <el-input v-model="newPhone" placeholder="请填写手机号码" />
+          <el-button :disabled="disabled" class="button ml10" type="primary" @click="getCode">{{
             text
           }}</el-button>
         </div>
       </el-form-item>
-      <el-form-item v-show="isEditPhone === false" :label="$t('login.code') + '：'" prop="enterprise_name">
-        <el-input v-model="verification_code" :placeholder="$t('login.codetitle')" size="small" type="text" />
+      <el-form-item v-show="isEditPhone === false" :label="'验证码' + '：'" prop="enterprise_name">
+        <el-input v-model="verification_code" placeholder="请输入验证码" type="text" />
 
-        <el-link :underline="false" class="btns" type="primary" @click="isEditPhone = true">
-          {{ $t('public.cancel') }}
-        </el-link>
+        <el-button class="btns text-action" type="primary" link @click="isEditPhone = true">
+          取消
+        </el-button>
       </el-form-item>
       <el-form-item label="密码：" prop="password">
         <div v-show="isEditPassword" class="flex-item">
           <el-input
             v-model="ruleForm.password"
-            :placeholder="$t('login.title2')"
+            placeholder="请输入密码"
             auto-complete="on"
             disabled
-            size="small"
             type="password"
           />
-          <el-link :underline="false" class="btns" type="primary" @click="replacePwd">
-            {{ $t('login.changepassword') }}
-          </el-link>
+          <el-button class="btns text-action" type="primary" link @click="replacePwd">
+            更换密码
+          </el-button>
         </div>
         <div v-show="isEditPassword === false" class="flex-item" prop="newPassword">
           <el-input
             v-model="newPassword"
-            :placeholder="$t('login.title2')"
+            placeholder="请输入密码"
             auto-complete="on"
-            size="small"
             show-password
             type="password"
             @blur="regularFn"
@@ -90,37 +88,77 @@
         </div>
       </el-form-item>
       <el-form-item v-show="isEditPassword === false" label="确认密码：" prop="enterprise_name">
-        <el-input v-model="password_confirm" placeholder="请输入密码" size="small" type="password" show-password />
-        <!-- <el-link type="primary" :underline="false" class="btns" @click="confirmPwd">{{ $t('public.ok') }}</el-link> -->
-        <el-link :underline="false" class="btns" type="primary" @click="cancelPwd">
-          {{ $t('public.cancel') }}
-        </el-link>
+        <el-input v-model="password_confirm" placeholder="请输入密码" type="password" show-password />
+        <el-button class="btns text-action" type="primary" link @click="cancelPwd">
+          取消
+        </el-button>
       </el-form-item>
-      <el-form-item :label="$t('setting.mailbox') + '：'" prop="enterprise_name">
-        <el-input v-model="ruleForm.email" :placeholder="$t('setting.mailboxtitle')" clearable size="small" />
+      <el-form-item :label="'邮箱' + '：'" prop="enterprise_name">
+        <el-input v-model="ruleForm.email" placeholder="请填写邮箱地址" clearable />
+      </el-form-item>
+      <el-form-item label="企业微信：" prop="enterprise_name">
+        <el-input v-model="work_member_id" disabled />
+
+        <template v-if="userInfo.work_member_id != 0">
+          <el-button class="btns text-action" type="primary" link @click="bindChangeWork()">更换 </el-button>
+          <el-button class="btns text-action" type="primary" link @click="unbindWork()">解绑 </el-button>
+        </template>
+        <el-button v-else class="btns text-action" type="primary" link @click="bindWork()">绑定 </el-button>
+      </el-form-item>
+      <el-form-item label="McpKey：" prop="mcpKey">
+        <div class="flex-item">
+          <el-input v-model="ruleForm.mcpKey" disabled />
+          <el-button class="btns text-action" type="primary" link @click="refreshMcpKey">更新</el-button>
+          <el-button
+            :data-clipboard-text="ruleForm.mcpKey"
+            class="btns text-action copy-mcp-data"
+            type="primary" link
+            @click="copyMcpKey"
+          >
+            复制
+          </el-button>
+        </div>
       </el-form-item>
     </el-form>
     <div class="room-footer btn-shadow">
-      <el-button size="small" @click="cancel">{{ $t('public.cancel') }}</el-button>
-      <el-button size="small" type="primary" @click="preserve">
-        {{ $t('public.save') }}
+      <el-button @click="cancel">取消</el-button>
+      <el-button type="primary" @click="preserve">
+        保存
       </el-button>
     </div>
+    <!-- 企微登录 -->
+    <authDialog ref="authDialog" @workloginOk="getInfo"></authDialog>
   </div>
 </template>
 
 <script>
+import { modalSure } from '@/libs/public.ts'
 import ClipboardJS from 'clipboard'
-import { mapGetters } from 'vuex'
-import { loginRegex } from '@/utils/format'
-import sendVerifyCode from '@/mixins/SendVerifyCode'
-import { uploader } from '@/utils/uploadCloud'
-import { getToken } from '@/utils/auth'
-import { userInfo, getCmsKeyApi, getCmsApi, editUserInfo, checkPasswordApi, site } from '@/api/user'
-import helper from '@/libs/helper'
+import { mapActions, mapState } from 'pinia'
+import { useUserStore } from '@/stores/user.ts'
+import { useAppStore } from '@/stores/app.ts'
+import { loginRegex } from '@/utils/format.ts'
+import sendVerifyCode from '@/mixins/SendVerifyCode.ts'
+import { uploader } from '@/utils/uploadCloud.ts'
+import { getToken } from '@/utils/auth.ts'
+import authDialog from '@/components/common/authDialog'
+import {
+  userInfo,
+  getCmsKeyApi,
+  getCmsApi,
+  editUserInfo,
+  updateMcpKeyApi,
+  checkPasswordApi,
+  site,
+  workUnbinding
+} from '@/api/user.ts'
+import { getStorageJson } from '@/utils/storage.ts'
+import helper from '@/libs/helper.ts'
 export default {
+  emits: ['isOk'],
   name: 'Index',
   mixins: [sendVerifyCode],
+  components: { authDialog },
   data() {
     return {
       ruleForm: {
@@ -129,12 +167,14 @@ export default {
         phone: '',
         avatar: '',
         email: '',
+        mcpKey: '',
         password: ''
       },
       uPattern: '',
       textVal: '',
       password_confirm: '',
       verification_code: '',
+      work_member_id: '未绑定',
       newPhone: '',
       newPassword: '',
       isEditPhone: true,
@@ -148,18 +188,45 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(['userInfo'])
+    ...mapState(useUserStore, ['userInfo'])
   },
   mounted() {
-    this.sitedata = JSON.parse(localStorage.getItem('sitedata'))
-    var { val, text } = loginRegex(this.sitedata.password_type, Number(this.sitedata.password_length))
+    this.sitedata = getStorageJson('sitedata', {})
+    var { val, text } = loginRegex(this.sitedata.password_type ?? 0, Number(this.sitedata.password_length || 6))
     this.textVal = text
     this.uPattern = new RegExp(val)
     this.userInfoList()
+    this.getInfo()
+    // this.work_member_id = this.userInfo.work_member_id == 0 ? '未绑定' : '已绑定'
   },
   methods: {
+    ...mapActions(useUserStore, ['fetchUserInfo', 'setUserInfo']),
+    ...mapActions(useAppStore, ['setClickTab']),
     regularFn() {
       if (!this.uPattern.test(this.newPassword)) return this.$message.error(this.textVal)
+    },
+    bindWork() {
+      this.$refs.authDialog.open()
+    },
+    bindChangeWork() {
+      this.$refs.authDialog.open('replace')
+    },
+    async getInfo() {
+      const data = await this.fetchUserInfo()
+      this.work_member_id =
+        this.userInfo.work_member_id == 0
+          ? '未绑定'
+          : `${this.userInfo && this.userInfo.work ? this.userInfo.work.name : '--'}@${
+              data.enterprise.enterprise_name
+            }`
+    },
+
+    unbindWork() {
+      modalSure('您确定要解绑企业微信吗？').then(() => {
+        workUnbinding().then(() => {
+          this.getInfo()
+        })
+      })
     },
 
     replacePwd() {
@@ -171,10 +238,27 @@ export default {
       this.$nextTick(() => {
         const clipboard = new ClipboardJS('.copy-data')
         clipboard.on('success', () => {
-          this.$message.success(this.$t('setting.copytitle'))
+          this.$message.success('复制成功')
           clipboard.destroy()
         })
-        this.$store.commit('app/SET_CLICK_TAB', false)
+        this.setClickTab(false)
+      })
+    },
+    copyMcpKey() {
+      this.$nextTick(() => {
+        const clipboard = new ClipboardJS('.copy-mcp-data')
+        clipboard.on('success', () => {
+          this.$message.success('复制成功')
+          clipboard.destroy()
+        })
+        this.setClickTab(false)
+      })
+    },
+    refreshMcpKey() {
+      modalSure('更新后旧McpKey将失效，确定更新吗？').then(() => {
+        updateMcpKeyApi().then((res) => {
+          this.ruleForm.mcpKey = res.data.mcpKey
+        })
       })
     },
     cancelPwd() {
@@ -184,19 +268,19 @@ export default {
     },
     defaultPwd(data) {
       if (!data) {
-        this.$set(this.ruleForm, 'password', '......')
+        this.ruleForm.password = '......'
       }
     },
     preserve() {
-      if (!this.isEditPassword) {
-        this.confirmPwd()
-      }
-      if (!this.isEditPhone) {
-        this.confirmBnt()
-      }
-      if (!this.password_confirm) {
-        this.$delete(this.ruleForm, 'password')
-      }
+      // if (!this.isEditPassword) {
+      //   if (this.confirmPwd() === false) return
+      // }
+      // if (!this.isEditPhone) {
+      //   if (this.confirmBnt() === false) return
+      // }
+      // if (!this.password_confirm) {
+      //   delete this.ruleForm.password
+      // }
       this.ruleForm.password_confirm = this.password_confirm
       this.ruleForm.password = this.newPassword
       this.ruleForm.verification_code = this.verification_code
@@ -204,14 +288,14 @@ export default {
         if (res.status != '200') {
           return false
         }
-        let userInfo = JSON.parse(JSON.stringify(this.$store.state.user.userInfo))
+        let userInfo = JSON.parse(JSON.stringify(this.userInfo))
         userInfo.name = res.data.name
         userInfo.avatar = res.data.avatar
         userInfo.email = res.data.email
         if (res.data.phone) {
           userInfo.phone = res.data.phone
         }
-        this.$store.commit('user/SET_USERINFO', userInfo)
+        this.setUserInfo(userInfo)
         this.defaultPwd(this.ruleForm.password)
         if (res.status == '200') {
           this.$emit('isOk')
@@ -225,9 +309,15 @@ export default {
       this.$emit('isOk')
     },
     confirmPwd() {
-      if (!this.uPattern.test(this.newPassword)) return this.$message.error(this.textVal)
+      if (!this.uPattern.test(this.newPassword)) {
+        this.$message.error(this.textVal)
+        return false
+      }
 
-      if (!this.newPassword) return this.$message.error(this.$t('login.title2'))
+      if (!this.newPassword) {
+        this.$message.error('请输入密码')
+        return false
+      }
       const data = { password: this.newPassword, password_confirm: this.password_confirm }
       checkPasswordApi(data).then((res) => {
         this.ruleForm.password = this.newPassword
@@ -241,9 +331,9 @@ export default {
       getCmsKeyApi().then((res) => {
         const cmsKey = res.data.key
         const exp = helper.phoneReg
-        if (!this.newPhone) return this.$message.error(this.$t('login.title1'))
+        if (!this.newPhone) return this.$message.error('请输入手机号码')
         if (!exp.test(this.newPhone)) {
-          return this.$message.error(this.$t('login.title9'))
+          return this.$message.error('请输入正确手机号码')
         }
         getCmsApi({
           phone: this.newPhone,
@@ -261,13 +351,16 @@ export default {
     confirmBnt() {
       const exp = helper.phoneReg
       if (!this.verification_code || !this.newPhone) {
-        return this.$message.error(this.$t('login.rules'))
+        this.$message.error('请填写手机号或验证码')
+        return false
       }
       if (!exp.test(this.newPhone)) {
-        return this.$message.error(this.$t('login.title9'))
+        this.$message.error('请输入正确手机号码')
+        return false
       }
       if (!/^\d{6}$/.test(this.verification_code)) {
-        return this.$message.error(this.$t('login.title5'))
+        this.$message.error('请输入验证码')
+        return false
       }
       this.ruleForm.phone = this.newPhone
       this.isEditPhone = true
@@ -294,7 +387,7 @@ export default {
       }
       uploader(file, 1, options).then((res) => {
         // 获取上传文件渲染页面
-        if (res.data.name) {
+        if (res.data && res.data.name) {
           this.ruleForm.avatar = res.data.url
           this.userInfo.card.avatar = res.data.url
         }
@@ -309,22 +402,19 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/deep/.el-form-item__label {
+:deep(.el-form-item__label) {
   /*width: 100px !important;*/
 }
-/deep/.el-form-item__content {
-  margin-left: 100px !important;
-}
-/deep/ .el-form-item__error {
+:deep(.el-form-item__error) {
   margin-left: 40px;
 }
 .codeItem {
   width: 300px;
-  /deep/.el-input {
+  :deep(.el-input) {
     width: auto;
   }
 }
-/deep/.el-upload--picture-card {
+:deep(.el-upload--picture-card) {
   width: 70px;
   height: 70px;
   line-height: 80px;
@@ -351,6 +441,8 @@ export default {
   }
   .right {
     width: calc(100% - 130px);
+    color: #909399;
+    font-size: 13px;
     p {
       margin: 0;
       padding: 0;
@@ -358,12 +450,25 @@ export default {
     }
   }
 }
-.copy-data {
-  font-size: 14px;
-  font-weight: 500;
-}
 .btns {
   margin-left: 11px;
+}
+.text-action {
+  padding: 0;
+  color: #1890ff;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 32px;
+  min-height: 32px;
+
+  &:hover,
+  &:focus {
+    color: #40a9ff;
+  }
+
+  :deep(span) {
+    font-weight: 500;
+  }
 }
 .btn-box {
   padding-left: 140px;

@@ -17,7 +17,7 @@ namespace App\Http\Service\Open;
 
 use App\Http\Dao\Open\OpenApiKeyDao;
 use App\Http\Service\BaseService;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -33,7 +33,6 @@ class OpenApiKeyService extends BaseService
 
     /**
      * 查看列表.
-     * @param null|mixed $sort
      */
     public function getList(array $where, array $field = ['*'], $sort = null, array $with = []): array
     {
@@ -103,7 +102,7 @@ class OpenApiKeyService extends BaseService
         }
 
         $methods = app('request')->route()->methods()[0] ?? '';
-        $ruleId  = app()->make(OpenapiRuleService::class)->value(['url' => $route, 'method' => $methods], 'id');
+        $ruleId  = app()->get(OpenapiRuleService::class)->value(['url' => $route, 'method' => $methods], 'id');
         if (! $ruleId) {
             throw $this->exception('暂无权限访问该接口!');
         }

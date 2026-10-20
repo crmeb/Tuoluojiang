@@ -23,7 +23,7 @@
 
           <el-table
             class="mt10"
-            :height="tableHeight"
+            :height="TABLE_HEIGHT"
             :data="tableData"
             style="width: 100%"
             row-key="id"
@@ -33,21 +33,29 @@
             <el-table-column type="selection" width="55"> </el-table-column>
             <el-table-column prop="number" label="物资编号" min-width="150" show-overflow-tooltip />
             <el-table-column prop="name" label="物资名称" min-width="100" show-overflow-tooltip />
-            <el-table-column prop="units" label="规格型号" min-width="100" show-overflow-tooltip />
+            <el-table-column prop="units" label="物资型号" min-width="100" show-overflow-tooltip>
+              <template #default="scope">
+                {{ scope.row.units || '--' }}
+              </template>
+            </el-table-column>
             <el-table-column prop="cate.cate_name" label="物资分类" min-width="100" show-overflow-tooltip />
             <el-table-column prop="record[0].price" label="物资单价(元)" min-width="100" show-overflow-tooltip />
-            <el-table-column prop="specs" label="计量单位" min-width="80" show-overflow-tooltip />
+            <el-table-column prop="specs" label="计量单位" min-width="80" show-overflow-tooltip>
+              <template #default="scope">
+                {{ scope.row.specs || '--' }}
+              </template>
+            </el-table-column>
             <el-table-column pstatus label="状态" min-width="80" show-overflow-tooltip>
-              <template slot-scope="scope">
-                <el-tag v-if="scope.row.status === 0" type="success" size="mini">未使用</el-tag>
-                <el-tag v-if="scope.row.status === 1" size="mini">已领用</el-tag>
-                <el-tag v-if="scope.row.status === 2" type="success" size="mini">已归还</el-tag>
-                <el-tag v-if="scope.row.status === 3" type="warning" size="mini">维修中</el-tag>
-                <el-tag v-if="scope.row.status === 4" type="danger" size="mini">已报废</el-tag>
+              <template #default="scope">
+                <el-tag size="small" v-if="scope.row.status === 0" type="success">未使用</el-tag>
+                <el-tag size="small" v-if="scope.row.status === 1">已领用</el-tag>
+                <el-tag size="small" v-if="scope.row.status === 2" type="success">已归还</el-tag>
+                <el-tag size="small" v-if="scope.row.status === 3" type="warning">维修中</el-tag>
+                <el-tag size="small" v-if="scope.row.status === 4" type="danger">已报废</el-tag>
               </template>
             </el-table-column>
             <el-table-column prop="remark" label="重要信息" min-width="180" show-overflow-tooltip>
-              <template slot-scope="scope">
+              <template #default="scope">
                 <div v-if="scope.row.status === 1">
                   领用对象：{{
                     scope.row.receive_frame ? scope.row.receive_frame.name : scope.row.receive_user.name
@@ -59,43 +67,43 @@
                 <div v-else>{{ scope.row.remark }}</div>
               </template>
             </el-table-column>
-            <el-table-column prop="describe" :label="$t('public.operation')" fixed="right" width="200">
-              <template slot-scope="scope">
-                <el-button type="text" @click="handleRecord(scope.row)" v-hasPermi="['material:fixed:manage:record']"
+            <el-table-column prop="describe" label="操作" fixed="right" width="200">
+              <template #default="scope">
+                <el-button type="primary" link @click="handleRecord(scope.row)" v-hasPermi="['material:fixed:manage:record']"
                   >记录</el-button
                 >
 
-                <el-button type="text" @click="handleEdit(scope.row)" v-hasPermi="['material:fixed:manage:edit']">{{
-                  $t('public.edit')
-                }}</el-button>
+                <el-button type="primary" link @click="handleEdit(scope.row)" v-hasPermi="['material:fixed:manage:edit']">编辑</el-button>
 
                 <el-dropdown class="ml10">
-                  <span class="el-dropdown-link el-button--text el-button">
-                    {{ $t('hr.more') }}
+                  <el-button type="primary" link class="el-dropdown-link">
+                    更多
                     <i class="el-icon-arrow-down el-icon--right" />
-                  </span>
-                  <el-dropdown-menu style="text-align: center">
-                    <el-dropdown-item v-if="scope.row.status === 0" @click.native="handleMaterialData(5, scope.row)"
-                      >领用</el-dropdown-item
-                    >
-                    <el-dropdown-item v-if="scope.row.status === 1" @click.native="handleMaterialData(6, scope.row)"
-                      >归还</el-dropdown-item
-                    >
-                    <el-dropdown-item v-if="scope.row.status <= 2" @click.native="handleMaterialData(2, scope.row)"
-                      >维修</el-dropdown-item
-                    >
-                    <el-dropdown-item v-if="scope.row.status === 3" @click.native="handleMaterialData(3, scope.row)"
-                      >处理</el-dropdown-item
-                    >
-                    <el-dropdown-item v-if="scope.row.status !== 4" @click.native="handleMaterialData(1, scope.row)"
-                      >报废</el-dropdown-item
-                    >
-                    <el-dropdown-item
-                      v-if="scope.row.status === 0 || scope.row.status === 4"
-                      @click.native="handleDelete(scope.row.id)"
-                      >删除</el-dropdown-item
-                    >
-                  </el-dropdown-menu>
+                  </el-button>
+                  <template #dropdown>
+                    <el-dropdown-menu style="text-align: center">
+                      <el-dropdown-item v-if="scope.row.status === 0" @click="handleMaterialData(5, scope.row)"
+                        >领用</el-dropdown-item
+                      >
+                      <el-dropdown-item v-if="scope.row.status === 1" @click="handleMaterialData(6, scope.row)"
+                        >归还</el-dropdown-item
+                      >
+                      <el-dropdown-item v-if="scope.row.status <= 2" @click="handleMaterialData(2, scope.row)"
+                        >维修</el-dropdown-item
+                      >
+                      <el-dropdown-item v-if="scope.row.status === 3" @click="handleMaterialData(3, scope.row)"
+                        >处理</el-dropdown-item
+                      >
+                      <el-dropdown-item v-if="scope.row.status !== 4" @click="handleMaterialData(1, scope.row)"
+                        >报废</el-dropdown-item
+                      >
+                      <el-dropdown-item
+                        v-if="scope.row.status === 0 || scope.row.status === 4"
+                        @click="handleDelete(scope.row.id)"
+                        >删除</el-dropdown-item
+                      >
+                    </el-dropdown-menu>
+                  </template>
                 </el-dropdown>
               </template>
             </el-table-column>
@@ -134,23 +142,30 @@
 </template>
 
 <script>
-import { storageCateApi, storageDeleteApi, storageListApi, storageListCateApi } from '@/api/administration'
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
+import { modalSure } from '@/libs/public.ts'
+import pickerOptions from '@/libs/pickerOptions.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { storageCateApi, storageDeleteApi, storageListApi, storageListCateApi } from '@/api/administration.ts'
+import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'Consume',
   components: {
-    tree: () => import('./tree'),
-    addMaterial: () => import('./addMaterial'),
-    receive: () => import('./receive'),
-    record: () => import('./record'),
-    returnMaterial: () => import('./return'),
-    materialDialog: () => import('./materialDialog'),
-    exportExcel: () => import('@/components/common/exportExcel'),
-    oaFromBox: () => import('@/components/common/oaFromBox'),
-    oaDialog: () => import('@/components/form-common/dialog-form')
+    tree: defineAsyncComponent(() => import('./tree')),
+    addMaterial: defineAsyncComponent(() => import('./addMaterial')),
+    receive: defineAsyncComponent(() => import('./receive')),
+    record: defineAsyncComponent(() => import('./record')),
+    returnMaterial: defineAsyncComponent(() => import('./return')),
+    materialDialog: defineAsyncComponent(() => import('./materialDialog')),
+    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel')),
+    oaFromBox,
+    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form'))
   },
   data() {
     return {
-      pickerOptions: this.$pickerOptionsTimeEle,
+      TABLE_HEIGHT,
+      pickerOptions,
       alertText: '固定物资经过领取之后，领取人只为借用，最终需要归还给公司，例如：电脑、显示器等。',
       gridl: {
         xl: 3,
@@ -338,12 +353,12 @@ export default {
       // 先将对象变为字符串，然后再变为json对象，防止对象的指针指向问题，为深拷贝
       let where = JSON.parse(JSON.stringify(this.where))
       where.limit = 0
-      this.saveName = '导出固定物资_' + this.$moment(new Date()).format('MM_DD_HH_mm_ss') + '.xlsx'
+      this.saveName = '导出固定物资_' + dayjs(new Date()).format('MM_DD_HH_mm_ss') + '.xlsx'
       storageListApi(where)
         .then((res) => {
           let data = res.data.list
           if (data.length <= 0) {
-            this.$message.error(this.$t('access.placeholder24'))
+            this.$message.error('暂无内容可导出')
           } else {
             const aoaData = [
               [
@@ -483,7 +498,7 @@ export default {
       this.$refs.addMaterial.openBox()
     },
     async handleDelete(id) {
-      await this.$modalSure('你确定要删除这条内容吗')
+      await modalSure('你确定要删除这条内容吗')
       await storageDeleteApi(id)
       let totalPage = Math.ceil((this.total - 1) / this.where.limit)
       let currentPage = this.where.page > totalPage ? totalPage : this.where.page
@@ -528,8 +543,12 @@ export default {
   }
 }
 </script>
+<style lang="scss">
+@import "@/styles/global.scss";
+</style>
 
 <style lang="scss" scoped>
+
 .list-header {
   padding: 0;
   border-bottom: none;
@@ -542,12 +561,12 @@ export default {
   margin-top: -2px;
   margin-right: 5px;
 }
-/deep/ .el-form-item {
+:deep(.el-form-item) {
   margin-right: 10px;
 }
 
 .table-box {
-  /deep/ .el-table th {
+  :deep(.el-table th) {
     background-color: rgba(247, 251, 255, 1);
   }
 }

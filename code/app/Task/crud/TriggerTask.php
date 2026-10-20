@@ -16,7 +16,7 @@ declare(strict_types=1);
 namespace App\Task\crud;
 
 use App\Constants\Crud\CrudEventEnum;
-use crmeb\exceptions\ApiException;
+use Tuoluojiang\Open\exceptions\ApiException;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Support\Facades\Log;
 

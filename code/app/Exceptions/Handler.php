@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,25 +15,26 @@ declare(strict_types=1);
 
 namespace App\Exceptions;
 
-use crmeb\exceptions\AdminException;
-use crmeb\exceptions\ApiException;
-use crmeb\exceptions\ApiRequestException;
-use crmeb\exceptions\AuthException;
-use crmeb\exceptions\EntException;
-use crmeb\exceptions\HttpServiceExceptions;
-use crmeb\exceptions\ServicesException;
-use crmeb\exceptions\UploadException;
-use crmeb\exceptions\WebOfficeException;
+use Tuoluojiang\Open\exceptions\AdminException;
+use Tuoluojiang\Open\exceptions\ApiException;
+use Tuoluojiang\Open\exceptions\ApiRequestException;
+use Tuoluojiang\Open\exceptions\AuthException;
+use Tuoluojiang\Open\exceptions\EntException;
+use Tuoluojiang\Open\exceptions\HttpServiceExceptions;
+use Tuoluojiang\Open\exceptions\ServicesException;
+use Tuoluojiang\Open\exceptions\UploadException;
+use Tuoluojiang\Open\exceptions\WebOfficeException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Container\EntryNotFoundException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Validation\ValidationException;
 use Predis\Connection\ConnectionException;
+use Symfony\Component\HttpClient\Exception\TransportException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\Routing\Exception\RouteNotFoundException;
@@ -75,78 +76,135 @@ class Handler extends ExceptionHandler
     /**
      * Register the exception handling callbacks for the application.
      */
-    public function register()
+    public function register(): void
     {
         $this->reportable(function (\Throwable $e) {});
     }
 
     /**
-     * Render an exception into an HTTP response.
-     *
-     * @param Request $request
-     * @return \Symfony\Component\HttpFoundation\Response
+     * @return \Illuminate\Http\Response|JsonResponse|mixed|\Symfony\Component\HttpFoundation\Response
      * @throws \Throwable
      */
     public function render($request, \Throwable $e)
     {
-        $debug = env('APP_DEBUG', false);
-
-        $data = $debug ? [
+        $debug            = config('app.debug', false);
+        $defaultMessage   = '系统开小差了';
+        $defaultErrorCode = 400;
+        $authExpiredCode  = 410003;
+        $webOfficeCode    = 40007;
+        $systemErrorMsg   = 'I\'m sorry, the system is out of order';
+        $debugData        = $debug ? [
             'file'  => $e->getFile(),
             'line'  => $e->getLine(),
-            'trace' => $e->getTrace(),
-            //            'previous' => $e->getPrevious(),
+            'trace' => mb_substr($e->getTraceAsString(), 0, 8000),
+            // 'previous' => $e->getPrevious(),
         ] : [];
-        if ($e instanceof QueryException
-            || $e instanceof ModelNotFoundException
-            || $e instanceof MethodNotAllowedHttpException
-            || $e instanceof RouteNotFoundException
-            || $e instanceof ValidationException
-            || $e instanceof \ReflectionException
-            || $e instanceof \BadMethodCallException
-            || $e instanceof UnauthorizedHttpException
-            || $e instanceof ApiException
-            || $e instanceof EntryNotFoundException
-        ) {
-            return $this->response(400, $e->getMessage() ?: '系统开小差了', $data);
-        }
-        if ($e instanceof HttpServiceExceptions
-            || $e instanceof UploadException
-            || $e instanceof ApiRequestException
-            || $e instanceof AdminException
-            || $e instanceof ServicesException
-            || $e instanceof ConnectionException
-            || $e instanceof AuthException
-            || $e instanceof EntException
-        ) {
-            return $this->response($e->getCode() ?: 400, $e->getMessage(), $data);
-        }
-        if (
-            $e instanceof AuthorizationException
-            || $e instanceof JWTException
-        ) {
-            return $this->response($e->getCode() ?: 403, $e->getMessage());
-        }
-        if (
-            $e instanceof AuthenticationException
-        ) {
-            return $this->response(410003, $e->getMessage());
-        }
-        if ($e instanceof WebOfficeException) {
-            return Response::json(['code' => 40007, 'details' => $e->getMessage(), 'message' => 'CustomMsg']);
+        $exceptionHandlers = [
+            // 基础业务异常 - 统一400码
+            'basicBusiness' => [
+                'exceptions' => [
+                    QueryException::class,
+                    ModelNotFoundException::class,
+                    MethodNotAllowedHttpException::class,
+                    RouteNotFoundException::class,
+                    ValidationException::class,
+                    \ReflectionException::class,
+                    \BadMethodCallException::class,
+                    UnauthorizedHttpException::class,
+                    ApiException::class,
+                    EntryNotFoundException::class,
+                ],
+                'handler' => fn ($e) => $this->response(
+                    $defaultErrorCode,
+                    $e->getMessage() ?: $defaultMessage,
+                    $debugData
+                ),
+            ],
+            // 服务/上传类异常 - 使用自定义码或400
+            'serviceUpload' => [
+                'exceptions' => [
+                    HttpServiceExceptions::class,
+                    UploadException::class,
+                    ApiRequestException::class,
+                    AdminException::class,
+                    ServicesException::class,
+                    ConnectionException::class,
+                    AuthException::class,
+                    EntException::class,
+                ],
+                'handler' => fn ($e) => $this->response(
+                    $e->getCode() ?: $defaultErrorCode,
+                    $e->getMessage(),
+                    $debugData
+                ),
+            ],
+            // 权限/认证异常 - 403码
+            'authorization' => [
+                'exceptions' => [
+                    AuthorizationException::class,
+                    JWTException::class,
+                ],
+                'handler' => fn ($e) => $this->response(
+                    $e->getCode() ?: 403,
+                    $e->getMessage()
+                ),
+            ],
+            // 登录状态失效 - 固定410003码
+            'authentication' => [
+                'exceptions' => [AuthenticationException::class],
+                'handler'    => fn ($e) => $this->response(
+                    $authExpiredCode,
+                    $e->getMessage()
+                ),
+            ],
+            // 在线办公异常 - 特殊返回格式
+            'webOffice' => [
+                'exceptions' => [WebOfficeException::class],
+                'handler'    => fn ($e) => Response::json([
+                    'code'    => $webOfficeCode,
+                    'details' => $e->getMessage(),
+                    'message' => 'CustomMsg',
+                ]),
+            ],
+
+            // 传输异常
+            'transport' => [
+                'exceptions' => [TransportException::class],
+                'handler'    => fn ($e) => $this->response(
+                    $e->getCode(),
+                    $e->getMessage() ?: $defaultMessage,
+                    $debugData
+                ),
+            ],
+        ];
+        foreach ($exceptionHandlers as $handlerConfig) {
+            foreach ($handlerConfig['exceptions'] as $exceptionClass) {
+                if ($e instanceof $exceptionClass) {
+                    return $handlerConfig['handler']($e);
+                }
+            }
         }
         if ($request->ajax()) {
-            return $this->response($e->getCode() ?: 400, $e->getMessage(), $data);
+            return $this->response(
+                $e->getCode() ?: $defaultErrorCode,
+                $e->getMessage(),
+                $debugData
+            );
         }
+        // 通用Exception处理
         if ($e instanceof \Exception) {
-            return $this->response($e->getCode(), $e->getMessage() ?: '系统开小差了', $data);
+            return $this->response(
+                $e->getCode(),
+                $e->getMessage() ?: $defaultMessage,
+                $debugData
+            );
         }
-        // 添加自定义异常处理机制
+        // 未匹配的异常
         $this->report($e);
-        if ($debug) {
-            return parent::render($request, $e);
-        }
-        return app('json')->httpStatus(400)->fail('I\'m sorry, the system is out of order');
+        // 调试模式下使用父类渲染，非调试模式返回统一错误
+        return $debug
+            ? parent::render($request, $e)
+            : app('json')->httpStatus($defaultErrorCode)->fail($systemErrorMsg);
     }
 
     /**

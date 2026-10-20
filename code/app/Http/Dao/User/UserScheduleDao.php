@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,13 +15,13 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\User;
 
+use App\Http\Model\Schedule\Schedule;
+use App\Http\Service\Customer\OrderService;
+use App\Http\Service\Customer\CustomerService;
+use App\Http\Service\Customer\RemindService;
 use App\Http\Dao\BaseDao;
 use App\Http\Model\BaseModel;
-use App\Http\Model\User\UserSchedule;
-use App\Http\Service\Client\ClientRemindService;
-use App\Http\Service\Client\ContractService;
-use App\Http\Service\Client\CustomerService;
-use crmeb\traits\dao\ListSearchTrait;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Traits\Conditionable;
@@ -35,7 +35,7 @@ class UserScheduleDao extends BaseDao
      */
     public function setModel()
     {
-        return UserSchedule::class;
+        return Schedule::class;
     }
 
     /**
@@ -82,9 +82,9 @@ class UserScheduleDao extends BaseDao
                     $item['link']  = '/customer/list';
                     break;
                 case 'client_renew':// 客户续费
-                case 'client_return':// 合同回款
-                    $id            = app()->get(ClientRemindService::class)->value(['id' => $item['link_id']], 'cid');
-                    $item['title'] = app()->get(ContractService::class)->value(['id' => $id], 'title');
+                case 'client_return':// 订单回款
+                    $id            = app()->get(RemindService::class)->value(['id' => $item['link_id']], 'cid');
+                    $item['title'] = app()->get(OrderService::class)->value(['id' => $id], 'title');
                     $item['link']  = '/customer/contract';
                     break;
                 default:// 其他类型

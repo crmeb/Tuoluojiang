@@ -1,22 +1,11 @@
 <?php
 
-declare(strict_types=1);
-/**
- *  +----------------------------------------------------------------------
- *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
- *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
- *  +----------------------------------------------------------------------
- *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
- *  +----------------------------------------------------------------------
- *  | Author: 陀螺匠 Team <admin@tuoluojiang.com>
- *  +----------------------------------------------------------------------
- */
 use App\Http\Model\Admin\Admin;
 use App\Http\Model\Open\OpenApiKey;
 use App\Http\Model\User\User;
 
 return [
+
     /*
     |--------------------------------------------------------------------------
     | Authentication Defaults
@@ -29,7 +18,7 @@ return [
     */
 
     'defaults' => [
-        'guard'     => 'admin',
+        'guard' => 'admin',
         'passwords' => 'users',
     ],
 
@@ -52,26 +41,26 @@ return [
 
     'guards' => [
         'web' => [
-            'driver'   => 'session',
+            'driver' => 'session',
             'provider' => 'users',
         ],
 
         'wap' => [
-            'driver'   => 'jwt',
+            'driver' => 'jwt',
             'provider' => 'wap',
-            'hash'     => true,
+            'hash' => true,
         ],
 
         'admin' => [
-            'driver'   => 'jwt',
+            'driver' => 'jwt',
             'provider' => 'admin',
-            'hash'     => true,
+            'hash' => true,
         ],
 
         'user' => [
-            'driver'   => 'jwt',
+            'driver' => 'jwt',
             'provider' => 'user',
-            'hash'     => true,
+            'hash' => true,
         ],
         'openapi' => [
             'driver' => 'jwt',
@@ -100,11 +89,11 @@ return [
     'providers' => [
         'admin' => [
             'driver' => 'eloquent',
-            'model'  => Admin::class,
+            'model' => Admin::class,
         ],
         'user' => [
             'driver' => 'eloquent',
-            'model'  => User::class,
+            'model' => User::class,
         ],
         'openapi' => [
             'driver' => 'eloquent',
@@ -130,8 +119,8 @@ return [
     'passwords' => [
         'users' => [
             'provider' => 'users',
-            'table'    => 'password_resets',
-            'expire'   => 60,
+            'table' => 'password_resets',
+            'expire' => 60,
             'throttle' => 60,
         ],
     ],
@@ -148,4 +137,5 @@ return [
     */
 
     'password_timeout' => 10800,
+
 ];

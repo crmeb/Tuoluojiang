@@ -10,19 +10,26 @@
         :mode="mode"
         style="overflow-y: hidden; margin-top: 20px"
         @onCreated="onCreated"
+        @customPaste="onCustomPaste"
       />
     </div>
   </div>
 </template>
 
 <script>
-import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
-import { uploader } from '@/utils/uploadCloud'
+import '@wangeditor-next/editor/dist/css/style.css'
+import { Editor, Toolbar } from '@wangeditor-next/editor-for-vue'
+import { uploader } from '@/utils/uploadCloud.ts'
+import { normalizePastedTableHtml } from '@/utils/wangeditor/tablePaste.ts'
+import { extractDocxImageSizes, applyDocxImageSizes, normalizeImageSizeForSave } from '@/utils/wangeditor/docxImageSize.ts'
+import { markDocxParagraphAlignment, restoreDocxParagraphAlignment } from '@/utils/wangeditor/docxHtml'
 import mammoth from 'mammoth'
 import { asBlob } from 'html-docx-js-typescript'
 import { saveAs } from 'file-saver'
-import { fileUpload } from '@/api/public'
+import { fileUpload } from '@/api/public.ts'
+import { processResourceUrl } from '@/utils/resourceUtil.ts'
 export default {
+  emits: ['closeLoading'],
   name: 'fileEdit',
   props: {
     url: {
@@ -76,13 +83,28 @@ export default {
   },
   mounted() {
     const xhr = new XMLHttpRequest()
-    xhr.open('get', this.$processResourceUrl(this.url), true)
+    xhr.open('get', processResourceUrl(this.url), true)
     xhr.responseType = 'arraybuffer'
     xhr.onload = () => {
       if (xhr.status == 200) {
-        mammoth.convertToHtml({ arrayBuffer: new Uint8Array(xhr.response) }).then((resultObject) => {
+        const buffer = new Uint8Array(xhr.response)
+        // mammoth 不会输出图片的显示尺寸，需要另外从 document.xml 里读出来再补回去
+        Promise.all([
+          mammoth.convertToHtml(
+            { arrayBuffer: buffer },
+            {
+              transformDocument: mammoth.transforms.paragraph(markDocxParagraphAlignment),
+              transformImage: function (image) {
+                return image.read('base64').then(function (imageBuffer) {
+                  return `<img src="data:${image.contentType};base64,${imageBuffer}" alt="文档图片">`
+                })
+              }
+            }
+          ),
+          extractDocxImageSizes(buffer)
+        ]).then(([resultObject, imageSizes]) => {
           this.$nextTick(() => {
-            this.vHtml = resultObject.value
+            this.vHtml = restoreDocxParagraphAlignment(applyDocxImageSizes(resultObject.value, imageSizes))
           })
         })
       }
@@ -93,49 +115,80 @@ export default {
     onCreated(editor) {
       this.editor = Object.seal(editor) // 一定要用 Object.seal() ，否则会报错
     },
-    //保存word
+
+    onCustomPaste(editor, event, done) {
+      try {
+        const clipboardData = event && event.clipboardData
+        if (!clipboardData) return done(true)
+
+        const html = clipboardData.getData('text/html')
+        if (!html || !/<table[\s>]/i.test(html)) return done(true)
+
+        const { html: cleanHtml, changed } = normalizePastedTableHtml(html)
+        if (!changed) return done(true)
+
+        editor.insertHtml(cleanHtml)
+        return done(false)
+      } catch (e) {
+        return done(true)
+      }
+    },
+
     wordOption(type) {
-      const innerHtml = this.vHtml
+      const innerHtml = normalizeImageSizeForSave(this.vHtml)
+        // 替换strong标签
         .replace(/<strong>/g, '<b>')
         .replace(/<\/strong>/g, '</b>')
-        // 背景色不生效问题
-        .replace(/<mark/g, '<span')
+        // 处理背景色标记
+        .replace(/<mark([^>]*)/g, '<span$1 style="background-color: yellow;"')
         .replace(/<\/mark>/g, '</span>')
 
-      asBlob(innerHtml).then((data) => {
-        if (type === 'export') {
-          saveAs(data, this.file.name + '.' + this.file.file_ext) // save as docx file
-        } else {
-          let data = {
-            content: innerHtml,
-            is_file: 1
-          }
-          fileUpload(this.fid, this.file.id, data).then((res) => {
-            if (res.status === 200) {
-              // let path = this.$router.history.current.path
-              // this.$router.push({ path, query: { ...this.$route.query, word_url: res.data.file_url } })
+      asBlob(innerHtml)
+        .then((blobData) => {
+          if (type === 'export') {
+            // 导出为文件
+            saveAs(blobData, `${this.file.name}.${this.file.file_ext}`)
+          } else {
+            // 上传文件内容
+            const uploadData = {
+              content: innerHtml,
+              is_file: 1
             }
-            this.$emit('closeLoading')
-          })
-        }
-      })
-    },
-    beforeDestroy() {
-      const editor = this.editor
-      if (editor == null) return
-      editor.destroy() // 组件销毁时，及时销毁编辑器
+
+            fileUpload(this.fid, this.file.id, uploadData)
+              .then((res) => {
+                if (res.status === 200) {
+                }
+              })
+              .catch((error) => {
+                // 后端转换失败时会被 request 层 reject，这里必须提示，否则内容静默丢失
+                this.$message.error((error && error.message) || '保存失败，请重试')
+              })
+              .finally(() => {
+                this.$emit('closeLoading')
+              })
+          }
+        })
+        .catch((error) => {
+          console.error('转换为Blob失败:', error)
+          this.$emit('closeLoading') // 确保在错误情况下也关闭加载状态
+        })
     }
+  },
+  beforeUnmount() {
+    const editor = this.editor
+    if (editor == null) return
+    editor.destroy() // 组件销毁时，及时销毁编辑器
   }
 }
 </script>
-<style src="@wangeditor/editor/dist/css/style.css"></style>
 <style lang="scss" scoped>
 .toolbar {
   position: fixed;
   width: 100%;
   z-index: 99;
 }
-/deep/.w-e-bar-show {
+:deep(.w-e-bar-show) {
   display: flex;
   justify-content: center;
 }
@@ -146,14 +199,14 @@ export default {
   margin: 0 auto;
   padding-top: 20px;
 }
-/deep/ .w-e-text-container {
+:deep(.w-e-text-container) {
   margin-top: 30px;
-  height: calc(100vh - 150px) !important;
-  overflow-y: auto;
+  min-height: calc(100vh - 110px) !important;
+  // overflow-y: auto;
   border: none !important;
   padding: 40px 60px;
 }
-/deep/ .w-e-text-placeholder {
+:deep(.w-e-text-placeholder) {
   padding: 40px 60px;
 }
 </style>

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,10 +15,11 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Attendance;
 
-use App\Http\Dao\BaseDao;
+use App\Constants\ApproveEnum;
 use App\Http\Model\Attendance\AttendanceApplyRecord;
+use App\Http\Dao\BaseDao;
 use App\Http\Model\BaseModel;
-use crmeb\traits\dao\ListSearchTrait;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Concerns\BuildsQueries;
 
@@ -38,6 +39,23 @@ class AttendanceApplyRecordDao extends BaseDao
     public function getCountGroupByUid(array $where): mixed
     {
         return $this->search($where)->selectRaw('`uid`, count(`id`) as `count`')->groupBy('uid')->distinct()->get();
+    }
+
+    /**
+     * 查询指定时间范围内已通过审批的申请记录.
+     * @throws BindingResolutionException
+     * @throws \ReflectionException
+     */
+    public function selectApprovedInTimeRange(array $where, string $startTime, string $endTime, array $field = ['*']): mixed
+    {
+        return $this->search($where)
+            ->where('start_time', '<=', $endTime)
+            ->where('end_time', '>=', $startTime)
+            ->whereHas('approveApply', function ($query) {
+                $query->where('status', ApproveEnum::APPROVE_PASSED);
+            })
+            ->select($field ?: '*')
+            ->get();
     }
 
     /**

@@ -114,12 +114,8 @@ fi
 echo 'php-fileinfo 插件安装成功'
 echo '---------------------------------'
 
-#安装swoole-loader 插件
-if [ ! -e "${extFile}/swoole_loader80.so" ]; then
-    cp ./helper/swoole_loader/swoole_loader80.so $extFile
-    echo "extension = swoole_loader80.so" >> ${setup_path}/php/$php_version/etc/php.ini
-fi
-echo 'swoole-loader 插件安装成功'
+# 开源版已去除加密运行时，无需安装 swoole_loader
+echo '跳过 swoole-loader（开源明文，无需加密扩展）'
 echo '---------------------------------'
 
 echo '修改mysql sql_mode配置'
@@ -258,7 +254,7 @@ cp .env.example .env
 chmod -R 755 storage
 chmod -R 755 .version
 chmod -R 755 .env
-chmod -R 755 .constant
+[ -f .constant ] && chmod -R 755 .constant
 chmod -R 755 public
 
 echo '正在启动系统'

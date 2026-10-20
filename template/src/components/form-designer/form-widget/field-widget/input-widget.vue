@@ -12,12 +12,12 @@
     :sub-form-row-id="subFormRowId"
   >
     <el-input
-      v-show="!getReadMode() || field.isShow"
+      v-if="isInputVisable"
       ref="fieldEditor"
       v-model="fieldModel"
       :disabled="field.options.disabled"
       :readonly="field.options.readonly"
-      :size="field.options.size"
+      :size="toElSize(field.options.size)"
       type="text"
       :show-password="field.options.showPassword"
       :placeholder="field.options.placeholder"
@@ -25,22 +25,23 @@
       :minlength="field.options.minLength"
       :maxlength="field.options.maxLength"
       :show-word-limit="field.options.showWordLimit"
-      :prefix-icon="field.options.prefixIcon"
-      :suffix-icon="field.options.suffixIcon"
+      :prefix-icon="$icon(field.options.prefixIcon)"
+      :suffix-icon="$icon(field.options.suffixIcon)"
       @focus="handleFocusCustomEvent"
       @blur="handleBlurCustomEvent"
       @input="handleInputCustomEvent"
       @change="handleChangeEvent"
     >
-      <el-button
-        slot="append"
-        v-if="field.options.appendButton"
-        :disabled="field.options.disabled || field.options.appendButtonDisabled"
-        :class="field.options.buttonIcon"
-        @click.native="emitAppendButtonClick"
-      ></el-button>
+      <!-- Element Plus 只要提供了 append 插槽就会渲染附加容器，需按条件提供插槽 -->
+      <template v-if="field.options.appendButton" #append>
+        <el-button
+          :disabled="field.options.disabled || field.options.appendButtonDisabled"
+          :class="field.options.buttonIcon"
+          @click="emitAppendButtonClick"
+        ></el-button>
+      </template>
     </el-input>
-    <template v-if="getReadMode() && !field.isShow">
+    <template v-else>
       <div class="readonly-mode-field" @click="isShowFn()">{{ contentForReadMode || '--' }}</div>
     </template>
   </form-item-wrapper>
@@ -48,13 +49,11 @@
 
 <script>
 import FormItemWrapper from './form-item-wrapper'
-import emitter from '@/utils/emitter'
-import i18n, { translate } from '@/utils/i18n'
+import i18n, { translate } from '@/utils/i18n.ts'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
 export default {
   name: 'input-widget',
-  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
-  mixins: [emitter, fieldMixin, i18n],
+  mixins: [fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -91,8 +90,17 @@ export default {
       rules: []
     }
   },
-  watch: {},
+  watch: {
+    isInputVisable(val) {
+      val && this.$nextTick(() => {
+        this.isInputVisable && this.$refs.fieldEditor.focus();
+      });
+    }
+  },
   computed: {
+    isInputVisable() {
+      return !this.getReadMode() || this.field.isShow;
+    },
     inputType() {
       if (this.field.options.type === 'number') {
         return 'text' //当input的type设置为number时，如果输入非数字字符，则v-model拿到的值为空字符串，无法实现输入校验！故屏蔽之！！
@@ -122,7 +130,7 @@ export default {
     this.handleOnMounted()
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     this.unregisterFromRefList()
   },
 
@@ -133,4 +141,3 @@ export default {
 <style lang="scss" scoped>
 @import '../../../../styles/global.scss'; //* form-item-wrapper已引入，还需要重复引入吗？ *//
 </style>
-@/utils/i18ns

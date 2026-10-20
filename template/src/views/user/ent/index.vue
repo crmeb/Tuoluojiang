@@ -23,21 +23,26 @@
                     clearable
                     placeholder="请输入姓名/手机号码"
                     prefix-icon="el-icon-search"
-                    size="small"
                     style="width: 210px"
                     @change="getUserAddBookeList(1)"
-                    @keyup.native.stop.prevent.enter="getUserAddBookeList(1)"
+                    @keyup.stop.prevent.enter="getUserAddBookeList(1)"
                   >
                   </el-input>
                 </div>
                 <div>
                   <oa-table
+                    :height="TABLE_HEIGHT"
+                    :loading="false"
+                    :total="total"
                     :tableData="tableData"
                     :tableOptions="tableOptions"
-                    :height="tableHeight"
-                    :isShowPagination="false"
-                    :loading="false"
+                    @handleSizeChange="handleSizeChange"
+                    @handleCurrentChange="pageChange"
                   >
+                    <template #job="{ row }">
+                      <span>{{ row.job ? row.job.name : '--' }}</span>
+                    </template>
+
                     <template #frames="{ row }">
                       <div v-for="(item, index) in row.frames" :key="index">
                         <span class="icon-h"
@@ -46,20 +51,13 @@
                         </span>
                       </div>
                     </template>
+
+                    <template #email="{ row }">
+                      <span>{{ row.info && row.info.email ? row.info.email : '--' }}</span>
+                    </template>
                   </oa-table>
                 </div>
               </div>
-            </div>
-            <div class="page-fixed">
-              <el-pagination
-                :current-page="where.page"
-                :page-size="where.limit"
-                :page-sizes="[15, 20, 30]"
-                :total="total"
-                layout="total, prev, pager, next, jumper"
-                @size-change="handleSizeChange"
-                @current-change="pageChange"
-              />
             </div>
           </el-col>
         </el-row>
@@ -70,13 +68,14 @@
 
 <script>
 // 引入用户通讯录树和列表的API
-import { userAddBookTree, userAddBookeList } from '@/api/user';
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { userAddBookTree, userAddBookeList } from '@/api/user.ts'
 // 引入菜单树组件
-import menuTree from './components/menuTree';
+import menuTree from './components/menuTree'
 // 引入默认页面组件
-import defaultPage from '@/components/common/defaultPage';
+import defaultPage from '@/components/common/defaultPage'
 // 引入自定义表格组件
-import oaTable from '@/components/form-common/oa-table';
+import oaTable from '@/components/form-common/oa-table'
 export default {
   name: 'Index',
   components: {
@@ -86,6 +85,7 @@ export default {
   },
   data() {
     return {
+      TABLE_HEIGHT,
       treeData: [],
       where: {
         page: 1,
@@ -115,9 +115,8 @@ export default {
         },
         {
           label: '职位',
-          render: (row) => {
-            return <span>{row.job ? row.job.name : '--'}</span>
-          }
+          type: 'slot',
+          name: 'job'
         },
         {
           label: '部门',
@@ -130,9 +129,8 @@ export default {
         },
         {
           label: '邮箱',
-          render: (row) => {
-            return <span>{row.info && row.info.email ? row.info.email : '--'}</span>
-          }
+          type: 'slot',
+          name: 'email'
         }
       ],
 
@@ -144,25 +142,24 @@ export default {
     this.getUserAddBookTree()
   },
   methods: {
-
     async getUserAddBookTree() {
       try {
-        const result = await userAddBookTree();
-        this.treeData = result.data;
-        this.getUserAddBookeList();
+        const result = await userAddBookTree()
+        this.treeData = result.data
+        this.getUserAddBookeList()
       } catch (error) {
-        console.error('获取用户通讯录树数据失败:', error);
+        console.error('获取用户通讯录树数据失败:', error)
       }
     },
 
     async getUserAddBookeList(num) {
-      this.where.page = num || this.where.page;
+      this.where.page = num || this.where.page
       try {
-        const result = await userAddBookeList(this.where);
-        this.tableData = result.data.list;
-        this.total = result.data.count;
+        const result = await userAddBookeList(this.where)
+        this.tableData = result.data.list
+        this.total = result.data.count
       } catch (error) {
-        console.error('获取用户通讯录列表数据失败:', error);
+        console.error('获取用户通讯录列表数据失败:', error)
       }
     },
 
@@ -178,14 +175,12 @@ export default {
       this.where = Object.assign(this.where, data)
       this.getUserAddBookeList(1)
     },
-   
-  
+
     getFrameId(data) {
       this.where.frame_id = data
       this.where.page = 1
       this.getUserAddBookeList()
-    },
-  
+    }
   }
 }
 </script>
@@ -203,16 +198,9 @@ export default {
     margin-right: 15px;
   }
 }
-/deep/ .el-input__inner {
-  display: flex;
-  justify-content: start;
-  align-items: end;
-  line-height: 32px;
-}
-
 .table-container {
   padding-top: 20px;
-  /deep/ .el-form-item {
+  :deep(.el-form-item) {
     margin-bottom: 0;
   }
 }
@@ -237,13 +225,13 @@ export default {
   border-radius: 50%;
   background-color: #ff9900;
 }
-/deep/ .seach-box .el-input__clear {
+:deep(.seach-box .el-input__clear) {
   position: absolute;
   height: 100%;
   right: 0;
   top: -4px;
 }
-/deep/ .el-input__suffix {
+:deep(.el-input__suffix) {
   position: absolute;
   top: 5px;
 }

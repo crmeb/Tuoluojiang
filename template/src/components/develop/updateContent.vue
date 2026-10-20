@@ -8,7 +8,6 @@
             <div>
               <div class="prompt">目标字段</div>
               <el-select
-                size="small"
                 v-model="item.form_field_uniqid"
                 placeholder="请搜索选择目标字段"
                 style="width: 300px"
@@ -29,7 +28,6 @@
               <div class="prompt">源字段</div>
               <!-- 源字段选择 -->
               <el-select
-                size="small"
                 v-model="item.to_form_field_uniqid"
                 placeholder="请搜索选择源字段"
                 style="width: 300px"
@@ -57,7 +55,6 @@
               <div>
                 <div class="prompt">目标字段</div>
                 <el-select
-                  size="small"
                   v-model="item.form_field_uniqid"
                   placeholder="请搜索选择目标字段"
                   style="width: 100%"
@@ -83,7 +80,6 @@
                 </div>
 
                 <el-select
-                  size="small"
                   v-model="item.operator"
                   placeholder="请选择更新方式"
                   style="width: 100%"
@@ -102,7 +98,6 @@
               <div class="mr14 ml14" v-else>
                 <div class="prompt">更新方式</div>
                 <el-select
-                  size="small"
                   v-model="item.operator"
                   placeholder="请选择更新方式"
                   style="width: 100%"
@@ -122,7 +117,6 @@
                   v-if="
                     ['skip_value', 'field_value', 'cover_value'].includes(item.operator) || type == 'field_aggregate'
                   "
-                  size="small"
                   v-model="item.to_form_field_uniqid"
                   placeholder="请搜索选择源字段"
                   style="width: 100%"
@@ -137,7 +131,6 @@
                   <template v-if="numBerList.includes(getType(item.form_field_uniqid))">
                     <el-input
                       placeholder="请输计算公式"
-                      size="small"
                       @focus="openDialog(index, item.value)"
                       v-model="item.value"
                     >
@@ -148,7 +141,6 @@
                 <div v-else>
                   <!-- 下拉选择 -->
                   <el-select
-                    size="small"
                     v-model="item.value"
                     :multiple="item.type == 'checkbox'"
                     v-if="['select', 'checkbox', 'radio'].includes(getType(item.form_field_uniqid))"
@@ -175,7 +167,6 @@
                   <el-input
                     v-model="item.value"
                     style="width: 100%"
-                    size="small"
                     v-if="
                       getType(item.form_field_uniqid) === 'input' ||
                       !item.form_field_uniqid ||
@@ -245,6 +236,7 @@
                         getValue(item.form_field_uniqid)
                       )
                     "
+                    :showType="item.association_show_type"
                     :value="item.value || {}"
                     :id="getId(item)"
                     style="width: 100%"
@@ -289,14 +281,17 @@
             {{ val.label }}
           </div>
         </div>
-        <span class="el-icon-chat-dot-square icon" slot="reference"></span>
+        <template #reference>
+          <span class="el-icon-chat-dot-square icon"></span>
+        </template>
       </el-popover>
     </oa-dialog>
   </div>
 </template>
 
 <script>
-import { getDictTreeListApi } from '@/api/form'
+import { defineAsyncComponent } from 'vue'
+import { getDictTreeListApi } from '@/api/form.ts'
 export default {
   props: {
     type: {
@@ -343,12 +338,12 @@ export default {
     }
   },
   components: {
-    tableDialog: () => import('@/components/develop/tableDialog'),
-    selectMember: () => import('@/components/form-common/select-member'),
-    selectDepartment: () => import('@/components/form-common/select-department'),
-    oaDialog: () => import('@/components/form-common/dialog-form'),
-    selectOne: () => import('@/components/form-common/select-one'),
-    selectLabel: () => import('@/components/form-common/select-label')
+    tableDialog: defineAsyncComponent(() => import('@/components/develop/tableDialog')),
+    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
+    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department')),
+    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form')),
+    selectOne: defineAsyncComponent(() => import('@/components/form-common/select-one')),
+    selectLabel: defineAsyncComponent(() => import('@/components/form-common/select-label'))
   },
 
   data() {
@@ -515,7 +510,7 @@ export default {
 
     getSelection(data, item) {
       item.value = data
-      // this.$set(this.updateList[this.activeIndex], 'value', data)
+      // this.updateList[this.activeIndex].value = data
     },
 
     getLabel(val) {
@@ -603,7 +598,7 @@ export default {
   right: 30px;
   bottom: 80px;
 }
-/deep/ .el-textarea__inner {
+:deep(.el-textarea__inner) {
   resize: none;
   font-size: 13px;
 }

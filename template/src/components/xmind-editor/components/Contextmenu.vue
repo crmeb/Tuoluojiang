@@ -1,9 +1,16 @@
 <template>
-  <div class="contextmenuContainer listBox" v-if="isShow" ref="contextmenuRef"
-    :style="{ left: left + 'px', top: top + 'px' }">
+  <div
+    class="contextmenuContainer listBox"
+    v-if="isShow"
+    ref="contextmenuRef"
+    :style="{ left: left + 'px', top: top + 'px' }"
+  >
     <template v-if="type === 'node'">
-      <div class="item" @click="handleExecCommand('INSERT_NODE', insertNodeBtnDisabled)"
-        :class="{ disabled: insertNodeBtnDisabled }">
+      <div
+        class="item"
+        @click="handleExecCommand('INSERT_NODE', insertNodeBtnDisabled)"
+        :class="{ disabled: insertNodeBtnDisabled }"
+      >
         <span class="name">插入同级节点</span>
         <span class="desc">Enter</span>
       </div>
@@ -84,8 +91,12 @@
         <span class="name">展开到</span>
         <span class="el-icon-arrow-right"></span>
         <div class="subItems listBox" :class="{ showLeft: subItemsShowLeft }" style="top: -10px">
-          <div class="item" v-for="(item, index) in expandList" :key="item"
-            @click="handleExecCommand('UNEXPAND_TO_LEVEL', false, index + 1)">
+          <div
+            class="item"
+            v-for="(item, index) in expandList"
+            :key="item"
+            @click="handleExecCommand('UNEXPAND_TO_LEVEL', false, index + 1)"
+          >
             {{ item }}
           </div>
         </div>
@@ -122,13 +133,24 @@
 </template>
 
 <script>
+import { EventBus } from '@/libs/bus.ts'
 import { getTextFromHtml, imgToDataUrl } from 'simple-mind-map/src/utils'
 import { transformToMarkdown } from 'simple-mind-map/src/parse/toMarkdown'
 import { transformToTxt } from 'simple-mind-map/src/parse/toTxt'
 
-import { DRAW_CLICK, EXEC_COMMAND, EXPAND_BTN_CLICK, MOUSEUP, NODE_CLICK, NODE_CONTEXTMENU, SVG_MOUSEDOWN, TOGGLE_ZEN_MODE, TRANSLATE } from '../event-constant';
+import {
+  DRAW_CLICK,
+  EXEC_COMMAND,
+  EXPAND_BTN_CLICK,
+  MOUSEUP,
+  NODE_CLICK,
+  NODE_CONTEXTMENU,
+  SVG_MOUSEDOWN,
+  TOGGLE_ZEN_MODE,
+  TRANSLATE
+} from '../event-constant.ts'
 
-import { copy, setDataToClipboard, setImgToClipboard } from "../utils";
+import { copy, setDataToClipboard, setImgToClipboard } from '../utils.ts'
 
 export default {
   name: 'Contextmenu',
@@ -162,38 +184,31 @@ export default {
         [TRANSLATE]: this.handleSetContextMenuHidden
       },
 
-      TOGGLE_ZEN_MODE,
+      TOGGLE_ZEN_MODE
     }
   },
   computed: {
     expandList() {
-      return [
-        "一级主题",
-        "二级主题",
-        "三级主题",
-        "四级主题",
-        "五级主题",
-        "六级主题"
-      ]
+      return ['一级主题', '二级主题', '三级主题', '四级主题', '五级主题', '六级主题']
     },
     copyTypeList() {
       const list = [
         {
-          name: "JSON",
+          name: 'JSON',
           value: 'json'
         },
         {
-          name: "Markdown",
+          name: 'Markdown',
           value: 'md'
         },
         {
-          name: "TXT",
+          name: 'TXT',
           value: 'txt'
         }
       ]
       if (this.enableCopyToClipboardApi) {
         list.push({
-          name: "图片",
+          name: '图片',
           value: 'png'
         })
       }
@@ -207,7 +222,7 @@ export default {
         return true
       }
       let isFirst =
-        this.node.parent.children.findIndex(item => {
+        this.node.parent.children.findIndex((item) => {
           return item === this.node
         }) === 0
       return isFirst
@@ -218,7 +233,7 @@ export default {
       }
       let children = this.node.parent.children
       let isLast =
-        children.findIndex(item => {
+        children.findIndex((item) => {
           return item === this.node
         }) ===
         children.length - 1
@@ -235,19 +250,16 @@ export default {
     }
   },
   created() {
-    Object.entries(this.listenEventMap)
-      .forEach(([eventName, handler]) => {
-        this.$bus.$on(eventName, handler);
-      });
+    Object.entries(this.listenEventMap).forEach(([eventName, handler]) => {
+      EventBus.$on(eventName, handler)
+    })
   },
-  beforeDestroy() {
-    Object.entries(this.listenEventMap)
-      .forEach(([eventName, handler]) => {
-        this.$bus.$off(eventName, handler);
-      });
+  beforeUnmount() {
+    Object.entries(this.listenEventMap).forEach(([eventName, handler]) => {
+      EventBus.$off(eventName, handler)
+    })
   },
   methods: {
-
     // 计算右键菜单元素的显示位置
     getShowPosition(x, y) {
       const rect = this.$refs.contextmenuRef.getBoundingClientRect()
@@ -294,10 +306,7 @@ export default {
         return
       }
       this.isMousedown = false
-      if (
-        Math.abs(this.mosuedownX - e.clientX) > 3 ||
-        Math.abs(this.mosuedownY - e.clientY) > 3
-      ) {
+      if (Math.abs(this.mosuedownX - e.clientX) > 3 || Math.abs(this.mosuedownY - e.clientY) > 3) {
         this.handleSetContextMenuHidden()
         return
       }
@@ -345,7 +354,7 @@ export default {
           this.mindMap.renderer.setRootNodeCenter()
           break
         case TOGGLE_ZEN_MODE:
-          this.$bus.$emit(TOGGLE_ZEN_MODE);
+          EventBus.$emit(TOGGLE_ZEN_MODE)
           break
         case 'FIT_CANVAS':
           this.mindMap.view.fit()
@@ -357,19 +366,13 @@ export default {
           this.node.setNote('')
           break
         case 'EXPORT_CUR_NODE_TO_PNG':
-          this.mindMap.export(
-            'png',
-            true,
-            getTextFromHtml(this.node.getData('text')),
-            false,
-            this.node
-          )
+          this.mindMap.export('png', true, getTextFromHtml(this.node.getData('text')), false, this.node)
           break
         case 'EXPAND_ALL':
-          this.$bus.$emit(EXEC_COMMAND, key, this.node.uid)
+          EventBus.$emit(EXEC_COMMAND, key, this.node.uid)
           break
         default:
-          this.$bus.$emit(EXEC_COMMAND, key, ...args)
+          EventBus.$emit(EXEC_COMMAND, key, ...args)
           break
       }
       this.handleSetContextMenuHidden()
@@ -409,10 +412,9 @@ export default {
             copy(str)
           }
         }
-        this.$message.success("复制成功")
+        this.$message.success('复制成功')
       } catch (error) {
-        console.log(error)
-        this.$message.error("复制失败")
+        this.$message.error('复制失败')
       }
     }
   }
@@ -427,8 +429,6 @@ export default {
   border-radius: 4px;
   padding-top: 16px;
   padding-bottom: 16px;
-
-
 }
 
 .contextmenuContainer {

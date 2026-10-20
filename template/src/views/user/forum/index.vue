@@ -5,7 +5,8 @@
 </template>
 
 <script>
-import { getAccount } from '@/utils/format'
+import { getAccount } from '@/utils/format.ts'
+import { getStorageJson } from '@/utils/storage.ts'
 export default {
   name: 'ArticleContent',
   data() {
@@ -14,8 +15,8 @@ export default {
     }
   },
   mounted() {
-    let uniquedId = JSON.parse(localStorage.getItem('enterprise')).uniqued
-    let accountNum = getAccount(JSON.parse(localStorage.getItem('userInfo')).phone, uniquedId)
+    let uniquedId = getStorageJson('enterprise', {}).uniqued
+    let accountNum = getAccount(getStorageJson('userInfo', {}).phone, uniquedId)
     this.url = `https://doc.tuoluojiang.com/forum?account=${accountNum}&uniqued=${uniquedId}`
   }
 }

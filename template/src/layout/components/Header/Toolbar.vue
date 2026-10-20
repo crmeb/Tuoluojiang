@@ -1,6 +1,7 @@
 <template>
   <div class="tool-bar breadcrumb">
     <breadcrumb></breadcrumb>
+  
     <!-- <div class="flex top" :class="helpShow ? 'left' : 'mr0'">
       <el-tooltip class="item" effect="dark" content="帮助中心搜索" placement="bottom">
         <span class="iconfont iconjishiben-sousuo" v-if="!searchShow" @click="searchShow = true"></span>
@@ -12,23 +13,24 @@
         v-model="keyword"
         clearable
         @blur="handleConfirm"
-        @keyup.native.stop.prevent.enter="handleConfirm"
+        @keyup.stop.prevent.enter="handleConfirm"
       >
-        <el-button
-          class="search"
-          size="small"
-          slot="suffix"
-          @click="handleConfirm()"
-          type="text"
-          icon="el-icon-search"
-        ></el-button>
+        <template #suffix>
+          <el-button
+            class="search"
+            size="small"
+            @click="handleConfirm()"
+            type="primary" link
+            icon="el-icon-search"
+          ></el-button>
+        </template>
       </el-input>
       <el-tooltip
         class="item"
         effect="dark"
         :content="helpShow ? '收起帮助中心' : '展开帮助中心'"
         placement="bottom"
-        v-if="this.$store.state.settings.helpShow"
+        v-if="settings.helpShow"
       >
         <span class="iconfont" :class="helpShow ? 'iconcebian-shouqi' : 'iconcebian-zhankai'" @click="openHelp"></span>"
       </el-tooltip>
@@ -36,7 +38,8 @@
 
     <div class="right-bar-wrapper">
       <!-- 扫码配置App -->
-      <!-- <configapp /> -->
+       
+      <configapp />
       <!-- 记事本 -->
       <notepad />
       <!-- 消息通知 -->
@@ -48,23 +51,23 @@
 </template>
 
 <script>
-import { help } from '@/layout/components/index'
-import { getAccount } from '@/utils/format'
-
+import { defineAsyncComponent } from 'vue'
 export default {
+  emits: ['openOrCloseHelp', 'handleSearchConfirm'],
   name: 'headerToolbar',
   components: {
-    breadcrumb:() => import('./breadcrumb'),
-    configapp: () => import('../ConfigApp/index'),
-    headerNotice: () => import('../Notice/index'),
-    notepad: () => import('../Notepad/notepad'),
-    personal: () => import('../Personal/index'),
+    breadcrumb:defineAsyncComponent(() => import('./breadcrumb')),
+    configapp: defineAsyncComponent(() => import('../ConfigApp/index')),
+    headerNotice: defineAsyncComponent(() => import('../Notice/index')),
+    notepad: defineAsyncComponent(() => import('../Notepad/notepad')),
+    personal: defineAsyncComponent(() => import('../Personal/index')),
   },
   props: [
     'searchShow',
     'helpIsShow',
     'openOrCloseHelp',
-    'handleSearchConfirm'
+    'handleSearchConfirm',
+    
   ],
   computed: {
 
@@ -136,23 +139,30 @@ export default {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  height: 52px;
+  height: 64px;
   padding-right: 15px;
-  background-color: #fff;
+  // background-color: #fff;
+  // border-bottom: 1px solid #EEEEEE;
   // box-shadow: 0px 2px 4px 2px rgba(0, 0, 0, 0.06);
 
   .iconfont {
     color: #909399;
   }
+
+  > :first-child {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 .right-bar-wrapper {
   display: flex;
+  flex-shrink: 0;
   // width: 220px;
   align-items: center;
   padding-right: 5px;
 
-  /deep/.iconfont {
+  :deep(.iconfont) {
     font-size: 20px !important;
     color: #606266;
   }
@@ -160,12 +170,11 @@ export default {
   .config-app {
   }
   .notepad {
-    margin: 0 19px;
+  margin-right: 18px;
   }
   .notice {
-    margin-right: 30px;
+    margin-right: 28px;
   }
 }
 </style>
-
 

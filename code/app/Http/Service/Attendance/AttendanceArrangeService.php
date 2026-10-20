@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,14 +18,17 @@ namespace App\Http\Service\Attendance;
 use App\Http\Contract\Attendance\AttendanceArrangeInterface;
 use App\Http\Dao\Attendance\AttendanceArrangeDao;
 use App\Http\Dao\Attendance\AttendanceArrangeRecordDao;
-use App\Http\Service\BaseService;
+use App\Jobs\Attend\AttendRangeJob;
 use Carbon\CarbonPeriod;
+use App\Http\Service\BaseService;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 
 /**
  * 考勤排班记录
@@ -65,7 +68,7 @@ class AttendanceArrangeService extends BaseService implements AttendanceArrangeI
      * 保存排班.
      * @throws BindingResolutionException
      */
-    public function saveArrange(array $data): bool
+    public function saveArrange(array $data, int $uid): bool
     {
         $tz           = config('app.timezone');
         $data['date'] = $data['date'] . '-01 00:00';
@@ -77,10 +80,9 @@ class AttendanceArrangeService extends BaseService implements AttendanceArrangeI
             throw $this->exception('考勤组异常');
         }
 
-        return $this->transaction(function () use ($data) {
-            $userId = uuid_to_uid($this->uuId(false));
+        return $this->transaction(function () use ($data, $uid) {
             foreach ($data['groups'] as $group) {
-                $res = $this->dao->firstOrCreate(['group_id' => $group, 'date' => $data['date']], ['group_id' => $group, 'uid' => $userId, 'date' => $data['date']]);
+                $res = $this->dao->firstOrCreate(['group_id' => $group, 'date' => $data['date']], ['group_id' => $group, 'uid' => $uid, 'date' => $data['date']]);
                 if (! $res) {
                     throw $this->exception(__('common.insert.fail'));
                 }
@@ -91,23 +93,27 @@ class AttendanceArrangeService extends BaseService implements AttendanceArrangeI
     }
 
     /**
-     * 解析时间.
+     * 解析考勤日期：不允许早于当前自然月
+     * @param string|null $date 日期字符串
+     * @throws \Exception
      */
-    public function parseDate(string $date): Carbon
+    public function parseDate(?string $date)
     {
-        $tz     = config('app.timezone');
-        $nowObj = now($tz)->startOfMonth();
-        if (! $date) {
-            $dateObj = $nowObj;
-        } else {
-            $dateObj = Carbon::parse($date, $tz);
-            if ($dateObj < $nowObj->subMonth()) {
-                throw $this->exception('考勤时间不能为过去月份');
-            }
-        }
-        return $dateObj;
-    }
+        $timezone = config('app.timezone');
+        $currentMonthStart = now($timezone)->startOfMonth();
 
+        // 空值默认返回当月首日
+        if (empty($date)) {
+            return $currentMonthStart;
+        }
+
+        $parsedDate = Carbon::parse($date, $timezone);
+        if ($parsedDate->isBefore($currentMonthStart)) {
+            throw $this->exception('考勤时间不能为过去月份');
+        }
+
+        return $parsedDate;
+    }
     /**
      * 详情.
      * @throws BindingResolutionException
@@ -158,7 +164,7 @@ class AttendanceArrangeService extends BaseService implements AttendanceArrangeI
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
-    public function updateArrange(int $groupId, string $date, array $data): mixed
+    public function updateArrangeV1(int $groupId, string $date, array $data): mixed
     {
         $tz      = config('app.timezone');
         $nowObj  = now($tz);
@@ -218,6 +224,76 @@ class AttendanceArrangeService extends BaseService implements AttendanceArrangeI
     }
 
     /**
+     * 更新排班.
+     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
+     */
+    public function updateArrange(int $groupId, string $date, array $data, int $uid): mixed
+    {
+        $tz      = config('app.timezone');
+        $nowObj  = now($tz);
+        $dateObj = Carbon::parse($date, $tz);
+        if ($dateObj->startOfMonth()->lt(now($tz)->startOfMonth())) {
+            throw $this->exception('排班时间不能为过去月份');
+        }
+        $groupService = app()->get(AttendanceGroupService::class);
+        if (! $groupService->exists(['id' => $groupId])) {
+            throw $this->exception('操作失败，考勤组记录不存在');
+        }
+        $nowObj->startOfDay();
+        $shiftIds  = $groupService->getShiftIds($groupId);
+        $memberIds = $groupService->getMemberIdsById($groupId);
+        // 获取排班记录ID
+        $id = $this->dao->value(['group_id' => $groupId, 'month' => $dateObj->format('Y-m')], 'id');
+        if (! $id) {
+            $id = $this->dao->create(['uid' => $uid, 'date' => $dateObj->toDateString(), 'group_id' => $groupId])->id;
+            if (! $id) {
+                throw $this->exception('排班失败');
+            }
+        }
+        // 初始化日期对象为月初
+        $dateObj->startOfMonth();
+        $recordsToSave = $delIds = [];
+        foreach ($data as $item) {
+            // 验证排班数据长度
+            if (count($item['shifts']) != $dateObj->daysInMonth) {
+                throw $this->exception('排班数据异常: 排班数据长度与月份天数不符');
+            }
+            // 验证排班人员
+            $uid = (int) $item['uid'];
+            if (! in_array($uid, $memberIds)) {
+                throw $this->exception('排班人员异常: 用户ID不在成员列表中');
+            }
+            // 提前处理班次数据
+            $shifts = array_map('intval', $item['shifts']);
+            // 获取已有记录
+            $recordData = $this->recordDao->column(['uid' => $uid, 'month' => $date, 'group_id' => $groupId], 'id', 'date');
+            foreach ($shifts as $key => $shift) {
+                $date = $dateObj->copy()->addDays($key)->toDateString();
+                if (isset($recordData[$date])) {
+                    unset($recordData[$date]);
+                }
+                if ($nowObj->diffInDays($dateObj->copy()->addDays($key), false) < 0) {
+                    continue;
+                }
+                if (! $this->isValidShift($shift, $shiftIds)) {
+                    throw $this->exception('排班班次异常: 无效班次ID');
+                }
+                $recordsToSave[] = ['id' => $id, 'group_id' => $groupId, 'shift_id' => $shift, 'uid' => $uid, 'date' => $date];
+            }
+            // 删除多余的记录
+            if (! empty($recordData)) {
+                $delIds[] = array_merge($delIds, array_values($recordData));
+            }
+        }
+        AttendRangeJob::dispatch($recordsToSave);
+        $this->recordDao->forceDelete(['id' => $delIds]);
+        return Cache::tags([self::CACHE_KEY])->flush();
+    }
+
+    /**
      * 根据考勤组清除未来排班数据.
      */
     public function clearFutureArrangeByGroupId(int $groupId, bool $isForce = false): int
@@ -231,7 +307,7 @@ class AttendanceArrangeService extends BaseService implements AttendanceArrangeI
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
-    public function clearFutureArrangeByShiftId(int $shiftId): int
+    public function clearFutureArrangeByShiftId(int $shiftId): ?int
     {
         Cache::tags([self::CACHE_KEY])->flush();
         return $this->recordDao->delete(['shift_id' => $shiftId, 'gt_date' => now(config('app.timezone'))->toDateString()]);
@@ -257,20 +333,51 @@ class AttendanceArrangeService extends BaseService implements AttendanceArrangeI
     {
         $calcIsRest = app()->get(CalendarConfigService::class)->dayIsRest($date);
         $info       = $this->recordDao->get(['uid' => $uid, 'date' => $date], ['shift_id']);
-        if (! $info) {
-            return $calcIsRest;
+
+        return $this->isRestByShift($info ? (int) $info->shift_id : null, $calcIsRest);
+    }
+
+    /**
+     * 批量判断日期范围内是否全员休息.
+     * @throws BindingResolutionException
+     * @throws \ReflectionException
+     */
+    public function allUsersRestByDate(array $uids, Carbon $startObj, Carbon $endObj): array
+    {
+        $timeZone = CarbonPeriod::create($startObj->toDateString(), $endObj->toDateString())->toArray();
+        if (! $uids) {
+            return array_fill_keys(array_map(fn ($day) => $day->toDateString(), $timeZone), true);
         }
 
-        $shiftId = intval($info->shift_id);
-        if ($shiftId > 1) {
-            return false;
+        $restMap = app()->get(CalendarConfigService::class)->getRestListByPeriod(clone $startObj, clone $endObj);
+        $records = $this->recordDao->setTimeField('date')->getList([
+            'uid'  => $uids,
+            'time' => $startObj->format('Y/m/d') . '-' . $endObj->format('Y/m/d'),
+        ], ['uid', 'date', 'shift_id']);
+
+        $recordMap = [];
+        foreach ($records as $record) {
+            $recordMap[$record['date']][(int) $record['uid']] = (int) $record['shift_id'];
         }
 
-        if ($shiftId == 1 || ($shiftId < 1 && $calcIsRest)) {
-            return true;
+        $data = [];
+        foreach ($timeZone as $day) {
+            $date           = $day->toDateString();
+            $calendarIsRest = isset($restMap[$date]);
+            $allRest        = true;
+
+            foreach ($uids as $uid) {
+                $shiftId = $recordMap[$date][(int) $uid] ?? null;
+                if (! $this->isRestByShift($shiftId, $calendarIsRest)) {
+                    $allRest = false;
+                    break;
+                }
+            }
+
+            $data[$date] = $allRest;
         }
 
-        return false;
+        return $data;
     }
 
     /**
@@ -438,8 +545,91 @@ class AttendanceArrangeService extends BaseService implements AttendanceArrangeI
     }
 
     /**
+     * 保存考勤排班数据、处理打卡统计状态.
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    public function saveRecords(array $recordsToSave)
+    {
+        $newRecord = [];
+        foreach ($recordsToSave as $record) {
+            $newRecord[$record['uid']][] = $record;
+        }
+        $statisticsService = app(AttendanceStatisticsService::class);
+        $groupService      = app(AttendanceGroupService::class);
+        $shiftService      = app(AttendanceShiftService::class);
+        $statusService     = app(AttendanceStatusService::class);
+        foreach ($newRecord as $k => $v) {
+            foreach ($v as $item) {
+                $this->recordDao->updateOrCreate([
+                    'uid'  => $k,
+                    'date' => $item['date'],
+                ], [
+                    'uid'        => $k,
+                    'date'       => $item['date'],
+                    'arrange_id' => $item['id'],
+                    'group_id'   => $item['group_id'],
+                    'shift_id'   => $item['shift_id'],
+                ]);
+                if ($item['date'] == now()->tz('Asia/Shanghai')->toDateString()) {
+                    if ($item['shift_id']) {
+                        $info      = $statisticsService->renewStatisticsByDate((int) $k, $item['date']);
+                        $shiftData = $shiftService->getArrangeShiftById($item['shift_id'], $item['date']);
+                        if ($info->shift_id != $item['shift_id'] || $info->group_id != $item['group_id']) {
+                            $info->shift_id   = $item['shift_id'];
+                            $info->group_id   = $item['group_id'];
+                            $info->group      = $groupService->value(['id' => $item['group_id']], 'name');
+                            $info->shift_data = $shiftData;
+                            $info->save();
+                        }
+                        $statusService->changeStatus($k, $item['date'], $shiftData);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 是否为考勤管理员.
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    public function isAdmin(int $uid): bool
+    {
+        if (app()->get(AttendanceWhitelistService::class)->exists(['uid' => $uid, 'type' => 1])) {
+            return true;
+        }
+        return (bool) app()->get(AttendanceGroupMemberService::class)->exists(['member' => $uid, 'type' => 2]);
+    }
+
+    /**
+     * 排班数据.
+     * @throws BindingResolutionException
+     * @throws \ReflectionException
+     */
+    public function getUserShift(int $uid, string $date): array
+    {
+        $info = $this->recordDao->get(['uid' => $uid, 'date' => $date], ['shift_id'], ['shift' => fn ($q) => $q->select(['*'])->with(['rules'])])?->toArray();
+        return $info ? ($info['shift'] ?: []) : [];
+    }
+
+    /**
+     * 提取班次验证逻辑.
+     * @param mixed $shift
+     * @param mixed $shiftIds
+     * @return bool
+     */
+    private function isValidShift($shift, $shiftIds)
+    {
+        return in_array($shift, $shiftIds) || in_array($shift, [0, 1]);
+    }
+
+    /**
      * 保存记录.
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
      */
     private function saveRecord(int $arrangeId, int $groupId, int $shiftId, int $uid, string $date): void
     {
@@ -477,6 +667,26 @@ class AttendanceArrangeService extends BaseService implements AttendanceArrangeI
             }
         }
         return $num;
+    }
+
+    /**
+     * 根据排班班次与日历结果判断是否休息.
+     */
+    private function isRestByShift(?int $shiftId, bool $calendarIsRest): bool
+    {
+        if ($shiftId === null) {
+            return $calendarIsRest;
+        }
+
+        if ($shiftId > 1) {
+            return false;
+        }
+
+        if ($shiftId == 1 || ($shiftId < 1 && $calendarIsRest)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

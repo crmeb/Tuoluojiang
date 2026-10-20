@@ -8,7 +8,7 @@
     </div>
     <div class="v-height-flag">
       <div v-height>
-        <el-scrollbar style="height: 100%">
+        <el-scrollbar style="height: 100%" class="reset-scroll-bar">
           <ul class="assess-left-ul">
             <li
               v-for="(item, index) in department"
@@ -19,18 +19,20 @@
               <div>
                 <el-tooltip content="显示/隐藏" effect="dark" placement="top">
                   <span v-if="item.status == 1" class="iconfont icondakai" @click.stop="putStatus(item)" />
-                  <span v-if="item.status == 0" class="iconfont iconyincang" @click.stop="putStatus(item)" />
+                  <span v-else class="iconfont iconyincang" @click.stop="putStatus(item)" />
                 </el-tooltip>
 
                 <span>{{ item.name }}</span>
               </div>
 
-              <el-popover :ref="`pop-${item.id}`" :offset="10" placement="bottom-end" trigger="click">
+              <el-popover :ref="`pop-${item.id}`" :offset="10" placement="bottom-end" trigger="click" width="auto">
                 <div class="right-item-list">
-                  <div class="right-item" @click.stop="addDivsion(item)">{{ $t('public.edit') }}</div>
-                  <div class="right-item" @click.stop="handleDelete(item.id)">{{ $t('public.delete') }}</div>
+                  <div class="right-item" @click.stop="addDivsion(item)">编辑</div>
+                  <div class="right-item" @click.stop="handleDelete(item.id)">删除</div>
                 </div>
-                <i slot="reference" class="icon iconfont icongengduo pointer assess-left-more"></i>
+                <template #reference>
+                  <i class="icon iconfont icongengduo pointer assess-left-more"></i>
+                </template>
               </el-popover>
             </li>
           </ul>
@@ -50,16 +52,19 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
 import {
   promotionListApi,
   subPromotionApi,
   putPromotionApi,
   deletePromotionApi,
   promotionShowApi
-} from '@/api/config.js'
+} from '@/api/config.ts'
 export default {
+  emits: ['clickType'],
   name: 'CrmebOaEntLeft',
-  components: { oaDialog: () => import('@/components/form-common/dialog-form') },
+  components: { oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form')) },
 
   data() {
     return {
@@ -146,7 +151,7 @@ export default {
     },
     // 删除
     handleDelete(id) {
-      this.$modalSure('您确定要删除此条数据吗').then(() => {
+      modalSure('您确定要删除此条数据吗').then(() => {
         deletePromotionApi(id).then((res) => {
           this.getList(1)
         })
@@ -181,7 +186,7 @@ export default {
   margin: -15px 0 -20px -20px;
   padding: 14px 0;
   border-right: 1px solid #eeeeee;
-  /deep/ .el-card__header {
+  :deep(.el-card__header) {
     border-bottom: none;
     display: flex;
     align-items: center;
@@ -192,10 +197,13 @@ export default {
       justify-content: flex-end;
     }
   }
-  /deep/ .el-scrollbar__wrap {
+  :deep(.el-scrollbar__wrap) {
     overflow-x: hidden;
   }
   overflow: auto;
+  .assess-left-ul :hover {
+    background-color: #f3f5f9;
+  }
   .assess-left-ul {
     list-style: none;
     margin: 0;
@@ -211,13 +219,13 @@ export default {
       color: #303133;
       cursor: pointer;
       display: flex;
+      border-radius: 4px;
       justify-content: space-between;
       .assess-left-more {
         font-size: 14px;
       }
       &.active {
         background-color: rgba(24, 144, 255, 0.08);
-        border-right: 2px solid #1890ff;
         color: #1890ff;
         font-weight: 600;
         .assess-left-more {

@@ -11,6 +11,7 @@
 
 namespace Tymon\JWTAuth\Providers\JWT;
 
+use Composer\InstalledVersions;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Exception;
@@ -137,37 +138,24 @@ class Lcobucci extends Provider implements JWT
      */
     protected function getBuilderFromClaims(array $payload): Builder
     {
-        $builder = $this->config->builder();
+        return array_reduce(
+            array_keys($payload),
+            function (Builder $builder, string $key) use ($payload): Builder {
+                $value = $payload[$key];
 
-        foreach ($payload as $key => $value) {
-            switch ($key) {
-                case RegisteredClaims::ID:
-                    $builder->identifiedBy($value);
-                    break;
-                case RegisteredClaims::EXPIRATION_TIME:
-                    $builder->expiresAt(DateTimeImmutable::createFromFormat('U', $value));
-                    break;
-                case RegisteredClaims::NOT_BEFORE:
-                    $builder->canOnlyBeUsedAfter(DateTimeImmutable::createFromFormat('U', $value));
-                    break;
-                case RegisteredClaims::ISSUED_AT:
-                    $builder->issuedAt(DateTimeImmutable::createFromFormat('U', $value));
-                    break;
-                case RegisteredClaims::ISSUER:
-                    $builder->issuedBy($value);
-                    break;
-                case RegisteredClaims::AUDIENCE:
-                    $builder->permittedFor($value);
-                    break;
-                case RegisteredClaims::SUBJECT:
-                    $builder->relatedTo($value);
-                    break;
-                default:
-                    $builder->withClaim($key, $value);
-            }
-        }
-
-        return $builder;
+                return match ($key) {
+                    RegisteredClaims::ID => $builder->identifiedBy($value),
+                    RegisteredClaims::EXPIRATION_TIME => $builder->expiresAt(DateTimeImmutable::createFromFormat('U', $value)),
+                    RegisteredClaims::NOT_BEFORE => $builder->canOnlyBeUsedAfter(DateTimeImmutable::createFromFormat('U', $value)),
+                    RegisteredClaims::ISSUED_AT => $builder->issuedAt(DateTimeImmutable::createFromFormat('U', $value)),
+                    RegisteredClaims::ISSUER => $builder->issuedBy($value),
+                    RegisteredClaims::AUDIENCE => $builder->permittedFor($value),
+                    RegisteredClaims::SUBJECT => $builder->relatedTo($value),
+                    default => $builder->withClaim($key, $value),
+                };
+            },
+            $this->config->builder()
+        );
     }
 
     /**
@@ -184,6 +172,12 @@ class Lcobucci extends Provider implements JWT
                 $this->getVerificationKey()
             )
             : Configuration::forSymmetricSigner($this->signer, $this->getSigningKey());
+
+        if (method_exists($config, 'withValidationConstraints')) {
+            return $config->withValidationConstraints(
+                new SignedWith($this->signer, $this->getVerificationKey())
+            );
+        }
 
         $config->setValidationConstraints(
             new SignedWith($this->signer, $this->getVerificationKey())
@@ -207,7 +201,7 @@ class Lcobucci extends Provider implements JWT
 
         $signer = $this->signers[$this->algo];
 
-        if (is_subclass_of($signer, Ecdsa::class)) {
+        if (is_subclass_of($signer, Ecdsa::class) && $this->usingV4()) {
             return $signer::create();
         }
 
@@ -277,5 +271,13 @@ class Lcobucci extends Provider implements JWT
     protected function getKey(string $contents, string $passphrase = ''): Key
     {
         return InMemory::plainText($contents, $passphrase);
+    }
+
+    /**
+     * Determine if the lcobucci/jwt package version is less than 5.0.0.
+     */
+    protected function usingV4(): bool
+    {
+        return version_compare(InstalledVersions::getPrettyVersion('lcobucci/jwt'), '5.0.0', '<');
     }
 }

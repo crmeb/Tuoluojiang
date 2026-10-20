@@ -17,9 +17,9 @@ namespace App\Http\Middleware;
 
 use App\Http\Service\Crud\SystemCrudDataShareService;
 use App\Http\Service\System\RolesService;
-use crmeb\exceptions\AuthException;
-use crmeb\interfaces\ApiMiddlewareInterface;
-use crmeb\traits\MiddlewareTrait;
+use Tuoluojiang\Open\exceptions\AuthException;
+use Tuoluojiang\Open\interfaces\ApiMiddlewareInterface;
+use Tuoluojiang\Open\traits\MiddlewareTrait;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Http\Middleware\BaseMiddleware;
 
@@ -79,7 +79,7 @@ class AuthCrud extends BaseMiddleware implements ApiMiddlewareInterface
                         if (! $id) {
                             throw new AuthException('缺少必要的参数');
                         }
-                        if (! app()->make(SystemCrudDataShareService::class)->value(['crud_id' => $request->crudInfo->id, 'data_id' => $id, 'user_id' => $userId], 'is_update')) {
+                        if (! app()->get(SystemCrudDataShareService::class)->value(['crud_id' => $request->crudInfo->id, 'data_id' => $id, 'user_id' => $userId], 'is_update')) {
                             throw new AuthException('暂无权限在' . $request->crudInfo->table_name . '中修改数据');
                         }
                         break;
@@ -88,7 +88,7 @@ class AuthCrud extends BaseMiddleware implements ApiMiddlewareInterface
                         if (! $id) {
                             throw new AuthException('缺少必要的参数');
                         }
-                        if (! app()->make(SystemCrudDataShareService::class)->value(['crud_id' => $request->crudInfo->id, 'data_id' => $id, 'user_id' => $userId], 'is_delete')) {
+                        if (! app()->get(SystemCrudDataShareService::class)->value(['crud_id' => $request->crudInfo->id, 'data_id' => $id, 'user_id' => $userId], 'is_delete')) {
                             throw new AuthException('暂无权限在' . $request->crudInfo->table_name . '中删除数据');
                         }
                         break;

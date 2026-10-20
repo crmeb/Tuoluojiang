@@ -1,14 +1,14 @@
 <template>
   <div class="box-container">
     <el-drawer
+      class="personal-center-drawer"
       title="个人中心"
-      :visible.sync="drawer"
+      v-model="drawer"
       direction="rtl"
       :before-close="handleClose"
       size="650px"
       :append-to-body="true"
       :modal="true"
-      :wrapper-closable="true"
     >
       <room ref="room" @isOk="handleClose"></room>
     </el-drawer>
@@ -16,10 +16,11 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 export default {
   name: 'User',
   components: {
-    room: () => import('@/views/setting/user/room/index')
+    room: defineAsyncComponent(() => import('@/views/setting/user/room/index'))
   },
   data() {
     return {
@@ -38,15 +39,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/deep/.el-drawer__header {
-  border-bottom: 1px solid #d8d8d8;
-  padding-bottom: 20px;
-  margin-bottom: 0;
-}
-/deep/ .el-drawer__body {
-  padding-bottom: 0;
-  overflow-y: auto;
-}
 .tab-box {
   display: flex;
   align-items: center;
@@ -101,7 +93,7 @@ export default {
     margin-bottom: 10px;
   }
 }
-/deep/.el-popover {
+:deep(.el-popover) {
   min-width: 166px;
 }
 .prop-txt {
@@ -111,5 +103,18 @@ export default {
   line-height: 30px;
   font-size: 13px;
   cursor: pointer;
+}
+</style>
+
+<style lang="scss">
+// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
+.personal-center-drawer .el-drawer__header {
+  border-bottom: 1px solid #d8d8d8;
+  padding-bottom: 20px;
+  margin-bottom: 0;
+}
+.personal-center-drawer .el-drawer__body {
+  padding-bottom: 0;
+  overflow-y: auto;
 }
 </style>

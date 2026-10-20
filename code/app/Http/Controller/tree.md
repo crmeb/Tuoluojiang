@@ -1,7 +1,8 @@
 .
 ├── AdminApi PC端
-├── UniApi 移动端
-├── WpsApi wps回调
+├── Mcp MCP 服务
+├── BaseController.php
+├── Install.php
 └── tree.md
 
-4 directories, 1 file
+（开源版不含 UniApi 移动端）

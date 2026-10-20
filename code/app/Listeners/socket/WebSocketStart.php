@@ -15,8 +15,8 @@ declare(strict_types=1);
 
 namespace App\Listeners\socket;
 
-use crmeb\interfaces\ListenerInterface;
-use crmeb\socket\Ping;
+use Tuoluojiang\Open\interfaces\ListenerInterface;
+use Tuoluojiang\Open\socket\Ping;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;

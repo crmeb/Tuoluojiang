@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,8 +16,9 @@ declare(strict_types=1);
 namespace App\Http\Model\Crud;
 
 use App\Http\Model\Admin\Admin;
-use App\Http\Model\BaseModel;
+use App\Http\Model\System\Menus;
 use App\Observers\SystemCrudObserver;
+use App\Http\Model\BaseModel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -42,6 +43,34 @@ class SystemCrud extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'              => 'integer',
+        'crud_id'         => 'integer',
+        'user_id'         => 'integer',
+        'list_type'       => 'integer',
+        'is_update_form'  => 'integer',
+        'is_update_table' => 'integer',
+        'show_log'        => 'integer',
+        'show_comment'    => 'integer',
+        'created_at'      => 'datetime:Y-m-d H:i:s',
+        'updated_at'      => 'datetime:Y-m-d H:i:s',
+        'deleted_at'      => 'datetime:Y-m-d H:i:s',
+        'is_form_table'   => 'integer',
+        'table_field'     => 'array',
+    ];
+
+    const USER_ID_KEY = 'user_id';
+
+    const UPDATE_USER_ID_KEY = 'update_user_id';
+
+    const FRAME_ID_KEY = 'frame_id';
+
+    const OWNER_USER_ID_KEY = 'owner_user_id';
+
+    protected $appends = ['menu_name_path'];
+
+    protected $hidden = ['menuNamePathData', 'menu_name_path_data'];
 
     public static function boot()
     {
@@ -138,10 +167,9 @@ class SystemCrud extends BaseModel
     }
 
     /**
+     * @return array
      * @email 136327134@qq.com
      * @date 2024/3/5
-     * @param mixed $value
-     * @return array
      */
     public function getCateIdsAttribute($value)
     {
@@ -159,9 +187,27 @@ class SystemCrud extends BaseModel
     }
 
     /**
+     * 菜单关联.
+     * @return HasOne
+     */
+    public function menu()
+    {
+        return $this->hasOne(Menus::class, 'crud_id', 'id');
+    }
+
+    public function menuNamePathData()
+    {
+        return $this->hasOne(Menus::class, 'crud_id', 'id')->with('ancestors');
+    }
+
+    public function getMenuNamePathAttribute(): array
+    {
+        return $this->relationLoaded('menuNamePathData') ? ($this->menuNamePathData?->name_path ?? []) : [];
+    }
+
+    /**
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
      */
     public function setFormFieldsAttribute($value)
     {
@@ -169,12 +215,30 @@ class SystemCrud extends BaseModel
     }
 
     /**
+     * @return mixed
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
-     * @return mixed
      */
     public function getFormFieldsAttribute($value)
+    {
+        return $value ? json_decode($value, true) : [];
+    }
+
+    /**
+     * @email 136327134@qq.com
+     * @date 2024/2/24
+     */
+    public function setTableFieldAttribute($value)
+    {
+        $this->attributes['table_field'] = json_encode($value);
+    }
+
+    /**
+     * @return mixed
+     * @email 136327134@qq.com
+     * @date 2024/2/24
+     */
+    public function getTableFieldAttribute($value)
     {
         return $value ? json_decode($value, true) : [];
     }

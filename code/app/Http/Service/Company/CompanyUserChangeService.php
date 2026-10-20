@@ -17,8 +17,8 @@ namespace App\Http\Service\Company;
 
 use App\Http\Dao\Company\CompanyUserChangeDao;
 use App\Http\Service\BaseService;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 
 /**
  * 人事异动.
@@ -41,23 +41,23 @@ class CompanyUserChangeService extends BaseService implements ResourceServicesIn
 
     public function resourceCreate(array $other = []): array
     {
-        // TODO: Implement resourceCreate() method.
+        return [];
     }
 
     public function resourceSave(array $data) {}
 
     public function resourceEdit(int $id, array $other = []): array
     {
-        // TODO: Implement resourceEdit() method.
+        return [];
     }
 
     public function resourceUpdate($id, array $data)
     {
-        // TODO: Implement resourceUpdate() method.
+        return [];
     }
 
     public function resourceDelete($id, ?string $key = null)
     {
-        // TODO: Implement resourceDelete() method.
+        return [];
     }
 }

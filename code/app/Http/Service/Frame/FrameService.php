@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -20,22 +20,22 @@ use App\Constants\RuleEnum;
 use App\Http\Contract\Frame\FrameInterface;
 use App\Http\Dao\Frame\FrameAssistDao;
 use App\Http\Dao\Frame\FrameDao;
-use App\Http\Model\BaseModel;
 use App\Http\Service\Admin\AdminInfoService;
 use App\Http\Service\Admin\AdminService;
 use App\Http\Service\Assess\UserScopeService;
-use App\Http\Service\BaseService;
 use App\Http\Service\System\RolesService;
+use App\Http\Model\BaseModel;
+use App\Http\Service\BaseService;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Concerns\BuildsQueries;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Event;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
 /**
  * 组织架构.
+ * @mixin FrameDao
  */
 class FrameService extends BaseService implements FrameInterface
 {
@@ -82,20 +82,16 @@ class FrameService extends BaseService implements FrameInterface
      */
     public function getDepartmentTreeList(array $where, array $field = ['*'], null|array|string $sort = null, array $with = []): array
     {
-        $key = md5(json_encode(compact('where', 'field', 'sort', 'with')));
-        return Cache::tags([CacheEnum::TAG_FRAME])
+        $key  = md5(json_encode(compact('where', 'field', 'sort', 'with')));
+        $list = Cache::tags([CacheEnum::TAG_FRAME])
             ->remember($key, (int) sys_config('system_cache_ttl', 3600), function () use ($where, $field, $with, $sort) {
-                $list = $this->dao->getTierList(
-                    $where,
-                    $field,
-                    $with,
-                    $sort
-                );
+                $list = $this->dao->getTierList($where, $field, $with, $sort);
                 foreach ($list as &$value) {
                     $value['isCheck'] = false;
                 }
-                return get_tree_children($list, 'children', 'value');
+                return json_encode(get_tree_children($list, 'children', 'value'), JSON_UNESCAPED_UNICODE);
             });
+        return json_decode($list, true);
     }
 
     /**
@@ -210,86 +206,168 @@ class FrameService extends BaseService implements FrameInterface
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
-    public function deleteDepartment(array $where): int
+    public function deleteDepartment(int $id): bool
     {
-        if (! $this->dao->exists($where)) {
+        $info = $this->dao->get($id);
+        if (! $info) {
             throw $this->exception('未找到相关部门信息');
         }
-        if ($this->dao->exists(['pid' => $where['id'], 'entid' => $where['entid']])) {
+        if ($this->dao->exists(['pid' => $info->id])) {
             throw $this->exception('删除失败，存在下级部门');
         }
-        $res = $this->dao->delete($where['id']);
-        if ($res) {
-            Cache::tags([CacheEnum::TAG_FRAME, CacheEnum::TAG_APPROVE, CacheEnum::TAG_ROLE, CacheEnum::TAG_ASSESS])->flush();
-            Event::dispatch('frame.DeleteSuccess', [$where['entid'], $where['id']]);
-            return $res;
-        }
-        throw $this->exception('创建部门失败');
+        $assistService = app(FrameAssistService::class);
+        $res           = $this->transaction(function () use ($info, $id, $assistService) {
+            $info->delete();
+            $assistService->delete(['frame_id' => $id]);
+            return true;
+        });
+        $topId = $this->dao->value(['pid' => 0], 'id');
+        $res && collect(app(AdminService::class)->column([], 'id'))->diff(collect($assistService->column([], 'user_id'))->unique())
+            ->each(function ($item) use ($topId, $assistService) {
+                $assistService->create(['frame_id' => $topId, 'user_id' => $item]);
+            });
+        return $res && Cache::tags([CacheEnum::TAG_FRAME, CacheEnum::TAG_APPROVE, CacheEnum::TAG_ROLE, CacheEnum::TAG_ASSESS])->flush();
     }
 
     /**
      * 获取组织架构和组织架构下的用户.
+     * @param bool $excludePreEntry 是否排除未入职人员（type=0）
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
-    public function getTreeFrame(array $ids = [], bool $needUser = true): array
+    public function getTreeFrame(array $ids = [], bool $needUser = true, bool $excludePreEntry = true): array
     {
-        return Cache::tags([CacheEnum::TAG_FRAME])->remember(
-            md5('frame_tree:' . $needUser . '_' . json_encode($ids)),
+        $data = Cache::tags([CacheEnum::TAG_FRAME])->remember(
+            md5('frame_tree:v3:' . (int) $needUser . '_' . (int) $excludePreEntry . '_' . json_encode($ids)),
             (int) sys_config('system_cache_ttl', 3600),
-            function () use ($ids, $needUser) {
+            function () use ($ids, $needUser, $excludePreEntry) {
                 $where                = ['is_show' => 1, 'entid' => 1];
                 $ids && $where['ids'] = $ids;
-                $list                 = $this->dao->getTierList(
+                // 不走 Frame::user()（含 groupBy admin.id，多部门人员会被吞掉），改为 assist 批量组装
+                $list = $this->dao->getTierList(
                     $where,
-                    ['id', 'pid', 'entid', 'user_count', 'path', 'id as value', 'name as label', 'user_single_count'],
-                    ['user']
+                    ['id', 'pid', 'entid', 'user_count', 'path', 'id as value', 'name as label', 'user_single_count']
                 );
-                $userList = [];
-                if ($needUser) {
-                    foreach ($list as $items) {
-                        if ($items['user'] && is_array($items['user'])) {
-                            $userList = array_merge($userList, $items['user']);
-                        }
-                    }
-                }
-                $userCount   = 0;
-                $topFrameKey = -1;
-                $topFrame    = $this->getTopFrame();
-                $allUser     = [];
 
-                $uids = app()->get(AdminService::class)->column(['status' => 1], 'id');
-                foreach ($list as $key => &$item) {
-                    $item['user']              = [];
-                    $item['type']              = 0;
-                    $item['user_single_count'] = 0;
-                    $item['childFrame']        = $this->dao->count(['pid' => $item['id']]);
-                    if ($needUser) {
-                        $user = [];
-                        foreach ($userList as $k => $value) {
-                            $frameIds = $value['frame_ids'] ? array_column($value['frame_ids'], 'frame_id') : [];
-                            unset($value['frame_ids']);
-                            if (in_array($item['id'], $frameIds) && in_array($value['id'], $uids)) {
-                                $user[]         = $value;
-                                $value['pid']   = $item['id'];
-                                $value['value'] = $value['id'] . '-' . $key . $k;
-                                $value['label'] = $value['name'];
-                                $value['type']  = 1;
-                                $allUser[]      = $value;
-                            }
-                        }
-                        $item['user']              = $user;
-                        $item['user_single_count'] = count($user);
-                    }
-                    $item['isCheck']                               = false;
-                    $item['id'] == $topFrame['id'] && $topFrameKey = $key;
-                    $item['pid'] == $topFrame['id'] && $userCount += $item['user_count'];
+                $usersByFrameId = $needUser ? $this->buildTreeFrameUsersByFrameId(
+                    array_column($list, 'id'),
+                    $excludePreEntry
+                ) : [];
+
+                // 子部门数量内存统计，避免按部门 N+1 count
+                $childCountMap = [];
+                foreach ($list as $row) {
+                    $pid                 = (int) ($row['pid'] ?? 0);
+                    $childCountMap[$pid] = ($childCountMap[$pid] ?? 0) + 1;
                 }
-                $topFrameKey >= 0 && $list[$topFrameKey]['user_count'] = $userCount;
-                $list                                                  = array_merge($list, $allUser);
-                return get_tree_children($list, 'children', 'value');
+
+                $topFrame    = $this->getTopFrame();
+                $topFrameKey = -1;
+                $userCount   = 0;
+
+                foreach ($list as $key => &$item) {
+                    $frameId = (int) $item['id'];
+                    $users   = [];
+                    if ($needUser) {
+                        foreach ($usersByFrameId[$frameId] ?? [] as $value) {
+                            $value['pid']   = $frameId;
+                            $value['value'] = $value['id'];
+                            $value['label'] = $value['name'];
+                            $value['type']  = 1;
+                            $users[]        = $value;
+                        }
+                    }
+
+                    $item['user']              = $users;
+                    $item['type']              = 0;
+                    $item['user_single_count'] = count($users);
+                    $item['childFrame']        = $childCountMap[$frameId] ?? 0;
+                    $item['isCheck']           = false;
+
+                    if ($item['id'] == $topFrame['id']) {
+                        $topFrameKey = $key;
+                    }
+                    if ($item['pid'] == $topFrame['id']) {
+                        $userCount += $item['user_count'];
+                    }
+                }
+                unset($item);
+
+                if ($topFrameKey >= 0) {
+                    $list[$topFrameKey]['user_count'] = $userCount;
+                }
+
+                // user 作为部门节点属性，可直接参与建树，无需二次遍历查找节点
+                return json_encode(get_tree_children($list, 'children', 'value'), JSON_UNESCAPED_UNICODE);
             }
         );
+        return json_decode($data, true);
+    }
+
+    /**
+     * 按部门批量组装组织树人员（避免 hasManyThrough + groupBy 丢失多部门任职）.
+     *
+     * @param array<int|string> $frameIds
+     * @return array<int, list<array<string, mixed>>>
+     * @throws BindingResolutionException
+     * @throws \ReflectionException
+     */
+    protected function buildTreeFrameUsersByFrameId(array $frameIds, bool $excludePreEntry): array
+    {
+        if (! $frameIds) {
+            return [];
+        }
+
+        /** @var AdminService $adminService */
+        $adminService = app()->get(AdminService::class);
+        $adminWhere   = ['status' => 1];
+        if ($excludePreEntry) {
+            $typeIds = app()->get(AdminInfoService::class)->column(['type' => [1, 2, 3]], 'id') ?: [];
+            if (! $typeIds) {
+                return [];
+            }
+            $adminWhere['id'] = $typeIds;
+        }
+
+        $users = $adminService->select($adminWhere, ['id', 'uid', 'name', 'avatar', 'phone', 'job'], [
+            'job' => fn ($q) => $q->select(['id', 'name', 'rank_id', 'card_id']),
+        ]);
+        if (! $users || $users->isEmpty()) {
+            return [];
+        }
+
+        $userMap = [];
+        foreach ($users as $user) {
+            // 使用 toArray 取关联后的 job，避免 ArrayAccess 落到 job 外键整型
+            $row                         = $user instanceof Model ? $user->toArray() : (array) $user;
+            $userMap[(int) $row['id']] = [
+                'id'     => (int) $row['id'],
+                'uid'    => $row['uid'] ?? '',
+                'name'   => $row['name'] ?? '',
+                'avatar' => $row['avatar'] ?? '',
+                'phone'  => $row['phone'] ?? '',
+                'job'    => $row['job'] ?? null,
+            ];
+        }
+
+        /** @var FrameAssistService $assistService */
+        $assistService = app()->get(FrameAssistService::class);
+        $assistRows    = $assistService->column([
+            'frame_ids' => $frameIds,
+            'user_ids'  => array_keys($userMap),
+        ], ['frame_id', 'user_id']) ?: [];
+
+        $usersByFrameId = [];
+        foreach ($assistRows as $row) {
+            $userId  = (int) ($row['user_id'] ?? 0);
+            $frameId = (int) ($row['frame_id'] ?? 0);
+            if (! $userId || ! $frameId || ! isset($userMap[$userId])) {
+                continue;
+            }
+            $usersByFrameId[$frameId][] = $userMap[$userId];
+        }
+
+        return $usersByFrameId;
     }
 
     /**
@@ -299,13 +377,69 @@ class FrameService extends BaseService implements FrameInterface
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function getTree(string $uuid, int $entId, bool $withRole = true, bool $isScope = true, int $crudId = 0, int $crudRouleType = 1): array
+    public function getTree(int $uid, bool $withRole = true, bool $isScope = true, int $crudId = 0, int $crudRoleType = 1): array
     {
-        return Cache::tags([CacheEnum::TAG_FRAME, CacheEnum::TAG_ROLE])->remember(
-            md5($uuid . $entId . (int) $withRole . (int) $isScope . $crudId . $crudRouleType),
+        $data = Cache::tags([CacheEnum::TAG_FRAME, CacheEnum::TAG_ROLE])->remember(
+            md5($uid . (int) $withRole . (int) $isScope . $crudId . $crudRoleType),
             (int) sys_config('system_cache_ttl', 3600),
-            function () use ($uuid, $entId, $withRole, $isScope, $crudId, $crudRouleType) {
-                [$userFrames, $levels] = app()->get(RolesService::class)->getDataFrames($uuid, $entId, true, $crudId, $crudRouleType);
+            function () use ($uid, $withRole, $isScope, $crudId, $crudRoleType) {
+                // 获取用户部门和级别数据
+                [$userFrames, $levels] = app()->get(RolesService::class)->getDataFrames($uid, 1, true, $crudId, $crudRoleType);
+                // 构建查询条件
+                $where = collect(['is_show' => 1, 'entid' => 1]);
+                if ($isScope) {
+                    $where->put('ids', $userFrames);
+                }
+                // 查询部门数据并处理
+                $frames = collect($this->dao->select($where->all(), [
+                    'id', 'pid', 'entid', 'user_count', 'path',
+                    'id as value', 'name as label', 'name', 'user_single_count',
+                ])?->toArray())->map(function ($item) use ($withRole, $userFrames) {
+                    if ($withRole) {
+                        $item['disabled'] = in_array($item['id'], $userFrames);
+                    } else {
+                        $item['disabled'] = false;
+                    }
+                    return $item;
+                });
+                // 处理权限范围
+                if ($isScope) {
+                    $list = collect();
+                    if ($levels) {
+                        $count = $frames->count() + count($levels) > 1;
+                        if ($count) {
+                            $list->push($this->roleList[RuleEnum::DATA_ALL]);
+                        }
+                        collect($levels)->each(function ($level) use ($count, $list) {
+                            if ($count && $level == RuleEnum::DATA_ALL) {
+                                return;
+                            }
+                            if (isset($this->roleList[$level])) {
+                                $list->push($this->roleList[$level]);
+                            }
+                        });
+                    } else {
+                        $list->push($this->roleList[RuleEnum::DATA_SELF]);
+                    }
+                    // 合并并构建树形结构
+                    $combinedList = $list->concat($frames)->all();
+                    return json_encode(get_tree_children($combinedList), JSON_UNESCAPED_UNICODE);
+                }
+                // 直接构建树形结构
+                return json_encode(get_tree_children($frames->all()), JSON_UNESCAPED_UNICODE);
+            }
+        );
+
+        return json_decode($data, true);
+    }
+
+    public function getTree1(string $uuid, int $entId, bool $withRole = true, bool $isScope = true, int $crudId = 0, int $crudRoleType = 1): array
+    {
+        $data = Cache::tags([CacheEnum::TAG_FRAME, CacheEnum::TAG_ROLE])->remember(
+            md5($uuid . $entId . (int) $withRole . (int) $isScope . $crudId . $crudRoleType),
+            (int) sys_config('system_cache_ttl', 3600),
+            function () use ($uuid, $entId, $withRole, $isScope, $crudId, $crudRoleType) {
+                [$userFrames, $levels] = app()->get(RolesService::class)->getDataFrames($uuid, $entId, true, $crudId, $crudRoleType);
                 $where                 = ['is_show' => 1, 'entid' => $entId];
                 if ($isScope) {
                     $where['ids'] = $userFrames;
@@ -337,11 +471,12 @@ class FrameService extends BaseService implements FrameInterface
                         $list[] = $this->roleList[RuleEnum::DATA_SELF];
                     }
                     $list = array_merge($list, $frames);
-                    return get_tree_children($list);
+                    return json_encode(get_tree_children($list), JSON_UNESCAPED_UNICODE);
                 }
-                return get_tree_children($frames);
+                return json_encode(get_tree_children($frames), JSON_UNESCAPED_UNICODE);
             }
         );
+        return json_decode($data, true);
     }
 
     /**
@@ -353,7 +488,7 @@ class FrameService extends BaseService implements FrameInterface
      */
     public function getUserTree(string $uuid, int $entId, bool $withRole = true, bool $leave = false): array
     {
-        return Cache::tags(CacheEnum::TAG_FRAME)->remember(
+        $result = Cache::tags(CacheEnum::TAG_FRAME)->remember(
             md5($uuid . $entId . (int) $withRole . '_' . (int) $leave),
             (int) sys_config('system_cache_ttl', 86400),
             function () use ($uuid, $entId, $withRole, $leave) {
@@ -361,65 +496,92 @@ class FrameService extends BaseService implements FrameInterface
                 $userFrames  = app()->get(RolesService::class)->getDataFrames($uuid, $entId);
                 $field       = ['id', 'pid', 'entid', 'user_count', 'path', 'id as value', 'name as label', 'user_single_count'];
                 $infoService = app()->get(AdminInfoService::class);
-                if ($leave) {
-                    $ids = $infoService->column(['type' => [1, 2, 3, 4]], 'id');
-                } else {
-                    $ids = array_intersect($infoService->column(['type' => [1, 2, 3]], 'id'), app()->get(AdminService::class)->column(['status' => 1], 'id'));
-                }
-
-                $list = $this->dao->select($where, $field, [
+                // ID筛选
+                $ids = collect($infoService->column($leave ? ['type' => [1, 2, 3, 4]] : ['type' => [1, 2, 3]], 'id'))
+                    ->when(! $leave, function ($collection) {
+                        $adminIds = app()->get(AdminService::class)->column(['status' => 1], 'id');
+                        return $collection->intersect($adminIds);
+                    })
+                    ->all();
+                // 查询列表
+                $list = collect($this->dao->select($where, $field, [
                     'users' => fn ($query) => $query->where(function ($query) use ($ids) {
                         $query->whereIn('admin.id', $ids);
                     })->with([
                         'user_card' => fn ($query) => $query->select(['id', 'type']),
-                    ])->select(['admin.id', 'name', 'avatar', 'phone', 'job', 'uid']),
-                ])?->toArray();
-                $userList = [];
-                foreach ($list as $value) {
-                    $userList = array_merge($userList, $value['users']);
-                }
+                    ])->select(['admin.id', 'name', 'avatar', 'phone', 'job', 'uid', 'work_member_id']),
+                ])?->toArray());
+                // 提取所有用户
+                $userList = $list->pluck('users')->flatten(1)->filter()->map(function ($user) {
+                    $user['is_work'] = ! empty($user['work_member_id']) && $user['work_member_id'] !== 0;
+                    unset($user['work_member_id']);
+                    return $user;
+                })->values();
+                // 基础变量初始化
                 $userCount   = 0;
                 $topFrameKey = -1;
                 $topFrame    = $this->getTopFrame();
-                $allUser     = [];
-                $assists     = app()->get(FrameAssistService::class)->column(['user_id' => array_column($userList, 'id')], ['frame_id', 'user_id']);
-                $frameIds    = [];
-                foreach ($assists as $assist) {
-                    $frameIds[$assist['user_id']][] = $assist['frame_id'];
-                }
-                foreach ($list as $key => &$item) {
-                    if ($withRole) {
-                        $disabled = in_array($item['id'], $userFrames);
-                    } else {
-                        $disabled = false;
-                    }
+
+                // 处理辅助表数据，构建用户-部门ID映射
+                $frameIds = collect(app()->get(FrameAssistService::class)->column(['user_id' => $userList->pluck('id')->all()], ['frame_id', 'user_id']))
+                    ->groupBy('user_id')
+                    ->map(fn ($item) => $item->pluck('frame_id')->all())
+                    ->all();
+
+                // 处理列表项
+                $processedList = $list->map(function ($item, $key) use ($userFrames, $withRole, $userList, $frameIds, $topFrame, &$userCount, &$topFrameKey) {
+                    // 处理disabled状态
+                    $disabled = $withRole && in_array($item['id'], $userFrames);
+                    // 初始化基础字段
                     $item['type']              = 0;
                     $item['user_single_count'] = 0;
                     $item['disabled']          = $disabled;
-                    $user                      = [];
-                    foreach ($userList as $val) {
-                        if (in_array($item['id'], $frameIds[$val['id']])) {
-                            $user[]          = $val;
-                            $val['value']    = $val['id'];
-                            $val['id']       = $val['id'] . '-' . $item['id'];
-                            $val['pid']      = $item['id'];
-                            $val['label']    = $val['name'];
-                            $val['type']     = 1;
-                            $val['disabled'] = $disabled;
-                            $allUser[]       = $val;
-                        }
+                    $item['isCheck']           = false;
+
+                    // 筛选当前部门下的用户并处理
+                    $userItems = $userList->filter(function ($val) use ($item, $frameIds) {
+                        return isset($frameIds[$val['id']]) && in_array($item['id'], $frameIds[$val['id']]);
+                    })->map(function ($val) use ($item, $disabled) {
+                        // 处理用户项字段
+                        $val['value']    = $val['id'];
+                        $val['id']       = $val['id'] . '-' . $item['id'];
+                        $val['pid']      = $item['id'];
+                        $val['label']    = $val['name'];
+                        $val['type']     = 1;
+                        $val['disabled'] = $disabled;
+                        return $val;
+                    });
+                    // 赋值用户数量
+                    $item['user_single_count'] = $userItems->count();
+                    // 更新topFrameKey和userCount
+                    if ($item['id'] == $topFrame['id']) {
+                        $topFrameKey = $key;
                     }
-                    $item['user_single_count']                     = count($user);
-                    $item['isCheck']                               = false;
-                    $item['id'] == $topFrame['id'] && $topFrameKey = $key;
-                    $item['pid'] == $topFrame['id'] && $userCount += $item['user_count'];
+                    if ($item['pid'] == $topFrame['id']) {
+                        $userCount += $item['user_count'];
+                    }
+                    // 移除无用字段
                     unset($item['users']);
+                    return [
+                        'item'       => $item,
+                        'userItems'  => $userItems,
+                        'isTopFrame' => $item['id'] == $topFrame['id'], // 标记是否为顶级部门
+                    ];
+                });
+                // 理后的部门列表和用户列表
+                $frameList = $processedList->pluck('item')->values()->all();
+                $allUser   = $processedList->pluck('userItems')->flatten(1)->filter()->values()->all();
+                // 修改原生数组
+                if ($topFrameKey >= 0) {
+                    $frameList[$topFrameKey]['user_count'] = $userCount;
                 }
-                $topFrameKey >= 0 && $list[$topFrameKey]['user_count'] = $userCount;
-                $list                                                  = array_merge($list, $allUser);
-                return get_tree_children($list);
+                // 合并部门列表和用户列表
+                $finalList = array_merge($frameList, $allUser);
+                return json_encode(get_tree_children($finalList), JSON_UNESCAPED_UNICODE);
             }
         );
+
+        return json_decode($result, true);
     }
 
     /**
@@ -661,16 +823,21 @@ class FrameService extends BaseService implements FrameInterface
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function getFrameSubUids($userId = 0): array
+    public function getFrameSubUids($userId = 0, bool $isNormal = true): array
     {
         if (! $userId) {
             return [];
         }
         $frameAssist = app()->get(FrameAssistService::class);
-        $frameId     = $frameAssist->value(['user_id' => $userId, 'is_mastart' => 1], 'frame_id');
+        $dao         = $isNormal ? $frameAssist : $frameAssist->dao->setTrashed();
+        $frameId     = $dao->value(['user_id' => $userId, 'is_mastart' => 1], 'frame_id');
         $frameIds    = $this->dao->column(['path' => $frameId, 'is_show' => 1], 'id');
         $frameIds[]  = $frameId;
-        return array_unique($frameAssist->column(['frame_id' => $frameIds], 'user_id'));
+        $userIds     = array_unique($dao->column(['frame_id' => $frameIds], 'user_id'));
+        if ($isNormal) {
+            $userIds = array_intersect($userIds, app()->get(AdminService::class)->column(['status' => 1], 'id'));
+        }
+        return array_values($userIds);
     }
 
     /**
@@ -678,7 +845,7 @@ class FrameService extends BaseService implements FrameInterface
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
-    public function scopeFrames(array|int $frameId, bool $isTree = false, array|string $field = 'id'): array
+    public function scopeFrames(array|int|string $frameId, bool $isTree = false, array|string $field = 'id'): array
     {
         $frameIds = array_merge(is_array($frameId) ? $frameId : [$frameId], $this->getMoreFrame($frameId));
         if (is_array($field)) {
@@ -714,8 +881,10 @@ class FrameService extends BaseService implements FrameInterface
         $assistService = app()->get(FrameAssistService::class);
         if ($isNormal) {
             $where['user_id'] = app()->get(AdminService::class)->column(['status' => 1], 'id');
+            $userIds          = $assistService->column($where, 'user_id') ?? [];
+        } else {
+            $userIds = $assistService->setTrashed()->column($where, 'user_id') ?: [];
         }
-        $userIds = $assistService->column($where, 'user_id') ?? [];
         if ($types) {
             return app()->get(AdminService::class)->column(['id' => $userIds], 'card_id');
         }
@@ -756,22 +925,23 @@ class FrameService extends BaseService implements FrameInterface
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
-    final public function getLevelSuper(int $uid, int $level = 1, bool $all = false, array $uids = [], int $count = 1): array|int
+    final public function getLevelSuper(int|string $uid, int $level = 1, bool $all = false, array $uids = [], int $count = 1): array|int
     {
         $assistInfo = $this->assistDao->get(['user_id' => $uid, 'is_mastart' => 1])?->toArray();
         if (! $assistInfo) {
             return $all ? $uids : 0;
         }
         $upUid = 0;
-        if ($assistInfo['superior_uid']) {
-            if (! in_array($assistInfo['superior_uid'], $uids)) {
-                $uids[] = $assistInfo['superior_uid'];
-                $upUid  = $assistInfo['superior_uid'];
+        $superiorUid = (int) $assistInfo['superior_uid'];
+        if ($superiorUid) {
+            if (! in_array($superiorUid, $uids)) {
+                $uids[] = $superiorUid;
+                $upUid  = $superiorUid;
             } else {
                 return $all ? $uids : $upUid;
             }
         } else {
-            $frameAdmin = $this->dao->value($assistInfo['frame_id'], 'user_id');
+            $frameAdmin = (int) $this->dao->value($assistInfo['frame_id'], 'user_id');
             if ($frameAdmin && ! in_array($frameAdmin, $uids)) {
                 $uids[] = $frameAdmin;
                 $upUid  = $frameAdmin;
@@ -796,9 +966,11 @@ class FrameService extends BaseService implements FrameInterface
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    final public function getLevelSub(array|int $uid, int $level = 1, bool $all = false, array $uids = [], int $count = 1, bool $isNormal = true): array
+    final public function getLevelSub(array|int $uid, int $level = 1, bool $all = false, array $uids = [], int $count = 1, bool $isNormal = true, array $visited = []): array
     {
         $userIds = is_array($uid) ? $uid : [$uid];
+        // 记录已访问用户，避免上下级关系成环时将本人或上层节点重复加入下级结果
+        $visited = array_unique(array_merge($visited, $userIds));
         $subUid  = [];
         foreach ($userIds as $userId) {
             $frameIds = $this->assistDao->column(['user_id' => $userId, 'is_admin' => 1], 'frame_id');
@@ -812,18 +984,20 @@ class FrameService extends BaseService implements FrameInterface
             $uid2   = $this->assistDao->column(['superior_uid' => $userId], 'user_id');
             $subUid = array_unique(array_merge($subUid, array_merge($uid1, $uid2)));
         }
+        if ($isNormal) {
+            $normalUserIds = app(AdminInfoService::class)->column(['type' => [1, 2, 3]], 'id');
+            $subUid        = array_intersect($subUid, $normalUserIds);
+        }
+        $subUid = array_values(array_diff($subUid, $visited));
         if (! $subUid) {
             return $all ? $uids : [];
-        }
-        if ($isNormal) {
-            $subUid = app()->get(AdminService::class)->column(['id' => $subUid], 'id');
         }
         $uids = array_unique(array_merge($uids, $subUid));
         if ($count == $level) {
             return $all ? $uids : $subUid;
         }
         ++$count;
-        return $this->getLevelSub($subUid, $level, $all, $uids, $count);
+        return $this->getLevelSub($subUid, $level, $all, $uids, $count, $isNormal, $visited);
     }
 
     /**
@@ -833,7 +1007,7 @@ class FrameService extends BaseService implements FrameInterface
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    final public function getLevelSuperUser(int $uid, int $level = 1, bool $all = false, array $field = ['id', 'uid', 'name', 'avatar']): array
+    final public function getLevelSuperUser(int|string $uid, int $level = 1, bool $all = false, array $field = ['id', 'uid', 'name', 'avatar']): array
     {
         $userIds = $this->getLevelSuper($uid, $level, $all);
         if ($all) {
@@ -906,7 +1080,8 @@ class FrameService extends BaseService implements FrameInterface
      */
     public function getFrameByUserIds(array $userIds): array
     {
-        $assistUser = app()->get(FrameAssistService::class)->column(['entid' => 1, 'is_mastart' => 1, 'user_id' => $userIds], 'frame_id', 'user_id');
+        $assistService = app()->get(FrameAssistService::class);
+        $assistUser    = $assistService->dao->setTrashed()->column(['entid' => 1, 'is_mastart' => 1, 'user_id' => $userIds], 'frame_id', 'user_id');
         if (! $assistUser) {
             return [];
         }
@@ -1178,7 +1353,7 @@ class FrameService extends BaseService implements FrameInterface
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function getIdsByFrameIds(int $uid, array|int $frameIds = []): array
+    public function getIdsByFrameIds(int $uid, array|int $frameIds = [], bool $isNormal = true): array
     {
         if (empty($frameIds)) {
             $frameIds[] = $this->getFrameIdByUserId($uid);
@@ -1188,10 +1363,13 @@ class FrameService extends BaseService implements FrameInterface
                 app()->get(RolesService::class)->getDataFrames(app()->get(AdminService::class)->value($uid, 'uid'))
             );
         }
-        return array_unique(array_intersect(
-            $this->assistDao->column(['frame_id' => $frameIds], 'user_id'),
-            app()->get(AdminService::class)->column(['status' => 1], 'id')
-        ));
+        $userIds = $isNormal
+            ? $this->assistDao->column(['frame_id' => $frameIds], 'user_id')
+            : $this->assistDao->setTrashed()->column(['frame_id' => $frameIds], 'user_id');
+        if ($isNormal) {
+            $userIds = array_intersect($userIds, app()->get(AdminService::class)->column(['status' => 1], 'id'));
+        }
+        return array_values(array_unique($userIds));
     }
 
     /**
@@ -1281,6 +1459,29 @@ class FrameService extends BaseService implements FrameInterface
             return $this->getMoreFrame($frameIds, $frames);
         }
         return $frames;
+    }
+
+    /**
+     * 在树形结构中查找指定部门的引用.
+     * @param array $tree 树形结构
+     * @param mixed $value 部门 value
+     * @return array|null
+     */
+    protected function &findFrameNode(array &$tree, $value): ?array
+    {
+        foreach ($tree as &$node) {
+            if ($node['value'] === $value) {
+                return $node;
+            }
+            if (! empty($node['children'])) {
+                $found = &$this->findFrameNode($node['children'], $value);
+                if ($found !== null) {
+                    return $found;
+                }
+            }
+        }
+        $null = null;
+        return $null;
     }
 
     /**

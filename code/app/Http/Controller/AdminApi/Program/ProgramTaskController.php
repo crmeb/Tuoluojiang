@@ -15,10 +15,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controller\AdminApi\Program;
 
+use App\Constants\ModuleEnum;
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Requests\enterprise\program\ProgramTaskRequest;
 use App\Http\Service\Program\ProgramTaskService;
-use crmeb\traits\SearchTrait;
+use Tuoluojiang\Open\traits\SearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -65,7 +66,7 @@ class ProgramTaskController extends AuthController
         ], true);
 
         if ($types < 1) {
-            $this->withScopeFrame();
+            $this->withScopeFrame(module: ModuleEnum::PROGRAM);
         }
 
         $where = $this->request->getMore([
@@ -100,7 +101,7 @@ class ProgramTaskController extends AuthController
      */
     public function store(ProgramTaskRequest $request): mixed
     {
-        $res = $this->service->saveTask($request->postMore($this->getRequestFields()));
+        $res = $this->service->saveTask($request->postMore($this->getRequestFields()), auth('admin')->id());
         return $this->success('common.insert.succ', ['id' => $res->id]);
     }
 
@@ -113,7 +114,7 @@ class ProgramTaskController extends AuthController
         $res = $this->service->saveSubordinateTask($request->postMore([
             ['pid', 0],
             ['name', ''],
-        ]));
+        ]), auth('admin')->id());
         return $this->success('common.insert.succ', ['id' => $res->id]);
     }
 
@@ -179,7 +180,7 @@ class ProgramTaskController extends AuthController
             ['program_id', ''],
             ['pid', ''],
         ]);
-        return $this->success($this->service->getSelectList($where));
+        return $this->success($this->service->getSelectList($where, auth('admin')->id()));
     }
 
     /**
@@ -201,7 +202,7 @@ class ProgramTaskController extends AuthController
             ['data', []],
         ]);
 
-        $this->service->batchUpdate($data);
+        $this->service->batchUpdate($data, auth('admin')->id());
         return $this->success('common.operation.succ');
     }
 

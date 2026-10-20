@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -23,9 +23,10 @@ use App\Http\Model\Frame\Frame;
 use App\Http\Model\Frame\FrameAssist;
 use App\Http\Model\Frame\FrameScope;
 use App\Http\Model\Position\Job;
+use App\Http\Model\Work\WorkMember;
 use App\Observers\AdminObserver;
-use crmeb\interfaces\TimeDataInterface;
-use crmeb\traits\model\TimeDataTrait;
+use Tuoluojiang\Open\interfaces\TimeDataInterface;
+use Tuoluojiang\Open\traits\model\TimeDataTrait;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
@@ -67,12 +68,36 @@ class Admin extends AuthUser implements JWTSubject, TimeDataInterface
      * @var string[]
      */
     protected $casts = [
-        'created_at' => 'datetime:Y-m-d H:i:s',
-        'updated_at' => 'datetime:Y-m-d H:i:s',
-        'uid'        => 'string',
+        'created_at'     => 'datetime:Y-m-d H:i:s',
+        'updated_at'     => 'datetime:Y-m-d H:i:s',
+        'uid'            => 'string',
+        'id'             => 'integer',
+        'value'       => 'integer',
+        'type'       => 'integer',
+        'job'            => 'integer',
+        'is_admin'       => 'integer',
+        'uni_online'     => 'integer',
+        'login_count'    => 'integer',
+        'status'         => 'integer',
+        'is_init'        => 'integer',
+        'work_member_id' => 'integer',
+        'deleted_at'     => 'datetime:Y-m-d H:i:s',
+        'e_sign'         => 'integer',
     ];
 
-    protected $hidden = ['password', 'deleted_at'];
+    protected $hidden = ['password', 'mcp_key', 'deleted_at'];
+
+    /**
+     * 生成 MCP 工具调用唯一值.
+     */
+    public static function generateMcpKey(): string
+    {
+        do {
+            $key = bin2hex(random_bytes(24));
+        } while (self::where('mcp_key', $key)->exists());
+
+        return $key;
+    }
 
     /**
      * 密码修改器.
@@ -89,7 +114,8 @@ class Admin extends AuthUser implements JWTSubject, TimeDataInterface
      */
     public function setRolesAttribute($value)
     {
-        $this->attributes['roles'] = $value ? (is_array($value) ? json_encode($value) : '') : '';
+        $roles                     = $this->formatRoles($value);
+        $this->attributes['roles'] = $roles ? json_encode($roles) : '';
     }
 
     /**
@@ -98,7 +124,7 @@ class Admin extends AuthUser implements JWTSubject, TimeDataInterface
      */
     public function getRolesAttribute($value)
     {
-        return $value ? json_decode($value, true) : [];
+        return $this->formatRoles($value);
     }
 
     public static function boot()
@@ -149,6 +175,11 @@ class Admin extends AuthUser implements JWTSubject, TimeDataInterface
         return $this->hasMany(FrameAssist::class, 'user_id', 'id');
     }
 
+    public function member()
+    {
+        return $this->hasOne(WorkMember::class, 'id', 'work_member_id');
+    }
+
     /**
      * 一对一关联.
      */
@@ -185,11 +216,12 @@ class Admin extends AuthUser implements JWTSubject, TimeDataInterface
 
     public function scopeNotId($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereNotIn('id', $value);
-        } else {
-            $query->where('id', '!=', $value);
-        }
+        is_array($value) ? $query->whereNotIn('id', $value) : $query->where('id', '!=', $value);
+    }
+
+    public function scopeId($query, $value)
+    {
+        is_array($value) ? $query->whereIn('id', $value) : $query->where('id', $value);
     }
 
     /**
@@ -239,11 +271,7 @@ class Admin extends AuthUser implements JWTSubject, TimeDataInterface
      */
     public function scopeUid($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereIn('uid', $value);
-        } else {
-            $query->where('uid', $value);
-        }
+        is_array($value) ? $query->whereIn('uid', $value) : $query->where('uid', $value);
     }
 
     /**
@@ -386,31 +414,13 @@ class Admin extends AuthUser implements JWTSubject, TimeDataInterface
     }
 
     /**
-     * id 作用域
-     * @param mixed $query
-     * @param mixed $value
-     */
-    public function scopeId($query, $value)
-    {
-        if (is_array($value)) {
-            $query->whereIn('id', $value);
-        } else {
-            $query->where('id', $value);
-        }
-    }
-
-    /**
      * name 作用域
      * @param mixed $query
      * @param mixed $value
      */
     public function scopeNameEq($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereIn('name', $value);
-        } else {
-            $query->where('name', $value);
-        }
+        is_array($value) ? $query->whereIn('name', $value) : $query->where('name', $value);
     }
 
     /**
@@ -429,9 +439,17 @@ class Admin extends AuthUser implements JWTSubject, TimeDataInterface
      */
     public function scopeNameLike($query, $value): void
     {
-        if ($value !== '') {
-            $query->where('name', 'like', '%' . $value . '%');
-        }
+        $query->where('name', 'like', '%' . $value . '%');
+    }
+
+    public function scopeIsWork($query, $value)
+    {
+        $query->where('work_member_id', '<>', 0);
+    }
+
+    public function work()
+    {
+        return $this->hasOne(WorkMember::class, 'id', 'work_member_id')->where('corp_id', sys_config('wechat_work_corpid'));
     }
 
     /**
@@ -442,5 +460,53 @@ class Admin extends AuthUser implements JWTSubject, TimeDataInterface
     protected function serializeDate(\DateTimeInterface $date)
     {
         return $date->format('Y-m-d H:i:s');
+    }
+
+    /**
+     * 规范化用户角色：去掉 0/空值/非法值，并保持原顺序去重.
+     *
+     * @param mixed $value
+     */
+    private function formatRoles($value): array
+    {
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            if (is_string($decoded)) {
+                $decoded = json_decode($decoded, true);
+            }
+            $value = is_array($decoded) ? $decoded : [];
+        }
+
+        if (! is_array($value)) {
+            return [];
+        }
+
+        $roles = [];
+        foreach ($value as $roleId) {
+            $roleId = $this->parseRoleId($roleId);
+            if ($roleId && ! in_array($roleId, $roles, true)) {
+                $roles[] = $roleId;
+            }
+        }
+
+        return $roles;
+    }
+
+    /**
+     * 解析角色ID，仅接受正整数或纯数字字符串.
+     *
+     * @param mixed $roleId
+     */
+    private function parseRoleId($roleId): int
+    {
+        if (is_int($roleId)) {
+            return $roleId > 0 ? $roleId : 0;
+        }
+
+        if (is_string($roleId) && ctype_digit(trim($roleId))) {
+            return (int) $roleId;
+        }
+
+        return 0;
     }
 }

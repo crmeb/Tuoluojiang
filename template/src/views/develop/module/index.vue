@@ -16,16 +16,14 @@
       ></formBox>
 
       <!-- 表格数据 -->
-      <div
-        class="table-box mt10 non-resize-el-table"
-        v-if="info.showField && info.showField.length > 0"
-        v-loading="loading"
-      >
+      <div class="table-box mt10 non-resize-el-table" v-if="info.showField && info.showField.length > 0">
         <el-table
+          v-if="!where.group"
           ref="table"
           :data="tableData"
+          v-loading="loading"
           style="width: 100%"
-          :height="tableHeight"
+          :height="TABLE_HEIGHT"
           @selection-change="handleSelectionChange"
           row-key="id"
           border
@@ -36,181 +34,50 @@
             :prop="item.field_name_en"
             :label="item.field_name"
             :key="index"
-            :width="
-              [
-                'input_percentage',
-                'tag',
-                'image',
-                'textarea',
-                'date_picker',
-                'date_time_picker',
-                'cascader',
-                'cascader_address'
-              ].includes(item.form_value)
-                ? 200
-                : ''
-            "
+            min-width="200"
           >
-            <template slot-scope="scope">
-              <div v-if="item.form_value === 'image'" class="img-box">
-                <img
-                  v-for="(val, index) in scope.row[item.field_name_en]"
-                  :key="index"
-                  :src="val.url"
-                  alt=""
-                  class="img"
-                  @click="lookViewer(val.url, val.name)"
-                />
-                <span v-if="!scope.row[item.field_name_en] || scope.row[item.field_name_en].length == 0">--</span>
-              </div>
-              <div v-else-if="item.form_value === 'input_percentage'">
-                <el-progress
-                  :percentage="scope.row[item.field_name_en] ? scope.row[item.field_name_en] : 0"
-                ></el-progress>
-              </div>
-              <div v-else-if="item.form_value === 'tag'">
-                <el-popover
-                  v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 2"
-                  placement="top-start"
-                  trigger="hover"
-                >
-                  <template>
-                    <div class="flex_box">
-                      <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                        <el-tag size="small">
-                          {{ val }}
-                        </el-tag>
-                      </div>
-                    </div>
-                  </template>
-                  <div slot="reference">
-                    <div class="flex_box">
-                      <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                        <el-tag size="small" v-if="index < 2">
-                          {{ val }}
-                        </el-tag>
-                      </div>
-                      <el-tag
-                        v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 2"
-                        size="small"
-                        >...</el-tag
-                      >
-                    </div>
-                  </div>
-                </el-popover>
-                <template v-else>
-                  <div class="flex_box">
-                    <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                      <el-tag size="small" v-if="index < 2">
-                        {{ val }}
-                      </el-tag>
-                    </div>
-                    <el-tag
-                      v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 2"
-                      size="small"
-                      >...</el-tag
-                    >
-                  </div>
-                </template>
-                <span v-if="!scope.row[item.field_name_en] || scope.row[item.field_name_en].length == 0">--</span>
-              </div>
-              <div v-else-if="item.form_value === 'switch'">
-                <el-switch
-                  disabled
-                  v-model="scope.row[item.field_name_en]"
-                  :active-value="1"
-                  :inactive-value="0"
-                  active-text="开启"
-                  inactive-text="关闭"
-                >
-                </el-switch>
-              </div>
-
-              <div v-else-if="item.form_value === 'textarea'">
-                <el-popover placement="top-start" width="350" trigger="hover" :content="scope.row[item.field_name_en]">
-                  <div
-                    class="over-text"
-                    slot="reference"
-                    v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 11"
-                  >
-                    {{ scope.row[item.field_name_en] }}
-                  </div>
-                </el-popover>
-                <span v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length <= 11">
-                  {{ scope.row[item.field_name_en] }}
-                </span>
-                <span v-if="!scope.row[item.field_name_en]">--</span>
-              </div>
-              <div v-else-if="['input_number', 'input_float', 'input_price'].includes(item.form_value)">
-                {{ scope.row[item.field_name_en] }}
-              </div>
-              <div v-else class="flex-center">
-                <span
-                  v-if="item.field_name_en == info.crudInfo.main_field_name"
-                  class="color-doc pointer"
-                  @click="checkRow(scope.row)"
-                >
-                  {{ getValue(scope.row[item.field_name_en], item.form_value) }}
-                  <span class="share-tag" v-if="scope.row.is_share"> 共享 </span></span
-                >
-
-                <!-- 多选 -->
-                <div v-else-if="item.form_value == 'checkbox'">
-                  <div
-                    v-for="(val, index) in scope.row[item.field_name_en]"
-                    class="dictionaries-tag over-text mr10"
-                    :style="{
-                      color: val.color ? val.color : '#1890ff',
-                      background: val.color ? getColorFn(val.color, '0.1') : getColorFn('#1890ff', '0.1')
-                    }"
-                  >
-                    {{ val.name }}
-                  </div>
-                  <div v-if="scope.row[item.field_name_en].length == 0">--</div>
-                </div>
-
-                <!-- 关联字典颜色 -->
-                <div
-                  v-else-if="
-                    scope.row[item.field_name_en] &&
-                    Object.prototype.hasOwnProperty.call(scope.row[item.field_name_en], 'color')
-                  "
-                  class="dictionaries-tag over-text"
-                  :style="{
-                    color: scope.row[item.field_name_en].color ? scope.row[item.field_name_en].color : '#1890ff',
-                    background: scope.row[item.field_name_en].color
-                      ? getColorFn(scope.row[item.field_name_en].color, '0.1')
-                      : getColorFn('#1890ff', '0.1')
-                  }"
-                >
-                  {{ scope.row[item.field_name_en].name }}
-                </div>
-                <span v-else> {{ getValue(scope.row[item.field_name_en], item.form_value) }}</span>
-              </div>
+            <template #default="scope">
+              <tableColumn :item="item" :scope="scope" :info="info" @checkRow="checkRow"></tableColumn>
             </template>
           </el-table-column>
 
           <el-table-column prop="address" label="操作" fixed="right" width="130">
-            <template slot-scope="scope">
-              <el-button class="mr10" type="text" @click="checkRow(scope.row)">查看</el-button>
-              <!-- <el-button type="text" @click="editRow(scope.row)">编辑</el-button> -->
+            <template #default="scope">
+              <el-button class="mr10" type="primary" link @click="checkRow(scope.row)">查看</el-button>
               <el-dropdown>
-                <span class="el-dropdown-link el-button--text el-button"> 更多 <i class="el-icon-arrow-down" /></span>
-                <el-dropdown-menu>
-                  <el-dropdown-item @click.native="openShare(scope.row)"> 共享协作 </el-dropdown-item>
-                  <el-dropdown-item v-if="scope.row.is_share" @click.native="cancelShare(scope.row)">
-                    取消协作
-                  </el-dropdown-item>
-                  <el-dropdown-item @click.native="handleDropdown('transfer', scope.row)">
-                    移交负责人
-                  </el-dropdown-item>
-                  <el-dropdown-item @click.native="deleteRow(scope.row)">删除</el-dropdown-item>
-                </el-dropdown-menu>
+                <el-button type="primary" link class="el-dropdown-link"> 更多 <i class="el-icon-arrow-down" /></el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item @click="openShare(scope.row)"> 共享协作 </el-dropdown-item>
+                    <el-dropdown-item v-if="scope.row.is_share" @click="cancelShare(scope.row)">
+                      取消协作
+                    </el-dropdown-item>
+                    <el-dropdown-item @click="handleDropdown('transfer', scope.row)">
+                      移交负责人
+                    </el-dropdown-item>
+                    <el-dropdown-item @click="deleteRow(scope.row)">删除</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
               </el-dropdown>
             </template>
           </el-table-column>
         </el-table>
-        <div class="page-fixed">
+        <!-- 分组查看表格 -->
+        <treeTable
+          v-else
+          :treeData="tableData"
+          :group="where.group"
+          :headerFields="info.showField"
+          :info="info"
+          @selectionChange="handleSelectionChange"
+          @checkRow="checkRow"
+          @openShare="openShare"
+          @cancelShare="cancelShare"
+          @handleDropdown="handleDropdown"
+          @deleteRow="deleteRow"
+          @handleLoadMore="handleLoadMore"
+        ></treeTable>
+        <div class="page-fixed" :class="where.group ? 'group-page' : ''">
           <el-pagination
             :page-size="where.limit"
             :current-page="where.page"
@@ -239,7 +106,7 @@
 
     <!-- 拖拽导入 -->
     <dragUpload ref="dragUpload" @getList="getList"></dragUpload>
-    <image-viewer ref="imageViewer" :src-list="srcList"></image-viewer>
+
     <!-- 新增 -->
     <add-drawer v-if="addDrawerShow" ref="addDrawer" :keyName="keyName" @getList="getList"></add-drawer>
     <!-- 查看 -->
@@ -269,7 +136,10 @@
   </div>
 </template>
 <script>
-import { getColor } from '@/utils/format'
+import { mapStores } from 'pinia'
+import { useConditionDialogStore } from '@/stores/conditionDialog.ts'
+import { modalSure } from '@/libs/public.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
 import defaultPage from '@/components/common/defaultPage'
 import Commnt from '@/components/develop/commonData'
 import formBox from './components/formBox'
@@ -278,9 +148,11 @@ import checkDrawer from './components/checkDrawer'
 import fillInDialog from './components/fillInDialog'
 import addDrawer from './components/addDrawer'
 import fillIn from './components/fillIn'
+import tableColumn from './components/tableColumn'
 import share from '@/views/develop/module/components/share'
 import oaDialog from '@/components/form-common/dialog-form'
-import imageViewer from '@/components/common/imageViewer'
+
+import treeTable from './treeTable.vue'
 import {
   crudModuleListApi,
   crudModuleInfoApi,
@@ -290,7 +162,7 @@ import {
   moduleTransferApi,
   moduleShareApi,
   delCancelShareApi
-} from '@/api/develop'
+} from '@/api/develop.ts'
 import BatchActionBar from './components/batchActionBar.vue'
 import batchActionHandler from './mixins/batchActionHandler'
 
@@ -299,18 +171,23 @@ export default {
     formBox,
     addDrawer,
     checkDrawer,
-    imageViewer,
     dragUpload,
     oaDialog,
     share,
     fillInDialog,
     fillIn,
     BatchActionBar,
-    defaultPage
+    defaultPage,
+    treeTable,
+    tableColumn
   },
   mixins: [batchActionHandler],
+  computed: {
+    ...mapStores(useConditionDialogStore)
+  },
   data() {
     return {
+      TABLE_HEIGHT,
       loading: false,
       addDrawerShow: false,
       checkDrawerShow: false,
@@ -346,6 +223,11 @@ export default {
         page: 1,
         limit: 15
       },
+      childrenWhere: {
+        children_limit: 4,
+        children_page: 1,
+        children_id: ''
+      },
       multipleSelection: [],
       searchTypeOptions: Commnt.searchTypeOptions
     }
@@ -358,21 +240,49 @@ export default {
     this.keyName = routeArray[3]
     this.getInfo()
   },
-  destroyed() {
-    this.$store.commit('updateConditionDialog', false)
+  unmounted() {
+    this.conditionDialogStore.visible = false
   },
 
   methods: {
+    // 加载更多子级数据
+    handleLoadMore(group, val) {
+      // if (!val) return;
+      // 提取分组 id
+      const id = group.id.split('_')[1]
+      // 如果切换了分组，重置子页码
+      if (id != this.childrenWhere.children_id) {
+        this.childrenWhere.children_page = 1
+      }
+      this.childrenWhere.children_id = id
+      this.childrenWhere.children_page += 1
+
+      this.loading = true
+      crudModuleListApi(this.keyName, { ...this.where, ...this.childrenWhere })
+        .then((res) => {
+          // 追加新数据到对应分组
+          const target = this.tableData.find((item) => item.id == id)
+          if (target) {
+            target.children = [...(target.children || []), ...(res.data || [])]
+          }
+          this.loading = false
+        })
+        .catch(() => {
+          this.$message.error('加载更多失败')
+          this.loading = false
+        })
+    },
     getList() {
       this.loading = true
-      crudModuleListApi(this.keyName, this.where)
+      crudModuleListApi(this.keyName, { ...this.where, ...this.childrenWhere })
         .then((res) => {
-          this.loading = false
           this.total = res.data.count
           this.tableData = res.data.list
+
           setTimeout(() => {
             this.$refs.table?.doLayout()
           }, 300)
+          this.loading = false
         })
         .catch((err) => {
           this.loading = false
@@ -385,7 +295,7 @@ export default {
       this.$refs.share.openBox(this.keyName, row)
     },
     cancelShare(val) {
-      this.$modalSure('您确定要取消此数据的协作权限吗').then(() => {
+      modalSure('您确定要取消此数据的协作权限吗').then(() => {
         delCancelShareApi(this.keyName, val.id).then((res) => {
           this.getList()
         })
@@ -490,39 +400,11 @@ export default {
       }
     },
 
-    // 数组转成字符串
-    getValue(val, type) {
-      // 如果值为空字符串，直接返回 '--'
-      if (val === '') return '--';
-
-      // 处理包含 type 属性的对象
-      if (val && val.type) {
-        return `${val.name}(${val.type})`;
-      }
-
-      // 处理 input_select 类型且值不是字符串的情况
-      if (type === 'input_select' && typeof val !== 'string') {
-        return val.type ? `${val.name}（${val.type}）` : val.name;
-      }
-
-      // 处理数组类型的值
-      if (Array.isArray(val)) {
-        return val.toString();
-      }
-
-      // 其他情况直接返回值，若值为假值则返回 '--'
-      return val || '--';
-    },
-    
-    getColorFn(color, opacity) {
-      return getColor(color, opacity)
-    },
-
     handleDelete() {
       if (this.multipleSelection.length <= 0) {
         this.$message.error('至少选择一项内容')
       } else {
-        this.$modalSure('您确认要删除吗').then(() => {
+        modalSure('您确认要删除吗').then(() => {
           const ids = []
           this.multipleSelection.map((value) => {
             ids.push(value.id)
@@ -575,7 +457,7 @@ export default {
     },
 
     async deleteRow(item) {
-      await this.$modalSure('您确定要删除吗')
+      await modalSure('您确定要删除吗')
       await crudModuleDelApi(this.keyName, item.id)
       let totalPage = Math.ceil((this.total - 1) / this.where.limit)
       let currentPage = this.where.page > totalPage ? totalPage : this.where.page
@@ -587,12 +469,6 @@ export default {
       crudModuleInfoApi(this.keyName, 0).then((res) => {
         this.info = res.data
       })
-    },
-
-    // 查看与下载附件
-    lookViewer(url, name = '') {
-      this.srcList.push(url)
-      this.$refs.imageViewer.openImageViewer(url)
     },
 
     confirmData(data) {
@@ -618,8 +494,8 @@ export default {
 .img {
   cursor: pointer;
   display: block;
-  width: 50px;
-  height: 50px;
+  width: 38px;
+  height: 38px;
   margin-right: 4px;
   margin-bottom: 4px;
 }
@@ -706,19 +582,19 @@ export default {
 }
 
 .table-box {
-  /deep/.el-table__column-resize-proxy {
+  :deep(.el-table__column-resize-proxy) {
     border-left-color: #6fbaff;
   }
 
-  /deep/.el-table--border {
+  :deep(.el-table--border) {
     border: none;
     .el-table__cell {
       border-right: none;
     }
   }
-
-  /deep/.el-table__fixed-right .el-table__fixed-body-wrapper {
-    border-right: 1px solid #fff;
-  }
+}
+.group-page {
+  position: relative;
+  margin-top: 20px;
 }
 </style>

@@ -16,7 +16,8 @@ export function isEmptyStr(o) {
   return o === void 0 || (!o && o !== 0 && o !== '0') || !/[^\s]/.test(o)
 }
 export function generateId() {
-  return Math.floor(Math.random() * 1e5 + Math.random() * 2e4 + Math.random() * 5e3)
+  // 使用时间戳 + 随机数生成更加唯一的ID
+  return Date.now() + Math.floor(Math.random() * 1e6)
 }
 export function deepClone(o) {
   if (o !== void 0) return JSON.parse(JSON.stringify(o))
@@ -264,7 +265,7 @@ export function traverseWidgetsOfContainer(o, e, n, l, s) {
                 })
             })
         })
-      : o.type === 'tab'
+      : o.type === 'tab' && o.tabs
       ? o.tabs.forEach((c) => {
           l && n(c),
             c.widgetList.forEach((u) => {
@@ -444,7 +445,7 @@ export function assembleAxiosConfig(o, e, n) {
   return (
     !o ||
       o.length <= 0 ||
-      (o.map((s) => {
+      o.map((s) => {
         s.type === 'String'
           ? (l[s.name] = String(s.value))
           : s.type === 'Number'
@@ -457,8 +458,6 @@ export function assembleAxiosConfig(o, e, n) {
             : (l[s.name] = null)
           : s.type === 'Variable' && (l[s.name] = evalFn(s.value, e, n))
       }),
-      console.log('test DSV: ', e),
-      console.log('test VFR: ', n)),
     l
   )
 }

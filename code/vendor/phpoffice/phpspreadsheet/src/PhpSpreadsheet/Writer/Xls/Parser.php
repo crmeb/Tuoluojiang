@@ -49,22 +49,22 @@ class Parser
     // Former value for this constant led to "catastrophic backtracking",
     //     unable to handle double apostrophes.
     //     (*COMMIT) should prevent this.
-    const REGEX_SHEET_TITLE_QUOTED = "([^*:/\\\\?\[\]']|'')+";
+    const REGEX_SHEET_TITLE_QUOTED = "([^*:/\\\\?\\[\\]']|'')+";
 
     const REGEX_CELL_TITLE_QUOTED = "~^'"
         . self::REGEX_SHEET_TITLE_QUOTED
         . '(:' . self::REGEX_SHEET_TITLE_QUOTED . ')?'
         . "'!(*COMMIT)"
-        . '[$]?[A-Ia-i]?[A-Za-z][$]?(\\d+)'
+        . '[$]?[A-Ia-i]?[A-Za-z][$]?(\d+)'
         . '$~u';
 
     const REGEX_RANGE_TITLE_QUOTED = "~^'"
         . self::REGEX_SHEET_TITLE_QUOTED
         . '(:' . self::REGEX_SHEET_TITLE_QUOTED . ')?'
         . "'!(*COMMIT)"
-        . '[$]?[A-Ia-i]?[A-Za-z][$]?(\\d+)'
+        . '[$]?[A-Ia-i]?[A-Za-z][$]?(\d+)'
         . ':'
-        . '[$]?[A-Ia-i]?[A-Za-z][$]?(\\d+)'
+        . '[$]?[A-Ia-i]?[A-Za-z][$]?(\d+)'
         . '$~u';
 
     private const UTF8 = 'UTF-8';
@@ -91,10 +91,8 @@ class Parser
 
     /**
      * The parse tree to be generated.
-     *
-     * @var array|string
      */
-    public $parseTree;
+    public array|string $parseTree;
 
     /**
      * Array of external sheets.
@@ -513,7 +511,7 @@ class Parser
             return $this->convertRef2d($token);
         }
         // match external references like Sheet1!A1 or Sheet1:Sheet2!A1 or Sheet1!$A$1 or Sheet1:Sheet2!$A$1
-        if (Preg::isMatch('/^' . self::REGEX_SHEET_TITLE_UNQUOTED . '(\\:' . self::REGEX_SHEET_TITLE_UNQUOTED . ')?\\!\$?[A-Ia-i]?[A-Za-z]\$?(\\d+)$/u', $token)) {
+        if (Preg::isMatch('/^' . self::REGEX_SHEET_TITLE_UNQUOTED . '(\:' . self::REGEX_SHEET_TITLE_UNQUOTED . ')?\!\$?[A-Ia-i]?[A-Za-z]\$?(\d+)$/u', $token)) {
             return $this->convertRef3d($token);
         }
         // match external references like 'Sheet1'!A1 or 'Sheet1:Sheet2'!A1 or 'Sheet1'!$A$1 or 'Sheet1:Sheet2'!$A$1
@@ -525,7 +523,7 @@ class Parser
             return $this->convertRange2d($token);
         }
         // match external ranges like Sheet1!A1:B2 or Sheet1:Sheet2!A1:B2 or Sheet1!$A$1:$B$2 or Sheet1:Sheet2!$A$1:$B$2
-        if (Preg::isMatch('/^' . self::REGEX_SHEET_TITLE_UNQUOTED . '(\\:' . self::REGEX_SHEET_TITLE_UNQUOTED . ')?\\!\$?([A-Ia-i]?[A-Za-z])?\$?(\\d+)\\:\$?([A-Ia-i]?[A-Za-z])?\$?(\\d+)$/u', $token)) {
+        if (Preg::isMatch('/^' . self::REGEX_SHEET_TITLE_UNQUOTED . '(\:' . self::REGEX_SHEET_TITLE_UNQUOTED . ')?\!\$?([A-Ia-i]?[A-Za-z])?\$?(\d+)\:\$?([A-Ia-i]?[A-Za-z])?\$?(\d+)$/u', $token)) {
             return $this->convertRange3d($token);
         }
         // match external ranges like 'Sheet1'!A1:B2 or 'Sheet1:Sheet2'!A1:B2 or 'Sheet1'!$A$1:$B$2 or 'Sheet1:Sheet2'!$A$1:$B$2
@@ -537,7 +535,7 @@ class Parser
             return pack('C', $this->ptg[$token]);
         }
         // match error codes
-        if (Preg::isMatch('/^#[A-Z0\\/]{3,5}[!?]{1}$/', $token) || $token == '#N/A') {
+        if (Preg::isMatch('/^#[A-Z0\/]{3,5}[!?]{1}$/', $token) || $token == '#N/A') {
             return $this->convertError($token);
         }
         if (Preg::isMatch('/^' . Calculation::CALCULATION_REGEXP_DEFINEDNAME . '$/mui', $token) && $this->spreadsheet->getDefinedName($token) !== null) {
@@ -568,10 +566,10 @@ class Parser
      *
      * @param float|int|string $num an integer or double for conversion to its ptg value
      */
-    private function convertNumber($num): string
+    private function convertNumber(mixed $num): string
     {
         // Integer in the range 0..2**16-1
-        if ((Preg::isMatch('/^\\d+$/', (string) $num)) && ($num <= 65535)) {
+        if ((Preg::isMatch('/^\d+$/', (string) $num)) && ($num <= 65535)) {
             return pack('Cv', $this->ptg['ptgInt'], $num);
         }
 
@@ -682,7 +680,7 @@ class Parser
         [$cell1, $cell2] = explode(':', $range ?? '');
 
         // Convert the cell references
-        if (Preg::isMatch('/^(\$)?[A-Ia-i]?[A-Za-z](\$)?(\\d+)$/', $cell1)) {
+        if (Preg::isMatch('/^(\$)?[A-Ia-i]?[A-Za-z](\$)?(\d+)$/', $cell1)) {
             [$row1, $col1] = $this->cellToPackedRowcol($cell1);
             [$row2, $col2] = $this->cellToPackedRowcol($cell2);
         } else { // It's a rows range (like 26:27)
@@ -746,26 +744,18 @@ class Parser
      *
      * @return string The error code ptgErr
      */
-    private function convertError($errorCode)
+    private function convertError(string $errorCode): string
     {
-        switch ($errorCode) {
-            case '#NULL!':
-                return pack('C', 0x00);
-            case '#DIV/0!':
-                return pack('C', 0x07);
-            case '#VALUE!':
-                return pack('C', 0x0F);
-            case '#REF!':
-                return pack('C', 0x17);
-            case '#NAME?':
-                return pack('C', 0x1D);
-            case '#NUM!':
-                return pack('C', 0x24);
-            case '#N/A':
-                return pack('C', 0x2A);
-        }
-
-        return pack('C', 0xFF);
+        return match ($errorCode) {
+            '#NULL!' => pack('C', 0x00),
+            '#DIV/0!' => pack('C', 0x07),
+            '#VALUE!' => pack('C', 0x0F),
+            '#REF!' => pack('C', 0x17),
+            '#NAME?' => pack('C', 0x1D),
+            '#NUM!' => pack('C', 0x24),
+            '#N/A' => pack('C', 0x2A),
+            default => pack('C', 0xFF),
+        };
     }
 
     private bool $tryDefinedName = false;
@@ -981,11 +971,11 @@ class Parser
         $row = $match[4];
 
         // Convert base26 column string to a number.
-        $expn = strlen($col_ref) - 1;
+        $expn = strlen($col_ref) - 1; // @phpstan-ignore-line
         $col = 0;
-        $col_ref_length = strlen($col_ref);
+        $col_ref_length = strlen($col_ref); // @phpstan-ignore-line
         for ($i = 0; $i < $col_ref_length; ++$i) {
-            $col += (ord($col_ref[$i]) - 64) * 26 ** $expn;
+            $col += (ord($col_ref[$i]) - 64) * 26 ** $expn; // @phpstan-ignore-line
             --$expn;
         }
 
@@ -1097,7 +1087,7 @@ class Parser
         }
         // If it's an external reference (Sheet1!A1 or Sheet1:Sheet2!A1 or Sheet1!$A$1 or Sheet1:Sheet2!$A$1)
         if (
-            Preg::isMatch('/^' . self::REGEX_SHEET_TITLE_UNQUOTED . '(\\:' . self::REGEX_SHEET_TITLE_UNQUOTED . ')?\\!\$?[A-Ia-i]?[A-Za-z]\$?\\d+$/u', $token)
+            Preg::isMatch('/^' . self::REGEX_SHEET_TITLE_UNQUOTED . '(\:' . self::REGEX_SHEET_TITLE_UNQUOTED . ')?\!\$?[A-Ia-i]?[A-Za-z]\$?\d+$/u', $token)
             && !Preg::isMatch('/\d/', $this->lookAhead)
             && ($this->lookAhead !== ':')
             && ($this->lookAhead !== '.')
@@ -1107,7 +1097,7 @@ class Parser
         // If it's an external reference ('Sheet1'!A1 or 'Sheet1:Sheet2'!A1 or 'Sheet1'!$A$1 or 'Sheet1:Sheet2'!$A$1)
         if (
             self::matchCellSheetnameQuoted($token)
-            && !Preg::isMatch('/\\d/', $this->lookAhead)
+            && !Preg::isMatch('/\d/', $this->lookAhead)
             && ($this->lookAhead !== ':') && ($this->lookAhead !== '.')
         ) {
             return $token;
@@ -1127,8 +1117,8 @@ class Parser
             Preg::isMatch(
                 '/^'
                 . self::REGEX_SHEET_TITLE_UNQUOTED
-                . '(\\:' . self::REGEX_SHEET_TITLE_UNQUOTED
-                . ')?\\!\$?([A-Ia-i]?[A-Za-z])?\$?\\d+:\$?([A-Ia-i]?[A-Za-z])?\$?\\d+$/u',
+                . '(\:' . self::REGEX_SHEET_TITLE_UNQUOTED
+                . ')?\!\$?([A-Ia-i]?[A-Za-z])?\$?\d+:\$?([A-Ia-i]?[A-Za-z])?\$?\d+$/u',
                 $token
             )
             && !Preg::isMatch('/\d/', $this->lookAhead)
@@ -1138,7 +1128,7 @@ class Parser
         // If it's an external range like 'Sheet1'!A1:B2 or 'Sheet1:Sheet2'!A1:B2 or 'Sheet1'!$A$1:$B$2 or 'Sheet1:Sheet2'!$A$1:$B$2
         if (
             self::matchRangeSheetnameQuoted($token)
-            && !Preg::isMatch('/\\d/', $this->lookAhead)
+            && !Preg::isMatch('/\d/', $this->lookAhead)
         ) {
             return $token;
         }
@@ -1156,7 +1146,7 @@ class Parser
         }
         // If it's an error code
         if (
-            Preg::isMatch('/^#[A-Z0\\/]{3,5}[!?]{1}$/', $token)
+            Preg::isMatch('/^#[A-Z0\/]{3,5}[!?]{1}$/', $token)
             || $token === '#N/A'
         ) {
             return $token;
@@ -1191,7 +1181,7 @@ class Parser
         ) {
             return $token;
         }
-        if (substr($token, -1) === ')') {
+        if (str_ends_with($token, ')')) {
             //    It's an argument of some description (e.g. a named range),
             //        precise nature yet to be determined
             return $token;
@@ -1282,7 +1272,7 @@ class Parser
             return $result;
         }
         if (
-            Preg::isMatch('/^#[A-Z0\\/]{3,5}[!?]{1}$/', $this->currentToken)
+            Preg::isMatch('/^#[A-Z0\/]{3,5}[!?]{1}$/', $this->currentToken)
             || $this->currentToken == '#N/A'
         ) { // error code
             $result = $this->createTree($this->currentToken, 'ptgErr', '');
@@ -1406,8 +1396,8 @@ class Parser
             Preg::isMatch(
                 '/^'
                 . self::REGEX_SHEET_TITLE_UNQUOTED
-                . '(\\:' . self::REGEX_SHEET_TITLE_UNQUOTED
-                . ')?\\!\$?[A-Ia-i]?[A-Za-z]\$?\\d+$/u',
+                . '(\:' . self::REGEX_SHEET_TITLE_UNQUOTED
+                . ')?\!\$?[A-Ia-i]?[A-Za-z]\$?\d+$/u',
                 $this->currentToken
             )
         ) {
@@ -1445,9 +1435,9 @@ class Parser
             Preg::isMatch(
                 '/^'
                 . self::REGEX_SHEET_TITLE_UNQUOTED
-                . '(\\:'
+                . '(\:'
                 . self::REGEX_SHEET_TITLE_UNQUOTED
-                . ')?\\!\$?([A-Ia-i]?[A-Za-z])?\$?\\d+:\$?([A-Ia-i]?[A-Za-z])?\$?\\d+$/u',
+                . ')?\!\$?([A-Ia-i]?[A-Za-z])?\$?\d+:\$?([A-Ia-i]?[A-Za-z])?\$?\d+$/u',
                 $this->currentToken
             )
         ) {
@@ -1562,7 +1552,7 @@ class Parser
      *
      * @return array A tree
      */
-    private function createTree($value, $left, $right): array
+    private function createTree(mixed $value, mixed $left, mixed $right): array
     {
         return ['value' => $value, 'left' => $left, 'right' => $right];
     }
@@ -1623,7 +1613,7 @@ class Parser
             Preg::isMatch("/^[A-Z0-9\xc0-\xdc\\.]+$/", $tree['value'])
             && !Preg::isMatch('/^([A-Ia-i]?[A-Za-z])(\d+)$/', $tree['value'])
             && !Preg::isMatch(
-                '/^[A-Ia-i]?[A-Za-z](\\d+)\\.\\.[A-Ia-i]?[A-Za-z](\\d+)$/',
+                '/^[A-Ia-i]?[A-Za-z](\d+)\.\.[A-Ia-i]?[A-Za-z](\d+)$/',
                 $tree['value']
             )
             && !is_numeric($tree['value'])

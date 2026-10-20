@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -33,6 +33,12 @@ class ScheduleJob implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
+    public $tries = 1;
+
+    public $timeout = 80;
+
+    public $failOnTimeout = true;
+
     /**
      * Create a new job instance.
      */
@@ -41,10 +47,10 @@ class ScheduleJob implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(): void
+    public function handle(ScheduleInterface $schedule): void
     {
         try {
-            app()->make(ScheduleInterface::class)->scheduleTimer($this->where, $this->i, $this->limit);
+            $schedule->scheduleTimer($this->where, $this->i, $this->limit);
         } catch (\Throwable $e) {
             Log::error(__CLASS__ . ':' . $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine(), 'trace' => $e->getTrace()]);
         }

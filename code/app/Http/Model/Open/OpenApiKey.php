@@ -15,8 +15,8 @@ declare(strict_types=1);
 
 namespace App\Http\Model\Open;
 
-use crmeb\interfaces\TimeDataInterface;
-use crmeb\traits\model\TimeDataTrait;
+use Tuoluojiang\Open\interfaces\TimeDataInterface;
+use Tuoluojiang\Open\traits\model\TimeDataTrait;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Foundation\Auth\User as AuthUser;
@@ -48,6 +48,11 @@ class OpenApiKey extends AuthUser implements JWTSubject, TimeDataInterface
     protected $casts = [
         'created_at' => 'datetime:Y-m-d H:i:s',
         'updated_at' => 'datetime:Y-m-d H:i:s',
+        'id'         => 'integer',
+        'uid'        => 'integer',
+        'status'     => 'integer',
+        'last_time'  => 'datetime:Y-m-d H:i:s',
+        'deleted_at' => 'datetime:Y-m-d H:i:s',
     ];
 
     public $timestamps = false;

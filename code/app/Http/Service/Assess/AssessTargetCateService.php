@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,10 +18,10 @@ namespace App\Http\Service\Assess;
 use App\Http\Dao\Access\AssessTargetCategoryDao;
 use App\Http\Model\BaseModel;
 use App\Http\Service\BaseService;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\services\FormService as Form;
-use crmeb\services\synchro\Company;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\services\FormService as Form;
+use Tuoluojiang\Open\services\synchro\Company;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -76,7 +76,7 @@ class AssessTargetCateService extends BaseService implements ResourceServicesInt
         if (! $rankCateInfo) {
             throw $this->exception('修改的模板分类不存在');
         }
-        return $this->elForm('修改模板分类', $this->getBillCateFormRule(collect($rankCateInfo->toArray())), '/admin/enterprise/assess/category/' . $id, 'PUT');
+        return $this->createElementForm('修改模板分类', $this->getBillCateFormRule(collect($rankCateInfo->toArray())), '/admin/enterprise/assess/category/' . $id, 'PUT');
     }
 
     /**
@@ -84,7 +84,7 @@ class AssessTargetCateService extends BaseService implements ResourceServicesInt
      */
     public function resourceCreate(array $other = []): array
     {
-        return $this->elForm('添加模板分类', $this->getBillCateFormRule(collect($other)), '/admin/enterprise/assess/category');
+        return $this->createElementForm('添加模板分类', $this->getBillCateFormRule(collect($other)), '/admin/enterprise/assess/category');
     }
 
     /**
@@ -128,7 +128,6 @@ class AssessTargetCateService extends BaseService implements ResourceServicesInt
 
     /**
      * 删除模板分类.
-     * @param mixed $id
      * @return int|mixed
      * @throws BindingResolutionException
      * @throws \ReflectionException

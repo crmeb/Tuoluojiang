@@ -4,14 +4,13 @@
       <div class="clearfix el-card__header">
         <el-input
           v-model="filterText"
-          :placeholder="$t('public.searchdepartment')"
+          placeholder="搜索部门"
           clearable
-          size="small"
           suffix-icon="el-icon-search"
         />
       </div>
       <div v-height>
-        <el-scrollbar style="height: 100%">
+        <el-scrollbar style="height: 100%" class="reset-scroll-bar">
           <div class="tree-box-con">
             <el-tree
               ref="tree"
@@ -24,34 +23,38 @@
               node-key="value"
               @node-click="handleClick"
             >
-              <div slot-scope="{ node, data }" class="custom-tree-node">
-                <div class="flex-box">
-                  <i class="tree-icon iconfont iconwenjianjia" />
-                  <span class="over-text">{{ node.label }}</span>
-                  <span>（{{ data.user_count }}）</span>
-                  <div>
-                    <el-popover
-                      :ref="`pop-${data.value}`"
-                      :offset="10"
-                      placement="bottom-end"
-                      trigger="click"
-                      @hide="handleHide"
-                      @after-enter="handleShow(data.value)"
-                    >
-                      <div class="right-item-list">
-                        <div class="right-item" @click.stop="addDivsion(0)">{{ $t('public.Adddepartment') }}</div>
-                        <div v-if="data.pid !== 0" class="right-item" @click.stop="addDivsion(1)">
-                          {{ $t('public.edit') }}
+              <template #default="{ node, data }">
+                <div class="custom-tree-node">
+                  <div class="flex-box">
+                    <i class="tree-icon iconfont iconwenjianjia" />
+                    <span class="over-text">{{ node.label }}</span>
+                    <span style="margin-right: 20px">({{ data.user_count }})</span>
+                    <div>
+                      <el-popover
+                        :ref="`pop-${data.value}`"
+                        :offset="10"
+                        placement="bottom-end"
+                        trigger="click"
+                        @hide="handleHide"
+                        @after-enter="handleShow(data.value)"
+                      >
+                        <div class="right-item-list">
+                          <div class="right-item" @click.stop="addDivsion(0)">添加子部门</div>
+                          <div v-if="data.pid !== 0" class="right-item" @click.stop="addDivsion(1)">
+                            编辑
+                          </div>
+                          <div v-if="data.pid !== 0" class="right-item" @click.stop="hanleDelete(data)">
+                            删除
+                          </div>
                         </div>
-                        <div v-if="data.pid !== 0" class="right-item" @click.stop="hanleDelete(data)">
-                          {{ $t('public.delete') }}
-                        </div>
-                      </div>
-                      <div slot="reference" class="iconfont icongengduo right-icon" />
-                    </el-popover>
+                        <template #reference>
+                          <div class="iconfont icongengduo right-icon" />
+                        </template>
+                      </el-popover>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </template>
             </el-tree>
           </div>
         </el-scrollbar>
@@ -68,11 +71,15 @@
 </template>
 
 <script>
-import { configFrameDeleteApi } from '@/api/setting'
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { EventBus } from '@/libs/bus.ts'
+import { configFrameDeleteApi } from '@/api/setting.ts'
 export default {
+  emits: ['frameId'],
   name: 'TreeVue',
   components: {
-    rightRole: () => import('./rightRole')
+    rightRole: defineAsyncComponent(() => import('./rightRole'))
   },
   props: {
     parentTree: {
@@ -82,7 +89,7 @@ export default {
       }
     },
     frameId: {
-      type: Number | String,
+      type: [Number, String],
       default: () => {
         return 0
       }
@@ -113,9 +120,9 @@ export default {
         this.$nextTick(() => {
           if (!this.isShowEdit && nVal.length) {
             const value = nVal[0].value
-
-            this.defaultFrame = [value]
-            this.$refs.tree.setCurrentKey(this.frame_id ? this.frame_id : value)
+            const key = this.frame_id ? this.frame_id : value
+            this.defaultFrame = [key]
+            this.$refs.tree.setCurrentKey(key)
           }
           this.topId = nVal.length ? nVal[0].value : ''
         })
@@ -138,7 +145,7 @@ export default {
     // tree节点点击
     handleClick(node, data) {
       if (this.activeValue) {
-        this.$refs[`pop-${this.activeValue}`].doClose()
+        this.$refs[`pop-${this.activeValue}`].hide()
       }
       this.frame_id = node.value
       this.isShowEdit = ''
@@ -155,9 +162,9 @@ export default {
     },
     // 删除部门
     async hanleDelete(data) {
-      await this.$modalSure('确定删除改部门吗')
+      await modalSure('确定删除该部门吗')
       await configFrameDeleteApi(data.value)
-      this.$bus.$emit('getList')
+      EventBus.$emit('getList')
     },
     // 添加子部门
     addDivsion(type) {
@@ -172,8 +179,8 @@ export default {
         this.parentId.push(node.value)
       }
       this.drawerConfig.title = type
-        ? this.$t('setting.group.editorialdepartment')
-        : this.$t('setting.group.adddepartment')
+        ? '编辑部门'
+        : '添加部门'
       this.drawerConfig.type = type
       this.drawerConfig.id = node.value
       this.drawerConfig.disabled = !!(this.topId === node.value && type)
@@ -190,14 +197,14 @@ export default {
   font-size: 15px;
   color: #ffca28;
 }
-// .el-card__header /deep/.el-input--small .el-input__inner {
+// .el-card__header :deep(.el-input--small .el-input__inner) {
 //   cursor: pointer;
 // }
 
-/deep/ .el-scrollbar__wrap {
+:deep(.el-scrollbar__wrap) {
   overflow-x: hidden;
 }
-/deep/ .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content {
+:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
   background: rgba(240, 250, 254, 0.6);
   border-color: #1890ff;
   .flex-box {
@@ -205,20 +212,21 @@ export default {
     font-weight: 600;
   }
 }
-/deep/.tree-box-con .el-tree-node__content {
-  width: 100%;
-  height: 40px;
-  padding-right: 15px;
-  border-right: 2px solid transparent;
+:deep(.tree-box-con) {
+  margin-top: 10px;
+  .el-tree-node__content {
+    width: 100%;
+    height: 40px;
+    border-radius: 4px;
+  }
 }
-/deep/ .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node,
+:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node),
 .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .right-icon {
   display: inline-block;
-  color: #1890ff;
   font-weight: 600;
 }
 
-/deep/.el-tree-node > .el-tree-node__children {
+:deep(.el-tree-node > .el-tree-node__children) {
   overflow: inherit;
 }
 
@@ -241,7 +249,7 @@ export default {
     .right-icon {
       display: none;
       position: absolute;
-      right: -6px;
+      right: 10px;
       top: 0px;
     }
   }
@@ -272,9 +280,11 @@ export default {
 .tree-box-con {
   padding-bottom: 12px;
 }
+:deep(.el-tree) {
+  background-color: transparent;
+}
 
 .tree-box {
-  background: #fff;
   margin: -20px 0 -20px -20px;
 }
 </style>

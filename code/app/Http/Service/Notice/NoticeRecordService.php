@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -19,20 +19,20 @@ use App\Constants\NoticeEnum;
 use App\Http\Dao\Notice\MessageNoticeDao;
 use App\Http\Service\Admin\AdminService;
 use App\Http\Service\Assess\UserAssessService;
-use App\Http\Service\BaseService;
 use App\Http\Service\Company\CompanyApplyService;
 use App\Http\Service\Frame\FrameService;
 use App\Http\Service\Message\MessageService;
 use App\Http\Service\Message\MessageTemplateService;
 use App\Jobs\WebhookJob;
-use App\Task\frame\EnterpriseMessageJob;
 use App\Task\message\NoticeMessageTask;
 use App\Task\message\SmsMessageTask;
-use crmeb\services\SwooleTaskService;
-use crmeb\services\uniPush\options\PushMessageOptions;
-use crmeb\services\uniPush\options\PushOptions;
-use crmeb\services\uniPush\PushMessage;
-use crmeb\utils\MessageType;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\services\SwooleTaskService;
+use Tuoluojiang\Open\services\uniPush\options\PushMessageOptions;
+use Tuoluojiang\Open\services\uniPush\options\PushOptions;
+use Tuoluojiang\Open\services\uniPush\PushMessage;
+use Tuoluojiang\Open\services\wechat\Work;
+use Tuoluojiang\Open\utils\MessageType;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
@@ -41,10 +41,15 @@ use Illuminate\Support\Facades\Log;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Psr\SimpleCache\InvalidArgumentException;
+use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 /**
  * 企业消息
  * Class NoticeRecordService.
+ * @mixin MessageNoticeDao
  */
 class NoticeRecordService extends BaseService
 {
@@ -242,107 +247,17 @@ class NoticeRecordService extends BaseService
         $res['system_job_id'] = $this->systemSend($system, $messageInfo, $params, $other, $linkId, $linkStatus);
         // 短信消息
         $res['sms_job_id'] = $this->smsSend($sms, $messageInfo, $params);
-        // 企业微信消息
+        // 企业微信webhook
         $res['work_job_id'] = $this->workSend($work, $messageInfo, $params);
         // 钉钉消息
         $res['ding_job_id'] = $this->dingSend($ding, $messageInfo, $params);
         // 其他消息
         $res['other_job_id'] = $this->otherSend($bot, $messageInfo, $params);
+        // 企业微信消息
+        $this->sendWeWorkPush($messageInfo, $params);
 
         $this->reset();
 
-        return $res;
-    }
-
-    /**
-     * @param null|mixed $linkStatus
-     * @return false|PendingDispatch
-     */
-    public function systemSend(array $system, array $messageInfo, array $params, array $other = [], int $linkId = 0, mixed $linkStatus = 0)
-    {
-        $res = false;
-        if (! empty($system['status'])) {
-            preg_match_all('/\{#[\x7f-\xffa-z0-9_]+}/', $system['content_template'], $arr);
-            $templateNewVar = $arr[0] ?? [];
-            $newParams      = [];
-            $newKey         = [];
-            foreach ($templateNewVar as $v) {
-                $key      = trim(str_replace(['{#', '}'], '', $v));
-                $newKey[] = $v;
-                if ($key) {
-                    $newParams[] = $params[$key] ?? '';
-                }
-            }
-            if ($newKey) {
-                $content = str_replace($newKey, $newParams, $system['content_template']);
-            } else {
-                $content = $system['content_template'];
-            }
-            $data = [];
-            if ($this->toIds) {
-                foreach ($this->toIds as $toId) {
-                    $data[] = [
-                        'send_id'         => $this->sendId,
-                        'cate_id'         => $messageInfo['cate_id'],
-                        'message_id'      => $messageInfo['id'],
-                        'cate_name'       => $messageInfo['cate_name'],
-                        'title'           => $messageInfo['title'],
-                        'image'           => $system['image'],
-                        'template_type'   => $messageInfo['template_type'],
-                        'button_template' => $system['button_template'],
-                        'to_uid'          => is_array($toId) ? $toId['to_uid'] : $toId,
-                        'message'         => $content,
-                        'other'           => json_encode($other),
-                        'url'             => $this->url ?: $system['url'],
-                        'uni_url'         => $this->uniUrl ?: $system['uni_url'],
-                        'type'            => $this->type,
-                        'entid'           => $this->entid,
-                        'link_id'         => $linkId,
-                        'link_status'     => $linkStatus,
-                    ];
-                }
-            } elseif ($this->toId) {
-                $data[] = [
-                    'send_id'         => $this->sendId,
-                    'cate_id'         => $messageInfo['cate_id'],
-                    'message_id'      => $messageInfo['id'],
-                    'cate_name'       => $messageInfo['cate_name'],
-                    'title'           => $messageInfo['title'],
-                    'image'           => $system['image'],
-                    'template_type'   => $messageInfo['template_type'],
-                    'button_template' => $system['button_template'],
-                    'to_uid'          => is_array($this->toId) ? $this->toId['to_uid'] : $this->toId,
-                    'message'         => $content,
-                    'other'           => json_encode($other),
-                    'url'             => $this->url ?: $system['url'],
-                    'uni_url'         => $this->uniUrl ?: $system['uni_url'],
-                    'type'            => $this->type,
-                    'entid'           => $this->entid,
-                    'link_id'         => $linkId,
-                    'link_status'     => $linkStatus,
-                ];
-            }
-            $toIds = [];
-            foreach ($data as $item) {
-                if (! isset($item['to_uid']) || ! isset($item['message'])) {
-                    throw $this->exception('缺少参数');
-                }
-                if (! $item['to_uid']) {
-                    throw $this->exception('送达人不能为空');
-                }
-                if (! $item['message']) {
-                    throw $this->exception('消息内容不能为空');
-                }
-                $toIds[] = $item['to_uid'];
-            }
-            // 加入队列
-            if ($data) {
-                $delay = $system['push_rule'] ? (int) ($system['minute']) * 60 : $this->delay;
-                $task  = new NoticeMessageTask($data);
-                $task->delay($delay);
-                $res = Task::deliver($task);
-            }
-        }
         return $res;
     }
 
@@ -395,6 +310,95 @@ class NoticeRecordService extends BaseService
         }
 
         return $result;
+    }
+
+    /**
+     * 系统消息发送（加入队列）.
+     *
+     * @param array $system 系统消息配置（含模板、推送规则、链接等）
+     * @param array $messageInfo 消息基础信息（分类、标题等）
+     * @param array $params 模板变量替换参数
+     * @param array $other 附加信息（JSON存储）
+     * @param int $linkId 关联业务ID
+     * @param mixed $linkStatus 关联业务状态
+     * @return bool 队列投递结果
+     * @throws \Exception 缺少必要参数时抛出异常
+     */
+    public function systemSend(array $system, array $messageInfo, array $params, array $other = [], int $linkId = 0, mixed $linkStatus = 0): bool
+    {
+        $res = false;
+        if (empty($system['status'])) {
+            return false;
+        }
+        $templateVarPattern   = '/\{#[\x7f-\xffa-z0-9_]+}/';
+        $errorMsgMissingParam = '缺少参数：%s';
+        $errorMsgEmptyToUid   = '送达人不能为空';
+        $errorMsgEmptyMessage = '消息内容不能为空';
+        preg_match_all($templateVarPattern, $system['content_template'], $matchResult);
+        $templateVars  = $matchResult[0] ?? [];
+        $replaceKeys   = [];
+        $replaceValues = [];
+
+        foreach ($templateVars as $var) {
+            $key = trim(str_replace(['{#', '}'], '', $var));
+            if (empty($key)) {
+                continue;
+            }
+            $replaceKeys[]   = $var;
+            $replaceValues[] = $params[$key] ?? '';
+        }
+        $content = ! empty($replaceKeys)
+            ? str_replace($replaceKeys, $replaceValues, $system['content_template'])
+            : $system['content_template'];
+
+        $messageData = [];
+        $targetUids  = [];
+        if (! empty($this->toIds)) {
+            $targetUids = $this->toIds;
+        } elseif (! empty($this->toId)) {
+            $targetUids = [$this->toId];
+        }
+        $baseMessage = [
+            'send_id'         => $this->sendId,
+            'cate_id'         => $messageInfo['cate_id'],
+            'message_id'      => $messageInfo['id'],
+            'cate_name'       => $messageInfo['cate_name'],
+            'title'           => $messageInfo['title'],
+            'image'           => $system['image'],
+            'template_type'   => $messageInfo['template_type'],
+            'button_template' => $system['button_template'],
+            'message'         => $content,
+            'other'           => json_encode($other),
+            'url'             => $this->url ?: $system['url'],
+            'uni_url'         => $this->uniUrl ?: $system['uni_url'],
+            'type'            => $this->type,
+            'entid'           => $this->entid,
+            'link_id'         => $linkId,
+            'link_status'     => $linkStatus,
+        ];
+        foreach ($targetUids as $toId) {
+            $item           = $baseMessage;
+            $item['to_uid'] = is_array($toId) ? $toId['to_uid'] : $toId;
+            $messageData[]  = $item;
+        }
+        foreach ($messageData as $item) {
+            if (! isset($item['to_uid']) || ! isset($item['message'])) {
+                throw $this->exception(sprintf($errorMsgMissingParam, isset($item['to_uid']) ? 'message' : 'to_uid'));
+            }
+            if (empty($item['to_uid'])) {
+                throw $this->exception($errorMsgEmptyToUid);
+            }
+            if (empty($item['message'])) {
+                throw $this->exception($errorMsgEmptyMessage);
+            }
+        }
+        if (! empty($messageData)) {
+            $delay = $system['push_rule'] ? (int) ($system['minute']) * 60 : $this->delay;
+            $task  = new NoticeMessageTask($messageData);
+            $task->delay($delay);
+            $res = Task::deliver($task);
+        }
+        return $res;
     }
 
     /**
@@ -543,63 +547,6 @@ class NoticeRecordService extends BaseService
     }
 
     /**
-     * @deprecated
-     * 保存并发送消息
-     * @return bool
-     */
-    public function send()
-    {
-        $data = [];
-        if ($this->toIds) {
-            foreach ($this->toIds as $toId) {
-                $data[] = [
-                    'title'           => '系统消息',
-                    'cate_name'       => '系统通知',
-                    'send_id'         => $this->sendId,
-                    'to_uid'          => $toId,
-                    'message'         => $this->message,
-                    'url'             => $this->url,
-                    'uni_url'         => $this->uniUrl,
-                    'button_template' => [],
-                    'type'            => $this->type,
-                    'entid'           => $this->entid ?: 1,
-                ];
-            }
-        } elseif ($this->toId) {
-            $data[] = [
-                'title'           => '系统消息',
-                'cate_name'       => '系统通知',
-                'send_id'         => $this->sendId,
-                'to_uid'          => $this->toId,
-                'message'         => $this->message,
-                'url'             => $this->url,
-                'uni_url'         => $this->uniUrl,
-                'button_template' => [],
-                'type'            => $this->type,
-                'entid'           => $this->entid ?: 1,
-            ];
-        }
-        if (! $data) {
-            return true;
-        }
-        foreach ($data as $item) {
-            if (! isset($item['send_id']) || ! isset($item['to_uid']) || ! isset($item['message'])) {
-                throw $this->exception('缺少参数');
-            }
-            if (! $item['to_uid']) {
-                throw $this->exception('送达人不能为空');
-            }
-            if (! $item['message']) {
-                throw $this->exception('消息内容不能为空');
-            }
-        }
-        // 加入队列
-        $res = EnterpriseMessageJob::dispatch($data)->delay($this->delay);
-        $this->reset();
-        return (bool) $res;
-    }
-
-    /**
      * 写入消息.
      * @throws BindingResolutionException
      * @throws ContainerExceptionInterface
@@ -673,13 +620,25 @@ class NoticeRecordService extends BaseService
                 'template' => fn ($query) => $query->select(['message_id', 'uni_url', 'url']),
                 'user'     => fn ($query) => $query->select(['id', 'name']),
             ])->get()?->toArray();
+            $messageMap = app(MessageService::class)
+                ->column(['template_type' => array_filter(array_column($list, 'template_type'))], ['cate_id', 'cate_name'], 'template_type');
             // 获取移动端跳转地址
             foreach ($list as &$item) {
+                if ((! $item['cate_name'] || ! $item['cate_id']) && isset($messageMap[$item['template_type']])) {
+                    $item['cate_id']   = $item['cate_id'] ?: ($messageMap[$item['template_type']]['cate_id'] ?? 0);
+                    $item['cate_name'] = $item['cate_name'] ?: ($messageMap[$item['template_type']]['cate_name'] ?? '');
+                }
                 $item['button_template'] = is_string($item['button_template']) ? json_decode($item['button_template'], true) : $item['button_template'];
                 $item['other']           = is_string($item['other']) ? json_decode($item['other'], true) : $item['other'];
                 $item['uni_url']         = $item['template'] ? $item['template']['uni_url'] : '';
                 $item['url']             = $item['template'] ? $item['template']['url'] : '';
-                $item['buttons']         = $this->getButtonInfo($item['template_type'], $item['link_status'], $item['link_id'], $item['url'], $item['uni_url']);
+                $item['buttons']         = $this->getButtonInfo(
+                    (string) $item['template_type'],
+                    (int) $item['link_status'],
+                    (int) $item['link_id'],
+                    (string) ($item['url'] ?? ''),
+                    (string) ($item['uni_url'] ?? '')
+                );
                 unset($item['template'], $item['entid']);
                 if ($is_handle !== '') {
                     $item['detail'] = $this->getNoticeInfo($item['other'], $item['template_type']);
@@ -728,6 +687,50 @@ class NoticeRecordService extends BaseService
         }
         $count = $services->dao->count($where);
         return $this->listData($list, $count);
+    }
+
+    /**
+     * 获取消息详情并标记已读.
+     * @param int $id 消息ID
+     * @param int $userId 用户ID
+     * @return array
+     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
+     */
+    public function getInfoAndMarkRead(int $id, int $userId): array
+    {
+        $messageInfo = $this->dao->get($id);
+        if (! $messageInfo) {
+            throw $this->exception('消息不存在');
+        }
+
+        // 验证消息是否属于当前用户
+        if ($messageInfo->to_uid != $userId) {
+            throw $this->exception('无权访问此消息');
+        }
+
+        // 如果消息未读，标记为已读
+        if ($messageInfo->is_read == 0) {
+            $messageInfo->is_read = 1;
+            $messageInfo->save();
+            // 更新个推角标
+            $this->updatePushBadge($userId);
+        }
+
+        // 处理按钮模板和附加信息
+        $messageInfo->button_template = is_string($messageInfo->button_template) ? json_decode($messageInfo->button_template, true) : $messageInfo->button_template;
+        $messageInfo->other           = is_string($messageInfo->other) ? json_decode($messageInfo->other, true) : $messageInfo->other;
+        $messageInfo->buttons         = $this->getButtonInfo(
+            $messageInfo->template_type,
+            (int) $messageInfo->link_status,
+            (int) $messageInfo->link_id,
+            $messageInfo->url ?? '',
+            $messageInfo->uni_url ?? ''
+        );
+
+        return $messageInfo->toArray();
     }
 
     /**
@@ -789,7 +792,7 @@ class NoticeRecordService extends BaseService
         $push->setCid($clientId);
 
         /** @var \GTClient $uniPush */
-        $uniPush = app()->make(\GTClient::class, [
+        $uniPush = app()->get(\GTClient::class, [
             'domainUrl'    => 'https://restapi.getui.com',
             'appkey'       => \sys_config('uni_push_appkey', env('UNI_PUSH_APPKEY', '')),
             'appId'        => \sys_config('uni_push_appid', env('UNI_PUSH_APPID', '')),
@@ -914,105 +917,115 @@ class NoticeRecordService extends BaseService
     }
 
     /**
-     * 获取操作按钮信息.
+     * 获取通知按钮信息.
+     *
+     * @param string $noticeType 通知类型（如contract_abnormal、daily等）
+     * @param int $status 通知状态（-1:作废/删除,1:已通过,2:未通过,4:已结束,5:已删除/查看）
+     * @param int $id 关联ID
+     * @param string $url H5链接
+     * @param string $uniUrl 小程序链接
+     * @return array 按钮信息数组
      */
     public function getButtonInfo(string $noticeType, int $status, int $id = 0, string $url = '', string $uniUrl = ''): array
     {
-        $data['url']     = $url;
-        $data['uni_url'] = $uniUrl;
-        $newUrl          = str_contains($url, '?') ? $url . '&id=' . $id : $url . '?id=' . $id;
-        $newUniUrl       = str_contains($uniUrl, '?') ? $uniUrl . '&id=' . $id : $uniUrl . '?id=' . $id;
+        $contractRelatedKeywords = [
+            'contract_abnormal', 'contract_overdue_day_remind', 'contract_soon_overdue_remind',
+            'contract_overdue_remind', 'contract_urgent_renew', 'contract_day_remind',
+            'approv', 'recall', 'contract_return_money', 'contract_renew',
+            'contract_expend', 'finance_verify_fail',
+        ];
+        $assessKeyword         = 'assess';
+        $dailyKeyword          = 'daily';
+        $attendanceKeyword     = 'attendance';
+        $enterpriseKeyword     = 'enterprise';
+        $assessAbnormalKeyword = 'assess_abnormal';
+        $newsKeyword           = 'news';
+        $buttonData            = [
+            'url'     => $url,
+            'uni_url' => $uniUrl,
+            'action'  => '',
+            'title'   => '',
+        ];
+        $newUrl = $newUniUrl = '';
+        if ($id > 0) {
+            $newUrl    = str_contains($url, '?') ? $url . '&id=' . $id : $url . '?id=' . $id;
+            $newUniUrl = str_contains($uniUrl, '?') ? $uniUrl . '&id=' . $id : $uniUrl . '?id=' . $id;
+        }
         switch ($status) {
             case -1:
-                if (str_contains($noticeType, 'contract_abnormal')
-                    || str_contains($noticeType, 'contract_overdue_day_remind')
-                    || str_contains($noticeType, 'contract_soon_overdue_remind')
-                    || str_contains($noticeType, 'contract_overdue_remind')
-                    || str_contains($noticeType, 'contract_urgent_renew')
-                    || str_contains($noticeType, 'contract_day_remind')
-                    || str_contains($noticeType, 'approv')
-                    || str_contains($noticeType, 'recall')
-                    || str_contains($noticeType, 'contract_return_money')
-                    || str_contains($noticeType, 'contract_renew')
-                    || str_contains($noticeType, 'contract_expend')
-                    || str_contains($noticeType, 'finance_verify_fail')
-                ) {
-                    $data['action'] = NoticeEnum::STATUS_RECALL;
-                    $data['title']  = '已作废';
-                } elseif (str_contains($noticeType, 'enterprise')) {
-                    $data['action'] = NoticeEnum::STATUS_DELETE;
-                    $data['title']  = '已处理';
-                } elseif (str_contains($noticeType, 'assess_abnormal')) {
-                    $data['action'] = NoticeEnum::STATUS_RECALL;
-                    $data['title']  = '';
-                } else {
-                    $data['action'] = NoticeEnum::STATUS_DELETE;
-                    $data['title']  = '已删除';
+                // 简化多关键词判断逻辑
+                $isContractRelated = false;
+                foreach ($contractRelatedKeywords as $keyword) {
+                    if (str_contains($noticeType, $keyword)) {
+                        $isContractRelated = true;
+                        break;
+                    }
                 }
-                $data['url'] = $data['uni_url'] = '';
+                if ($isContractRelated) {
+                    $buttonData['action'] = NoticeEnum::STATUS_RECALL;
+                    $buttonData['title']  = '已作废';
+                } elseif (str_contains($noticeType, $enterpriseKeyword)) {
+                    $buttonData['action'] = NoticeEnum::STATUS_DELETE;
+                    $buttonData['title']  = '已处理';
+                } elseif (str_contains($noticeType, $assessAbnormalKeyword)) {
+                    $buttonData['action'] = NoticeEnum::STATUS_RECALL;
+                    $buttonData['title']  = '';
+                } else {
+                    $buttonData['action'] = NoticeEnum::STATUS_DELETE;
+                    $buttonData['title']  = '已删除';
+                }
+                $buttonData['url'] = $buttonData['uni_url'] = '';
                 break;
             case 1:
-                if (str_contains($noticeType, 'daily') || str_contains($noticeType, 'assess') || str_contains($noticeType, 'news')) {
-                    $data['title'] = '立即查看';
-                } else {
-                    $data['title'] = '已通过';
-                }
-                $data['action'] = NoticeEnum::STATUS_DETAIL;
-                if ($id) {
-                    $data['url']     = $newUrl;
-                    $data['uni_url'] = $newUniUrl;
+                $buttonData['action'] = NoticeEnum::STATUS_DETAIL;
+                $isDailyAssessNews    = str_contains($noticeType, $dailyKeyword)
+                    || str_contains($noticeType, $assessKeyword)
+                    || str_contains($noticeType, $newsKeyword);
+                $buttonData['title'] = $isDailyAssessNews ? '立即查看' : '已通过';
+                if ($id > 0) {
+                    $buttonData['url']     = $newUrl;
+                    $buttonData['uni_url'] = $newUniUrl;
                 }
                 break;
             case 2:
-                if (! str_contains($noticeType, 'assess')) {
-                    $data['action'] = NoticeEnum::STATUS_DETAIL;
-                    $data['title']  = '未通过';
-                    if ($id) {
-                        $data['url']     = $newUrl;
-                        $data['uni_url'] = $newUniUrl;
-                    }
-                } else {
-                    $data['action'] = NoticeEnum::STATUS_DETAIL;
-                    $data['title']  = '立即查看';
-                    if ($id) {
-                        $data['url']     = $newUrl;
-                        $data['uni_url'] = $newUniUrl;
-                    }
+                $buttonData['action'] = NoticeEnum::STATUS_DETAIL;
+                $buttonData['title']  = str_contains($noticeType, $assessKeyword) ? '立即查看' : '未通过';
+                if ($id > 0) {
+                    $buttonData['url']     = $newUrl;
+                    $buttonData['uni_url'] = $newUniUrl;
                 }
                 break;
             case 4:
-                $data['action'] = NoticeEnum::STATUS_DELETE;
-                $data['title']  = '已结束';
-                $data['url']    = $data['uni_url'] = '';
+                $buttonData['action'] = NoticeEnum::STATUS_DELETE;
+                $buttonData['title']  = '已结束';
+                $buttonData['url']    = $buttonData['uni_url'] = '';
                 break;
             case 5:
-                if (str_contains($noticeType, 'assess')) {
-                    $data['action'] = NoticeEnum::STATUS_DETAIL;
-                    $data['title']  = '立即查看';
-                    if ($id) {
-                        $data['url']     = $newUrl;
-                        $data['uni_url'] = $newUniUrl;
+                if (str_contains($noticeType, $assessKeyword)) {
+                    $buttonData['action'] = NoticeEnum::STATUS_DETAIL;
+                    $buttonData['title']  = '立即查看';
+                    if ($id > 0) {
+                        $buttonData['url']     = $newUrl;
+                        $buttonData['uni_url'] = $newUniUrl;
                     }
                 } else {
-                    $data['action'] = NoticeEnum::STATUS_DELETE;
-                    $data['title']  = '已删除';
-                    $data['url']    = $data['uni_url'] = '';
+                    $buttonData['action'] = NoticeEnum::STATUS_DELETE;
+                    $buttonData['title']  = '已删除';
+                    $buttonData['url']    = $buttonData['uni_url'] = '';
                 }
                 break;
             default:
-                $data['action'] = NoticeEnum::STATUS_DETAIL;
-                if (str_contains($noticeType, 'daily') && ! str_contains($noticeType, 'attendance')) {
-                    $data['title'] = '立即填写';
-                } else {
-                    $data['title'] = '立即查看';
-                }
-                if ($id) {
-                    $data['url']     = $newUrl;
-                    $data['uni_url'] = $newUniUrl;
+                $buttonData['action'] = NoticeEnum::STATUS_DETAIL;
+                // 简化标题判断逻辑
+                $isDailyNotAttendance = str_contains($noticeType, $dailyKeyword)
+                    && ! str_contains($noticeType, $attendanceKeyword);
+                $buttonData['title'] = $isDailyNotAttendance ? '立即填写' : '立即查看';
+                if ($id > 0) {
+                    $buttonData['url']     = $newUrl;
+                    $buttonData['uni_url'] = $newUniUrl;
                 }
         }
-        $buttons[] = $data;
-        return $buttons;
+        return [$buttonData];
     }
 
     /**
@@ -1027,7 +1040,14 @@ class NoticeRecordService extends BaseService
         } else {
             $where['ids'] = $ids;
         }
-        return $this->dao->update($where, ['is_read' => $isRead]);
+        $result = $this->dao->update($where, ['is_read' => $isRead]);
+
+        // 如果是标记为已读，则更新个推角标
+        if ($isRead == 1) {
+            $this->updatePushBadge(uuid_to_uid($uuid, $entId));
+        }
+
+        return $result;
     }
 
     /**
@@ -1047,10 +1067,72 @@ class NoticeRecordService extends BaseService
     }
 
     /**
+     * 根据用户ID获取未读消息数量.
+     */
+    public function getUnreadCountByUserId(int $userId): int
+    {
+        $where = [
+            'to_uid'  => $userId,
+            'is_read' => 0,
+        ];
+
+        return $this->dao->count($where);
+    }
+
+    /**
+     * 更新用户个推角标.
+     */
+    public function updatePushBadge(int $userId): void
+    {
+        try {
+            $clientId = app(AdminService::class)->value($userId, 'client_id');
+            if (! $clientId) {
+                return;
+            }
+            $unreadCount = $this->dao->count(['to_uid' => $userId, 'is_read' => 0]);
+            // 使用个推服务设置正确的角标数
+            app(PushMessage::class)->userBadge([$clientId], (string) $unreadCount);
+        } catch (\Exception $e) {
+            Log::error('更新个推角标失败: ' . $e->getMessage(), [
+                'user_id' => $userId,
+                'error'   => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * 更新已读状态.
+     * @param mixed $isRead
+     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
+     */
+    public function updateRead(array $where, $isRead, int $uid)
+    {
+        if ($where['cate_id']) {
+            if ($where['cate_id'] == 'all'){
+                unset($where['cate_id']);
+            }
+            unset($where['ids']);
+        } else {
+            unset($where['cate_id']);
+        }
+        if (! $where) {
+            $where = ['to_uid' => $uid];
+        }
+        $this->dao->update($where, ['is_read' => $isRead]);
+        $this->updatePushBadge($uid);
+    }
+
+    /**
      * 获取可用的手机号列表.
      * @param mixed $messageInfo
+     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
-    protected function getAvailablePhoneNumbers($messageInfo): array
+    protected function getAvailablePhoneNumbers(array $messageInfo): array
     {
         if (! empty($this->toId['phone'])) {
             return [$this->toId['phone']];
@@ -1104,13 +1186,11 @@ class NoticeRecordService extends BaseService
 
     /**
      * UniPush推送
-     * @param mixed $clientId
-     * @param mixed $messageInfo
-     * @return bool
-     * @throws InvalidArgumentException
-     * @throws BindingResolutionException
+     * @return true|void
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
-    protected function sendUniPush($clientId, $messageInfo)
+    protected function sendUniPush(string $clientId, array $messageInfo)
     {
         try {
             if (! $clientId) {
@@ -1119,8 +1199,7 @@ class NoticeRecordService extends BaseService
             if (! $messageInfo) {
                 return true;
             }
-            /** @var PushMessage $uniPush */
-            $uniPush                    = app()->get(PushMessage::class);
+            $uniPush                    = app(PushMessage::class);
             $option                     = new PushOptions();
             $messageOption              = new PushMessageOptions();
             $messageOption->title       = $messageInfo['title'];
@@ -1201,9 +1280,9 @@ class NoticeRecordService extends BaseService
             $pushChannel->setAndroid($android);
 
             /** @var \GTPushMessage $message */
-            $message = app()->make(\GTPushMessage::class);
+            $message = app()->get(\GTPushMessage::class);
             /** @var \GTNotification $notify */
-            $notify = app()->make(\GTNotification::class);
+            $notify = app()->get(\GTNotification::class);
             $notify->setTitle($messageInfo['title']);
             $notify->setBody($messageInfo['message']);
             $notify->setClickType('payload');
@@ -1212,7 +1291,7 @@ class NoticeRecordService extends BaseService
             $res = $uniPush->push($message, $notify, $pushChannel, $clientId);
             Log::info('uniPush推送结果:', $res);
         } catch (\Exception $e) {
-            Log::error('uniPush推送错误:', ['msg' => $e->getMessage(), 'line' => $e->getLine()]);
+            Log::error('uniPush推送错误:', ['file' => $e->getFile(), 'line' => $e->getLine(), 'trace' => $e->getTraceAsString()]);
         }
     }
 
@@ -1258,5 +1337,54 @@ class NoticeRecordService extends BaseService
             ]),
             default => [],
         };
+    }
+
+    /**
+     * 推送企业微信.
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \EasyWeChat\Kernel\Exceptions\InvalidArgumentException
+     * @throws ClientExceptionInterface
+     * @throws RedirectionExceptionInterface
+     * @throws ServerExceptionInterface
+     * @throws TransportExceptionInterface
+     */
+    private function sendWeWorkPush(array $messageInfo, array $params = []): void
+    {
+        if (! sys_config('wechat_work_build_agent_id')) {
+            return;
+        }
+        $targetUids = ! empty($this->toIds) ? $this->toIds : (! empty($this->toId) ? [$this->toId] : []);
+        $template   = collect($messageInfo['message_template'])->filter(fn ($item) => $item['type'] == 0)->last();
+        $work       = app(Work::class);
+        collect($targetUids)->filter(fn ($item) => $item['userid'])->each(function ($item) use ($template, $params, $work) {
+            $sendParams = [
+                'touser'        => $item['userid'],
+                'msgtype'       => 'template_card',
+                'agentid'       => sys_config('wechat_work_build_agent_id'),
+                'template_card' => [
+                    'card_type'               => 'text_notice',
+                    'sub_title_text'          => $template['message_title'],
+                    'horizontal_content_list' => collect($template['template_var'])->map(function ($item) use ($params) {
+                        return [
+                            'keyname' => $item,
+                            'value'   => $params[$item],
+                        ];
+                    })->all(),
+                    'jump_list' => collect(json_decode($template['button_template'], true) ?? [])->map(function ($item) use ($template) {
+                        return [
+                            'type'  => 1,
+                            'title' => $item,
+                            'url'   => link_file('/work' . $template['uni_url']),
+                        ];
+                    })->values()->all(),
+                    'card_action' => [
+                        'type' => 1,
+                        'url'  => link_file('/work'),
+                    ],
+                ],
+            ];
+            $work->sendMessage($sendParams);
+        });
     }
 }

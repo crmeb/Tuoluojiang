@@ -14,21 +14,21 @@
 
         <!-- 表格数据 -->
         <div v-loading="loading" class="table-box mt10">
-          <el-table :data="tableData" :height="tableHeight" row-key="id" style="width: 100%">
+          <el-table :data="tableData" :height="TABLE_HEIGHT" row-key="id" style="width: 100%">
             <el-table-column label="接口标题" prop="title"> </el-table-column>
             <el-table-column label="链接地址" prop="url" width="300"> </el-table-column>
             <el-table-column label="请求方式" prop="method"> </el-table-column>
             <el-table-column label="请求类型" prop="is_pre">
-              <template slot-scope="scope">
-                <el-tag type="warning" size="small" v-if="scope.row.is_pre == 0">直接请求</el-tag>
-                <el-tag type="success" size="small" v-if="scope.row.is_pre == 1">授权请求</el-tag>
+              <template #default="scope">
+                <el-tag type="warning" v-if="scope.row.is_pre == 0">直接请求</el-tag>
+                <el-tag type="success" v-if="scope.row.is_pre == 1">授权请求</el-tag>
               </template>
             </el-table-column>
             <el-table-column label="创建时间" min-width="140" prop="created_at"> </el-table-column>
             <el-table-column fixed="right" label="操作" prop="address" width="110">
-              <template slot-scope="scope">
-                <el-button type="text" @click="editFn(scope.row.id)">编辑</el-button>
-                <el-button type="text" @click="deleteFn(scope.row.id)">删除</el-button>
+              <template #default="scope">
+                <el-button type="primary" link @click="editFn(scope.row.id)">编辑</el-button>
+                <el-button type="primary" link @click="deleteFn(scope.row.id)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -52,9 +52,11 @@
 </template>
 
 <script>
+import { modalSure } from '@/libs/public.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
 import oaFromBox from '@/components/common/oaFromBox'
 import addData from './components/addData.vue'
-import { crudGetCurlListApi, crudDeleteCurlApi } from '@/api/develop'
+import { crudGetCurlListApi, crudDeleteCurlApi } from '@/api/develop.ts'
 export default {
   name: 'FinanceList',
   components: {
@@ -63,6 +65,7 @@ export default {
   },
   data() {
     return {
+      TABLE_HEIGHT,
       search: [
         {
           field_name: '标题或链接搜索',
@@ -105,7 +108,7 @@ export default {
 
     // 删除触发器
     deleteFn(id) {
-      this.$modalSure('您确定要删除此数据吗').then(() => {
+      modalSure('您确定要删除此数据吗').then(() => {
         crudDeleteCurlApi(id).then((res) => {
           this.getList()
         })
@@ -145,7 +148,7 @@ export default {
   font-size: 16px;
   font-weight: 500;
 }
-/deep/ el-tag {
+:deep(el-tag) {
   border: none;
 }
 </style>

@@ -1,5 +1,5 @@
 import uniqueId from '@form-create/utils/lib/unique'
-const label = '作废发票'
+const label = '冲红发票'
 const name = 'voidedInvoice'
 export default {
   icon: 'iconfont iconqingjia2',
@@ -52,7 +52,7 @@ export default {
       //     activeText: '显示',
       //     inactiveText: '隐藏',
       //     value: true,
-      //     name: '作废原因'
+      //     name: '冲红原因'
       //   },
       //   _fc_drag_tag: 'switchStatus'
       // },
@@ -81,8 +81,8 @@ export default {
         hidden: false,
         info: '',
         props: {
-          value: '1.作废发票是否需要审批流，在客户规格设置中配置<br>2.作废发票关联的付款单，支持重新开具发票',
-          title: '作废发票规则'
+          value: '1.冲红发票是否需要审批流，在客户规格设置中配置<br>2.冲红发票关联的付款单，支持重新开具发票',
+          title: '冲红发票规则'
         },
         input: false,
         title: '',

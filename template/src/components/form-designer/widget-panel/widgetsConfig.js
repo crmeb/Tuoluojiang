@@ -51,6 +51,24 @@ export const containers = [
       xs: 12
     }
   },
+   {
+    name: '明细表',
+    type: 'details',
+    category: 'container',
+    widgetList: [],
+    options: {
+         name: '',
+      label: 'card',
+      hidden: false,
+      folded: false,
+      showFold: true,
+      cardHeader: true,
+      cardWidth: '100%',
+      shadow: 'never',
+      topMargin: 0,
+      bottomMargin: 20
+    }
+  },
   {
     name: '选项卡页',
     type: 'tab-pane',
@@ -82,7 +100,8 @@ export const containers = [
       topMargin: 0,
       bottomMargin: 20
     }
-  }
+  },
+ 
 ]
 
 /**
@@ -123,11 +142,11 @@ export const basicFields = [
       /**
        * @description 自定义组件属性
        */
-
+      dataLink:'', // 数据联动
       labelIconClass: null, //标签图标类名
       labelIconPosition: 'rear', //标签图标位置
       labelTooltip: null, //标签提示信息
-      minLength: null, //最小长度限制
+      minLength: 0, //最小长度限制
       maxLength: null, //最大长度限制
       showWordLimit: false, //是否显示字数统计
       prefixIcon: '', //前缀图标
@@ -203,7 +222,7 @@ export const basicFields = [
       validation: '',
       validationHint: '',
       //-------------------
-
+      dataLink:'', // 数据联动
       labelIconClass: null,
       labelIconPosition: 'rear',
       labelTooltip: null,
@@ -272,7 +291,7 @@ export const basicFields = [
       validation: '',
       validationHint: '',
       //-------------------
-
+      dataLink:'', // 数据联动
       labelIconClass: null,
       labelIconPosition: 'rear',
       labelTooltip: null,
@@ -319,7 +338,7 @@ export const basicFields = [
       validation: '',
       validationHint: '',
       //-------------------
-
+      dataLink:'', // 数据联动
       labelIconClass: null,
       labelIconPosition: 'rear',
       labelTooltip: null,
@@ -349,13 +368,14 @@ export const basicFields = [
       labelHidden: false,
       disabled: false,
       hidden: false,
-      // optionItems: [],
+      optionItems: [],
       required: false,
       requiredHint: '',
       validation: '',
       validationHint: '',
       //-------------------
       // customClass: '', //自定义css类名
+      dataLink:'', // 数据联动
       labelIconClass: null,
       labelIconPosition: 'rear',
       labelTooltip: null,
@@ -400,7 +420,7 @@ export const basicFields = [
       validation: '',
       validationHint: '',
       //-------------------
-
+      dataLink:'', // 数据联动
       labelIconClass: null,
       labelIconPosition: 'rear',
       labelTooltip: null,
@@ -439,7 +459,7 @@ export const basicFields = [
       validation: '',
       validationHint: '',
       //-------------------
-
+      dataLink:'', // 数据联动
       labelIconClass: null,
       labelIconPosition: 'rear',
       labelTooltip: null,
@@ -478,7 +498,7 @@ export const basicFields = [
       validation: '',
       validationHint: '',
       //-------------------
-
+      dataLink:'', // 数据联动
       labelIconClass: null,
       labelIconPosition: 'rear',
       labelTooltip: null,
@@ -510,12 +530,14 @@ export const basicFields = [
       hidden: false,
       clearable: true,
       editable: false,
+       defaultType:'1',
+      defaultValue: '', // 表单项默认值
       required: false,
       requiredHint: '',
       validation: '',
       validationHint: '',
       //-------------------
-
+      dataLink:'', // 数据联动
       labelIconClass: null,
       labelIconPosition: 'rear',
       labelTooltip: null,
@@ -547,14 +569,16 @@ export const basicFields = [
       hidden: false,
       clearable: true,
       editable: false,
-      format: 'yyyy-MM-dd', //日期显示格式
-      valueFormat: 'yyyy-MM-dd', //日期对象格式
+      format: 'YYYY-MM-DD', //日期显示格式
+      valueFormat: 'YYYY-MM-DD', //日期对象格式
+      defaultType:'1',
+       defaultValue: '', // 表单项默认值
       required: false,
       requiredHint: '',
       validation: '',
       validationHint: '',
       //-------------------
-
+      dataLink:'', // 数据联动
       labelIconClass: null,
       labelIconPosition: 'rear',
       labelTooltip: null,
@@ -583,7 +607,7 @@ export const basicFields = [
       disabled: false,
       hidden: false,
       //-------------------
-
+      dataLink:'', // 数据联动
       labelIconClass: null,
       labelIconPosition: 'rear',
       labelTooltip: null,
@@ -643,7 +667,9 @@ export const basicFields = [
       validation: '',
       validationHint: '',
       //-------------------
+      showType:1,
       buttonText: '选择',
+      dataLink:'', // 数据联动
       labelIconPosition: 'rear',
       prefixIcon: '',
       appendButtonDisabled: false,
@@ -711,6 +737,7 @@ export const basicFields = [
       customRule: '',
       customRuleHint: '',
       // customClass: [],
+      dataLink:'', // 数据联动
       labelIconClass: null,
       labelIconPosition: 'rear',
       labelTooltip: null,
@@ -749,9 +776,11 @@ export const basicFields = [
       formulaEnabled: false,
       formula: '',
       // customClass: [],
+      dataLink:'', // 数据联动
       labelIconClass: null,
       labelIconPosition: 'rear',
       labelTooltip: null,
+      dataLink:'',
       min: -100000000000,
       max: 100000000000,
       precision: 0,
@@ -792,6 +821,7 @@ export const basicFields = [
       formulaEnabled: false,
       formula: '',
 
+      dataLink:'', // 数据联动
       labelIconClass: null,
       labelIconPosition: 'rear',
       labelTooltip: null,
@@ -835,6 +865,7 @@ export const basicFields = [
       formulaEnabled: false,
       formula: '',
 
+      dataLink:'', // 数据联动
       labelIconClass: null,
       labelIconPosition: 'rear',
       labelTooltip: null,
@@ -872,6 +903,7 @@ export const basicFields = [
       validationHint: '',
       //-------------------
 
+      dataLink:'', // 数据联动
       labelIconClass: null,
       labelIconPosition: 'rear',
       labelTooltip: null,
@@ -906,7 +938,13 @@ export const basicFields = [
       requiredHint: '',
       validation: '',
       validationHint: '',
+       optionItems: [
+       { label: 'radio 1', value: 1 },
+        { label: 'radio 2', value: 2 },
+        { label: 'radio 3', value: 3 }
+      ],
       //-------------------
+      dataLink:'', // 数据联动
       labelIconClass: null,
       labelIconPosition: 'rear',
       labelTooltip: null,
@@ -1020,7 +1058,9 @@ export const advancedFields = [
       customRule: '',
       customRuleHint: '',
       //-------------------
+      optionItems: [],
 
+      dataLink:'', // 数据联动
       labelIconClass: null,
       labelIconPosition: 'rear',
       labelTooltip: null,
@@ -1057,10 +1097,12 @@ export const advancedFields = [
       customRule: '',
       customRuleHint: '',
       //-------------------
-
+     
+      dataLink:'', // 数据联动
       labelIconClass: null,
       labelIconPosition: 'rear',
       labelTooltip: null,
+      optionItems: [],
       //-------------------
       onCreated: '',
       onMounted: '',

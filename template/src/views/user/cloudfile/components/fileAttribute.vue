@@ -7,24 +7,33 @@
       :modal="true"
       :size="formData.width"
       :title="formData.title"
-      :visible.sync="drawer"
-      :wrapper-closable="true"
+      v-model="drawer"
     >
       <div v-if="fileData.id !== undefined" class="content">
         <div class="logo">
-          <i :class="getFileType(fileData.type, fileData.file_url)" class="icon iconfont" />
-          <p>{{ $t('file.detailedinformation') }}</p>
+          <i
+            v-if="fileData.type == 0"
+            :class="getFileTypeIconfont(fileData.type, fileData.file_ext)"
+            class="icon iconfont"
+          />
+          <img
+            v-if="fileData.type == 1"
+            src="../../../../assets/images/cloud/file.png"
+            alt=""
+            style="width: 80px; height: 80px"
+          />
+          <p>详细信息</p>
         </div>
         <el-row :gutter="20" class="content-list mt15">
-          <el-col class="content-left"><i class="icon iconfont iconkuaizhuangyangshi" /></el-col>
+          <el-col class="content-left"><i class="icon iconfont iconwenjianleixing" /></el-col>
           <el-col class="content-right">
-            <div>{{ $t('file.filetype') }}</div>
+            <div>文件类型</div>
             <div v-if="fileData.type !== 1">{{ fileData.file_ext }}</div>
-            <div v-else>{{ $t('file.folder') }}</div>
+            <div v-else>文件夹</div>
           </el-col>
         </el-row>
         <el-row :gutter="20" class="content-list mt15" v-if="fileData.type !== 1">
-          <el-col class="content-left"><i class="icon iconfont iconkuaizhuangyangshi" /></el-col>
+          <el-col class="content-left"><i class="icon iconfont iconwenjiandaxiao1" /></el-col>
           <el-col class="content-right">
             <div>文件大小</div>
             <div>{{ formatBytesFn(fileData.file_size) }}</div>
@@ -33,35 +42,35 @@
         <el-row :gutter="20" class="content-list">
           <el-col class="content-left"><i class="icon iconfont iconwenjianweizhi" /></el-col>
           <el-col class="content-right">
-            <div>{{ $t('file.filelocation') }}</div>
+            <div>文件位置</div>
             <div v-if="fileData.path.length > 0">
-              {{ $t('file.allpositions') }}
+              全部位置
               <span>/ {{ fileData.path }}</span>
             </div>
             <div v-else>
-              {{ $t('file.allpositions') }}
+              全部位置
             </div>
           </el-col>
         </el-row>
 
         <el-row :gutter="20" class="content-list">
-          <el-col class="content-left"><i class="icon iconfont icongongxiangzu" /></el-col>
+          <el-col class="content-left"><i class="icon iconfont iconchuangjianren" /></el-col>
           <el-col class="content-right">
-            <div>{{ $t('hr.founder') }}</div>
+            <div>创建人</div>
             <div>{{ fileData.user.name || '--' }}</div>
           </el-col>
         </el-row>
         <el-row :gutter="20" class="content-list">
           <el-col class="content-left"><i class="icon iconfont iconchuangjianshijian" /></el-col>
           <el-col class="content-right">
-            <div>{{ $t('file.creationtime') }}</div>
+            <div>创建时间</div>
             <div>{{ fileData.created_at }}</div>
           </el-col>
         </el-row>
         <el-row :gutter="20" class="content-list">
           <el-col class="content-left"><i class="icon iconfont iconxiugaishijian" /></el-col>
           <el-col class="content-right">
-            <div>{{ $t('file.updatetime') }}</div>
+            <div>更新时间</div>
             <div>{{ fileData.updated_at }}</div>
           </el-col>
         </el-row>
@@ -71,11 +80,8 @@
 </template>
 
 <script>
-import { formatBytes } from '@/libs/public'
-import { folderDetailApi, folderSpaceEntDetailApi } from '@/api/cloud'
-import file from '@/utils/file'
-Vue.use(file)
-import Vue from 'vue'
+import { formatBytes, getFileType, getFileTypeIconfont } from '@/utils/file.ts'
+import { folderDetailApi, folderSpaceEntDetailApi } from '@/api/cloud.ts'
 export default {
   name: 'FileAttribute',
   props: {
@@ -106,6 +112,7 @@ export default {
     }
   },
   methods: {
+    getFileTypeIconfont,
     handleClose() {
       this.drawer = false
       this.fileData = {}
@@ -120,6 +127,9 @@ export default {
       } else {
         return '--'
       }
+    },
+    getFileType(type, url) {
+      return getFileType(url)
     },
 
     // 我的文件-文件详情

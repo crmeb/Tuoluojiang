@@ -15,14 +15,17 @@ declare(strict_types=1);
 
 namespace App\Http\Service\Program;
 
+use App\Constants\ModuleEnum;
 use App\Constants\ProgramEnum\DynamicEnum;
 use App\Constants\ProgramEnum\TaskPriorityEnum;
 use App\Constants\ProgramEnum\TaskStatusEnum;
+use App\Constants\TodoEnum;
+use App\Events\BusinessDataChangeEvent;
 use App\Http\Dao\Program\ProgramTaskDao;
 use App\Http\Service\Admin\AdminService;
+use App\Http\Service\System\ModulePermissionService;
 use App\Http\Service\BaseService;
-use App\Http\Service\System\RolesService;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -71,72 +74,59 @@ class ProgramTaskService extends BaseService
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function saveTask(array $data): mixed
+    public function saveTask(array $data, int $uid): mixed
     {
         $data['pid']   = 0;
         $data['level'] = 1;
         $data['ident'] = $this->generateIdent();
         $members       = $data['members'];
         unset($data['members']);
-
         if ($data['path']) {
             $data['pid'] = (int) last($data['path']);
         }
-
         if ($data['plan_start'] && $data['plan_end'] && Carbon::parse($data['plan_start'])->startOfDay()->gt(Carbon::parse($data['plan_end']))) {
             throw $this->exception('开始时间不能大于结束时间');
         }
-
         if ($data['pid'] > 0) {
             $parent = $this->dao->get(['program_id' => $data['program_id'], 'id' => $data['pid']]);
             if (! $parent) {
                 throw $this->exception('请重新选择父级任务');
             }
-
             if ($parent->level >= 4) {
                 throw $this->exception('最多支持4级任务');
             }
-
             if ($data['program_id'] != $parent->program_id) {
                 throw $this->exception('当前任务存在父级任务，无法修改关联项目');
             }
-
             $data['level']  = $parent->level + 1;
             $data['top_id'] = $parent->top_id;
         }
-
         if (! app()->get(ProgramService::class)->exists($data['program_id'])) {
             throw $this->exception('请重新选择关联项目');
         }
-
         if ($data['version_id'] && ! app()->get(ProgramVersionService::class)->exists(['id' => $data['version_id'], 'program_id' => $data['program_id']])) {
             throw $this->exception('请重新选择关联版本');
         }
-
         $programMember = app()->get(ProgramMemberService::class)->column(['program_id' => $data['program_id']], 'uid');
         if ($data['uid'] && ! in_array($data['uid'], $programMember)) {
             throw $this->exception('请重新选择负责人');
         }
-
         if ($members && array_diff($members, $programMember)) {
             throw $this->exception('请重新选择协作者');
         }
-
         $data['sort'] = $this->dao->max(['pid' => $data['pid']], 'sort') + 1;
-        return $this->transaction(function () use ($data, $members) {
-            $creatorUid = uuid_to_uid($this->uuId(false));
-            $res        = $this->dao->create(array_merge($data, ['creator_uid' => $creatorUid]));
+        return $this->transaction(function () use ($data, $members, $uid) {
+            $res = $this->dao->create(array_merge($data, ['creator_uid' => $uid]));
             if (! $res) {
                 throw $this->exception(__('common.insert.fail'));
             }
-
             if ($members) {
                 app()->get(ProgramTaskMemberService::class)->handleMember($members, $res->id);
             }
-
+            $this->syncTaskTodo((int) $res->id, 'update', [(int) $res->uid, ...$members]);
             // program dynamic
             app()->get(ProgramDynamicService::class)->addLog(DynamicEnum::TASK, DynamicEnum::CREATED_ACTION, [
-                'uid'         => $creatorUid,
+                'uid'         => $uid,
                 'relation_id' => $res->id,
                 'title'       => '新建了 <b>任务</b>',
             ]);
@@ -151,20 +141,17 @@ class ProgramTaskService extends BaseService
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function saveSubordinateTask(array $data): mixed
+    public function saveSubordinateTask(array $data, int $uid): mixed
     {
         $data['level'] = 1;
         $data['ident'] = $this->generateIdent();
-
-        $parent = $this->dao->get(['id' => $data['pid']]);
+        $parent        = $this->dao->get(['id' => $data['pid']]);
         if (! $parent) {
             throw $this->exception('请选择父级任务');
         }
-
         if ($parent->level >= 4) {
             throw $this->exception('最多支持4级任务');
         }
-
         $planDate           = now()->toDateString();
         $data['status']     = 0;
         $data['priority']   = 0;
@@ -177,17 +164,15 @@ class ProgramTaskService extends BaseService
         $data['plan_start'] = $planDate;
         $data['plan_end']   = $planDate;
         $data['sort']       = $this->dao->max(['pid' => $data['pid']], 'sort') + 1;
-
-        return $this->transaction(function () use ($data) {
-            $creatorUid = uuid_to_uid($this->uuId(false));
-            $res        = $this->dao->create(array_merge($data, ['creator_uid' => $creatorUid]));
+        return $this->transaction(function () use ($data, $uid) {
+            $res = $this->dao->create(array_merge($data, ['creator_uid' => $uid]));
             if (! $res) {
                 throw $this->exception(__('common.insert.fail'));
             }
-
+            $this->syncTaskTodo((int) $res->id, 'update', [(int) $res->uid]);
             // program dynamic
             app()->get(ProgramDynamicService::class)->addLog(DynamicEnum::TASK, DynamicEnum::CREATED_ACTION, [
-                'uid'         => $creatorUid,
+                'uid'         => $uid,
                 'relation_id' => $res->id,
                 'title'       => '新建了 <b>任务</b>',
             ]);
@@ -334,6 +319,15 @@ class ProgramTaskService extends BaseService
                 $res = $this->dao->update($id, $update);
                 if (! $res) {
                     throw $this->exception(__('common.update.fail'));
+                }
+                if ($field === 'status') {
+                    $this->finishTaskTodoWhenClosed((int) $id, (int) $value);
+                } elseif ($field === 'uid') {
+                    $this->syncTaskTodo((int) $id, 'update', [
+                        (int) ($task['uid'] ?? 0),
+                        (int) $value,
+                        ...app()->get(ProgramTaskMemberService::class)->column(['task_id' => $id], 'uid'),
+                    ]);
                 }
                 // task dynamic
                 $field != 'plan_date' && $this->combinationDynamic($task, $field, $before, $value);
@@ -545,12 +539,11 @@ class ProgramTaskService extends BaseService
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function getSelectList(array $where): array
+    public function getSelectList(array $where, int $uid): array
     {
-        $adminUid   = uuid_to_uid($this->uuId(false));
         $field      = ['id as value', 'name as label', 'level', 'pid'];
-        $uid        = app()->get(RolesService::class)->getDataUids($adminUid);
-        $programIds = app()->get(ProgramService::class)->column(['uid' => $uid, 'admin_uid' => $adminUid, 'types' => ''], 'id', 'id');
+        $uids       = app()->get(ModulePermissionService::class)->getAccessibleUserIds($uid, ModuleEnum::PROGRAM);
+        $programIds = app()->get(ProgramService::class)->column(['uid' => $uids, 'admin_uid' => $uid, 'types' => ''], 'id', 'id');
         if (! $where['program_id']) {
             $where['program_id'] = $programIds;
         } else {
@@ -574,25 +567,21 @@ class ProgramTaskService extends BaseService
      * @throws \ReflectionException
      * @throws BindingResolutionException
      */
-    public function batchUpdate(array $batchData)
+    public function batchUpdate(array $batchData, int $uid)
     {
         $data = array_filter(array_unique($batchData['data']));
         unset($batchData['data']);
-
-        $list = $this->dao->column(['id' => $data, 'auth_uid' => uuid_to_uid($this->uuId(false))], ['id']);
+        $list = $this->dao->column(['id' => $data, 'auth_uid' => $uid], ['id']);
         if (empty($list)) {
             return true;
         }
-
         $tz = config('app.timezone');
         if ($batchData['start_date'] && $batchData['end_date'] && Carbon::parse($batchData['start_date'], $tz)->startOfDay()->gt($batchData['end_date'])) {
             throw $this->exception('开始时间不能大于结束时间');
         }
-
         if (($batchData['pid'] > 0 || $batchData['version_id'] > 0 || $batchData['uid'] > 0) && $batchData['program_id'] < 1) {
             throw $this->exception('请选择关联项目');
         }
-
         return $this->transaction(function () use ($data, $batchData) {
             foreach ($batchData as $key => $item) {
                 $method = 'update' . Str::studly($key);
@@ -624,7 +613,7 @@ class ProgramTaskService extends BaseService
                 if (! $info) {
                     continue;
                 }
-                $program = app()->make(ProgramService::class)->setTrashed()->get($info['program_id']);
+                $program = app()->get(ProgramService::class)->setTrashed()->get($info['program_id']);
                 if (! $program) {
                     continue;
                 }
@@ -666,6 +655,9 @@ class ProgramTaskService extends BaseService
 
                 // destroy task member
                 app()->get(ProgramTaskMemberService::class)->delete(['task_id' => $delIds]);
+                foreach ($delIds as $delId) {
+                    $this->syncTaskTodo((int) $delId, 'delete');
+                }
             }
         });
     }
@@ -689,6 +681,7 @@ class ProgramTaskService extends BaseService
             }
 
             $memberService->delete(['task_id' => $task['id'], 'uid' => $delMembers]);
+            $this->syncTaskTodo((int) $task['id'], 'update', [(int) ($task['uid'] ?? 0), ...$members]);
             $this->combinationDynamic($task, 'members', $members, array_diff($members, $removeMembers));
         }
     }
@@ -811,7 +804,25 @@ class ProgramTaskService extends BaseService
                 $this->combinationDynamic($task, 'status', $task['status'], $status);
             }
             $this->dao->update(['id' => array_column($list, 'id')], ['status' => $status]);
+
+            foreach ($list as $task) {
+                $this->finishTaskTodoWhenClosed((int) $task['id'], $status);
+            }
         });
+    }
+
+    protected function finishTaskTodoWhenClosed(int $taskId, int $status): void
+    {
+        if (! in_array($status, [
+            TaskStatusEnum::RESOLVED,
+            TaskStatusEnum::ACCEPTED,
+            TaskStatusEnum::REJECTED,
+            TaskStatusEnum::CLOSED,
+        ], true)) {
+            return;
+        }
+
+        $this->syncTaskTodo($taskId, 'complete');
     }
 
     /**
@@ -834,6 +845,9 @@ class ProgramTaskService extends BaseService
                 $this->combinationDynamic($task, 'uid', $task['uid'], $uid);
             }
             $this->dao->update(['id' => array_column($list, 'id')], ['uid' => $uid]);
+            foreach ($list as $task) {
+                $this->syncTaskTodo((int) $task['id'], 'update', [(int) $task['uid'], $uid]);
+            }
         });
     }
 
@@ -1001,7 +1015,21 @@ class ProgramTaskService extends BaseService
         }
 
         $memberService->handleMember($updateMember, $task['id']);
+        $this->syncTaskTodo((int) $task['id'], 'update', [(int) ($task['uid'] ?? 0), ...$taskMember, ...$updateMember]);
         $this->combinationDynamic($task, 'members', $taskMember, $updateMember);
+    }
+
+    /**
+     * @param array<int, int> $userIds
+     */
+    private function syncTaskTodo(int $taskId, string $action = 'update', array $userIds = []): void
+    {
+        BusinessDataChangeEvent::dispatch(
+            TodoEnum::TYPE_TASK,
+            $taskId,
+            $action,
+            array_values(array_unique(array_filter(array_map('intval', $userIds))))
+        );
     }
 
     /**

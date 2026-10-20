@@ -2,17 +2,17 @@
   <div class="station">
     <el-drawer
       :title="id > 0 ? '编辑接口' : '新增接口'"
-      :visible.sync="drawer"
+      v-model="drawer"
       direction="rtl"
       :modal="true"
-      :wrapperClosable="false"
+      :close-on-click-modal="false"
       :before-close="handleClose"
       size="800px"
     >
       <div class="form-box">
         <el-form :model="form" :rules="rules" ref="ruleForm" label-width="110px">
           <el-form-item label="接口标题：" prop="title">
-            <el-input v-model="form.title" size="small" placeholder="请输入接口标题"></el-input>
+            <el-input v-model="form.title" placeholder="请输入接口标题"></el-input>
           </el-form-item>
           <el-form-item label="授权请求：" prop="is_pre">
             <el-switch
@@ -26,10 +26,10 @@
           </el-form-item>
           <template v-if="form.is_pre == '1'">
             <el-form-item label="授权链接：" prop="pre_url">
-              <el-input v-model="form.pre_url" size="small" placeholder="请输入前置链接"></el-input>
+              <el-input v-model="form.pre_url" placeholder="请输入前置链接"></el-input>
             </el-form-item>
             <el-form-item label="请求方式：" prop="pre_method">
-              <el-select v-model="form.pre_method" size="small" style="width: 100%">
+              <el-select v-model="form.pre_method" style="width: 100%">
                 <el-option
                   v-for="item in requestMethod"
                   :key="item.value"
@@ -43,23 +43,23 @@
               <div class="table-box">
                 <el-table :data="form.pre_headers" style="width: 100%">
                   <el-table-column prop="name" label="参数名">
-                    <template slot-scope="scope">
-                      <el-input v-model="scope.row.name" size="small" placeholder="请输入"></el-input>
+                    <template #default="scope">
+                      <el-input v-model="scope.row.name" placeholder="请输入"></el-input>
                     </template>
                   </el-table-column>
                   <el-table-column prop="value" label="参数值">
-                    <template slot-scope="scope">
-                      <el-input v-model="scope.row.value" size="small" placeholder="请输入"></el-input>
+                    <template #default="scope">
+                      <el-input v-model="scope.row.value" placeholder="请输入"></el-input>
                     </template>
                   </el-table-column>
                   <el-table-column width="40px">
-                    <template slot-scope="scope">
+                    <template #default="scope">
                       <span class="iconfont iconshanchu pointer" @click="deleteFn('pre_headers', scope.$index)"></span>
                     </template>
                   </el-table-column>
                 </el-table>
                 <div class="addBtn">
-                  <el-button type="text" icon="el-icon-plus" @click="addFn('pre_headers')">添加行</el-button>
+                  <el-button type="primary" link icon="el-icon-plus" @click="addFn('pre_headers')">添加行</el-button>
                 </div>
               </div>
             </el-form-item>
@@ -68,39 +68,41 @@
               <div class="table-box">
                 <el-table :data="form.pre_data" style="width: 100%">
                   <el-table-column prop="name" label="参数名">
-                    <template slot-scope="scope">
-                      <el-input v-model="scope.row.name" size="small" placeholder="请输入"></el-input>
+                    <template #default="scope">
+                      <el-input v-model="scope.row.name" placeholder="请输入"></el-input>
                     </template>
                   </el-table-column>
                   <el-table-column prop="value" label="参数值">
-                    <template slot-scope="scope">
-                      <el-input v-model="scope.row.value" size="small" placeholder="请输入"></el-input>
+                    <template #default="scope">
+                      <el-input v-model="scope.row.value" placeholder="请输入"></el-input>
                     </template>
                   </el-table-column>
                   <el-table-column width="40px">
-                    <template slot-scope="scope">
+                    <template #default="scope">
                       <span class="iconfont iconshanchu pointer" @click="deleteFn('pre_data', scope.$index)"></span>
                     </template>
                   </el-table-column>
                 </el-table>
                 <div class="addBtn">
-                  <el-button type="text" icon="el-icon-plus" @click="addFn('pre_data')">添加行</el-button>
+                  <el-button type="primary" link icon="el-icon-plus" @click="addFn('pre_data')">添加行</el-button>
                 </div>
               </div>
             </el-form-item>
             <el-form-item label="缓存时间：">
-              <el-input v-model="form.pre_cache_time" size="small" placeholder="请输入缓存时间" type="number">
-                <span slot="suffix" class="text-16">秒</span>
+              <el-input v-model="form.pre_cache_time" placeholder="请输入缓存时间" type="number">
+                <template #suffix>
+                  <span class="text-16">秒</span>
+                </template>
               </el-input>
-              <el-button type="primary" size="small" class="mt14" @click="requestFn">测试请求</el-button>
+              <el-button type="primary" class="mt14" @click="requestFn">测试请求</el-button>
             </el-form-item>
           </template>
 
           <el-form-item label="链接地址：" prop="url">
-            <el-input v-model="form.url" size="small" placeholder="请输入链接地址"></el-input>
+            <el-input v-model="form.url" placeholder="请输入链接地址"></el-input>
           </el-form-item>
           <el-form-item label="请求方式：" prop="method">
-            <el-select v-model="form.method" size="small" style="width: 100%">
+            <el-select v-model="form.method" style="width: 100%">
               <el-option
                 v-for="item in requestMethod"
                 :key="item.value"
@@ -114,40 +116,40 @@
             <div class="table-box">
               <el-table :data="form.headers" style="width: 100%">
                 <el-table-column prop="name" label="参数名">
-                  <template slot-scope="scope">
-                    <el-input v-model="scope.row.name" size="small" placeholder="请输入"></el-input>
+                  <template #default="scope">
+                    <el-input v-model="scope.row.name" placeholder="请输入"></el-input>
                   </template>
                 </el-table-column>
                 <el-table-column prop="type" label="参数来源" v-if="form.is_pre == 1">
-                  <template slot-scope="scope">
-                    <el-select v-model="scope.row.type" size="small" placeholder="请选择">
+                  <template #default="scope">
+                    <el-select v-model="scope.row.type" placeholder="请选择">
                       <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value">
                       </el-option>
                     </el-select>
                   </template>
                 </el-table-column>
                 <el-table-column prop="name" label="前缀">
-                  <template slot-scope="scope">
-                    <el-input v-model="scope.row.prefix" size="small" placeholder="请输入"></el-input>
+                  <template #default="scope">
+                    <el-input v-model="scope.row.prefix" placeholder="请输入"></el-input>
                   </template>
                 </el-table-column>
                 <el-table-column prop="value" label="参数值">
-                  <template slot-scope="scope">
-                    <el-select v-if="scope.row.type == '1'" v-model="scope.row.value" size="small" placeholder="请选择">
+                  <template #default="scope">
+                    <el-select v-if="scope.row.type == '1'" v-model="scope.row.value" placeholder="请选择">
                       <el-option v-for="item in fieldValue" :key="item.value" :label="item.label" :value="item.value">
                       </el-option>
                     </el-select>
-                    <el-input v-else v-model="scope.row.value" size="small" placeholder="请输入"></el-input>
+                    <el-input v-else v-model="scope.row.value" placeholder="请输入"></el-input>
                   </template>
                 </el-table-column>
                 <el-table-column width="40px">
-                  <template slot-scope="scope">
+                  <template #default="scope">
                     <span class="iconfont iconshanchu pointer" @click="deleteFn('headers', scope.$index)"></span>
                   </template>
                 </el-table-column>
               </el-table>
               <div class="addBtn">
-                <el-button type="text" icon="el-icon-plus" @click="addFn('headers')">添加行</el-button>
+                <el-button type="primary" link icon="el-icon-plus" @click="addFn('headers')">添加行</el-button>
               </div>
             </div>
           </el-form-item>
@@ -156,13 +158,13 @@
             <div class="table-box">
               <el-table :data="form.data" style="width: 100%">
                 <el-table-column prop="name" label="参数名">
-                  <template slot-scope="scope">
-                    <el-input v-model="scope.row.name" size="small" placeholder="请输入"></el-input>
+                  <template #default="scope">
+                    <el-input v-model="scope.row.name" placeholder="请输入"></el-input>
                   </template>
                 </el-table-column>
                 <el-table-column prop="type" label="参数来源" v-if="form.is_pre == 1">
-                  <template slot-scope="scope">
-                    <el-select v-model="scope.row.type" size="small" placeholder="请选择" @change="changeFn(scope.row)">
+                  <template #default="scope">
+                    <el-select v-model="scope.row.type" placeholder="请选择" @change="changeFn(scope.row)">
                       <el-option
                         v-for="item in options"
                         :key="item.value"
@@ -175,46 +177,44 @@
                   </template>
                 </el-table-column>
                 <el-table-column prop="value" label="参数值">
-                  <template slot-scope="scope">
-                    <el-select v-if="scope.row.type == '1'" v-model="scope.row.value" size="small" placeholder="请选择">
+                  <template #default="scope">
+                    <el-select v-if="scope.row.type == '1'" v-model="scope.row.value" placeholder="请选择">
                       <el-option v-for="item in fieldValue" :key="item.value" :label="item.label" :value="item.value">
                       </el-option>
                     </el-select>
-                    <el-input v-else-if="0" v-model="scope.row.value" size="small" placeholder="请输入"></el-input>
+                    <el-input v-else-if="0" v-model="scope.row.value" placeholder="请输入"></el-input>
                     <el-input
                       v-else-if="2"
                       v-model="scope.row.value"
                       type="number"
-                      size="small"
                       placeholder="请输入数字"
                     ></el-input>
                   </template>
                 </el-table-column>
                 <el-table-column width="40px">
-                  <template slot-scope="scope">
+                  <template #default="scope">
                     <span class="iconfont iconshanchu pointer" @click="deleteFn('data', scope.$index)"></span>
                   </template>
                 </el-table-column>
               </el-table>
               <div class="addBtn">
-                <el-button type="text" icon="el-icon-plus" @click="addFn('data')">添加行</el-button>
+                <el-button type="primary" link icon="el-icon-plus" @click="addFn('data')">添加行</el-button>
               </div>
             </div>
           </el-form-item>
         </el-form>
       </div>
       <div class="button from-foot-btn fix btn-shadow">
-        <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
-        <el-button :loading="loading" size="small" type="primary" @click="handleConfirm('ruleForm')">{{
-          $t('public.ok')
-        }}</el-button>
+        <el-button @click="handleClose">取消</el-button>
+        <el-button :loading="loading" type="primary" @click="handleConfirm('ruleForm')">确定</el-button>
       </div>
     </el-drawer>
   </div>
 </template>
 <script>
-import { crudTestSendApi, crudAddCurlApi, crudGetCurlEditApi, crudPutCurlApi } from '@/api/develop'
+import { crudTestSendApi, crudAddCurlApi, crudGetCurlEditApi, crudPutCurlApi } from '@/api/develop.ts'
 export default {
+  emits: ['getList'],
   name: '',
   props: {},
   data() {

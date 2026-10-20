@@ -13,86 +13,75 @@
   >
     <div ref="fieldEditor" v-if="formConfig.roleType != 1">
       <div class="pic-list">
-        <div v-if="fieldModel.length" class="pic" v-for="(img, index) in fieldModel" :key="index">
-          <img class="img" :src="img.url" />
-          <div class="pic-upload">
-            <div class="pic-upload-content">
-              <i @click="handlePictureCardPreview(index)" class="el-icon-zoom-in"></i>
-              <i @click="handleAvatar(index)" class="el-icon-delete"></i>
+        <template v-if="fieldModel.length">
+          <div class="pic" v-for="(img, index) in fieldModel" :key="index">
+            <img class="img" :src="img.url" />
+            <div class="pic-upload">
+              <div class="pic-upload-content">
+                <i @click="handlePictureCardPreview(index)" class="el-icon-zoom-in"></i>
+                <i @click="handleAvatar(index)" class="el-icon-delete"></i>
+              </div>
             </div>
           </div>
-        </div>
+        </template>
 
-        <i
-          @click="beforeUpload"
-          v-if="fieldModel.length < field.options.fileMaxSize"
-          class="el-icon-plus pic-uploader-icon"
-        ></i>
+        <div @click="beforeUpload" v-if="fieldModel.length < field.options.fileMaxSize" class="pic-uploader-icon">
+          <i :class="uploading ? 'el-icon-loading' : 'el-icon-plus'"></i>
+        </div>
       </div>
+      <input
+        ref="uploadInput"
+        type="file"
+        :accept="uploadAccept"
+        multiple
+        style="display: none"
+        @change="handleFileChange"
+      />
     </div>
 
     <uploadFile
       v-else
       ref="fieldEditor"
       :only-image="true"
-      :value="fieldModel"
       v-model="fieldModel"
       :max-length="Number(field.options.fileMaxSize)"
       :max-size="Number(field.options.fileMaxSize)"
       :fileTypes="field.options.fileTypes"
-      @input="handleSuccess"
+      @update:modelValue="handleSuccess"
     ></uploadFile>
 
     <el-dialog
       title=""
       v-if="showPreviewDialogFlag"
-      :visible.sync="showPreviewDialogFlag"
-      v-dialog-drag
+      v-model="showPreviewDialogFlag"
+      draggable
       append-to-body
       width="60%"
       :show-close="true"
-      custom-class="drag-dialog small-padding-dialog"
+      class="drag-dialog small-padding-dialog"
       :close-on-click-modal="true"
       :close-on-press-escape="true"
       :destroy-on-close="true"
     >
       <img :src="previewUrl" width="100%" alt="" />
     </el-dialog>
-    <el-dialog
-      title="选择图片"
-      custom-class="drag-dialog small-padding-dialog"
-      v-dialog-drag
-      :visible.sync="dialogVisible"
-      append-to-body
-      width="850px"
-      :before-close="handleClose"
-    >
-      <div class="mt20">
-        <upload-picture
-          ref="uploadPicture"
-          :maxNum="Number(field.options.limit)"
-          :multiple="true"
-          :check-button="true"
-          @getImage="getImage"
-        ></upload-picture>
-      </div>
-    </el-dialog>
-
-    <el-image-viewer v-if="isImage" :on-close="closeImageViewer" :url-list="srcList" />
+    <el-image-viewer v-if="isImage" @close="closeImageViewer" :url-list="srcList" />
   </form-item-wrapper>
 </template>
 
 <script>
-import emitter from '@/utils/emitter'
-import i18n, { translate } from '@/utils/i18n'
-import { deepClone, evalFn } from '@/utils/util'
+import { defineAsyncComponent } from 'vue'
+import i18n from '@/utils/i18n.ts'
+import { deepClone } from '@/utils/util'
+import { evalFn } from '@/utils/formDesignerUtils'
+import { uploader } from '@/utils/uploadCloud.ts'
+import FormItemWrapper from "./form-item-wrapper.vue";
 
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
 
 export default {
   name: 'image-widget',
-  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
-  mixins: [emitter, fieldMixin, i18n],
+  mixins: [fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -119,10 +108,8 @@ export default {
     }
   },
   components: {
-    FormItemWrapper: () => import('./form-item-wrapper'),
-    uploadFile: () => import('@/components/form-common/oa-upload'),
-    uploadPicture: () => import('@/components/uploadPicture/index'),
-    ElImageViewer: () => import('element-ui/packages/image/src/image-viewer')
+    FormItemWrapper,
+    uploadFile: defineAsyncComponent(() => import('@/components/form-common/oa-upload')),
   },
   inject: ['refList', 'formConfig', 'globalOptionData', 'globalModel'],
   data() {
@@ -130,7 +117,7 @@ export default {
       oldFieldValue: null, //field组件change之前的值
       fieldModel: [],
       rules: [],
-      dialogVisible: false,
+      uploading: false,
       isImage: false,
       srcList: [],
       uploadHeaders: {},
@@ -149,6 +136,13 @@ export default {
     }
   },
   computed: {
+    uploadAccept() {
+      let fileTypes = this.field.options.fileTypes
+      if (!!fileTypes && fileTypes.length > 0) {
+        return fileTypes.map((ft) => '.' + ft).join(',')
+      }
+      return 'image/*'
+    },
     realUploadURL() {
       let uploadURL = this.field.options.uploadURL
       if (!!uploadURL && (uploadURL.indexOf('DSV.') > -1 || uploadURL.indexOf('DSV[') > -1)) {
@@ -178,7 +172,7 @@ export default {
     this.handleOnMounted()
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     this.unregisterFromRefList()
   },
 
@@ -198,17 +192,71 @@ export default {
       this.srcList = []
     },
     beforeUpload() {
-      this.dialogVisible = true
-      let imgFile = this.fieldModel.map((item) => {
-        return {
-          att_size: item.size,
-          real_name: item.name,
-          att_dir: item.url
+      if (this.uploading) return
+      this.$refs.uploadInput.value = ''
+      this.$refs.uploadInput.click()
+    },
+    checkImageFile(file) {
+      let fileTypes = this.field.options.fileTypes
+      if (!!fileTypes && fileTypes.length > 0) {
+        let ext = file.name.substring(file.name.lastIndexOf('.') + 1).toLowerCase()
+        if (!fileTypes.some((ft) => ext === String(ft).toLowerCase())) {
+          this.$message.error(this.i18nt('render.hint.unsupportedFileType') + ext)
+          return false
         }
-      })
-      // setTimeout(() => {
-      // this.$refs.uploadPicture.checkPicList = imgFile
-      // }, 300)
+      } else if (file.type.indexOf('image/') !== 0) {
+        this.$message.error(this.i18nt('render.hint.unsupportedFileType') + file.type)
+        return false
+      }
+      return true
+    },
+    async handleFileChange(event) {
+      let files = Array.from(event.target.files || [])
+      event.target.value = ''
+      if (!files.length) return
+
+      let remainCount = Number(this.field.options.fileMaxSize) - this.fieldModel.length
+      if (files.length > remainCount) {
+        files = files.slice(0, remainCount)
+        this.$message.warning(
+          this.i18nt('render.hint.uploadExceed').replace('${uploadLimit}', this.field.options.fileMaxSize)
+        )
+      }
+
+      files = files.filter((file) => this.checkImageFile(file))
+      if (!files.length) return
+
+      this.uploading = true
+      try {
+        let options = {
+          way: 2,
+          relation_type: '',
+          relation_id: 0,
+          eid: 0
+        }
+        let results = await Promise.all(files.map((file) => uploader(file, 1, options).catch(() => null)))
+        let imgFile = results
+          .filter((res) => !!res && !!res.data && !!res.data.url)
+          .map((res) => {
+            return {
+              size: res.data.size,
+              name: res.data.name,
+              url: res.data.url,
+              id: res.data.id
+            }
+          })
+        if (!imgFile.length) return
+
+        let oldValue = deepClone(this.fieldModel)
+        this.fieldModel = [...this.fieldModel, ...imgFile]
+        this.syncUpdateFormModel(this.fieldModel)
+        this.emitFieldDataChange(this.fieldModel, oldValue)
+        if (this.getReadMode()) {
+          this.putUpdateField()
+        }
+      } finally {
+        this.uploading = false
+      }
     },
     // 上传成功
     handleSuccess(fileList) {
@@ -219,32 +267,6 @@ export default {
       if (this.getReadMode()) {
         this.putUpdateField()
       }
-    },
-    getImage(data) {
-      let imgFile = data.map((item) => {
-        return {
-          size: item.att_size,
-          name: item.real_name,
-          url: item.att_dir,
-          id: item.id
-        }
-      })
-      this.fieldModel = [...this.fieldModel, ...imgFile]
-      this.handleClose()
-
-      let oldValue = deepClone(this.fieldModel)
-      this.syncUpdateFormModel(this.fieldModel)
-      this.emitFieldDataChange(this.fieldModel, oldValue)
-      if (this.getReadMode()) {
-        this.putUpdateField()
-      }
-    },
-
-    handleClose() {
-      this.dialogVisible = false
-      this.$refs.uploadPicture.getFileList('')
-      this.$refs.uploadPicture.selectItem = []
-      this.$refs.uploadPicture.checkPicList = []
     },
     handlePictureExceed() {
       let uploadLimit = this.field.options.limit
@@ -385,17 +407,17 @@ export default {
 }
 
 .hideUploadDiv {
-  ::v-deep div.el-upload--picture-card {
+  :deep(div.el-upload--picture-card) {
     /* 隐藏最后的图片上传按钮 */
     display: none;
   }
 
-  ::v-deep div.el-upload--text {
+  :deep(div.el-upload--text) {
     /* 隐藏最后的文件上传按钮 */
     display: none;
   }
 
-  ::v-deep div.el-upload__tip {
+  :deep(div.el-upload__tip) {
     /* 隐藏最后的文件上传按钮提示 */
     display: none;
   }
@@ -446,14 +468,14 @@ export default {
   }
 }
 .pic-uploader-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: 1px dashed #d9d9d9;
   font-size: 28px;
   color: #8c939d;
   width: 80px;
   height: 80px;
-  line-height: 80px;
-  text-align: center;
   cursor: pointer;
 }
 </style>
-@/utils/i18ns

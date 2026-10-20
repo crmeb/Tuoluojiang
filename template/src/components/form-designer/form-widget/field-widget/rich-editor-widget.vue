@@ -28,15 +28,13 @@
 <script>
 import FormItemWrapper from './form-item-wrapper'
 // import { VueEditor } from 'vue2-editor'
-import emitter from '@/utils/emitter'
-import i18n, { translate } from '@/utils/i18n'
+import i18n, { translate } from '@/utils/i18n.ts'
 import { deepClone } from '@/utils/util'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
 
 export default {
   name: 'rich-editor-widget',
-  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
-  mixins: [emitter, fieldMixin, i18n],
+  mixins: [fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -100,7 +98,7 @@ export default {
     this.handleOnMounted()
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     this.unregisterFromRefList()
   },
 
@@ -130,4 +128,4 @@ export default {
 .full-width-input {
   width: 100% !important;
 }
-</style>@/utils/i18ns
+</style>

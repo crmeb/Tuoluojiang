@@ -7,27 +7,34 @@
       :title="field.options.labelTooltip"
       :rules="rules"
       :prop="getPropName()"
-      :class="[selected ? 'selected' : '', labelAlign, customClass, field.options.required ? 'required' : '']"
-      @click.native.stop="selectField(field)"
+      :class="[
+        selected ? 'selected' : '',
+        labelAlign,
+        customClass,
+        field.options.required ? 'required' : 'not-required'
+      ]"
+      @click.stop="selectField(field)"
     >
-      <span v-if="!!field.options.labelIconClass" slot="label" class="custom-label">
-        <template v-if="field.options.labelIconPosition === 'front'">
-          <template v-if="!!field.options.labelTooltip">
-            <el-tooltip :content="field.options.labelTooltip" effect="light">
-              <i :class="field.options.labelIconClass"></i></el-tooltip
-            >{{ label }}</template
-          >
-          <template v-else> <i :class="field.options.labelIconClass"></i>{{ label }}</template>
-        </template>
-        <template v-else-if="field.options.labelIconPosition === 'rear'">
-          <template v-if="!!field.options.labelTooltip">
-            {{ label
-            }}<el-tooltip :content="field.options.labelTooltip" effect="light">
-              <i :class="field.options.labelIconClass"></i></el-tooltip
-          ></template>
-          <template v-else> {{ label }}<i :class="field.options.labelIconClass"></i></template>
-        </template>
-      </span>
+      <template #label>
+        <span v-if="!!field.options.labelIconClass" class="custom-label">
+          <template v-if="field.options.labelIconPosition === 'front'">
+            <template v-if="!!field.options.labelTooltip">
+              <el-tooltip :content="field.options.labelTooltip" effect="light">
+                <i :class="field.options.labelIconClass"></i></el-tooltip
+              >{{ label }}</template
+            >
+            <template v-else> <i :class="field.options.labelIconClass"></i>{{ label }}</template>
+          </template>
+          <template v-else-if="field.options.labelIconPosition === 'rear'">
+            <template v-if="!!field.options.labelTooltip">
+              {{ label
+              }}<el-tooltip :content="field.options.labelTooltip" effect="light">
+                <i :class="field.options.labelIconClass"></i></el-tooltip
+            ></template>
+            <template v-else> {{ label }}<i :class="field.options.labelIconClass"></i></template>
+          </template>
+        </span>
+      </template>
       <slot></slot>
     </el-form-item>
 
@@ -50,20 +57,21 @@
           :title="i18nt('designer.hint.moveDownWidget')"
           @click.stop="moveDownWidget(field)"
         ></i>
+      
         <i class="el-icon-delete" :title="i18nt('designer.hint.remove')" @click.stop="removeFieldWidget"></i>
       </div>
 
       <div class="drag-handler background-opacity" v-if="designer.selectedId === field.id">
         <i class="el-icon-rank" :title="i18nt('designer.hint.dragHandler')"></i>
         <i>{{ i18n2t(`designer.widgetLabel.${field.type}`, `extension.widgetLabel.${field.type}`) }}</i>
-        <i v-if="field.options.hidden === true" class="iconfont icon-hide"></i>
+        <i v-if="field.options.hidden === true" class="designer-icon icon-hide"></i>
       </div>
     </template>
   </div>
 </template>
 
 <script>
-import i18n from '@/utils/i18n'
+import i18n from '@/utils/i18n.ts'
 
 export default {
   name: 'form-item-wrapper',
@@ -154,7 +162,8 @@ export default {
   },
   methods: {
     selectField(field) {
-      if (!!this.designer) {
+      
+      if (this.designer && this.designer.setSelected) {
         this.designer.setSelected(field)
         this.designer.emitEvent('field-selected', this.parentWidget) //发送选中组件的父组件对象
       }
@@ -179,9 +188,10 @@ export default {
     },
 
     removeFieldWidget() {
-      console.log('removeFieldWidget', this.designer.selectedWidgetName)
       if (!!this.parentList) {
-        const fieldRefName = this.designer.selectedWidgetName
+        // 保存要删除的字段名称
+        const fieldRefName = this.field.options.name
+       
         let nextSelected = null
         if (this.parentList.length === 1) {
           if (!!this.parentWidget) {
@@ -194,11 +204,12 @@ export default {
         }
 
         this.$nextTick(() => {
-          // this.$store.commit('app/SET_FORM_INDEX_SET', this.designer.selectedWidget)
-
           this.parentList.splice(this.indexOfParentList, 1)
           this.designer.setSelected(nextSelected)
-          this.designer.formWidget.deleteWidgetRef(fieldRefName) //删除组件ref！！！
+          // 确保从selectNames数组中移除要删除的字段名称
+          if (fieldRefName) {
+            this.designer.formWidget.deleteWidgetRef(fieldRefName)
+          }
           this.designer.emitHistoryChange()
         })
       }
@@ -276,12 +287,12 @@ export default {
   // margin-bottom: 5px;
   position: relative;
 
-  ::v-deep .el-form-item__label {
+  :deep(.el-form-item__label) {
     white-space: nowrap;
     text-overflow: ellipsis;
   }
 
-  ::v-deep .el-form-item__content {
+  :deep(.el-form-item__content) {
     //position: unset;  /* TODO: 忘了这个样式设置是为了解决什么问题？？ */
   }
 
@@ -290,21 +301,25 @@ export default {
   }
 
   /* 隐藏Chrome浏览器中el-input数字输入框右侧的上下调整小箭头 */
-  ::v-deep .hide-spin-button input::-webkit-outer-spin-button,
-  ::v-deep .hide-spin-button input::-webkit-inner-spin-button {
+  :deep(.hide-spin-button input::-webkit-outer-spin-button),
+  :deep(.hide-spin-button input::-webkit-inner-spin-button) {
     -webkit-appearance: none !important;
   }
 
   /* 隐藏Firefox浏览器中el-input数字输入框右侧的上下调整小箭头 */
-  ::v-deep .hide-spin-button input[type='number'] {
+  :deep(.hide-spin-button input[type='number']) {
     -moz-appearance: textfield;
   }
 }
 
-.required ::v-deep .el-form-item__label::before {
+.required :deep(.el-form-item__label::before) {
   content: '*';
   color: #f56c6c;
   margin-right: 4px;
+}
+.not-required :deep(.el-form-item__label::before) {
+  content: '' !important;
+  display: none;
 }
 
 .static-content-item {
@@ -312,7 +327,7 @@ export default {
   display: flex; /* 垂直居中 */
   align-items: center; /* 垂直居中 */
 
-  ::v-deep .el-divider--horizontal {
+  :deep(.el-divider--horizontal) {
     margin: 0;
   }
 }
@@ -322,16 +337,15 @@ export default {
   outline: 2px solid #409eff;
 }
 
-::v-deep .label-left-align .el-form-item__label {
-  text-align: left;
+:deep(.label-left-align .el-form-item__label) {
+  justify-content: flex-start;
 }
 
-::v-deep .label-center-align .el-form-item__label {
-  text-align: center;
+:deep(.label-center-align .el-form-item__label) {
+  justify-content: center;
 }
 
-::v-deep .label-right-align .el-form-item__label {
-  text-align: right;
+:deep(.label-right-align .el-form-item__label) {
+  justify-content: flex-end;
 }
 </style>
-@/utils/i18ns

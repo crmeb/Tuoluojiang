@@ -2,50 +2,53 @@
   <div>
     <el-dialog
       :title="repeatData.title"
-      :visible.sync="dialogVisible"
+      v-model="dialogVisible"
       :width="repeatData.width"
       :before-close="handleClose"
     >
-      <div class="mt20">
-        <el-form ref="form" :model="rules" :rules="rule" label-width="100px">
-          <el-form-item prop="title">
-            <span v-if="repeatData.title == '添加类目' || repeatData.title == '编辑类目'" slot="label">类目名称：</span>
-            <span v-else slot="label"
-              >{{ repeatData.label === 1 ? $t('customer.typename') : $t('customer.labelename') }}：</span
+      <el-form ref="form" :model="rules" :rules="rule" label-width="100px">
+        <el-form-item prop="title">
+          <template #label>
+            <span v-if="repeatData.title == '添加类目' || repeatData.title == '编辑类目'">类目名称：</span>
+            <span v-else
+              >{{ repeatData.label === 1 ? '分类名称' : '标签组名称' }}：</span
             >
-            <el-input
-              v-if="repeatData.title == '添加分类'"
-              v-model="rules.title"
-              maxlength="16"
-              show-word-limit
-              placeholder="请输入分类名称"
-            />
-            <el-input
-              v-else
-              v-model="rules.title"
-              maxlength="16"
-              show-word-limit
-              :placeholder="placeholderFn(repeatData.label)"
-            />
-          </el-form-item>
-          <el-form-item>
-            <span slot="label">{{ $t('toptable.sort') }}：</span>
-            <el-input-number
-              :controls="false"
-              :min="0"
-              :max="999999"
-              v-model="rules.sort"
-              :placeholder="$t('customer.placeholder04')"
-            />
-          </el-form-item>
-        </el-form>
-      </div>
-      <div slot="footer" class="dialog-footer">
-        <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
-        <el-button size="small" :loading="loading" type="primary" @click="handleConfirm">{{
-          $t('public.ok')
-        }}</el-button>
-      </div>
+          </template>
+          <el-input
+            v-if="repeatData.title == '添加分类'"
+            v-model="rules.title"
+            maxlength="16"
+            show-word-limit
+            placeholder="请输入分类名称"
+          />
+          <el-input
+            v-else
+            v-model="rules.title"
+            maxlength="16"
+            show-word-limit
+            :placeholder="placeholderFn(repeatData.label)"
+          />
+        </el-form-item>
+        <el-form-item>
+          <template #label>
+            <span>排序：</span>
+          </template>
+          <el-input-number
+            :controls="false"
+            :min="0"
+            :max="999999"
+            v-model="rules.sort"
+            placeholder="请输入排序"
+          />
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleClose">取消</el-button>
+          <el-button :loading="loading" type="primary" @click="handleConfirm">确定</el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -54,12 +57,13 @@
 import {
   clientConfigLabelEditApi,
   clientConfigLabelSaveApi,
-  clientConfigSaveApi,
   invoiceCategory,
   putInvoiceCategory
-} from '@/api/enterprise'
+} from '@/api/enterprise.ts'
+import { clientConfigSaveApi } from '@/api/client.ts'
 
 export default {
+  emits: ['handleRepeatData', 'isOk'],
   name: 'AddDialog',
   components: {},
   props: {
@@ -78,7 +82,7 @@ export default {
         sort: 0
       },
       rule: {
-        title: [{ required: true, message: this.$t('customer.message02'), trigger: 'blur' }]
+        title: [{ required: true, message: '内容不能为空', trigger: 'blur' }]
       },
       key: 'cate',
       loading: false
@@ -113,11 +117,11 @@ export default {
     },
     placeholderFn(type) {
       if (type == 1) {
-        return this.$t('customer.placeholder03')
+        return '请输入分类名称'
       } else if (type == 3) {
         return '请输入类目名称'
       } else {
-        return this.$t('customer.placeholder05')
+        return '请输入标签组名称'
       }
     },
 
@@ -127,13 +131,13 @@ export default {
           // 添加分类
           if (this.repeatData.label === 1) {
             this.rules.sort = this.rules.sort === '' ? 1 : this.rules.sort
-            var id = this.repeatData.type === 1 ? 0 : this.repeatData.data.id
-            var data = [{ title: this.rules.title, sort: this.rules.sort, id: id }]
+            const id = this.repeatData.type === 1 ? 0 : this.repeatData.data.id
+            const data = [{ title: this.rules.title, sort: this.rules.sort, id: id }]
             this.clientConfigSave({ data, key: this.key })
           } else if (this.repeatData.label === 3) {
             this.rules.sort = this.rules.sort === '' ? 1 : this.rules.sort
-            var id = this.repeatData.type === 1 ? 0 : this.repeatData.data.id
-            var data = { name: this.rules.title, sort: this.rules.sort }
+            const id = this.repeatData.type === 1 ? 0 : this.repeatData.data.id
+            const data = { name: this.rules.title, sort: this.rules.sort }
             if (this.repeatData.type === 1) {
               this.invoiceCategory(data)
             } else {
@@ -225,7 +229,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
-/deep/ .el-dialog__footer {
+:deep(.el-dialog__footer) {
   // border-top: 1px solid #d8d8d8;
 }
 .body {
@@ -233,13 +237,16 @@ export default {
     margin: 0 0 6px 0;
   }
 }
-/deep/ .el-input-number--medium {
+:deep(.el-dialog__body) {
+  padding-bottom: 0;
+}
+:deep(.el-input-number) {
   width: 100%;
   .el-input__inner {
     text-align: left;
   }
 }
 .dialog-footer {
-  padding-top: 20px;
+  padding-top: 0px;
 }
 </style>

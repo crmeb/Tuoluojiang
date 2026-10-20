@@ -129,4 +129,9 @@ final class CrudOperatorEnum extends Enum
      * 正则表达式.
      */
     public const OPERATOR_REGEX = 'regex';
+
+    /**
+     * 模糊查询.
+     */
+    public const OPERATOR_LIKE = 'like';
 }

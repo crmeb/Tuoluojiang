@@ -16,8 +16,8 @@ declare(strict_types=1);
 namespace App\Http\Model\Company;
 
 use App\Http\Model\Admin\Admin;
-use App\Http\Model\BaseModel;
 use App\Http\Model\Frame\Frame;
+use App\Http\Model\BaseModel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -46,6 +46,22 @@ class Company extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'         => 'integer',
+        'scale'      => 'integer',
+        'type'       => 'integer',
+        'level'      => 'integer',
+        'sort'       => 'integer',
+        'verify'     => 'integer',
+        'remind'     => 'integer',
+        'init_data'  => 'integer',
+        'disk_size'  => 'integer',
+        'status'     => 'integer',
+        'delete'     => 'datetime:Y-m-d H:i:s',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
 
     /**
      * 用户关联.
@@ -76,7 +92,6 @@ class Company extends BaseModel
 
     /**
      * other字段转json.
-     * @param mixed $value
      */
     public function setOtherAttribute($value)
     {
@@ -85,7 +100,6 @@ class Company extends BaseModel
 
     /**
      * other字段转回数组.
-     * @param mixed $value
      * @return mixed
      */
     public function getOtherAttribute($value)
@@ -96,7 +110,6 @@ class Company extends BaseModel
     /**
      * enterprise_name作用域
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeEnterpriseName($query, $value)
     {
@@ -110,7 +123,6 @@ class Company extends BaseModel
     /**
      * enterprise_name作用域
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeName($query, $value)
     {
@@ -122,7 +134,6 @@ class Company extends BaseModel
     /**
      * type作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeType($query, $value)
@@ -135,7 +146,6 @@ class Company extends BaseModel
     /**
      * status作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeStatus($query, $value)
@@ -148,7 +158,6 @@ class Company extends BaseModel
     /**
      * level作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeLevel($query, $value)
@@ -161,7 +170,6 @@ class Company extends BaseModel
     /**
      * scale作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeScale($query, $value)
@@ -174,7 +182,6 @@ class Company extends BaseModel
     /**
      * scale作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeUid($query, $value)
@@ -187,7 +194,6 @@ class Company extends BaseModel
     /**
      * uniqued作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeUniqued($query, $value)
@@ -199,8 +205,6 @@ class Company extends BaseModel
 
     /**
      * Verify作用域
-     * @param mixed $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeVerifys($query, $value)

@@ -12,7 +12,7 @@
     </div>
     <div class="tree-box-con">
       <div v-height>
-        <el-scrollbar style="height: 100%">
+        <el-scrollbar style="height: 100%" class="reset-scroll-bar">
           <el-tree
             ref="tree"
             :data="parentTree"
@@ -25,30 +25,37 @@
             node-key="value"
             @node-click="handleClick"
           >
-            <div slot-scope="{ node, data }" class="custom-tree-node">
-              <div class="flex-box">
-                <span class="over-text">{{ node.label }}</span>
-                <el-popover
-                  :ref="`pop-${data.value}`"
-                  placement="bottom-end"
-                  trigger="click"
-                  :offset="10"
-                  @after-enter="handleShow(data.value)"
-                  @hide="handleHide"
-                >
-                  <div class="right-item-list">
-                    <div class="right-item" @click.stop="addDivsion(data)">添加子类</div>
-                    <div class="right-item" v-if="data.value !== topId" @click.stop="editDivsion(data.value)">
-                      {{ $t('public.edit') }}
+            <template #default="{ node, data }">
+              <div class="custom-tree-node">
+                <div class="flex-box">
+                  <span class="over-text">{{ node.label }}</span>
+                  <el-popover
+                    v-if="data.value > 0"
+                    :ref="`pop-${data.value}`"
+                    placement="bottom-end"
+                    trigger="click"
+                    :offset="10"
+                    @after-enter="handleShow(data.value)"
+                    @hide="handleHide"
+                  >
+                    <div class="right-item-list">
+                      <div class="right-item" @click.stop="addDivsion(data)">添加子类</div>
+                      <!-- v-if="data.value !== topId" -->
+                      <div class="right-item" @click.stop="editDivsion(data.value)">
+                        编辑
+                      </div>
+                      <!-- v-if="data.value !== topId"  -->
+                      <div class="right-item" @click.stop="handleDelete(data)">
+                        删除
+                      </div>
                     </div>
-                    <div v-if="data.value !== topId" class="right-item" @click.stop="handleDelete(data)">
-                      {{ $t('public.delete') }}
-                    </div>
-                  </div>
-                  <div slot="reference" v-if="data.value > 0" class="iconfont icongengduo right-icon" />
-                </el-popover>
+                    <template #reference>
+                      <div class="iconfont icongengduo right-icon" @click.stop />
+                    </template>
+                  </el-popover>
+                </div>
               </div>
-            </div>
+            </template>
           </el-tree>
         </el-scrollbar>
       </div>
@@ -57,9 +64,12 @@
 </template>
 
 <script>
-import { storageCateCreateApi, storageCateDeleteApi, storageCateEditApi } from '@/api/administration'
+import { modalSure } from '@/libs/public.ts'
+import modalForm from '@/libs/modal-form.ts'
+import { storageCateCreateApi, storageCateDeleteApi, storageCateEditApi } from '@/api/administration.ts'
 
 export default {
+  emits: ['frameId', 'getList'],
   name: 'TreeVue',
   components: {},
   props: {
@@ -134,7 +144,7 @@ export default {
       } else {
         this.focusShow = false
         if (this.activeValue !== '') {
-          this.$refs[`pop-${this.activeValue}`].doClose()
+          this.$refs[`pop-${this.activeValue}`].hide()
         }
         this.frame_id = node.value
         this.isShowEdit = ''
@@ -149,7 +159,7 @@ export default {
     },
     // 删除部门
     async handleDelete(data) {
-      await this.$modalSure('你确定要删除该分类吗')
+      await modalSure('你确定要删除该分类吗')
       await storageCateDeleteApi(data.value)
 
       await this.$emit('getList')
@@ -157,7 +167,6 @@ export default {
     },
     // 添加子类
     addDivsion(data) {
-      console.log(data, '添加子类')
       let path = null
       if (data) {
         path = data.path
@@ -178,13 +187,13 @@ export default {
         return i != 0
       })
 
-      this.$modalForm(storageCateCreateApi({ type: this.types, path: path })).then(({ message }) => {
+      modalForm(storageCateCreateApi({ type: this.types, path: path })).then(({ message }) => {
         this.$emit('getList')
       })
     },
     // 编辑子类
     editDivsion(value) {
-      this.$modalForm(storageCateEditApi(value, { type: this.types })).then(({ message }) => {
+      modalForm(storageCateEditApi(value, { type: this.types })).then(({ message }) => {
         this.$emit('getList')
       })
     }
@@ -215,40 +224,43 @@ export default {
   font-size: 18px;
   color: #ffca28;
 }
-/deep/ .el-card__header {
+:deep(.el-card__header) {
   border-bottom: none;
   padding: 20px 16px 15px 0;
   font-weight: 600;
 }
-/deep/ .el-scrollbar__wrap {
+:deep(.el-scrollbar__wrap) {
   overflow-x: hidden;
 }
-/deep/ .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content {
+
+:deep(.el-tree) {
+  background-color: transparent;
+}
+:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
   background: rgba(24, 144, 255, 0.08);
-  border-color: #1890ff;
   .flex-box {
     max-width: 100%;
-    font-size: 14px;
+    // font-size: 14px;
     font-weight: 600;
     color: #1890ff;
   }
 }
-/deep/ .tree-box-con .el-tree-node__content {
+:deep(.tree-box-con .el-tree-node__content) {
   height: 40px;
-  padding-right: 15px;
-  border-right: 2px solid transparent;
+  border-radius: 4px;
 }
-/deep/ .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node,
-.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .right-icon {
-  display: inline-block;
+:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node) {
   color: #1890ff;
   font-weight: 600;
 }
+:deep(.el-tree-node__content:hover .right-icon) {
+  display: inline-block;
+}
 
-/deep/.el-tree-node > .el-tree-node__children {
+:deep(.el-tree-node > .el-tree-node__children) {
   overflow: inherit;
 }
-/deep/.el-tree-node__content {
+:deep(.el-tree-node__content) {
   // padding-left: 14px !important;
 }
 .custom-tree-node {
@@ -269,7 +281,7 @@ export default {
 .flex-box {
   display: flex;
   align-items: center;
-  font-size: 14px;
+  font-size: 13px;
   font-family: PingFangSC-Regular, PingFang SC;
   font-weight: 400;
   color: #303133;

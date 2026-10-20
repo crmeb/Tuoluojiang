@@ -15,8 +15,11 @@ declare(strict_types=1);
 
 namespace App\Http\Model\Approve;
 
+use App\Constants\AttachEnum;
 use App\Http\Model\Admin\Admin;
+use App\Http\Model\System\Attach;
 use App\Http\Model\BaseModel;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Query\Builder;
 
@@ -37,6 +40,24 @@ class ApproveReply extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'         => 'integer',
+        'user_id'    => 'integer',
+        'card_id'    => 'integer',
+        'apply_id'   => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
+    /**
+     * 一对多关联附件.
+     * @return HasMany
+     */
+    public function files()
+    {
+        return $this->hasMany(Attach::class, 'relation_id', 'id')->where('relation_type', AttachEnum::RELATION_TYPE[AttachEnum::RELATION_TYPE_APPROVE_REPLY]);
+    }
 
     /**
      * 一对一关联.
@@ -63,11 +84,7 @@ class ApproveReply extends BaseModel
      */
     public function scopeId($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereIn('id', $value);
-        } elseif ($value !== '') {
-            $query->where('id', $value);
-        }
+        is_array($value) ? $query->whereIn('id', $value) : $query->where('id', $value);
     }
 
     /**
@@ -77,9 +94,7 @@ class ApproveReply extends BaseModel
      */
     public function scopeNotid($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereNotIn('id', $value);
-        }
+        is_array($value) ? $query->whereNotIn('id', $value) : $query->where('id', '<>', $value);
     }
 
     /**
@@ -89,9 +104,7 @@ class ApproveReply extends BaseModel
      */
     public function scopeCateId($query, $value)
     {
-        if ($value !== '') {
-            $query->where('cate_id', $value);
-        }
+        $query->where('cate_id', $value);
     }
 
     /**
@@ -101,9 +114,7 @@ class ApproveReply extends BaseModel
      */
     public function scopeEntid($query, $value)
     {
-        if ($value !== '') {
-            $query->where('entid', $value);
-        }
+        $query->where('entid', $value);
     }
 
     /**

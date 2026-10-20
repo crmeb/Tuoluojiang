@@ -2,7 +2,9 @@
   <div>
     <el-popover placement="bottom" trigger="hover" popper-class="popover-padding" :width="width">
       <span class="tips"> {{ tips }}。</span>
-      <span slot="reference" class="iconfont icona-zu11438"></span>
+      <template #reference>
+        <span class="iconfont icona-zu11438"></span>
+      </template>
     </el-popover>
   </div>
 </template>

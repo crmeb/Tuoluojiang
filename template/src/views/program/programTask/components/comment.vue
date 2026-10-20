@@ -1,12 +1,11 @@
 <template>
   <div>
-    <div v-clickoutside="hideReplyBtn" @click="inputFocus" class="my-reply">
-      <el-avatar class="header-img" :size="36" :src="myHeader"></el-avatar>
+    <div v-clickoutside="hideReplyBtn" class="my-reply" :class="{ active: showReply }">
+      <el-avatar class="header-img mr14" :size="38" :src="myHeader"></el-avatar>
       <div class="reply-info" v-show="!showReply">
         <div
           tabindex="0"
           contenteditable="true"
-          id="replyInput"
           spellcheck="false"
           placeholder="请输入您的评论"
           class="reply-input pointer"
@@ -16,7 +15,7 @@
         ></div>
       </div>
       <div class="reply-ueditor" v-if="showReply">
-        <ueditor-form
+        <component
           is="ueditorFrom"
           :border="true"
           ref="ueditorFrom"
@@ -24,71 +23,69 @@
           :type="`simple`"
           :headers="true"
           :content="formData.describe"
-          :placeholder="'发表您的看法...'"
+          placeholder="发表您的看法..."
           @input="ueditorEdit"
         />
       </div>
       <div class="reply-btn-box" v-show="showReply">
         <el-button class="reply-btn" @click="cancelComment">取消</el-button>
-        <el-button size="medium" @click="sendComment" type="primary">评论</el-button>
+        <el-button size="default" @click="sendComment" type="primary">评论</el-button>
       </div>
     </div>
     <div v-if="comments.length" class="reply-father">
       <div v-for="(item, i) in comments" :key="i" class="author-title">
-        <el-avatar class="header-img" :size="36" :src="item.member.avatar"></el-avatar>
-        <div class="author-info">
-          <span class="author-name">{{ item.member.name }}</span>
-          <span class="author-time">{{ item.updated_at }}</span>
-        </div>
-        <div class="icon-btn icon-btn-header">
-          <div v-if="myId !== item.member.id" class="pointer lh-center" @click="showReplyEvt(item, 1)">
-            <i class="iconfont iconcebianlan-luntanzhongxin"></i>
-            <span>回复</span>
-          </div>
-          <div v-else class="flex">
-            <div class="edit-name pointer lh-center" @click="eidtReply(item)">
-              <i class="iconfont iconbianji"></i>
-              <span>编辑</span>
+        <div class="comment-item-wrapper">
+          <el-avatar class="header-img" :size="36" :src="item.member.avatar"></el-avatar>
+          <div class="comment-body">
+            <div class="author-info">
+              <span class="author-name mr10">{{ item.member.name }}</span>
+              <span class="author-time">{{ item.updated_at }}</span>
+              <div class="icon-btn icon-btn-header">
+                <div v-if="myId !== item.member.id" class="pointer lh-center" @click="showReplyEvt(item, 1)">
+                  <i class="iconfont iconcebianlan-luntanzhongxin"></i>
+                  <span>回复</span>
+                </div>
+                <div v-else class="flex">
+                  <div class="edit-name pointer lh-center" @click="eidtReply(item)">
+                    <i class="iconfont iconbianji"></i>
+                    <span>编辑</span>
+                  </div>
+                  <div class="pointer lh-center" @click="deleteReply(item)">
+                    <i class="iconfont iconshanchu1"></i>
+                    <span>删除</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="pointer lh-center" @click="deleteReply(item)">
-              <i class="iconfont iconshanchu1"></i>
-              <span>删除</span>
+            <div class="talk-box">
+              <p class="content">
+                <span class="reply" v-html="item.describe" @click="previewPicture($event)"></span>
+              </p>
             </div>
           </div>
-        </div>
-        <div class="talk-box">
-          <p class="content">
-            <!-- <ueditor-form
-              is="ueditorFrom"
-              ref="ueditorFrom"
-              :readOnly="true"
-              :headers="false"
-              :height="`120px`"
-              :content="item.describe"
-            /> -->
-            <span class="reply" v-html="item.describe" @click="previewPicture($event)"></span>
-          </p>
         </div>
         <div class="reply-box">
           <div v-for="(reply, j) in item.children" :key="j" class="author-item">
-            <el-avatar class="header-img" :size="26" :src="reply.member.avatar"></el-avatar>
-            <div class="author-info">
-              <span class="author-name">{{ reply.member.name }}</span>
-              <span class="author-time">{{ reply.updated_at }}</span>
-            </div>
-            <div class="icon-btn">
-              <div v-if="myId !== reply.member.id" class="pointer lh-center" @click="showReplyEvt(reply, 2)">
-                <i class="iconfont iconcebianlan-luntanzhongxin"></i>
-                <span>回复</span>
-              </div>
-              <div v-else class="flex">
-                <div class="edit-name pointer lh-center" @click="eidtReply(reply)">
-                  <i class="iconfont iconbianji"></i>
-                  <span>编辑</span>
-                </div>
-                <div class="pointer lh-center" @click="deleteReply(reply)">
-                  <i class="iconfont iconshanchu1"></i>
-                  <span>删除</span>
+            <div class="reply-wrapper">
+              <el-avatar class="header-img" :size="26" :src="reply.member.avatar"></el-avatar>
+              <div class="author-info">
+                <span class="author-name mr10">{{ reply.member.name }}</span>
+                <span class="author-time">{{ reply.updated_at }}</span>
+                <div class="icon-btn">
+                  <div v-if="myId !== reply.member.id" class="pointer lh-center" @click="showReplyEvt(reply, 2)">
+                    <i class="iconfont iconcebianlan-luntanzhongxin"></i>
+                    <span>回复</span>
+                  </div>
+                  <div v-else class="flex">
+                    <div class="edit-name pointer lh-center" @click="eidtReply(reply)">
+                      <i class="iconfont iconbianji"></i>
+                      <span>编辑</span>
+                    </div>
+                    <div class="pointer lh-center" @click="deleteReply(reply)">
+                      <i class="iconfont iconshanchu1"></i>
+                      <span>删除</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -114,7 +111,7 @@
             ></div>
           </div>
           <div class="reply-btn-box">
-            <el-button class="reply-btn" size="medium" @click="sendCommentReply(i, j)" type="primary"
+            <el-button class="reply-btn" size="default" @click="sendCommentReply(i, j)" type="primary"
               >发表评论</el-button
             >
           </div>
@@ -122,45 +119,48 @@
       </div>
     </div>
     <div v-if="!comments.length" class="default">
-      <default-page :index="17" :min-height="300"></default-page>
+      <default-page :index="17" :min-height="300" imgWidth="120px"></default-page>
     </div>
     <image-viewer ref="imageViewer" :src-list="srcList"></image-viewer>
   </div>
 </template>
 <script>
-import { getTaskCommentApi, saveTaskCommentApi, putTaskCommentApi, deleteTaskCommentApi } from '@/api/program'
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { getTaskCommentApi, saveTaskCommentApi, putTaskCommentApi, deleteTaskCommentApi } from '@/api/program.ts'
 import imageViewer from '@/components/common/imageViewer'
+import { getStorageJson } from '@/utils/storage.ts'
 
 const clickoutside = {
   // 初始化指令
-  bind(el, binding, vnode) {
+  beforeMount(el, binding) {
     function documentHandler(e) {
       // 这里判断点击的元素是否是本身，是本身，则返回
       if (el.contains(e.target)) {
         return false
       }
       // 判断指令中是否绑定了函数
-      if (binding.expression) {
+      if (typeof binding.value === 'function') {
         // 如果绑定了函数 则调用那个函数，此处binding.value就是handleClose方法
         binding.value(e)
       }
     }
-    // 给当前元素绑定个私有变量，方便在unbind中可以解除事件监听
+    // 给当前元素绑定个私有变量，方便在unmounted中可以解除事件监听
     el.vueClickOutside = documentHandler
     document.addEventListener('click', documentHandler)
   },
-  update() {},
-  unbind(el, binding) {
+  unmounted(el) {
     // 解除事件监听
     document.removeEventListener('click', el.vueClickOutside)
     delete el.vueClickOutside
   }
 }
 export default {
+  emits: ['gettotalCount'],
   name: 'ArticleComment',
   components: {
-    ueditorFrom: () => import('@/components/form-common/oa-wangeditor'),
-    defaultPage: () => import('@/components/common/defaultPage'),
+    ueditorFrom: defineAsyncComponent(() => import('@/components/form-common/oa-wangeditor')),
+    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage')),
     imageViewer
   },
   props: {
@@ -181,8 +181,8 @@ export default {
       replyComment: '',
       myName: '',
       isEdit: false,
-      myHeader: JSON.parse(localStorage.getItem('userInfo')).avatar,
-      myId: JSON.parse(localStorage.getItem('userInfo')).id,
+      myHeader: getStorageJson('userInfo', {}).avatar,
+      myId: getStorageJson('userInfo', {}).id,
       to: '',
       toId: -1,
       comments: [],
@@ -222,17 +222,11 @@ export default {
         this.$emit('gettotalCount', res.data.total_count)
       })
     },
-    inputFocus() {
-      var replyInput = document.getElementById('replyInput')
-      replyInput.style.padding = '8px 8px'
-    },
     showReplyBtn() {
       this.btnShow = true
     },
     hideReplyBtn() {
       this.btnShow = false
-      replyInput.style.padding = '10px'
-      replyInput.style.border = 'none'
     },
     showReplyInput(i, name, id) {
       this.comments[this.index].inputShow = false
@@ -306,7 +300,7 @@ export default {
     },
     // 删除评论
     deleteReply(item) {
-      this.$modalSure('你确定要删除此评论吗').then(() => {
+      modalSure('你确定要删除此评论吗').then(() => {
         deleteTaskCommentApi(item.id).then((res) => {
           this.getTaskComment()
         })
@@ -345,11 +339,11 @@ export default {
 .my-reply {
   position: fixed;
   bottom: 0;
-  padding: 10px;
-  padding-right: 0;
+  padding: 14px 20px;
   width: 859px;
-  background-color: #fafafa;
   z-index: 10;
+  border-top: 1px solid #F2F6FC;
+  background-color: #fff;
 
   .header-img {
     display: inline-block;
@@ -357,18 +351,18 @@ export default {
   }
   .reply-info {
     display: inline-block;
-    margin-left: 5px;
-    width: 90%;
-    @media screen and (max-width: 1200px) {
-      width: 80%;
-    }
+    width: calc(100% - 52px);
     .reply-input {
-      min-height: 20px;
-      line-height: 22px;
-      padding: 10px 10px;
+      height: 32px;
+      margin-top: 3px;
+      padding-inline: 12px;
       color: #ccc;
       background-color: #fff;
-      border-radius: 5px;
+      border-radius: 4px;
+      border: 1px solid #DCDFE6;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
       &:empty:before {
         content: attr(placeholder);
       }
@@ -383,15 +377,15 @@ export default {
     }
   }
   .reply-ueditor {
-    width: calc(100% - 46px);
+    width: calc(100% - 52px);
     display: inline-block;
+    border-top: 1px solid rgb(220, 223, 230);
   }
   .reply-btn-box {
-    height: 25px;
-    margin: 10px 0;
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
     .reply-btn {
-      position: relative;
-      float: left;
       margin-left: 40px;
     }
   }
@@ -408,22 +402,45 @@ export default {
 .author-title {
   min-height: 100px;
   padding: 20px;
+  
+  .comment-item-wrapper {
+    display: flex;
+  }
+
+  .comment-body {
+    flex: 1;
+    margin-left: 14px;
+  }
 
   .author-item {
     min-height: 100px;
     margin: 0 20px;
     padding: 20px 0;
     border-bottom: 1px dashed #eeeeee;
+
+    .talk-box {
+      margin-left: 34px;
+    }
   }
+
+  .reply-wrapper {
+    display: flex;
+    
+    .author-info {
+      display: flex;
+      align-items: center;
+      margin-left: 8px;
+      flex: 1;
+    }
+  }
+
   .header-img {
     display: inline-block;
     vertical-align: top;
   }
   .author-info {
-    display: inline-block;
-    margin-left: 5px;
-    width: 60%;
-    line-height: 20px;
+    display: flex;
+    align-items: center;
 
     > span {
       cursor: pointer;
@@ -445,15 +462,11 @@ export default {
     margin-right: 20px;
   }
   .icon-btn {
+    margin-left: auto;
     padding: 0 !important;
-    float: right;
     font-size: 13px;
     color: #606266;
     display: flex;
-    @media screen and (max-width: 1200px) {
-      width: 20%;
-      padding: 7px;
-    }
     > span {
       cursor: pointer;
     }
@@ -465,18 +478,15 @@ export default {
     }
   }
   .talk-box {
-    margin: 0 35px;
+    margin-top: 12px;
     > p {
       margin: 0;
-    }
-    .content {
-      margin-left: 11px;
     }
     .reply {
       font-size: 14px;
       color: #303133;
       display: inline-block;
-      /deep/ p {
+      :deep(p) {
         img {
           width: 148px;
         }
@@ -493,7 +503,7 @@ export default {
     background-color: #f7fbff;
   }
 }
-/deep/.el-avatar > img {
+:deep(.el-avatar > img) {
   width: 100% !important;
   height: 100% !important;
 }
@@ -504,7 +514,11 @@ export default {
   padding: 20px 0 0 20px;
   color: #909399;
 }
-/deep/.w-e-text-container {
+:deep(.w-e-text-container) {
   padding-top: 10px;
+}
+
+:deep(.my-reply .wangeditor-box) {
+  border-right: 1px solid rgb(220, 223, 230);
 }
 </style>

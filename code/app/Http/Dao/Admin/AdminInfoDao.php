@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,14 +15,14 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Admin;
 
-use App\Http\Dao\BaseDao;
 use App\Http\Model\Admin\Admin;
 use App\Http\Model\Admin\AdminInfo;
+use App\Http\Dao\BaseDao;
 use App\Http\Model\BaseModel;
-use crmeb\interfaces\ResourceDaoInterface;
-use crmeb\traits\dao\JoinSearchTrait;
-use crmeb\traits\dao\ListSearchTrait;
-use crmeb\traits\dao\TogetherSearchTrait;
+use Tuoluojiang\Open\interfaces\ResourceDaoInterface;
+use Tuoluojiang\Open\traits\dao\JoinSearchTrait;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
+use Tuoluojiang\Open\traits\dao\TogetherSearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Traits\Conditionable;
@@ -80,9 +80,8 @@ class AdminInfoDao extends BaseDao implements ResourceDaoInterface
             ->when($frameIds, fn ($q) => $q->whereIn('id', fn ($query) => $query->from('frame_assist')
                 ->whereIn('frame_id', $frameIds)
                 ->select(['user_id'])))
-            ->when($name !== '', fn ($q) => $q->whereIn('uid', fn ($query) => $query->from('enterprise_user_card')
+            ->when($name !== '', fn ($q) => $q->whereIn('id', fn ($query) => $query->from('admin_info')
                 ->where('name', 'like', '%' . $name . '%')
-                ->where('entid', $entid)
                 ->select(['uid'])));
     }
 
@@ -114,7 +113,6 @@ class AdminInfoDao extends BaseDao implements ResourceDaoInterface
     }
 
     /**
-     * @param mixed $where
      * @return BaseModel|Conditionable|mixed
      * @throws \ReflectionException
      * @throws BindingResolutionException
@@ -145,18 +143,20 @@ class AdminInfoDao extends BaseDao implements ResourceDaoInterface
      */
     public function getAssessPlanModel(array $where, int $entid)
     {
-        return $this->getModel(false)
-            ->join('enterprise_user_card', 'enterprise_user_card.id', '=', 'user_enterprise.card_id')
-            ->when(isset($where['ids']), fn ($q) => $q->whereIn('user_enterprise.id', $where['ids']))
-            ->when($entid, fn ($q) => $q->where('user_enterprise.entid', $entid))
-            ->where('user_enterprise.status', 1)
-            ->when(isset($where['notid']), fn ($q) => $q->whereNotIn('user_enterprise.id', $where['notid']))
+        return app()->get(Admin::class)
+            ->join('admin_info', 'admin_info.uid', '=', 'admin.uid')
+            ->when(isset($where['ids']), fn ($q) => $q->whereIn('admin.id', $where['ids']))
+            ->when($entid, fn ($q) => $q->whereIn('admin.id', fn ($query) => $query->from('frame_assist')->where('entid', $entid)->select(['user_id'])))
+            ->where('admin.status', 1)
+            ->whereNull('admin_info.deleted_at')
+            ->when(isset($where['type']), fn ($q) => $q->whereIn('admin_info.type', (array) $where['type']))
+            ->when(isset($where['notid']), fn ($q) => $q->whereNotIn('admin.id', $where['notid']))
             ->when(isset($where['frame_id']) && $where['frame_id'], fn ($q) => $q->whereIn(
-                'user_enterprise.id',
+                'admin.id',
                 fn ($query) => $query->from('frame_assist')
                     ->whereIn('frame_id', $where['frame_id'])
                     ->select(['user_id'])
-            ))->when(isset($where['name']) && $where['name'] !== '', fn ($q) => $q->where('enterprise_user_card.name', 'like', '%' . $where['name'] . '%'));
+            ))->when(isset($where['name']) && $where['name'] !== '', fn ($q) => $q->where('admin_info.name', 'like', '%' . $where['name'] . '%'));
     }
 
     protected function setModelB(): string

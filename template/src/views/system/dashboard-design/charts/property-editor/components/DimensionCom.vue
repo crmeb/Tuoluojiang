@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="item-tag" v-for="(tag, inx) of list" :key="inx" :title="'原名：' + tag.fieldLabel" ref="buttonRef">
+    <div class="item-tag" v-for="(tag, inx) of list" :key="inx" ref="buttonRef">
       <div class="field-name">
         <span>
           <i class="el-icon-sort-up sort-icon ml-3" v-if="tag.sort == 'asc'"></i>
@@ -15,7 +15,7 @@
       <el-popover
         v-if="needChangeAlias"
         ref="fieldsPopoverRefs"
-        v-model="visibles[inx]"
+        v-model:visible="visibles[inx]"
         placement="bottom"
         popper-class="fields-popover"
         :width="200"
@@ -32,11 +32,11 @@
         <div class="popover-div" style="padding: 10px">
           <div class="popover-name">修改显示名</div>
           <div class="w-100">
-            <el-input v-model="tag.editAlias" size="small"></el-input>
+            <el-input v-model="tag.editAlias"></el-input>
           </div>
           <div class="w-100 mt-10" style="text-align: right">
-            <el-button size="small" @click="cannerAlias(inx)">取消</el-button>
-            <el-button size="small" type="primary" @click="confirmAlias(tag, inx)">确认</el-button>
+            <el-button @click="cannerAlias(inx)">取消</el-button>
+            <el-button type="primary" @click="confirmAlias(tag, inx)">确认</el-button>
           </div>
         </div>
       </el-popover>
@@ -51,9 +51,8 @@
       >
         <div class="popover-name">汇总方式</div>
         <div class="popover-div">
-          <template v-for="(summary, summaryInx) of modeValue(tag)">
+          <template :key="summaryInx" v-for="(summary, summaryInx) of modeValue(tag)">
             <div
-              :key="summaryInx"
               class="popover-item"
               :class="{ 'is-active': tag.calcMode == summary.code }"
               @click="onCalcModeChange(tag, summary.code, inx)"
@@ -104,7 +103,7 @@
         v-if="needFormat"
         placement="bottom"
         trigger="click"
-        v-model="dialogConf.isShow[inx]"
+        v-model:visible="dialogConf.isShow[inx]"
         popper-class="fields-popover"
         ref="summaryPopoverRefs"
       >
@@ -124,7 +123,6 @@
                 <span class="decimal-places" v-if="dialogConf.data.showDecimalPlaces">
                   <el-input-number
                     style="width: 150px"
-                    size="small"
                     v-model="dialogConf.data.decimalPlaces"
                     :min="1"
                     :max="4"
@@ -142,7 +140,6 @@
                     v-model="dialogConf.data.numericUnits"
                     filterable
                     style="width: 150px"
-                    size="small"
                     placeholder
                     allow-create
                     default-first-option
@@ -189,9 +186,9 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
 import SvgIcon from '@/components/svg-icon-nc'
 export default {
+  emits: ['update:modelValue', 'onSort'],
   name: 'YourComponentName',
   components: {
     SvgIcon
@@ -228,10 +225,6 @@ export default {
       type: String,
       default: ''
     }
-  },
-  model: {
-    prop: 'modelValue', // 默认是value
-    event: 'modelValue' // 默认是input
   },
   data() {
     return {
@@ -302,7 +295,7 @@ export default {
     openVisible(inx) {},
     delCom(inx) {
       this.list.splice(inx, 1)
-      this.$emit('modelValue', this.list)
+      this.$emit('update:modelValue', this.list)
     },
     editAlias(tag) {
       tag.editAlias = tag.alias
@@ -322,12 +315,12 @@ export default {
       // this.summaryPopoverRefs[inx].hide()
       // this.sortPopoverRefs[inx].hide()
       tag.calcMode = target
-      this.$emit('modelValue', this.list)
+      this.$emit('update:modelValue', this.list)
     },
     onSort(tag, target, inx) {
       // this.fieldsPopoverRefs[inx].hide()
       // this.sortPopoverRefs[inx].hide()
-      this.$emit('modelValue', this.list)
+      this.$emit('update:modelValue', this.list)
       this.$emit('onSort', { tag, target })
     },
     needDisabledType() {
@@ -363,9 +356,9 @@ export default {
       return intPartFormat + floatPart
     },
     confirmDataFormat() {
-      this.$set(this.list, this.dialogConf.inx, { ...this.list[this.dialogConf.inx], ...this.dialogConf.data })
+      this.list[this.dialogConf.inx] = { ...this.list[this.dialogConf.inx], ...this.dialogConf.data }
       this.dialogConf.isShow = []
-      this.$emit('modelValue', this.list)
+      this.$emit('update:modelValue', this.list)
     }
   }
 }

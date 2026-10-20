@@ -1,5 +1,5 @@
 import uniqueId from '@form-create/utils/lib/unique'
-const label = '合同续费'
+const label = '订单续费'
 const name = 'contractRenewal'
 export default {
   icon: 'iconfont iconqingjia2',
@@ -19,9 +19,9 @@ export default {
           hidden: false,
           info: '',
           input: false,
-          title: '合同名称',
+          title: '订单名称',
           symbol: 'contractList',
-          props: { disabled: false, readonly: true, placeholder:'请选择合同名称'},
+          props: { disabled: false, readonly: true, placeholder:'请选择订单名称'},
           type: 'select',
           _fc_drag_tag: 'select',
           options: []
@@ -62,7 +62,7 @@ export default {
           effect: { fetch: '', required: true },
           field: uniqueId(),
           props: { type: 'moneyFrom' },
-          title: '续费金额（元）',
+          title: '续费金额(元)',
           symbol: 'renewalAmount',
           type: 'moneyFrom',
           _fc_drag_tag: 'moneyFrom'
@@ -201,7 +201,7 @@ export default {
         info: '',
         props: {
           value:
-            '1. 回款是否需要审批流，在客户规格设置中配置<br>2.支持财务在付款记录中进行回款修改、管理<br>3. 合同回款根据财务收入科目，自动同步财务账目收入记录',
+            '1. 回款是否需要审批流，在客户规格设置中配置<br>2.支持财务在付款记录中进行回款修改、管理<br>3. 订单回款根据财务收入科目，自动同步财务账目收入记录',
           title: '回款规则'
         },
         input: false,

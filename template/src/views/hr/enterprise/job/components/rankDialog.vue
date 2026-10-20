@@ -1,7 +1,8 @@
 <template>
   <el-dialog
+      class="hr-enterprise-job-rank-dialog"
     :title="config.title"
-    :visible.sync="dialogVisible"
+    v-model="dialogVisible"
     :width="config.width"
     :append-to-body="true"
     :before-close="handleClose"
@@ -10,10 +11,12 @@
     <el-form ref="form" :model="formData" :rules="rules" :label-width="labelWidth">
       <div v-if="config.type === 1 || config.type === 3">
         <el-form-item class="mt20">
-          <span slot="label">
-            <span class="color-tab">*</span>
-            职等区间：
-          </span>
+          <template #label>
+            <span>
+              <span class="color-tab">*</span>
+              职等区间：
+            </span>
+          </template>
           <el-col :span="11">
             <el-form-item prop="levelMin">
               <el-input-number
@@ -37,10 +40,12 @@
           </el-col>
         </el-form-item>
         <el-form-item class="mt20">
-          <span slot="label">
-            <span class="color-tab">*</span>
-            薪资区间：
-          </span>
+          <template #label>
+            <span>
+              <span class="color-tab">*</span>
+              薪资区间：
+            </span>
+          </template>
           <el-col :span="11">
             <el-form-item prop="salaryMin">
               <el-input-number
@@ -76,16 +81,19 @@
         </el-form-item>
       </div>
     </el-form>
-    <div slot="footer" class="dialog-footer">
-      <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
-      <el-button size="small" type="primary" :loading="loading" @click="handleConfirm">{{ $t('public.ok') }}</el-button>
-    </div>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="handleClose">取消</el-button>
+        <el-button type="primary" :loading="loading" @click="handleConfirm">确定</el-button>
+      </div>
+    </template>
   </el-dialog>
 </template>
 <script>
-import { rankLevelBatchApi, rankLevelEditApi, rankLevelSaveApi } from '@/api/setting'
+import { rankLevelBatchApi, rankLevelEditApi, rankLevelSaveApi } from '@/api/setting.ts'
 
 export default {
+  emits: ['isOk'],
   name: 'RankDialog',
   props: {
     config: {
@@ -168,7 +176,7 @@ export default {
     handleConfirm() {
       this.$refs.form.validate((valid) => {
         if (valid) {
-          var data = {}
+          let data = {}
           if (this.config.type === 1) {
             data.salary = this.formData.salaryMin + '-' + this.formData.salaryMax
             data.min_level = this.formData.levelMin
@@ -231,14 +239,13 @@ export default {
 </script>
 
 <style scoped lang="scss">
-
 .line {
   padding: 0 8px;
 }
-/deep/ .el-input-number--medium {
+:deep(.el-input-number) {
   width: 100%;
 }
-/deep/ .el-input__inner {
+:deep(.el-input__inner) {
   text-align: left;
 }
 .rank-explain {
@@ -248,11 +255,15 @@ export default {
     color: rgba(0, 0, 0, 0.5);
   }
 }
-/deep/ .el-dialog__footer {
-  padding: 0;
-}
 .dialog-footer {
   padding: 20px;
   border-top: 1px solid #e6ebf5;
+}
+</style>
+
+<style lang="scss">
+// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
+.el-dialog.hr-enterprise-job-rank-dialog .el-dialog__footer {
+  padding: 0;
 }
 </style>

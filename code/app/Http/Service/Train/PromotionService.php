@@ -18,7 +18,7 @@ namespace App\Http\Service\Train;
 use App\Http\Contract\Company\PromotionInterface;
 use App\Http\Dao\Train\PromotionDao;
 use App\Http\Service\BaseService;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 
 /**

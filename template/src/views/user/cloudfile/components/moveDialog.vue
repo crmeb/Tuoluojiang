@@ -1,13 +1,15 @@
 <template>
   <div>
     <!-- 移动弹窗 -->
-    <el-dialog :visible.sync="dialogVisible" width="480px" :before-close="handleClose">
-      <div slot="title">
-        <el-tabs v-model="name" class="tab-move" @tab-click="handleTabClick">
-          <!--<el-tab-pane :label="$t('file.myfiles')" name="1" />-->
-          <el-tab-pane :label="$t('file.enterprisespace')" name="2" />
-        </el-tabs>
-      </div>
+    <el-dialog v-model="dialogVisible" width="480px" :before-close="handleClose">
+      <template #header>
+        <div>
+          <el-tabs v-model="name" class="tab-move" @tab-change="handleTabClick">
+            <!--<el-tab-pane label="我的文件" name="1" />-->
+            <el-tab-pane label="企业空间" name="2" />
+          </el-tabs>
+        </div>
+      </template>
       <div class="tree-box">
         <el-scrollbar style="height: 100%">
           <el-tree
@@ -20,20 +22,24 @@
             node-key="id"
             @node-click="handleClick"
           >
-            <div slot-scope="{ node, data }" class="custom-tree-node">
-              <span class="flex-box">
-                <i v-if="data.icon" class="el-icon-s-home" :icon-class="data.icon" />
-                <i v-else class="icon iconfont iconwenjianjia color-file" />
-                {{ data.name }}
-              </span>
-            </div>
+            <template #default="{ node, data }">
+              <div class="custom-tree-node">
+                <span class="flex-box">
+                  <i v-if="data.icon" class="el-icon-s-home" :icon-class="data.icon" />
+                  <i v-else class="icon iconfont iconwenjianjia color-file" />
+                  {{ data.name }}
+                </span>
+              </div>
+            </template>
           </el-tree>
         </el-scrollbar>
       </div>
-      <div slot="footer" class="dialog-footer text-right">
-        <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
-        <el-button size="small" type="primary" @click="handleSave">{{ $t('public.ok') }}</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer text-right">
+          <el-button @click="handleClose">取消</el-button>
+          <el-button type="primary" @click="handleSave">确定</el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -49,9 +55,10 @@ import {
   folderSpaceEntDirApi,
   folderSpaceEntMoveApi,
   folderSpaceListApi
-} from '@/api/cloud'
+} from '@/api/cloud.ts'
 
 export default {
+  emits: ['handlerMove'],
   name: 'MoveDialog',
   props: {
     moveData: {
@@ -114,15 +121,13 @@ export default {
     handleClick(node, data) {
       this.fileId = node.id
     },
-    handleTabClick(e) {
-      if (this.activeIndex !== this.name) {
-        if (this.name == 1) {
-          this.getFolderDirList()
-        } else {
-          this.getFolderSpaceEntDir()
-        }
+    handleTabClick(name) {
+      if (name == 1) {
+        this.getFolderDirList()
+      } else {
+        this.getFolderSpaceEntDir()
       }
-      this.activeIndex = e.name
+      this.activeIndex = name
     },
 
     handlerEmit() {
@@ -214,28 +219,28 @@ export default {
 
 <style scoped lang="scss">
 .tab-move {
-  /deep/ .el-tabs__nav-wrap::after {
+  :deep(.el-tabs__nav-wrap::after) {
     height: 0;
   }
-  /deep/ .el-tabs__header {
+  :deep(.el-tabs__header) {
     margin: 0;
   }
-  /deep/ .el-tabs__active-bar {
+  :deep(.el-tabs__active-bar) {
     height: 0;
   }
-  /deep/ .el-tabs__item {
+  :deep(.el-tabs__item) {
     padding-bottom: 15px;
     height: 0;
     line-height: 0;
   }
 }
-/deep/ .el-tabs__item.is-active {
+:deep(.el-tabs__item.is-active) {
   color: #303133;
   font-weight: 600;
 }
 .tree-box {
   height: 340px;
-  /deep/ .el-scrollbar__wrap {
+  :deep(.el-scrollbar__wrap) {
     overflow-x: hidden;
   }
 }

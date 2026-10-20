@@ -1,15 +1,31 @@
 <?php
 
+/**
+ * This file is part of PHPPresentation - A pure PHP library for reading and writing
+ * presentations documents.
+ *
+ * PHPPresentation is free software distributed under the terms of the GNU Lesser
+ * General Public License version 3 as published by the Free Software Foundation.
+ *
+ * For the full copyright and license information, please read the LICENSE
+ * file that was distributed with this source code. For the full list of
+ * contributors, visit https://github.com/PHPOffice/PHPPresentation/contributors.
+ *
+ * @see        https://github.com/PHPOffice/PHPPresentation
+ *
+ * @license     http://www.gnu.org/licenses/lgpl.txt LGPL version 3
+ */
+
+declare(strict_types=1);
+
 namespace PhpOffice\PhpPresentation\Writer\PowerPoint2007;
 
+use PhpOffice\Common\Adapter\Zip\ZipInterface;
 use PhpOffice\Common\XMLWriter;
 
 class DocPropsCore extends AbstractDecoratorWriter
 {
-    /**
-     * @return \PhpOffice\Common\Adapter\Zip\ZipInterface
-     */
-    public function render()
+    public function render(): ZipInterface
     {
         // Create XML writer
         $objWriter = new XMLWriter(XMLWriter::STORAGE_MEMORY);
@@ -34,13 +50,13 @@ class DocPropsCore extends AbstractDecoratorWriter
         // dcterms:created
         $objWriter->startElement('dcterms:created');
         $objWriter->writeAttribute('xsi:type', 'dcterms:W3CDTF');
-        $objWriter->writeRaw(gmdate("Y-m-d\TH:i:s\Z", $this->oPresentation->getDocumentProperties()->getCreated()));
+        $objWriter->writeRaw(gmdate('Y-m-d\\TH:i:s\\Z', $this->oPresentation->getDocumentProperties()->getCreated()));
         $objWriter->endElement();
 
         // dcterms:modified
         $objWriter->startElement('dcterms:modified');
         $objWriter->writeAttribute('xsi:type', 'dcterms:W3CDTF');
-        $objWriter->writeRaw(gmdate("Y-m-d\TH:i:s\Z", $this->oPresentation->getDocumentProperties()->getModified()));
+        $objWriter->writeRaw(gmdate('Y-m-d\\TH:i:s\\Z', $this->oPresentation->getDocumentProperties()->getModified()));
         $objWriter->endElement();
 
         // dc:title
@@ -58,9 +74,14 @@ class DocPropsCore extends AbstractDecoratorWriter
         // cp:category
         $objWriter->writeElement('cp:category', $this->oPresentation->getDocumentProperties()->getCategory());
 
+        // cp:revision
+        $objWriter->writeElement('cp:revision', $this->oPresentation->getDocumentProperties()->getRevision());
+
+        // cp:contentStatus
         if ($this->oPresentation->getPresentationProperties()->isMarkedAsFinal()) {
-            // cp:contentStatus = Final
             $objWriter->writeElement('cp:contentStatus', 'Final');
+        } else {
+            $objWriter->writeElement('cp:contentStatus', $this->oPresentation->getDocumentProperties()->getStatus());
         }
 
         $objWriter->endElement();

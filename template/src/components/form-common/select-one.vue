@@ -1,166 +1,207 @@
 <!-- @FileDescription: 下拉选择一对一组件 -->
 <template>
-  <el-popover placement="bottom-start" trigger="manual" v-model="showPopover" popper-class="popover" ref="treePopover">
-    <isFullScreen @call-parent-method="handlePopoverHide">
-      <div class="tree-box">
-        <el-input
-          v-model="where.keyword"
-          prefix-icon="el-icon-search"
-          size="small"
-          placeholder="请输入关键字搜索"
-          clearable
-          style="width: 100%"
-          @change="getList"
-          @keyup.native.stop.prevent.enter="getList"
-          class="input"
-        ></el-input>
+  <div>
+    <template v-if="showType == 1">
+      <el-popover
+        placement="bottom-start"
+        trigger="manual"
+        :visible="showPopover"
+        popper-class="popover"
+        ref="treePopover"
+      >
+        <isFullScreen @call-parent-method="handlePopoverHide">
+          <div class="tree-box">
+            <el-input
+              v-model="where.keyword"
+              prefix-icon="el-icon-search"
+              placeholder="请输入关键字搜索"
+              clearable
+              style="width: 100%"
+              @change="getList"
+              @keyup.stop.prevent.enter="getList"
+              class="input"
+            ></el-input>
 
-        <div class="table-box mt20">
-          <el-table :data="tableData" style="width: 100%" height="390px">
-            <el-table-column
-              v-for="(item, index) in header"
-              :prop="item.field_name_en"
-              :label="item.field_name"
-              :key="index"
-            >
-              <template slot-scope="scope">
-                <div v-if="item.form_value === 'image'" class="img-box">
-                  <img
-                    v-for="(val, index) in scope.row[item.field_name_en]"
-                    :key="index"
-                    :src="val.url"
-                    alt=""
-                    class="img"
-                    @click="lookViewer(val.url, val.name)"
-                  />
-                  <span v-if="!scope.row[item.field_name_en] || scope.row[item.field_name_en].length == 0">--</span>
-                </div>
-                <div v-else-if="item.form_value === 'input_percentage'">
-                  <el-progress
-                    :percentage="scope.row[item.field_name_en] ? scope.row[item.field_name_en] : 0"
-                  ></el-progress>
-                </div>
-                <div v-else-if="item.form_value === 'tag' || item.form_value === 'checkbox'">
-                  <el-popover v-if="scope.row[item.field_name_en].length > 2" placement="top-start" trigger="hover">
-                    <template>
-                      <div class="flex_box">
-                        <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                          <el-tag size="small">
-                            {{ val }}
-                          </el-tag>
-                        </div>
-                      </div>
-                    </template>
-                    <div slot="reference">
-                      <div class="flex_box">
-                        <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                          <el-tag size="small" v-if="index < 2">
-                            {{ val }}
-                          </el-tag>
-                        </div>
-                        <el-tag v-if="scope.row[item.field_name_en].length > 2" size="small">...</el-tag>
-                      </div>
+            <div class="table-box mt20">
+              <el-table :data="tableData" style="width: 100%" height="390px">
+                <el-table-column
+                  v-for="(item, index) in header"
+                  :prop="item.field_name_en"
+                  :label="item.field_name"
+                  :key="index"
+                >
+                  <template #default="scope">
+                    <div v-if="item.form_value === 'image'" class="img-box">
+                      <img
+                        v-for="(val, index) in scope.row[item.field_name_en]"
+                        :key="index"
+                        :src="val.url"
+                        alt=""
+                        class="img"
+                        @click="lookViewer(val.url, val.name)"
+                      />
+                      <span v-if="!scope.row[item.field_name_en] || scope.row[item.field_name_en].length == 0">--</span>
                     </div>
-                  </el-popover>
-                  <template v-else>
-                    <div class="flex_box">
-                      <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                        <el-tag size="small" v-if="index < 2">
-                          {{ val }}
-                        </el-tag>
-                      </div>
-                      <el-tag v-if="scope.row[item.field_name_en].length > 2" size="small">...</el-tag>
+                    <div v-else-if="item.form_value === 'input_percentage'">
+                      <el-progress
+                        :percentage="scope.row[item.field_name_en] ? scope.row[item.field_name_en] : 0"
+                      ></el-progress>
                     </div>
-                  </template>
-                  <span v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length == 0">--</span>
-                </div>
-                <div v-else-if="item.form_value === 'switch'">
-                  <el-switch
-                    disabled
-                    v-model="scope.row[item.field_name_en]"
-                    :active-value="1"
-                    :inactive-value="0"
-                    active-text="开启"
-                    inactive-text="关闭"
-                  >
-                  </el-switch>
-                </div>
+                    <div v-else-if="item.form_value === 'tag' || item.form_value === 'checkbox'">
+                      <el-popover v-if="scope.row[item.field_name_en].length > 2" placement="top-start" trigger="hover">
+                        <div class="flex_box">
+                          <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
+                            <el-tag>
+                              {{ val }}
+                            </el-tag>
+                          </div>
+                        </div>
+                        <template #reference>
+                          <div>
+                            <div class="flex_box">
+                              <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
+                                <el-tag v-if="index < 2">
+                                  {{ val }}
+                                </el-tag>
+                              </div>
+                              <el-tag v-if="scope.row[item.field_name_en].length > 2">...</el-tag>
+                            </div>
+                          </div>
+                        </template>
+                      </el-popover>
+                      <template v-else>
+                        <div class="flex_box">
+                          <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
+                            <el-tag v-if="index < 2">
+                              {{ val }}
+                            </el-tag>
+                          </div>
+                          <el-tag v-if="scope.row[item.field_name_en].length > 2">...</el-tag>
+                        </div>
+                      </template>
+                      <span v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length == 0">--</span>
+                    </div>
+                    <div v-else-if="item.form_value === 'switch'">
+                      <el-switch
+                        disabled
+                        v-model="scope.row[item.field_name_en]"
+                        :active-value="1"
+                        :inactive-value="0"
+                        active-text="开启"
+                        inactive-text="关闭"
+                      >
+                      </el-switch>
+                    </div>
 
-                <div v-else-if="item.form_value === 'textarea'">
-                  <el-popover
-                    placement="top-start"
-                    width="350"
-                    trigger="hover"
-                    :content="scope.row[item.field_name_en]"
-                  >
-                    <div class="over-text" slot="reference" v-if="scope.row[item.field_name_en].length > 11">
+                    <div v-else-if="item.form_value === 'textarea'">
+                      <el-popover
+                        v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 11"
+                        placement="top-start"
+                        width="350"
+                        trigger="hover"
+                        :content="scope.row[item.field_name_en]"
+                      >
+                        <template #reference>
+                          <div class="over-text">
+                            {{ scope.row[item.field_name_en] }}
+                          </div>
+                        </template>
+                      </el-popover>
+                      <span v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length <= 11">
+                        {{ scope.row[item.field_name_en] }}
+                      </span>
+                      <span v-if="!scope.row[item.field_name_en]">--</span>
+                    </div>
+                    <div v-else-if="['input_number', 'input_float', 'input_price'].includes(item.form_value)">
                       {{ scope.row[item.field_name_en] }}
                     </div>
-                  </el-popover>
-                  <span v-if="scope.row[item.field_name_en].length <= 11"> {{ scope.row[item.field_name_en] }} </span>
-                  <span v-if="!scope.row[item.field_name_en]">--</span>
-                </div>
-                <div v-else-if="['input_number', 'input_float', 'input_price'].includes(item.form_value)">
-                  {{ scope.row[item.field_name_en] }}
-                </div>
-                <div v-else>
-                  {{ getValue(scope.row[item.field_name_en], item.form_value) }}
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作">
-              <template slot-scope="scope">
-                <el-button type="text" @click="selectClick(scope.row)">选择</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-        <div class="flex-end mt14">
-          <el-pagination
-            :page-size="where.limit"
-            :current-page="where.page"
-            :page-sizes="[10, 15, 20]"
-            layout="total, prev, pager, next, jumper"
-            :total="total"
-            @size-change="handleSizeChange"
-            @current-change="pageChange"
-          />
-        </div>
-      </div>
-    </isFullScreen>
-    <!-- 人员数据 -->
-    <template slot="reference">
-      <slot name="custom"></slot>
-      <div class="select plan-footer-one mr10" ref="select" v-if="!isSlots" @click="handlePopoverShow">
-        <span v-if="!oneData.name">{{ placeholder }}</span>
-        <div class="flex-box" v-else>
-          <span> {{ oneData.name }}</span>
-          <span class="el-icon-circle-close" @click.stop="deleteFn"></span>
-        </div>
-      </div>
+                    <div v-else>
+                      {{ getValue(scope.row[item.field_name_en], item.form_value) }}
+                    </div>
+                  </template>
+                </el-table-column>
+                <el-table-column label="操作">
+                  <template #default="scope">
+                    <el-button type="primary" link @click="selectClick(scope.row)">选择</el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+            <div class="flex-end mt14">
+              <el-pagination
+                :page-size="where.limit"
+                :current-page="where.page"
+                :page-sizes="[10, 15, 20]"
+                layout="total, prev, pager, next, jumper"
+                :total="total"
+                @size-change="handleSizeChange"
+                @current-change="pageChange"
+              />
+            </div>
+          </div>
+        </isFullScreen>
+        <!-- 人员数据 -->
+        <template #reference>
+          <slot v-if="$slots.custom" name="custom"></slot>
+          <div class="select plan-footer-one mr10" ref="select" v-else @click="handlePopoverShow">
+            <span v-if="!oneData.name">{{ placeholder }}</span>
+            <div class="flex-box" v-else>
+              <span> {{ oneData.name }}</span>
+              <span class="el-icon-circle-close" @click.stop="deleteFn"></span>
+            </div>
+          </div>
+        </template>
+      </el-popover>
     </template>
-  </el-popover>
+    <el-select
+      v-else
+      v-model="selectValue"
+      :placeholder="`请选择${placeholder}`"
+      class="mr10"
+      clearable
+      filterable
+      style="width: 100%"
+      @change="handleEmit()"
+    >
+      <el-option
+        v-for="items in tableData"
+        :key="items.id"
+        :label="items[index_field_name]"
+        :value="items.id"
+      ></el-option>
+    </el-select>
+  </div>
 </template>
 <script>
-import { savecrudCateApi, dataModulerListApi, dataModulerFieldApi } from '@/api/develop'
-import { PopupManager } from 'element-ui/src/utils/popup'
+import { savecrudCateApi, dataModulerListApi, dataModulerFieldApi } from '@/api/develop.ts'
+import { useZIndex } from 'element-plus'
 import isFullScreen from '@/components/isFullScreen/index'
 
 export default {
+  emits: ['getSelection'],
   name: '',
   components: { isFullScreen },
+  setup() {
+    const { nextZIndex } = useZIndex()
+    return { nextZIndex }
+  },
   props: {
     // 选中的数据
     value: {
-      type: Array,
+      type: Object,
       default: () => {
-        return []
+        return {}
       }
     },
     id: {},
     placeholder: {
       type: String,
       default: '请选择一对一'
+    },
+    showType: {
+      // 0 下拉选择 1 弹窗选择
+      type: Number,
+      default: 1
     },
     // 只能单选一个
     onlyOne: {
@@ -172,6 +213,7 @@ export default {
     return {
       rowId: 0,
       header: [],
+      selectValue: '',
       isSlots: false,
       total: 0,
       showPopover: false,
@@ -185,10 +227,11 @@ export default {
   watch: {
     value(newVal, oldValue) {
       this.oneData = newVal
+      this.selectValue = newVal.id
     }
   },
   mounted() {
-    this.maskZindex = PopupManager.nextZIndex()
+    this.maskZindex = this.nextZIndex()
     document.addEventListener('click', this.handleGlobalClick)
     this.rowId = this.id
     if (this.$slots.custom) {
@@ -219,19 +262,47 @@ export default {
         this.tableData = res.data.list || []
       })
     },
+    handleEmit() {
+      let data = {}
+      if (this.selectValue) {
+        const foundItem = this.tableData.find((item) => item.id == this.selectValue)
+        data = {
+          id: this.selectValue,
+          name: foundItem ? foundItem[this.index_field_name] : ''
+        }
+      } else {
+        data = {
+          id: '',
+          name: ''
+        }
+      }
+
+      this.oneData = data
+      this.$emit('getSelection', data)
+    },
+    // 数组转成字符串
     // 数组转成字符串
     getValue(val, type) {
-      let str = ''
-      if (val == '') {
-        str = '--'
-      } else if (type === 'input_select') {
-        str = val.name + val.type ? '（' + val.type + '）' : ''
-      } else if (Array.isArray(val)) {
-        str = val.toString()
-      } else {
-        str = val
+      // 如果值为空字符串，直接返回 '--'
+      if (val === '') return '--'
+
+      // 处理包含 type 属性的对象
+      if (val && val.type) {
+        return `${val.name}(${val.type})`
       }
-      return str || '--'
+
+      // 处理 input_select 类型且值不是字符串的情况
+      if (type === 'input_select' && typeof val !== 'string') {
+        return val.type ? `${val.name}（${val.type}）` : val.name
+      }
+
+      // 处理数组类型的值
+      if (Array.isArray(val)) {
+        return val.toString()
+      }
+
+      // 其他情况直接返回值，若值为假值则返回 '--'
+      return val || '--'
     },
     handleSizeChange(val) {
       this.where.limit = val
@@ -255,10 +326,15 @@ export default {
       }
       this.oneData = data
       this.$emit('getSelection', data)
-      this.$refs.treePopover.doClose()
+      this.$refs.treePopover.hide()
+    },
+    // 点击是否落在触发框或弹层内：Element Plus 的 popover 根节点是片段，$el 不能用来判断
+    isInsidePopover(target) {
+      const popper = this.$refs.treePopover?.popperRef
+      return [popper?.triggerRef, popper?.contentRef].some((el) => el?.contains?.(target))
     },
     handleGlobalClick(event) {
-      if (!this.$refs.treePopover.$el.contains(event.target)) {
+      if (!this.isInsidePopover(event.target)) {
         this.showPopover = false
       }
     },
@@ -269,7 +345,7 @@ export default {
       this.showPopover = false
     }
   },
-  beforeDestroy() {
+  beforeUnmount() {
     document.removeEventListener('click', this.handleGlobalClick)
   }
 }
@@ -335,7 +411,7 @@ export default {
   }
 }
 .input {
-  /deep/.el-input__validateIcon {
+  :deep(.el-input__validateIcon) {
     display: none;
   }
 }
@@ -343,7 +419,7 @@ export default {
   color: #1890ff !important;
 }
 
-/deep/ .el-popper {
+:deep(.el-popper) {
   margin-top: 5px;
 }
 </style>

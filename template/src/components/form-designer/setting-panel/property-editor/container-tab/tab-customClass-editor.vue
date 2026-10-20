@@ -10,40 +10,43 @@
         tag="ul"
         :list="selectedWidget.tabs"
         v-bind="{ group: 'panesGroup', ghostClass: 'ghost', handle: '.drag-option' }"
+        :item-key="$draggableKey"
       >
-        <li v-for="(tpItem, tpIdx) in selectedWidget.tabs" :key="tpIdx" class="col-item">
-          <span style="margin-right: 12px">标签:{{ tpIdx + 1 }}</span>
-
-          <el-input type="text" v-model="tpItem.options.label" style="width: 155px"></el-input>
-          <i class="iconfont icon-drag drag-option"></i>
-          <el-button
-            circle
-            plain
-            size="mini"
-            type="danger"
-            @click="deleteTabPane(selectedWidget, tpIdx)"
-            icon="el-icon-minus"
-            class="col-delete-button"
-          ></el-button>
-        </li>
-        <div>
-          <el-button type="text" @click="addTabPane(selectedWidget)">{{
-            i18nt('designer.setting.addTabPane')
-          }}</el-button>
-        </div>
+        <template #item="{ element: tpItem, index: tpIdx }">
+          <li class="col-item">
+            <span style="margin-right: 12px">标签:{{ tpIdx + 1 }}</span>
+  
+            <el-input type="text" v-model="tpItem.options.label" style="width: 155px"></el-input>
+            <i class="designer-icon icon-drag drag-option"></i>
+            <el-button
+              circle
+              plain
+              type="danger"
+              @click="deleteTabPane(selectedWidget, tpIdx)"
+              icon="el-icon-minus"
+              class="col-delete-button"
+            ></el-button>
+          </li>
+        </template>
+        <template #footer>
+          <div>
+            <el-button type="primary" link @click="addTabPane(selectedWidget)">{{
+              i18nt('designer.setting.addTabPane')
+            }}</el-button>
+          </div>
+        </template>
       </draggable>
     </el-form-item>
   </div>
 </template>
 
 <script>
-import i18n from '@/utils/i18n'
+import i18n from '@/utils/i18n.ts'
 import Draggable from 'vuedraggable'
 import { deepClone } from '@/utils/util'
 
 export default {
   name: 'tab-customClass-editor',
-  componentName: 'PropertyEditor',
   mixins: [i18n],
   components: {
     Draggable
@@ -120,4 +123,3 @@ li.col-item {
   }
 }
 </style>
-@/utils/i18ns

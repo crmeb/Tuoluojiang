@@ -2,50 +2,58 @@
 <template>
   <el-dialog
     :title="config.title"
-    :visible.sync="examineVisible"
+    v-model="examineVisible"
     :width="config.width"
     :append-to-body="true"
     :before-close="handleClose"
   >
     <el-form class="mt15" label-width="100px">
       <el-form-item>
-        <span slot="label"><span class="color-tab">*</span>{{ config.title }}：</span>
+        <template #label>
+          <span><span class="color-tab">*</span>{{ config.title }}：</span>
+        </template>
         <el-radio-group v-model="radio">
-          <el-radio :label="1">{{ config.type === 3 ? $t('customer.invoiced') : $t('customer.passed') }}</el-radio>
-          <el-radio :label="2">{{ config.type === 3 ? $t('customer.notinvoiced') : $t('customer.fail') }}</el-radio>
+          <el-radio :label="1" :value="1">{{ config.type === 3 ? '已开票' : '已通过' }}</el-radio>
+          <el-radio :label="2" :value="2">{{ config.type === 3 ? '未开票' : '未通过' }}</el-radio>
         </el-radio-group>
       </el-form-item>
       <template v-if="config.type === 3 && radio === 1">
         <el-form-item>
-          <span slot="label"><span class="color-tab">*</span>发票编号：</span>
-          <el-input type="text" v-model="num" size="small" placeholder="请输入发票编号" />
+          <template #label>
+            <span><span class="color-tab">*</span>发票编号：</span>
+          </template>
+          <el-input type="text" v-model="num" placeholder="请输入发票编号" />
         </el-form-item>
         <el-form-item>
-          <span slot="label"><span class="color-tab">*</span>发送方式：</span>
+          <template #label>
+            <span><span class="color-tab">*</span>发送方式：</span>
+          </template>
           <el-select
             v-model="invoice_type"
-            size="small"
             @change="handleMethod"
-            :placeholder="$t('customer.placeholder54')"
+            placeholder="请选择邮寄方式"
           >
             <el-option v-for="(item, index) in methodOptions" :key="index" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
         <el-form-item>
-          <span slot="label"
-            ><span class="color-tab">*</span>{{ invoice_type === 'express' ? '收货地址' : '接收邮箱' }}：</span
-          >
+          <template #label>
+            <span
+              ><span class="color-tab">*</span>{{ invoice_type === 'express' ? '收货地址' : '接收邮箱' }}：</span
+            >
+          </template>
           <el-input
             type="text"
             v-model="invoice_address"
-            size="small"
             :placeholder="invoice_type === 'express' ? '请输入收件地址' : '请输入接受邮箱'"
           />
         </el-form-item>
       </template>
 
       <el-form-item>
-        <span slot="label"><span v-if="radio === 2" class="color-tab">*</span>{{ $t('public.remarks') }}：</span>
+        <template #label>
+          <span><span v-if="radio === 2" class="color-tab">*</span>备注：</span>
+        </template>
         <el-input
           type="textarea"
           :rows="3"
@@ -53,12 +61,14 @@
           :maxlength="200"
           show-word-limit
           :placeholder="
-            config.type === 3 && radio === 1 ? '用于快递单号/邮箱地址等相关开票信息' : $t('customer.placeholder18')
+            config.type === 3 && radio === 1 ? '用于快递单号/邮箱地址等相关开票信息' : '请填写备注信息'
           "
         />
       </el-form-item>
       <el-form-item v-if="config.type === 3 && radio === 1">
-        <span slot="label">{{ $t('customer.billingdocuments') }}:</span>
+        <template #label>
+          <span>开票凭证:</span>
+        </template>
         <div class="examine-card">
           <ul class="el-upload-list el-upload-list--picture-card">
             <li class="el-upload-list__item" v-for="(item, index) in uploadList" :key="index">
@@ -88,35 +98,32 @@
             :data="uploadData"
             multiple
           >
-            <i slot="default" class="el-icon-plus"></i>
+            <template #default>
+              <i class="el-icon-plus"></i>
+            </template>
           </el-upload>
-          <el-image-viewer v-if="isImage" :on-close="closeImageViewer" :url-list="srcList" />
+          <el-image-viewer v-if="isImage" @close="closeImageViewer" :url-list="srcList" />
         </div>
       </el-form-item>
     </el-form>
-    <div slot="footer" class="dialog-footer">
-      <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
-      <el-button size="small" :loading="loading" type="primary" @click="handleConfirm">{{ $t('public.ok') }}</el-button>
-    </div>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="handleClose">取消</el-button>
+        <el-button :loading="loading" type="primary" @click="handleConfirm">确定</el-button>
+      </div>
+    </template>
   </el-dialog>
 </template>
 
 <script>
-import {
-  clientBillStatusApi,
-  clientFileDeleteApi,
-  clientInvoiceStatusApi,
-  putInvalid,
-  clientInvoiceStatus
-} from '@/api/enterprise'
-import SettingMer from '@/libs/settingMer'
-import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
-import { getToken } from '@/utils/auth'
-import file from '@/utils/file'
-import Vue from 'vue'
-Vue.use(file)
+import { clientBillStatusApi, clientFileDeleteApi, clientInvoiceStatusApi, putInvalid, clientInvoiceStatus } from '@/api/client.ts'
+import SettingMer from '@/libs/settingMer.ts'
+import { ElImageViewer } from 'element-plus'
+import { getToken } from '@/utils/auth.ts'
+import { fileIsImage } from '@/utils/file.ts'
 
 export default {
+  emits: ['isOk'],
   name: 'ExamineDialog',
   props: {
     config: {
@@ -144,8 +151,8 @@ export default {
         authorization: 'Bearer ' + getToken()
       },
       methodOptions: [
-        { value: 'express', label: this.$t('customer.express') },
-        { value: 'mail', label: this.$t('customer.mail') }
+        { value: 'express', label: '快递' },
+        { value: 'mail', label: '邮件' }
       ],
       uploadData: {},
       uploadList: [],
@@ -164,22 +171,23 @@ export default {
     config: {
       handler(nVal) {
         if (nVal.type === 1) {
-          this.title1 = this.$t('customer.fundaudit')
+          this.title1 = '资金审核'
         } else if (nVal.type === 2) {
-          this.title1 = this.$t('customer.invoicereview')
+          this.title1 = '发票审核'
         } else {
           if (nVal.data.num) {
             this.radio = 1
           } else {
             this.radio = 2
           }
-          this.title1 = this.$t('customer.invoicingapproval')
+          this.title1 = '开票审核'
         }
       },
       deep: true
     }
   },
   methods: {
+    fileIsImage,
     handleOpen() {
       this.examineVisible = true
     },
@@ -188,9 +196,9 @@ export default {
       this.reset()
     },
     handleConfirm() {
-      var file = []
+      const file = []
       if (this.radio === 2 && !this.remarks) {
-        this.$message.error(this.$t('customer.placeholder18'))
+        this.$message.error('请填写备注信息')
       } else if (this.config.type === 3 && this.radio === 1 && !this.num) {
         this.$message.error('请输入发票编号')
       } else if (this.config.type === 3 && this.radio === 1 && !this.invoice_address) {
@@ -213,13 +221,13 @@ export default {
             }
           } else {
             if (this.config.data.treaty) {
-              mark = this.config.data.treaty.title + '-' + this.$t('customer.Contractpayment')
+              mark = this.config.data.treaty.title + '-' + '订单回款'
             }
           }
           data.mark = mark
           this.getBillStatus(this.config.data.id, data)
         } else if (this.config.type === 2) {
-          if (this.config.title === '作废审核') {
+          if (this.config.title === '冲红审核') {
             let status = ''
             if (this.radio == 1) {
               status = 2
@@ -249,7 +257,7 @@ export default {
               file.push(value.id)
             })
           }
-          data.file = file
+          data.attach_ids = file
           this.invoiceStatus(this.config.data.id, data)
         }
       }
@@ -259,7 +267,7 @@ export default {
       this.srcList = []
     },
 
-    // 作废审核
+    // 冲红审核
     async putInvalid(id, data) {
       await clientInvoiceStatus(id, data)
       this.$emit('isOk')
@@ -274,6 +282,10 @@ export default {
     },
     // 上传前
     handleUpload(file) {
+      if (!this.config.data || !this.config.data.eid) {
+        this.$message.error('缺少客户信息，无法上传开票凭证')
+        return false
+      }
       const types = [
         'jpeg',
         'gif',
@@ -290,7 +302,7 @@ export default {
         'txt',
         'pdf'
       ]
-      this.uploadData.cid = this.config.data.cid
+      this.uploadData.cid = this.config.data.cid || ''
       this.uploadData.eid = this.config.data.eid
       const fileTypeName = file.name.substr(file.name.lastIndexOf('.') + 1)
       const isImage = types.includes(fileTypeName)
@@ -384,23 +396,22 @@ export default {
 </script>
 
 <style scoped lang="scss">
-
-/deep/ .el-textarea__inner {
+:deep(.el-textarea__inner) {
   resize: none;
 }
-/deep/ .el-select,
-/deep/ .el-input-number--medium,
-/deep/ .el-date-editor {
+:deep(.el-select),
+:deep(.el-input-number),
+:deep(.el-date-editor) {
   width: 100%;
 }
-/deep/ .el-form-item:last-of-type {
+:deep(.el-form-item:last-of-type) {
   margin-bottom: 0;
 }
 .examine-card {
   div {
     display: inline-block;
   }
-  /deep/ .el-upload--picture-card {
+  :deep(.el-upload--picture-card) {
     width: 98px;
     height: 98px;
     line-height: 102px;
@@ -408,7 +419,7 @@ export default {
   .upload-icon {
     font-size: 98px;
   }
-  /deep/ .el-upload-list--picture-card .el-upload-list__item {
+  :deep(.el-upload-list--picture-card .el-upload-list__item) {
     width: 98px;
     height: 98px;
     line-height: 1;

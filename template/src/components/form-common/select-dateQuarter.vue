@@ -10,37 +10,40 @@
       v-model="showValue"
       :placeholder="halfYearBtn ? '请选择半年' : '请选择季度'"
       style="width: 100%"
-      size="small"
       @focus="showSeason = true"
     >
-      <i slot="prefix" class="el-input__icon el-icon-date" />
+      <template #prefix>
+        <i class="el-input__icon el-icon-date" />
+      </template>
     </el-input>
     <el-card
       v-show="showSeason"
       class="box-card"
       style="width: 322px; padding: 0 3px 20px; margin-top: 10px; position: fixed; z-index: 9999"
     >
-      <div slot="header" class="clearfix" style="text-align: center; padding: 0">
-        <button
-          type="button"
-          aria-label="前一年"
-          class="el-picker-panel__icon-btn el-date-picker__prev-btn el-icon-d-arrow-left"
-          @click="prev"
-        />
-        <span role="button" class="el-date-picker__header-label">{{ year }}年</span>
-        <button
-          type="button"
-          aria-label="后一年"
-          class="el-picker-panel__icon-btn el-date-picker__next-btn el-icon-d-arrow-right"
-          @click="next"
-        />
-      </div>
+      <template #header>
+        <div class="clearfix" style="text-align: center; padding: 0">
+          <button
+            type="button"
+            aria-label="前一年"
+            class="el-picker-panel__icon-btn el-date-picker__prev-btn el-icon-d-arrow-left"
+            @click="prev"
+          />
+          <span role="button" class="el-date-picker__header-label">{{ year }}年</span>
+          <button
+            type="button"
+            aria-label="后一年"
+            class="el-picker-panel__icon-btn el-date-picker__next-btn el-icon-d-arrow-right"
+            @click="next"
+          />
+        </div>
+      </template>
       <div v-if="!halfYearBtn" class="text item text-center">
         <el-button
           v-for="(item, index) in quarterArray"
           :key="index"
-          type="text"
-          size="medium"
+          type="primary" link
+          size="default"
           class="item-button"
           @click="selectSeason(index)"
         >
@@ -51,8 +54,8 @@
         <el-button
           v-for="(item, index) in halfYearArray"
           :key="index"
-          type="text"
-          size="medium"
+          type="primary" link
+          size="default"
           class="item-button"
           @click="selectSeason(index)"
         >

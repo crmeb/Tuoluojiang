@@ -30,6 +30,7 @@
 </template>
 
 <script>
+import { EventBus } from '@/libs/bus.ts'
 import MindMap from 'simple-mind-map';
 import Export from 'simple-mind-map/src/plugins/Export.js';
 import MiniMap from 'simple-mind-map/src/plugins/MiniMap.js'
@@ -51,7 +52,7 @@ import Search from './components/Search.vue';
 import Toolbar from './components/Toolbar.vue';
 // import RichTextToolbar from './components/RichTextToolbar.vue';
 
-import { EDITOR_EVENTS, FORWARD_EDITOR_INNER_EVENTS } from "./event-constant";
+import { EDITOR_EVENTS, FORWARD_EDITOR_INNER_EVENTS } from "./event-constant.ts";
 
 import '@/icons/xmind-iconfont.scss';
 
@@ -78,6 +79,7 @@ Themes.init(MindMap);
  *          也可以在外部直接调用 getData 方法来获取 Blob 数据
  */
 export default {
+  emits: ['save'],
   name: 'XmindEditor',
   components: {
     Contextmenu,
@@ -129,7 +131,7 @@ export default {
 
     this.handleKeyBoardSaveShortCut();
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.stopListenEvent();
   },
   methods: {
@@ -138,7 +140,7 @@ export default {
       FORWARD_EDITOR_INNER_EVENTS
         .forEach(eventName => {
           this.mindMap.on(eventName, (...args) => {
-            this.$bus.$emit(eventName, ...args);
+            EventBus.$emit(eventName, ...args);
           });
         });
     },
@@ -170,14 +172,14 @@ export default {
     startListenEvent() {
       Object.entries(this.listenEventMap)
         .forEach(([eventName, handler]) => {
-          this.$bus.$on(eventName, handler);
+          EventBus.$on(eventName, handler);
         });
     },
 
     stopListenEvent() {
       Object.entries(this.listenEventMap)
         .forEach(([eventName, handler]) => {
-          this.$bus.$off(eventName, handler);
+          EventBus.$off(eventName, handler);
         });
     },
 

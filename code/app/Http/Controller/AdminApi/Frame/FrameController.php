@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -74,7 +74,7 @@ class FrameController extends AuthController
     {
         $withRole = (bool) $this->request->get('role', 0);
         $isScope  = (bool) $this->request->get('scope', 0);
-        return $this->success($this->service->getTree($this->uuid, $this->entId, $withRole, $isScope));
+        return $this->success($this->service->getTree(auth('admin')->id(), $withRole, $isScope));
     }
 
     /**
@@ -180,11 +180,7 @@ class FrameController extends AuthController
      */
     public function destroy($id)
     {
-        $where = $this->request->getMore([
-            ['id', $id],
-            ['entid', 1],
-        ]);
-        $this->service->deleteDepartment($where);
+        $this->service->deleteDepartment((int) $id);
         return $this->success('删除成功');
     }
 

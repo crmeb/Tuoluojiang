@@ -1,9 +1,9 @@
-<!-- 合同-合同记录页面组件 -->
+<!-- 订单-订单记录页面组件 -->
 <template>
   <div class="followUpRecord">
     <div class="mb10 btn-box1">
-      <div class="title-16">合同记录</div>
-      <el-button type="primary" size="small" @click="addRecord">添加合同记录</el-button>
+      <div class="title-16">订单记录</div>
+      <el-button type="primary" @click="addRecord">添加订单记录</el-button>
     </div>
     <file-upload :formInfo="formInfo" v-if="addRecordShow" @change="uploadChange"></file-upload>
     <div class="recordContent">
@@ -11,8 +11,7 @@
         <el-timeline-item
           v-for="(activity, index) in liaisonData"
           :key="index"
-          :icon="activity.icon"
-          :type="activity.type"
+          :icon="$icon(activity.icon)"
           color="#1890FF"
           :size="activity.size"
         >
@@ -25,10 +24,12 @@
               </div>
               <el-dropdown class="more">
                 <i class="el-icon-more" />
-                <el-dropdown-menu style="text-align: center; width: 100px">
-                  <el-dropdown-item @click.native="handleEdit(activity, index)"> 编辑 </el-dropdown-item>
-                  <el-dropdown-item @click.native="handleDelete(activity)"> 删除 </el-dropdown-item>
-                </el-dropdown-menu>
+                <template #dropdown>
+                  <el-dropdown-menu style="text-align: center; width: 100px">
+                    <el-dropdown-item @click="handleEdit(activity, index)"> 编辑 </el-dropdown-item>
+                    <el-dropdown-item @click="handleDelete(activity)"> 删除 </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
               </el-dropdown>
             </div>
             <div class="record">
@@ -36,7 +37,7 @@
             </div>
             <div v-for="(fileItem, g) in activity.attachs" :key="g" class="flex">
               <div class="fileItem">
-                <span class="file" v-if="toSrcIcon(fileItem.name) !== 'img'" @click="filePreview(fileItem)">
+                <span class="file" v-if="toSrcIcon(fileItem.name) !== 'img'" @click="filePreview(fileItem, { list: activity.attachs })">
                   {{ getFileTypeFn(fileItem.name) }}
                 </span>
                 <img v-else :src="fileItem.url" alt="" class="img" />
@@ -44,7 +45,7 @@
               </div>
 
               <div class="mt10">
-                <span class="iconfont iconyulan pointer" @click="filePreview(fileItem)"></span>
+                <span class="iconfont iconyulan pointer" @click="filePreview(fileItem, { list: activity.attachs })"></span>
                 <span class="iconfont iconxiazai pointer" @click="downloadFile(fileItem.url, fileItem.name)"></span>
               </div>
             </div>
@@ -54,26 +55,25 @@
       </el-timeline>
     </div>
     <div v-if="liaisonData.length == 0" class="default">
-      <img src="../../../../assets/images/def1.png" alt="" class="img" />
-      <span class="text">{{ $t('public.message14') + '~' }}</span>
+      <EmptyState type="record" :text="'暂无数据' + '~'" />
     </div>
-    <!-- 打开文件 -->
-    <fileDialog ref="viewFile"></fileDialog>
   </div>
 </template>
 
 <script>
-import { contracFileListApi, contracFileDeleteApi } from '@/api/enterprise'
-import { toSrcFn } from '@/utils/format'
-import { fileLinkDownLoad, getFileType, getFileExtension } from '@/libs/public'
-import file from '@/utils/file'
-import Vue from 'vue'
-Vue.use(file)
+import { defineAsyncComponent } from 'vue'
+import { contracFileListApi, contracFileDeleteApi } from '@/api/client.ts'
+import { toSrcFn } from '@/utils/format.ts'
+import { modalSure } from '@/libs/public.ts'
+import { fileLinkDownLoad, getFileExtension, getFileType } from '@/utils/file.ts'
+import EmptyState from '@/components/common/emptyState.vue'
+import { filePreview } from '@/utils/filePreview.ts'
 export default {
+  emits: ['refresh-detail'],
   name: 'Record',
   components: {
-    fileDialog: () => import('@/components/openFile/previewDialog '), // 图片、MP3，MP4弹窗
-    fileUpload: () => import('./fileUpload')
+    EmptyState,
+    fileUpload: defineAsyncComponent(() => import('./fileUpload'))
   },
   props: {
     formInfo: {
@@ -96,6 +96,7 @@ export default {
   mounted() {},
 
   methods: {
+    filePreview,
     getTableData() {
       this.liaisonData = []
       let data = {
@@ -126,7 +127,7 @@ export default {
     },
     // 下载文件
     downloadFile(row, name) {
-      this.fileLinkDownLoad(row, name)
+      fileLinkDownLoad(row, name)
     },
     // 添加
     addRecord() {
@@ -140,6 +141,7 @@ export default {
         this.editIndex = -1
       }
       this.getTableData()
+      this.$emit('refresh-detail')
     },
     toSrcIcon(name) {
       return getFileType(name)
@@ -153,9 +155,10 @@ export default {
     // 删除
 
     async handleDelete(row, index) {
-      await this.$modalSure('您确定要删除此合同记录?')
+      await modalSure('您确定要删除此订单记录?')
       await contracFileDeleteApi(row.id)
       this.getTableData()
+      this.$emit('refresh-detail')
     },
     // 判断上传的文件格式文件是否有无图片，无图则为默认
     toSrc(e) {
@@ -259,9 +262,6 @@ export default {
   padding: 0px;
   margin-right: 16px;
 }
-.el-button--medium {
-  padding: 10px 15px !important;
-}
 .recordContent {
   padding-top: 38px;
 }
@@ -311,7 +311,7 @@ export default {
   font-weight: 400;
   color: #303133;
 }
-/deep/ .el-timeline-item__wrapper {
+:deep(.el-timeline-item__wrapper) {
   position: relative;
   top: -12px;
 }
@@ -378,30 +378,32 @@ export default {
 .iconfont {
   color: #1890ff;
 }
-/deep/ .el-timeline-item__tail {
+:deep(.el-timeline-item__tail) {
   position: absolute;
   left: 4px;
   height: 100%;
 
   border-left: 1px solid #dfe4ed;
 }
-/deep/.el-timeline-item__node--normal {
+:deep(.el-timeline-item__node--normal) {
   left: 0px;
   width: 10px;
   height: 10px;
 }
-/deep/ .el-textarea__inner {
+:deep(.el-textarea__inner) {
   min-height: 96px;
   // word-break: break-all;
   border: none;
+  box-shadow: none;
   font-size: 12px;
 }
-/deep/ .icondangqian {
+:deep(.icondangqian) {
   font-size: 16px;
   color: #1890ff;
   background-color: none;
 }
 .default {
+  margin-top: 80px;
   .img {
     width: 200px;
     height: 150px;

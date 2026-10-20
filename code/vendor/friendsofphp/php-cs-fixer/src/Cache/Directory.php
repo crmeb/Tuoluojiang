@@ -17,6 +17,8 @@ namespace PhpCsFixer\Cache;
 /**
  * @author Dariusz Rumiński <dariusz.ruminski@gmail.com>
  *
+ * @readonly
+ *
  * @internal
  */
 final class Directory implements DirectoryInterface
@@ -28,9 +30,6 @@ final class Directory implements DirectoryInterface
         $this->directoryName = $directoryName;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getRelativePathTo(string $file): string
     {
         $file = $this->normalizePath($file);

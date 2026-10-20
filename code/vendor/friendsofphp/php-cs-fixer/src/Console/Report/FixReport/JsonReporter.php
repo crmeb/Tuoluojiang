@@ -14,26 +14,23 @@ declare(strict_types=1);
 
 namespace PhpCsFixer\Console\Report\FixReport;
 
+use PhpCsFixer\Console\Application;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 
 /**
  * @author Boris Gorbylev <ekho@ekho.name>
  *
+ * @readonly
+ *
  * @internal
  */
 final class JsonReporter implements ReporterInterface
 {
-    /**
-     * {@inheritdoc}
-     */
     public function getFormat(): string
     {
         return 'json';
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function generate(ReportSummary $reportSummary): string
     {
         $jsonFiles = [];
@@ -53,14 +50,15 @@ final class JsonReporter implements ReporterInterface
         }
 
         $json = [
+            'about' => Application::getAbout(),
             'files' => $jsonFiles,
             'time' => [
-                'total' => round($reportSummary->getTime() / 1000, 3),
+                'total' => round($reportSummary->getTime() / 1_000, 3),
             ],
-            'memory' => round($reportSummary->getMemory() / 1024 / 1024, 3),
+            'memory' => round($reportSummary->getMemory() / 1_024 / 1_024, 3),
         ];
 
-        $json = json_encode($json);
+        $json = json_encode($json, JSON_THROW_ON_ERROR);
 
         return $reportSummary->isDecoratedOutput() ? OutputFormatter::escape($json) : $json;
     }

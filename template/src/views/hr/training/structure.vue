@@ -1,23 +1,24 @@
 <template>
   <div class="divBox">
-    <ueditorFrom
-      :border="true"
-      :height="height"
-      :training="true"
-      :main-width="`1000px`"
-      :editor-border="false"
-      ref="ueditorFrom"
-      :placeholder="`支持上传组织架构图`"
-      :content="content"
-    />
-    <div class="cr-bottom-button btn-shadow">
-      <el-button size="small" :loading="loading" type="primary" @click="handleConfirm()">保存</el-button>
+    <div class="box-height">
+      <ueditorFrom
+        :border="true"
+        :height="height"
+        :training="true"
+        :editor-border="false"
+        ref="ueditorFrom"
+        :placeholder="`支持上传组织架构图`"
+        :content="content"
+      />
+      <div class="cr-bottom-button btn-shadow">
+        <el-button :loading="loading" type="primary" @click="handleConfirm()">保存</el-button>
+      </div>
     </div>
   </div>
 </template>
 <script>
 import ueditorFrom from '@/components/form-common/oa-wangeditor'
-import { employeeTrainApi, getEmployeeTrainApi } from '@/api/config.js'
+import { employeeTrainApi, getEmployeeTrainApi } from '@/api/config.ts'
 export default {
   name: '',
   components: { ueditorFrom },
@@ -61,15 +62,32 @@ export default {
 }
 </script>
 <style scoped lang="scss">
+.divBox {
+  padding: 0;
+  position: relative;
+  margin-left: 14px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
 .cr-bottom-button {
-  position: fixed;
-  left: -20px;
+  position: absolute;
+  left: 0px;
   right: 0;
   bottom: 0;
-  width: calc(100% + 220px);
+  width: calc(100% + 0px);
+  border-radius: 0 0 8px 8px;
 }
-.divBox {
-  margin: 0 !important;
-  padding: 0;
+
+:deep(.w-e-toolbar) {
+  border-radius: 8px 8px 0 0;
+  border-bottom-color: #eee;
+  background-color: transparent;
+}
+:deep(.main) {
+  background-color: transparent;
+}
+:deep(.w-e-text-container) {
+  background-color: transparent;
 }
 </style>

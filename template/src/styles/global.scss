@@ -24,36 +24,6 @@ $--color-primary: #1890ff;
   }
 }
 
-.el-form-item--medium {
-  .el-radio {
-    line-height: 36px !important;
-  }
-
-  .el-rate {
-    margin-top: 8px;
-  }
-}
-
-.el-form-item--small {
-  .el-radio {
-    line-height: 32px !important;
-  }
-
-  .el-rate {
-    margin-top: 6px;
-  }
-}
-
-.el-form-item--mini {
-  .el-radio {
-    line-height: 28px !important;
-  }
-
-  .el-rate {
-    margin-top: 4px;
-  }
-}
-
 // .el-card {
 //   margin-top: 3px;
 //   margin-bottom: 3px;
@@ -110,7 +80,9 @@ body {//IE浏览器滚动条样式
 /* 滚动条样式 end */
 
 .readonly-mode-field {
-
+  // Element Plus 的表单内容区是 flex 行布局，占满剩余宽度以保持整行 hover 高亮
+  flex: 1;
+  min-width: 0;
   padding: 0 10px;
 }
 .readonly-mode-field:hover{
@@ -119,9 +91,6 @@ body {//IE浏览器滚动条样式
   border-radius: 4px;
 }
 
-.mt-10 {
-  margin-top: 10px;
-}
 .iconbianji3 {
   font-size: 14px;
   color: #909399;

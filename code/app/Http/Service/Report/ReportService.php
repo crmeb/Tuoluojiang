@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,28 +17,32 @@ namespace App\Http\Service\Report;
 
 use App\Constants\CommonEnum;
 use App\Constants\DailyEnum;
+use App\Constants\ModuleEnum;
+use App\Constants\NoticeEnum;
 use App\Constants\RuleEnum;
+use App\Events\SystemMessageEvent;
 use App\Http\Contract\Schedule\ScheduleInterface;
 use App\Http\Dao\Report\MemberDao;
 use App\Http\Dao\Report\UserDailyDao;
-use App\Http\Model\BaseModel;
 use App\Http\Service\Admin\AdminInfoService;
 use App\Http\Service\Admin\AdminService;
 use App\Http\Service\Attach\AttachService;
 use App\Http\Service\Attendance\AttendanceArrangeService;
-use App\Http\Service\BaseService;
+use App\Http\Service\Frame\FrameAssistService;
 use App\Http\Service\Frame\FrameService;
+use App\Http\Service\System\ModulePermissionService;
 use App\Http\Service\System\RolesService;
 use App\Http\Service\User\UserRemindLogService;
 use App\Task\message\DailyReportRemind;
-use App\Task\message\MessageSendTask;
 use App\Task\message\StatusChangeTask;
 use App\Task\report\DailyCreateTask;
 use Carbon\CarbonPeriod;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\services\FormService;
-use crmeb\traits\service\ResourceServiceTrait;
-use crmeb\utils\MessageType;
+use App\Http\Model\BaseModel;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\services\FormService;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\utils\MessageType;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Config\Repository;
 use Illuminate\Contracts\Container\BindingResolutionException;
@@ -46,6 +50,7 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * 汇报.
@@ -82,10 +87,10 @@ class ReportService extends BaseService implements ResourceServicesInterface
      */
     public function getList(array $where, array $field = ['*'], $sort = 'created_at', array $with = []): array
     {
-        if ($where['viewer'] == 'hr') {
+        if (isset($where['viewer']) && $where['viewer'] == 'hr') {
             unset($where['user_id']);
         }
-        if ($where['finish_like']) {
+        if (isset($where['finish_like'])) {
             if (! $where['user_ids'] = app()->get(AdminService::class)->column(['name_like' => $where['finish_like']], 'id')) {
                 return $this->listData([]);
             }
@@ -102,8 +107,16 @@ class ReportService extends BaseService implements ResourceServicesInterface
     {
         if ($where['viewer'] != 'hr') {
             if ($where['dep_report']) {
-                if (! $where['user_id']) {
-                    $where['user_ids'] = app()->get(RolesService::class)->getDataUids($uid);
+                if ($where['user_id']) {
+                    if ((int) $where['user_id'] === $uid) {
+                        $where['user_ids'] = [-1];
+                        unset($where['user_id']);
+                    }
+                } else {
+                    $where['user_ids'] = array_values(array_diff(
+                        app()->get(ModulePermissionService::class)->getAccessibleUserIds($uid, ModuleEnum::REPORT),
+                        [$uid]
+                    )) ?: [-1];
                 }
             } else {
                 $where['user_id'] = $uid;
@@ -231,20 +244,23 @@ class ReportService extends BaseService implements ResourceServicesInterface
         }
         return $this->transaction(function () use ($data) {
             $attachIds = $data['attach_ids'];
-            $members   = $data['members'];
+            $members   = array_values(array_filter(array_map('intval', (array) ($data['members'] ?? []))));
             unset($data['attach_ids'], $data['members']);
             $data['user_id']  = uuid_to_uid($data['uid']);
-            $data['plan']     = is_array($data['plan']) ? array_filter($data['plan']) : [$data['plan']];
-            $data['finish']   = is_array($data['finish']) ? array_filter($data['finish']) : [$data['finish']];
+            // AI / MCP 等入口常不传 members；与 PC/移动端「默认汇报人」一致，回落直属上级
+            if ($members === []) {
+                $members = $this->defaultMemberIds((int) $data['user_id']);
+            }
+            $data['plan']     = is_array($data['plan']) ? array_filter($data['plan']) : explode("\n", str_replace(["\r\n", "\r"], "\n", $data['plan']));
+            $data['finish']   = is_array($data['finish']) ? array_filter($data['finish']) : explode("\n", str_replace(["\r\n", "\r"], "\n", $data['finish']));
             $res              = $this->dao->create($data);
             $data['daily_id'] = $res->daily_id;
 
             $this->handleMember($members, $res->daily_id);
             app()->get(AttachService::class)->saveRelation($attachIds, $data['uid'], $res->daily_id, AttachService::RELATION_TYPE_DAILY);
-            // 消息提醒
-            Task::deliver(new DailyReportRemind($data['entid'], $data['uid'], $res->daily_id, $data, true));
-            // 待办同步
-            Task::deliver(new DailyCreateTask($data['entid'], $data['uid'], $res->daily_id, $data));
+            // 事务提交后再投递，避免侧效失败回滚主数据，且非 Swoole 环境可本地兜底
+            $this->scheduleReportTask(new DailyReportRemind($data['entid'], $data['uid'], $res->daily_id, $data, true));
+            $this->scheduleReportTask(new DailyCreateTask($data['entid'], $data['uid'], $res->daily_id, $data));
 
             return $res;
         });
@@ -272,24 +288,24 @@ class ReportService extends BaseService implements ResourceServicesInterface
 
         return $this->transaction(function () use ($id, $daily, $data) {
             $timezone  = config('app.timezone');
-            $createdAt = strtotime((string) $daily->created_at);
-            switch ($daily->types) {
-                case 0:
-                    if ($createdAt < now()->startOfDay()->timezone($timezone)->timestamp || $createdAt > now()->endOfDay()->timezone($timezone)->timestamp) {
-                        throw $this->exception('您只能修改当天的汇报');
-                    }
-                    break;
-                case 1:
-                    if ($createdAt > now()->endOfWeek()->timezone($timezone)->timestamp || $createdAt < now()->startOfWeek()->timezone($timezone)->timestamp) {
-                        throw $this->exception('您只能修改本周的汇报');
-                    }
-                    break;
-                case 2:
-                    if ($createdAt > now()->endOfMonth()->timezone($timezone)->timestamp || $createdAt < now()->startOfMonth()->timezone($timezone)->timestamp) {
-                        throw $this->exception('您只能修改本月的汇报');
-                    }
-                    break;
-            }
+            $createdAt = datetime_timestamp((string) $daily->created_at);
+//            switch ($daily->types) {
+//                case 0:
+//                    if ($createdAt < now()->startOfDay()->timezone($timezone)->timestamp || $createdAt > now()->endOfDay()->timezone($timezone)->timestamp) {
+//                        throw $this->exception('您只能修改当天的汇报');
+//                    }
+//                    break;
+//                case 1:
+//                    if ($createdAt > now()->endOfWeek()->timezone($timezone)->timestamp || $createdAt < now()->startOfWeek()->timezone($timezone)->timestamp) {
+//                        throw $this->exception('您只能修改本周的汇报');
+//                    }
+//                    break;
+//                case 2:
+//                    if ($createdAt > now()->endOfMonth()->timezone($timezone)->timestamp || $createdAt < now()->startOfMonth()->timezone($timezone)->timestamp) {
+//                        throw $this->exception('您只能修改本月的汇报');
+//                    }
+//                    break;
+//            }
 
             $daily->finish    = array_filter($data['finish']);
             $daily->plan      = array_filter($data['plan']);
@@ -298,10 +314,8 @@ class ReportService extends BaseService implements ResourceServicesInterface
             $data['daily_id'] = $daily->daily_id;
             $this->handleMember($data['members'], $daily->daily_id);
             app()->get(AttachService::class)->saveRelation($data['attach_ids'], $daily->uid, $daily->daily_id, AttachService::RELATION_TYPE_DAILY);
-            // 消息提醒
-            Task::deliver(new DailyReportRemind($data['entid'], $data['uid'], $id, $data));
-            // 待办同步
-            Task::deliver(new DailyCreateTask($data['entid'], $data['uid'], $id, $data));
+            $this->scheduleReportTask(new DailyReportRemind($data['entid'], $data['uid'], $id, $data));
+            $this->scheduleReportTask(new DailyCreateTask($data['entid'], $data['uid'], $id, $data));
             return $res;
         });
     }
@@ -321,13 +335,13 @@ class ReportService extends BaseService implements ResourceServicesInterface
             throw $this->exception('未找到删除记录');
         }
         $tz   = config('app.timezone');
-        $time = strtotime($info['created_at']);
+        $time = datetime_timestamp($info['created_at']);
         if ($time < now()->startOfDay()->timezone($tz)->timestamp || $time > now()->endOfDay()->timezone($tz)->timestamp) {
             throw $this->exception('您只能删除当天提交的汇报');
         }
 
         if ($this->dao->delete($id, $key)) {
-            Task::deliver(new StatusChangeTask(DailyEnum::LINK_NOTICE, DailyEnum::DAILY_DELETE, $info['entid'], $id));
+            $this->scheduleReportTask(new StatusChangeTask(DailyEnum::LINK_NOTICE, DailyEnum::DAILY_DELETE, $info['entid'], $id));
             return true;
         }
         return false;
@@ -350,7 +364,7 @@ class ReportService extends BaseService implements ResourceServicesInterface
                 $ids = [];
             }
         } else {
-            $ids = app()->get(RolesService::class)->getDataUids($uid);
+            $ids = app()->get(ModulePermissionService::class)->getAccessibleUserIds($uid, ModuleEnum::REPORT);
         }
         return app()->get(AdminService::class)->select(['id' => $ids])?->toArray();
     }
@@ -361,55 +375,40 @@ class ReportService extends BaseService implements ResourceServicesInterface
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
-    public function timer(int $entid, int $type, int $page, int $limit)
+    public function timer(int $page, int $limit, int $entId = 1, int $type = 0)
     {
-        $user = app()->get(AdminInfoService::class)->getEntUserIdsCache($entid, $page, $limit);
+        $user = app()->get(AdminInfoService::class)->getEntUserIdsCache($entId, $page, $limit);
         if (! $user) {
             return;
         }
-        $where         = ['entid' => $entid, 'user_ids' => array_column($user, 'id'), 'types' => $type];
         $where['time'] = match ($type) {
             1       => 'week',
             2       => 'month',
             default => 'today',
         };
+        $where     = ['entid' => $entId, 'user_ids' => array_column($user, 'id'), 'types' => $type];
         $unUserIds = $this->dao->column($where, 'user_id');
         // 比较出没有提交的用户
         $diffUserId = array_diff(array_column($user, 'id'), $unUserIds);
         if (! $diffUserId) {
             return;
         }
-        $userList      = app()->get(AdminService::class)->select(['id' => $diffUserId])?->toArray();
-        $batchData     = [];
-        $remindService = app()->get(UserRemindLogService::class);
-        $remindList    = $remindService->batchUserRemindList([
-            'entid'       => $entid,
+        $remindService = app(UserRemindLogService::class);
+        $diffUserId    = collect($remindService->column([
+            'entid'       => $entId,
             'year'        => now()->year,
             'month'       => now()->month,
             'day'         => now()->day,
             'remind_type' => MessageType::DAILY_REMIND_TYPE,
             'user_id'     => $diffUserId,
-        ]);
-
-        foreach ($userList as $item) {
-            if (isset($remindList[$item['id']])) {
-                continue;
-            }
-            $batchData[] = ['to_uid' => $item['id'], 'phone' => $item['phone']];
-        }
-        $task = new MessageSendTask(
-            entid: $entid,
-            i: $entid,
-            type: MessageType::DAILY_REMIND_TYPE,
-            bathTo: $batchData
-        );
-        Task::deliver($task);
+        ], 'user_id') ?? [])->unique()->diff($diffUserId)->all();
+        event(new SystemMessageEvent(type: NoticeEnum::DAILY_REMIND_TYPE, receiverIds: $diffUserId));
         $remind = [];
-        foreach ($batchData as $item) {
+        foreach ($diffUserId as $uid) {
             $remind[] = [
                 'remind_type' => MessageType::DAILY_REMIND_TYPE,
-                'user_id'     => $item['to_uid'],
-                'entid'       => $entid,
+                'user_id'     => $uid,
+                'entid'       => $entId,
                 'year'        => now()->year,
                 'day'         => now()->day,
                 'month'       => now()->month,
@@ -418,7 +417,6 @@ class ReportService extends BaseService implements ResourceServicesInterface
                 'created_at'  => date('Y-m-d H:i:s'),
             ];
         }
-
         if ($remind) {
             $remindService->insert($remind);
         }
@@ -468,20 +466,21 @@ class ReportService extends BaseService implements ResourceServicesInterface
         $types          = $type == 1 ? 0 : (! in_array($types, [0, 1, 2, 3]) ? 0 : $types);
         $arrangeService = app()->get(AttendanceArrangeService::class);
 
-        $list       = [];
-        $format     = 'Y/m/d H:i:s';
-        $uid        = uuid_to_uid($uuid);
-        $tz         = config('app.timezone');
-        $now        = Carbon::now($tz);
-        $originTime = $this->parseTime($time, $types);
-        $origin     = explode('-', $originTime);
+        $list        = [];
+        $format      = 'Y/m/d H:i:s';
+        $uid         = uuid_to_uid($uuid);
+        $tz          = config('app.timezone');
+        $now         = Carbon::now($tz);
+        $originTime  = $this->parseTime($time, $types);
+        $origin      = explode('-', $originTime);
 
         $userNum = 1;
         if ($type == 1) {
             $where = ['entid' => 1, 'types' => $types, 'user_id' => $uid];
         } else {
+            $userIds = $this->validReportUserIds($userIds);
             $userNum = count($userIds);
-            $where   = ['entid' => 1, 'types' => $types, 'user_ids' => $userIds];
+            $where   = ['entid' => 1, 'types' => $types, 'user_ids' => $userIds ?: [-1]];
         }
         switch ($types) {
             case 2:// 月报
@@ -526,39 +525,27 @@ class ReportService extends BaseService implements ResourceServicesInterface
                 }
                 break;
             default:// 日报
-                $timeZone = CarbonPeriod::create(Carbon::parse($origin[0], $tz)->toDateString(), Carbon::parse($origin[1], $tz)->toDateString())->toArray();
+                $startObj       = Carbon::parse($origin[0], $tz)->startOfDay();
+                $endObj         = Carbon::parse($origin[1], $tz)->endOfDay();
+                $timeZone       = CarbonPeriod::create($startObj->toDateString(), $endObj->toDateString())->toArray();
+                $submitCountMap = $this->dao->getDailySubmitUserCount($where + ['time' => $originTime]);
+                $restMap        = $arrangeService->allUsersRestByDate($type == 1 ? [$uid] : $where['user_ids'], $startObj, $endObj);
                 foreach ($timeZone as $day) {
-                    if ($day->startOfDay()->gt($now->toDateTimeString())) {
+                    $dayObj = Carbon::parse($day, $tz);
+                    if ($dayObj->startOfDay()->gt($now->toDateTimeString())) {
                         continue;
                     }
 
-                    $date = $day->startOfDay()->toDateString();
-
-                    // rest day no prompt
-                    $isRest = false;
-                    if ($type == 1) {
-                        $isRest = $arrangeService->dayIsRest($uid, $date);
-                    } else {
-                        $restNum = 0;
-                        foreach ($where['user_ids'] as $userId) {
-                            if ($arrangeService->dayIsRest((int) $userId, $date)) {
-                                ++$restNum;
-                            }
-                        }
-
-                        if ($restNum == $userNum) {
-                            $isRest = true;
-                        }
-                    }
+                    $date   = $dayObj->toDateString();
+                    $isRest = $restMap[$date] ?? false;
 
                     if ($isRest) {
-                        $list[] = ['time' => $day->toDateString(), 'no_submit' => 0];
+                        $list[] = ['time' => $date, 'no_submit' => 0];
                         continue;
                     }
 
-                    $where['time'] = $day->startOfDay()->format($format) . '-' . $day->endOfDay()->format($format);
-                    $result        = $this->dao->search($where)->groupBy('user_id')->get(DB::raw('distinct(user_id)'))->count() == $userNum;
-                    $list[]        = ['time' => $day->toDateString(), 'no_submit' => $result ? 0 : 1];
+                    $result = ($submitCountMap[$date] ?? 0) == $userNum;
+                    $list[] = ['time' => $date, 'no_submit' => $result ? 0 : 1];
                 }
         }
         return $list;
@@ -571,7 +558,11 @@ class ReportService extends BaseService implements ResourceServicesInterface
      */
     public function statistics(array $where): array
     {
-        $data           = $submit = [];
+        $data              = $submit = [];
+        $where['user_ids'] = $this->validReportUserIds($where['user_ids']);
+        if (! $where['user_ids']) {
+            return ['submit' => 0, 'no_submit' => 0, 'total' => 0];
+        }
         $where['entid'] = 1;
         $where['time']  = $this->parseTime($where['time'], $where['types']);
         $data['submit'] = $this->dao->search($where)->select(['user_id'])->groupBy('user_id')->get()->each(function ($item) use (&$submit) {
@@ -651,6 +642,10 @@ class ReportService extends BaseService implements ResourceServicesInterface
      */
     public function getSubmitList(array $where): array
     {
+        $where['user_ids'] = $this->validReportUserIds($where['user_ids']);
+        if (! $where['user_ids']) {
+            return $this->listData([]);
+        }
         $where['entid'] = 1;
         $where['time']  = $this->parseTime($where['time'], $where['types']);
         $field          = ['daily_id', 'uid', 'user_id', 'types', 'created_at'];
@@ -701,6 +696,10 @@ class ReportService extends BaseService implements ResourceServicesInterface
      */
     public function getNoSubmitUserList(array $where): array
     {
+        $where['user_ids'] = $this->validReportUserIds($where['user_ids']);
+        if (! $where['user_ids']) {
+            return $this->listData([]);
+        }
         $submit         = [];
         $where['entid'] = 1;
         $where['time']  = $this->parseTime($where['time'], $where['types']);
@@ -708,8 +707,13 @@ class ReportService extends BaseService implements ResourceServicesInterface
             $submit[] = $item['user_id'];
         });
 
+        $noSubmitUserIds = array_values(array_diff($where['user_ids'], $submit));
+        if (! $noSubmitUserIds) {
+            return $this->listData([]);
+        }
+
         $field     = ['id', 'name', 'avatar'];
-        $userWhere = ['id' => array_diff($where['user_ids'], $submit)];
+        $userWhere = ['id' => $noSubmitUserIds];
         $users     = app()->get(AdminService::class)->getList($userWhere, $field, 'created_at', ['frame']);
         foreach ($users['list'] as &$item) {
             $item['types']      = $where['types'];
@@ -728,8 +732,11 @@ class ReportService extends BaseService implements ResourceServicesInterface
     {
         return match ($frameId) {
             -1      => app()->get(FrameService::class)->getLevelSub(uuid_to_uid($uuid, $entId)),
-            0       => app()->get(RolesService::class)->getDataUids(uuid_to_uid($uuid, $entId)),
-            default => app()->get(FrameService::class)->scopeUser($frameId)
+            0       => app()->get(ModulePermissionService::class)->getAccessibleUserIds(uuid_to_uid($uuid, $entId), ModuleEnum::REPORT),
+            default => app()->get(FrameAssistService::class)->column([
+                'frame_id'   => app()->get(FrameService::class)->scopeFrames((int) $frameId),
+                'is_mastart' => 1,
+            ], 'user_id'),
         };
     }
 
@@ -757,6 +764,73 @@ class ReportService extends BaseService implements ResourceServicesInterface
             'plan'   => $origin === CommonEnum::ORIGIN_WEB ? $scheduleService->getNextWorkDayPlan($uuid) : [],
             'finish' => ! $this->dao->exists($where) ? $scheduleService->dailyCompleteRecord($uuid, $type) : [],
         ];
+    }
+
+    /**
+     * 默认汇报人用户库 ID 列表（直属上级），与 PC/移动端「默认汇报人」接口一致.
+     *
+     * @return array<int, int>
+     * @throws BindingResolutionException
+     */
+    public function defaultMemberIds(int $uid): array
+    {
+        if ($uid <= 0) {
+            return [];
+        }
+        $info = app()->get(FrameService::class)->getLevelSuperUser($uid);
+        $id   = (int) ($info['id'] ?? 0);
+
+        return $id > 0 ? [$id] : [];
+    }
+
+    /**
+     * 事务提交后再投递汇报侧效任务（无活跃事务时立即执行）.
+     */
+    private function scheduleReportTask(Task $task): void
+    {
+        DB::afterCommit(function () use ($task) {
+            $this->dispatchReportTask($task);
+        });
+    }
+
+    /**
+     * LaravelS 下异步投递；非 Swoole（artisan/tinker）同步 handle，失败只记日志不回滚主流程.
+     */
+    private function dispatchReportTask(Task $task): void
+    {
+        if ($this->canUseSwooleTask()) {
+            Task::deliver($task);
+
+            return;
+        }
+
+        try {
+            $task->handle();
+        } catch (\Throwable $e) {
+            Log::warning('汇报侧效任务在非 Swoole 环境执行失败，已跳过', [
+                'task'    => $task::class,
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * 是否具备真实 Swoole Worker 投递能力.
+     */
+    private function canUseSwooleTask(): bool
+    {
+        try {
+            if (! app()->bound('swoole')) {
+                return false;
+            }
+            $swoole = app('swoole');
+
+            return is_object($swoole)
+                && method_exists($swoole, 'task')
+                && ($swoole instanceof \Swoole\Server || property_exists($swoole, 'worker_id'));
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**
@@ -854,6 +928,21 @@ class ReportService extends BaseService implements ResourceServicesInterface
         return $item;
     }
 
+    private function validReportUserIds(array $userIds): array
+    {
+        $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds))));
+        if (! $userIds) {
+            return [];
+        }
+
+        $validIds = app()->get(AdminService::class)->joinSearch([
+            'id'    => $userIds,
+            'types' => [1, 2, 3],
+        ])->pluck('admin.id')->map(fn ($id) => (int) $id)->all();
+
+        return array_values(array_intersect($userIds, $validIds));
+    }
+
     /**
      * 按周期获取已提交次数及未提交次数.
      * @return int[]
@@ -916,7 +1005,7 @@ class ReportService extends BaseService implements ResourceServicesInterface
             $adminWhere['id'] = $where['user_id'];
         }
         $adminWhere['name_like'] = $where['name_like'];
-        $types                   = (int) $where['types'];
+        $types                   = is_array($where['types']) ? (int) $where['types'][0] : $where['types'];
         $tz                      = config('app.timezone');
         [$startTime, $endTime]   = explode('-', $where['time']);
         if (! $startTime || ! $endTime) {
@@ -936,13 +1025,13 @@ class ReportService extends BaseService implements ResourceServicesInterface
                 $sumNum = Carbon::parse($startTime, $tz)->diffInDays(Carbon::parse($endTime, $tz)->addDays());
                 break;
         }
-        $typeName = DailyEnum::getDailyTypeName($types);
+        $typeName = DailyEnum::getDailyTypeName((int)$types);
         $list     = app()->get(AdminService::class)->select($adminWhere, ['id', 'name'], ['frame' => fn ($query) => $query->select(['frame.id', 'frame.name'])])?->toArray();
-        $data     = $this->dao->getGroupSearch(['types' => $types, 'time' => $where['time']], $field)->get()->toArray();
         foreach ($list as &$item) {
             $item['frame_name'] = $item['frame']['name'] ?? '';
             $item['type_name']  = $typeName;
             $submitNum          = 0;
+            $data               = $this->dao->getGroupSearch(['types' => $types, 'user_id' => $item['id'], 'time' => $where['time']], $field)->get()->toArray();
             array_walk_recursive($data, function ($value, $key) use (&$submitNum, $item) {
                 if ($value === $item['id'] && $key === 'user_id') {
                     ++$submitNum;

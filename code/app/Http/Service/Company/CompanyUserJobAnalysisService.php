@@ -17,10 +17,10 @@ namespace App\Http\Service\Company;
 
 use App\Http\Dao\Company\CompanyUserJobAnalysisDao;
 use App\Http\Service\Admin\AdminService;
-use App\Http\Service\BaseService;
 use App\Http\Service\Frame\FrameService;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\traits\service\ResourceServiceTrait;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -95,17 +95,17 @@ class CompanyUserJobAnalysisService extends BaseService implements ResourceServi
      */
     public function getInfoByUid(int $uid, int $entId): array
     {
-        return $this->get(['entid' => $entId, 'uid' => $uid], ['uid', 'data', 'created_at', 'updated_at'])?->toArray();
+        return toArray($this->get(['entid' => $entId, 'uid' => $uid], ['uid', 'data', 'created_at', 'updated_at']));
     }
 
     public function resourceCreate(array $other = []): array
     {
-        // TODO: Implement resourceCreate() method.
+        return [];
     }
 
     public function resourceEdit(int $id, array $other = []): array
     {
-        // TODO: Implement resourceEdit() method.
+        return [];
     }
 
     /**

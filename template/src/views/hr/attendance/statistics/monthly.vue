@@ -4,12 +4,12 @@
       <!-- 搜索条件 -->
       <formBox :type="`month`" @confirmData="confirmData" :total="total"></formBox>
       <!-- 表格 -->
-      <el-table class="mt10" v-loading="loading" :data="tableData" style="width: 100%" :height="tableHeight">
-        <el-table-column prop="card.name" label="姓名"> </el-table-column>
+      <el-table class="mt10" v-loading="loading" :data="tableData" style="width: 100%" :height="TABLE_HEIGHT">
+        <el-table-column prop="card.name" label="姓名" fixed="left" min-width="120px"> </el-table-column>
         <el-table-column prop="frame.name" label="部门"> </el-table-column>
         <el-table-column label="出勤统计">
           <el-table-column prop="group" label="考勤组名称" width="120">
-            <template slot-scope="scope">
+            <template #default="scope">
               {{ scope.row.group || '--' }}
             </template>
           </el-table-column>
@@ -23,21 +23,25 @@
           <el-table-column prop="early_card" label="下班缺卡" width="120"> </el-table-column>
           <el-table-column prop="absenteeism" label="旷工天数" width="120"> </el-table-column>
         </el-table-column>
-        <el-table-column prop="overtime_hours" label="加班（小时）" width="130"> </el-table-column>
+        <el-table-column prop="overtime_hours" label="加班（小时）" width="130">
+            <template #default="{ row }">
+            <span :style="{ color: row.overtime_hours != 0.00 ? 'red' : '' }">{{ row.overtime_hours }}</span>
+            </template>  
+        </el-table-column>
         <el-table-column prop="trip_hours" label="出差（小时）" width="130"> </el-table-column>
         <el-table-column prop="out_hours" label="外出（小时）" width="130"> </el-table-column>
         <el-table-column label="请假">
-          <div v-for="(item, index) in holiday_type" :key="index">
+          <template v-for="(item, index) in holiday_type" :key="index">
             <el-table-column
               prop="holiday_data"
               :label="item.name + (item.duration_type === 0 ? ' (天)' : ' (小时)')"
               width="120"
             >
-              <template slot-scope="scope">
+              <template #default="scope">
                 {{ scope.row.holiday_data[index].duration }}
               </template>
             </el-table-column>
-          </div>
+          </template>
         </el-table-column>
       </el-table>
       <div class="page-fixed">
@@ -58,17 +62,21 @@
 </template>
 
 <script>
-import { monthlyStatisticsApi } from '@/api/config'
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { monthlyStatisticsApi } from '@/api/config.ts'
 
 export default {
   name: 'CrmebOaEntDaily',
   components: {
-    formBox: () => import('./components/formBox'),
-    exportExcel: () => import('@/components/common/exportExcel')
+    formBox: defineAsyncComponent(() => import('./components/formBox')),
+    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel'))
   },
 
   data() {
     return {
+      TABLE_HEIGHT,
       total: 0,
       saveName: '上下班打卡_月报_统计日期范围.xlsx',
       exportData: {
@@ -131,7 +139,7 @@ export default {
     },
     async exportFn() {
       let aoaData = [
-        [`统计时间：${this.where.time} 制表时间：${this.$moment(new Date()).format('YYYY/MM/DD')}`],
+        [`统计时间：${this.where.time} 制表时间：${dayjs(new Date()).format('YYYY/MM/DD')}`],
         [
           '姓名',
           '部门',
@@ -199,14 +207,14 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/deep/ .el-table thead.is-group th {
+:deep(.el-table thead.is-group th) {
   background-color: rgba(247, 251, 255, 1);
-  border-color: #fff;
+  border-color: #f5f5f5;
 }
-/deep/ .el-table {
+:deep(.el-table) {
   border: none;
 }
-/deep/ .el-table td {
+:deep(.el-table td) {
   border: none;
 }
 </style>

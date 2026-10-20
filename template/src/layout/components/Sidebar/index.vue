@@ -1,41 +1,41 @@
 <template>
   <!--  <div class="sidebar-container" v-if="isShowMenu"></div>-->
-  <div class="nav-bar" v-if="isShowMenu && menuList[sidebarParentCur] && menuList[sidebarParentCur].children" :style="{ width: !isCollapse ? '156px !important' : '64px !important' }">
+    
+  <div class="nav-bar" v-if="isShowMenu && currentMenu && currentMenu.children" :style="{ width: !isCollapse ? '204px !important' : '76px !important' }">
     <div v-if="isShow" class="child-bar" :class="!isCollapse ? 'plr12' : ''">
-      <div
+      <!-- <div
         class="over-text1"
-        v-if="menuList[sidebarParentCur.length > 13 ? sidebarParentCur.slice(13) : sidebarParentCur]"
+        v-if="currentMenu"
         :class="!isCollapse ? 'title-box-open' : 'title-box-close'"
       >
-        {{ menuList[sidebarParentCur.length > 13 ? sidebarParentCur.slice(13) : sidebarParentCur].menu_name }}
-      </div>
-      <el-scrollbar style="height: 100%;" wrap-class="scrollbar-wrapper">
-        <!-- <div class="scroll-box"> -->
+        {{ currentMenu.menu_name }}
+      </div> -->
+      <!-- <el-scrollbar style="height: 100%;" wrap-class="scrollbar-wrapper"> -->
+        <div class="scroll-box">
+    
         <el-menu
           :default-active="activeMenu"
           :collapse="isCollapse"
           :background-color="variables.menuBg"
           :text-color="variables.menuText"
-          :unique-opened="true"
+          :unique-opened="false"
           :active-text-color="variables.menuActiveText"
           :collapse-transition="false"
-          :router="true"
+          :router="false"
           mode="vertical"
-          @select="selectMenu"
         >
-          <template v-if="menuList[sidebarParentCur.length > 13 ? sidebarParentCur.slice(13) : sidebarParentCur]">
+          <template v-if="currentMenu">
+            
             <sidebar-item
-              v-for="route in menuList[sidebarParentCur.length > 13 ? sidebarParentCur.slice(13) : sidebarParentCur]
-                .children"
+              v-for="route in currentMenu.children"
               :key="'sidebar' + route.id"
               :item="route"
-              :base-path="includeRouteOrNot(route.menu_path)"
-              @click.native="routerClick(route)"
+              :base-path="route.menu_path"
             />
           </template>
         </el-menu>
-        <!-- </div> -->
-      </el-scrollbar>
+        </div>
+      <!-- </el-scrollbar> -->
     </div>
     <div class="nav-open" @click="clickOutside">
       <i class="el-icon-arrow-left" :class="isCollapse ? 'active' : ''"></i>
@@ -44,36 +44,28 @@
 </template>
 
 <script>
-import { mapGetters, mapMutations } from 'vuex'
-import variables from '@/styles/variables.scss'
+import { defineAsyncComponent } from 'vue'
+import { mapActions, mapState } from 'pinia'
+import { useAppStore } from '@/stores/app.ts'
+import { useUserStore } from '@/stores/user.ts'
+import variables from '@/styles/variables.module.scss'
+import { shouldShowSubSidebar } from '@/layout/utils/menu.ts'
+
+// 与 layout/mixin/ResizeHandler 保持一致
+const SIDEBAR_RESPONSIVE_WIDTH = 992
+
 export default {
-  components: { SidebarItem: () => import('./SidebarItem'), Logo: () => import('./Logo') },
+  components: { SidebarItem: defineAsyncComponent(() => import('./SidebarItem')), Logo: defineAsyncComponent(() => import('./Logo')) },
   data() {
     return {
-      parentCur: 0,
-      childcur: 0,
       isShow: false,
-      activePath: '',
-      menuName: ''
+      menuName: '',
+      windowWidth: document.documentElement.clientWidth
     }
   },
   computed: {
-    ...mapGetters([
-      'permission_routes',
-      'sidebar',
-      'menuList',
-      'sidebarType',
-      'parentMenuId',
-      'defaultOpen',
-      'isClickTab',
-      'menuStatus'
-    ]),
-    sidebarParentCur: {
-      get() {
-        return this.$store.state.app.sidebarParentCur
-      },
-      set() {}
-    },
+    ...mapState(useAppStore, ['sidebar', 'isClickTab', 'sidebarParentCur']),
+    ...mapState(useUserStore, ['menuList']),
     activeMenu() {
       const route = this.$route
       const { meta, path } = route
@@ -81,154 +73,134 @@ export default {
       if (meta.activeMenu) {
         return meta.activeMenu
       }
-      return path
+      return this.matchVisibleMenuPath(path)
     },
-    showLogo() {
-      return this.$store.state.settings.sidebarLogo
+    currentMenuIndex() {
+      const index = this.sidebarParentCur
+      if (typeof index === 'string' && index.length > 13) {
+        return index.slice(13)
+      }
+      return index
+    },
+    currentMenu() {
+      return this.menuList && this.menuList[this.currentMenuIndex]
     },
     isShowMenu() {
-      let index = this.sidebarParentCur
-      if (index.length > 13) {
-        const index_ = JSON.stringify(index)
-        const indexClone = JSON.parse(index_)
-        index = indexClone.slice(13)
-      }
-      // 二级菜单只有一个，那就用is_show==1来判断显示隐藏
-      if (this.menuList && this.menuList[index] && this.menuList[index].children && this.menuList[index].children.length > 1) {
-        return this.menuList[index].children.length > 0
-      } else {
-        if (this.menuList && this.menuList[index] && this.menuList[index].children && this.menuList[index].children[0].is_show === 0) {
-          return false
-        } else {
-          return true
-        }
-      }
+      return shouldShowSubSidebar(this.currentMenu)
     },
     variables() {
       return variables
     },
     isCollapse() {
-      return !this.sidebar.opened
-    },
-    includeRouteOrNot() {
-      return function (menuPath) {
-        const { path } = this.$route
-        if (this.activeMenu.startsWith(menuPath)) {
-          return path
-        }
-        return menuPath
+      // 窗口较小时强制收起二级侧边栏
+      if (this.windowWidth < SIDEBAR_RESPONSIVE_WIDTH) {
+        return true
       }
+      return !this.sidebar.opened
     }
   },
   watch: {
     sidebarParentCur: {
       handler(nVal, oVal) {
         let nVals = nVal
-        if (nVal.length > 13) {
+        if (typeof nVal === 'string' && nVal.length > 13) {
           nVals = nVal.slice(13)
         }
         this.isShow = true
         if (this.isClickTab) {
+          const currentMenu = this.menuList && this.menuList[nVals]
+          const children = Array.isArray(currentMenu && currentMenu.children) ? currentMenu.children : []
+          const firstChild = children[0]
           if (
-            this.menuList[nVals].children &&
-            this.menuList[nVals].children[0].children !== undefined &&
-            this.menuList[nVals].children[0].children.length
+            firstChild &&
+            firstChild.children !== undefined &&
+            firstChild.children.length
           ) {
-            this.$store.commit('app/SET_CLICK_TAB', false)
+            this.setClickTab(false)
             this.$router.push({
-              path: this.menuList[nVals].children[0].children[0].menu_path
+              path: firstChild.children[0].menu_path
             })
           } else {
-            this.$store.commit('app/SET_CLICK_TAB', false)
-            this.$router.push({
-              path:  this.menuList[nVals].children?this.menuList[nVals].children[0].menu_path:''
-            })
+            this.setClickTab(false)
+            const menuPath = firstChild ? firstChild.menu_path : ''
+            if (menuPath) {
+              this.$router.push({
+                path: menuPath
+              })
+            }
           }
         }
-        this.sidebarParentCur = nVals
       },
       deep: true
     }
   },
   created() {},
   mounted() {
+    this.syncSidebarOnResize()
+    window.addEventListener('resize', this.syncSidebarOnResize)
+
     this.$nextTick(() => {
       if (this.sidebarParentCur >= 0) this.isShow = true
-      this.menuList.forEach((nav, i) => {
-        if (nav.id === this.parentMenuId) {
-          this.parentCur = i
-        }
-      })
-
-      if (this.menuList[this.parentCur].children) {
-        this.$store.commit('app/SET_BARTYPE', true)
-      } else {
-        this.$store.commit('app/SET_BARTYPE', false)
-      }
     })
   },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.syncSidebarOnResize)
+  },
   methods: {
-    ...mapMutations('user', ['SET_MENU_LIST']),
-    // 父级导航点击
-    handelParentClick(item, index) {
-      this.parentCur = index
-      this.$store.commit('app/SETPID', item.id)
-      const childUrl = ''
-      let chiidLink = ''
-      if (item.children) {
-        if (item.children[0].children) {
-          var recursiveFunction = function () {
-            const getStr = function (list) {
-              list.children.forEach(function (row, index) {
-                if (row.children) {
-                  getStr(row)
-                } else {
-                  if (index == 0) {
-                    return (chiidLink = row.menu_path)
-                  }
-                }
-              })
-            }
-            getStr(item.children[0])
-          }
-          recursiveFunction()
-        } else {
-          chiidLink = item.children[0].menu_path
+    ...mapActions(useAppStore, ['setClickTab', 'openSideBar', 'closeSideBar']),
+    // 收集当前一级菜单下所有可见的叶子菜单路径
+    collectVisiblePaths(menus, result = []) {
+      const list = Array.isArray(menus) ? menus : []
+      list.forEach((menu) => {
+        const children = Array.isArray(menu.children) ? menu.children : []
+        if (children.length) {
+          this.collectVisiblePaths(children, result)
+        } else if (menu.is_show !== 0 && menu.menu_path) {
+          result.push(menu.menu_path)
         }
+      })
+      return result
+    },
+    // 把当前路由映射成"可见菜单的路径"，用于 el-menu 的 default-active：
+    // 1) 新建/编辑等隐藏子路由（如 xxx/form）归到它所属的可见菜单上，菜单保持选中且指向不变；
+    // 2) 完全命不中时，回退到同级列表页，避免左侧菜单丢失选中态
+    matchVisibleMenuPath(path) {
+      const visiblePaths = this.collectVisiblePaths(this.currentMenu && this.currentMenu.children)
+      if (!visiblePaths.length) {
+        return path
+      }
+      // 命中多个前缀时取最长的那个，避免 a/index 与 a/index/detail 这类嵌套菜单选错
+      const matched = visiblePaths
+        .filter((menuPath) => path === menuPath || path.startsWith(menuPath + '/'))
+        .sort((a, b) => b.length - a.length)[0]
+      if (matched) {
+        return matched
+      }
 
-        this.childcur = 0
-        this.$router.push({
-          path: chiidLink
-        })
-        this.$store.commit('app/SET_BARTYPE', true)
-      } else {
-        this.$router.push({
-          path: item.menu_path
-        })
-        this.$store.commit('app/SET_BARTYPE', false)
+      const parentOf = (menuPath) => menuPath.slice(0, menuPath.lastIndexOf('/'))
+      let base = path
+      while (base.lastIndexOf('/') > 0) {
+        base = parentOf(base)
+        // 仅回退到同一父路径下的兄弟菜单，避免误高亮其他模块
+        const siblings = visiblePaths.filter((menuPath) => parentOf(menuPath) === base)
+        if (siblings.length) {
+          return siblings.find((menuPath) => menuPath === base + '/index') || siblings[0]
+        }
       }
+      return path
     },
-    routerClick(item) {
-      if (item.children) {
-        item.children.forEach((el) => {
-          if (el.top_position && el.top_position.length > 0) {
-            if (this.activePath == el.menu_path) {
-              this.$store.commit('app/SETPID', el.pid)
-            }
-          }
-        })
-      } else {
-        this.$store.commit('app/SETPID', item.pid)
+    // 窗口缩小时自动收起二级侧边栏，同步主内容区布局
+    syncSidebarOnResize() {
+      this.windowWidth = document.documentElement.clientWidth
+      if (this.windowWidth < SIDEBAR_RESPONSIVE_WIDTH && this.sidebar.opened) {
+        this.closeSideBar(true)
       }
-    },
-    selectMenu(index) {
-      this.activePath = index
     },
     clickOutside() {
       if (this.isCollapse) {
-        this.$store.dispatch('app/openSideBar')
+        this.openSideBar()
       } else {
-        this.$store.dispatch('app/closeSideBar', { withoutAnimation: false })
+        this.closeSideBar(false)
       }
     }
   }
@@ -242,10 +214,21 @@ export default {
   height: 100%;
   overflow: hidden;
 
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0px;
+    width: 1px;
+    background: #eee;
+    pointer-events: none;
+  }
+
   .nav-open {
     width: 10px;
     height: 35px;
-    background: rgba(0, 0, 0, 0.08);
+    background: #F3F5F9;
     cursor: pointer;
     position: absolute;
     right: 0;
@@ -268,9 +251,12 @@ export default {
 }
 
 .scroll-box {
-  height: calc(100vh - 50px);
+  // 容器（.aside-wrapper）已按视口高度减去顶栏，这里跟随容器即可，不再用 100vh 另起基准
+  height: 100%;
   overflow-y: auto;
   padding-bottom: 20px;
+   scrollbar-width: none; /* firefox */
+  -ms-overflow-style: none; /* IE 10+ */
 }
 
 .scroll-box::-webkit-scrollbar {
@@ -306,62 +292,62 @@ export default {
       margin-bottom: 5px;
       font-size: 18px;
     }
-    &.on {
-      background: #1890ff;
-    }
+    // &.on {
+    //   background: #1890ff;
+    // }
   }
 }
-/deep/ .el-menu--popup {
+:deep(.el-menu--popup) {
   min-width: 114px;
 }
 .child-bar {
   width: 100%;
   height: 100%;
-  color: #000;
-  &.plr12 {
-    // padding: 0 12px;
-  }
-  font-size: 13px;
-  /deep/ .el-menu {
+  padding: 0 10px;
+  
+
+  :deep(.el-menu) {
     border-right: none;
   }
-  /deep/ .el-menu-item {
-    font-size: 14px !important;
+  :deep(.el-menu-item) {
+    font-size: 13px !important;
     display: flex;
     align-items: center;
+    color: #303133 !important;
   }
-  /deep/ .el-scrollbar__wrap {
+  // 选中态统一由 el-menu 的 default-active 驱动（新建页等隐藏路由下不存在 router-link-exact-active），
+  // 这里补齐选中态文字色，底色见 styles/sidebar.scss
+  :deep(.el-menu-item.is-active) {
+    color: #1890ff !important;
+  }
+  :deep(.el-scrollbar__wrap) {
     overflow-x: hidden;
   }
-  /deep/ .router-link-exact-active.router-link-active li {
-    background-color: #f1f9ff !important;
-    color: #1890ff !important;
-    border-radius: 4px;
+  :deep(.router-link-exact-active) {
+    margin-bottom: 1px;
   }
-  /deep/ .router-link-exact-active.router-link-active li i {
-    color: #1890ff !important;
+
+  :deep(.el-sub-menu__title) {
+    font-size: 13px;
   }
-  /deep/ .el-submenu__title {
-    font-size: 14px;
-  }
-  /deep/ .el-menu .el-submenu .el-submenu__title > i {
+  :deep(.el-menu .el-sub-menu .el-sub-menu__title > i) {
     width: auto !important;
   }
 
-  /deep/ .el-submenu.is-active > .el-submenu__title {
-    color: #1890ff !important;
-  }
-  /deep/ .el-submenu.is-active > .el-submenu__title > i {
-    color: #1890ff !important;
-  }
+
 
   .title-box-open {
-    padding: 15px 15px 15px 23px;
-    font-size: 18px;
-    font-weight: 800;
+    height: 64px;
+    line-height: 64px;
+    padding-left: 10px;
+    // padding: 15px 15px 15px 23px;
+  font-family: PingFang SC, PingFang SC;
+font-weight: 600;
+font-size: 18px;
+color: #303133;
   }
   .title-box-close {
-    padding: 15px 15px 15px 20px;
+    padding: 15px 15px 15px 10px;
     font-size: 13px;
     font-weight: 800;
   }
@@ -372,7 +358,7 @@ export default {
       align-items: center;
       padding-left: 42px;
       height: 36px;
-      font-size: 14px;
+      font-size: 13px;
       cursor: pointer;
       &.on {
         background: #f0f2f5;
@@ -385,9 +371,9 @@ export default {
       color: #000 !important;
       font-size: 14px;
       padding-left: 42px;
-      &:hover {
-        color: #2d8cf0 !important;
-      }
+      // &:hover {
+      //   color: #2d8cf0 !important;
+      // }
       &.router-link-active {
         background: #f0f2f5;
       }
@@ -401,9 +387,6 @@ export default {
       font-size: 16px;
     }
   }
-}
-.small-txt {
-  font-size: 14px !important;
 }
 .icon {
   font-size: 18px;

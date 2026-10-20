@@ -34,12 +34,13 @@
       <div
         :class="entIndex == 'recently' ? 'activeText' : ''"
         class="name over-text m20"
+        style="margin-inline: 10px"
         @click="entClick('recently', 0, 'recently')"
       >
         <i class="icon iconfont iconzuijin" /> <span>最近打开</span>
       </div>
       <div class="box">
-        <el-scrollbar style="height: 100%">
+        <el-scrollbar style="height: 100%" class="reset-scroll-bar">
           <ul v-show="showEntBtn" class="cloudfile-left-list">
             <li
               v-for="(item, index) in entArray"
@@ -63,17 +64,19 @@
                 >
                   <div class="right-item-list">
                     <div class="right-item" @click.stop="addEdit(item)">
-                      {{ $store.state.user.userInfo.uid === item.uid ? $t('public.edit') : $t('public.check') }}
+                      {{ userStore.userInfo.uid === item.uid ? '编辑' : '查看' }}
                     </div>
                     <div
-                      v-if="$store.state.user.userInfo.uid === item.uid"
+                      v-if="userStore.userInfo.uid === item.uid"
                       class="right-item"
                       @click.stop="handleDelete(item)"
                     >
-                      {{ $t('public.delete') }}
+                      删除
                     </div>
                   </div>
-                  <div slot="reference" class="icon iconfont icongengduo right-icon" />
+                  <template #reference>
+                    <div class="icon iconfont icongengduo right-icon" />
+                  </template>
                 </el-popover>
               </div>
             </li>
@@ -92,14 +95,22 @@
 </template>
 
 <script>
-import { folderSpaceDeleteApi, folderSpaceListApi, folderTotalApi, folderMatchtListApi } from '@/api/cloud'
+import { mapStores } from 'pinia'
+import { useUserStore } from '@/stores/user.ts'
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { folderSpaceDeleteApi, folderSpaceListApi, folderTotalApi, folderMatchtListApi } from '@/api/cloud.ts'
 import debounce from '@form-create/utils/lib/debounce'
-import countTo from 'vue-count-to'
+import { CountTo as countTo } from 'vue3-count-to'
 export default {
+  emits: ['confirmData'],
   name: 'CloudfileLeft',
   components: {
-    spaceDialog: () => import('../spaceDialog'),
+    spaceDialog: defineAsyncComponent(() => import('../spaceDialog')),
     countTo
+  },
+  computed: {
+    ...mapStores(useUserStore)
   },
   data() {
     return {
@@ -117,22 +128,22 @@ export default {
       searchList: [],
       shareArray: [
         { name: '最近浏览', type: 1, icon: 'iconzuijin' } //最近访问
-        // { name: this.$t('file.collection'), type: 2, icon: 'iconshoucang1', number: 0 }, //收藏
-        // { name: this.$t('file.share'), type: 3, icon: 'iconchangyongwenjianjia', number: 0 } //分享
+        // { name: '我的收藏', type: 2, icon: 'iconshoucang1', number: 0 }, //收藏
+        // { name: '共享', type: 3, icon: 'iconchangyongwenjianjia', number: 0 } //分享
       ],
       commonlyArray: [
-        { name: this.$t('file.myfiles'), type: 4, icon: 'iconquanbuwendang' }, //我的文件
-        { name: this.$t('file.commonfolders'), type: 5, icon: 'iconchangyongwenjianjia' } //常用文件夹
+        { name: '我的文件', type: 4, icon: 'iconquanbuwendang' }, //我的文件
+        { name: '常用文件夹', type: 5, icon: 'iconchangyongwenjianjia' } //常用文件夹
       ],
-      recoveryArray: [{ name: this.$t('file.recyclebin'), type: 7, icon: 'iconhuishouzhan' }],
+      recoveryArray: [{ name: '回收站', type: 7, icon: 'iconhuishouzhan' }],
       fileSortData: [
-        { name: this.$t('file.filename'), id: 1 }, //文件名
-        { name: this.$t('file.creationtime'), id: 2 }, //创建时间
-        { name: this.$t('file.updatetime'), id: 3 }, //图片
-        { name: this.$t('file.filesize'), id: 4 }, //大小
-        { name: this.$t('file.deletetime'), id: 5 }, //删除时间
-        { name: this.$t('file.order'), id: 6 }, //升序
-        { name: this.$t('file.desc'), id: 7 } //降序
+        { name: '文件名称', id: 1 }, //文件名
+        { name: '创建时间', id: 2 }, //创建时间
+        { name: '更新时间', id: 3 }, //图片
+        { name: '文件大小', id: 4 }, //大小
+        { name: '删除时间', id: 5 }, //删除时间
+        { name: '升序', id: 6 }, //升序
+        { name: '降序', id: 7 } //降序
       ],
       shareIndex: 0,
       entIndex: 'recently',
@@ -143,34 +154,11 @@ export default {
       spaceId: 0
     }
   },
-  computed: {
-    lang: function () {
-      return this.$store.getters.lang
-    }
-  },
-  watch: {
-    lang() {
-      this.setOptions()
-    }
-  },
   mounted() {
     this.getEntList()
     this.confirmData('recently')
   },
   methods: {
-    setOptions() {
-      this.shareArray = [
-        { name: this.$t('file.lately'), type: 1, icon: 'iconzuijin' }, //最近访问
-        { name: this.$t('file.collection'), type: 2, icon: 'iconshoucang1', number: 0 }, //收藏
-        { name: this.$t('file.share'), type: 3, icon: 'iconchangyongwenjianjia', number: 0 } //分享
-      ]
-      this.commonlyArray = [
-        { name: this.$t('file.myfiles'), type: 4, icon: 'iconquanbuwendang' }, //我的文件
-        { name: this.$t('file.commonfolders'), type: 5, icon: 'iconchangyongwenjianjia' } //常用文件夹
-      ]
-      this.recoveryArray = [{ name: this.$t('file.recyclebin'), type: 7, icon: 'iconhuishouzhan' }] //回收站文件
-      this.getFolderTotal()
-    },
     // 展示常用文件夹和我的文件
     showCommonly() {
       this.showComBtn === false ? (this.showComBtn = true) : (this.showComBtn = false)
@@ -269,8 +257,8 @@ export default {
 
     addName() {
       this.fromData = {
-        title: this.$t('file.spacesettings'),
-        name: this.$t('setting.edit.selectmembers1'),
+        title: '空间设置',
+        name: '选择成员',
         edit: 1
       }
       this.$refs.spaceDialog.dialogVisible = true
@@ -286,8 +274,8 @@ export default {
     // 修改分类
     addEdit(item) {
       this.fromData = {
-        title: `空间${this.$store.state.user.userInfo.uid === item.uid ? '编辑' : '查看'}`,
-        name: this.$t('setting.edit.selectmembers1'),
+        title: `空间${this.userStore.userInfo.uid === item.uid ? '编辑' : '查看'}`,
+        name: '选择成员',
         edit: 2,
         data: item
       }
@@ -295,7 +283,7 @@ export default {
     },
     // 删除
     async handleDelete(item) {
-      await this.$modalSure(this.$t('file.placeholder02'))
+      await modalSure('你确定要删除该空间吗')
       await folderSpaceDeleteApi(item.id)
       this.getEntList()
     }
@@ -306,9 +294,6 @@ export default {
 <style lang="scss" scoped>
 .isAcitive {
   background-color: #f5f5f5;
-}
-/deep/.el-input--small .el-input__inner {
-  cursor: pointer;
 }
 .box {
   height: calc(100vh - 220px);
@@ -329,12 +314,25 @@ export default {
 
 .m20 {
   height: 40px;
-  line-height: 40px;
   padding-left: 20px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  .iconzuijin {
+    font-size: 17px;
+    line-height: 1;
+    color: #909399;
+    margin-right: 1px;
+  }
+
+  span {
+    line-height: 20px;
+  }
 }
 
-/deep/ .el-empty__image svg {
+:deep(.el-empty__image svg) {
   width: 50%;
 }
 .icontianjia {
@@ -348,24 +346,25 @@ export default {
   .p0 {
     padding: 0 !important;
   }
-  /deep/ .el-scrollbar__wrap {
+  :deep(.el-scrollbar__wrap) {
     overflow-x: hidden;
   }
   border-right: 1px solid #f5f5f5;
   padding-top: 20px;
   .cloudfile-left-list {
+    margin-top: 0;
     list-style: none;
     padding: 0;
     li {
       cursor: pointer;
       display: flex;
       align-items: center;
-      padding: 10px 15px;
-      padding-left: 20px;
+      padding: 0 15px 0 20px;
       font-weight: 400;
       font-size: 14px;
       color: #303133;
-      border-right: 2px solid #ffffff;
+      border-radius: 4px;
+      height: 40px;
       i {
         font-size: 20px;
         padding-right: 3px;
@@ -394,7 +393,6 @@ export default {
       font-family: PingFang SC, PingFang SC;
       font-weight: 500;
       font-size: 14px;
-      border-right: 2px solid #1890ff;
     }
   }
   .border-bottom {
@@ -406,7 +404,7 @@ export default {
     font-family: PingFang SC, PingFang SC;
     font-weight: 500;
     font-size: 14px;
-    border-right: 2px solid #1890ff;
+    border-radius: 4px;
   }
 
   .tab-name {
@@ -476,7 +474,7 @@ export default {
     background-color: #f5f7fa;
   }
 }
-/deep/.el-scrollbar__view {
+:deep(.el-scrollbar__view) {
   height: 100%;
   overflow-y: scroll;
   scrollbar-width: none; /* firefox */

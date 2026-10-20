@@ -9,21 +9,26 @@
     :validate-on-rule-change="false"
     :model="formDataModel"
     ref="renderForm"
-    @submit.native.prevent
+    @submit.prevent
   >
-    <template v-for="(widget, index) in widgetList">
+    <template v-for="(widget, index) in widgetList" :key="index">
       <template v-if="'container' === widget.category">
         <component
+          :ref="`container_${widget.type}`"
           :is="getContainerWidgetName(widget)"
           :widget="widget"
           :key="widget.id"
+          :designer="formJsonObj"
+          :previewState="previewState"
+          :form-model="formDataModel"
+          :formData="formData"
           :developData="developData"
           :parent-list="widgetList"
           :index-of-parent-list="index"
           :parent-widget="developData"
         >
           <!-- 递归传递插槽！！！ -->
-          <template v-for="slot in Object.keys($scopedSlots)" v-slot:[slot]="scope">
+          <template v-for="slot in Object.keys($slots)" :key="slot" v-slot:[slot]="scope">
             <slot :name="slot" v-bind="scope" />
           </template>
         </component>
@@ -33,7 +38,7 @@
           :is="getWidgetName(widget)"
           :field="widget"
           :form-model="formDataModel"
-          :designer="null"
+          :designer="formJsonObj"
           :parent-widget="developData"
           :developData="developData"
           :key="widget.id"
@@ -41,7 +46,7 @@
           :index-of-parent-list="index"
         >
           <!-- 递归传递插槽！！！ -->
-          <template v-for="(slot, index) in Object.keys($scopedSlots)" v-slot:[slot]="scope">
+          <template v-for="(slot, index) in Object.keys($slots)" :key="index" v-slot:[slot]="scope">
             <slot :name="slot" v-bind="scope" />
           </template>
         </component>
@@ -51,9 +56,12 @@
 </template>
 
 <script>
+import { watchActiveField } from '@/components/form-render/activeField.ts'
+import { toElSize } from '@/utils/el-size.ts'
 //import ElForm from 'element-ui/packages/form/src/form.vue'  /* 用于源码调试Element UI */
-import emitter from '@/utils/emitter'
+import { createEventHub, FORM_RENDER_HUB } from '@/utils/eventHub.ts'
 import './container-item/index'
+import '@/views/system/dashboard-design/charts/runtime'
 import FieldComponents from '@/components/form-designer/form-widget/field-widget/index'
 import {
   generateId,
@@ -64,13 +72,13 @@ import {
   insertGlobalFunctionsToHtml,
   traverseFieldWidgets,
   buildDefaultFormJson
-} from '@/utils/util'
-import i18n, { changeLocale } from '../../utils/i18n'
+} from '@/utils/formDesignerUtils'
+import i18n, { changeLocale } from '../../utils/i18n.ts'
 
 export default {
+  emits: ['formChange', 'appendButtonClick', 'buttonClick'],
   name: 'VFormRender',
-  componentName: 'VFormRender',
-  mixins: [emitter, i18n],
+  mixins: [i18n],
   components: {
     //ElForm,
     ...FieldComponents
@@ -108,6 +116,8 @@ export default {
   },
   provide() {
     return {
+      // 后代字段 / 容器通过它与渲染器互发事件（替代原 dispatch / broadcast）
+      [FORM_RENDER_HUB]: this.formHub,
       refList: this.widgetRefList,
       sfRefList: this.subFormRefList, //收集SubForm引用
       formConfig: this.formConfig,
@@ -124,9 +134,7 @@ export default {
   data() {
     return {
       formJsonObj: this.formJson,
-      formDataModel: {
-        //
-      },
+      formDataModel: {},
 
       widgetRefList: {},
       subFormRefList: {},
@@ -150,7 +158,6 @@ export default {
       if (!!this.formConfig && !!this.formConfig.labelPosition) {
         return this.formConfig.labelPosition
       }
-
       return 'left'
     },
 
@@ -164,10 +171,10 @@ export default {
 
     size() {
       if (!!this.formConfig && !!this.formConfig.size) {
-        return this.formConfig.size
+        return toElSize(this.formConfig.size)
       }
 
-      return 'medium'
+      return 'default'
     },
 
     customClass() {
@@ -177,15 +184,13 @@ export default {
       return this.getReadMode()
     }
   },
-  watch: {
-    '$store.state.user.activeField': {
-      deep: true, //深度监听设置为 true
-      handler: function (newVal, oldVal) {
-        this.fieldShowFn(newVal)
-      }
-    }
+
+  beforeCreate() {
+    // 非响应式实例属性：provide() 执行时已可用
+    this.formHub = createEventHub()
   },
   created() {
+    watchActiveField((field) => this.fieldShowFn(field))
     this.buildFormModel(!this.formJsonObj ? null : this.formJsonObj.widgetList)
     this.initFormObject()
   },
@@ -199,13 +204,10 @@ export default {
     },
     fieldShowFn(val) {
       this.widgetList.forEach((item) => {
-        if (item.id == val.id) {
-          item.isShow = true
-        } else {
-          item.isShow = false
-        }
+        item.isShow = item.id == val.id
       })
     },
+
     getReadMode() {
       return this.readModeFlag
     },
@@ -216,6 +218,7 @@ export default {
       }
       this.addFieldChangeEventHandler()
       this.addFieldValidateEventHandler()
+      this.addButtonClickEventHandler()
       this.registerFormToRefList()
       this.handleOnCreated()
     },
@@ -225,7 +228,6 @@ export default {
         //grid-item跟VueGridLayout全局注册组件重名，故特殊处理！！
         return 'vf-grid-item'
       }
-
       return widget.type + '-item'
     },
 
@@ -295,13 +297,13 @@ export default {
                 }
               })
 
-              this.$set(this.formDataModel, subFormName, [subFormDataRow]) //
+              this.formDataModel[subFormName] = [subFormDataRow] //
             } else {
-              this.$set(this.formDataModel, subFormName, []) //
+              this.formDataModel[subFormName] = [] //
             }
           } else {
             let initialValue = this.formData[subFormName]
-            this.$set(this.formDataModel, subFormName, deepClone(initialValue))
+            this.formDataModel[subFormName] = deepClone(initialValue)
           }
         } else if (wItem.type === 'grid-col' || wItem.type === 'table-cell') {
           if (!!wItem.widgetList && wItem.widgetList.length > 0) {
@@ -309,6 +311,13 @@ export default {
               this.buildDataFromWidget(childItem)
             })
           }
+        } else if (wItem.type === 'details') {
+          // 明细表
+          let tableObj = {}
+          wItem.widgetList.forEach((childItem) => {
+            let key = childItem.options.name
+            tableObj[key] = ''
+          })
         } else {
           //自定义容器组件
           if (!!wItem.widgetList && wItem.widgetList.length > 0) {
@@ -320,27 +329,35 @@ export default {
       } else if (!!wItem.formItemFlag) {
         if (!this.formData.hasOwnProperty(wItem.options.name)) {
           //this.formDataModel[wItem.options.name] = '' //这种写法不支持对象属性响应式更新，必须用$set方法！！
-          this.$set(this.formDataModel, wItem.options.name, wItem.options.defaultValue) //设置字段默认值
+          this.formDataModel[wItem.options.name] = wItem.options.defaultValue //设置字段默认值
         } else {
           let initialValue = this.formData[wItem.options.name]
-          this.$set(this.formDataModel, wItem.options.name, deepClone(initialValue))
+          this.formDataModel[wItem.options.name] = deepClone(initialValue)
         }
       }
     },
 
     addFieldChangeEventHandler() {
-      this.$off('fieldChange') //移除原有事件监听
-      this.$on('fieldChange', (fieldName, newValue, oldValue, subFormName, subFormRowIndex) => {
+      this.formHub.off('fieldChange') //移除原有事件监听
+      this.formHub.on('fieldChange', (fieldName, newValue, oldValue, subFormName, subFormRowIndex) => {
         this.handleFieldDataChange(fieldName, newValue, oldValue, subFormName, subFormRowIndex)
         this.$emit('formChange', fieldName, newValue, oldValue, this.formDataModel, subFormName, subFormRowIndex)
       })
     },
 
     addFieldValidateEventHandler() {
-      this.$off('fieldValidation') //移除原有事件监听
-      this.$on('fieldValidation', (fieldName) => {
+      this.formHub.off('fieldValidation') //移除原有事件监听
+      this.formHub.on('fieldValidation', (fieldName) => {
         this.$refs.renderForm.validateField(fieldName)
       })
+    },
+
+    // 按钮 / 输入框后缀按钮未配置自定义脚本时，把点击事件抛给使用方（Vue 2 时 dispatch 即目标组件的 $emit）
+    addButtonClickEventHandler() {
+      this.formHub.off('appendButtonClick')
+      this.formHub.on('appendButtonClick', (widget) => this.$emit('appendButtonClick', widget))
+      this.formHub.off('buttonClick')
+      this.formHub.on('buttonClick', (widget) => this.$emit('buttonClick', widget))
     },
 
     registerFormToRefList() {
@@ -493,9 +510,9 @@ export default {
           this.clearFormDataModel() //上行代码有问题，会导致表单校验失败，故保留原对象引用只清空对象属性！！
           this.buildFormModel(newFormJsonObj.widgetList)
 
-          this.$set(this.formJsonObj, 'formConfig', newFormJsonObj.formConfig)
+          this.formJsonObj.formConfig = newFormJsonObj.formConfig
           this._provided.formConfig = newFormJsonObj.formConfig //强制更新provide的formConfig对象
-          this.$set(this.formJsonObj, 'widgetList', newFormJsonObj.widgetList)
+          this.formJsonObj.widgetList = newFormJsonObj.widgetList
 
           this.insertCustomStyleAndScriptNode() /* 必须先插入表单全局函数，否则VForm内部引用全局函数会报错！！！ */
           this.$nextTick(() => {
@@ -519,10 +536,28 @@ export default {
       } else if (!!widgetNames && Array.isArray(widgetNames)) {
         eventParams = [...widgetNames]
       }
-      this.broadcast('FieldWidget', 'reloadOptionItems', [eventParams])
+      this.formHub.emit('field:reloadOptionItems', eventParams)
     },
 
-    getFormData(needValidation = true) {
+    async getone() {
+      for (const item of this.widgetList) {
+        if (item.category === 'container' && item.type === 'details') {
+          const formKey = `container_${item.type}`
+          const formRef = this.$refs[formKey]?.[0]
+
+          if (formRef && typeof formRef.handlDetailsHideFn === 'function') {
+            const res = await formRef.handlDetailsHideFn(1)
+
+            return res
+          }
+        }
+      }
+
+      return true
+    },
+
+    // 提交表单
+    async getFormData(needValidation = true) {
       let callback = function nullFunc() {}
       let promise = new window.Promise(function (resolve, reject) {
         callback = function (formData, error) {
@@ -531,6 +566,11 @@ export default {
       })
       if (!needValidation) {
         callback(this.formDataModel)
+        return promise
+      }
+      // 明细表校验
+      const result = await this.getone()
+      if (!result) {
         return promise
       }
 
@@ -554,9 +594,9 @@ export default {
       })
 
       // 通知SubForm组件：表单数据更新事件！！
-      this.broadcast('ContainerItem', 'setFormData', this.formDataModel)
+      this.formHub.emit('container:setFormData', this.formDataModel)
       // 通知FieldWidget组件：表单数据更新事件！！
-      this.broadcast('FieldWidget', 'setFormData', this.formDataModel)
+      this.formHub.emit('field:setFormData', this.formDataModel)
     },
 
     getFieldValue(fieldName) {
@@ -784,10 +824,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.el-form ::v-deep .el-row {
+.el-form :deep(.el-row) {
   padding: 8px;
 }
-/deep/ .el-form-item__error {
+:deep(.el-form-item__error) {
   position: relative;
 }
 </style>

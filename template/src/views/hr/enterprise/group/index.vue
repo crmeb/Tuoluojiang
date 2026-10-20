@@ -14,22 +14,22 @@
                 <el-popover placement="right" trigger="hover" popper-class="monitor-yt-popover">
                   <div class="prompt-bag">
                     <p>
-                      {{ $t('setting.group.text') }}
-                      <span @click="goTheJob" style="color: #1890ff; cursor: pointer">{{
-                        $t('setting.group.text2')
-                      }}</span>
-                      {{ $t('setting.group.text3') }}
+                      1. 可在组织架构中快速邀请成员，为成员设置所在部门；成员的详细信息可在
+                      <span @click="goTheJob" style="color: #1890ff; cursor: pointer">员工档案</span>
+                      中添加设置
                     </p>
                     <p>
-                      {{ $t('setting.group.title2') }}
+                      2. 选中的部门可为其添加子部门、修改名称、删除部门，公司名称在
                       <span @click="goTheEnterprise" style="color: #1890ff; cursor: pointer">企业信息 </span>中进行修改
                     </p>
-                    <p>{{ $t('setting.group.title3') }}</p>
+                    <p>3. 删除部门需先删除此部门下的子部门及成员</p>
                   </div>
-                  <i class="el-icon-question" slot="reference"></i>
+                  <template #reference>
+                    <i class="el-icon-question"></i>
+                  </template>
                 </el-popover>
               </div>
-              <el-button type="primary" size="small" icon="el-icon-plus" @click="openBox('addDrawerIsShow', 'add')"
+              <el-button type="primary" icon="el-icon-plus" @click="openBox('addDrawerIsShow', 'add')"
                 >新增</el-button
               >
             </div>
@@ -42,8 +42,7 @@
                 v-model="formData.name"
                 @change="handleSearch"
                 style="width: 250px"
-                size="small"
-                @keyup.enter.native="handleSearch"
+                @keyup.enter="handleSearch"
               >
               </el-input>
             </div>
@@ -53,19 +52,28 @@
                 :data="tableData"
                 tooltip-effect="dark"
                 style="width: 100%"
-                :height="tableHeight"
+                :height="TABLE_HEIGHT"
                 @selection-change="handleSelectionChange"
               >
-                <el-table-column prop="name" :label="$t('toptable.name')" min-width="100">
-                  <template slot-scope="scope">
+                <el-table-column prop="name" label="姓名" min-width="100">
+                  <template #default="scope">
                     <div class="flex lh-center">
                       <img :src="scope.row.avatar" alt="" class="img" />
-                      <div>{{ scope.row.name }}</div>
+                      <div>
+                        {{ scope.row.name }}
+                      </div>
+                      <img
+                        v-if="scope.row.work_member_id != 0"
+                        src="../../../../assets/images/bindWeChat.png"
+                        alt=""
+                        class="bindWeChat"
+                      />
+                      <img v-else src="../../../../assets/images/unbindWeChat.png" alt="" class="bindWeChat" />
                     </div>
                   </template>
                 </el-table-column>
-                <el-table-column prop="frame.name" :label="$t('toptable.department')" min-width="140">
-                  <template slot-scope="scope">
+                <el-table-column prop="frame.name" label="部门" min-width="140">
+                  <template #default="scope">
                     <div class="frame-name over-text" v-for="(item, index) in scope.row.frames" :key="index">
                       <span class="icon-h">
                         {{ item.name
@@ -75,17 +83,21 @@
                     </div>
                   </template>
                 </el-table-column>
-                <el-table-column prop="job.name" :label="$t('toptable.post')" min-width="110" />
-                <el-table-column prop="phone" :label="$t('toptable.phone')" min-width="110" />
-                <el-table-column prop="join_time" :label="$t('toptable.jointime')" min-width="100" />
-                <el-table-column :label="$t('public.operation')" width="120">
-                  <template slot-scope="scope">
-                    <el-button type="text" @click="onEdit(scope.row.id)" v-hasPermi="['hr:enterprise:group:edit']">
-                      {{ $t('public.edit') }}
+                <el-table-column prop="job.name" label="职位" min-width="110">
+                  <template #default="scope">
+                    <div class="over-text">{{ scope.row.job && scope.row.job.name ? scope.row.job.name : '--' }}</div>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="phone" label="手机号码" min-width="110" />
+                <el-table-column prop="join_time" label="加入时间" min-width="100" />
+                <el-table-column label="操作" width="120">
+                  <template #default="scope">
+                    <el-button type="primary" link @click="onEdit(scope.row.id)" v-hasPermi="['hr:enterprise:group:edit']">
+                      编辑
                     </el-button>
 
-                    <el-button type="text" @click="onDelete(scope.row.id, scope.$index)" v-if="!scope.row.uid">
-                      {{ $t('public.delete') }}
+                    <el-button type="primary" link @click="onDelete(scope.row.id, scope.$index)" v-if="!scope.row.uid">
+                      删除
                     </el-button>
                   </template>
                 </el-table-column>
@@ -113,7 +125,7 @@
     <!--  被邀请人列表弹窗  -->
     <inviteesTable ref="inviteesTableBox" @handleInvitees="handleInvitees" @getQuantity="getQuantity" />
     <!--  编辑用户  -->
-    <editUser ref="editUser" :user-id="userId" />
+    <editUser ref="editUser" :user-id="userId" @closed="userId = ''" @saved="handleTree" />
     <!-- 通用弹窗表单   -->
     <dialogForm ref="dialogForm" :roles-config="rolesConfig" :form-data="formBoxConfig" @isOk="isOk" />
     <!-- 人员新增/修改  -->
@@ -122,23 +134,34 @@
 </template>
 
 <script>
-import { configFrameApi } from '@/api/setting'
-import { userListApi } from '@/api/user'
-import { roterPre } from '@/settings'
-import { enterpriseCardDeleteApi, getQuantity } from '@/api/enterprise'
+import { mapStores } from 'pinia'
+import { useUserStore } from '@/stores/user.ts'
+import { useOrganizationStore } from '@/stores/organization.ts'
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { EventBus } from '@/libs/bus.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { configFrameApi } from '@/api/setting.ts'
+import { userListApi } from '@/api/user.ts'
+import { roterPre } from '@/settings.ts'
+import { enterpriseCardDeleteApi, getQuantity } from '@/api/enterprise.ts'
 export default {
   name: 'Index',
   components: {
-    tree: () => import('./components/tree'),
-    dialogForm: () => import('./components/index'),
-    editUser: () => import('./components/editUser'),
-    updataXls: () => import('./components/updataXls'),
-    inviteesTable: () => import('./components/inviteesTable'),
+    tree: defineAsyncComponent(() => import('./components/tree')),
+    dialogForm: defineAsyncComponent(() => import('./components/index')),
+    editUser: defineAsyncComponent(() => import('./components/editUser')),
+    updataXls: defineAsyncComponent(() => import('./components/updataXls')),
+    inviteesTable: defineAsyncComponent(() => import('./components/inviteesTable')),
     // 档案信息弹窗
-    UserDetails: () => import('@/views/hr/archives/components/userDetails.vue')
+    UserDetails: defineAsyncComponent(() => import('@/views/hr/archives/components/userDetails.vue'))
+  },
+  computed: {
+    ...mapStores(useUserStore, useOrganizationStore)
   },
   data() {
     return {
+      TABLE_HEIGHT,
       treeData: [],
       loading: false,
       tableData: [],
@@ -153,22 +176,22 @@ export default {
       },
 
       gridl: {
-        xl: 3,
-        lg: 4,
-        md: 5,
-        sm: 6,
-        xs: 24
+        xl: 5,
+        lg: 5,
+        md: 8,
+        sm: 8,
+        xs: 8
       },
       gridr: {
-        xl: 21,
-        lg: 20,
-        md: 19,
-        sm: 18,
-        xs: 24
+        xl: 19,
+        lg: 19,
+        md: 16,
+        sm: 16,
+        xs: 16
       },
       rolesConfig: [],
       formBoxConfig: {
-        title: this.$t('setting.box1'),
+        title: '邀请成员',
         width: '500px',
         method: 'post',
         action: '/user/create'
@@ -182,19 +205,20 @@ export default {
       this.$refs.tree.filter(val)
     }
   },
-  beforeDestroy() {
-    this.$bus.$off()
+  beforeUnmount() {
+    EventBus.$off('getList', this.handleBusGetList)
   },
   created() {
     this.getList()
   },
   mounted() {
-    this.$bus.$on('getList', () => {
-      this.getList()
-      this.$store.dispatch('user/getDepartment')
-    })
+    EventBus.$on('getList', this.handleBusGetList)
   },
   methods: {
+    handleBusGetList() {
+      this.getList()
+      this.organizationStore.getDepartment({ force: true })
+    },
     // 获取选中id
     getFrameId(data) {
       this.frame_id = data
@@ -240,7 +264,7 @@ export default {
           '【' +
           data.name +
           '】邀请你加入【' +
-          this.$store.state.user.enterprise.enterprise_name +
+          this.userStore.enterprise.enterprise_name +
           '】办公系统，请点击链接使用手机号验证登录 ' +
           data.url +
           ' 链接有效期为7天，请尽快登录加入团队！'
@@ -257,10 +281,10 @@ export default {
     // addPerson(type) {
     //   switch (type) {
     //     case 1:
-    //       this.personConfig.title = this.$t('setting.group.addpersonnel')
+    //       this.personConfig.title = '添加人员'
     //       break
     //     case 2:
-    //       this.personConfig.title = this.$t('setting.group.batchpersonnel')
+    //       this.personConfig.title = '批量导入人员'
     //       break
     //   }
     //   this.personConfig.type = type
@@ -286,11 +310,11 @@ export default {
         this.tableData = res.data.list
         this.loading = false
         if (this.tableData && this.tableData.length > 0) {
-          this.tableData.map((value) => {
+          this.tableData.forEach((value) => {
             if (value.frames.length > 1) {
               value.frames.sort((a, b) => {
                 return b.is_mastart - a.is_mastart
-              }) //升序
+              }) //降序
             }
           })
         }
@@ -325,7 +349,7 @@ export default {
         this.isSite = true
         this.onlyDepartment = false
         const selection = this.$refs.multipleTable.selection
-        if (!selection.length) return this.$message.error(this.$t('setting.group.selectmember'))
+        if (!selection.length) return this.$message.error('请选择成员')
       } else {
         this.isSite = false
         this.onlyDepartment = true
@@ -341,7 +365,7 @@ export default {
     },
     //  删除人员
     onDelete(id, index) {
-      this.$modalSure(this.$t('setting.group.deletitle')).then(() => {
+      modalSure('确定删除该人员吗').then(() => {
         enterpriseCardDeleteApi(id).then((res) => {
           this.tableData.splice(index, 1)
         })
@@ -365,6 +389,12 @@ export default {
   border-radius: 50%;
   margin-right: 4px;
 }
+.bindWeChat {
+  display: block;
+  width: 16px;
+  height: 16px;
+  margin-left: 6px;
+}
 
 .prompt-bag {
   background-color: #edf5ff;
@@ -373,7 +403,7 @@ export default {
   font-size: 12px;
   color: #606266;
 }
-/deep/.el-button--small {
+:deep(.el-button) {
   font-size: 13px;
 }
 
@@ -382,7 +412,7 @@ export default {
   color: #1890ff;
   font-size: 15px;
 }
-/deep/ .el-card__body {
+:deep(.el-card__body) {
   padding: 0 20px;
 }
 .iconzhuyaobumen {
@@ -429,7 +459,7 @@ export default {
   border-radius: 50%;
   background-color: #ff9900;
 }
-/deep/.select-bar {
+:deep(.select-bar) {
   line-height: 32px;
 }
 </style>

@@ -1,1 +1,0 @@
-C:37:"PHPUnit\Runner\DefaultTestResultCache":187:{a:2:{s:7:"defects";a:0:{}s:5:"times";a:2:{s:55:"Casbin\Bridge\Logger\Tests\LoggerTest::testEnableLogger";d:0.071;s:56:"Casbin\Bridge\Logger\Tests\LoggerTest::testDisableLogger";d:0.002;}}}

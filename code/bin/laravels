@@ -1,12 +1,17 @@
 #!/usr/bin/env php
 <?php
 
-$basePath = dirname(__DIR__) . '/';
-require $basePath.'/vendor/autoload.php';
-if (!file_exists($basePath.'.env')) {
-    @shell_exec('cp -f '. $basePath.'.env.example '. $basePath.'.env');
+$basePath = dirname(__DIR__);
+$envPath = $basePath.'/.env';
+$envExamplePath = $basePath.'/.env.example';
+
+if (! file_exists($envPath) && file_exists($envExamplePath)) {
+    copy($envExamplePath, $envPath);
 }
-$command = new crmeb\swoole\laravels\Portal($basePath);
+
+require $basePath.'/vendor/autoload.php';
+
+$command = new Tuoluojiang\Open\swoole\laravels\Portal($basePath);
 $input = new Symfony\Component\Console\Input\ArgvInput();
 $output = new Symfony\Component\Console\Output\ConsoleOutput();
 $code = $command->run($input, $output);

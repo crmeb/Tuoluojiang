@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,13 +16,13 @@ return [
     // 默认上传模式
     'default' => 'local',
     // 上传文件大小
-    'filesize' => 2097152 * 50,
+    'filesize' => 2097152 * 15,
     // 上传文件后缀类型
     'fileExt' => ['pdf', 'xls', 'xlt', 'et', 'xlsx', 'xltx', 'csv', 'xlsm', 'xltm', 'ppt',
         'pptx', 'pptm', 'ppsx', 'ppsm', 'pps', 'potx', 'potm', 'dpt', 'dps', 'doc', 'dot', 'pdf',
         'wps', 'wpt', 'docx', 'dotx', 'docm', 'dotm', 'rtf', 'jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG', 'gif', 'bmp',
         'pem', 'mp3', 'wma', 'wav', 'amr', 'mp4', 'key', 'txt', 'zip', 'ps', 'ai', 'rmvb', 'rar', 'tar', 'gz', '7z', 'xmind', 'sketch', 'xd', '7z', 'svg', 'tif', 'tiff', 'svg', 'md', 'rm', 'avi',
-        'dwg', 'psd', 'cdr', 'eps', 'swf', 'raw', 'webp'],
+        'dwg', 'psd', 'cdr', 'eps', 'swf', 'raw', 'webp', 'html'],
     // 上传文件类型
     'fileMime' => [
         'image/jpeg',
@@ -36,10 +36,12 @@ return [
         'application/vnd.ms-excel',
         'application/zip',
         'text/xml',
+        'text/html',
         'text/csv',
         'application/msexcel',
         'application/mspowerpoint',
         'application/msword',
+        'application/CDFV2',
         'application/msword-template',
         'application/pdf',
         'application/powerpoint',
@@ -108,6 +110,7 @@ return [
         'application/x-tar',
         'application/postscript',
         'application/x-gzip',
+        'application/x-dosexec',
         'text/x-markdown',
         'image/svg+xml',
         'application/xmind+xml',

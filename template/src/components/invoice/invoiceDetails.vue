@@ -2,37 +2,39 @@
 <template>
   <div class="station">
     <el-drawer
+      class="invoice-details-drawer"
       :title="formData.title"
-      :visible.sync="drawer"
+      v-model="drawer"
       :direction="direction"
       :modal="true"
       :show-close="true"
-      :wrapper-closable="true"
       :append-to-body="true"
       :before-close="handleClose"
       :size="formData.width"
     >
-      <div class="invoice-title" slot="title">
-        <el-row class="invoice-header">
-          <el-col class="invoice-left">
-            <div class="invoice-logo"><i class="icon iconfont iconfapiao"></i></div>
-          </el-col>
-          <el-col v-if="drawer">
-            <div class="txt1">{{ delData.title }}</div>
-            <div class="txt2">
-              <span class="title1">发票状态：</span>
-              <span class="tab-btn" :class="getInvoiceColor(delData.status)">
-                {{ getInvoiceStatus(delData.status) }}
-              </span>
-              <span class="title">{{ $t('customer.invoicingpay') }}：</span
-              ><span class="info2">{{ delData.amount }}</span>
-              <span class="title">{{ $t('customer.actualdate') }}：</span
-              ><span class="info3">{{ delData.real_date }}</span>
+      <template #header>
+        <div class="invoice-title">
+          <div class="invoice-header">
+            <div class="invoice-left">
+              <div class="invoice-logo"><i class="icon iconfont iconfapiao"></i></div>
             </div>
-          </el-col>
-        </el-row>
-      </div>
-      <el-tabs v-model="tabIndex" type="border-card" @tab-click="handleClick" :tab-position="tabPosition">
+            <div v-if="drawer">
+              <div class="txt1">{{ delData.title }}</div>
+              <div class="txt2">
+                <span class="title1">发票状态：</span>
+                <span class="tab-btn" :class="getInvoiceColor(delData.status)">
+                  {{ getInvoiceStatus(delData.status) }}
+                </span>
+                <span class="title">开票金额(元)：</span
+                ><span class="info2">{{ delData.amount }}</span>
+                <span class="title">实际开票日期：</span
+                ><span class="info3">{{ delData.real_date }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+      <el-tabs v-model="tabIndex" type="border-card" @tab-change="handleClick" :tab-position="tabPosition">
         <el-tab-pane label="发票信息" name="1"></el-tab-pane>
         <el-tab-pane label="关联付款单" name="2"></el-tab-pane>
         <el-tab-pane label="操作记录" name="3"></el-tab-pane>
@@ -43,12 +45,15 @@
 
         <!-- 关联付款单 -->
         <div v-if="tabIndex == 2" class="invoice-body mr20">
+          <div class="flex-end mb10">
+            <el-button  type="primary" @click="handleOpenPaymentDrawer">关联付款单</el-button>
+            </div>
           <el-table :data="tableData" style="width: 100%">
             <el-table-column prop="bill_no" label="付款单号" min-width="180"> </el-table-column>
-            <el-table-column prop="treaty.contract_name" label="合同名称" min-width="150"> </el-table-column>
+            <el-table-column prop="treaty.contract_name" label="订单名称" min-width="150"> </el-table-column>
 
             <el-table-column prop="types" label="业务类型" min-width="200">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <span v-if="scope.row.types === 0">回款记录</span>
                 <span v-if="scope.row.types === 1">续费记录 - {{ scope.row.renew.title }}</span>
               </template>
@@ -63,35 +68,38 @@
         <!-- 操作记录 -->
         <div class="invoice-body1" v-show="tabIndex == 3">
           <div class="default" v-if="recordList.length == 0">
-            <img src="../../assets/images/defd.png" alt="" class="img" />
-            <div class="text">暂无操作记录</div>
+            <EmptyState type="record" text="暂无操作记录" />
           </div>
           <el-steps direction="vertical" space="100" class="set" :active="1" v-if="recordList.length !== 0">
             <el-step v-for="(item, index) in recordList" :key="index">
-              <div slot="icon">
-                <span class="iconfont iconfapiaoxiangqing-caozuojilu"></span>
-              </div>
-              <div slot="description">
-                <div class="operationBox" :class="item.operation_name == '申请开票' ? 'removeBorderLine' : ''">
-                  <div class="header">
-                    <div class="left">{{ item.operation_name }}</div>
-                    <div class="right">
-                      {{ item.card && item.card.name }}
-                      <el-divider direction="vertical" />
-                      {{ item.created_at }}
+              <template #icon>
+                <div>
+                  <span class="iconfont iconfapiaoxiangqing-caozuojilu"></span>
+                </div>
+              </template>
+              <template #description>
+                <div>
+                  <div class="operationBox" :class="item.operation_name == '申请开票' ? 'removeBorderLine' : ''">
+                    <div class="header">
+                      <div class="left">{{ item.operation_name }}</div>
+                      <div class="right">
+                        {{ item.card && item.card.name }}
+                        <el-divider direction="vertical" />
+                        {{ item.created_at }}
+                      </div>
+                    </div>
+
+                    <div class="footer" v-if="item.operation_name !== '申请开票'">
+                      <el-form label-width="110px" :row-style="{ height: '32px' }" class="description">
+                        <el-form-item :label="details.name" v-for="(details, index) in item.operation" :key="index">
+                          <span v-if="details.name !== '开票凭证：'" class="content">{{ details.val || '--' }}</span>
+                          <img :src="details.val" alt="" v-else class="item-img" />
+                        </el-form-item>
+                      </el-form>
                     </div>
                   </div>
-
-                  <div class="footer" v-if="item.operation_name !== '申请开票'">
-                    <el-form label-width="110px" :row-style="{ height: '32px' }" class="description">
-                      <el-form-item :label="details.name" v-for="(details, index) in item.operation" :key="index">
-                        <span v-if="details.name !== '开票凭证：'" class="content">{{ details.val || '--' }}</span>
-                        <img :src="details.val" alt="" v-else class="item-img" />
-                      </el-form-item>
-                    </el-form>
-                  </div>
                 </div>
-              </div>
+              </template>
             </el-step>
           </el-steps>
         </div>
@@ -101,20 +109,31 @@
         class="button from-foot-btn fix btn-shadow"
         v-if="formData.follType && formData.follType === 'fd' && delData.status === 0"
       >
-        <el-button size="small" type="primary" @click="handleInvoicing">审核</el-button>
+        <el-button type="primary" @click="handleInvoicing">审核</el-button>
       </div>
-      <el-image-viewer v-if="isImage" :on-close="closeImageViewer" :url-list="srcList" />
+      <el-image-viewer v-if="isImage" @close="closeImageViewer" :url-list="srcList" />
     </el-drawer>
     <invoicing-dialog ref="invoicingDialog" :config="invoicingDialog" @isOk="isOk" />
+
+        <!-- 关联付款侧滑 -->
+    <el-drawer title="关联付款单" class="paymentDrawer" v-model="paymentDrawer" direction="rtl" :append-to-body="true"
+      :before-close="paymentHandleClose" size="60%">
+     <div class="paymentTable-box">
+       <paymentTable ref="paymentTable" edit="" :tableData="tableData1" @handleSelectionFn="handleSelectionChange">
+      </paymentTable>
+     </div>
+     <div class="button from-foot-btn fix btn-shadow" >
+        <el-button class="el-btn" @click="paymentHandleClose">取消</el-button>
+        <el-button type="primary" @click="submit">确定</el-button>
+      </div>
+    </el-drawer>
   </div>
 </template>
-
 <script>
-import file from '@/utils/file'
-import { paymentRecordApi, operationRecordApi } from '@/api/enterprise'
-import Vue from 'vue'
-Vue.use(file)
-import { getInvoiceClassName, getInvoiceText, getInvoiceType } from '@/libs/customer'
+import { defineAsyncComponent } from 'vue'
+import { paymentRecordApi, operationRecordApi,uninvoicedListApi ,invoiceBillApi} from '@/api/enterprise.ts'
+import { getInvoiceClassName, getInvoiceText, getInvoiceType } from '@/libs/customer.ts'
+import EmptyState from '../common/emptyState.vue'
 export default {
   name: 'InvoiceView',
   props: {
@@ -126,9 +145,10 @@ export default {
     }
   },
   components: {
-    ElImageViewer: () => import('element-ui/packages/image/src/image-viewer'),
-    invoicingDialog: () => import('@/views/fd/invoice/components/invoicingDialog'),
-    approval: () => import('./approval')
+    EmptyState,
+    paymentTable: defineAsyncComponent(() => import('@/components/invoice/paymentTable')),
+    invoicingDialog: defineAsyncComponent(() => import('@/views/fd/invoice/components/invoicingDialog')),
+    approval: defineAsyncComponent(() => import('./approval'))
   },
   data() {
     return {
@@ -137,6 +157,9 @@ export default {
       drawer: false,
       direction: 'rtl',
       isImage: false,
+      paymentDrawer: false,
+      tableData1: [],
+      bill_id: '',
       srcList: [],
       delData: {},
       tableData: [],
@@ -159,13 +182,56 @@ export default {
       this.drawer = false
       this.tabIndex = '1'
     },
+    paymentHandleClose() {
+      this.paymentDrawer = false
+    },
     openBox(linkId) {
       this.linkId = linkId
       this.drawer = true
       setTimeout(() => {
         this.$refs.approval.upDate(linkId)
       }, 300)
+      // 父组件多为「先赋值 formData 再同步调用 openBox」，此时 props 尚未同步，
+      // 需等下一个 tick 拿到最新的 formData.data 再拉取付款单
+      this.$nextTick(() => {
+        this.getPaymentRecord()
+      })
     },
+    handleOpenPaymentDrawer() {
+      this.paymentDrawer = true
+    },
+
+     handleSelectionChange(val) {
+      this.bill_id=[]
+      val.map(item=>{
+        this.bill_id.push(item.id)
+      })
+      
+    },
+    // 关联付款单
+    submit() {
+      let data = {
+        bill_id: this.bill_id
+      }
+      invoiceBillApi(this.formData.data.id,data).then((res) => {
+        this.paymentRecordApi()
+        this.paymentDrawer = false
+      })
+    },
+
+     // 获取付款列表
+    getPaymentRecord() {
+      const info = this.formData.data || {}
+      let data = {
+        eid: info.eid || '',
+        cid: info.cid || ''
+      }
+
+      uninvoicedListApi(data).then((res) => {
+        this.tableData1 = res.data
+      })
+    },
+
     // 开票
     handleInvoicing() {
       this.invoicingDialog = {
@@ -219,13 +285,13 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.station /deep/.el-drawer__body {
-  padding: 20px 20px 50px 20px;
-}
 .item-img {
   width: 40px;
   height: 40px;
   display: block;
+}
+.paymentTable-box {
+  padding: 20px;
 }
 
 .def {
@@ -247,10 +313,9 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 200px;
+  margin: 200px auto 0;
   .img {
     width: 200px;
-    height: 150px;
   }
   .text {
     font-size: 14px;
@@ -260,28 +325,28 @@ export default {
   }
 }
 .set {
-  /deep/ .el-step__icon.is-text {
+  :deep(.el-step__icon.is-text) {
     border: none;
   }
   .iconfapiaoxiangqing-caozuojilu {
     font-size: 13px;
     color: #1890ff;
   }
-  /deep/ .el-step__line {
+  :deep(.el-step__line) {
     width: 1px;
     background-color: #ebeef4;
   }
-  /deep/ .el-step__icon {
+  :deep(.el-step__icon) {
     margin-top: 20px;
     height: 12px;
   }
-  /deep/ .el-step.is-vertical .el-step__line {
+  :deep(.el-step.is-vertical .el-step__line) {
     top: 20px;
     bottom: -18px;
   }
 }
 
-.description /deep/ .el-form-item {
+.description :deep(.el-form-item) {
   margin-bottom: 0px;
 }
 .removeBorderLine {
@@ -300,12 +365,12 @@ export default {
   color: #303133;
   line-height: 12px;
 }
-/deep/ .el-step.is-vertical .el-step__main {
+:deep(.el-step.is-vertical .el-step__main) {
   width: 800px;
   // margin-bottom: 30px;
 }
 
-/deep/ .el-tabs__item.is-active {
+:deep(.el-tabs__item.is-active) {
   border-right-color: transparent !important;
   border-left-color: transparent !important;
   &::after {
@@ -359,33 +424,32 @@ export default {
   }
   .footer {
     padding: 20px 20px 8px 0px;
-    /deep/ .el-form-item {
+    :deep(.el-form-item) {
       margin-bottom: 12px;
     }
 
-    /deep/ .el-form-item__label {
+    :deep(.el-form-item__label) {
       line-height: 18px;
     }
-    /deep/.el-form-item__content {
+    :deep(.el-form-item__content) {
       line-height: 18px;
     }
   }
 }
-/deep/ .el-drawer__header {
-  height: 85px !important;
-  padding: 14px 18px;
-}
-/deep/ .el-tabs__header {
+:deep(.el-tabs__header) {
   background-color: #f7fbff;
   border-bottom: none;
 }
-/deep/ .el-tabs__content {
+:deep(.el-tabs__item) {
+  line-height: 40px !important;
+}
+:deep(.el-tabs__content) {
   padding: 0;
 }
-/deep/ .el-tabs__nav-wrap::after {
+:deep(.el-tabs__nav-wrap::after) {
   height: 0;
 }
-/deep/ .el-tabs__active-bar {
+:deep(.el-tabs__active-bar) {
   top: 0;
 }
 .el-tabs--border-card {
@@ -398,23 +462,23 @@ export default {
   border: none;
   box-shadow: none;
 }
-/deep/ .el-step.is-vertical .el-step__title {
+:deep(.el-step.is-vertical .el-step__title) {
   font-size: 14px;
   font-family: PingFangSC-Medium, PingFang SC;
   font-weight: 500;
   color: #303133;
   margin-left: 10px;
 }
-/deep/ .el-form--inline .el-form-item {
+:deep(.el-form--inline .el-form-item) {
   display: flex;
 }
-/deep/ .el-input-number--medium {
+:deep(.el-input-number) {
   width: 100%;
   .el-input__inner {
     text-align: left;
   }
 }
-/deep/ .el-date-editor {
+:deep(.el-date-editor) {
   width: 100%;
 }
 .invoice-body {
@@ -508,7 +572,7 @@ export default {
   .contract-list {
     width: 100%;
     height: 100%;
-    /deep/ .el-button--medium {
+    :deep(.el-button) {
       font-size: 13px;
     }
     .icon-cover {
@@ -529,16 +593,16 @@ export default {
   justify-content: space-between;
   .form-item {
     width: 49%;
-    /deep/ .el-form-item__content {
+    :deep(.el-form-item__content) {
       width: calc(100% - 110px);
     }
-    /deep/ .el-select--medium {
+    :deep(.el-select) {
       width: 100%;
     }
-    /deep/ .el-form-item {
+    :deep(.el-form-item) {
       margin-bottom: 0;
     }
-    /deep/ .el-textarea__inner {
+    :deep(.el-textarea__inner) {
       resize: none;
     }
 
@@ -558,7 +622,7 @@ export default {
   div {
     display: inline-block;
   }
-  /deep/ .el-upload--picture-card {
+  :deep(.el-upload--picture-card) {
     width: 98px;
     height: 98px;
     line-height: 102px;
@@ -566,7 +630,7 @@ export default {
   .upload-icon {
     font-size: 98px;
   }
-  /deep/ .el-upload-list--picture-card .el-upload-list__item {
+  :deep(.el-upload-list--picture-card .el-upload-list__item) {
     width: 98px;
     height: 98px;
     line-height: 1;
@@ -593,12 +657,22 @@ export default {
   border-top: 1px solid #e6ebf5;
   text-align: right;
 }
-/deep/ .el-form-item__label {
+:deep(.el-form-item__label) {
   font-size: 12px !important;
   font-weight: 400;
   color: #909399 !important;
+  margin-left: 0;
 }
-/deep/.el-tabs__header .el-tabs__item {
-  line-height: 40px;
+</style>
+
+<style lang="scss">
+// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
+.invoice-details-drawer .el-drawer__header {
+  height: 85px !important;
+  padding: 14px 18px;
+}
+.paymentDrawer .el-drawer__header {
+  height: 50px !important;
+  padding: 14px 18px;
 }
 </style>

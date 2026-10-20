@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -45,11 +45,57 @@ final class CustomerEnum extends CustomEnum
      */
     public const CUSTOMER_OPEN = 5;
 
+    /**
+     * 退回公海.
+     */
+    public const OPERATE_BACK = 1;
+
+    /**
+     * 领取.
+     */
+    public const OPERATE_RECEIVE = 2;
+
+    /**
+     * 流失.
+     */
+    public const OPERATE_LOST = 3;
+
+    /**
+     * 取消流失.
+     */
+    public const OPERATE_BACK_LOST = 4;
+
+    /**
+     * 移交同事.
+     */
+    public const OPERATE_SHIFT = 5;
+
+    /**
+     * 创建.
+     */
+    public const OPERATE_CREATE = 6;
+
+    /**
+     * 线索转客户.
+     */
+    public const OPERATE_CONVERT = 7;
+
+    /**
+     * 客户合并.
+     */
+    public const OPERATE_MERGE = 8;
+
     public const CUSTOMER_LIST_FIELD = [
         [
             'field' => 'customer_no',
             'name'  => '客户编号',
             'type'  => 'text',
+        ],
+        [
+            'field'      => 'work_customer',
+            'name'       => '企微客户',
+            'type'       => 'singleMember',
+            'input_type' => 'member',
         ],
         [
             'field' => 'un_followed_days',
@@ -69,7 +115,7 @@ final class CustomerEnum extends CustomEnum
         ],
         [
             'field' => 'contract_num',
-            'name'  => '合同数量',
+            'name'  => '订单数量',
         ],
         [
             'field' => 'invoice_num',
@@ -79,10 +125,10 @@ final class CustomerEnum extends CustomEnum
             'field' => 'attachment_num',
             'name'  => '附件数量',
         ],
-        // [
-        //     'field' => 'customer_status',
-        //     'name'  => '客户状态',
-        // ],
+        [
+            'field' => 'customer_status',
+            'name'  => '客户状态',
+        ],
         [
             'field' => 'liaison_tel',
             'name'  => '联系人：联系电话',
@@ -107,6 +153,13 @@ final class CustomerEnum extends CustomEnum
             'name'       => '客户编号',
             'input_type' => 'input',
         ],
+        [
+            'field'      => 'customer_status',
+            'name'       => '客户状态',
+            'input_type' => 'radio',
+            'type'       => 'radio',
+            'dict_ident' => 'customer_status',
+        ],
         //        [
         //            'field' => 'un_followed_days',
         //            'name'  => '未跟进天数',
@@ -125,7 +178,7 @@ final class CustomerEnum extends CustomEnum
         //        ],
         //        [
         //            'field' => 'contract_num',
-        //            'name'  => '合同数量',
+        //            'name'  => '订单数量',
         //        ],
         //        [
         //            'field' => 'invoice_num',
@@ -145,37 +198,81 @@ final class CustomerEnum extends CustomEnum
             'name'       => '创建人',
             'input_type' => 'personnel',
         ],
-        //        [
-        //            'field' => 'customer_repeat_check',
-        //            'name'  => '客户查重',
-        //            'input_type'  => 'input',
-        //        ],
+        [
+            'field'      => 'repeat',
+            'name'       => '客户查重',
+            'input_type' => 'select',
+            'dict'       => [
+                [
+                    'value' => 'customer_name',
+                    'label' => '客户名称',
+                ],
+                [
+                    'value' => 'customer_tel',
+                    'label' => '联系电话',
+                ],
+            ],
+        ],
+        [
+            'field'      => 'work_customer',
+            'name'       => '企微客户',
+            'input_type' => 'select',
+            'dict'       => [
+                [
+                    'value' => 1,
+                    'label' => '是',
+                    'name'  => '是',
+                ],
+                [
+                    'value' => 2,
+                    'label' => '否',
+                    'name'  => '否',
+                ],
+            ],
+        ],
+        [
+            'field'      => 'follow',
+            'name'       => '跟进状态',
+            'input_type' => 'select',
+            'dict'       => [
+                [
+                    'value' => 1,
+                    'label' => '已跟进',
+                    'name'  => '已跟进',
+                ],
+                [
+                    'value' => 2,
+                    'label' => '未跟进',
+                    'name'  => '未跟进',
+                ],
+            ],
+        ],
         [
             'field'      => 'contract_name',
-            'name'       => '合同名称',
+            'name'       => '订单名称',
             'input_type' => 'input',
         ],
         [
             'field'      => 'contract_no',
-            'name'       => '合同编号',
+            'name'       => '订单编号',
             'input_type' => 'input',
         ],
-        [
-            'field'      => 'liaison',
-            'name'       => '联系人',
-            'input_type' => 'input',
-        ],
-        [
-            'field'      => 'liaison_tel',
-            'name'       => '联系电话',
-            'input_type' => 'input',
-        ],
+        //        [
+        //            'field'      => 'liaison',
+        //            'name'       => '联系人',
+        //            'input_type' => 'input',
+        //        ],
+        //        [
+        //            'field'      => 'liaison_tel',
+        //            'name'       => '联系电话',
+        //            'input_type' => 'input',
+        //        ],
     ];
 
     public const CUSTOMER_HEIGHT_SEAS_LIST_FIELD = [
         [
             'field' => 'before_salesman',
-            'name'  => '前业务员',
+            'name'  => '前负责人',
         ],
         [
             'field' => 'return_num',
@@ -188,14 +285,23 @@ final class CustomerEnum extends CustomEnum
     ];
 
     public const CUSTOMER_HEIGHT_SEAS_LIST_DEFAULT_FIELD = [
-        'customer_name', 'customer_way', 'liaison_tel', 'customer_label', 'salesman', 'last_follow_time',
-        'customer_status', 'return_num', 'return_reason', 'created_at',
+        "customer_name",
+        "customer_way",
+        "liaison_tel",
+        "work_customer",
+        "customer_label",
+        "created_at",
+        "member",
+        "before_salesman",
+        "return_num",
+        "return_reason",
+        "last_follow_time"
     ];
 
     public const CUSTOMER_HEIGHT_SEAS_SEARCH_FIELD = [
         [
             'field'      => 'before_salesman',
-            'name'       => '前业务员',
+            'name'       => '前负责人',
             'input_type' => 'personnel',
         ],
     ];
@@ -208,20 +314,22 @@ final class CustomerEnum extends CustomEnum
     public const CUSTOMER_CHARGE_LIST_FIELD = [
         [
             'field' => 'salesman',
-            'name'  => '业务员',
+            'name'  => '负责人',
             'type'  => 'salesman',
         ],
     ];
 
+    /**
+     * 客户列表默认表头.
+     */
     public const CUSTOMER_CHARGE_LIST_DEFAULT_FIELD = [
-        'customer_name', 'customer_way', 'liaison_tel', 'customer_label', 'last_follow_time', 'customer_status',
-        'customer_followed', 'created_at',
+        'customer_name', 'liaison_tel', 'work_customer', 'customer_tel', 'customer_status', 'customer_label', 'last_follow_time', 'customer_followed', 'salesman', 'member', 'customer_way', 'created_at',
     ];
 
     public const CUSTOMER_VIEWER_SEARCH_FIELD = [
         [
             'field'      => 'salesman',
-            'name'       => '业务员',
+            'name'       => '负责人',
             'input_type' => 'personnel',
         ],
         [
@@ -234,7 +342,7 @@ final class CustomerEnum extends CustomEnum
     public const CUSTOMER_CHARGE_SEARCH_FIELD = [
         [
             'field'      => 'salesman',
-            'name'       => '业务员',
+            'name'       => '负责人',
             'input_type' => 'personnel',
         ],
     ];
@@ -252,7 +360,7 @@ final class CustomerEnum extends CustomEnum
     ];
 
     public const CUSTOMER_VIEWER_SEARCH_DEFAULT_FIELD = [
-        'customer_name', 'customer_label', 'created_at',
+        'customer_name', 'created_at', 'customer_label',
     ];
 
     public const CUSTOMER_COMPANY_LIST_FIELD = self::CUSTOMER_CHARGE_LIST_FIELD;
@@ -270,13 +378,11 @@ final class CustomerEnum extends CustomEnum
     ];
 
     public const CUSTOMER_NOT_ALLOW_DELETE_FIELD = [
-        'customer_way', 'customer_name', 'customer_label', 'customer_followed', 'area_cascade', 'customer_status', 'b37a3f16',
+        'customer_way', 'customer_name', 'customer_label', 'customer_followed', 'area_cascade', 'customer_status', 'customer_tel', 'member', 'clue_id',
     ];
 
     public const CUSTOMER_TYPE = [
         self::CUSTOMER_VIEWER,
-        self::CUSTOMER_CHARGE,
         self::CUSTOMER_HEIGHT_SEAS,
-        self::CUSTOMER_COMPANY,
     ];
 }

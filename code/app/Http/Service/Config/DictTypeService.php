@@ -17,12 +17,12 @@ namespace App\Http\Service\Config;
 
 use App\Constants\CacheEnum;
 use App\Http\Dao\Config\DictTypeDao;
+use App\Http\Service\Crud\SystemCrudFieldService;
 use App\Http\Model\BaseModel;
 use App\Http\Service\BaseService;
-use App\Http\Service\Crud\SystemCrudFieldService;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\services\FormService;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\services\FormService;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -66,7 +66,7 @@ class DictTypeService extends BaseService implements ResourceServicesInterface
 
         $ids = array_column($list, 'id');
         if ($ids) {
-            $crudList = app()->make(SystemCrudFieldService::class)
+            $crudList = app()->get(SystemCrudFieldService::class)
                 ->getModel()
                 ->with([
                     'crud' => fn ($q) => $q->select('id', 'table_name'),
@@ -110,7 +110,7 @@ class DictTypeService extends BaseService implements ResourceServicesInterface
      */
     public function resourceCreate(array $other = []): array
     {
-        return $this->elForm('新增字典', $this->getFormRule(collect($other)), '/ent/config/dict_type');
+        return $this->createElementForm('新增字典', $this->getFormRule(collect($other)), '/ent/config/dict_type');
     }
 
     /**
@@ -139,7 +139,7 @@ class DictTypeService extends BaseService implements ResourceServicesInterface
         if (! $info) {
             throw $this->exception('修改的字典不存在');
         }
-        return $this->elForm('修改字典', $this->getFormRule(collect($info), true), '/ent/config/dict_type/' . $id, 'PUT');
+        return $this->createElementForm('修改字典', $this->getFormRule(collect($info), true), '/ent/config/dict_type/' . $id, 'PUT');
     }
 
     /**

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,13 +18,15 @@ namespace App\Http\Service\Crud;
 use App\Constants\CacheEnum;
 use App\Constants\Crud\CrudFormEnum;
 use App\Http\Dao\Crud\SystemCrudApproveDao;
-use App\Http\Service\BaseService;
-use App\Http\Service\Client\ClientLabelService;
+use App\Http\Service\Approve\ApproveProcessService;
+use App\Http\Service\Customer\LabelService;
 use App\Http\Service\Config\DictDataService;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\traits\service\ResourceServiceTrait;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
@@ -125,11 +127,16 @@ class SystemCrudApproveService extends BaseService implements ResourceServicesIn
             $ruleConfig    = [];
             if ($baseConfig) {
                 $processConfig = app()->get(SystemCrudApproveProcessService::class)->value(['approve_id' => $id, 'is_initial' => 1], 'info');
+                $processConfig = app()->get(ApproveProcessService::class)->enrichProcessConfigInfo($processConfig);
                 $ruleConfig    = toArray(app()->get(SystemCrudApproveRuleService::class)->get(['approve_id' => $id], ['*'], [
                     'abCard' => function ($query) {
-                        $query->select(['id', 'name', 'avatar', 'name']);
+                        $query->withTrashed()->select(['id', 'name', 'avatar', 'status']);
                     },
                 ]));
+                if ($ruleConfig && empty($ruleConfig['ab_card']) && (int) ($ruleConfig['abnormal'] ?? 0) > 0) {
+                    $ruleConfig['ab_card'] = app()->get(ApproveProcessService::class)
+                        ->getProcessUserProfile((int) $ruleConfig['abnormal']);
+                }
             }
             return compact('baseConfig', 'processConfig', 'ruleConfig');
         });
@@ -239,84 +246,75 @@ class SystemCrudApproveService extends BaseService implements ResourceServicesIn
      */
     public function getContent(int $crudId, int $linkId, int $applyId = 0)
     {
-        $fieldService = app()->get(SystemCrudFieldService::class);
-        $fields       = $fieldService->select(
-            ['crud_id' => $crudId, 'is_form' => 1],
-            ['field_name', 'field_name_en', 'form_value', 'field_type', 'form_field_uniqid', 'options', 'data_dict_id', 'association_crud_id'],
-            ['association']
-        )?->toArray();
-        $moduleService = app()->get(CrudModuleService::class);
-        $fn            = fn ($q) => $q->select(['id', 'name']);
-        $record        = app()->get(SystemCrudApproveRecordService::class)->value(['approve_id' => $applyId, 'crud_id' => $crudId], 'data');
-        $data          = $moduleService->model(crudId: $crudId)->setTrashed()->get(
-            $linkId,
-            array_column($fields, 'field_name_en'),
-            ['ownerUser' => $fn, 'ownerFrame' => $fn, 'updateUser' => $fn, 'createUser' => $fn]
-        )?->toArray();
-        $dictService = app()->get(DictDataService::class);
-        $content     = [];
-        if ($data || $record) {
-            foreach ($fields as $field) {
-                if (isset($record[$field['field_name_en']])) {
-                    $data[$field['field_name_en']] = $record[$field['field_name_en']];
-                }
-                $arr = [
-                    'uniqued' => $field['form_field_uniqid'],
-                    'label'   => $field['field_name'],
-                    'type'    => $field['form_value'],
-                ];
-                if ($field['association_crud_id'] && $field['association']) {
-                    $tableName = $fieldService->value(['crud_id' => $field['association_crud_id'], 'is_main' => 1], 'field_name_en');
-                    if ($tableName) {
-                        $value = $moduleService->setTableName($field['association']['table_name_en'])->value($data[$field['field_name_en']], $tableName);
-                    }
-                }
-                $content[] = array_merge($arr, match ($field['form_value']) {
-                    CrudFormEnum::FORM_IMAGE, CrudFormEnum::FORM_FILE => [
-                        'type'  => 'uploadFrom',
-                        'value' => json_decode($data[$field['field_name_en']], true),
-                    ],
-                    CrudFormEnum::FORM_INPUT_PERCENTAGE => [
-                        'value' => $data[$field['field_name_en']] . '/' . ($field['options']['max'] ?? 100),
-                    ],
-                    CrudFormEnum::FORM_RADIO => [
-                        'value' => $dictService->value(['value' => $data[$field['field_name_en']], 'type_id' => $field['data_dict_id']], 'name'),
-                    ],
-                    CrudFormEnum::FORM_CASCADER_RADIO => [
-                        'value' => implode('/', $data[$field['field_name_en']] ? $dictService->column(['values' => explode('/', $data[$field['field_name_en']]), 'type_id' => $field['data_dict_id']], 'name') : []),
-                    ],
-                    CrudFormEnum::FORM_CHECKBOX => [
-                        'value' => implode('、', $data[$field['field_name_en']] ? $dictService->column(['values' => explode('/', $data[$field['field_name_en']]), 'type_id' => $field['data_dict_id']], 'name') : []),
-                    ],
-                    CrudFormEnum::FORM_TAG => $field['data_dict_id']
-                        ? ['value' => implode('、', $data[$field['field_name_en']] ? $dictService->column(['id' => explode('/', $data[$field['field_name_en']]), 'type_id' => $field['data_dict_id']], 'name') : [])]
-                        : ['value' => implode('、', $data[$field['field_name_en']] ? app()->make(ClientLabelService::class)->idByValue(explode('/', $data[$field['field_name_en']])) : [])],
-                    CrudFormEnum::FORM_INPUT_SELECT => match ($field['field_name_en']) {
-                        'user_id'        => ['value' => $data['create_user']['name'] ?? ''],
-                        'update_user_id' => ['value' => $data['update_user']['name'] ?? ''],
-                        'frame_id'       => ['value' => $data['owner_frame']['name'] ?? ''],
-                        'owner_user_id'  => ['value' => $data['owner_user']['name'] ?? ''],
-                        default          => ['value' => $value ?? $data[$field['field_name_en']]]
-                    },
-                    CrudFormEnum::FORM_CASCADER => [
-                        'value' => $this->getCascaderDictData((string) $data[$field['field_name_en']], (int) $field['data_dict_id']),
-                    ],
-                    CrudFormEnum::FORM_CASCADER_ADDRESS => [
-                        'value' => implode('/', $data[$field['field_name_en']] ? $dictService->column(['id' => explode('/', $data[$field['field_name_en']]), 'type_id' => $field['data_dict_id']], 'name') : []),
-                    ],
-                    CrudFormEnum::FORM_SWITCH => [
-                        'value' => $data[$field['field_name_en']] ? '开启' : '关闭',
-                    ],
-                    CrudFormEnum::FORM_RICH_TEXT => [
-                        'value' => isset($data[$field['field_name_en']]) ? htmlspecialchars_decode($data[$field['field_name_en']]) : '',
-                    ],
-                    default => [
-                        'value' => $data[$field['field_name_en']] ?? '',
-                    ],
-                });
-            }
+        // 获取服务实例
+        $services = collect([
+            'field'  => app()->get(SystemCrudFieldService::class),
+            'module' => app()->get(CrudModuleService::class),
+            'record' => app()->get(SystemCrudApproveRecordService::class),
+            'dict'   => app()->get(DictDataService::class),
+            'label'  => app()->get(LabelService::class),
+        ]);
+        // 获取字段列表并转为集合
+        $fields = collect($services['field']->select(['crud_id' => $crudId, 'is_form' => 1], ['field_name', 'field_name_en', 'form_value', 'field_type', 'form_field_uniqid', 'options', 'data_dict_id', 'association_crud_id'], ['association'])?->toArray());
+        // 获取记录数据
+        $record = $services['record']->value(['approve_id' => $applyId, 'crud_id' => $crudId], 'data');
+        // 检查数据表是否存在
+        $model = $services['module']->model(crudId: $crudId);
+        if (! Schema::hasTable($model->getTable())) {
+            return [];
         }
-        return $content;
+        // 获取主数据
+        $data = collect($services['module']->model(crudId: $crudId)->setTrashed()->get(
+            $linkId,
+            $fields->pluck('field_name_en')->all(),
+            [
+                'ownerUser'  => fn ($q) => $q->select(['id', 'name']),
+                'ownerFrame' => fn ($q) => $q->select(['id', 'name']),
+                'updateUser' => fn ($q) => $q->select(['id', 'name']),
+                'createUser' => fn ($q) => $q->select(['id', 'name'])]
+        )?->toArray());
+        // 处理内容数据
+        return $fields->filter(function ($field) use ($data, $record) {
+            return $data->isNotEmpty() || ($record && isset($record[$field['field_name_en']]));
+        })->map(function ($field) use ($services, $data, $record) {
+            // 合并记录数据到主数据
+            $fieldData = $data->all();
+            if (isset($record[$field['field_name_en']])) {
+                $fieldData[$field['field_name_en']] = $record[$field['field_name_en']];
+            }
+            // 基础信息
+            $base = ['uniqued' => $field['form_field_uniqid'], 'label' => $field['field_name'], 'type' => $field['form_value']];
+            // 处理关联数据
+            $value = null;
+            if ($field['association_crud_id'] && $field['association']) {
+                $tableName = $services['field']->value(['crud_id' => $field['association_crud_id'], 'is_main' => 1], 'field_name_en');
+                if ($tableName) {
+                    $value = $services['module']->setTableName($field['association']['table_name_en'])->value($fieldData[$field['field_name_en']], $tableName);
+                }
+            }
+            // 根据字段类型处理值
+            return array_merge($base, match ($field['form_value']) {
+                CrudFormEnum::FORM_IMAGE, CrudFormEnum::FORM_FILE => ['type' => 'uploadFrom', 'value' => isset($fieldData[$field['field_name_en']]) ? json_decode($fieldData[$field['field_name_en']], true) : []],
+                CrudFormEnum::FORM_INPUT_PERCENTAGE => ['value' => $fieldData[$field['field_name_en']] . '/' . ($field['options']['max'] ?? 100)],
+                CrudFormEnum::FORM_RADIO            => ['value' => $services['dict']->value(['value' => $fieldData[$field['field_name_en']], 'type_id' => $field['data_dict_id']], 'name')],
+                CrudFormEnum::FORM_CASCADER_RADIO   => ['value' => implode('/', $fieldData[$field['field_name_en']] ? $services['dict']->column(['values' => explode('/', $fieldData[$field['field_name_en']]), 'type_id' => $field['data_dict_id']], 'name') : [])],
+                CrudFormEnum::FORM_CHECKBOX         => ['value' => implode('、', $fieldData[$field['field_name_en']] ? $services['dict']->column(['values' => explode('/', $fieldData[$field['field_name_en']]), 'type_id' => $field['data_dict_id']], 'name') : [])],
+                CrudFormEnum::FORM_TAG              => $field['data_dict_id'] ? ['value' => implode('、', $fieldData[$field['field_name_en']] ? $services['dict']->column(['id' => explode('/', $fieldData[$field['field_name_en']]), 'type_id' => $field['data_dict_id']], 'name') : [])]
+                    : ['value' => implode('、', $fieldData[$field['field_name_en']] ? $services['label']->idByValue(explode('/', $fieldData[$field['field_name_en']])) : [])],
+                CrudFormEnum::FORM_INPUT_SELECT => match ($field['field_name_en']) {
+                    'user_id'        => ['value' => $data->get('create_user.name', '')],
+                    'update_user_id' => ['value' => $data->get('update_user.name', '')],
+                    'frame_id'       => ['value' => $data->get('owner_frame.name', '')],
+                    'owner_user_id'  => ['value' => $data->get('owner_user.name', '')],
+                    default          => ['value' => $value ?? $fieldData[$field['field_name_en']] ?? '']
+                },
+                CrudFormEnum::FORM_CASCADER         => ['value' => isset($fieldData[$field['field_name_en']]) ? $this->getCascaderDictData((string) $fieldData[$field['field_name_en']], (int) $field['data_dict_id']) : []],
+                CrudFormEnum::FORM_CASCADER_ADDRESS => ['value' => implode('/', $fieldData[$field['field_name_en']] ? $services['dict']->column(['id' => explode('/', $fieldData[$field['field_name_en']]), 'type_id' => $field['data_dict_id']], 'name') : [])],
+                CrudFormEnum::FORM_SWITCH           => ['value' => $fieldData[$field['field_name_en']] ? '开启' : '关闭'],
+                CrudFormEnum::FORM_RICH_TEXT        => ['value' => isset($fieldData[$field['field_name_en']]) ? htmlspecialchars_decode($fieldData[$field['field_name_en']]) : ''],
+                default                             => ['value' => $fieldData[$field['field_name_en']] ?? '']
+            });
+        })->all();
     }
 
     /**
@@ -328,7 +326,7 @@ class SystemCrudApproveService extends BaseService implements ResourceServicesIn
      */
     public function getCrudApproveList(int $crudId)
     {
-        $crudApproveId = app()->make(SystemCrudEventService::class)
+        $crudApproveId = app()->get(SystemCrudEventService::class)
             ->column(['crud_id' => $crudId, 'status' => 1], 'crud_approve_id');
         $crudApproveId = array_merge(array_unique(array_filter($crudApproveId)));
         return $this->dao->getCrudApprove($crudId, $crudApproveId);
@@ -345,7 +343,7 @@ class SystemCrudApproveService extends BaseService implements ResourceServicesIn
         if (! $data) {
             return '';
         }
-        $dataDict = app()->make(DictDataService::class)->idByValues($dictId);
+        $dataDict = app()->get(DictDataService::class)->idByValues($dictId);
         $res      = [];
         foreach ($data as $v) {
             $v  = array_filter(explode('/', $v));

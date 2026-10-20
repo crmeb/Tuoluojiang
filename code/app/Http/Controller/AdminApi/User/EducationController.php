@@ -18,8 +18,8 @@ namespace App\Http\Controller\AdminApi\User;
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Requests\enterprise\user\EnterpriseUserEducationRequest;
 use App\Http\Service\Company\CompanyUserEducationService;
-use crmeb\interfaces\ResourceControllerInterface;
-use crmeb\traits\ResourceControllerTrait;
+use Tuoluojiang\Open\interfaces\ResourceControllerInterface;
+use Tuoluojiang\Open\traits\ResourceControllerTrait;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 

@@ -2,30 +2,32 @@
   <div>
     <el-dialog
       :title="title"
-      :visible.sync="dialogFormVisible"
+      v-model="dialogFormVisible"
       :modal="true"
       width="698px"
       :before-close="closeDialog"
       :show-close="false"
     >
-      <div slot="title" class="dialog-title">
-        <div class="dialog-title-title">选择封面</div>
-        <div class="dialog-title-upload">
-          <span v-if="deleteButton" @click="deleteImage"><i class="el-icon-delete" />删除</span>
-          <el-upload
-            class="upload"
-            :action="fileUrl"
-            :on-success="handleSuccess"
-            :headers="myHeaders"
-            :show-file-list="false"
-            :before-upload="handleUpload"
-            :data="uploadData"
-            multiple
-          >
-            <i class="el-icon-upload2" />上传封面图
-          </el-upload>
+      <template #header>
+        <div class="dialog-title">
+          <div class="dialog-title-title">选择封面</div>
+          <div class="dialog-title-upload">
+            <span v-if="deleteButton" @click="deleteImage"><i class="el-icon-delete" />删除</span>
+            <el-upload
+              class="upload"
+              :action="fileUrl"
+              :on-success="handleSuccess"
+              :headers="myHeaders"
+              :show-file-list="false"
+              :before-upload="handleUpload"
+              :data="uploadData"
+              multiple
+            >
+              <i class="el-icon-upload2" />上传封面图
+            </el-upload>
+          </div>
         </div>
-      </div>
+      </template>
       <el-col :span="24">
         <el-col :span="6">
           <div class="image-preview">
@@ -84,20 +86,28 @@
           </div>
         </el-col>
       </el-col>
-      <div slot="footer" class="dialog-footer">
-        <el-button size="small" @click="closeDialog">{{ $t('public.cancel') }}</el-button>
-        <el-button size="small" type="primary" @click="handleConfirm">{{ $t('public.ok') }}</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeDialog">取消</el-button>
+          <el-button type="primary" @click="handleConfirm">确定</el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>
 
 <script>
-import RGBaster from '@/utils/rgbaster'
-import { attachCoverDeleteApi, attachCoverListApi, attachCoverSetApi } from '@/api/enterprise'
-import SettingMer from '@/libs/settingMer'
-import { getToken } from '@/utils/auth'
+import { mapStores } from 'pinia'
+import { useUserStore } from '@/stores/user.ts'
+import '@/utils/rgbaster'
+import { attachCoverDeleteApi, attachCoverListApi, attachCoverSetApi } from '@/api/enterprise.ts'
+import SettingMer from '@/libs/settingMer.ts'
+import { getToken } from '@/utils/auth.ts'
+
+import morenImg from '@/assets/images/moren.jpg';
+
 export default {
+  emits: ['handlePreview'],
   name: 'Preview',
 
   props: {
@@ -127,8 +137,8 @@ export default {
         limit: 15
       },
       total: 0,
-      defaultImg: require('@/assets/images/moren.jpg'),
-      defaultMore: require('@/assets/images/moren.jpg'),
+      defaultImg: morenImg,
+      defaultMore: morenImg,
       colorBtn: false,
       isImage: false,
       myHeaders: {
@@ -140,6 +150,7 @@ export default {
     }
   },
   computed: {
+    ...mapStores(useUserStore),
     fileUrl() {
       return SettingMer.https + `/system/attach/cover`
     }
@@ -180,7 +191,7 @@ export default {
       this.isImage = true
       this.defaultImg = item.thumb_dir
       var _this = this
-      this.deleteButton = this.$store.state.user.userInfo.uid === item.uid && item.thumb_dir !== this.data.cover
+      this.deleteButton = this.userStore.userInfo.uid === item.uid && item.thumb_dir !== this.data.cover
       window.RGBaster.colors(this.defaultImg, {
         paletteSize: 30,
         // 颜色排除
@@ -346,7 +357,7 @@ export default {
       float: left;
       margin: 0 30px 10px 0;
       position: relative;
-      /deep/ .el-image__inner {
+      :deep(.el-image__inner) {
         width: 86px;
         height: 104px;
       }

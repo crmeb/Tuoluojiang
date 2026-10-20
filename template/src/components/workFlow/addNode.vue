@@ -1,7 +1,7 @@
 <template>
   <div class="add-node-btn-box">
     <div class="add-node-btn">
-      <el-popover v-model="visible" placement="right-start">
+      <el-popover v-model:visible="visible" placement="right-start" :width="240">
         <div class="add-node-popover-body">
           <a class="add-node-popover-item approver" @click="addType(1)">
             <div class="item-wrapper">
@@ -22,20 +22,23 @@
             <p>条件</p>
           </a>
         </div>
-        <button slot="reference" class="btn" type="button">
-          <i class="iconfont iconxinjian"></i>
-        </button>
+        <template #reference>
+          <button class="btn" type="button">
+            <i class="iconfont iconxinjian"></i>
+          </button>
+        </template>
       </el-popover>
     </div>
   </div>
 </template>
 <script>
-import func from '@/utils/preload';
+import func from '@/utils/preload.ts';
 
 export default {
+  emits: ['update:childNodeP'],
   props: {
     childNodeP: {
-      type: Object | String,
+      type: [Object, String],
       default: '',
     },
   },
@@ -43,9 +46,6 @@ export default {
     return {
       visible: false,
     };
-  },
-  beforeCreate() {
-    this.$vue.prototype.$func = func;
   },
   methods: {
     addType(type) {
@@ -57,7 +57,7 @@ export default {
             nodeName: '审核人',
             error: false,
             type: '1',
-            onlyValue: this.$func.onlyValue(),
+            onlyValue: func.onlyValue(),
             settype: '2',
             selectMode: '0',
             selectRange: '0',
@@ -74,7 +74,7 @@ export default {
           data = {
             nodeName: '抄送人',
             type: 2,
-            onlyValue: this.$func.onlyValue(),
+            onlyValue: func.onlyValue(),
             ccSelfSelectFlag: '1',
             departmentHead: [],
             childNode: this.childNodeP,
@@ -86,14 +86,14 @@ export default {
         this.$emit('update:childNodeP', {
           nodeName: '路由',
           type: 4,
-          onlyValue: this.$func.onlyValue(),
+          onlyValue: func.onlyValue(),
           childNode: null,
           conditionNodes: [
             {
               nodeName: '条件1',
               error: true,
               type: 3,
-              onlyValue: this.$func.onlyValue(),
+              onlyValue: func.onlyValue(),
               priorityLevel: '1',
               conditionList: [],
               isDefault: false,
@@ -103,7 +103,7 @@ export default {
             {
               nodeName: '默认条件',
               type: 3,
-              onlyValue: this.$func.onlyValue(),
+              onlyValue: func.onlyValue(),
               priorityLevel: '2',
               conditionList: [],
               isDefault: true,

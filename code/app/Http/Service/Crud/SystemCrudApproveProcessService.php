@@ -19,10 +19,11 @@ use App\Constants\CacheEnum;
 use App\Constants\Crud\CrudFormEnum;
 use App\Constants\Crud\CrudOperatorEnum;
 use App\Http\Dao\Crud\SystemCrudApproveProcessDao;
-use App\Http\Model\BaseModel;
 use App\Http\Service\Admin\AdminService;
-use App\Http\Service\BaseService;
+use App\Http\Service\Approve\ApproveAbnormalService;
 use App\Http\Service\Frame\FrameService;
+use App\Http\Model\BaseModel;
+use App\Http\Service\BaseService;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Concerns\BuildsQueries;
 use Illuminate\Database\Eloquent\Model;
@@ -91,6 +92,11 @@ class SystemCrudApproveProcessService extends BaseService
             $list = array_values($data);
         } else {
             $list = [];
+        }
+        if ($list) {
+            $abnormal = app()->get(ApproveAbnormalService::class);
+            $context  = $abnormal->loadContext((int) $approveId, true);
+            $list     = $abnormal->preview($list, $context['abnormal'], $context['handler']);
         }
         return $list;
     }
@@ -203,12 +209,12 @@ class SystemCrudApproveProcessService extends BaseService
                     $res = match ($value['value']) {
                         CrudOperatorEnum::OPERATOR_EQ     => $val === $value['option'],
                         CrudOperatorEnum::OPERATOR_NOT_EQ => $val != $value['option'],
-                        CrudOperatorEnum::OPERATOR_IN     => in_array($val, array_map(function ($item) {
-                            return '/' . explode('/', $item) . '/';
-                        }, $value['option'])),
-                        CrudOperatorEnum::OPERATOR_NOT_IN => ! in_array($val, array_map(function ($item) {
-                            return '/' . explode('/', $item) . '/';
-                        }, $value['option'])),
+                        CrudOperatorEnum::OPERATOR_IN     => in_array($val, collect($value['option'])->map(function ($item) {
+                            return '/' . collect(explode('/', $item))->filter()->implode('/') . '/';
+                        })->all()),
+                        CrudOperatorEnum::OPERATOR_NOT_IN => ! in_array($val, collect($value['option'])->map(function ($item) {
+                            return '/' . collect(explode('/', $item))->filter()->implode('/') . '/';
+                        })->all()),
                         CrudOperatorEnum::OPERATOR_IS_EMPTY  => empty($val),
                         CrudOperatorEnum::OPERATOR_NOT_EMPTY => ! empty($val),
                     };
@@ -226,8 +232,8 @@ class SystemCrudApproveProcessService extends BaseService
                 case CrudFormEnum::FORM_INPUT:
                 case CrudFormEnum::FORM_TEXTAREA:
                     $res = match ($value['value']) {
-                        CrudOperatorEnum::OPERATOR_IN        => str_contains($val, $value['option']),
-                        CrudOperatorEnum::OPERATOR_NOT_IN    => ! str_contains($val, $value['option']),
+                        CrudOperatorEnum::OPERATOR_IN        => str_contains($value['option'], $val),
+                        CrudOperatorEnum::OPERATOR_NOT_IN    => ! str_contains($value['option'], $val),
                         CrudOperatorEnum::OPERATOR_EQ        => $val == $value['option'],
                         CrudOperatorEnum::OPERATOR_NOT_EQ    => $val != $value['option'],
                         CrudOperatorEnum::OPERATOR_IS_EMPTY  => empty($val),
@@ -255,15 +261,15 @@ class SystemCrudApproveProcessService extends BaseService
                     break;
                 case CrudFormEnum::FORM_DATE_PICKER:
                 case CrudFormEnum::FORM_DATE_TIME_PICKER:
-                    $time = strtotime($val);
+                    $time = datetime_timestamp($val);
                     $res  = match ($value['value']) {
-                        CrudOperatorEnum::OPERATOR_EQ       => $time == strtotime($value['option']),
-                        CrudOperatorEnum::OPERATOR_GT       => $time > strtotime($value['option']),
-                        CrudOperatorEnum::OPERATOR_LT       => $time < strtotime($value['option']),
-                        CrudOperatorEnum::OPERATOR_BT       => ($time >= strtotime($value['option'])) && ($time <= strtotime($value['option'])),
-                        CrudOperatorEnum::OPERATOR_N_DAY    => $value['option'] ? $time < strtotime('-' . $value['option'] . 'day') : $val == now()->toDateString(),
-                        CrudOperatorEnum::OPERATOR_LAST_DAY => $value['option'] ? $time >= strtotime('-' . $value['option'] . 'day') && $time <= strtotime('+' . $value['option'] . 'day') : $val == now()->toDateString(),
-                        CrudOperatorEnum::OPERATOR_NEXT_DAY => $value['option'] ? $time <= strtotime('+' . $value['option'] . 'day') && $time >= time() : $val == now()->toDateString(),
+                        CrudOperatorEnum::OPERATOR_EQ       => $time == datetime_timestamp($value['option']),
+                        CrudOperatorEnum::OPERATOR_GT       => $time > datetime_timestamp($value['option']),
+                        CrudOperatorEnum::OPERATOR_LT       => $time < datetime_timestamp($value['option']),
+                        CrudOperatorEnum::OPERATOR_BT       => ($time >= datetime_timestamp($value['option'])) && ($time <= datetime_timestamp($value['option'])),
+                        CrudOperatorEnum::OPERATOR_N_DAY    => $value['option'] ? $time < datetime_timestamp('-' . $value['option'] . 'day') : $val == now()->toDateString(),
+                        CrudOperatorEnum::OPERATOR_LAST_DAY => $value['option'] ? $time >= datetime_timestamp('-' . $value['option'] . 'day') && $time <= datetime_timestamp('+' . $value['option'] . 'day') : $val == now()->toDateString(),
+                        CrudOperatorEnum::OPERATOR_NEXT_DAY => $value['option'] ? $time <= datetime_timestamp('+' . $value['option'] . 'day') && $time >= time() : $val == now()->toDateString(),
                         CrudOperatorEnum::OPERATOR_TO_DAY   => $val == now()->toDateString(),
                         CrudOperatorEnum::OPERATOR_WEEK     => Carbon::make($val)->week == now()->week && Carbon::make($val)->year == now()->year,
                         CrudOperatorEnum::OPERATOR_MONTH    => Carbon::make($val)->month == now()->month && Carbon::make($val)->year == now()->year,
@@ -309,6 +315,7 @@ class SystemCrudApproveProcessService extends BaseService
         $save['select_mode'] = $data['select_mode'];
         if ($data['types'] == 1) {
             $save['examine_mode'] = $data['examine_mode'];
+            $save['pass_ratio']   = $data['pass_ratio'] ?? 0;
             $save['settype']      = $data['settype'];
             $save['no_hander']    = $data['no_hander'];
             switch ($data['settype']) {
@@ -382,9 +389,9 @@ class SystemCrudApproveProcessService extends BaseService
             $users = assoc_unique($users, 'id');
         }
         $userIds       = app()->get(AdminService::class)->column(['status' => 1], 'id');
-        $save['users'] = array_filter($users, function ($v) use ($userIds) {
-            return in_array($v['id'], $userIds);
-        });
+        $save['users'] = array_values(array_filter($users, function ($v) use ($userIds) {
+            return is_array($v) && isset($v['id']) && in_array($v['id'], $userIds);
+        }));
         return $save;
     }
 
@@ -479,6 +486,8 @@ class SystemCrudApproveProcessService extends BaseService
             'select_mode' => isset($data['selectMode']) && $data['selectMode'] ? $data['selectMode'] : 0,
             // 多人审批方式：1、或签；2、会签；3、依次审批；(0、无此条件)
             'examine_mode' => isset($data['examineMode']) && $data['examineMode'] ? $data['examineMode'] : 0,
+            // 通过比例(%)：仅在 examine_mode=1（或签）时有效，0=关闭（原逻辑）
+            'pass_ratio' => isset($data['passRatio']) ? (int) $data['passRatio'] : ($data['pass_ratio'] ?? 0),
             // 条件优先级
             'priority'       => isset($data['priorityLevel']) && $data['priorityLevel'] ? $data['priorityLevel'] : 0,
             'parent'         => $parent, // 父级唯一值

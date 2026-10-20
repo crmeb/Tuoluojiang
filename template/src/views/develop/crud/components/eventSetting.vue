@@ -18,12 +18,11 @@
         <el-input
           v-model="where.name"
           prefix-icon="el-icon-search"
-          size="small"
           placeholder="请输入关键字搜索"
           clearable
           style="width: 250px"
           @change="getList"
-          @keyup.native.stop.prevent.enter="getList"
+          @keyup.stop.prevent.enter="getList"
           class="input"
         ></el-input>
       </div>
@@ -33,12 +32,12 @@
       <el-table row-key="id" :data="tableData" :height="height" style="width: 100%">
         <el-table-column prop="name" label="触发器名称" />
         <el-table-column prop="field_name" label="触发类型">
-          <template slot-scope="scope">
+          <template #default="scope">
             {{ getEvent(scope.row.event) }}
           </template>
         </el-table-column>
         <el-table-column prop="form_value" label="触发动作">
-          <template slot-scope="scope">
+          <template #default="scope">
             <span v-if="scope.row.action && scope.row.action.length > 0">
               {{ getAction(scope.row.action) }}
             </span>
@@ -48,7 +47,7 @@
         <el-table-column prop="sort" label="优先级"> </el-table-column>
         <el-table-column prop="updated_at" label="更新时间"> </el-table-column>
         <el-table-column prop="is_main" label="状态">
-          <template slot-scope="scope">
+          <template #default="scope">
             <el-switch
               @change="handleStatus(scope.row)"
               v-model="scope.row.status"
@@ -63,9 +62,9 @@
         </el-table-column>
 
         <el-table-column prop="address" label="操作" fixed="right" width="170">
-          <template slot-scope="scope">
-            <el-button type="text" @click="editFn(scope.row)">编辑</el-button>
-            <el-button type="text" @click="deleteFn(scope.row)">删除</el-button>
+          <template #default="scope">
+            <el-button type="primary" link @click="editFn(scope.row)">编辑</el-button>
+            <el-button type="primary" link @click="deleteFn(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -84,6 +83,7 @@
   </div>
 </template>
 <script>
+import { modalSure } from '@/libs/public.ts'
 import oaPopover from '@/components/form-common/oa-popover'
 
 import {
@@ -93,8 +93,8 @@ import {
   dataEventDelApi,
   dataEventStatusApi,
   dataEventActionApi
-} from '@/api/develop'
-import { roterPre } from '@/settings'
+} from '@/api/develop.ts'
+import { roterPre } from '@/settings.ts'
 
 export default {
   name: '',
@@ -197,7 +197,7 @@ export default {
 
     // 删除触发器
     deleteFn(row) {
-      this.$modalSure('您确定要删除此触发器数据吗').then(() => {
+      modalSure('您确定要删除此触发器数据吗').then(() => {
         dataEventDelApi(row.id).then((res) => {
           this.getList()
         })

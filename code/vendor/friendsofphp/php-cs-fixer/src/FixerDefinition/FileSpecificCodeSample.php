@@ -17,6 +17,8 @@ namespace PhpCsFixer\FixerDefinition;
 /**
  * @author Dariusz Rumiński <dariusz.ruminski@gmail.com>
  *
+ * @readonly
+ *
  * @internal
  */
 final class FileSpecificCodeSample implements FileSpecificCodeSampleInterface
@@ -37,25 +39,16 @@ final class FileSpecificCodeSample implements FileSpecificCodeSampleInterface
         $this->splFileInfo = $splFileInfo;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getCode(): string
     {
         return $this->codeSample->getCode();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getConfiguration(): ?array
     {
         return $this->codeSample->getConfiguration();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getSplFileInfo(): \SplFileInfo
     {
         return $this->splFileInfo;

@@ -15,12 +15,12 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Notepad;
 
-use App\Http\Dao\BaseDao;
 use App\Http\Dao\User\UserMemorialCategoryDao;
-use App\Http\Model\BaseModel;
 use App\Http\Model\Notepad\NotepadCategory;
 use App\Http\Service\User\UserMemorialService;
-use crmeb\traits\dao\ListSearchTrait;
+use App\Http\Dao\BaseDao;
+use App\Http\Model\BaseModel;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Concerns\BuildsQueries;
 

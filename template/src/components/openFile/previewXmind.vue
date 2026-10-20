@@ -4,6 +4,7 @@
 
 <script>
 import { XMindEmbedViewer } from "xmind-embed-viewer";
+import { processResourceUrl } from '@/utils/resourceUtil.ts'
 
 export default {
   name: 'previewXmind',
@@ -26,7 +27,7 @@ export default {
   },
   methods: {
     async getXmindFileArrayBuffer() {
-      const response = await fetch(this.$processResourceUrl(this.url))
+      const response = await fetch(processResourceUrl(this.url))
       return await response.arrayBuffer();
     },
   }

@@ -1,7 +1,7 @@
 <template>
-  <el-dialog class="nodeTagDialog" title="标签" :visible.sync="dialogVisible" :width="isMobile ? '90%' : '50%'"
+  <el-dialog class="nodeTagDialog" title="标签" v-model="dialogVisible" :width="isMobile ? '90%' : '50%'"
     :top="isMobile ? '20px' : '15vh'">
-    <el-input v-model="tag" @keyup.native.enter="add" @keyup.native.stop @keydown.native.stop
+    <el-input v-model="tag" @keyup.enter="add" @keyup.stop @keydown.stop
       :disabled="tagArr.length >= max" placeholder="请按回车键添加">
     </el-input>
     <div class="tagList">
@@ -14,19 +14,22 @@
         </div>
       </div>
     </div>
-    <span slot="footer" class="dialog-footer">
-      <el-button @click="cancel">取 消</el-button>
-      <el-button type="primary" @click="confirm">确 定</el-button>
-    </span>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="cancel">取 消</el-button>
+        <el-button type="primary" @click="confirm">确 定</el-button>
+      </span>
+    </template>
   </el-dialog>
 </template>
 
 <script>
+import { EventBus } from '@/libs/bus.ts'
 import {
   generateColorByContent,
   isMobile
 } from 'simple-mind-map/src/utils/index'
-import { END_TEXT_EDIT, NODE_ACTIVE, SHOW_NODE_TAG, START_TEXT_EDIT } from '../event-constant';
+import { END_TEXT_EDIT, NODE_ACTIVE, SHOW_NODE_TAG, START_TEXT_EDIT } from '../event-constant.ts';
 
 
 export default {
@@ -44,17 +47,17 @@ export default {
   watch: {
     dialogVisible(val, oldVal) {
       if (!val && oldVal) {
-        this.$bus.$emit(END_TEXT_EDIT)
+        EventBus.$emit(END_TEXT_EDIT)
       }
     }
   },
   created() {
-    this.$bus.$on(NODE_ACTIVE, this.handleNodeActive)
-    this.$bus.$on(SHOW_NODE_TAG, this.handleShowNodeTag)
+    EventBus.$on(NODE_ACTIVE, this.handleNodeActive)
+    EventBus.$on(SHOW_NODE_TAG, this.handleShowNodeTag)
   },
-  beforeDestroy() {
-    this.$bus.$off(NODE_ACTIVE, this.handleNodeActive)
-    this.$bus.$off(SHOW_NODE_TAG, this.handleShowNodeTag)
+  beforeUnmount() {
+    EventBus.$off(NODE_ACTIVE, this.handleNodeActive)
+    EventBus.$off(SHOW_NODE_TAG, this.handleShowNodeTag)
   },
   methods: {
     generateColorByContent,
@@ -71,7 +74,7 @@ export default {
     },
 
     handleShowNodeTag() {
-      this.$bus.$emit(START_TEXT_EDIT)
+      EventBus.$emit(START_TEXT_EDIT)
       this.dialogVisible = true
     },
 

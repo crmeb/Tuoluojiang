@@ -35,9 +35,16 @@ class UserJobAnalysis extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'entid'      => 'integer',
+        'uid'        => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * data 修改器.
-     * @param mixed $value
      */
     public function setDataAttribute($value)
     {
@@ -46,7 +53,6 @@ class UserJobAnalysis extends BaseModel
 
     /**
      * data 获取器.
-     * @param mixed $value
      */
     public function getDataAttribute($value): string
     {

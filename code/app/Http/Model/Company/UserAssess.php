@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -19,9 +19,9 @@ use App\Http\Model\Admin\Admin;
 use App\Http\Model\Assess\AssessPlan;
 use App\Http\Model\Assess\AssessSpace;
 use App\Http\Model\Assess\AssessTarget;
-use App\Http\Model\BaseModel;
 use App\Http\Model\Frame\Frame;
-use crmeb\traits\model\TimeDataTrait;
+use App\Http\Model\BaseModel;
+use Tuoluojiang\Open\traits\model\TimeDataTrait;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -53,6 +53,36 @@ class UserAssess extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'            => 'integer',
+        'entid'         => 'integer',
+        'period'        => 'integer',
+        'planid'        => 'integer',
+        'frame_id'      => 'integer',
+        'number'        => 'integer',
+        'check_uid'     => 'integer',
+        'test_uid'      => 'integer',
+        'start_time'    => 'datetime:Y-m-d H:i:s',
+        'make_time'     => 'datetime:Y-m-d H:i:s',
+        'make_status'   => 'integer',
+        'end_time'      => 'datetime:Y-m-d H:i:s',
+        'test_status'   => 'integer',
+        'check_end'     => 'datetime:Y-m-d H:i:s',
+        'check_status'  => 'integer',
+        'verify_time'   => 'datetime:Y-m-d H:i:s',
+        'verify_status' => 'integer',
+        'score'         => 'decimal:2',
+        'total'         => 'decimal:2',
+        'grade'         => 'integer',
+        'status'        => 'integer',
+        'types'         => 'integer',
+        'intact'        => 'integer',
+        'is_show'       => 'integer',
+        'delete'        => 'datetime:Y-m-d H:i:s',
+        'created_at'    => 'datetime:Y-m-d H:i:s',
+        'updated_at'    => 'datetime:Y-m-d H:i:s',
+    ];
 
     /**
      * @return HasOne
@@ -133,11 +163,7 @@ class UserAssess extends BaseModel
      */
     public function scopeTestUid($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereIn('test_uid', $value);
-        } elseif ($value !== '') {
-            $query->where('test_uid', $value);
-        }
+        is_array($value) ? $query->whereIn('test_uid', $value) : $query->where('test_uid', $value);
     }
 
     /**
@@ -148,12 +174,7 @@ class UserAssess extends BaseModel
      */
     public function scopeEntid($query, $value)
     {
-        if (is_array($value)) {
-            return $query->whereIn('entid', $value);
-        }
-        if ($value !== '') {
-            return $query->where('entid', $value);
-        }
+        is_array($value) ? $query->whereIn('entid', $value) : $query->where('entid', $value);
     }
 
     /**
@@ -164,12 +185,7 @@ class UserAssess extends BaseModel
      */
     public function scopePlanid($query, $value)
     {
-        if (is_array($value)) {
-            return $query->whereIn('planid', $value);
-        }
-        if ($value !== '') {
-            return $query->where('planid', $value);
-        }
+        is_array($value) ? $query->whereIn('planid', $value) : $query->where('planid', $value);
     }
 
     /**
@@ -180,12 +196,7 @@ class UserAssess extends BaseModel
      */
     public function scopeNumber($query, $value)
     {
-        if (is_array($value)) {
-            return $query->whereIn('number', $value);
-        }
-        if ($value !== '') {
-            return $query->where('number', $value);
-        }
+        is_array($value) ? $query->whereIn('number', $value) : $query->where('number', $value);
     }
 
     /**
@@ -196,12 +207,7 @@ class UserAssess extends BaseModel
      */
     public function scopeGrade($query, $value)
     {
-        if (is_array($value)) {
-            return $query->whereIn('grade', $value);
-        }
-        if ($value !== '') {
-            return $query->where('grade', $value);
-        }
+        is_array($value) ? $query->whereIn('grade', $value) : $query->where('grade', $value);
     }
 
     /**
@@ -222,45 +228,6 @@ class UserAssess extends BaseModel
     }
 
     /**
-     * 名称.
-     * @param mixed $query
-     * @param mixed $value
-     * @return mixed
-     */
-    public function scopeName($query, $value)
-    {
-        if ($value !== '') {
-            return $query->where('name', $value);
-        }
-    }
-
-    /**
-     * 启用状态
-     * @param mixed $query
-     * @param mixed $value
-     * @return mixed
-     */
-    public function scopeIsShow($query, $value)
-    {
-        if ($value !== '') {
-            return $query->where('is_show', $value);
-        }
-    }
-
-    /**
-     * 目标制定状态
-     * @param mixed $query
-     * @param mixed $value
-     * @return mixed
-     */
-    public function scopeMakeStatus($query, $value)
-    {
-        if ($value !== '') {
-            return $query->where('make_status', $value);
-        }
-    }
-
-    /**
      * 当前时间筛选/执行期
      * @param mixed $query
      * @param mixed $value
@@ -268,9 +235,9 @@ class UserAssess extends BaseModel
      */
     public function scopeExecTime($query, $value)
     {
-        if ($value !== '') {
-            return $query->where('start_time', '<', now()->toDateTimeString())->where('verify_time', '>', now()->toDateTimeString());
-        }
+        $query->where(function ($que) {
+            $que->where('start_time', '<', now()->toDateTimeString())->where('verify_time', '>', now()->toDateTimeString());
+        });
     }
 
     /**
@@ -281,9 +248,7 @@ class UserAssess extends BaseModel
      */
     public function scopeEndTime($query, $value)
     {
-        if ($value !== '') {
-            return $query->where('end_time', '>=', $value);
-        }
+        $query->where('end_time', '>=', $value);
     }
 
     /**
@@ -294,9 +259,7 @@ class UserAssess extends BaseModel
      */
     public function scopeStartTime($query, $value)
     {
-        if ($value !== '') {
-            return $query->where('start_time', '>=', $value);
-        }
+        $query->where('start_time', '>=', $value);
     }
 
     /**
@@ -321,7 +284,7 @@ class UserAssess extends BaseModel
      */
     public function check()
     {
-        return $this->hasOne(Admin::class, 'id', 'check_uid')->select(['id', 'uid', 'name', 'phone', 'avatar']);
+        return $this->hasOne(Admin::class, 'id', 'check_uid')->select(['id', 'uid', 'name', 'phone', 'avatar', 'job']);
     }
 
     /**
@@ -330,16 +293,12 @@ class UserAssess extends BaseModel
      */
     public function test()
     {
-        return $this->hasOne(Admin::class, 'id', 'test_uid')->select(['id', 'uid', 'name', 'phone', 'avatar']);
+        return $this->hasOne(Admin::class, 'id', 'test_uid')->select(['id', 'uid', 'name', 'phone', 'avatar', 'job'])->with(['job' => fn ($q) => $q->select(['id', 'name'])]);
     }
 
     public function scopeStatus($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereIn('status', $value);
-        } elseif ($value !== '') {
-            $query->where('status', $value);
-        }
+        is_array($value) ? $query->whereIn('status', $value) : $query->where('status', $value);
     }
 
     /**
@@ -349,11 +308,7 @@ class UserAssess extends BaseModel
      */
     public function scopeCheckStatus($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereIn('check_status', $value);
-        } elseif ($value !== '') {
-            $query->where('check_status', $value);
-        }
+        is_array($value) ? $query->whereIn('check_status', $value) : $query->where('check_status', $value);
     }
 
     /**
@@ -363,10 +318,6 @@ class UserAssess extends BaseModel
      */
     public function scopeNotStatus($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereNotIn('status', $value);
-        } elseif ($value !== '') {
-            $query->where('status', '<>', $value);
-        }
+        is_array($value) ? $query->whereNotIn('status', $value) : $query->where('status', '<>', $value);
     }
 }

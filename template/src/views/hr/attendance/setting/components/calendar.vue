@@ -1,11 +1,13 @@
 <template>
   <div>
-    <el-dialog top="5%" :visible.sync="show" width="600" :close-on-click-modal="false" :show-close="false">
-      <div slot="title" class="header">
-        <span class="title">排班日历</span>
+    <el-dialog top="5%" v-model="show" width="600" :close-on-click-modal="false" :show-close="false">
+      <template #header>
+        <div class="header">
+          <span class="title">排班日历</span>
 
-        <span class="el-icon-close" @click="handleClose"></span>
-      </div>
+          <span class="el-icon-close" @click="handleClose"></span>
+        </div>
+      </template>
       <div class="box">
         <div class="day">
           当前时间：{{ activateDate.year }}-{{
@@ -22,27 +24,37 @@
           ref="veCalendar"
           v-if="show"
         >
-          <div slot="header" slot-scope="{ year, month }"></div>
-          <div slot="day-number" slot-scope="{ day }">{{ day.sDay }}</div>
-          <slot slot="day-lunar" slot-scope="{ day }">
-            <span class="fz12">{{ getLunar(day, 5) }}</span>
-          </slot>
+          <template #header="{ year, month }">
+            <div></div>
+          </template>
+          <template #day-number="{ day }">
+            <div>{{ day.sDay }}</div>
+          </template>
+          <template #day-lunar="{ day }">
+            <slot :day="day">
+              <span class="fz12">{{ getLunar(day, 5) }}</span>
+            </slot>
+          </template>
         </ve-calendar>
       </div>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="handleClose">取 消</el-button>
-        <el-button type="primary" :loading="loading" @click="submit">确定</el-button>
-      </span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="handleClose">取 消</el-button>
+          <el-button type="primary" :loading="loading" @click="submit">确定</el-button>
+        </span>
+      </template>
     </el-dialog>
   </div>
 </template>
 
 <script>
-import veCalendar from 've-calendar'
+import dayjs from 'dayjs'
+import veCalendar from '@/components/ve-calendar'
 
-import { putCalendarApi, calendarYearApi } from '@/api/config'
+import { putCalendarApi, calendarYearApi } from '@/api/config.ts'
 
 export default {
+  emits: ['getList'],
   name: 'CrmebOaEntCalendar',
   components: {
     veCalendar
@@ -59,7 +71,7 @@ export default {
       selectList: [],
       loading: false,
       sundayOff: [],
-      min: this.$moment(new Date()).add(1, 'days').format('YYYY-MM-DD')
+      min: dayjs(new Date()).add(1, 'days').format('YYYY-MM-DD')
     }
   },
 
@@ -217,32 +229,32 @@ export default {
     font-size: 14px;
   }
 }
-/deep/.el-dialog {
+:deep(.el-dialog) {
   border-radius: 6px;
 }
-/deep/ .day-title {
+:deep(.day-title) {
   display: flex;
   flex-direction: column;
   align-items: center;
   height: 82px;
 }
-/deep/ .day-grid {
+:deep(.day-grid) {
   cursor: pointer;
   height: 72px;
   padding-top: 19px;
   border-radius: 0;
   border: 1px solid #eeeeee;
 }
-/deep/.day-grid:active {
+:deep(.day-grid:active) {
   background-color: #fff;
 }
-/deep/ .title-grid {
+:deep(.title-grid) {
   font-size: 15px;
   font-family: PingFang SC-Regular, PingFang SC;
   font-weight: 400;
   color: #303133;
 }
-/deep/ .day-number {
+:deep(.day-number) {
   height: 24px;
   line-height: 24px;
   display: flex;
@@ -254,31 +266,31 @@ export default {
     color: #303133;
   }
 }
-/deep/ .day-lunar {
+:deep(.day-lunar) {
   font-size: 14px;
   font-weight: 400;
   display: flex;
   justify-content: center;
   font-family: PingFang SC-Regular, PingFang SC;
 }
-/deep/ .day-grid.selected {
+:deep(.day-grid.selected) {
   background-color: #fff;
   color: #ed4014 !important;
   .day-number div {
     color: #ed4014;
   }
 }
-/deep/ .week-title {
+:deep(.week-title) {
   height: 43px;
   background-color: #e7f3ff;
   line-height: 43px;
   font-family: PingFang SC-Regular, PingFang SC;
 }
 .box {
-  /deep/ .ve-calendar {
+  :deep(.ve-calendar) {
     padding: 0;
   }
-  /deep/.day-grid.today {
+  :deep(.day-grid.today) {
     .day-number {
       width: 24px;
       height: 24px;
@@ -290,7 +302,7 @@ export default {
       font-weight: 500;
     }
   }
-  /deep/.day-grid.today.selected {
+  :deep(.day-grid.today.selected) {
     .day-number {
       color: #fff !important;
       font-size: 14px;
@@ -303,10 +315,15 @@ export default {
       }
     }
   }
-  /deep/ .day-grid.hide {
+  // 注：`visibility: none` 不是合法取值（只有 visible / hidden / collapse），
+  // 会在解析阶段被丢弃，实际生效的仍是 ve-calendar 自带的 .day-grid.hide{visibility:hidden}。
+  // 想让越界日期显示成空白边框格，得把它改成 visibility: visible——那是行为变更，此处不动。
+  :deep(.day-grid.hide) {
     visibility: none;
     border: 1px solid;
-    /deep/ .day-number {
+    // 这里不能再写 ::v-deep：外层已经穿透，嵌套的第二个不会被 scoped 编译器处理，
+    // 会原样输出成 `... .day-grid.hide ::v-deep .day-number`，选择器永不命中。
+    .day-number {
       visibility: hidden;
     }
   }

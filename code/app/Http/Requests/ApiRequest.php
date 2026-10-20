@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,11 +16,8 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Http\Model\Crud\SystemCrud;
-use crmeb\exceptions\ApiRequestException;
-use crmeb\interfaces\ApiRequestInterface;
-use crmeb\traits\RequestHelpTrait;
-use crmeb\utils\Arr;
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\BaseRequest;
+use Tuoluojiang\Open\interfaces\ApiRequestInterface;
 
 /**
  * Class ApiRequest.
@@ -33,24 +30,8 @@ use Illuminate\Foundation\Http\FormRequest;
  * @method array userInfo(string $key = null) 获取用户登录企业后台账号信息
  * @property SystemCrud $crudInfo
  */
-class ApiRequest extends FormRequest implements ApiRequestInterface
+class ApiRequest extends BaseRequest implements ApiRequestInterface
 {
-    use RequestHelpTrait;
-
-    /**
-     * 程序自定义业务错误码
-     *
-     * @var int
-     */
-    protected $code = 400;
-
-    /**
-     * http状态码
-     *
-     * @var int
-     */
-    protected $statusCode = 200;
-
     /**
      * 验证规则.
      * @var array
@@ -77,7 +58,7 @@ class ApiRequest extends FormRequest implements ApiRequestInterface
      */
     public function getMore(array $params = [], ?bool $suffix = null): array
     {
-        $queryData = Arr::more($this->request(), $this->getParamKeys($params), $suffix, 'get');
+        $queryData = parent::getMore($this->getParamKeys($params), false);
         return $this->mergeData($queryData, $suffix);
     }
 
@@ -86,23 +67,8 @@ class ApiRequest extends FormRequest implements ApiRequestInterface
      */
     public function postMore(array $params = [], ?bool $suffix = null): array
     {
-        $postData = Arr::more($this->request(), $this->getParamKeys($params), $suffix);;
+        $postData = parent::postMore($this->getParamKeys($params), false);
         return $this->mergeData($postData, $suffix);
-    }
-
-    public function authorize()
-    {
-        return true;
-    }
-
-    public function rules()
-    {
-        return [];
-    }
-
-    public function messages()
-    {
-        return [];
     }
 
     /**
@@ -136,24 +102,5 @@ class ApiRequest extends FormRequest implements ApiRequestInterface
             return $nowData;
         }
         return $data;
-    }
-
-    protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
-    {
-        throw new ApiRequestException(
-            $validator->errors()->first(),
-            $this->code,
-            null,
-            $this->statusCode
-        );
-    }
-
-    /**
-     * 设置request.
-     * @return $this
-     */
-    protected function request()
-    {
-        return $this;
     }
 }

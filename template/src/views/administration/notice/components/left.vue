@@ -9,7 +9,7 @@
     </div>
 
     <div v-height>
-      <el-scrollbar style="height: 100%">
+      <el-scrollbar style="height: 100%" class="reset-scroll-bar">
         <ul class="assess-left-ul">
           <li
             v-for="(item, index) in department"
@@ -27,14 +27,15 @@
               @after-enter="handleShow(item.id)"
             >
               <div class="right-item-list">
-                <div class="right-item" @click.stop="addDivsion(item.id)">{{ $t('public.edit') }}</div>
-                <div class="right-item" @click.stop="handleDelete(item.id)">{{ $t('public.delete') }}</div>
+                <div class="right-item" @click.stop="addDivsion(item.id)">编辑</div>
+                <div class="right-item" @click.stop="handleDelete(item.id)">删除</div>
               </div>
-              <div
-                slot="reference"
-                v-show="tabIndex == index"
-                class="icon iconfont icongengduo pointer assess-left-more"
-              ></div>
+              <template #reference>
+                <div
+                  v-show="tabIndex == index && item.id"
+                  class="icon iconfont icongengduo pointer assess-left-more"
+                ></div>
+              </template>
             </el-popover>
           </li>
         </ul>
@@ -44,13 +45,16 @@
 </template>
 
 <script>
+import { modalSure } from '@/libs/public.ts'
+import modalForm from '@/libs/modal-form.ts'
 import {
   noticeCategoryApi,
   noticeCategoryCreateApi,
   noticeCategoryDeleteApi,
   noticeCategoryEditApi
-} from '@/api/administration'
+} from '@/api/administration.ts'
 export default {
+  emits: ['eventOptionData'],
   name: 'DepartmentNot',
   data() {
     return {
@@ -84,7 +88,12 @@ export default {
     },
     getList() {
       noticeCategoryApi().then((res) => {
-        this.department = res.data ? res.data : []
+        let obj = {
+          cate_name: '全部',
+          id: ''
+        }
+        // 请求去重会让多个组件共享同一份 res.data，必须拷贝后再插入「全部」，否则会污染新建页的分类下拉
+        this.department = [obj, ...(res.data || [])]
         if (this.department.length > 0) {
           this.optionValue.id = this.department[0].id
         }
@@ -92,7 +101,12 @@ export default {
     },
     getTargetCate() {
       noticeCategoryApi().then((res) => {
-        this.department = res.data ? res.data : []
+        let obj = {
+          cate_name: '全部',
+          id: ''
+        }
+        // 请求去重会让多个组件共享同一份 res.data，必须拷贝后再插入「全部」，否则会污染新建页的分类下拉
+        this.department = [obj, ...(res.data || [])]
         if (this.department.length > 0) {
           this.optionValue.id = this.department[0].id
         }
@@ -100,17 +114,17 @@ export default {
       })
     },
     addCategory() {
-      this.$modalForm(noticeCategoryCreateApi()).then(({ message }) => {
+      modalForm(noticeCategoryCreateApi()).then(({ message }) => {
         this.getTargetCate()
       })
     },
     addDivsion(id) {
-      this.$modalForm(noticeCategoryEditApi(id)).then(({ message }) => {
+      modalForm(noticeCategoryEditApi(id)).then(({ message }) => {
         this.getList()
       })
     },
     async handleDelete(id) {
-      await this.$modalSure('你确定要删除该分类吗')
+      await modalSure('你确定要删除该分类吗')
       const res = await noticeCategoryDeleteApi(id)
       if (res.status === 200) {
         this.getTargetCate()
@@ -133,7 +147,7 @@ export default {
   margin: -15px 0 -20px -20px;
   padding: 14px 0;
   border-right: 1px solid #eeeeee;
-  /deep/ .el-card__header {
+  :deep(.el-card__header) {
     border-bottom: none;
     display: flex;
     align-items: center;
@@ -144,7 +158,7 @@ export default {
       justify-content: flex-end;
     }
   }
-  /deep/ .el-scrollbar__wrap {
+  :deep(.el-scrollbar__wrap) {
     overflow-x: hidden;
   }
   overflow: auto;
@@ -158,20 +172,22 @@ export default {
       padding-left: 20px;
       padding-right: 15px;
       line-height: 40px;
-      font-size: 14px;
+      font-size: 13px;
       font-family: PingFangSC-Regular, PingFang SC;
       font-weight: 400;
       color: #303133;
-      border-right: 2px solid transparent;
+      border-radius: 4px;
       cursor: pointer;
       display: flex;
       justify-content: space-between;
       .assess-left-more {
         font-size: 14px;
       }
+      &:hover {
+        background: #f3f5f9 !important;
+      }
       &.active {
         background-color: rgba(24, 144, 255, 0.08);
-        border-right: 2px solid #1890ff;
         color: #1890ff;
         font-weight: 600;
         .assess-left-more {
@@ -181,6 +197,8 @@ export default {
     }
   }
 }
+
+
 .assess-left::-webkit-scrollbar {
   width: 5px;
   height: 1px;

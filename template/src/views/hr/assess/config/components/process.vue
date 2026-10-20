@@ -26,7 +26,7 @@
           >
             <p class="title">{{ item.name }}</p>
             <div v-if="item.id == 5" class="process-right-con">
-              <div class="left">{{ $t('access.reviewer') }}：</div>
+              <div class="left">审核人：</div>
               <div class="right">
                 <div class="right-con">
                   <!-- <el-checkbox :checked="true" :disabled="true" @change="changeSuperior($event)"
@@ -59,7 +59,7 @@
 
             <!-- <div v-if="item.id == 5" class="process-right-con">
               <div class="left" />
-              <div class="right color444">{{ $t('access.placeholder20') }}</div>
+              <div class="right color444">高级领导为考核人的直接上级，指定人员为多人时，一人同意或驳回即生效</div>
             </div> -->
           </div>
         </el-col>
@@ -69,7 +69,7 @@
 </template>
 
 <script>
-import { assessScoreUpdateApi, assessVerifyApi } from '@/api/enterprise'
+import { assessScoreUpdateApi, assessVerifyApi } from '@/api/enterprise.ts'
 export default {
   name: 'AssessProcess',
   data() {
@@ -78,39 +78,39 @@ export default {
       tableData: [
         {
           id: 1,
-          name: this.$t('access.goalsetting'),
-          title: this.$t('access.participants'),
-          children: [{ label: this.$t('toptable.assessor') }]
+          name: '目标制定',
+          title: '参与人',
+          children: [{ label: '考核人' }]
         },
         {
           id: 2,
-          name: this.$t('access.executionphase'),
-          title: this.$t('access.participants'),
-          children: [{ label: this.$t('toptable.assessor') }, { label: this.$t('access.examinee') }]
+          name: '执行期',
+          title: '参与人',
+          children: [{ label: '考核人' }, { label: '被考核人' }]
         },
         {
           id: 3,
-          name: this.$t('access.higherevaluation'),
-          title: this.$t('access.required'),
-          children: [{ label: this.$t('access.assessmentscore') }, { label: this.$t('access.superiorcomments') }]
+          name: '上级评价',
+          title: '必填项',
+          children: [{ label: '考核分数' }, { label: '上级评语' }]
         },
         {
           id: 4,
-          name: this.$t('access.performancegrievance'),
-          title: this.$t('access.applicant'),
-          children: [{ label: this.$t('access.examinee') }]
+          name: '绩效申诉',
+          title: '申请人',
+          children: [{ label: '被考核人' }]
         },
         {
           id: 5,
-          name: this.$t('access.performancereview'),
-          title: this.$t('access.jurisdiction'),
+          name: '绩效审核',
+          title: '权限',
           children: [
-            { label: this.$t('access.adjustscore') },
-            { label: this.$t('access.superiorcomments') },
-            { label: this.$t('access.toscore') }
+            { label: '调整分数' },
+            { label: '上级评语' },
+            { label: '重新打分' }
           ]
         },
-        { id: 6, name: this.$t('access.end') }
+        { id: 6, name: '结束' }
       ],
       tabIndex: 0,
       staff: []
@@ -119,56 +119,7 @@ export default {
   mounted() {
     this.getVerify()
   },
-  computed: {
-    lang: function () {
-      return this.$store.getters.lang
-    }
-  },
-  watch: {
-    lang() {
-      this.setOptions()
-    }
-  },
   methods: {
-    setOptions() {
-      this.tableData = [
-        {
-          id: 1,
-          name: this.$t('access.goalsetting'),
-          title: this.$t('access.participants'),
-          children: [{ label: this.$t('toptable.assessor') }]
-        },
-        {
-          id: 2,
-          name: this.$t('access.executionphase'),
-          title: this.$t('access.participants'),
-          children: [{ label: this.$t('toptable.assessor') }, { label: this.$t('access.examinee') }]
-        },
-        {
-          id: 3,
-          name: this.$t('access.higherevaluation'),
-          title: this.$t('access.required'),
-          children: [{ label: this.$t('access.assessmentscore') }, { label: this.$t('access.superiorcomments') }]
-        },
-        {
-          id: 4,
-          name: this.$t('access.performancegrievance'),
-          title: this.$t('access.applicant'),
-          children: [{ label: this.$t('access.examinee') }]
-        },
-        {
-          id: 5,
-          name: this.$t('access.performancereview'),
-          title: this.$t('access.jurisdiction'),
-          children: [
-            { label: this.$t('access.adjustscore') },
-            { label: this.$t('access.superiorcomments') },
-            { label: this.$t('access.toscore') }
-          ]
-        },
-        { id: 6, name: this.$t('access.end') }
-      ]
-    },
     async getVerify() {
       const result = await assessVerifyApi()
       result.data.is_superior == 1 ? (this.isSuperior = true) : (this.isSuperior = false)
@@ -179,7 +130,7 @@ export default {
     },
     async handlePreserve() {
       if (this.isAppoint && this.departmentObj.userList.length == 0) {
-        this.$message.error(this.$t('access.placeholder21'))
+        this.$message.error('必须指定至少一个人员')
       } else {
         const is_superior = this.isSuperior == true ? 1 : 0
         const is_appoint = this.isAppoint == true ? 1 : 0
@@ -221,7 +172,7 @@ export default {
   // flex-direction: row-reverse;
   .process-left-con {
     .process-left-list {
-      .el-button--medium {
+      .el-button {
         padding: 8px 0;
         width: 100px;
         font-size: 13px;
@@ -276,14 +227,10 @@ export default {
             height: 16px;
             font-size: 13px;
             padding: 0;
+            margin-right: 4px;
           }
         }
-        .el-input__inner {
-          width: 100%;
-          height: 36px;
-          line-height: 36px;
-        }
-        >>> .disable {
+        :deep(.disable) {
           pointer-events: none;
           color: #eeeeee;
           border-color: #eeeeee;

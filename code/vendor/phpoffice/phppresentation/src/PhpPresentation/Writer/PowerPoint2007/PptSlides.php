@@ -1,7 +1,26 @@
 <?php
 
+/**
+ * This file is part of PHPPresentation - A pure PHP library for reading and writing
+ * presentations documents.
+ *
+ * PHPPresentation is free software distributed under the terms of the GNU Lesser
+ * General Public License version 3 as published by the Free Software Foundation.
+ *
+ * For the full copyright and license information, please read the LICENSE
+ * file that was distributed with this source code. For the full list of
+ * contributors, visit https://github.com/PHPOffice/PHPPresentation/contributors.
+ *
+ * @see        https://github.com/PHPOffice/PHPPresentation
+ *
+ * @license     http://www.gnu.org/licenses/lgpl.txt LGPL version 3
+ */
+
+declare(strict_types=1);
+
 namespace PhpOffice\PhpPresentation\Writer\PowerPoint2007;
 
+use PhpOffice\Common\Adapter\Zip\ZipInterface;
 use PhpOffice\Common\Drawing as CommonDrawing;
 use PhpOffice\Common\XMLWriter;
 use PhpOffice\PhpPresentation\Shape\Chart as ShapeChart;
@@ -13,6 +32,7 @@ use PhpOffice\PhpPresentation\Shape\RichText;
 use PhpOffice\PhpPresentation\Shape\RichText\Run;
 use PhpOffice\PhpPresentation\Shape\RichText\TextElement;
 use PhpOffice\PhpPresentation\Shape\Table as ShapeTable;
+use PhpOffice\PhpPresentation\ShapeContainerInterface;
 use PhpOffice\PhpPresentation\Slide;
 use PhpOffice\PhpPresentation\Slide\Background\Image;
 use PhpOffice\PhpPresentation\Slide\Note;
@@ -20,10 +40,9 @@ use PhpOffice\PhpPresentation\Slide\Note;
 class PptSlides extends AbstractSlide
 {
     /**
-     * Add slides (drawings, ...) and slide relationships (drawings, ...)
-     * @return \PhpOffice\Common\Adapter\Zip\ZipInterface
+     * Add slides (drawings, ...) and slide relationships (drawings, ...).
      */
-    public function render()
+    public function render(): ZipInterface
     {
         foreach ($this->oPresentation->getAllSlides() as $idx => $oSlide) {
             $this->oZip->addFromString('ppt/slides/_rels/slide' . ($idx + 1) . '.xml.rels', $this->writeSlideRelationships($oSlide));
@@ -31,7 +50,7 @@ class PptSlides extends AbstractSlide
 
             // Add note slide
             if ($oSlide->getNote() instanceof Note) {
-                if ($oSlide->getNote()->getShapeCollection()->count() > 0) {
+                if (count($oSlide->getNote()->getShapeCollection()) > 0) {
                     $this->oZip->addFromString('ppt/notesSlides/notesSlide' . ($idx + 1) . '.xml', $this->writeNote($oSlide->getNote()));
                 }
             }
@@ -39,7 +58,7 @@ class PptSlides extends AbstractSlide
             // Add background image slide
             $oBkgImage = $oSlide->getBackground();
             if ($oBkgImage instanceof Image) {
-                $this->oZip->addFromString('ppt/media/'.$oBkgImage->getIndexedFilename($idx), file_get_contents($oBkgImage->getPath()));
+                $this->oZip->addFromString('ppt/media/' . $oBkgImage->getIndexedFilename((string) $idx), file_get_contents($oBkgImage->getPath()));
             }
         }
 
@@ -47,13 +66,11 @@ class PptSlides extends AbstractSlide
     }
 
     /**
-     * Write slide relationships to XML format
+     * Write slide relationships to XML format.
      *
-     * @param  \PhpOffice\PhpPresentation\Slide $pSlide
-     * @return string              XML Output
-     * @throws \Exception
+     * @return string XML Output
      */
-    protected function writeSlideRelationships(Slide $pSlide)
+    protected function writeSlideRelationships(Slide $pSlide): string
     {
         //@todo Group all getShapeCollection()->getIterator
 
@@ -80,77 +97,54 @@ class PptSlides extends AbstractSlide
         ++$relId;
 
         // Write drawing relationships?
-        if ($pSlide->getShapeCollection()->count() > 0) {
+        if (count($pSlide->getShapeCollection()) > 0) {
+            $collections = [$pSlide->getShapeCollection()];
+
             // Loop trough images and write relationships
-            $iterator = $pSlide->getShapeCollection()->getIterator();
-            while ($iterator->valid()) {
-                if ($iterator->current() instanceof Media) {
-                    // Write relationship for image drawing
-                    $iterator->current()->relationId = 'rId' . $relId;
-                    $this->writeRelationship($objWriter, $relId, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/video', '../media/' . $iterator->current()->getIndexedFilename());
-                    ++$relId;
-                    $this->writeRelationship($objWriter, $relId, 'http://schemas.microsoft.com/office/2007/relationships/media', '../media/' . $iterator->current()->getIndexedFilename());
-                    ++$relId;
-                } elseif ($iterator->current() instanceof ShapeDrawing\AbstractDrawingAdapter) {
-                    // Write relationship for image drawing
-                    $this->writeRelationship($objWriter, $relId, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image', '../media/' . $iterator->current()->getIndexedFilename());
-                    $iterator->current()->relationId = 'rId' . $relId;
-                    ++$relId;
-                } elseif ($iterator->current() instanceof ShapeChart) {
-                    // Write relationship for chart drawing
-                    $this->writeRelationship($objWriter, $relId, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart', '../charts/' . $iterator->current()->getIndexedFilename());
+            while (count($collections)) {
+                $collection = array_shift($collections);
 
-                    $iterator->current()->relationId = 'rId' . $relId;
-
-                    ++$relId;
-                } elseif ($iterator->current() instanceof Group) {
-                    $iterator2 = $iterator->current()->getShapeCollection()->getIterator();
-                    while ($iterator2->valid()) {
-                        if ($iterator2->current() instanceof Media) {
-                            // Write relationship for image drawing
-                            $iterator2->current()->relationId = 'rId' . $relId;
-                            $this->writeRelationship($objWriter, $relId, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/video', '../media/' . $iterator->current()->getIndexedFilename());
-                            ++$relId;
-                            $this->writeRelationship($objWriter, $relId, 'http://schemas.microsoft.com/office/2007/relationships/media', '../media/' . $iterator->current()->getIndexedFilename());
-                            ++$relId;
-                        } elseif ($iterator2->current() instanceof ShapeDrawing\AbstractDrawingAdapter) {
-                            // Write relationship for image drawing
-                            $this->writeRelationship($objWriter, $relId, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image', '../media/' . $iterator2->current()->getIndexedFilename());
-                            $iterator2->current()->relationId = 'rId' . $relId;
-
-                            ++$relId;
-                        } elseif ($iterator2->current() instanceof ShapeChart) {
-                            // Write relationship for chart drawing
-                            $this->writeRelationship($objWriter, $relId, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart', '../charts/' . $iterator2->current()->getIndexedFilename());
-                            $iterator2->current()->relationId = 'rId' . $relId;
-
-                            ++$relId;
-                        }
-                        $iterator2->next();
+                foreach ($collection as $currentShape) {
+                    if ($currentShape instanceof Media) {
+                        // Write relationship for image drawing
+                        $currentShape->relationId = 'rId' . $relId;
+                        $this->writeRelationship($objWriter, $relId, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/video', '../media/' . $currentShape->getIndexedFilename());
+                        ++$relId;
+                        $this->writeRelationship($objWriter, $relId, 'http://schemas.microsoft.com/office/2007/relationships/media', '../media/' . $currentShape->getIndexedFilename());
+                        ++$relId;
+                    } elseif ($currentShape instanceof ShapeDrawing\AbstractDrawingAdapter) {
+                        // Write relationship for image drawing
+                        $this->writeRelationship($objWriter, $relId, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image', '../media/' . $currentShape->getIndexedFilename());
+                        $currentShape->relationId = 'rId' . $relId;
+                        ++$relId;
+                    } elseif ($currentShape instanceof ShapeChart) {
+                        // Write relationship for chart drawing
+                        $this->writeRelationship($objWriter, $relId, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart', '../charts/' . $currentShape->getIndexedFilename());
+                        $currentShape->relationId = 'rId' . $relId;
+                        ++$relId;
+                    } elseif ($currentShape instanceof ShapeContainerInterface) {
+                        $collections[] = $currentShape->getShapeCollection();
                     }
                 }
-
-                $iterator->next();
             }
         }
 
         // Write background relationships?
         $oBackground = $pSlide->getBackground();
         if ($oBackground instanceof Image) {
-            $this->writeRelationship($objWriter, $relId, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image', '../media/' . $oBackground->getIndexedFilename($idxSlide));
+            $this->writeRelationship($objWriter, $relId, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image', '../media/' . $oBackground->getIndexedFilename((string) $idxSlide));
             $oBackground->relationId = 'rId' . $relId;
             ++$relId;
         }
 
         // Write hyperlink relationships?
-        if ($pSlide->getShapeCollection()->count() > 0) {
+        if (count($pSlide->getShapeCollection()) > 0) {
             // Loop trough hyperlinks and write relationships
-            $iterator = $pSlide->getShapeCollection()->getIterator();
-            while ($iterator->valid()) {
+            foreach ($pSlide->getShapeCollection() as $shape) {
                 // Hyperlink on shape
-                if ($iterator->current()->hasHyperlink()) {
+                if ($shape->hasHyperlink()) {
                     // Write relationship for hyperlink
-                    $hyperlink               = $iterator->current()->getHyperlink();
+                    $hyperlink = $shape->getHyperlink();
                     $hyperlink->relationId = 'rId' . $relId;
 
                     if (!$hyperlink->isInternal()) {
@@ -163,13 +157,13 @@ class PptSlides extends AbstractSlide
                 }
 
                 // Hyperlink on rich text run
-                if ($iterator->current() instanceof RichText) {
-                    foreach ($iterator->current()->getParagraphs() as $paragraph) {
+                if ($shape instanceof RichText) {
+                    foreach ($shape->getParagraphs() as $paragraph) {
                         foreach ($paragraph->getRichTextElements() as $element) {
                             if ($element instanceof Run || $element instanceof TextElement) {
                                 if ($element->hasHyperlink()) {
                                     // Write relationship for hyperlink
-                                    $hyperlink               = $element->getHyperlink();
+                                    $hyperlink = $element->getHyperlink();
                                     $hyperlink->relationId = 'rId' . $relId;
 
                                     if (!$hyperlink->isInternal()) {
@@ -186,14 +180,14 @@ class PptSlides extends AbstractSlide
                 }
 
                 // Hyperlink in table
-                if ($iterator->current() instanceof ShapeTable) {
+                if ($shape instanceof ShapeTable) {
                     // Rows
-                    $countRows = count($iterator->current()->getRows());
-                    for ($row = 0; $row < $countRows; $row++) {
+                    $countRows = count($shape->getRows());
+                    for ($row = 0; $row < $countRows; ++$row) {
                         // Cells in rows
-                        $countCells = count($iterator->current()->getRow($row)->getCells());
-                        for ($cell = 0; $cell < $countCells; $cell++) {
-                            $currentCell = $iterator->current()->getRow($row)->getCell($cell);
+                        $countCells = count($shape->getRow($row)->getCells());
+                        for ($cell = 0; $cell < $countCells; ++$cell) {
+                            $currentCell = $shape->getRow($row)->getCell($cell);
                             // Paragraphs in cell
                             foreach ($currentCell->getParagraphs() as $paragraph) {
                                 // RichText in paragraph
@@ -202,7 +196,7 @@ class PptSlides extends AbstractSlide
                                     if ($element instanceof Run || $element instanceof TextElement) {
                                         if ($element->hasHyperlink()) {
                                             // Write relationship for hyperlink
-                                            $hyperlink               = $element->getHyperlink();
+                                            $hyperlink = $element->getHyperlink();
                                             $hyperlink->relationId = 'rId' . $relId;
 
                                             if (!$hyperlink->isInternal()) {
@@ -220,13 +214,12 @@ class PptSlides extends AbstractSlide
                     }
                 }
 
-                if ($iterator->current() instanceof Group) {
-                    $iterator2 = $pSlide->getShapeCollection()->getIterator();
-                    while ($iterator2->valid()) {
+                if ($shape instanceof Group) {
+                    foreach ($shape->getShapeCollection() as $subShape) {
                         // Hyperlink on shape
-                        if ($iterator2->current()->hasHyperlink()) {
+                        if ($subShape->hasHyperlink()) {
                             // Write relationship for hyperlink
-                            $hyperlink             = $iterator2->current()->getHyperlink();
+                            $hyperlink = $subShape->getHyperlink();
                             $hyperlink->relationId = 'rId' . $relId;
 
                             if (!$hyperlink->isInternal()) {
@@ -239,13 +232,13 @@ class PptSlides extends AbstractSlide
                         }
 
                         // Hyperlink on rich text run
-                        if ($iterator2->current() instanceof RichText) {
-                            foreach ($iterator2->current()->getParagraphs() as $paragraph) {
+                        if ($subShape instanceof RichText) {
+                            foreach ($subShape->getParagraphs() as $paragraph) {
                                 foreach ($paragraph->getRichTextElements() as $element) {
                                     if ($element instanceof Run || $element instanceof TextElement) {
                                         if ($element->hasHyperlink()) {
                                             // Write relationship for hyperlink
-                                            $hyperlink              = $element->getHyperlink();
+                                            $hyperlink = $element->getHyperlink();
                                             $hyperlink->relationId = 'rId' . $relId;
 
                                             if (!$hyperlink->isInternal()) {
@@ -262,14 +255,14 @@ class PptSlides extends AbstractSlide
                         }
 
                         // Hyperlink in table
-                        if ($iterator2->current() instanceof ShapeTable) {
+                        if ($subShape instanceof ShapeTable) {
                             // Rows
-                            $countRows = count($iterator2->current()->getRows());
-                            for ($row = 0; $row < $countRows; $row++) {
+                            $countRows = count($subShape->getRows());
+                            for ($row = 0; $row < $countRows; ++$row) {
                                 // Cells in rows
-                                $countCells = count($iterator2->current()->getRow($row)->getCells());
-                                for ($cell = 0; $cell < $countCells; $cell++) {
-                                    $currentCell = $iterator2->current()->getRow($row)->getCell($cell);
+                                $countCells = count($subShape->getRow($row)->getCells());
+                                for ($cell = 0; $cell < $countCells; ++$cell) {
+                                    $currentCell = $subShape->getRow($row)->getCell($cell);
                                     // Paragraphs in cell
                                     foreach ($currentCell->getParagraphs() as $paragraph) {
                                         // RichText in paragraph
@@ -278,7 +271,7 @@ class PptSlides extends AbstractSlide
                                             if ($element instanceof Run || $element instanceof TextElement) {
                                                 if ($element->hasHyperlink()) {
                                                     // Write relationship for hyperlink
-                                                    $hyperlink               = $element->getHyperlink();
+                                                    $hyperlink = $element->getHyperlink();
                                                     $hyperlink->relationId = 'rId' . $relId;
 
                                                     if (!$hyperlink->isInternal()) {
@@ -295,47 +288,40 @@ class PptSlides extends AbstractSlide
                                 }
                             }
                         }
-
-                        $iterator2->next();
                     }
                 }
-
-                $iterator->next();
             }
         }
 
         // Write comment relationships
-        if ($pSlide->getShapeCollection()->count() > 0) {
+        if (count($pSlide->getShapeCollection()) > 0) {
             $hasSlideComment = false;
 
             // Loop trough images and write relationships
-            $iterator = $pSlide->getShapeCollection()->getIterator();
-            while ($iterator->valid()) {
-                if ($iterator->current() instanceof Comment) {
+            foreach ($pSlide->getShapeCollection() as $shape) {
+                if ($shape instanceof Comment) {
                     $hasSlideComment = true;
+
                     break;
-                } elseif ($iterator->current() instanceof Group) {
-                    $iterator2 = $iterator->current()->getShapeCollection()->getIterator();
-                    while ($iterator2->valid()) {
-                        if ($iterator2->current() instanceof Comment) {
+                } elseif ($shape instanceof Group) {
+                    foreach ($shape->getShapeCollection() as $subShape) {
+                        if ($subShape instanceof Comment) {
                             $hasSlideComment = true;
+
                             break 2;
                         }
-                        $iterator2->next();
                     }
                 }
-
-                $iterator->next();
             }
 
             if ($hasSlideComment) {
-                $this->writeRelationship($objWriter, $relId, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments', '../comments/comment'.($idxSlide + 1).'.xml');
+                $this->writeRelationship($objWriter, $relId, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments', '../comments/comment' . ($idxSlide + 1) . '.xml');
                 ++$relId;
             }
         }
 
-        if ($pSlide->getNote()->getShapeCollection()->count() > 0) {
-            $this->writeRelationship($objWriter, $relId, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide', '../notesSlides/notesSlide'.($idxSlide + 1).'.xml');
+        if (count($pSlide->getNote()->getShapeCollection()) > 0) {
+            $this->writeRelationship($objWriter, $relId, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide', '../notesSlides/notesSlide' . ($idxSlide + 1) . '.xml');
         }
 
         $objWriter->endElement();
@@ -345,13 +331,11 @@ class PptSlides extends AbstractSlide
     }
 
     /**
-     * Write slide to XML format
+     * Write slide to XML format.
      *
-     * @param  \PhpOffice\PhpPresentation\Slide $pSlide
-     * @return string              XML Output
-     * @throws \Exception
+     * @return string XML Output
      */
-    public function writeSlide(Slide $pSlide)
+    protected function writeSlide(Slide $pSlide): string
     {
         // Create XML writer
         $objWriter = new XMLWriter(XMLWriter::STORAGE_MEMORY);
@@ -388,7 +372,7 @@ class PptSlides extends AbstractSlide
                 $objWriter->endElement();
             }
 
-            if ($oBackground instanceof Slide\Background\Image) {
+            if ($oBackground instanceof Image) {
                 // a:blipFill
                 $objWriter->startElement('a:blipFill');
 
@@ -498,11 +482,7 @@ class PptSlides extends AbstractSlide
         return $objWriter->getData();
     }
 
-    /**
-     * @param XMLWriter $objWriter
-     * @param Slide $oSlide
-     */
-    protected function writeSlideAnimations(XMLWriter $objWriter, Slide $oSlide)
+    protected function writeSlideAnimations(XMLWriter $objWriter, Slide $oSlide): void
     {
         $arrayAnimations = $oSlide->getAnimations();
         if (empty($arrayAnimations)) {
@@ -512,8 +492,8 @@ class PptSlides extends AbstractSlide
         // Variables
         $shapeId = 1;
         $idCount = 1;
-        $hashToIdMap = array();
-        $arrayAnimationIds = array();
+        $hashToIdMap = [];
+        $arrayAnimationIds = [];
 
         foreach ($oSlide->getShapeCollection() as $shape) {
             $hashToIdMap[$shape->getHashCode()] = ++$shapeId;
@@ -743,134 +723,6 @@ class PptSlides extends AbstractSlide
         $objWriter->endElement();
 
         // ##p:timing
-        $objWriter->endElement();
-    }
-
-    /**
-     * Write pic
-     *
-     * @param  \PhpOffice\Common\XMLWriter  $objWriter XML Writer
-     * @param  \PhpOffice\PhpPresentation\Shape\Drawing\AbstractDrawingAdapter $shape
-     * @param  int $shapeId
-     * @throws \Exception
-     */
-    protected function writeShapeDrawing(XMLWriter $objWriter, ShapeDrawing\AbstractDrawingAdapter $shape, $shapeId)
-    {
-        // p:pic
-        $objWriter->startElement('p:pic');
-
-        // p:nvPicPr
-        $objWriter->startElement('p:nvPicPr');
-
-        // p:cNvPr
-        $objWriter->startElement('p:cNvPr');
-        $objWriter->writeAttribute('id', $shapeId);
-        $objWriter->writeAttribute('name', $shape->getName());
-        $objWriter->writeAttribute('descr', $shape->getDescription());
-
-        // a:hlinkClick
-        if ($shape->hasHyperlink()) {
-            $this->writeHyperlink($objWriter, $shape);
-        }
-
-        $objWriter->endElement();
-
-        // p:cNvPicPr
-        $objWriter->startElement('p:cNvPicPr');
-
-        // a:picLocks
-        $objWriter->startElement('a:picLocks');
-        $objWriter->writeAttribute('noChangeAspect', '1');
-        $objWriter->endElement();
-
-        $objWriter->endElement();
-
-        // p:nvPr
-        $objWriter->startElement('p:nvPr');
-        // PlaceHolder
-        if ($shape->isPlaceholder()) {
-            $objWriter->startElement('p:ph');
-            $objWriter->writeAttribute('type', $shape->getPlaceholder()->getType());
-            $objWriter->endElement();
-        }
-        /**
-         * @link : https://github.com/stefslon/exportToPPTX/blob/master/exportToPPTX.m#L2128
-         */
-        if ($shape instanceof Media) {
-            // p:nvPr > a:videoFile
-            $objWriter->startElement('a:videoFile');
-            $objWriter->writeAttribute('r:link', $shape->relationId);
-            $objWriter->endElement();
-            // p:nvPr > p:extLst
-            $objWriter->startElement('p:extLst');
-            // p:nvPr > p:extLst > p:ext
-            $objWriter->startElement('p:ext');
-            $objWriter->writeAttribute('uri', '{DAA4B4D4-6D71-4841-9C94-3DE7FCFB9230}');
-            // p:nvPr > p:extLst > p:ext > p14:media
-            $objWriter->startElement('p14:media');
-            $objWriter->writeAttribute('r:embed', ($shape->relationId + 1));
-            $objWriter->writeAttribute('xmlns:p14', 'http://schemas.microsoft.com/office/powerpoint/2010/main');
-            // p:nvPr > p:extLst > p:ext > ##p14:media
-            $objWriter->endElement();
-            // p:nvPr > p:extLst > ##p:ext
-            $objWriter->endElement();
-            // p:nvPr > ##p:extLst
-            $objWriter->endElement();
-        }
-        // ##p:nvPr
-        $objWriter->endElement();
-        $objWriter->endElement();
-
-        // p:blipFill
-        $objWriter->startElement('p:blipFill');
-
-        // a:blip
-        $objWriter->startElement('a:blip');
-        $objWriter->writeAttribute('r:embed', $shape->relationId);
-        $objWriter->endElement();
-
-        // a:stretch
-        $objWriter->startElement('a:stretch');
-        $objWriter->writeElement('a:fillRect', null);
-        $objWriter->endElement();
-
-        $objWriter->endElement();
-
-        // p:spPr
-        $objWriter->startElement('p:spPr');
-        // a:xfrm
-        $objWriter->startElement('a:xfrm');
-        $objWriter->writeAttributeIf($shape->getRotation() != 0, 'rot', CommonDrawing::degreesToAngle($shape->getRotation()));
-
-        // a:off
-        $objWriter->startElement('a:off');
-        $objWriter->writeAttribute('x', CommonDrawing::pixelsToEmu($shape->getOffsetX()));
-        $objWriter->writeAttribute('y', CommonDrawing::pixelsToEmu($shape->getOffsetY()));
-        $objWriter->endElement();
-
-        // a:ext
-        $objWriter->startElement('a:ext');
-        $objWriter->writeAttribute('cx', CommonDrawing::pixelsToEmu($shape->getWidth()));
-        $objWriter->writeAttribute('cy', CommonDrawing::pixelsToEmu($shape->getHeight()));
-        $objWriter->endElement();
-
-        $objWriter->endElement();
-
-        // a:prstGeom
-        $objWriter->startElement('a:prstGeom');
-        $objWriter->writeAttribute('prst', 'rect');
-
-        // a:avLst
-        $objWriter->writeElement('a:avLst', null);
-
-        $objWriter->endElement();
-
-        $this->writeBorder($objWriter, $shape->getBorder(), '');
-
-        $this->writeShadow($objWriter, $shape->getShadow());
-
-        $objWriter->endElement();
-
         $objWriter->endElement();
     }
 }

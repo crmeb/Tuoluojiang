@@ -35,9 +35,20 @@ class CompanyConfig extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'          => 'integer',
+        'upload_type' => 'integer',
+        'width'       => 'integer',
+        'high'        => 'integer',
+        'sort'        => 'integer',
+        'entid'       => 'integer',
+        'is_show'     => 'integer',
+        'created_at'  => 'datetime:Y-m-d H:i:s',
+        'updated_at'  => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * value修改器.
-     * @param mixed $value
      */
     public function setValueAttribute($value)
     {
@@ -46,7 +57,6 @@ class CompanyConfig extends BaseModel
 
     /**
      * parameter 获取器.
-     * @param mixed $value
      */
     public function getParameterAttribute($value)
     {
@@ -55,7 +65,6 @@ class CompanyConfig extends BaseModel
 
     /**
      * value获取器.
-     * @param mixed $value
      * @return mixed
      */
     public function getValueAttribute($value)
@@ -66,7 +75,6 @@ class CompanyConfig extends BaseModel
     /**
      * 配置动态作用域
      * @param Builder $query
-     * @param mixed $value
      * @return Builder
      */
     public function scopeKey($query, $value)
@@ -82,7 +90,6 @@ class CompanyConfig extends BaseModel
     /**
      * 配置动态作用域
      * @param Builder $query
-     * @param mixed $value
      * @return Builder
      */
     public function scopeEntid($query, $value)
@@ -95,7 +102,6 @@ class CompanyConfig extends BaseModel
     /**
      * 分类动态作用域
      * @param Builder $query
-     * @param mixed $value
      * @return Builder
      */
     public function scopeCategory($query, $value)

@@ -4,28 +4,56 @@
       <span class="closeBtn el-icon-close" @click="close"></span>
     </div>
     <div class="searchInputBox">
-      <el-input ref="searchInputRef" placeholder="请输入查找内容" size="small" v-model="searchText"
-        @keyup.native.enter.stop="onSearchNext" @keydown.native.stop @focus="onFocus" @blur="onBlur">
-        <i slot="prefix" class="el-input__icon el-icon-search"></i>
-        <el-button size="small" slot="append" v-if="!isUndef(searchText)"
-          @click="showReplaceInput = true">替换</el-button>
+      <el-input
+        ref="searchInputRef"
+        placeholder="请输入查找内容"
+        v-model="searchText"
+        @keyup.enter.stop="onSearchNext"
+        @keydown.stop
+        @focus="onFocus"
+        @blur="onBlur"
+      >
+        <template #prefix>
+          <i class="el-input__icon el-icon-search"></i>
+        </template>
+        <template #append>
+          <el-button v-if="!isUndef(searchText)" @click="showReplaceInput = true"
+            >替换</el-button
+          >
+        </template>
       </el-input>
-      <div class="searchInfo" v-if="showSearchInfo">
-        {{ currentIndex }} / {{ total }}
-      </div>
+      <div class="searchInfo" v-if="showSearchInfo">{{ currentIndex }} / {{ total }}</div>
     </div>
-    <el-input v-if="showReplaceInput" ref="replaceInputRef" placeholder="请输入替换内容" size="small" v-model="replaceText"
-      style="margin: 12px 0;" @keydown.native.stop @focus="onFocus" @blur="onBlur">
-      <i slot="prefix" class="el-input__icon el-icon-edit"></i>
-      <el-button size="small" slot="append" @click="hideReplaceInput">取消</el-button>
+    <el-input
+      v-if="showReplaceInput"
+      ref="replaceInputRef"
+      placeholder="请输入替换内容"
+      v-model="replaceText"
+      style="margin: 12px 0"
+      @keydown.stop
+      @focus="onFocus"
+      @blur="onBlur"
+    >
+      <template #prefix>
+        <i class="el-input__icon el-icon-edit"></i>
+      </template>
+      <template #append>
+        <el-button @click="hideReplaceInput">取消</el-button>
+      </template>
     </el-input>
     <div class="btnList" v-if="showReplaceInput">
-      <el-button size="small" :disabled="isReadonly" @click="replace">替换</el-button>
-      <el-button size="small" :disabled="isReadonly" @click="replaceAll">全部替换</el-button>
+      <el-button :disabled="isReadonly" @click="replace">替换</el-button>
+      <el-button :disabled="isReadonly" @click="replaceAll">全部替换</el-button>
     </div>
     <div class="searchResultList" :style="{ height: searchResultListHeight + 'px' }" v-if="showSearchResultList">
-      <div class="searchResultItem" v-for="(item, index) in searchResultList" :key="item.id" :title="item.name"
-        v-html="item.text" @click.stop="onSearchResultItemClick(index)"></div>
+      <div
+        class="searchResultItem"
+        v-for="(item, index) in searchResultList"
+        :key="item.id"
+        :title="item.name"
+        v-html="item.text"
+        @click.stop="onSearchResultItemClick(index)"
+      ></div>
       <div class="empty" v-if="searchResultList.length <= 0">
         <span class="xmind-iconfont iconwushuju"></span>
         <span class="text">暂无结果</span>
@@ -35,8 +63,17 @@
 </template>
 
 <script>
+import { EventBus } from '@/libs/bus.ts'
 import { isUndef, getTextFromHtml } from 'simple-mind-map/src/utils/index'
-import { CLOSE_SIDE_BAR, DRAW_CLICK, EXPAND_BTN_CLICK, NODE_CLICK, SEARCH_INFO_CHANGE, SEARCH_MATCH_NODE_LIST_CHANGE, SHOW_SEARCH } from '../event-constant';
+import {
+  CLOSE_SIDE_BAR,
+  DRAW_CLICK,
+  EXPAND_BTN_CLICK,
+  NODE_CLICK,
+  SEARCH_INFO_CHANGE,
+  SEARCH_MATCH_NODE_LIST_CHANGE,
+  SHOW_SEARCH
+} from '../event-constant.ts'
 
 // 搜索替换
 export default {
@@ -83,23 +120,20 @@ export default {
     this.mindMap.keyCommand.addShortcut('Control+f', this.showSearch)
     window.addEventListener('resize', this.setSearchResultListHeight)
 
-    Object.entries(this.listenEventMap)
-      .forEach(([eventName, handler]) => {
-        this.$bus.$on(eventName, handler);
-      });
+    Object.entries(this.listenEventMap).forEach(([eventName, handler]) => {
+      EventBus.$on(eventName, handler)
+    })
   },
   mounted() {
     this.setSearchResultListHeight()
   },
-  beforeDestroy() {
-
+  beforeUnmount() {
     this.mindMap.keyCommand.removeShortcut('Control+f', this.showSearch)
     window.removeEventListener('resize', this.setSearchResultListHeight)
 
-    Object.entries(this.listenEventMap)
-      .forEach(([eventName, handler]) => {
-        this.$bus.$off(eventName, handler);
-      });
+    Object.entries(this.listenEventMap).forEach(([eventName, handler]) => {
+      EventBus.$off(eventName, handler)
+    })
   },
   methods: {
     isUndef,
@@ -111,7 +145,7 @@ export default {
     },
 
     showSearch() {
-      this.$bus.$emit(CLOSE_SIDE_BAR)
+      EventBus.$emit(CLOSE_SIDE_BAR)
       this.show = true
       // this.$refs.searchInputRef.focus()
     },
@@ -170,7 +204,7 @@ export default {
     },
 
     onSearchMatchNodeListChange(list) {
-      this.searchResultList = list.map(item => {
+      this.searchResultList = list.map((item) => {
         const data = item.data || item.nodeData.data
         let name = data.text
         const id = data.uid
@@ -178,7 +212,7 @@ export default {
           name = getTextFromHtml(name)
         }
         const reg = new RegExp(`${this.searchText.trim()}`, 'g')
-        const text = name.replace(reg, a => {
+        const text = name.replace(reg, (a) => {
           return `<span class="match">${a}</span>`
         })
         return {
@@ -295,7 +329,7 @@ export default {
         background-color: #f2f4f7;
       }
 
-      /deep/.match {
+      :deep(.match) {
         color: #409eff;
         font-weight: bold;
       }

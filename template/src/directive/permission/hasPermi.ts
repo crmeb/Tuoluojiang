@@ -1,0 +1,37 @@
+
+import type { Directive } from 'vue';
+import pinia from '@/stores';
+import { useUserStore } from '@/stores/user';
+
+const hasPermi: Directive<HTMLElement, string[]> = {
+  mounted(el, binding) {
+
+    // 当被绑定的元素插入到 DOM 中时……
+    const { value } = binding;
+    const all_permission = '*';
+    //超管标识
+    const permissions = useUserStore(pinia).permissions;
+    //从接口请求到的权限标识数组
+    if (value && value instanceof Array && value.length > 0) {
+      //value为指令的绑定值，并且要求是一个非空数组
+      const permissionFlag = value;
+
+      const hasPermissions = permissions.some((permission) => {
+        //some() 方法用于检测数组中的元素是否满足指定条件
+        //如果是超管或者其他管理员有对应的权限标识
+        return all_permission === permission || permissionFlag.includes(permission);
+        //检测数组 permissionFlag 是否包含 permission
+      });
+
+      if (!hasPermissions) {
+        el.parentNode && el.parentNode.removeChild(el);
+        //否则就删除该节点，体现在页面上就是没有按钮对应的权限标识就不显示该按钮
+      }
+    } else {
+      throw new Error(`请设置操作权限标签值`);
+      //页面上使用v-hasPermi没有传值的情况下给的提示
+    }
+  },
+};
+
+export default hasPermi;

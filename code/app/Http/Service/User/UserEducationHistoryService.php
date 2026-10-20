@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,11 +16,11 @@ declare(strict_types=1);
 namespace App\Http\Service\User;
 
 use App\Http\Dao\User\UserEducationHistoryDao;
-use App\Http\Service\BaseService;
 use Carbon\Carbon;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\services\FormService;
-use crmeb\traits\service\ResourceServiceTrait;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\services\FormService;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -75,7 +75,7 @@ class UserEducationHistoryService extends BaseService implements ResourceService
     {
         $this->setResumeId();
 
-        return $this->elForm('添加教育经历', $this->createEducationRule(collect()), '/ent/user/education?resume_id=' . $this->resumeId);
+        return $this->createElementForm('添加教育经历', $this->createEducationRule(collect()), '/ent/user/education?resume_id=' . $this->resumeId);
     }
 
     /**
@@ -111,7 +111,7 @@ class UserEducationHistoryService extends BaseService implements ResourceService
             throw $this->exception('修改的信息不存在');
         }
 
-        return $this->elForm('修改教育经历', $this->createEducationRule(collect($info->toArray())), '/ent/user/education/' . $id, 'put');
+        return $this->createElementForm('修改教育经历', $this->createEducationRule(collect($info->toArray())), '/ent/user/education/' . $id, 'put');
     }
 
     public function resourceUpdate($id, array $data)

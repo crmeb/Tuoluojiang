@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,25 +15,29 @@ declare(strict_types=1);
 
 namespace App\Http\Service\Assess;
 
+use App\Constants\AssessEnum;
 use App\Constants\CacheEnum;
+use App\Constants\NoticeEnum;
+use App\Constants\TodoEnum;
+use App\Events\BusinessDataChangeEvent;
+use App\Events\SystemMessageEvent;
 use App\Http\Dao\Company\CompanyUserAssessDao;
-use App\Http\Model\BaseModel;
 use App\Http\Service\Admin\AdminService;
-use App\Http\Service\BaseService;
 use App\Http\Service\Frame\FrameAssistService;
 use App\Http\Service\Frame\FrameService;
 use App\Http\Service\Message\MessageService;
 use App\Http\Service\Notice\NoticeRecordService;
 use App\Http\Service\Other\TaskService;
 use App\Http\Service\User\UserRemindLogService;
-use App\Task\message\MessageSendTask;
 use App\Task\message\UserAssessAppealRemind;
 use App\Task\message\UserAssessAppealResRemind;
 use App\Task\message\UserAssessEndRemind;
 use App\Task\message\UserAssessReleaseRemind;
-use crmeb\options\TaskOptions;
-use crmeb\services\FormService as Form;
-use crmeb\utils\MessageType;
+use App\Http\Model\BaseModel;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\options\TaskOptions;
+use Tuoluojiang\Open\services\FormService as Form;
+use Tuoluojiang\Open\utils\MessageType;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
@@ -156,18 +160,21 @@ class UserAssessService extends BaseService
             'is_show'  => 1,
         ];
 
-        return $this->dao->getUserAssessMode($where)
-            ->get()->each(function ($item) use ($scoreList) {
-                if (strtotime($item['start_time']) > time()) {
-                    $item['status'] = 5;
-                }
-                if ($item['status'] > 2) {
-                    $item['level'] = isset($scoreList) && isset($scoreList[$item['grade']]) ? $scoreList[$item['grade']] : '无';
-                } else {
-                    $item['level'] = '--';
-                    $item['score'] = '--';
-                }
-            })->toArray();
+        $data = $this->dao->getUserAssessMode($where)->get()->toArray();
+        foreach ($data as &$item) {
+            if (datetime_timestamp($item['start_time']) > time()) {
+                $item['status'] = 5;
+            }
+            if ($item['status'] > 2) {
+                $item['level'] = isset($scoreList) && isset($scoreList[$item['grade']]) ? $scoreList[$item['grade']] : '无';
+            } else {
+                $item['level'] = '--';
+                $item['score'] = '--';
+            }
+        }
+        unset($item);
+
+        return $data;
     }
 
     /**
@@ -188,18 +195,21 @@ class UserAssessService extends BaseService
             'is_show'    => 1,
         ];
 
-        return $this->dao->getUserAssessMode($where, ['*'], 0, 0, ['id' => 'asc'])->get()
-            ->each(function ($item) use ($scoreList) {
-                if (strtotime($item['start_time']) > time()) {
-                    $item['status'] = 5;
-                }
-                if ($item['status'] > 2) {
-                    $item['level'] = isset($scoreList) && isset($scoreList[$item['grade']]) ? $scoreList[$item['grade']] : '无';
-                } else {
-                    $item['level'] = '--';
-                    $item['score'] = '--';
-                }
-            })->toArray();
+        $data = $this->dao->getUserAssessMode($where, ['*'], 0, 0, ['id' => 'asc'])->get()->toArray();
+        foreach ($data as &$item) {
+            if (datetime_timestamp($item['start_time']) > time()) {
+                $item['status'] = 5;
+            }
+            if ($item['status'] > 2) {
+                $item['level'] = isset($scoreList) && isset($scoreList[$item['grade']]) ? $scoreList[$item['grade']] : '无';
+            } else {
+                $item['level'] = '--';
+                $item['score'] = '--';
+            }
+        }
+        unset($item);
+
+        return $data;
     }
 
     /**
@@ -216,20 +226,20 @@ class UserAssessService extends BaseService
     {
         [$page, $limit] = $this->getPageValue();
         $scoreList      = $this->getScoreLevel();
-        $data           = $this->dao->getUserAssessMode($where + ['test_uid' => $uid, 'entid' => 1, 'is_show' => 1], ['*'], $page, $limit, 'id', ['test', 'check'])
-            ->get()
-            ->each(function ($item) use ($uid, $scoreList) {
-                if (strtotime($item['start_time']) > time()) {
-                    $item['status'] = 5;
-                }
-                if ($item['status'] > 2) {
-                    $item['level'] = isset($scoreList) && isset($scoreList[$item['grade']]) ? $scoreList[$item['grade']] : '无';
-                } else {
-                    $item['level'] = '--';
-                    $item['score'] = '--';
-                }
-                $item['verify'] = $this->dao->getVerifyInfo($uid);
-            });
+        $data           = $this->dao->getUserAssessMode($where + ['test_uid' => $uid, 'entid' => 1, 'is_show' => 1], ['*'], $page, $limit, 'id', ['test', 'check'])->get()->toArray();
+        foreach ($data as &$item) {
+            if (datetime_timestamp($item['start_time']) > time()) {
+                $item['status'] = 5;
+            }
+            if ($item['status'] > 2) {
+                $item['level'] = isset($scoreList) && isset($scoreList[$item['grade']]) ? $scoreList[$item['grade']] : '无';
+            } else {
+                $item['level'] = '--';
+                $item['score'] = '--';
+            }
+            $item['verify'] = $this->dao->getVerifyInfo($uid);
+        }
+        unset($item);
         $count = $this->dao->getUserAssessMode($where + ['test_uid' => $uid, 'entid' => 1, 'is_show' => 1])->count();
 
         return $this->listData($data, $count);
@@ -251,19 +261,21 @@ class UserAssessService extends BaseService
                 $where['test_uid'] = $uids;
             }
             [$page, $limit] = $this->getPageValue();
-            $data           = $this->dao->getUserAssessMode($where, ['*'], $page, $limit, ['start_time', 'id'], ['frame', 'test'])->get()->each(function ($item) use ($scoreList) {
+            $data           = $this->dao->getUserAssessMode($where, ['*'], $page, $limit, ['start_time', 'id'], ['frame', 'test'])->get()->toArray();
+            foreach ($data as &$item) {
                 if ($item['status'] > 2) {
                     $item['level'] = isset($scoreList) && isset($scoreList[$item['grade']]) ? $scoreList[$item['grade']] : '无';
                 } else {
                     $item['level'] = '--';
                     $item['score'] = '--';
                 }
-                if (strtotime($item['start_time']) > time()) {
+                if (datetime_timestamp($item['start_time']) > time()) {
                     $item['status'] = 5;
                 }
                 // TODO 审核人信息
                 $item['verify'] = $this->dao->getVerifyInfo($item['test_uid'], $item['entid']);
-            });
+            }
+            unset($item);
             $count = $this->dao->getUserAssessMode($where)->count();
         } else {
             $data  = [];
@@ -288,19 +300,20 @@ class UserAssessService extends BaseService
             $where['test_uid'] = $where['test_uid'] ?: $uids;
             [$page, $limit]    = $this->getPageValue();
             $scoreList         = $this->getScoreLevel();
-            $data              = $this->dao->getUserAssessMode($where, ['*'], $page, $limit, 'start_time', ['frame', 'test'])->get()
-                ->each(function ($item) use ($scoreList) {
-                    if (strtotime($item['start_time']) > time()) {
-                        $item['status'] = 5;
-                    }
-                    if ($item['status'] > 2) {
-                        $item['level'] = $scoreList[$item['grade']] ?? '无';
-                    } else {
-                        $item['level'] = '--';
-                        $item['score'] = '--';
-                    }
-                    //                    $item['check'] = $frameService->getUpUser($item['test_uid'], $item['entid']);
-                });
+            $data              = $this->dao->getUserAssessMode($where, ['*'], $page, $limit, 'start_time', ['frame', 'test'])->get()->toArray();
+            foreach ($data as &$item) {
+                if (datetime_timestamp($item['start_time']) > time()) {
+                    $item['status'] = 5;
+                }
+                if ($item['status'] > 2) {
+                    $item['level'] = $scoreList[$item['grade']] ?? '无';
+                } else {
+                    $item['level'] = '--';
+                    $item['score'] = '--';
+                }
+                //                    $item['check'] = $frameService->getUpUser($item['test_uid'], $item['entid']);
+            }
+            unset($item);
             $count = $this->dao->getUserAssessMode($where)->count();
         } else {
             $data  = [];
@@ -323,8 +336,9 @@ class UserAssessService extends BaseService
         [$page, $limit] = $this->getPageValue();
         $data           = $this->dao->getUserAssessMode($where, ['*'], $page, $limit, ['start_time', 'id'], [
             'frame', 'test', 'check',
-        ])->get()->each(function ($item) use ($scoreList) {
-            if (strtotime($item['start_time']) > time()) {
+        ])->get()->toArray();
+        foreach ($data as &$item) {
+            if (datetime_timestamp($item['start_time']) > time()) {
                 $item['status'] = 5;
             }
             if ($item['status'] > 2) {
@@ -335,7 +349,8 @@ class UserAssessService extends BaseService
             }
             //                $item['check']  = $frameService->getUpUser($item['test_uid'], $item['entid']);
             $item['verify'] = $this->dao->getVerifyInfo($item['test_uid'], $item['entid']);
-        });
+        }
+        unset($item);
         $count = $this->dao->getUserAssessMode($where)->count();
 
         return $this->listData($data, $count);
@@ -401,8 +416,11 @@ class UserAssessService extends BaseService
     public function getAssessCensusLine($where, $uid, $entId)
     {
         $adminService = app()->get(AdminService::class);
+        $uids = [];
         switch ($where['types']) {
             case 2:// 人事
+                $uids = array_values(array_filter(array_map('intval', (array) ($where['uid'] ?? []))));
+                unset($where['frame_id']);
                 break;
             case 1:// 下级
                 $frameService = app()->get(FrameService::class);
@@ -542,7 +560,7 @@ class UserAssessService extends BaseService
         if (count($time) != 2) {
             throw $this->exception('参数错误');
         }
-        $dayCount = (strtotime($time[1]) - strtotime($time[0])) / 86400 + 1;
+        $dayCount = (datetime_timestamp($time[1]) - datetime_timestamp($time[0])) / 86400 + 1;
         $data     = [];
         if ($dayCount == 1) {
             $data = $this->trend($time, 0, $excel);
@@ -573,8 +591,8 @@ class UserAssessService extends BaseService
             $xAxis    = ['00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23'];
             $timeType = '%H';
         } elseif ($num != 0) {
-            $dt_start = strtotime($time[0]);
-            $dt_end   = strtotime($time[1]);
+            $dt_start = datetime_timestamp($time[0]);
+            $dt_end   = datetime_timestamp($time[1]);
             while ($dt_start <= $dt_end) {
                 if ($num == 30) {
                     $xAxis[]  = date('Y-m', $dt_start);
@@ -1104,6 +1122,7 @@ class UserAssessService extends BaseService
                         }
                     }
                     $this->dao->update(['id' => $assessInfo->id], ['make_status' => 1, 'is_show' => 1, 'status' => 1]);
+                    $this->syncAssessTodo((int) $assessInfo->id);
                 } else {
                     $save['intact'] = 1;
                     if ($computeMode) {
@@ -1174,7 +1193,7 @@ class UserAssessService extends BaseService
                 if ($assessInfo['test_uid'] != $uid) {
                     throw $this->exception('您暂无权限操作该考核记录');
                 }
-                if (strtotime($assessInfo['start_time']) > time()) {
+                if (datetime_timestamp($assessInfo['start_time']) > time()) {
                     throw $this->exception('保存失败，不在考核期内');
                 }
                 $res = $this->transaction(function () use ($data, $targetService, $is_draft, $assessid, $replyService, $mark, $entid, $uid, $assessInfo) {
@@ -1186,6 +1205,7 @@ class UserAssessService extends BaseService
                     }
                     if (! $is_draft && $assessInfo['status'] == 1) {
                         $this->dao->update(['id' => $assessid], ['test_status' => 1, 'status' => 2]);
+                        $this->syncAssessTodo((int) $assessid);
                     }
                     if ($mark) {
                         $replyService->createOrUpdate([
@@ -1206,7 +1226,7 @@ class UserAssessService extends BaseService
                 if (! in_array($assessInfo['test_uid'], $uids)) {
                     throw $this->exception('您暂无权限操作该考核记录');
                 }
-                if (strtotime($assessInfo['start_time']) > time()) {
+                if (datetime_timestamp($assessInfo['start_time']) > time()) {
                     throw $this->exception('保存失败，不在评价期内');
                 }
                 $res = $this->transaction(function () use ($data, $targetService, $assessid, $replyService, $mark, $hide_mark, $entid, $uid, $assessInfo) {
@@ -1247,7 +1267,7 @@ class UserAssessService extends BaseService
                 if ($frameService->getLevelSuper($assessInfo['test_uid'], 2) != $uid) {
                     throw $this->exception('您暂无权限操作该考核记录');
                 }
-                if (strtotime($assessInfo['start_time']) > time()) {
+                if (datetime_timestamp($assessInfo['start_time']) > time()) {
                     throw $this->exception('保存失败，不在审核期内');
                 }
                 $res = $this->transaction(function () use ($data, $targetService, $assessid, $replyService, $uid, $assessInfo) {
@@ -1266,6 +1286,7 @@ class UserAssessService extends BaseService
                 break;
         }
         Cache::tags([CacheEnum::TAG_FRAME])->flush();
+        $res && $this->syncAssessTodo((int) $assessid);
 
         return $res;
     }
@@ -1391,6 +1412,7 @@ class UserAssessService extends BaseService
                     'content'  => $content,
                     'types'    => 1,
                 ]);
+                $this->dao->update($assessid, ['status' => AssessEnum::ASSESS_APPEAL]);
                 // 绩效申诉提醒
                 Task::deliver(new UserAssessAppealRemind($entid, $assessInfo->toArray()));
                 break;
@@ -1404,11 +1426,13 @@ class UserAssessService extends BaseService
                     'types'    => 1,
                     'status'   => 2,
                 ]);
+                $this->dao->update($assessid, ['status' => AssessEnum::ASSESS_REJECT]);
                 // 绩效申诉结果
                 Task::deliver(new UserAssessAppealResRemind($entid, $assessInfo->toArray()));
                 break;
         }
 
+        $this->syncAssessTodo((int) $assessid, $types ? [(int) $uid] : []);
         return $res;
     }
 
@@ -1552,6 +1576,7 @@ class UserAssessService extends BaseService
         } else {
             if ($assessInfo['status'] == 1) {
                 $this->dao->update(['id' => $id], ['status' => 2]);
+                $this->syncAssessTodo((int) $id);
             }
             $res3 = true;
         }
@@ -1566,6 +1591,7 @@ class UserAssessService extends BaseService
         // 修改关联消息处理状态
         app()->get(NoticeRecordService::class)->update(['to_uid' => $assessInfo['test_uid'], 'other_id' => $assessInfo['id'], 'template_type' => MessageType::ASSESS_SELF_TYPE], ['is_handle' => 1]);
         Cache::tags([CacheEnum::TAG_FRAME])->flush();
+        ($res1 && $res2 && $res3) && $this->syncAssessTodo((int) $id);
 
         return $res1 && $res2 && $res3;
     }
@@ -1770,6 +1796,7 @@ class UserAssessService extends BaseService
 
         return $this->transaction(function () use ($id, $info, $entid, $status) {
             $res1 = $this->dao->update($id, ['is_show' => $status, 'status' => $status, 'make_status' => $status]);
+            $res1 && $this->syncAssessTodo((int) $id);
             if ($status) {
                 // 考核目标发布提醒
                 Task::deliver(new UserAssessReleaseRemind($entid, $info['test_uid'], $info));
@@ -1796,7 +1823,7 @@ class UserAssessService extends BaseService
             Form::textarea('mark', '删除原因', '')->placeholder('请输入删除原因')->required(),
         ];
 
-        return $this->elForm('删除绩效考核', $form, '/ent/user/assess/delete/' . $id);
+        return $this->createElementForm('删除绩效考核', $form, '/ent/user/assess/delete/' . $id);
     }
 
     /**
@@ -1931,7 +1958,6 @@ class UserAssessService extends BaseService
     public function timer(int $page, int $limit, array $where)
     {
         $where['period'] = 1;
-        $entid           = $where['entid'];
         $list            = Cache::tags([CacheEnum::TAG_FRAME])->remember(
             md5('user_assess_list_' . $page . '_' . $limit . '_' . json_encode($where)),
             (int) sys_config('system_cache_ttl', 3600),
@@ -2090,12 +2116,9 @@ class UserAssessService extends BaseService
 
         $toUid = 0;
         // 自我评价提醒
-        if ($type === MessageType::ASSESS_SELF_TYPE) {
-            $task = new MessageSendTask(
-                entid: $item['entid'],
-                i: $item['entid'],
+        if ($type === NoticeEnum::ASSESS_SELF_TYPE) {
+            event(new SystemMessageEvent(
                 type: $type,
-                toUid: ['to_uid' => $item['test_uid'], 'phone' => $item['test']['phone'] ?? ''],
                 params: [
                     '考核名称'     => $item['name'],
                     '考核开始时间' => $item['start_time'],
@@ -2107,18 +2130,16 @@ class UserAssessService extends BaseService
                     '时间2'        => $timeStr,
                     '时间3'        => $timeStr,
                 ],
-                other: ['id' => $item['id']]
-            );
-            Task::deliver($task);
+                receiverIds: (int) $item['test_uid'],
+                other: ['id' => $item['id']],
+                linkId: $item['id'],
+            ));
             $toUid = $item['test_uid'];
-        } elseif ($type === MessageType::ASSESS_START_TYPE) {
+        } elseif ($type === NoticeEnum::ASSESS_START_TYPE) {
             // 上级是否开启提醒
             if (! $item['is_show']) {
-                $task = new MessageSendTask(
-                    entid: $item['entid'],
-                    i: $item['entid'],
+                event(new SystemMessageEvent(
                     type: $type,
-                    toUid: ['to_uid' => $item['check_uid'], 'phone' => $item['check']['phone'] ?? ''],
                     params: [
                         '负责部门'     => $item['check']['frame']['name'] ?? '',
                         '考核类型'     => $timeStr . '考核',
@@ -2128,18 +2149,17 @@ class UserAssessService extends BaseService
                         '时间1'        => $timeStr,
                         '时间2'        => $timeStr,
                         '时间3'        => $timeStr,
-                    ]
-                );
-                Task::deliver($task);
+                    ],
+                    receiverIds: (int) $item['check_uid'],
+                    other: ['id' => $item['id']],
+                    linkId: $item['id'],
+                ));
                 $toUid = $item['check_uid'];
             }
-        } elseif ($type === MessageType::ASSESS_EXAMINE_TYPE) {
+        } elseif ($type === NoticeEnum::ASSESS_EXAMINE_TYPE) {
             // 考核上级评价提醒
-            $task = new MessageSendTask(
-                entid: $item['entid'],
-                i: $item['entid'],
+            event(new SystemMessageEvent(
                 type: $type,
-                toUid: ['to_uid' => $item['check_uid'], 'phone' => $item['check']['phone'] ?? ''],
                 params: [
                     '负责部门'     => $item['check']['frame']['name'] ?? '',
                     '考核名称'     => $item['name'],
@@ -2150,9 +2170,11 @@ class UserAssessService extends BaseService
                     '被考核人'     => $item['test']['name'] ?? '',
                     '被考核人部门' => $item['test']['frame']['name'] ?? '',
                     '时间'         => $timeStr,
-                ]
-            );
-            Task::deliver($task);
+                ],
+                receiverIds: (int) $item['check_uid'],
+                other: ['id' => $item['id']],
+                linkId: $item['id'],
+            ));
             $toUid = $item['check_uid'];
         }
         if ($toUid) {
@@ -2187,13 +2209,28 @@ class UserAssessService extends BaseService
         );
 
         foreach ($list as $item) {
-            $updated = strtotime($item['verify_time']);
+            $updated = datetime_timestamp($item['verify_time']);
             if ($updated <= time()) {
                 // 修改为已结束
                 $this->dao->update($item['id'], ['status' => 4]);
+                $this->syncAssessTodo((int) $item['id']);
                 // 发送考核结束提醒
                 Task::deliver(new UserAssessEndRemind($item['entid'], $item['test_uid'], $item['id']));
             }
+        }
+    }
+
+    private function syncAssessTodo(int $assessId, array $userIds = []): void
+    {
+        if (! $assessId) {
+            return;
+        }
+
+        try {
+            foreach (TodoEnum::ASSESS_TYPES as $type) {
+                BusinessDataChangeEvent::dispatch($type, $assessId, 'update', $userIds);
+            }
+        } catch (\Throwable) {
         }
     }
 
@@ -2273,7 +2310,7 @@ class UserAssessService extends BaseService
                 if ($assessInfo['test_uid'] != $uid) {
                     throw $this->exception('您暂无权限操作该考核记录');
                 }
-                if (strtotime($assessInfo['start_time']) > time()) {
+                if (datetime_timestamp($assessInfo['start_time']) > time()) {
                     throw $this->exception('保存失败，不在考核期内');
                 }
                 break;
@@ -2282,12 +2319,12 @@ class UserAssessService extends BaseService
                 if (! in_array($assessInfo['test_uid'], $uids)) {
                     throw $this->exception('您暂无权限操作该考核记录');
                 }
-                if (strtotime($assessInfo['start_time']) > time()) {
+                if (datetime_timestamp($assessInfo['start_time']) > time()) {
                     throw $this->exception('保存失败，不在评价期内');
                 }
                 break;
             case 2:
-                if (strtotime($assessInfo['start_time']) > time()) {
+                if (datetime_timestamp($assessInfo['start_time']) > time()) {
                     throw $this->exception('保存失败，不在审核期内');
                 }
                 break;

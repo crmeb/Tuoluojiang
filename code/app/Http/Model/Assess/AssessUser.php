@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,9 +15,10 @@ declare(strict_types=1);
 
 namespace App\Http\Model\Assess;
 
-use App\Http\Model\BaseModel;
+use App\Http\Model\Admin\Admin;
+use App\Http\Model\Admin\AdminInfo;
 use App\Http\Model\Frame\FrameAssist;
-use App\Http\Model\User\UserEnterprise;
+use App\Http\Model\BaseModel;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Query\Builder;
 
@@ -39,6 +40,12 @@ class AssessUser extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'        => 'integer',
+        'scheme_id' => 'integer',
+        'user_id'   => 'integer',
+    ];
+
     /**
      * 部门关联.
      * @return HasOne
@@ -53,9 +60,9 @@ class AssessUser extends BaseModel
      */
     public function userent()
     {
-        return $this->hasOne(UserEnterprise::class, 'id', 'user_id')
+        return $this->hasOne(Admin::class, 'id', 'user_id')
             ->where(['verify' => 1, 'status' => 1])
-            ->select(['id', 'card_id', 'uid'])
+            ->select(['id', 'uid'])
             ->with([
                 'card' => function ($query) {
                     $query->select(['id', 'name']);
@@ -65,7 +72,6 @@ class AssessUser extends BaseModel
     /**
      * 考核计划作用域
      * @param Builder $query
-     * @param mixed $value
      * @return Builder
      */
     public function scopePlanid($query, $value)
@@ -81,7 +87,6 @@ class AssessUser extends BaseModel
     /**
      * 考核人作用域
      * @param Builder $query
-     * @param mixed $value
      * @return Builder
      */
     public function scopeCheckUid($query, $value)

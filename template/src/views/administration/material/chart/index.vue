@@ -1,191 +1,203 @@
 ﻿<template>
-  <div class="divBox">
-    <el-card>
-      <statisticsBox ref="formBox" @confirmData="confirmData" />
-    </el-card>
-    <el-row :gutter="14" class="mt14">
-      <el-col :span="12">
-        <el-card>
-          <div class="statistics-title">资产金额</div>
-          <echartBox :option-data="optionData" :styles="styles1" />
-        </el-card>
-      </el-col>
-      <el-col :span="12">
-        <el-card>
-          <div class="statistics-title">物资变动情况</div>
-          <div class="content border-none">
-            <ul class="content-ul">
-              <li>
-                <el-row>
-                  <el-col :span="16">采购数量</el-col>
-                  <el-col :span="8" class="text-right">
-                    <el-button circle size="small" type="primary">
-                      <count-to :duration="1000" :end-val="Number(storageCount.put_count)" :start-val="0" />
-                    </el-button>
-                  </el-col>
-                </el-row>
-              </li>
-              <li>
-                <el-row>
-                  <el-col :span="16">固定物资领取数量</el-col>
-                  <el-col :span="8" class="text-right">
-                    <el-button circle size="small" type="success">
-                      <count-to :duration="1000" :end-val="storageCount.fixed_count" :start-val="0" />
-                    </el-button>
-                  </el-col>
-                </el-row>
-              </li>
-              <li>
-                <el-row>
-                  <el-col :span="16">消耗物资领取数量</el-col>
-                  <el-col :span="8" class="text-right">
-                    <el-button circle size="small" type="warning">
-                      <count-to :duration="1000" :end-val="storageCount.temp_count" :start-val="0" />
-                    </el-button>
-                  </el-col>
-                </el-row>
-              </li>
-              <li>
-                <el-row>
-                  <el-col :span="16">报废数量</el-col>
-                  <el-col :span="8" class="text-right">
-                    <el-button circle size="small" type="info">
-                      <count-to :duration="1000" :end-val="storageCount.scrap_count" :start-val="0" />
-                    </el-button>
-                  </el-col>
-                </el-row>
-              </li>
-              <li>
-                <el-row>
-                  <el-col :span="16">维修数量</el-col>
-                  <el-col :span="8" class="text-right">
-                    <el-button circle size="small" type="info">
-                      <count-to :duration="1000" :end-val="storageCount.repair_count" :start-val="0" />
-                    </el-button>
-                  </el-col>
-                </el-row>
-              </li>
-            </ul>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-    <el-row ref="rows" :gutter="14" class="mt14">
-      <el-col :span="12">
-        <el-card>
-          <div class="pie-tab">
-            <div class="statistics-title mb20">库存预警</div>
-            <div v-if="stockData.length > 0" class="content">
-              <el-table :data="stockData" default-expand-all row-key="id" style="width: 100%">
-                <el-table-column label="物资名称" min-width="100" prop="name" />
-                <el-table-column label="规格型号" min-width="100" prop="units" />
-                <el-table-column label="物资分类" min-width="100" prop="cate.cate_name" />
-                <el-table-column label="当前库存" min-width="100" prop="stock" />
-                <el-table-column :label="$t('public.operation')" fixed="right" prop="describe" width="80">
-                  <template slot-scope="scope">
-                    <el-button type="text" @click="handleManage(scope.row)">补货</el-button>
-                  </template>
-                </el-table-column>
-              </el-table>
-              <div class="block">
-                <el-pagination
-                  :current-page="stockWhere.page"
-                  :page-size="stockWhere.limit"
-                  :total="stockTotal"
-                  layout="prev, pager, next"
-                  @size-change="handleStockSize"
-                  @current-change="pageStockChange"
-                />
+  <div class="box">
+    <div class="box-height">
+      <el-card class="background-card">
+        <statisticsBox ref="formBox" @confirmData="confirmData" />
+      </el-card>
+      <el-row :gutter="14" class="mt14">
+        <el-col :span="12">
+          <el-card>
+            <div class="statistics-title">资产金额</div>
+            <echartBox :option-data="optionData" :styles="styles1" />
+          </el-card>
+        </el-col>
+        <el-col :span="12">
+          <el-card>
+            <div class="statistics-title">物资变动情况</div>
+            <div class="content border-none">
+              <ul class="content-ul">
+                <li>
+                  <el-row>
+                    <el-col :span="16">采购数量</el-col>
+                    <el-col :span="8" class="text-right">
+                      <el-button circle type="primary">
+                        <count-to :duration="1000" :end-val="Number(storageCount.put_count)" :start-val="0" />
+                      </el-button>
+                    </el-col>
+                  </el-row>
+                </li>
+                <li>
+                  <el-row>
+                    <el-col :span="16">固定物资领取数量</el-col>
+                    <el-col :span="8" class="text-right">
+                      <el-button circle type="success">
+                        <count-to :duration="1000" :end-val="storageCount.fixed_count" :start-val="0" />
+                      </el-button>
+                    </el-col>
+                  </el-row>
+                </li>
+                <li>
+                  <el-row>
+                    <el-col :span="16">消耗物资领取数量</el-col>
+                    <el-col :span="8" class="text-right">
+                      <el-button circle type="warning">
+                        <count-to :duration="1000" :end-val="storageCount.temp_count" :start-val="0" />
+                      </el-button>
+                    </el-col>
+                  </el-row>
+                </li>
+                <li>
+                  <el-row>
+                    <el-col :span="16">报废数量</el-col>
+                    <el-col :span="8" class="text-right">
+                      <el-button circle type="info">
+                        <count-to :duration="1000" :end-val="storageCount.scrap_count" :start-val="0" />
+                      </el-button>
+                    </el-col>
+                  </el-row>
+                </li>
+                <li>
+                  <el-row>
+                    <el-col :span="16">维修数量</el-col>
+                    <el-col :span="8" class="text-right">
+                      <el-button circle type="info">
+                        <count-to :duration="1000" :end-val="storageCount.repair_count" :start-val="0" />
+                      </el-button>
+                    </el-col>
+                  </el-row>
+                </li>
+              </ul>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+      <el-row ref="rows" :gutter="14" class="mt14">
+        <el-col :span="12">
+          <el-card>
+            <div class="pie-tab">
+              <div class="statistics-title mb20">库存预警</div>
+              <div v-if="stockData.length > 0" class="content">
+                <el-table :data="stockData" default-expand-all row-key="id" style="width: 100%">
+                  <el-table-column label="物资名称" min-width="100" prop="name" />
+                  <el-table-column label="规格型号" min-width="100" prop="units" />
+                  <el-table-column label="物资分类" min-width="100" prop="cate.cate_name" />
+                  <el-table-column label="当前库存" min-width="100" prop="stock" />
+                  <el-table-column label="操作" fixed="right" prop="describe" width="80">
+                    <template #default="scope">
+                      <el-button type="primary" link @click="handleManage(scope.row)">补货</el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
+                <div class="block">
+                  <el-pagination
+                    :current-page="stockWhere.page"
+                    :page-size="stockWhere.limit"
+                    :total="stockTotal"
+                    layout="prev, pager, next"
+                    @size-change="handleStockSize"
+                    @current-change="pageStockChange"
+                  />
+                </div>
+              </div>
+              <div v-else>
+                <default-page :height="`calc(50vh - 158px)`" :img-show="false" :index="14"></default-page>
               </div>
             </div>
-            <div v-else>
-              <default-page :height="`calc(50vh - 158px)`" :index="14"></default-page>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="12">
-        <el-card>
-          <div class="pie-tab">
-            <div class="statistics-title mb20">物资变动明细</div>
-            <div v-if="detailedDat.length > 0" class="content">
-              <el-table
-                v-loading="detailLoading"
-                :data="detailedDat"
-                :height="tableHeight"
-                default-expand-all
-                row-key="id"
-                style="width: 100%"
-              >
-                <el-table-column label="物资名称" min-width="130" prop="storage.name" show-overflow-tooltip />
-                <el-table-column label="物资分类" min-width="100" prop="storage.cate.cate_name" show-overflow-tooltip />
-                <el-table-column label="规格型号" min-width="100" prop="storage.units" show-overflow-tooltip />
-                <el-table-column label="变动情况" min-width="100" prop="stock" show-overflow-tooltip>
-                  <template #default="{ row }">
-                    <template v-if="row.types === 0">
-                      入库量
-                      <span class="color1">+{{ row.num }}</span>
+          </el-card>
+        </el-col>
+        <el-col :span="12">
+          <el-card>
+            <div class="pie-tab">
+              <div class="statistics-title mb20">物资变动明细</div>
+              <div v-if="detailedDat.length > 0" class="content">
+                <el-table
+                  v-loading="detailLoading"
+                  :data="detailedDat"
+                  :height="tableHeight"
+                  default-expand-all
+                  row-key="id"
+                  style="width: 100%"
+                >
+                  <el-table-column label="物资名称" min-width="130" prop="storage.name" show-overflow-tooltip />
+                  <el-table-column
+                    label="物资分类"
+                    min-width="100"
+                    prop="storage.cate.cate_name"
+                    show-overflow-tooltip
+                  />
+                  <el-table-column label="规格型号" min-width="100" prop="storage.units" show-overflow-tooltip />
+                  <el-table-column label="变动情况" min-width="100" prop="stock" show-overflow-tooltip>
+                    <template #default="{ row }">
+                      <template v-if="row.types === 0">
+                        入库量
+                        <span class="color1">+{{ row.num }}</span>
+                      </template>
+                      <template v-if="row.types === 1">
+                        领用量
+                        <span class="color2">+{{ row.num }}</span>
+                      </template>
+                      <template v-if="row.types === 4">
+                        报废量
+                        <span class="color-success">+1</span>
+                      </template>
                     </template>
-                    <template v-if="row.types === 1">
-                      领用量
-                      <span class="color2">+{{ row.num }}</span>
+                  </el-table-column>
+                  <el-table-column label="变动时间" min-width="100" prop="storage.units" show-overflow-tooltip>
+                    <template #default="scope">
+                      {{ dayjs(scope.row.created_at).format('YYYY-MM-DD') }}
                     </template>
-                    <template v-if="row.types === 4">
-                      报废量
-                      <span class="color-success">+1</span>
+                  </el-table-column>
+                  <el-table-column :show-overflow-tooltip="true" label="操作人" prop="creater.name" width="80">
+                    <template #default="scope">
+                      <span class="none-button over-text" type="text">{{
+                        scope.row.creater ? scope.row.creater.name : '--'
+                      }}</span>
                     </template>
-                  </template>
-                </el-table-column>
-                <el-table-column label="变动时间" min-width="100" prop="storage.units" show-overflow-tooltip>
-                  <template slot-scope="scope">
-                    {{ $moment(scope.row.created_at).format('yyyy-MM-DD') }}
-                  </template>
-                </el-table-column>
-                <el-table-column :show-overflow-tooltip="true" label="操作人" prop="creater.name" width="80">
-                  <template slot-scope="scope">
-                    <span class="none-button over-text" type="text">{{
-                      scope.row.creater ? scope.row.creater.name : '--'
-                    }}</span>
-                  </template>
-                </el-table-column>
-              </el-table>
-              <div class="block">
-                <el-pagination
-                  :current-page="where.page"
-                  :page-size="where.limit"
-                  :total="total"
-                  layout="prev, pager, next"
-                  @size-change="handleSizeChange"
-                  @current-change="pageChange"
-                />
+                  </el-table-column>
+                </el-table>
+                <div class="block">
+                  <el-pagination
+                    :current-page="where.page"
+                    :page-size="where.limit"
+                    :total="total"
+                    layout="prev, pager, next"
+                    @size-change="handleSizeChange"
+                    @current-change="pageChange"
+                  />
+                </div>
+              </div>
+              <div v-else>
+                <default-page :height="styles1.height" :img-show="false" :index="14"></default-page>
               </div>
             </div>
-            <div v-else>
-              <default-page :index="14" :min-height="styles1.height"></default-page>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-    <material-dialog ref="materialDialog" :from-data="fromData" @isOk="handleMaterial"></material-dialog>
+          </el-card>
+        </el-col>
+      </el-row>
+      <material-dialog ref="materialDialog" :from-data="fromData" @isOk="handleMaterial"></material-dialog>
+    </div>
   </div>
 </template>
 
 <script>
-import { storageListApi, storageRecordApi, storageRecordCensusApi } from '@/api/administration'
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
+import { storageListApi, storageRecordApi, storageRecordCensusApi } from '@/api/administration.ts'
 export default {
   name: 'FinanceChart',
   components: {
-    statisticsBox: () => import('./components/statisticsBox'),
-    echartBox: () => import('@/components/common/echarts'),
-    materialDialog: () => import('@/views/administration/material/fixed/components/materialDialog'),
-    defaultPage: () => import('@/components/common/defaultPage'),
-    countTo: () => import('vue-count-to')
+    statisticsBox: defineAsyncComponent(() => import('./components/statisticsBox')),
+    echartBox: defineAsyncComponent(() => import('@/components/common/echarts')),
+    materialDialog: defineAsyncComponent(() => import('@/views/administration/material/fixed/components/materialDialog')),
+    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage')),
+    countTo: defineAsyncComponent(() => import('vue3-count-to').then((m) => m.CountTo))
+  },
+  computed: {
+    dayjs: () => dayjs
   },
   data() {
     return {
       time:
-        this.$moment().subtract(30, 'days').format('YYYY/MM/DD') + '-' + this.$moment(new Date()).format('YYYY/MM/DD'),
+        dayjs().subtract(30, 'days').format('YYYY/MM/DD') + '-' + dayjs(new Date()).format('YYYY/MM/DD'),
       optionData: {},
       styles1: {
         height: 'calc(50vh - 158px)',
@@ -314,7 +326,7 @@ export default {
                     formatter: '{c}'
                   },
                   color: function (params) {
-                    var colorList = ['#1890FF', '#ED4014', '#FF9900']
+                    const colorList = ['#1890FF', '#ED4014', '#FF9900']
                     return colorList[params.dataIndex]
                   }
                 }
@@ -395,8 +407,10 @@ export default {
 .border-none {
   border: none !important;
 }
-.divBox {
-  height: auto !important;
+.box {
+  margin: 14px;
+  margin-top: 1px;
+  box-sizing: border-box;
 }
 .statistics-title {
   color: #000000;
@@ -424,10 +438,10 @@ export default {
   height: calc(50vh - 158px);
   padding-top: 5px;
   border-top: 1px solid #dfe6ec;
-  /deep/ .el-table td {
+  :deep(.el-table td) {
     padding: 7px 0;
   }
-  /deep/ .el-pagination {
+  :deep(.el-pagination) {
     margin-top: 20px;
   }
   .none-button {
@@ -446,19 +460,19 @@ export default {
       &:last-of-type {
         border: none;
       }
-      /deep/ .el-row {
+      :deep(.el-row) {
         display: flex;
         align-items: center;
       }
     }
   }
 }
-/deep/ .el-button--small.is-circle {
+:deep(.el-button.is-circle) {
   padding: 0;
   width: 36px;
   height: 36px;
 }
-/deep/ .el-drawer__body {
+:deep(.el-drawer__body) {
   height: 100%;
   overflow-y: auto;
 }

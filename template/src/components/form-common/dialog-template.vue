@@ -3,25 +3,27 @@
   <div>
     <el-dialog
       :title="title"
-      :visible.sync="dialogFormVisible"
+      v-model="dialogFormVisible"
       :modal="true"
       width="846px"
       :before-close="closeDialog"
       :show-close="true"
     >
-      <div slot="title" class="dialog-title">
-        <div class="dialog-title-title">{{ title }}</div>
-      </div>
+      <template #header>
+        <div class="dialog-title">
+          <div class="dialog-title-title">{{ title }}</div>
+        </div>
+      </template>
       <el-row>
         <el-col :span="4">
           <!-- 考核模板库与指标库导航 -->
-          <div class="assess-left">
+          <div v-loading="isCateLoading" class="assess-left">
             <ul class="assess-left-ul">
               <li
-                v-for="(item, index) in department"
-                :key="index"
-                :class="index == tabIndex ? 'active' : ''"
-                @click="clickDepart(index, item.id)"
+                v-for="(item, index) in cateList"
+                :key="item.id"
+                :class="index === tabIndex ? 'active' : ''"
+                @click="handleCateChange(index, item.id)"
               >
                 <span>{{ item.name }}</span>
               </li>
@@ -30,50 +32,41 @@
         </el-col>
         <el-col :span="13">
           <div class="ml15">
-            <div class="content-temp">
+            <div v-loading="isListLoading" class="content-temp">
               <el-input
-                v-model="where.name"
-                @change="searchFn"
-                size="small"
+                v-model="searchForm.name"
                 placeholder="请输入模板名称"
                 class="input-with-select"
+                @change="handleSearch"
               />
               <el-scrollbar>
                 <ul class="content-temp-ul">
                   <li
                     v-for="(item, index) in tableData"
-                    :key="index"
-                    :class="[(index + 1) % 3 ? '' : 'mr0', index == clickIndex ? 'active' : '']"
-                    @click="selectList(item, index)"
-                    @mouseenter="showEnterItem(index)"
-                    @mouseleave="showLeaveItem(index)"
+                    :key="item.id"
+                    :class="[(index + 1) % 3 ? '' : 'mr0', index === activeIndex ? 'active' : '']"
+                    @click="handleSelect(item, index)"
+                    @mouseenter="hoverIndex = index"
+                    @mouseleave="hoverIndex = -1"
                   >
                     <div class="temp-text" :style="{ color: item.color }">
                       <p class="title textover">{{ item.name }}</p>
                       <p class="caption">{{ item.info }}</p>
-                      <p class="icon-star" v-if="item.way === 1">
-                        <i class="el-icon-star-on" :class="setIsCollect(item)" @click.stop="statusStar(item)" />
+                      <p v-if="item.way === 1" class="icon-star">
+                        <i
+                          class="el-icon-star-on"
+                          :class="isCollected(item) ? 'active' : ''"
+                          @click.stop="handleCollect(item)"
+                        />
 
                         <i class="icon-caret-star" />
                       </p>
                     </div>
 
-                    <img v-if="item.cover != ''" :src="item.cover" alt="" />
-                    <img v-else src="../../assets/images/default.jpg" alt="" />
-                    <div
-                      v-if="
-                        hoverIndex === index &&
-                        item.user !== undefined &&
-                        $store.state.user.userInfo.uid === item.user.uid
-                      "
-                      class="footer"
-                      @click.stop="
-                        () => {
-                          return false
-                        }
-                      "
-                    >
-                      <div class="pointer"><span @click.stop="setPreviewImage(item)">设置封面</span></div>
+                    <img :src="item.cover || defaultCover" alt="" />
+                    <!-- 仅模板创建人可见的操作层，鼠标移入卡片时浮出 -->
+                    <div v-if="hoverIndex === index && isOwner(item)" class="footer" @click.stop>
+                      <div class="pointer"><span @click.stop="handleSetCover(item)">设置封面</span></div>
                       <div class="pointer"><span @click.stop="handleEdit(item)">编辑</span></div>
                       <div class="pointer" @click.stop="handleDelete(item)">
                         <span>删除</span>
@@ -83,33 +76,25 @@
                 </ul>
               </el-scrollbar>
             </div>
-            <!--            <el-pagination-->
-            <!--              :current-page="where.page"-->
-            <!--              :page-size="where.limit"-->
-            <!--              :page-sizes="[3, 6, 9]"-->
-            <!--              :total="total"-->
-            <!--              layout="total, sizes,prev, pager, next, jumper"-->
-            <!--              @size-change="handleSizeChange"-->
-            <!--              @current-change="pageChange"-->
-            <!--            />-->
             <el-pagination
-              :page-size="where.limit"
-              :current-page="where.page"
+              :page-size="pageSize"
+              :current-page="page"
               layout="total, prev, pager, next"
               :total="total"
-              @current-change="pageChange"
+              @current-change="handlePageChange"
             />
           </div>
         </el-col>
         <el-col :span="7">
           <div class="ml15">
-            <div class="template-preview">
+            <!-- 右侧预览选中模板的维度与指标 -->
+            <div v-loading="isPreviewLoading" class="template-preview">
               <el-scrollbar style="height: 100%">
-                <p class="title">{{ selectTitle }}</p>
-                <div v-for="(item, index) in selectDada" :key="index" class="template-preview-list">
+                <p class="title">{{ previewTitle }}</p>
+                <div v-for="(item, index) in previewList" :key="index" class="template-preview-list">
                   <p class="caption">{{ item.name }}</p>
                   <ul class="template-preview-ul">
-                    <li v-for="(items, indexs) in item.target" :key="indexs">{{ items.name }}</li>
+                    <li v-for="(target, targetIndex) in item.target" :key="targetIndex">{{ target.name }}</li>
                   </ul>
                 </div>
               </el-scrollbar>
@@ -117,297 +102,292 @@
           </div>
         </el-col>
       </el-row>
-      <div slot="footer" class="dialog-footer">
-        <el-button size="small" @click="closeDialog">取消</el-button>
-        <el-button size="small" type="primary" @click="handleConfirm">确定</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeDialog">取消</el-button>
+          <el-button type="primary" :loading="isPreviewLoading" @click="handleConfirm">确定</el-button>
+        </div>
+      </template>
     </el-dialog>
-    <preview ref="preview" title="设置封面图" :data="itemData" @handlePreview="handlePreview" />
+    <preview ref="previewRef" title="设置封面图" :data="coverItem" @handlePreview="handlePreview" />
   </div>
 </template>
 
 <script>
+import { modalSure } from '@/libs/public.ts'
+import { getCurrentInstance, reactive, ref, defineAsyncComponent } from 'vue'
+import { useUserStore } from '@/stores/user.ts'
+import defaultCover from '@/assets/images/default.jpg'
 import {
-  assessTargetCateApi,
-  assessTargetCateEditApi,
-  assessTargetCateListApi,
   assessTemplateCollectApi,
   assessTemplateEditApi,
   assessTemplateListApi,
-  targetCateDeleteApi,
   templateDeleteApi
-} from '@/api/enterprise'
+} from '@/api/enterprise.ts'
+import { useAssessCate } from '@/composables/useAssessCate.ts'
+import { useLoading } from '@/composables/useLoading.ts'
+import { usePage } from '@/composables/usePage.ts'
+
+// 分类类型：1 = 考核模板（0 为指标）
+const CATE_TYPE = 1
+// 每页 9 条，正好铺满卡片区的 3 列 × 3 行
+const PAGE_SIZE = 9
+// 「我的模板」「我的收藏」是前端虚拟分类，接口不返回，固定置顶
+const MY_TEMPLATE_CATE_ID = 'template'
+const COLLECT_CATE_ID = 'collect'
+const VIRTUAL_CATES = [
+  { name: '我的模板', id: MY_TEMPLATE_CATE_ID },
+  { name: '我的收藏', id: COLLECT_CATE_ID }
+]
+// 回传给父级的操作类型：1 = 选用模板内容，2 = 编辑该模板
+const CONFIG_EDIT = { USE: 1, EDIT: 2 }
+
 export default {
   name: 'SelectTemplate',
   components: {
-    preview: () => import('@/views/hr/assess/check/components/preview')
+    preview: defineAsyncComponent(() => import('@/views/hr/assess/check/components/preview'))
   },
   props: {
     title: {
       type: String,
       default: ''
     },
+    // 已存在考核内容时，确定前需二次确认（选用模板会覆盖原内容）
     remindButton: {
       type: Boolean,
       default: false
     }
   },
-  data() {
-    return {
-      dialogFormVisible: false,
-      search: '',
-      type: 1,
-      where: {
-        page: 1,
-        limit: 9,
-        name: ''
-      },
-      tableData: [],
-      total: 0,
-      selectDada: [],
-      selectTitle: '',
-      clickIndex: -1,
-      hoverIndex: -1,
-      cateId: 'template',
-      itemData: {},
-      configData: {
-        edit: 1,
-        data: {}
-      },
-      collects: [],
-      templateValue: '',
-      department: [],
-      tabIndex: 0,
-      activeValue: '',
-      optionValue: {
-        id: 'template',
-        option: []
-      },
-      isTemplate: true
-    }
-  },
-  watch: {},
-  mounted() {
-    this.getTargetCate()
-    // this.getTableData()
-    this.$nextTick(() => {
-      if (this.tableData.length > 0) {
-        this.selectList(this.tableData[0], 0)
-      }
-    })
-  },
-  methods: {
-    // 点击分类获取模版数据
-    clickDepart(index, id) {
-      this.tabIndex = index
-      this.optionValue.id = id
-      this.eventOptionData(this.optionValue)
-      // this.$emit('eventOptionData', this.optionValue)
-    },
-    // 编辑窗口显示
-    handleShow(value) {
-      this.activeValue = value
-    },
-    // 编辑窗口隐藏
-    handleHide() {
-      this.activeValue = ''
-    },
-    // 获取模板分类
-    getTargetCate() {
-      const data = {
-        types: this.type
-      }
-      assessTargetCateListApi(data).then((res) => {
-        res.data === undefined ? (this.department = []) : (this.department = res.data)
-        if (this.isTemplate == false) this.department.unshift({ name: '全部', id: '' })
-        if (this.type == 1 && this.isTemplate) {
-          this.department.unshift({ name: '我的模板', id: 'template' }, { name: '我的收藏', id: 'collect' })
-        }
-        this.optionDate()
-      })
-    },
-    addCate() {
-      this.$modalForm(assessTargetCateApi(this.type)).then(({ message }) => {
-        this.getTargetCate()
-      })
-    },
-    addDivsion() {
-      this.$modalForm(assessTargetCateEditApi(this.activeValue)).then(({ message }) => {
-        this.getTargetCate()
-      })
-    },
-    hanleDelete() {
-      this.$modalSure('你确定要删除这条指标模板分类吗').then(() => {
-        targetCateDeleteApi(this.activeValue).then((res) => {
-          this.getTargetCate()
-        })
-      })
-    },
-    optionDate() {
-      const option = []
-      if (this.department.length <= 0) {
-        this.optionValue.option = option
-        this.eventOptionData(this.optionValue)
-        // this.$emit('eventOptionData', this.optionValue)
-      } else {
-        this.department.map((value) => {
-          option.push({ label: value.name, id: value.id })
-        })
-        this.optionValue.option = option
-        this.eventOptionData(this.optionValue)
-        // this.$emit('eventOptionData', this.optionValue)
-      }
-    },
-    openDialog() {
-      this.dialogFormVisible = true
-      this.getTableData()
-    },
-    closeDialog() {
-      this.selectDada = []
-      this.clickIndex = -1
-      this.selectTitle = ''
-      this.dialogFormVisible = false
-    },
-    searchFn() {
-      this.getTableData(1)
-    },
-    handleConfirm() {
-      if (this.clickIndex < 0) {
-        this.$message.error('选择为空')
-      } else {
-        if (this.remindButton) {
-          var selectDada = this.selectDada
-          this.$modalSure('确定后将替换原来的内容').then(() => {
-            this.configData.edit = 1
-            this.configData.data = selectDada
-            // this.templateChange(this.configData)
-            this.$emit('templateChange', this.configData)
-          })
-        } else {
-          this.configData.edit = 1
-          this.configData.data = this.selectDada
-          // this.templateChange(this.configData)
-          this.$emit('templateChange', this.configData)
-        }
-        this.closeDialog()
-      }
-    },
-    // 获取列表数据
-    getTableData(val) {
-      if (val == 1) {
-        this.where.page = 1
-      }
+  emits: ['templateChange'],
+  setup(props, { emit, expose }) {
+    const userStore = useUserStore()
+    const { proxy } = getCurrentInstance()
 
-      var data = {
-        page: this.where.page,
-        limit: this.where.limit,
-        name: this.where.name,
-        cate_id: this.cateId
+    const dialogFormVisible = ref(false)
+    const previewRef = ref(null)
+
+    // 分类在本实例内只加载一次，弹窗反复开关不会重复请求；组件重新挂载则重新拉取
+    const { cateList, isCateLoading, fetchCate } = useAssessCate(CATE_TYPE, {
+      decorate: (list) => [...VIRTUAL_CATES, ...list]
+    })
+    const tabIndex = ref(0)
+    const cateId = ref(MY_TEMPLATE_CATE_ID)
+
+    const { page, pageSize, total } = usePage()
+    pageSize.value = PAGE_SIZE
+
+    const searchForm = reactive({ name: '' })
+    const tableData = ref([])
+    // 当前用户已收藏的模板 id，用于卡片右上角星标高亮
+    const collects = ref([])
+    const activeIndex = ref(-1)
+    const hoverIndex = ref(-1)
+    const { isLoading: isListLoading, startLoading: startListLoading, stopLoading: stopListLoading } = useLoading()
+
+    const previewTitle = ref('')
+    const previewList = ref([])
+    const selectedTemplate = ref(null)
+    const {
+      isLoading: isPreviewLoading,
+      startLoading: startPreviewLoading,
+      stopLoading: stopPreviewLoading
+    } = useLoading()
+    // 预览请求序号：连续点击卡片时只认最后一次请求，避免旧响应覆盖新预览
+    let previewToken = 0
+
+    // 待设置封面的模板，传给 preview 子组件
+    const coverItem = ref({})
+
+    const resetPreview = () => {
+      previewToken += 1
+      activeIndex.value = -1
+      previewTitle.value = ''
+      previewList.value = []
+      selectedTemplate.value = null
+    }
+
+    // 选中模板：右侧展示其维度与指标明细
+    const handleSelect = async (row, index) => {
+      activeIndex.value = index
+      previewTitle.value = row.name
+      const token = (previewToken += 1)
+      startPreviewLoading()
+      try {
+        const res = await assessTemplateEditApi(row.id, { way: row.way })
+        if (token !== previewToken) return
+        selectedTemplate.value = res.data || null
+        previewList.value = res.data ? res.data.info : []
+      } catch (error) {
+        // 错误提示由 request 统一处理，这里保证预览区可渲染
+        if (token === previewToken) previewList.value = []
+      } finally {
+        if (token === previewToken) stopPreviewLoading()
       }
-      assessTemplateListApi(data).then((res) => {
-        this.tableData = res.data.list
-        this.collects = res.data.collects ? res.data.collects : []
-        this.total = res.data.count
-        if (this.tableData.length > 0) {
-          this.selectList(this.tableData[0], 0)
-        }
-      })
-    },
-    pageChange(page) {
-      this.where.page = page
-      this.getTableData()
-    },
-    handleSizeChange(val) {
-      this.where.limit = val
-      this.getTableData()
-    },
-    setIsCollect(item) {
-      if (this.cateId === 'collect') {
-        return 'active'
-      } else {
-        if (this.collects.length === 0) {
-          return ''
-        } else {
-          if (this.collects.includes(item.id)) {
-            return 'active'
-          } else {
-            return ''
-          }
-        }
-      }
-    },
-    eventOptionData(data) {
-      this.cateId = data.id
-      this.where.page = 1
-      this.clickIndex = -1
-      this.selectDada = []
-      this.selectTitle = ''
-      this.getTableData()
-    },
-    handleSelectionChange(val) {
-      this.multipleSelection = val
-    },
-    getRowKeys(row) {
-      return row.id
-    },
-    showEnterItem(index) {
-      this.hoverIndex = index
-    },
-    showLeaveItem(index) {
-      this.hoverIndex = -1
-    },
-    setPreviewImage(item) {
-      this.itemData = item
-      this.$refs.preview.openDialog()
-    },
-    // 设置 删除 封面图
-    handlePreview() {
-      this.getTableData()
-    },
-    handleDelete(item) {
-      this.$modalSure('考核模板删除后，将不可修改，你确定要删除吗').then(() => {
-        templateDeleteApi(item.id).then((res) => {
-          this.getTableData()
+    }
+
+    const fetchTableData = async () => {
+      startListLoading()
+      try {
+        const res = await assessTemplateListApi({
+          page: page.value,
+          limit: pageSize.value,
+          name: searchForm.name,
+          cate_id: cateId.value
         })
+        tableData.value = res.data.list || []
+        collects.value = res.data.collects || []
+        total.value = res.data.count
+        // 列表刷新后默认选中第一条；结果为空时清掉右侧，避免残留上一次的预览
+        tableData.value.length > 0 ? handleSelect(tableData.value[0], 0) : resetPreview()
+      } catch (error) {
+        // 错误提示由 request 统一处理
+      } finally {
+        stopListLoading()
+      }
+    }
+
+    // 切换左侧分类：重置分页与选中态后重新拉取
+    const handleCateChange = (index, id) => {
+      if (tabIndex.value === index) return
+      tabIndex.value = index
+      cateId.value = id
+      page.value = 1
+      resetPreview()
+      fetchTableData()
+    }
+
+    const handleSearch = () => {
+      page.value = 1
+      fetchTableData()
+    }
+
+    const handlePageChange = (val) => {
+      page.value = val
+      fetchTableData()
+    }
+
+    // 「我的收藏」分类下的模板必然已收藏，无需再比对 collects
+    const isCollected = (item) => cateId.value === COLLECT_CATE_ID || collects.value.includes(item.id)
+
+    const isOwner = (item) => item.user !== undefined && userStore.userInfo.uid === item.user.uid
+
+    const handleCollect = async (item) => {
+      try {
+        await assessTemplateCollectApi(item.id)
+        // 在「我的收藏」下取消收藏后该模板会从列表消失，预览需一并清空
+        if (cateId.value === COLLECT_CATE_ID) resetPreview()
+        fetchTableData()
+      } catch (error) {
+        // 错误提示由 request 统一处理
+      }
+    }
+
+    const handleSetCover = (item) => {
+      coverItem.value = item
+      previewRef.value.openDialog()
+    }
+
+    // 封面图设置 / 删除后回调
+    const handlePreview = () => {
+      fetchTableData()
+    }
+
+    const handleDelete = (item) => {
+      modalSure('考核模板删除后，将不可修改，你确定要删除吗').then(async () => {
+        await templateDeleteApi(item.id)
+        fetchTableData()
       })
-    },
-    handleEdit(item) {
-      assessTemplateEditApi(item.id).then((res) => {
+    }
+
+    // 编辑模板：把模板完整内容回传给父级，由父级进入编辑态
+    const handleEdit = async (item) => {
+      startListLoading()
+      try {
+        const res = await assessTemplateEditApi(item.id)
         if (res.data === undefined) {
-          this.$message.error('内容为空，不能编辑')
-        } else {
-          this.configData.edit = 2
-          this.configData.data = res.data
-          this.$emit('templateChange', this.configData)
-          this.closeDialog()
+          proxy.$message.error('内容为空，不能编辑')
+          return
         }
-      })
-    },
-    statusStar(item) {
-      assessTemplateCollectApi(item.id)
-        .then((res) => {
-          if (this.cateId === 'collect') {
-            this.selectDada = []
-            this.selectTitle = ''
-          }
-          this.getTableData()
+        emit('templateChange', { edit: CONFIG_EDIT.EDIT, data: res.data })
+        closeDialog()
+      } catch (error) {
+        // 错误提示由 request 统一处理
+      } finally {
+        stopListLoading()
+      }
+    }
+
+    const closeDialog = () => {
+      resetPreview()
+      dialogFormVisible.value = false
+    }
+
+    const handleConfirm = () => {
+      if (activeIndex.value < 0) {
+        proxy.$message.error('选择为空')
+        return
+      }
+      // 先取出引用：closeDialog 只是把 previewList 指向新数组，已回传的数据不受影响
+      const configData = { edit: CONFIG_EDIT.USE, data: selectedTemplate.value || { info: previewList.value } }
+      if (props.remindButton) {
+        modalSure('确定后将替换原来的内容').then(() => {
+          emit('templateChange', configData)
         })
-        .catch((error) => {
-          item.collect = null
-        })
-    },
-    selectList(row, index) {
-      this.clickIndex = index
-      this.selectTitle = this.tableData[index].name
-      assessTemplateEditApi(row.id, { way: row.way }).then((res) => {
-        this.selectDada = res.data ? res.data.info : []
-      })
+      } else {
+        emit('templateChange', configData)
+      }
+      closeDialog()
+    }
+
+    const openDialog = () => {
+      dialogFormVisible.value = true
+      // 分类仅首次打开时请求一次；列表则每次打开都取最新
+      fetchCate()
+      fetchTableData()
+    }
+
+    expose({ openDialog })
+
+    return {
+      defaultCover,
+      dialogFormVisible,
+      previewRef,
+      cateList,
+      isCateLoading,
+      tabIndex,
+      page,
+      pageSize,
+      total,
+      searchForm,
+      tableData,
+      activeIndex,
+      hoverIndex,
+      isListLoading,
+      previewTitle,
+      previewList,
+      isPreviewLoading,
+      coverItem,
+
+      handleCateChange,
+      handleSearch,
+      handlePageChange,
+      handleSelect,
+      isCollected,
+      isOwner,
+      handleCollect,
+      handleSetCover,
+      handlePreview,
+      handleDelete,
+      handleEdit,
+      handleConfirm,
+      closeDialog,
+      openDialog
     }
   }
 }
 </script>
 <style lang="scss" scoped>
-/deep/ .el-dialog__body {
+:deep(.el-dialog__body) {
   padding: 10px !important;
 }
 .assess-left {
@@ -483,7 +463,7 @@ export default {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/deep/.el-dialog {
+:deep(.el-dialog) {
   border-radius: 10px;
 }
 .dialog-title {

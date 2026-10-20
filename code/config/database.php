@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -70,8 +70,11 @@ return [
             'engine'         => null,
             'options'        => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-                // 开启持久连接
-                PDO::ATTR_PERSISTENT => true,
+                // 开启持久连接（Swoole长生命周期进程复用连接）
+                PDO::ATTR_PERSISTENT => env('DB_PERSISTENT', true),
+                PDO::ATTR_TIMEOUT    => (int) env('DB_TIMEOUT', 5),
+                // 启用查询缓存
+                PDO::ATTR_STRINGIFY_FETCHES => false
             ]) : [],
         ],
         'pgsql' => [
@@ -132,6 +135,7 @@ return [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
             'prefix'  => env('REDIS_PREFIX', env('APP_NAME', 'laravel') . ':'),
             //                Str::slug(env('APP_NAME', 'laravel'), '_') . '_database_'),
+            'serializer' => 4,
         ],
         'default' => [
             'url'                => env('REDIS_URL'),
@@ -140,6 +144,8 @@ return [
             'port'               => env('REDIS_PORT', '6379'),
             'database'           => env('REDIS_DB', '0'),
             'read_write_timeout' => 0,
+            // 开启Redis持久连接（Swoole长生命周期进程复用连接）
+            'persistent'         => env('REDIS_PERSISTENT', true),
         ],
         'cache' => [
             'url'                => env('REDIS_URL'),
@@ -149,6 +155,17 @@ return [
             'database'           => env('REDIS_CACHE_DB', '1'),
             'read_write_timeout' => 0,
         ],
+        // 知识库向量索引连接：复用 REDIS_HOST/PORT/PASSWORD。
+        // 注意：RediSearch 仅支持 DB 0 建索引，故默认与 REDIS_DB 相同，靠 key/index 前缀隔离。
+        'knowledge' => [
+            'url'                => env('REDIS_URL'),
+            'host'               => env('REDIS_HOST', '127.0.0.1'),
+            'password'           => env('REDIS_PASSWORD', null),
+            'port'               => env('REDIS_PORT', '6379'),
+            'database'           => env('REDIS_KNOWLEDGE_DB', env('REDIS_DB', '0')),
+            'read_write_timeout' => 0,
+            'persistent'         => env('REDIS_PERSISTENT', true),
+        ],
     ],
     // 数据分页配置
     'page' => [
@@ -157,7 +174,7 @@ return [
         // 每页截取key
         'limitKey' => 'limit',
         // 每页截取最大值
-        'limitMax' => 50,
+        'limitMax' => 100,
         // 默认条数
         'defaultLimit' => 10,
     ],

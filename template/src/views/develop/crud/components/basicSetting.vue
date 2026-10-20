@@ -3,22 +3,22 @@
     <!-- <div class="title-16 mt20">属性信息</div> -->
     <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="90px" class="mt20">
       <el-form-item label="显示名称:" prop="table_name">
-        <el-input v-model="ruleForm.table_name" size="small"></el-input>
+        <el-input v-model="ruleForm.table_name"></el-input>
       </el-form-item>
       <el-form-item label="实体名称:" prop="table_name_en">
-        <el-input disabled v-model="ruleForm.table_name_en" size="small"></el-input>
+        <el-input disabled v-model="ruleForm.table_name_en"></el-input>
       </el-form-item>
-      <el-form-item label="所属主实体:" prop="region">
+
+      <el-form-item label="所属主实体:" prop="region" v-if="ruleForm.crud_id">
         <el-cascader
           disabled
           v-model="ruleForm.crud_id"
           :options="options"
           style="width: 100%"
-          size="small"
           :show-all-levels="false"
           :props="{ checkStrictly: true, label: 'table_name', value: 'id', emitPath: false }"
         >
-          <template slot-scope="{ node, data }">
+          <template #default="{ node, data }">
             <span>{{ data.table_name }}</span>
             <span> （{{ data.table_name_en }}）</span>
           </template>
@@ -32,7 +32,6 @@
           inactive-value="0"
           inactive-text="关闭"
           active-text="开启"
-          size="small"
         ></el-switch>
       </el-form-item>
 
@@ -50,7 +49,6 @@
             class="ml10"
             v-model="ruleForm.comment_title"
             maxlength="5"
-            size="small"
             placeholder="评论重命名"
           ></el-input>
         </div>
@@ -62,29 +60,67 @@
           v-model="ruleForm.cate_ids"
           multiple
           filterable
-          size="small"
           placeholder="请搜索选择应用（多选）"
         >
           <el-option v-for="(v, index) in cateOptions" :key="v.id" :label="v.name" :value="v.id"> </el-option>
         </el-select>
+      </el-form-item>
+      <el-form-item label="上级菜单:" prop="region">
+        <el-cascader
+          v-model="ruleForm.path"
+          :options="menuList"
+          :props="{ checkStrictly: true, label: 'menu_name', value: 'id', emitPath: false }"
+          clearable
+          style="width: 100%"
+        ></el-cascader>
+      </el-form-item>
+      <el-form-item label="菜单图标:" prop="region">
+        <el-input
+          placeholder="请选择图标"
+          v-model="ruleForm.icon"
+          readonly
+          @click="showIconDialog = true"
+          clearable
+        >
+          <template #suffix>
+            <i v-if="!ruleForm.icon" class="el-icon-circle-plus-outline" style="cursor: pointer"></i>
+            <i
+              v-else
+              class="el-icon-circle-close"
+              style="cursor: pointer"
+              @click.stop="handleClearIcon"
+            ></i>
+          </template>
+        </el-input>
+      </el-form-item>
+      <el-form-item label="移动端图标:" prop="region">
+        <oa-systemImage ref="systemImageRef" @getImage="getImage"></oa-systemImage>
       </el-form-item>
       <el-form-item label="实体说明:" prop="region">
         <el-input
           type="textarea"
           v-model="ruleForm.info"
           :autosize="{ minRows: 4, maxRows: 8 }"
-          size="small"
         ></el-input>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" size="small" :loading="loading" @click="submit">保存</el-button>
+        <el-button type="primary" :loading="loading" @click="submit">保存</el-button>
       </el-form-item>
     </el-form>
+    <!-- 选择图标 -->
+    <el-dialog title="选择菜单图标" v-model="showIconDialog" :append-to-body="true" width="50%">
+      <div class="icon-box">
+        <select-icon ref="selectIconRef" :isEmit="true" @select="handleSelectIcon"></select-icon>
+      </div>
+    </el-dialog>
   </div>
 </template>
 <script>
+import oaSystemImage from '@/components/form-common/oa-systemImage'
+import selectIcon from '@/components/form-common/select-icon'
 import Commnt from '@/components/develop/commonData'
-import { getcrudCateListApi, databaseListApi, databasePutApi } from '@/api/develop'
+import { menuListApi } from '@/api/system.ts'
+import { getcrudCateListApi, databaseListApi, databasePutApi } from '@/api/develop.ts'
 
 export default {
   props: {
@@ -93,25 +129,43 @@ export default {
       default: () => {}
     }
   },
+  components: {
+    oaSystemImage,
+    selectIcon
+  },
   data() {
     return {
       ruleForm: Commnt.formDataInit,
       rules: Commnt.formRules,
       cateOptions: [],
+      showIconDialog: false,
       options: [],
+      menuList: [],
       loading: false
     }
   },
   created() {
     this.getList()
     this.getCateList()
+    this.getMenuList()
   },
   watch: {
     infoData(val) {
+      this.initForm(val)
+    }
+  },
+  mounted() {
+    this.initForm(this.infoData)
+  },
+
+  methods: {
+    initForm(val) {
       this.ruleForm.table_name = val.table_name
       this.ruleForm.table_name_en = val.table_name_en
       this.ruleForm.info = val.info
       this.ruleForm.crud_id = val.crud_id
+      this.ruleForm.uni_img = val.uni_img
+      this.$refs.systemImageRef.url = val.uni_img
       this.ruleForm.show_log = val.show_log + ''
       this.ruleForm.comment_name = val.comment_title || '评论'
       this.ruleForm.show_comment = val.show_comment + ''
@@ -120,10 +174,7 @@ export default {
       } else {
         this.ruleForm.cate_ids = []
       }
-    }
-  },
-
-  methods: {
+    },
     submit() {
       this.$refs.ruleForm.validate((valid) => {
         if (valid) {
@@ -133,6 +184,25 @@ export default {
           })
         }
       })
+    },
+    handleSelectIcon(data) {
+      this.ruleForm.icon = data
+      this.showIconDialog = false
+    },
+    getImage(e) {
+      this.ruleForm.uni_img = e.url
+    },
+    async getMenuList() {
+      let obj = {
+        menu_name: '顶级菜单',
+        id: 0
+      }
+      const result = await menuListApi()
+      this.menuList = result.data
+      this.menuList.unshift(obj)
+    },
+    handleClearIcon() {
+      this.ruleForm.icon = ''
     },
     async getList() {
       let obj = {

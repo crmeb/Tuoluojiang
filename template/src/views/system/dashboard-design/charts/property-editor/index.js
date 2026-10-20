@@ -26,6 +26,7 @@ export const registerChartLibProperties = (app, PERegister) => {
     'setDimensional',
     'setChartFilter',
     'showHeader',
+    'showTips',
     'showFullscreen',
     'showRefresh',
     'chartStyle',
@@ -35,16 +36,16 @@ export const registerChartLibProperties = (app, PERegister) => {
     'setQuickNavConf'
   ]
   let newCom = []
-  const modules = require.context('./', false, /\w+\.vue$/)
-  modules.keys().map((fileName) => {
-    let cname = modules(fileName).default.name
+  const modules = import.meta.glob('./*.vue', { eager: true })
+  Object.keys(modules).forEach((fileName) => {
+    let cname = modules[fileName].default.name
     let alias = cname.split('-')[0]
     let com = {}
     let inx = comOrder.indexOf(alias)
     if (inx != -1) {
       com.alias = alias
       com.cname = cname
-      com.default = modules(fileName).default
+      com.default = modules[fileName].default
       newCom[inx] = com
     }
   })
@@ -54,10 +55,10 @@ export const registerChartLibProperties = (app, PERegister) => {
 }
 
 export const registerPEWidgets = (app) => {
-  const requireComponent = require.context('./', false, /\w+\.vue$/)
-  requireComponent.keys().map((fileName) => {
-    let comp = requireComponent(fileName).default
-    app.component(comp.name, comp)
+  const requireComponent = import.meta.glob('./*.vue', { eager: true })
+  Object.keys(requireComponent).forEach((fileName) => {
+    let comp = requireComponent[fileName].default
+    // registerChartLibProperties 已注册过其中一部分，重复注册在 Vue 3 下会告警
+    if (!app.component(comp.name)) app.component(comp.name, comp)
   })
 }
-

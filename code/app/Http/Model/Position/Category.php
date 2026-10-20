@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -37,6 +37,15 @@ class Category extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'value'       => 'integer',
+        'entid'      => 'integer',
+        'number'     => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * @return HasOne
      */
@@ -47,7 +56,6 @@ class Category extends BaseModel
 
     /**
      * path修改器.
-     * @param mixed $value
      */
     public function setPathAttribute($value)
     {
@@ -56,7 +64,6 @@ class Category extends BaseModel
 
     /**
      * path获取器.
-     * @param mixed $value
      * @return false|string[]
      */
     public function getPathAttribute($value)
@@ -67,7 +74,6 @@ class Category extends BaseModel
     /**
      * name作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeNameLike($query, $value)
@@ -80,7 +86,6 @@ class Category extends BaseModel
     /**
      * id作用域
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeId($query, $value)
     {
@@ -92,7 +97,6 @@ class Category extends BaseModel
     /**
      * entid作用域
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeEntid($query, $value)
     {
@@ -103,8 +107,6 @@ class Category extends BaseModel
 
     /**
      * ID 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeNotId($query, $value): void
     {

@@ -1,13 +1,13 @@
 <template>
-  <div class="current-list">
+  <div class="current-list" :class="{ 'is-fit-height': fitHeight }">
     <!-- 创建考核页面 -->
     <div class="height">
       <div class="flex-between h32 mt20">
         <div class="title-16">绩效考核</div>
         <div class="flex">
-          <el-button size="small" @click="selectTemplate">{{ $t('access.addtarget') }}</el-button>
-          <el-button :disabled="dimensionMax <= 0" size="small" type="primary" @click="addAssess">
-            {{ $t('access.adddimension') }}
+          <el-button @click="selectTemplate">套用考核模板</el-button>
+          <el-button :disabled="dimensionMax <= 0" type="primary" @click="addAssess">
+            添加考核维度
           </el-button>
         </div>
       </div>
@@ -19,7 +19,6 @@
             :disabled="isEdit && strType !== 'copy'"
             class="mr10"
             placeholder="考核类型"
-            size="small"
             style="width: 160px"
             @change="changePeriod"
           >
@@ -31,10 +30,8 @@
               ref="getDateValue"
               v-model="tableFrom.time"
               :format="dateArray[tableFrom.period - 1].format"
-              value-format="yyyy-MM"
               :placeholder="dateArray[tableFrom.period - 1].text"
               :type="dateArray[tableFrom.period - 1].type"
-              size="small"
               style="flex: 1; width: 100%"
               @change="getDateValue"
             />
@@ -46,27 +43,22 @@
               :format="dateArray[4].format"
               :placeholder="dateArray[4].text"
               :type="dateArray[4].type"
-              size="small"
               @change="getDateValue"
             />
             <dateQuarter v-if="quarterBtn" ref="dateQuarter" :get-value="getQuarterDate" :half-year-btn="halfYearBtn" />
           </div>
 
-          <el-select
-            v-model="tableFrom.testUid"
-            :disabled="isEdit && strType !== 'copy'"
-            :placeholder="$t('access.selectexaminee')"
-            multiple
-            size="small"
-            style="width: 160px"
-          >
-            <el-option
-              v-for="(value, key) in frameUserOption"
-              :key="key"
-              :label="value.card ? value.card.name : value.name"
-              :value="value.id"
+          <div style="width: 200px">
+            <selectMember
+              :disabled="isEdit && strType !== 'copy'"
+              :enable-ids="testUserEnableIds"
+              :value="testUserList"
+              placeholder="选择被考核人"
+              is-avatar
+              is-search
+              @getSelectList="handleTestUserChange"
             />
-          </el-select>
+          </div>
         </div>
         <div class="flex">
           <div v-if="enterprise.compute_mode === 0" class="current-button-left text-right">
@@ -102,7 +94,7 @@
                 </span>
                 <span>
                   <span>
-                    {{ enterprise.compute_mode ? $t('access.dimensionscore') : $t('access.dimensionweight') }}
+                    {{ enterprise.compute_mode ? '维度分数' : '维度权重' }}
                   </span>
                   <el-input-number v-model="itm.ratio" :controls="false" :max="itm.weight" :min="0" />
                   <span v-if="!enterprise.compute_mode">%</span>
@@ -123,36 +115,38 @@
 
             <el-table :data="itm.target" default-expand-all row-key="id" style="width: 100%">
               <el-table-column min-width="160" prop="name">
-                <template slot="header"> 指标名称 <span class="red">*</span></template>
-                <template slot-scope="scope">
+                <template #header> 指标名称 <span class="red">*</span></template>
+                <template #default="scope">
                   <el-input
                     v-if="strType !== 'check'"
                     v-model="scope.row.name"
-                    :placeholder="$t('access.placeholder01')"
+                    placeholder="输入指标名称"
                     autosize
                     maxlength="255"
                     type="textarea"
+                    class="oa-input-borderless"
                   />
                   <span v-else>{{ scope.row.name }}</span>
                 </template>
               </el-table-column>
               <el-table-column min-width="330" prop="content">
-                <template slot="header"> 指标说明 <span class="red">*</span></template>
-                <template slot-scope="scope">
+                <template #header> 指标说明 <span class="red">*</span></template>
+                <template #default="scope">
                   <el-input
                     v-if="strType !== 'check'"
                     v-model="scope.row.content"
-                    :placeholder="$t('access.placeholder02')"
+                    placeholder="输入指标说明"
                     autosize
                     maxlength="255"
                     type="textarea"
+                    class="oa-input-borderless"
                   />
                   <span v-else>{{ scope.row.content }}</span>
                 </template>
               </el-table-column>
               <el-table-column min-width="330" prop="info">
-                <template slot="header"> 评分标准 <span class="red">*</span></template>
-                <template slot-scope="scope">
+                <template #header> 评分标准 <span class="red">*</span></template>
+                <template #default="scope">
                   <el-input
                     v-if="strType !== 'check'"
                     v-model="scope.row.info"
@@ -160,16 +154,17 @@
                     maxlength="255"
                     placeholder="输入评分标准"
                     type="textarea"
+                    class="oa-input-borderless"
                   />
                   <span v-else>{{ scope.row.info }}</span>
                 </template>
               </el-table-column>
               <el-table-column prop="weight" width="180">
-                <template slot="header"
+                <template #header
                   >{{ enterprise.compute_mode ? '分数' : '权重(%)' }}
                   <span class="red">*</span>
                 </template>
-                <template slot-scope="scope">
+                <template #default="scope">
                   <el-input-number
                     v-if="strType !== 'check'"
                     v-model="scope.row.ratio"
@@ -184,12 +179,12 @@
                   <span v-else>{{ scope.row.ratio }}</span>
                 </template>
               </el-table-column>
-              <el-table-column :label="$t('public.operation')" fixed="right" prop="address" width="120">
-                <template slot-scope="scope">
+              <el-table-column label="操作" fixed="right" prop="address" width="120">
+                <template #default="scope">
                   <el-button
                     class="current-delete"
                     icon="el-icon-delete"
-                    type="text"
+                    type="primary" link
                     @click="handleDelete(index, scope.$index)"
                   />
                 </template>
@@ -198,8 +193,8 @@
             <div class="current-bottom">
               <el-row>
                 <el-col :lg="12">
-                  <el-button type="text" @click="addTarget(index)">{{ $t('access.addTarget02') }}</el-button>
-                  <el-button type="text" @click="selectTarget(index)">{{ $t('access.addTarget01') }}</el-button>
+                  <el-button type="primary" link @click="addTarget(index)">添加指标</el-button>
+                  <el-button type="primary" link @click="selectTarget(index)">选择指标库</el-button>
                 </el-col>
               </el-row>
             </div>
@@ -208,95 +203,102 @@
       </div>
 
       <div v-if="strType !== 'check'" class="current-footer text-center">
-        <el-button v-if="addButton" size="small" @click="addTemp">
+        <el-button v-if="addButton" @click="addTemp">
           {{ tempButton === 1 ? '设置模板' : '编辑模板' }}
         </el-button>
-        <el-button v-if="!addButton" size="small" @click="addTemplate">
+        <el-button v-if="!addButton" @click="addTemplate">
           {{ tempButton === 1 ? '设置模板' : '编辑模板' }}
         </el-button>
-        <el-button :loading="saveLoading" size="small" type="primary" @click="addPreserve()"> 保存 </el-button>
+        <el-button :loading="saveLoading" type="primary" @click="addPreserve()"> 保存 </el-button>
       </div>
     </div>
     <!--添加考核维度-->
     <el-dialog
       :before-close="handleClose"
-      :title="$t('access.adddimension')"
-      :visible.sync="dialogVisible"
+      title="添加考核维度"
+      v-model="dialogVisible"
       :close-on-click-modal="false"
       width="560px"
     >
       <div class="current-dialog mb15">
-        <span>{{ $t('access.dimensionname') }}：</span>
-        <el-input v-model="from.name" size="small" type="text" />
+        <span>维度名称：</span>
+        <el-input v-model="from.name" type="text" />
       </div>
       <div v-if="!enterprise.compute_mode" class="current-dialog">
-        <span>{{ $t('access.dimensionweight') }}：</span>
+        <span>维度权重：</span>
         <div>
           <el-input-number
             v-model="from.ratio"
             :controls="false"
             :max="editDimension == 1 ? dimensionMax : 100"
             :min="1"
-            size="small"
             style="width: 100%"
           />
           <span v-if="!enterprise.compute_mode" class="current-dialog-icon">%</span>
         </div>
       </div>
 
-      <span slot="footer" class="dialog-footer">
-        <el-button size="small" @click="clickCancel">{{ $t('public.cancel') }}</el-button>
-        <el-button size="small" type="primary" @click="addOk">{{ $t('public.ok') }}</el-button>
-      </span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="clickCancel">取消</el-button>
+          <el-button type="primary" @click="addOk">确定</el-button>
+        </span>
+      </template>
     </el-dialog>
     <!--设置模板内容-->
     <el-dialog
       :before-close="templateClose"
-      :title="$t('access.settemplate')"
+      title="设置模板"
       :close-on-click-modal="false"
-      :visible.sync="dialogTemplate"
+      v-model="dialogTemplate"
       width="560px"
     >
       <div class="current-dialog mb15">
-        <span>{{ $t('access.templatename') }}：</span>
-        <el-input v-model="info.name" size="small" type="text" />
+        <span>模板名称：</span>
+        <el-input v-model="info.name" type="text" />
       </div>
       <div class="current-dialog mb15">
-        <span>{{ $t('access.templatecontent') }}：</span>
-        <el-input v-model="info.info" size="small" type="text" />
+        <span>模板简介：</span>
+        <el-input v-model="info.info" type="text" />
       </div>
-      <span slot="footer" class="dialog-footer">
-        <el-button size="small" @click="cancelTemplate">{{ $t('public.cancel') }}</el-button>
-        <el-button :loading="tempLoading" size="small" type="primary" @click="templateOk">{{
-          $t('public.ok')
-        }}</el-button>
-      </span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="cancelTemplate">取消</el-button>
+          <el-button :loading="tempLoading" type="primary" @click="templateOk">确定</el-button>
+        </span>
+      </template>
     </el-dialog>
-    <selectTarget ref="selectTarget" :title="$t('access.targetibrary')" @dialogChangeDada="dialogChangeDada" />
+    <selectTarget ref="selectTarget" title="指标模板库" @dialogChangeDada="dialogChangeDada" />
     <selectTemplate
       ref="selectTemplate"
       :remind-button="remindButton"
-      :title="$t('access.appraisallibrary')"
+      title="考核模板库"
       @templateChange="templateChange"
     />
   </div>
 </template>
 
 <script>
-import Common from '@/components/user/accessCommon'
-import { userAssessEditApi, userAssessInfo, userAssessCreateApi } from '@/api/user'
-import { assessPlanPeriodApi, assessTargetCateListApi, assessTemplatePutApi } from '@/api/enterprise'
+import { useUserStore } from '@/stores/user.ts'
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
+import { modalSure } from '@/libs/public.ts'
+import Common from '@/components/user/accessCommon.ts'
+import { userAssessEditApi, userAssessInfo, userAssessCreateApi } from '@/api/user.ts'
+import { assessPlanPeriodApi, assessTargetCateListApi, assessTemplatePutApi } from '@/api/enterprise.ts'
 
 export default {
+  emits: ['handleGoal'],
   name: 'GoalSetting',
   components: {
-    selectTarget: () => import('@/components/form-common/dialog-target'),
-    selectTemplate: () => import('@/components/form-common/dialog-template'),
-    dateQuarter: () => import('@/components/form-common/select-dateQuarter')
+    selectTarget: defineAsyncComponent(() => import('@/components/form-common/dialog-target')),
+    selectTemplate: defineAsyncComponent(() => import('@/components/form-common/dialog-template')),
+    dateQuarter: defineAsyncComponent(() => import('@/components/form-common/select-dateQuarter')),
+    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member'))
   },
   props: {
     id: {
-      type: Number | String,
+      type: [Number, String],
       default: 0
     },
     addButton: {
@@ -311,6 +313,11 @@ export default {
     strType: {
       type: String,
       default: ''
+    },
+    fitHeight: {
+      // 由父容器提供确定高度时，内部改为撑满剩余高度 + 底部按钮吸底
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -339,13 +346,13 @@ export default {
       editDimensionIndex: -1,
       remindButton: false,
       periodOptions: Common.periodOptions,
-      periodOption: [{ value: '', label: this.$t('access.selecteassessmenttype') }],
+      periodOption: [{ value: '', label: '选择考核类型' }],
       dateArray: [
-        { value: 1, type: 'week', text: '选择周', format: 'yyyy 第 WW 周' },
-        { value: 2, type: 'month', text: '选择月份', format: 'yyyy-MM' },
+        { value: 1, type: 'week', text: '选择周', format: 'YYYY 第 ww 周' },
+        { value: 2, type: 'month', text: '选择月份', format: 'YYYY-MM' },
         { value: 4, type: '' },
         { value: 5, type: '' },
-        { value: 3, type: 'year', text: '选择年份', format: 'yyyy' }
+        { value: 3, type: 'year', text: '选择年份', format: 'YYYY' }
       ],
       quarterBtn: false,
       halfYearBtn: false,
@@ -363,17 +370,22 @@ export default {
         firstDayOfWeek: 1
       },
       frameUserOption: [],
+      testUserList: [], // 已选被考核人（含姓名头像，供人员选择组件回显）
       assessPlan: [],
       isEdit: false,
       tempButton: 1,
       tempData: {},
       saveLoading: false,
       tempLoading: false,
-      userInfo: this.$store.state.user.userInfo,
-      enterprise: this.$store.state.user.enterprise
+      userInfo: useUserStore().userInfo,
+      enterprise: useUserStore().enterprise
     }
   },
   computed: {
+    // 当前考核类型下允许被考核的人员id，人员选择组件据此过滤组织架构
+    testUserEnableIds() {
+      return this.frameUserOption.map((item) => item.id)
+    },
     dimensionMax() {
       var max = 100
       if (this.enterprise.compute_mode) {
@@ -397,8 +409,18 @@ export default {
     }
   },
   watch: {
-    lang() {
-      this.setOptions()
+    rowData: {
+      handler() {
+        if(this.rowData.id){
+          this.rowId = this.rowData.id || this.id
+            this.getTableData()
+        }else {
+          this.isEdit = false
+          this.tableData = []
+        }
+      
+      },
+      deep: true
     }
   },
 
@@ -409,9 +431,6 @@ export default {
     this.getTableData()
   },
   methods: {
-    setOptions() {
-      this.periodOption = [{ value: '', label: this.$t('access.selecteassessmenttype') }]
-    },
     handleDelete(index, $index) {
       this.tableData[index].target.splice($index, 1)
       this.handleScore(index)
@@ -433,8 +452,10 @@ export default {
             if (this.strType !== 'copy') {
               this.frameUserOption = [this.accessInfo.test]
               this.tableFrom.testUid = [this.accessInfo.test.id]
+              this.testUserList = [{ ...this.accessInfo.test, value: this.accessInfo.test.id }]
             } else {
               this.tableFrom.testUid = []
+              this.testUserList = []
               this.tableFrom.period = ''
             }
           }
@@ -462,7 +483,7 @@ export default {
       }
       this.options = []
       const result = await assessTargetCateListApi(data)
-      res.data == undefined ? (this.department = []) : (this.department = result.data)
+      result.data == undefined ? (this.department = []) : (this.department = result.data)
       this.department.forEach((value) => {
         this.options.push({ value: value.id, label: value.name })
       })
@@ -472,9 +493,9 @@ export default {
     },
     addOk() {
       if (this.from.name == '') {
-        this.$message.error(this.$t('access.placeholder03'))
+        this.$message.error('考核维度名称为空')
       } else if (this.from.ratio == '') {
-        this.$message.error(this.$t('access.placeholder04'))
+        this.$message.error('考核维度权重为空')
       } else {
         if (this.editDimension == 1) {
           this.tableData.push({
@@ -524,9 +545,9 @@ export default {
     },
     templateOk() {
       if (this.info.name === '') {
-        this.$message.error(this.$t('access.placeholder05'))
+        this.$message.error('考核模板名称为空')
       } else if (this.info.info === '') {
-        this.$message.error(this.$t('access.placeholder06'))
+        this.$message.error('考核模板内容为空')
       } else {
         if (this.tempButton === 1) {
           if (this.isEdit) {
@@ -553,11 +574,11 @@ export default {
         this.handleScore(index)
       } else {
         if (this.tableData[index].target[len].name == '') {
-          this.$message.error(this.$t('access.placeholder09'))
+          this.$message.error('填写指标名称')
         } else if (this.tableData[index].target[len].content == '') {
-          this.$message.error(this.$t('access.placeholder10'))
+          this.$message.error('填写指标内容')
         } else if (this.tableData[index].target[len].ratio == '') {
-          this.$message.error(this.$t('access.placeholder11'))
+          this.$message.error('填写指标权重')
         } else {
           this.tableData[index].target.push({ name: '', content: '', ratio: 10 })
           this.handleScore(index)
@@ -600,7 +621,7 @@ export default {
     editPreserve(type, status) {
       if (type === 1) {
         this.is_draft = 0
-        this.$modalSure('你确定要提交考核吗').then(() => {
+        modalSure('你确定要提交考核吗').then(() => {
           this.preserveTemp(status)
         })
       } else {
@@ -630,6 +651,7 @@ export default {
         }
         this.is_temp === 0 ? (this.saveLoading = true) : (this.tempLoading = true)
         if (this.rowId > 0 && this.strType != 'copy' && this.tempButton !== 2) {
+          this.saveLoading = true
           userAssessEditApi(this.rowId, data)
             .then((res) => {
               if (res.status == 200) {
@@ -640,14 +662,17 @@ export default {
                 this.is_draft = 0
                 this.is_temp = 0
                 this.cancelTemplate()
+                this.saveLoading = false
               } else {
                 this.saveLoading = false
               }
             })
             .catch((error) => {
+              this.saveLoading = false
               this.is_temp === 0 ? (this.saveLoading = false) : (this.tempLoading = false)
             })
         } else {
+          this.saveLoading = true
           userAssessCreateApi(data)
             .then((res) => {
               if (res.status == 200) {
@@ -663,6 +688,7 @@ export default {
               }
             })
             .catch((error) => {
+              this.saveLoading = false
               this.is_temp === 0 ? (this.saveLoading = false) : (this.tempLoading = false)
             })
         }
@@ -730,13 +756,13 @@ export default {
       var res = []
       if (type !== 2) {
         if (this.tableData.length <= 0) {
-          this.$message.error(this.$t('access.placeholder12'))
+          this.$message.error('考核维度不能为空')
         } else if (this.dimensionMax > 0 && this.is_draft === 0 && this.is_temp === 0) {
-          this.$message.error(this.$t('access.placeholder13'))
+          this.$message.error('考核维度权重必须为100')
         } else if (this.tableFrom.period === '' && this.is_temp === 0) {
-          this.$message.error(this.$t('access.placeholder14'))
+          this.$message.error('考核类型不能为空')
         } else if (this.tableFrom.date === '' && !this.isEdit && this.is_temp === 0) {
-          this.$message.error(this.$t('access.placeholder15'))
+          this.$message.error('考核时间不能为空')
         } else if (this.tableFrom.testUid.length === 0 && this.is_temp === 0) {
           this.$message.error('被考核人不能为空')
         }
@@ -765,7 +791,7 @@ export default {
               this.$message.error('指标内容不能为空')
               break
             }
-            const info = this.tableData[i].target[j].info;
+            const info = this.tableData[i].target[j].info
             if (info == '' || info == undefined) {
               this.$message.error('评分标准不能为空')
               break
@@ -805,43 +831,106 @@ export default {
       }
     },
 
+    sumTargetScore(list) {
+      return list.reduce((sum, item) => {
+        return sum + (item.target || []).reduce((total, target) => total + (Number(target.ratio) || 0), 0)
+      }, 0)
+    },
+    sumDimensionScore(list) {
+      return list.reduce((sum, item) => sum + (Number(item.ratio) || 0), 0)
+    },
+    scaleScoreTemplate(list, totalScore) {
+      const sourceTotal = this.sumDimensionScore(list) || this.sumTargetScore(list)
+      if (!sourceTotal || !totalScore) return list
+      let dimensionTotal = 0
+      list.forEach((item, index) => {
+        const dimensionSource = Number(item.ratio) || this.sumTargetScore([item]) || 0
+        const targetSource = this.sumTargetScore([item]) || dimensionSource
+        item.ratio =
+          index === list.length - 1 ? totalScore - dimensionTotal : Math.round((dimensionSource * totalScore) / sourceTotal)
+        dimensionTotal += index === list.length - 1 ? 0 : item.ratio
+
+        let targetTotal = 0
+        const targetList = item.target || []
+        targetList.forEach((target, targetIndex) => {
+          target.ratio =
+            !targetSource
+              ? 0
+              : targetIndex === targetList.length - 1
+              ? item.ratio - targetTotal
+              : Math.round(((Number(target.ratio) || 0) * item.ratio) / targetSource)
+          targetTotal += targetIndex === targetList.length - 1 ? 0 : target.ratio
+        })
+      })
+      return list
+    },
+    weightTemplateToScore(list) {
+      const maxScore = Number(this.enterprise.maxScore) || 0
+      let dimensionTotal = 0
+      list.forEach((item, index) => {
+        item.ratio =
+          index === list.length - 1
+            ? maxScore - dimensionTotal
+            : Math.round(((Number(item.ratio) || 0) * maxScore) / 100)
+        dimensionTotal += index === list.length - 1 ? 0 : item.ratio
+
+        let targetTotal = 0
+        const targetList = item.target || []
+        targetList.forEach((target, targetIndex) => {
+          target.ratio =
+            targetIndex === targetList.length - 1
+              ? item.ratio - targetTotal
+              : Math.round((item.ratio * (Number(target.ratio) || 0)) / 100)
+          targetTotal += targetIndex === targetList.length - 1 ? 0 : target.ratio
+        })
+      })
+      return list
+    },
+    scoreTemplateToWeight(list) {
+      const sourceTotal = this.sumDimensionScore(list) || this.sumTargetScore(list)
+      if (!sourceTotal) return list
+      let dimensionTotal = 0
+      list.forEach((item, index) => {
+        const dimensionSource = Number(item.ratio) || this.sumTargetScore([item]) || 0
+        const targetSource = this.sumTargetScore([item]) || dimensionSource
+        item.ratio =
+          index === list.length - 1 ? 100 - dimensionTotal : Math.round((dimensionSource * 100) / sourceTotal)
+        dimensionTotal += index === list.length - 1 ? 0 : item.ratio
+
+        let targetTotal = 0
+        const targetList = item.target || []
+        targetList.forEach((target, targetIndex) => {
+          target.ratio =
+            !targetSource
+              ? 0
+              : targetIndex === targetList.length - 1
+              ? 100 - targetTotal
+              : Math.round(((Number(target.ratio) || 0) * 100) / targetSource)
+          targetTotal += targetIndex === targetList.length - 1 ? 0 : target.ratio
+        })
+      })
+      return list
+    },
+    formatTemplateScore(info, templateTypes) {
+      const list = JSON.parse(JSON.stringify(info || []))
+      const computeMode = Number(this.enterprise.compute_mode)
+      const types = templateTypes === undefined || templateTypes === null ? computeMode : Number(templateTypes)
+      const maxScore = Number(this.enterprise.maxScore) || 0
+
+      if (computeMode === 1 && types === 1) {
+        const templateScore = this.sumDimensionScore(list) || this.sumTargetScore(list)
+        return templateScore === maxScore ? list : this.scaleScoreTemplate(list, maxScore)
+      }
+      if (computeMode === 1 && types === 0) return this.weightTemplateToScore(list)
+      if (computeMode === 0 && types === 1) return this.scoreTemplateToWeight(list)
+      return list
+    },
     // 选用考核模板回调
     templateChange(data) {
-      // 加分评分判断
-      let maxVal = 0
-      if (data.data.length > 0) {
-        data.data.map((item) => {
-          item.target.map((item2) => {
-            maxVal += item2.ratio
-          })
-        })
-      }
-
-      if (this.enterprise.compute_mode && this.enterprise.maxScore !== maxVal && data.data.length > 0) {
-        let sumRatio = 0
-        data.data.forEach((value) => {
-          value.ratio = Math.round((value.ratio * this.enterprise.maxScore) / 100)
-        })
-        data.data.slice(0, data.data.length - 1).map((item) => {
-          sumRatio += item.ratio
-        })
-        if (data.data[data.data.length - 1]) {
-          data.data[data.data.length - 1].ratio = this.enterprise.maxScore - sumRatio
-        }
-        data.data.map((per) => {
-          per.target.forEach((val) => {
-            val.ratio = Math.round((per.ratio * val.ratio) / 100)
-          })
-          let sum = 0
-          per.target.slice(0, per.target.length - 1).map((item) => {
-            sum += item.ratio
-          })
-          per.target[per.target.length - 1].ratio = per.ratio - sum
-        })
-      }
       if (data.edit === 1) {
+        const template = Array.isArray(data.data) ? { info: data.data } : data.data || {}
         this.tempButton = 1
-        this.tableData = data.data
+        this.tableData = this.formatTemplateScore(template.info, template.temp && template.temp.types)
       } else {
         this.tempButton = 2
         this.tempData = data.data.temp
@@ -857,8 +946,8 @@ export default {
     },
     changePeriod(e) {
       if (e == 1) {
-        var selectedWeek = this.$moment(new Date()).isoWeek()
-        var selectedWeekFirst = this.$moment().isoWeek(selectedWeek).weekday(1).format('YYYY/MM/DD')
+        var selectedWeek = dayjs(new Date()).isoWeek()
+        var selectedWeekFirst = dayjs().isoWeek(selectedWeek).weekday(1).format('YYYY/MM/DD')
         this.pickerOptions0 = {
           disabledDate(time) {
             return time.getTime() < new Date(selectedWeekFirst)
@@ -895,15 +984,22 @@ export default {
         return item.period === e
       })
       this.tableFrom.testUid = []
-      this.frameUserOption = this.assessPlan[index].test
+      this.testUserList = []
+      this.frameUserOption = index > -1 && this.assessPlan[index].test ? this.assessPlan[index].test : []
+    },
+
+    // 选择被考核人回调
+    handleTestUserChange(list) {
+      this.testUserList = list
+      this.tableFrom.testUid = list.map((item) => (item.value !== undefined && item.value !== null ? item.value : item.id))
     },
     getDateValue() {
       if (this.tableFrom.period == 1) {
-        this.tableFrom.date = this.$moment(this.tableFrom.time).format('YYYY-WW')
+        this.tableFrom.date = dayjs(this.tableFrom.time).format('YYYY-WW')
       } else if (this.tableFrom.period == 2) {
-        this.tableFrom.date = this.$moment(this.tableFrom.time).format('YYYY-MM')
+        this.tableFrom.date = dayjs(this.tableFrom.time).format('YYYY-MM')
       } else if (this.tableFrom.period == 3) {
-        this.tableFrom.date = this.$moment(this.tableFrom.time).format('YYYY')
+        this.tableFrom.date = dayjs(this.tableFrom.time).format('YYYY')
       }
     },
     getQuarterDate(data) {
@@ -941,28 +1037,56 @@ export default {
 .box {
   height: calc(100vh - 364px);
 }
+// 父容器已提供确定高度：表格区自适应占满剩余空间，底部按钮吸底
+.current-list.is-fit-height {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+
+  > .height {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+
+    > .flex-between {
+      flex-shrink: 0;
+    }
+  }
+
+  .box {
+    flex: 1;
+    min-height: 0;
+    height: auto;
+  }
+
+  .current-footer {
+    flex-shrink: 0;
+    background-color: #fff;
+  }
+}
 .red {
   color: #ff0000;
 }
 .text-right {
   text-align: right;
 }
-/deep/ .el-scrollbar__wrap {
+:deep(.el-scrollbar__wrap) {
   overflow-x: hidden;
 }
 .form-list-con {
-  >>> .el-input__inner {
-    height: 36px;
-    line-height: 36px;
+  :deep(.el-input__wrapper) {
+    min-height: 36px;
   }
 }
-/deep/ .el-textarea__inner {
+:deep(.el-textarea__inner) {
   padding-left: 0;
   padding-right: 0;
 }
 .current-button {
   margin-right: 12px;
-  /deep/ .el-row {
+  :deep(.el-row) {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -973,7 +1097,7 @@ export default {
   }
 }
 .current-table {
-  >>> .el-table__empty-block {
+  :deep(.el-table__empty-block) {
     width: 0;
     height: 0;
     display: none;
@@ -1017,27 +1141,25 @@ export default {
       padding-left: 10px;
     }
   }
-  /deep/ .el-table th > .cell {
+  :deep(.el-table th > .cell) {
     font-weight: normal;
     font-size: 13px;
   }
-  /deep/ .el-table--medium td {
+  :deep(.el-table td) {
     padding: 3px 0;
   }
-  >>> .el-input__inner {
-    // height: 28px;
-    line-height: 28px;
-    // border: none;
-    font-size: 13px;
+  :deep(.el-input__wrapper) {
     background-color: transparent;
   }
-  >>> .el-textarea__inner {
+  :deep(.el-input__inner) {
+    font-size: 13px;
+  }
+  :deep(.el-textarea__inner) {
     resize: none;
     overflow-y: hidden;
-    border: none;
     background-color: transparent;
   }
-  /deep/ .el-table--enable-row-hover {
+  :deep(.el-table--enable-row-hover) {
     .el-table__body tr:hover > td {
       background: transparent;
     }
@@ -1048,11 +1170,11 @@ export default {
   // .current-task {
   //   display: flex;
   //   align-items: center;
-  //   >>> .el-input--medium,
+  // :deep(.el-input--medium),
   //   .el-input-number--medium {
   //     width: 30px;
   //   }
-  //   >>> .el-input__inner {
+  // :deep(.el-input__inner) {
   //     width: 100%;
   //     border: 1px;
   //     // background-color: transparent;
@@ -1062,16 +1184,16 @@ export default {
   // }
 }
 .current-bottom {
-  border-bottom: 1px solid #dfe6ec;
+  // border-bottom: 1px solid #dfe6ec;
   padding: 2px 10px;
   button {
     font-size: 13px;
   }
 }
 .current-footer {
-  margin-top: 20px;
   padding-top: 20px;
-  border-top: 4px solid #f0f2f5;
+  border-top: 1px solid #f0f2f5;
+  margin-inline: -20px;
 }
 .current-dialog {
   display: flex;
@@ -1090,14 +1212,14 @@ export default {
     width: auto;
     top: 12px;
   }
-  >>> .el-input__inner {
+  :deep(.el-input__inner) {
     text-align: left;
   }
 }
-/deep/.el-table th.is-leaf {
+:deep(.el-table th.is-leaf) {
   background-color: #fff !important;
 }
-/deep/.current-task .el-input-number {
+:deep(.current-task .el-input-number) {
   border: 1px solid #636363;
   text-align: center;
 }

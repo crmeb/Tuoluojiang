@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -19,9 +19,9 @@ use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Requests\system\SystemConfigRequest;
 use App\Http\Service\Config\CompanyConfigService;
 use App\Http\Service\Config\SystemConfigService;
-use crmeb\interfaces\ResourceControllerInterface;
-use crmeb\services\UploadService;
-use crmeb\traits\ResourceControllerTrait;
+use Tuoluojiang\Open\interfaces\ResourceControllerInterface;
+use Tuoluojiang\Open\services\UploadService;
+use Tuoluojiang\Open\traits\ResourceControllerTrait;
 use FormBuilder\Exception\FormBuilderException;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\Container\ContainerExceptionInterface;
@@ -113,70 +113,10 @@ class SysremConfigController extends AuthController implements ResourceControlle
     {
         $keys = $this->service->column(['category' => $category], 'key');
         $data = $this->request->postMore($keys);
-        if (! $data) {
+        if (!$data) {
             return $this->fail('保存失败');
         }
         $this->service->updateAllConfig($data);
-        return $this->success('保存成功');
-    }
-
-    /**
-     * 获取防火墙配置.
-     * @return mixed
-     * @throws BindingResolutionException
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     * @throws \ReflectionException
-     */
-    #[Get('data/firewall', '获取防火墙配置')]
-    public function firewallConfig()
-    {
-        return $this->success($this->service->getFirewallConfig());
-    }
-
-    /**
-     * 保存防火墙配置.
-     * @return mixed
-     */
-    #[Put('data/firewall', '保存防火墙配置')]
-    public function saveFirewallConfig()
-    {
-        $firewallSwitch  = $this->request->post('firewall_switch', 0);
-        $firewallContent = $this->request->post('firewall_content', []);
-
-        $info = $this->service->get(['key' => 'firewall_switch']);
-        if ($info) {
-            $info->value = $firewallSwitch;
-            $info->save();
-        } else {
-            $data = $this->service->setConfigData('firewall_switch', '防火墙开关', (int) $firewallSwitch, 'firewall');
-            $this->service->create($data);
-        }
-
-        if ($firewallContent) {
-            $isProbablyValidRegex = function ($pattern) {
-                try {
-                    preg_match($pattern, '');
-                    return true;
-                } catch (\Exception) {
-                    return false;
-                }
-            };
-            foreach ($firewallContent as $value) {
-                if (! $isProbablyValidRegex($value)) {
-                    return $this->fail('防火墙配置格式错误,必须为正则表达式');
-                }
-            }
-        }
-        $info = $this->service->get(['key' => 'firewall_content']);
-        if ($info) {
-            $info->value = $firewallContent;
-            $info->save();
-        } else {
-            $data = $this->service->setConfigData('firewall_content', '防火墙设置', $firewallContent, 'firewall');
-            $this->service->create($data);
-        }
-
         return $this->success('保存成功');
     }
 
@@ -190,7 +130,7 @@ class SysremConfigController extends AuthController implements ResourceControlle
 
     /**
      * 设置搜索字段.
-     * @return array|string[][]
+     * @return array|\string[][]
      */
     protected function getSearchField(): array
     {
@@ -224,5 +164,65 @@ class SysremConfigController extends AuthController implements ResourceControlle
             ['sort', 1],
             ['is_show', 0],
         ];
+    }
+
+    /**
+     * 获取防火墙配置.
+     * @return mixed
+     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
+     */
+    #[Get('data/firewall', '获取防火墙配置')]
+    public function firewallConfig()
+    {
+        return $this->success($this->service->getFirewallConfig());
+    }
+
+    /**
+     * 保存防火墙配置.
+     * @return mixed
+     */
+    #[Put('data/firewall', '保存防火墙配置')]
+    public function saveFirewallConfig()
+    {
+        $firewallSwitch = $this->request->post('firewall_switch', 0);
+        $firewallContent = $this->request->post('firewall_content', []);
+
+        $info = $this->service->get(['key' => 'firewall_switch']);
+        if ($info) {
+            $info->value = $firewallSwitch;
+            $info->save();
+        } else {
+            $data = $this->service->setConfigData('firewall_switch', '防火墙开关', (int)$firewallSwitch, 'firewall');
+            $this->service->create($data);
+        }
+
+        if ($firewallContent) {
+            $isProbablyValidRegex = function ($pattern) {
+                try {
+                    preg_match($pattern, '');
+                    return true;
+                } catch (\Exception) {
+                    return false;
+                }
+            };
+            foreach ($firewallContent as $value) {
+                if (!$isProbablyValidRegex($value)) {
+                    return $this->fail('防火墙配置格式错误,必须为正则表达式');
+                }
+            }
+        }
+        $info = $this->service->get(['key' => 'firewall_content']);
+        if ($info) {
+            $info->value = $firewallContent;
+            $info->save();
+        } else {
+            $data = $this->service->setConfigData('firewall_content', '防火墙设置', $firewallContent, 'firewall');
+            $this->service->create($data);
+        }
+
+        return $this->success('保存成功');
     }
 }

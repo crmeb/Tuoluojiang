@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,11 +17,12 @@ namespace App\Http\Service\Approve;
 
 use App\Constants\CommonEnum;
 use App\Http\Service\Attendance\AttendanceStatisticsService;
-use App\Http\Service\Client\ClientBillService;
-use App\Http\Service\Client\ClientInvoiceService;
-use App\Http\Service\Client\ContractService;
-use App\Http\Service\Client\CustomerService;
 use App\Http\Service\Config\DictDataService;
+use App\Http\Service\Customer\ContractService;
+use App\Http\Service\Customer\CustomerService;
+use App\Http\Service\Customer\InvoiceService;
+use App\Http\Service\Customer\OrderService;
+use App\Http\Service\Customer\PaymentService;
 use App\Http\Service\Finance\BillCategoryService;
 use App\Http\Service\Finance\PaytypeService;
 use App\Http\Service\System\RolesService;
@@ -61,7 +62,53 @@ class ApproveAssistService
     }
 
     /**
-     * 获取合同列表
+     * 获取客户信息
+     * 传参客户ID(customer_id)则选中并禁用.
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    public function eid(...$args): array|string
+    {
+        if (isset($args['value'])) {
+            return app()->get(CustomerService::class)->value($args['value'], 'customer_name') ?: '';
+        }
+        $field = ['id as value', 'customer_name as label'];
+        if ($args['data']['customer_id']) {
+            $args['child']['options']           = toArray(app()->get(CustomerService::class)->select(['id' => $args['data']['customer_id']], $field));
+            $args['child']['value']             = (int) $args['data']['customer_id'];
+            $args['child']['props']['disabled'] = true;
+        } else {
+            $where                    = ['uid' => app()->get(RolesService::class)->getDataUids($args['uid'])];
+            $args['child']['options'] = toArray(app()->get(CustomerService::class)->select($where, $field));
+            if ($args['child']['options']) {
+                $args['child']['value'] = $args['child']['options'][0]['value'];
+            }
+        }
+        return $args['child'];
+    }
+
+    /**
+     * 获取签约方式.
+     */
+    public function signType(...$args): array|string
+    {
+        if (isset($args['value'])) {
+            return match ((int) $args['value']) {
+                1       => '线下签约',
+                2       => '电子签约',
+                default => '未知签约方式',
+            };
+        }
+        $args['child']['options'] = [
+            ['value' => 1, 'label' => '线下签约'],
+            ['value' => 2, 'label' => '电子签约'],
+            ['value' => 3, 'label' => '未知签约方式'],
+        ];
+        return $args['child'];
+    }
+
+    /**
+     * 获取订单列表
      * 传参客户ID(customer_id)则选中并禁用.
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
@@ -69,25 +116,23 @@ class ApproveAssistService
     public function contractList(...$args): array|string
     {
         if (isset($args['value'])) {
-            return app()->get(ContractService::class)->value($args['value'], 'contract_name') ?: '';
+            return app()->get(OrderService::class)->value($args['value'], 'contract_no') ?: '';
         }
-        if ($args['data']['customer_id']) {
+        if ($args['data']['contract_id']) {
             $where = [
-                //                'uid' => $args['uid'],
-                'eid' => $args['data']['customer_id'],
-            ];
-        } elseif ($args['data']['contract_id']) {
-            $where = [
-                //                'uid' => $args['uid'],
                 'id' => $args['data']['contract_id'],
             ];
             $args['child']['value']             = (int) $args['data']['contract_id'];
             $args['child']['props']['disabled'] = true;
+        } elseif ($args['data']['customer_id']) {
+            $where = [
+                'eid' => $args['data']['customer_id'],
+            ];
         } else {
             $where['uid'] = $args['uid'];
         }
-        $field                    = ['id as value', 'contract_name as label'];
-        $args['child']['options'] = toArray(app()->get(ContractService::class)->select($where, $field));
+        $field                    = ['id as value', 'contract_no as label'];
+        $args['child']['options'] = app(OrderService::class)->select($where, $field)?->toArray();
         if ($args['child']['options']) {
             $args['child']['value'] = $args['child']['value'] ?? $args['child']['options'][0]['value'];
         }
@@ -134,10 +179,10 @@ class ApproveAssistService
     public function payType(...$args): array|string
     {
         if (isset($args['value'])) {
-            return app()->get(PaytypeService::class)->value($args['value'], 'name') ?: '';
+            return app(PaytypeService::class)->value($args['value'], 'name') ?: '';
         }
         $field                    = ['id as value', 'name as label'];
-        $args['child']['options'] = toArray(app()->get(PaytypeService::class)->select(['status' => 1], $field));
+        $args['child']['options'] = app(PaytypeService::class)->setDefaultSort('sort')->select(['status' => 1], $field)->toArray();
         if ($args['child']['options']) {
             $args['child']['value'] = $args['child']['options'][0]['value'];
         }
@@ -155,7 +200,7 @@ class ApproveAssistService
             return app()->get(DictDataService::class)->value(['value' => $args['value'], 'type_name' => 'client_renew'], 'name') ?: '';
         }
         $field                    = ['name as label', 'value'];
-        $args['child']['options'] = toArray(app()->get(DictDataService::class)->select(['status' => 1, 'type_name' => 'client_renew'], $field));
+        $args['child']['options'] = app()->get(DictDataService::class)->setDefaultSort('sort')->select(['status' => 1, 'type_name' => 'client_renew'], $field)?->toArray();
         if ($args['child']['options']) {
             $args['child']['value'] = $args['child']['options'][0]['value'];
         }
@@ -194,11 +239,31 @@ class ApproveAssistService
         }
         if ($args['data']['bill_id']) {
             $args['data']['bill_id'] = is_string($args['data']['bill_id']) ? explode(',', $args['data']['bill_id']) : $args['data']['bill_id'];
-            $args['child']['value']  = app()->get(ClientBillService::class)->sum(['id' => $args['data']['bill_id']], 'num');
+            $args['child']['value']  = app()->get(PaymentService::class)->sum(['id' => $args['data']['bill_id']], 'num');
         } else {
             $args['child']['value'] = 0;
         }
         $args['child']['props']['disabled'] = true;
+        return $args['child'];
+    }
+
+    /**
+     * 计算付款单金额
+     * 选填付款记录ID（contract_id）.
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    public function collectionAmount(...$args): mixed
+    {
+        if (isset($args['value'])) {
+            return $args['value'];
+        }if ($args['data']['contract_id']) {
+            $contract = app()->get(OrderService::class)->get(['id' => $args['data']['contract_id']], ['contract_price','surplus']);
+            $args['child']['value']  = $contract ? ($contract->surplus > 0 ? $contract->surplus : $contract->contract_price) : 0;
+        } else {
+            $args['child']['value'] = 0;
+        }
+        $args['child']['props']['disabled'] = false;
         return $args['child'];
     }
 
@@ -208,14 +273,14 @@ class ApproveAssistService
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    public function invoiceAmount(...$args): array|int|string
+    public function invoiceAmount(...$args): mixed
     {
         if (isset($args['value'])) {
             return $args['value'];
         }
         if ($args['data']['bill_id']) {
             $args['data']['bill_id'] = is_string($args['data']['bill_id']) ? explode(',', $args['data']['bill_id']) : $args['data']['bill_id'];
-            $args['child']['value']  = app()->get(ClientBillService::class)->sum(['id' => $args['data']['bill_id']], 'num');
+            $args['child']['value']  = app()->get(PaymentService::class)->sum(['id' => $args['data']['bill_id']], 'num');
         } else {
             $args['child']['value'] = 0;
         }
@@ -241,6 +306,9 @@ class ApproveAssistService
             }
         }
         $args['child']['value'] = 'mail';
+        if (isset($args['data']['customer_id']) && $args['data']['customer_id']) {
+            $args['child']['value'] = app()->get(InvoiceService::class)->value(['eid' => $args['data']['customer_id']], 'collect_type') ?: 'mail';
+        }
         return $args['child'];
     }
 
@@ -262,6 +330,9 @@ class ApproveAssistService
             }
         }
         $args['child']['value'] = 2;
+        if (isset($args['data']['customer_id']) && $args['data']['customer_id']) {
+            $args['child']['value'] = (int) app()->get(InvoiceService::class)->value(['eid' => $args['data']['customer_id']], 'types') ?: 2;
+        }
         return $args['child'];
     }
 
@@ -274,10 +345,10 @@ class ApproveAssistService
     public function invoiceList(...$args): array|string
     {
         if (isset($args['value'])) {
-            return app()->get(ClientInvoiceService::class)->value($args['value'], 'title') ?: '';
+            return app()->get(InvoiceService::class)->value($args['value'], 'title') ?: '';
         }
         $field                    = ['id as value', 'title as label'];
-        $args['child']['options'] = toArray(app()->get(ClientInvoiceService::class)->select(['status' => 5], $field));
+        $args['child']['options'] = toArray(app()->get(InvoiceService::class)->select(['status' => 5], $field));
         if ($args['data']['invoice_id']) {
             $args['child']['value']             = (int) $args['data']['invoice_id'];
             $args['child']['props']['disabled'] = true;
@@ -292,7 +363,6 @@ class ApproveAssistService
     /**
      * 可申请假期类型列表.
      * @return mixed
-     * @throws \ReflectionException
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      * @throws BindingResolutionException
@@ -368,6 +438,9 @@ class ApproveAssistService
 
     /**
      * 异常日期记录.
+     * 无效的历史打卡序号返回空展示值，避免影响审批列表读取。
+     * @param mixed ...$args 审批字段上下文，value.value 为 1–4 的打卡序号
+     * @return array|string 字段配置或异常打卡时间
      * @throws \ReflectionException
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
@@ -376,12 +449,85 @@ class ApproveAssistService
     public function attendanceExceptionRecord(...$args): mixed
     {
         if (isset($args['value'])) {
+            $value = is_array($args['value']) ? ($args['value']['value'] ?? null) : null;
+            if (! in_array($value, [1, 2, 3, 4, '1', '2', '3', '4'], true)) {
+                return '';
+            }
+
+            $recordId   = (int) $value - 1;
             $abnormalId = app()->get(ApproveContentService::class)->value(['apply_id' => ($args['value']['apply_id'] ?? 0), 'symbol' => 'attendanceExceptionDate'], 'value');
-            --$args['value']['value'];
-            return app()->get(AttendanceStatisticsService::class)->getRecordTimeWithAbnormalId((int) $abnormalId, $args['value']['value']);
+            return app()->get(AttendanceStatisticsService::class)->getRecordTimeWithAbnormalId((int) $abnormalId, $recordId);
         }
 
         $args['child']['options'] = [];
+        return $args['child'];
+    }
+
+    public function invoicingEmail(...$args)
+    {
+        if (isset($args['value'])) {
+            return $args['value'];
+        }
+        if (isset($args['data']['customer_id']) && $args['data']['customer_id']) {
+            $args['child']['value'] = app()->get(InvoiceService::class)->value(['eid' => $args['data']['customer_id']], 'collect_email') ?: '';
+        }
+        return $args['child'];
+    }
+
+    public function invoiceHeader(...$args)
+    {
+        if (isset($args['value'])) {
+            return $args['value'];
+        }
+        if (isset($args['data']['customer_id']) && $args['data']['customer_id']) {
+            // 无历史发票抬头时默认取客户名称
+            $args['child']['value'] = app()->get(InvoiceService::class)->value(['eid' => $args['data']['customer_id']], 'title')
+                ?: (app()->get(CustomerService::class)->value($args['data']['customer_id'], 'customer_name') ?: '');
+        }
+        return $args['child'];
+    }
+
+    public function dutyParagraph(...$args)
+    {
+        if (isset($args['value'])) {
+            return $args['value'];
+        }
+        if (isset($args['data']['customer_id']) && $args['data']['customer_id']) {
+            $args['child']['value'] = app()->get(InvoiceService::class)->value(['eid' => $args['data']['customer_id']], 'ident') ?: '';
+        }
+        return $args['child'];
+    }
+
+    public function liaisonMan(...$args)
+    {
+        if (isset($args['value'])) {
+            return $args['value'];
+        }
+        if (isset($args['data']['customer_id']) && $args['data']['customer_id']) {
+            $args['child']['value'] = app()->get(InvoiceService::class)->value(['eid' => $args['data']['customer_id']], 'collect_name') ?: '';
+        }
+        return $args['child'];
+    }
+
+    public function telephone(...$args)
+    {
+        if (isset($args['value'])) {
+            return $args['value'];
+        }
+        if (isset($args['data']['customer_id']) && $args['data']['customer_id']) {
+            $args['child']['value'] = app()->get(InvoiceService::class)->value(['eid' => $args['data']['customer_id']], 'collect_tel') ?: '';
+        }
+        return $args['child'];
+    }
+
+    public function mailingAddress(...$args)
+    {
+        if (isset($args['value'])) {
+            return $args['value'];
+        }
+        if (isset($args['data']['customer_id']) && $args['data']['customer_id']) {
+            $args['child']['value'] = app()->get(InvoiceService::class)->value(['eid' => $args['data']['customer_id']], 'mail_address') ?: '';
+        }
         return $args['child'];
     }
 }

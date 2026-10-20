@@ -3,51 +3,51 @@
   <div v-show="menuVisible" id="contextmenu" class="menu">
     <div v-if="configData.type === 1" class="right-item-list">
       <div v-if="configData.data.type !== 1" class="right-item" @click="fileDownLoad(configData.data)">
-        {{ $t('public.download') }}
+        下载
       </div>
 
       <el-divider />
       <div class="right-item" @click="rightItemClick(8)">
-        {{ configData.data.is_collect === 0 ? $t('file.collection') : $t('file.cancelcollection') }}
+        {{ configData.data.is_collect === 0 ? '我的收藏' : '取消收藏' }}
       </div>
     </div>
     <div v-if="configData.type === 2" class="right-item-list">
       <div v-if="configData.data.type === 1" class="right-item" @click="rightItemClick(1)">
-        {{ configData.data.is_shortcut === 0 ? $t('file.setcommon') : $t('file.cancelcommon') }}
+        {{ configData.data.is_shortcut === 0 ? '设为常用' : '取消常用' }}
       </div>
       <div v-if="configData.data.type !== 1" class="right-item" @click="fileDownLoad(configData.data)">
-        {{ $t('public.download') }}
+        下载
       </div>
       <el-divider />
       <div class="right-item" @click="rightItemClick(8)">
-        {{ configData.data.is_collect === 0 ? $t('file.collection') : $t('file.cancelcollection') }}
+        {{ configData.data.is_collect === 0 ? '我的收藏' : '取消收藏' }}
       </div>
     </div>
     <div v-if="configData.type === 3" class="right-item-list">
-      <div v-if="configData.share == 2" class="right-item" @click="fileDownLoad(item)">{{ $t('public.download') }}</div>
+      <div v-if="configData.share == 2" class="right-item" @click="fileDownLoad(item)">下载</div>
       <div
         v-if="configData.share == 1 && configData.data.auth.download === 1"
         class="right-item"
         @click="fileDownLoad(item)"
       >
-        {{ $t('public.download') }}
+        下载
       </div>
       <el-divider v-if="configData.share == 1 && configData.data.auth.download === 1" />
       <div v-if="configData.share == 2" class="right-item" @click="rightItemClick(1)">
-        {{ $t('file.sharingsettings') }}
+        共享设置
       </div>
       <div v-if="configData.share == 2" class="right-item" @click="rightItemClick(2)">
-        {{ $t('file.cancelsharing') }}
+        取消共享
       </div>
       <el-divider v-if="configData.share == 2" />
-      <div v-if="configData.share == 2" class="right-item" @click="rightItemClick(3)">{{ $t('public.delete') }}</div>
+      <div v-if="configData.share == 2" class="right-item" @click="rightItemClick(3)">删除</div>
     </div>
     <div v-if="configData.type === 4 || configData.type === 5" class="right-item-list">
       <div v-if="configData.data.type === 1" class="right-item" @click="rightItemClick(1)">
-        {{ configData.data.is_shortcut === 0 ? $t('file.setcommon') : $t('file.cancelcommon') }}
+        {{ configData.data.is_shortcut === 0 ? '设为常用' : '取消常用' }}
       </div>
       <div v-if="configData.data.type !== 1" class="right-item" @click="fileDownLoad(configData.data)">
-        {{ $t('public.download') }}
+        下载
       </div>
       <el-divider />
       <div
@@ -58,50 +58,49 @@
         {{ configData.data.is_share === 0 ? '共享' : '取消共享' }}
       </div>
       <div class="right-item" @click="rightItemClick(8)">
-        {{ configData.data.is_collect === 0 ? $t('file.collection') : $t('file.cancelcollection') }}
+        {{ configData.data.is_collect === 0 ? '我的收藏' : '取消收藏' }}
       </div>
       <el-divider />
-      <div class="right-item" @click="rightItemClick(2)">{{ $t('file.moveto') }}</div>
-      <div v-if="configData.data.type !== 1" class="right-item" @click="rightItemClick(3)">{{ $t('file.copyto') }}</div>
-      <div class="right-item" @click="rightItemClick(4)">{{ $t('file.rename') }}</div>
+      <div class="right-item" @click="rightItemClick(2)">移动至</div>
+      <div v-if="configData.data.type !== 1" class="right-item" @click="rightItemClick(3)">复制到</div>
+      <div class="right-item" v-if="!latelyFile" @click="rightItemClick(4)">重命名</div>
       <el-divider />
-      <div class="right-item" @click="rightItemClick(6)">{{ $t('public.delete') }}</div>
-      <div class="right-item" @click="rightItemClick(5)">{{ $t('file.attribute') }}</div>
+      <div class="right-item" @click="rightItemClick(6)">删除</div>
+      <div class="right-item" @click="rightItemClick(5)">属性</div>
     </div>
     <div v-if="configData.type === 6" class="right-item-list">
       <div class="right-item" v-if="openTypes.includes(configData.data.file_ext)" @click="rightItemClick(1)">打开</div>
       <div v-if="configData.data.type !== 1" class="right-item" @click="fileDownLoad(configData.data)">
-        {{ $t('public.download') }}
+        下载
       </div>
       <div v-if="configData.data.type !== 1" class="right-item" @click="rightItemClick(10)">分享</div>
       <el-divider v-if="configData.data.type !== 1" />
-      <div class="right-item" @click="rightItemClick(2)">{{ $t('file.moveto') }}</div>
+      <div class="right-item" @click="rightItemClick(2)">移动至</div>
       <div
-        v-if="configData.data.type === 1 && configData.data.user_id === $store.state.user.userInfo.id"
+        v-if="configData.data.type === 1 && configData.data.is_admin == 1"
         class="right-item"
         @click="rightItemClick(9)"
       >
-        {{ $t('file.directory') }}
+        目录权限
       </div>
-      <div v-if="configData.data.type !== 1" class="right-item" @click="rightItemClick(3)">{{ $t('file.copyto') }}</div>
-      <div class="right-item" @click="rightItemClick(4)">{{ $t('file.rename') }}</div>
+      <div v-if="configData.data.type !== 1" class="right-item" @click="rightItemClick(3)">复制到</div>
+      <div class="right-item" v-if="!latelyFile" @click="rightItemClick(4)">重命名</div>
       <el-divider />
-      <div class="right-item" @click="rightItemClick(6)">{{ $t('public.delete') }}</div>
-      <div class="right-item" @click="rightItemClick(5)">{{ $t('file.attribute') }}</div>
+      <div class="right-item" @click="rightItemClick(6)">删除</div>
+      <div class="right-item" @click="rightItemClick(5)">属性</div>
     </div>
     <div v-if="configData.type === 7" class="right-item-list">
-      <div class="right-item" @click="rightItemClick(2)">{{ $t('file.completelydelete') }}</div>
-      <div class="right-item" @click="rightItemClick(1)">{{ $t('file.restorefile') }}</div>
+      <div class="right-item" @click="rightItemClick(2)">彻底删除</div>
+      <div class="right-item" @click="rightItemClick(1)">恢复文件</div>
     </div>
   </div>
 </template>
 
 <script>
-import file from '@/utils/file'
-import helper from '@/libs/helper'
-Vue.use(file)
-import Vue from 'vue'
+import { fileDownLoad, fileIsImage } from '@/utils/file.ts'
+import helper from '@/libs/helper.ts'
 export default {
+  emits: ['handleRightClick'],
   name: 'RightClick',
   props: {
     configData: {
@@ -109,6 +108,10 @@ export default {
       default: () => {
         return {}
       }
+    },
+    latelyFile: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -123,11 +126,13 @@ export default {
   },
 
   methods: {
+    fileDownLoad,
+    fileIsImage,
     rightItemClick(type) {
       this.clickData.index = type
       this.clickData.row = this.configData.data
-
       this.$emit('handleRightClick', this.clickData)
+      this.foo()
     },
     rightClick(event) {
       this.menuVisible = false // 先把模态框关死，目的是 第二次或者第n次右键鼠标的时候 它默认的是true

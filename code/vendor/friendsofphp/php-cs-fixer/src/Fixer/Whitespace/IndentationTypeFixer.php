@@ -30,14 +30,8 @@ use PhpCsFixer\Tokenizer\Tokens;
  */
 final class IndentationTypeFixer extends AbstractFixer implements WhitespacesAwareFixerInterface
 {
-    /**
-     * @var string
-     */
-    private $indent;
+    private string $indent;
 
-    /**
-     * {@inheritdoc}
-     */
     public function getDefinition(): FixerDefinitionInterface
     {
         return new FixerDefinition(
@@ -59,17 +53,11 @@ final class IndentationTypeFixer extends AbstractFixer implements WhitespacesAwa
         return 50;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function isCandidate(Tokens $tokens): bool
     {
         return $tokens->isAnyTokenKindsFound([T_COMMENT, T_DOC_COMMENT, T_WHITESPACE]);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function applyFix(\SplFileInfo $file, Tokens $tokens): void
     {
         $this->indent = $this->whitespacesConfig->getIndent();
@@ -101,9 +89,7 @@ final class IndentationTypeFixer extends AbstractFixer implements WhitespacesAwa
         $indent = $this->indent;
 
         // change indent to expected one
-        $content = Preg::replaceCallback('/^(?:    )+/m', function (array $matches) use ($indent): string {
-            return $this->getExpectedIndent($matches[0], $indent);
-        }, $content);
+        $content = Preg::replaceCallback('/^(?:    )+/m', fn (array $matches): string => $this->getExpectedIndent($matches[0], $indent), $content);
 
         return new Token([$tokens[$index]->getId(), $content]);
     }

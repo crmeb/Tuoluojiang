@@ -1,6 +1,6 @@
 <template>
   <div>
-    <index activeName="3" :types="3"></index>
+    <index  types="customer_seas"></index>
   </div>
 </template>
 

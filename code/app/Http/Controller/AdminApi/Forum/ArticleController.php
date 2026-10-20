@@ -18,7 +18,7 @@ namespace App\Http\Controller\AdminApi\Forum;
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Service\System\MenusService;
 use App\Http\Service\System\RolesService;
-use crmeb\services\synchro\Article;
+use Tuoluojiang\Open\services\synchro\Article;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\SimpleCache\InvalidArgumentException;
 

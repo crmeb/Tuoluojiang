@@ -15,7 +15,7 @@
         </VFormRender>
       </div>
       <div class="footer">
-        <el-button size="small" type="primary" :loading="loading" @click="saveFn">提交</el-button>
+        <el-button type="primary" :loading="loading" @click="saveFn">提交</el-button>
       </div>
     </template>
     <default-page v-else :index="20"> </default-page>
@@ -30,11 +30,10 @@
   </div>
 </template>
 <script>
-import store from '@/store'
-import { mapMutations } from 'vuex'
+import { getToken, setShareUnique } from '@/utils/auth.ts'
 import Verify from '@/components/verifition/Verify'
 import VFormRender from '@/components/form-render/index'
-import { getModuleQuestionnaireInfoApi, saveModuleFormApi } from '@/api/develop'
+import { getModuleQuestionnaireInfoApi, saveModuleFormApi } from '@/api/develop.ts'
 import DefaultPage from '@/components/common/defaultPage.vue'
 export default {
   name: '',
@@ -77,25 +76,24 @@ export default {
   },
 
   created() {
-    this.token = store.getters.token
+    this.token = getToken()
     this.unique = this.$route.params.id
     this.role_type = this.$route.query.role_type
-    this.$store.commit('user/SET_UNIQUE', this.unique)
+    setShareUnique(this.unique)
   },
   mounted() {
     this.getInfo(this.unique)
   },
   methods: {
-    ...mapMutations('user', ['SET_UNIQUE']),
     getInfo(id) {
       getModuleQuestionnaireInfoApi(id).then((res) => {
         this.info = res.data
         this.keyName = res.data.crud.table_name_en
         if (res.data.form_info && res.data.form_info.global_options) {
-          this.$set(this.importTemplate, 'formConfig', res.data.form_info.global_options)
+          this.importTemplate.formConfig = res.data.form_info.global_options
           this.importTemplate.formConfig.roleType = this.token ? 0 : 1
         }
-        this.$set(this.importTemplate, 'widgetList', res.data.form_info.options)
+        this.importTemplate.widgetList = res.data.form_info.options
       })
 
       // 表单样式数据延迟

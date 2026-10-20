@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,8 +16,8 @@ declare(strict_types=1);
 namespace App\Http\Service\System;
 
 use App\Http\Dao\Auth\RoleUserDao;
-use App\Http\Dao\BaseDao;
 use App\Http\Service\Admin\AdminService;
+use App\Http\Dao\BaseDao;
 use App\Http\Service\BaseService;
 use Illuminate\Contracts\Container\BindingResolutionException;
 
@@ -82,16 +82,12 @@ class RoleUserService extends BaseService
         }
         $roleServices = app()->get(RolesService::class);
         $adminService = app()->get(AdminService::class);
-        return $this->transaction(function () use ($roleServices, $id, $user, $adminService) {
+        return $this->transaction(function () use ($roleServices, $user, $adminService) {
             $roleServices->dec($user->role_id, 1, 'user_count');
             $roles = $adminService->value($user->user_id, 'roles');
             $roles = is_string($roles) ? json_decode($roles, true) : $roles;
-            if (isset($roles[$id])) {
-                unset($roles[$id]);
-                if ($roles) {
-                    $adminService->update($user->user_id, ['roles' => json_encode($roles)]);
-                }
-            }
+            $roles = array_values(array_filter((array) $roles, fn ($roleId) => (int) $roleId !== (int) $user->role_id));
+            $adminService->update($user->user_id, ['roles' => $roles]);
             return $user->delete();
         });
     }

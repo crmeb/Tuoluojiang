@@ -15,11 +15,11 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Notepad;
 
+use App\Http\Model\Notepad\Notepad;
 use App\Http\Dao\BaseDao;
 use App\Http\Model\BaseModel;
-use App\Http\Model\Notepad\Notepad;
-use crmeb\traits\dao\BatchSearchTrait;
-use crmeb\traits\dao\ListSearchTrait;
+use Tuoluojiang\Open\traits\dao\BatchSearchTrait;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Concerns\BuildsQueries;
 use Illuminate\Support\Carbon;
@@ -99,7 +99,7 @@ class NotepadDao extends BaseDao
                 $value['month'] = match ($value['month']) {
                     $lastMonth    => '上个月',
                     $currentMonth => '本月',
-                    default       => date('Y年m月', strtotime($value['month']))
+                    default       => date('Y年m月', datetime_timestamp($value['month']))
                 };
             })->toArray();
     }

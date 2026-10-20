@@ -36,6 +36,14 @@ class SystemCrudEventLog extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'crud_id'    => 'integer',
+        'event_id'   => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * @email 136327134@qq.com
      * @date 2024/2/24
@@ -76,5 +84,15 @@ class SystemCrudEventLog extends BaseModel
     public function getLogAttribute($value)
     {
         return json_decode($value, true);
+    }
+
+    public function getActionAttribute($value)
+    {
+        return $value ? json_decode($value, true) : [];
+    }
+
+    public function crud()
+    {
+        return $this->hasOne(SystemCrud::class, 'id', 'crud_id');
     }
 }

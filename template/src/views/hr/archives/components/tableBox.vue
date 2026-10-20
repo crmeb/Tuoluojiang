@@ -1,20 +1,20 @@
 <template>
   <div>
-    <el-table :data="tableData" tooltip-effect="light" :header-cell-style="{ background: 'rgba(245, 245, 245, .3)' }">
+    <el-table :data="tableDataLocal" tooltip-effect="light" :header-cell-style="{ background: 'rgba(245, 245, 245, .3)' }">
       <el-table-column v-for="(item, index) in tableLabel" show-overflow-tooltip :key="index" :label="item.name">
-        <template slot-scope="scope">
+        <template #default="scope">
           <template v-if="!item.slot">
             {{ scope.row[item.prop] }}
           </template>
           <template v-else>
-            <span v-if="item.name == '任职状态'">{{ scope.row.status ? $t('hr.onob') : $t('hr.dimission') }}</span>
+            <span v-if="item.name == '任职状态'">{{ scope.row.status ? '在职' : '离职' }}</span>
           </template>
         </template>
       </el-table-column>
-      <el-table-column prop="address" :label="$t('public.operation')">
-        <template slot-scope="scope">
-          <el-button type="text" @click="handlePut(scope.row, scope.$index)">编辑</el-button>
-          <el-button type="text" @click="handleDelete(scope.row, scope.$index)">{{ $t('public.delete') }}</el-button>
+      <el-table-column prop="address" label="操作">
+        <template #default="scope">
+          <el-button type="primary" link @click="handlePut(scope.row, scope.$index)">编辑</el-button>
+          <el-button type="primary" link @click="handleDelete(scope.row, scope.$index)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -22,6 +22,8 @@
 </template>
 
 <script>
+import { modalSure } from '@/libs/public.ts'
+import modalForm from '@/libs/modal-form.ts'
 import {
   enterpriseWorkEditApi,
   getWorkList,
@@ -29,7 +31,7 @@ import {
   enterpriseEducationApi,
   educationDeleteApi,
   getEducationList
-} from '@/api/enterprise'
+} from '@/api/enterprise.ts'
 import {
   userDeleteWork,
   userDeleteEducation,
@@ -37,8 +39,9 @@ import {
   userPutEducation,
   userWorkList,
   userEducationList
-} from '@/api/user'
+} from '@/api/user.ts'
 export default {
+  emits: ['deleteWork', 'putWork'],
   name: 'Table',
   props: {
     tableData: {
@@ -74,20 +77,32 @@ export default {
       default: 'edit'
     }
   },
+  watch: {
+    // prop 由父组件更新时同步到本地副本（组件内部改写的是 tableDataLocal）
+    tableData(val) {
+      this.tableDataLocal = val
+    }
+  },
+  data() {
+    return {
+      // Vue 3 的 prop 只读，组件内部需要改写时用本地副本
+      tableDataLocal: this.tableData,
+    }
+  },
 
   methods: {
     // 删除
     handleDelete(row, index) {
-      this.$modalSure(this.$t('hr.deletetitle')).then(() => {
+      modalSure('删除该经历吗').then(() => {
         if (this.user == '个人简历') {
           if (this.tableName === 'works') {
             userDeleteWork(row.id).then((res) => {
-              this.tableData.splice(index, 1)
+              this.tableDataLocal.splice(index, 1)
             })
           }
           if (this.tableName === 'education') {
             userDeleteEducation(row.id).then((res) => {
-              this.tableData.splice(index, 1)
+              this.tableDataLocal.splice(index, 1)
             })
           }
         } else if (this.type === 'edit') {
@@ -96,13 +111,13 @@ export default {
               card_id: this.id
             }
             enterpriseWorkDeleteApi(row.id, data).then((res) => {
-              this.tableData.splice(index, 1)
+              this.tableDataLocal.splice(index, 1)
             })
           }
 
           if (this.tableName === 'education') {
             educationDeleteApi(row.id).then((res) => {
-              this.tableData.splice(index, 1)
+              this.tableDataLocal.splice(index, 1)
             })
           }
         } else if (this.type === 'add') {
@@ -119,23 +134,23 @@ export default {
     handlePut(row, index) {
       if (this.user == '个人简历') {
         if (this.tableName === 'works') {
-          this.$modalForm(userPutWork(row.id)).then((res) => {
+          modalForm(userPutWork(row.id)).then((res) => {
             this.userWorkList()
           })
         }
         if (this.tableName === 'education') {
-          this.$modalForm(userPutEducation(row.id)).then((res) => {
+          modalForm(userPutEducation(row.id)).then((res) => {
             this.userEducationList()
           })
         }
       } else if (this.type === 'edit') {
         if (this.tableName === 'works') {
-          this.$modalForm(enterpriseWorkEditApi(row.id)).then((res) => {
+          modalForm(enterpriseWorkEditApi(row.id)).then((res) => {
             this.getEditWorkList()
           })
         }
         if (this.tableName === 'education') {
-          this.$modalForm(enterpriseEducationApi(row.id)).then((res) => {
+          modalForm(enterpriseEducationApi(row.id)).then((res) => {
             this.getEducationList()
           })
         }
@@ -152,7 +167,7 @@ export default {
     // 刷新工作经历列表
     async userWorkList() {
       const result = await userWorkList()
-      this.tableData = result.data.list
+      this.tableDataLocal = result.data.list
     },
 
     // 刷新个人档案工作经历列表
@@ -161,7 +176,7 @@ export default {
         user_id: this.id
       }
       const result = await getWorkList(data)
-      this.tableData = result.data.list
+      this.tableDataLocal = result.data.list
     },
 
     // 刷新个人档案教育经历列表
@@ -170,21 +185,20 @@ export default {
         user_id: this.id
       }
       const result = await getEducationList(data)
-      this.tableData = result.data.list
+      this.tableDataLocal = result.data.list
     },
 
     // 刷新教育经历列表
     async userEducationList() {
       const result = await userEducationList()
-      this.tableData = result.data.list
+      this.tableDataLocal = result.data.list
     }
   }
 }
 </script>
 
 <style>
-.el-tooltip__popper {
-  max-width: 300px;
+.el-tooltip:where(.el-popper:not(.is-pure, .el-popover)) {
   border: none !important;
   font-size: 13px !important;
   line-height: 22px;
@@ -193,10 +207,10 @@ export default {
 }
 </style>
 <style scoped lang="scss">
-/deep/ .el-table .cell {
+:deep(.el-table .cell) {
   padding-right: 0;
 }
-/deep/ .el-textarea__inner {
+:deep(.el-textarea__inner) {
   width: 92%;
 }
 </style>

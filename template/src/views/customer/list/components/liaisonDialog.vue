@@ -2,12 +2,13 @@
 <template>
   <div class="station">
     <el-drawer
+      class="customer-list-liaison-dialog-drawer"
       :title="formData.title"
-      :visible.sync="drawer"
+      v-model="drawer"
       :direction="direction"
       :modal="true"
       :append-to-body="true"
-      :wrapper-closable="false"
+      :close-on-click-modal="false"
       :before-close="handleClose"
       :size="formData.width"
     >
@@ -22,8 +23,11 @@
   </div>
 </template>
 <script>
-import { liaisonCreateApi, liaisonSaveApi, liaisonEditCreateApi, liaisonEditSaveApi } from '@/api/enterprise'
+import { defineAsyncComponent } from 'vue'
+import { liaisonCreateApi, liaisonEditCreateApi } from '@/api/enterprise.ts'
+import { clientLiaisonSaveApi as liaisonSaveApi, clientLiaisonEditApi as liaisonEditSaveApi } from '@/api/client.ts'
 export default {
+  emits: ['isLiaison'],
   name: 'liaisonDialog',
   props: {
     formData: {
@@ -34,7 +38,7 @@ export default {
     }
   },
   components: {
-    oaForm: () => import('@/components/customer/oaForm')
+    oaForm: defineAsyncComponent(() => import('@/components/customer/oaForm'))
   },
   data() {
     return {
@@ -51,8 +55,20 @@ export default {
   methods: {
     // 新增联系人表单
     getData() {
-      liaisonCreateApi().then((res) => {
+      let data = {
+        link_id: this.customInfo.id || ''
+      }
+      liaisonCreateApi(data).then((res) => {
         this.fromInfo = res.data
+        if (this.customInfo.id) {
+          this.fromInfo.forEach((item) => {
+            item.data.forEach((val) => {
+              if (val.key == 'eid') {
+                val.value = this.customInfo.id || ''
+              }
+            })
+          })
+        }
       })
     },
     handleClose() {
@@ -63,31 +79,39 @@ export default {
     // 编辑联系人表单
     getEditData(id) {
       liaisonEditCreateApi(id).then((res) => {
-        this.fromInfo = res.data
+        this.fromInfo = res.data.form
       })
     },
 
     // 提交成功
     submitOk(data) {
-      data.eid = this.customInfo.id
       if (this.edit === 'edit') {
+        data.eid = this.customInfo.id
         liaisonEditSaveApi(this.row.id, data)
           .then((res) => {
             if (res.status == 200) {
               this.drawer = false
               this.$emit('isLiaison')
               this.$refs.oaForm.resetForm()
+            } else {
+              this.$refs.oaForm.saveLoading = false
             }
           })
           .catch((err) => {
             this.$refs.oaForm.resetForm()
           })
       } else {
+        if (this.customInfo.id) {
+          data.eid = this.customInfo.id
+        }
+
         liaisonSaveApi(data)
           .then((res) => {
             if (res.status == 200) {
               this.drawer = false
               this.$emit('isLiaison')
+              this.$refs.oaForm.resetForm()
+            } else {
               this.$refs.oaForm.resetForm()
             }
           })
@@ -115,10 +139,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/deep/.el-drawer__body {
-  padding: 30px 24px 50px 24px;
-}
-/deep/ .el-form--inline .el-form-item {
+:deep(.el-form--inline .el-form-item) {
   display: flex;
 }
 .dialog-footer {
@@ -130,5 +151,12 @@ export default {
   button {
     height: auto;
   }
+}
+</style>
+
+<style lang="scss">
+// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
+.customer-list-liaison-dialog-drawer .el-drawer__body {
+  padding: 30px 24px 50px 24px;
 }
 </style>

@@ -17,7 +17,7 @@
           >
           </el-input>
           <div class="uploadBox">
-            <el-tag v-for="(item, i) in uploadList" :key="i" class="mt10" type="info">
+            <el-tag v-for="(item, i) in uploadList" :key="i" class="mt10 mr10" type="info">
               <div class="info">
                 <i class="el-icon-error" @click="deleteTag(item)"></i>
                 <img v-if="toSrc(item.real_name) === 1" alt="" class="img" src="@/assets/images/doc.png" />
@@ -25,6 +25,7 @@
                 <img v-else-if="toSrc(item.real_name) === 3" alt="" class="img" src="@/assets/images/xls.png" />
                 <img v-else-if="toSrc(item.real_name) === 4" alt="" class="img" src="@/assets/images/record2.png" />
                 <img v-else-if="toSrc(item.real_name) === 5" alt="" class="img" src="@/assets/images/pdf.png" />
+                <img v-else alt="" class="img" src="@/assets/images/record2.png" />
                 <span class="text-info line1">{{ item.real_name }}</span>
               </div>
             </el-tag>
@@ -39,15 +40,15 @@
               action="##"
               class="mr10 upload-real"
             >
-              <div v-if="!percentShow" class="addText"><span class="iconfont iconfujian"></span> 添加文件</div>
-              <div v-else class="addText">
+              <div v-if="!percentShow" class="addText mt20"><span class="iconfont iconfujian"></span> 添加附件</div>
+              <div v-else class="addText mt20">
                 <img alt="" class="l_gif" src="@/assets/images/loading.gif" />
               </div>
             </el-upload>
           </el-col>
-          <el-col :span="12" class="text-right">
-            <el-button v-if="formInfo.type === 'edit'" size="small" @click="clientCancel">取消</el-button>
-            <el-button :loading="loading" size="small" type="primary" @click="clientFollowSave">确定</el-button>
+          <el-col :span="12" class="text-right mt20">
+            <el-button v-if="formInfo.type === 'edit'" @click="clientCancel">取消</el-button>
+            <el-button :loading="loading" type="primary" @click="clientFollowSave">确定</el-button>
           </el-col>
         </el-row>
         <!-- <div v-if="formInfo.show !== 1" class="mt30"></div> -->
@@ -57,15 +58,14 @@
 </template>
 
 <script>
-import { clientFollowEditApi, clientFollowSaveApi } from '@/api/enterprise'
-import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
-import { uploader } from '@/utils/uploadCloud'
-import file from '@/utils/file'
-import { toSrcFn } from '@/utils/format'
-import Vue from 'vue'
-Vue.use(file)
+import { getStorageJson } from '@/utils/storage.ts'
+import { saveClientFollowApi, putClientFollowApi } from '@/api/client.ts'
+import { ElImageViewer } from 'element-plus'
+import { uploader } from '@/utils/uploadCloud.ts'
+import { toSrcFn } from '@/utils/format.ts'
 export default {
   name: 'recordUpload',
+  emits: ['change'],
   components: {
     ElImageViewer
   },
@@ -122,9 +122,8 @@ export default {
     }
   },
   mounted() {
-    let userInfo = JSON.parse(localStorage.getItem('userInfo'))
-
-    this.avatar = userInfo.avatar
+    let userInfo = getStorageJson('userInfo', {})
+    this.avatar = userInfo.avatar || ''
   },
   methods: {
     focusFn() {
@@ -159,6 +158,7 @@ export default {
         .catch((err) => {
           this.percentShow = false
         })
+      this.percentShow = false
     },
 
     // 删除附件
@@ -179,7 +179,7 @@ export default {
 
     // 跟进记录--跟进详情
     clientFollowSave() {
-      var attach_ids = []
+      let attach_ids = []
       if (this.uploadList.length > 0) {
         this.uploadList.map((value) => {
           attach_ids.push(value.id)
@@ -191,10 +191,12 @@ export default {
         content: this.form.content,
         types: 0,
         attach_ids,
-        eid: this.formInfo.data.eid,
+        eid: this.formInfo.types === 'odds' ? this.formInfo.odds_id : (this.formInfo.data.eid || this.formInfo.data.id),
         time: this.form.time,
-        follow_id: this.follow_id
+        follow_id: this.follow_id,
+        link_type: this.formInfo.link_type
       }
+      if (this.loading) return;
       this.loading = true
       if (this.formInfo.type === 'add') {
         // 防抖input
@@ -206,28 +208,37 @@ export default {
 
     // 跟进记录--添加
     async clientFollowAdd(data) {
-      const res = await clientFollowSaveApi(data)
-      this.loading = false
-      if (res.status === 200) {
-        this.addRecordShow = false
+      try {
+        const res = await saveClientFollowApi(data)
+        if (res.status === 200) {
+          this.addRecordShow = false
+          this.successData.type = 'add'
+          this.successChange()
+          this.form.content = ''
+          this.form.time = ''
+          this.uploadList = []
+        }
+      } catch (error) {
+        this.$message.error(error.message);
+      } finally {
         this.loading = false
-        this.successData.type = 'add'
-        this.successChange()
-        this.form.content = ''
-        this.form.time = ''
-        this.uploadList = []
       }
     },
 
     // 跟进记录--修改跟进详情
     async clientFollowEdit(id, data) {
-      const res = await clientFollowEditApi(id, data)
-      this.loading = false
-      if (res.status === 200) {
-        this.clientCancel()
-        this.form.content = ''
-        this.form.time = ''
-        this.uploadList = []
+      try {
+        const res = await putClientFollowApi(id, data)
+        if (res.status === 200) {
+          this.clientCancel()
+          this.form.content = ''
+          this.form.time = ''
+          this.uploadList = []
+        }
+      } catch (error) {
+        this.$message.error(error.message);
+      } finally {
+        this.loading = false
       }
     }
   }
@@ -241,9 +252,7 @@ export default {
 .mt30 {
   margin-top: 30px;
 }
-.percent {
-  margin-top: 20px;
-}
+
 .addText {
   font-size: 12px;
   font-family: PingFang SC-Regular, PingFang SC;
@@ -255,7 +264,7 @@ export default {
   }
 }
 .addContent {
-  margin-top: 20px;
+  margin-top: 10px;
   display: flex;
 
   .left {
@@ -277,114 +286,25 @@ export default {
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      border-radius: 4px;
       .uploadBox {
         margin: 14px;
       }
     }
     .footer {
-      margin-top: 30px;
       margin-bottom: 10px;
       height: 32px;
       display: flex;
       justify-content: space-between;
-      align-items: center;
     }
   }
 }
-.topBtn {
-  width: 102px;
-  height: 32px;
-  font-size: 13px;
-}
-.iconzhong {
-  margin-left: 9px;
-  color: #79a8d7 !important;
-  font-size: 15px;
-}
-.reminderTime {
-  margin-left: 45px;
-  width: 246px;
-  height: 28px;
-  background: #f1f9ff;
-  border-radius: 4px;
-  line-height: 28px;
-  font-size: 13px;
-  font-family: PingFangSC-Regular, PingFang SC;
-  font-weight: 400;
-  color: #1890ff;
-  margin-top: 10px;
-}
-.iframe {
-  width: 100%;
-  height: 252px;
-  border: none;
-}
-.el-tag {
-  padding: 0px;
-  margin-right: 16px;
-}
-.el-button--medium {
-  padding: 10px 15px !important;
-}
-.recordContent {
-  padding-top: 38px;
-}
-.el-timeline {
-  padding-left: 0px;
-}
-.head {
-  display: flex;
-  align-items: center;
-  .more {
-    position: absolute;
-    right: 0;
-  }
 
-  .el-icon-more {
-    color: #909399;
-  }
-  .head-portrait {
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-  }
-  .head-right {
-    margin-left: 10px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    .head-name {
-      font-size: 14px;
-
-      font-weight: 400;
-      color: #303133;
-    }
-    .head-time {
-      font-size: 13px;
-      line-height: 17px;
-      font-weight: 400;
-      color: #c0c4cc;
-    }
-  }
-}
-.record {
-  padding-left: 45px;
-  font-size: 14px;
-  line-height: 21px;
-  font-weight: 400;
-  color: #303133;
-}
-.line {
-  width: 100%;
-  height: 4px;
-  border-bottom: 1px solid #dcdfe6;
-  margin-bottom: 20px;
-}
 .info {
   height: 28px;
   display: flex;
   align-items: center;
-  padding: 0 8px;
+  // padding: 0 8px;
   position: relative;
   margin-bottom: 10px;
   .el-icon-error {
@@ -408,20 +328,14 @@ export default {
 .flex {
   display: flex;
 }
-.mt10 {
-  margin-top: 20px;
-}
-/deep/ .el-timeline-item__tail {
-  position: absolute;
-  left: 4px;
-  height: 100%;
 
-  border-left: 1px solid #dfe4ed;
-}
-
-/deep/ .el-textarea__inner {
+:deep(.el-textarea__inner) {
   min-height: 96px;
   border: none;
+  box-shadow: none;
   font-size: 12px;
+}
+:deep(.el-tag) {
+  padding: 0 4px;
 }
 </style>

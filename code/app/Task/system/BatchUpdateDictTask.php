@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -41,13 +41,13 @@ class BatchUpdateDictTask extends Task
     {
         try {
             $info = $this->service->get($this->id, ['status', 'value', 'type_name']);
-            if (! $info) {
+            if (!$info){
                 return true;
             }
             if (! $info['status']) {
                 $subIds = $this->getSubId($info['value'], $info['type_name']);
                 $this->service->update(['id' => $subIds], ['status' => 0]);
-            } else {
+            }else{
                 $upIds = $this->getUpId($info['value'], $info['type_name']);
                 $this->service->update(['id' => $upIds], ['status' => 1]);
             }
@@ -65,14 +65,13 @@ class BatchUpdateDictTask extends Task
         $param = array_merge(array_column($sub, 'id'), $param);
         return $this->getSubId(array_column($sub, 'value'), $typeName, $param);
     }
-
     private function getUpId(array|int|string $value, string $typeName, array $param = [])
     {
         $up = $this->service->value(['value' => $value, 'type_name' => $typeName], 'pid');
         if (! $up) {
             return $param;
         }
-        $param = array_unique((array) array_push($param, $up));
+        $param = array_unique((array)array_push($param, $up));
         return $this->getUpId($up, $typeName, $param);
     }
 }

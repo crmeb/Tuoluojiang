@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,9 +17,9 @@ namespace App\Http\Service\System;
 
 use App\Http\Dao\Config\GroupDataDao;
 use App\Http\Service\BaseService;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\services\FormService as Form;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\services\FormService as Form;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use FormBuilder\Exception\FormBuilderException;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Facades\Cache;
@@ -176,7 +176,7 @@ class SystemGroupDataService extends BaseService implements ResourceServicesInte
         if (! isset($other['gid'])) {
             throw $this->exception('缺少组合数据id');
         }
-        return $this->elForm('添加数组', $this->createGroupForm($other['gid']), '/admin/system/groupData');
+        return $this->createElementForm('添加数组', $this->createGroupForm($other['gid']), '/admin/system/groupData');
     }
 
     /**
@@ -194,7 +194,7 @@ class SystemGroupDataService extends BaseService implements ResourceServicesInte
         if (! $groupDataInfo) {
             throw $this->exception('修改的组合数据不存在');
         }
-        return $this->elForm('修改组合数据', $this->createGroupForm($other['gid'], $groupDataInfo->toArray()), '/admin/system/groupData/' . $id, 'put');
+        return $this->createElementForm('修改组合数据', $this->createGroupForm($other['gid'], $groupDataInfo->toArray()), '/admin/system/groupData/' . $id, 'put');
     }
 
     /**

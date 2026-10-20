@@ -1,215 +1,123 @@
 <template>
-  <div>
-    <el-card class="station-header" :body-style="{ padding: '14px' }">
-      <el-row>
-        <el-col :span="24">
-          <el-page-header content="排班页面">
-            <div slot="title" @click="backFn">
-              <i class="el-icon-arrow-left"></i>
-              返回
-            </div>
-          </el-page-header>
-        </el-col>
-      </el-row>
-    </el-card>
-    <el-card class="card-box mt14">
-        <!-- 搜索条件 -->
-        <div class="head">
-          <!-- <div>
+  <BaseContainer class="schedul-edit none-padding">
+    <!-- 顶部：返回 + 标题 -->
+    <FormPageHeader title="排班页面" @back="backFn" />
+
+    <div class="schedul-edit__body">
+      <!-- 搜索条件 -->
+      <div class="head">
+        <!-- <div>
             <el-button size="small" type="primary">下载排班模板</el-button>
             <span class="el-icon-d-arrow-right"></span>
             <el-button size="small" type="primary">导入排班表</el-button>
           </div> -->
 
-          <el-form :inline="true" class="from-s form-box">
-            <el-form-item class="select-bar el-input--small">
-              <el-input
-                class="mr14"
-                size="small"
-                placeholder="请输入员工姓名"
-                v-model="where.name"
-                clearable
-                style="width: 260px"
-                @change="getList"
-              >
-                <i slot="prefix" class="el-input__icon el-icon-search"></i>
-              </el-input>
-            </el-form-item>
-            <el-form-item class="select-bar">
-              <el-date-picker
-                v-model="where.date"
-                style="width: 150px"
-                size="small"
-                type="month"
-                :picker-options="pickerOptions"
-                placeholder="选择月"
-                @change="getList"
-              >
-              </el-date-picker>
-            </el-form-item>
+        <el-form :inline="true" class="from-s form-box">
+          <el-form-item class="select-bar el-input--small">
+            <el-input
+              class="mr14"
+              placeholder="请输入员工姓名"
+              v-model="where.name"
+              clearable
+              style="width: 260px"
+              @change="getList"
+            >
+              <template #prefix>
+                <i class="el-input__icon el-icon-search"></i>
+              </template>
+            </el-input>
+          </el-form-item>
+          <el-form-item class="select-bar">
+            <el-date-picker
+              v-model="where.date"
+              style="width: 150px"
+              type="month"
+              v-bind="$pickerProps(pickerOptions)"
+              placeholder="选择月"
+              @change="getList"
+            >
+            </el-date-picker>
+          </el-form-item>
 
-            <!-- <el-form-item>
+          <!-- <el-form-item>
               <el-tooltip effect="dark" content="重置搜索条件" placement="top">
                 <div class="reset" @click="reset"><i class="iconfont iconqingchu"></i></div>
               </el-tooltip>
             </el-form-item> -->
-          </el-form>
-        </div>
+        </el-form>
+      </div>
 
-        <!-- 设置排班 -->
-        <el-form ref="ruleForm" label-width="90px" class="mt10 form-box">
-          <el-form-item class="h32">
-            <span slot="label">考勤班次：</span>
+      <!-- 设置排班 -->
+      <el-form ref="ruleForm" label-width="90px" class="mt10 form-box">
+        <el-form-item class="h32">
+          <template #label>
+            <span>考勤班次：</span>
+          </template>
+          <div class="flex-box">
+            <div class="shift-tag">
+              <div v-for="(item, index) in shiftsList" :key="index">
+                <div v-if="item.id !== 0 && item.times.length > 0">
+                  <span class="fang" :style="{ backgroundColor: item.color }"></span>
+                  <span class="mr10">
+                    {{ item.name }}
+                    {{ item.times[0].first_day_after == 0 ? '当日' : '次日' }} {{ item.times[0].work_hours }} -
+                    {{ item.times[0].second_day_after == 0 ? '当日' : '次日' }}{{ item.times[0].off_hours }}
+                    <span v-if="item.times.length > 1"
+                      >、 {{ item.times[1].first_day_after == 0 ? '当日' : '次日' }} {{ item.times[1].work_hours }} -
+                      {{ item.times[1].second_day_after == 0 ? '当日' : '次日' }}{{ item.times[1].off_hours }}
+                    </span>
+                  </span>
+                </div>
+              </div>
+              <span class="fang" style="backgroundcolor: #cccccc"></span>
+              <span>休息</span>
+            </div>
+          </div>
+        </el-form-item>
+        <el-form-item>
+          <template #label>
+            <span>排班周期：</span>
+          </template>
+          <div class="flex">
             <div class="flex-box">
-              <template>
-                <div class="shift-tag">
-                  <div v-for="(item, index) in shiftsList" :key="index">
-                    <div v-if="item.id !== 0 && item.times.length > 0">
-                      <span class="fang" :style="{ backgroundColor: item.color }"></span>
-                      <span class="mr10">
-                        {{ item.name }}
-                        {{ item.times[0].first_day_after == 0 ? '当日' : '次日' }} {{ item.times[0].work_hours }} -
-                        {{ item.times[0].second_day_after == 0 ? '当日' : '次日' }}{{ item.times[0].off_hours }}
-                        <span v-if="item.times.length > 1"
-                          >、 {{ item.times[1].first_day_after == 0 ? '当日' : '次日' }} {{ item.times[1].work_hours }} -
-                          {{ item.times[1].second_day_after == 0 ? '当日' : '次日' }}{{ item.times[1].off_hours }}
-                        </span>
-                      </span>
-                    </div>
-                  </div>
-                  <span class="fang" style="backgroundcolor: #cccccc"></span>
-                  <span>休息</span>
+              <template v-for="(item, index4) in cycleList" :key="index4">
+                <div class="cycle" :key="index4" v-if="item.id !== 0">
+                  {{ item.name }}{{ cycleList.length > 2 ? '、' : '' }}
                 </div>
               </template>
+
+              <span class="addText" @click="addCycleFn">添加</span>
             </div>
-          </el-form-item>
-          <el-form-item class="mb0">
-            <span slot="label">排班周期：</span>
-            <div class="flex">
-              <div class="flex-box">
-                <template v-for="(item, index4) in cycleList">
-                  <div class="cycle" :key="index4" v-if="item.id !== 0">
-                    {{ item.name }}{{ cycleList.length > 2 ? '、' : '' }}
-                  </div>
-                </template>
+            <span class="tips">未排班时，系统根据排休日历配置判断是否上班，若上班按照默认班次进行考勤</span>
+          </div>
+        </el-form-item>
+      </el-form>
 
-                <span class="addText" @click="addCycleFn">添加</span>
-              </div>
-              <span class="tips">未排班时，系统根据排休日历配置判断是否上班，若上班按照默认班次进行考勤</span>
-            </div>
-          </el-form-item>
-        </el-form>
-
-        <div class="table-wrapper">
-          <!-- 排班表格 -->
-          <el-table v-loading="loading" :data="tableData" style="width: 100%" border :cell-style="cellStyle" height="100%">
-            <template v-if="where.date">
-              <!-- 点击选中整行 -->
-              <el-table-column prop="name" label="姓名" width="140" fixed="left" style="background-color: #fff">
-                <template slot-scope="scope">
-                  <el-popover placement="bottom" :ref="'row' + scope.$index" width="238px" trigger="click">
-                    <div>
-                      <el-tabs v-model="activeName">
-                        <el-tab-pane label="按班次排班" name="1">
-                          <div class="shiftBox">
-                            <div
-                              class="box"
-                              v-for="(item, index2) in shiftsList"
-                              :key="index2"
-                              @click="clickName(scope, item)"
-                              :style="{ backgroundColor: item.color }"
-                              :class="item.id == 0 ? 'empty' : ''"
-                            >
-                              {{ item.name }}
-                            </div>
-                          </div>
-                        </el-tab-pane>
-
-                        <el-tab-pane label="按周期排班" name="2">
-                          <div class="shiftBox">
-                            <div
-                              class="box add-line"
-                              v-for="(item, cycle1) in cycleList"
-                              :key="cycle1"
-                              @click="clickCycle(1, scope, item)"
-                              :class="item.id == 0 ? 'empty' : ''"
-                            >
-                              {{ item.name }}
-                            </div>
-                          </div>
-                        </el-tab-pane>
-                      </el-tabs>
-                    </div>
-
-                    <div slot="reference">
-                      <el-tooltip class="item" effect="dark" content="点击选中整行" placement="top">
-                        <div class="nameFn" @click="clickRowIndex(scope.row.name)">
-                          {{ scope.row.name }}
-                        </div>
-                      </el-tooltip>
-                    </div>
-                  </el-popover>
-                </template>
-              </el-table-column>
-
-              <el-table-column :prop="item.prop" v-for="(item, index1) in colData" :key="index1">
-                <!-- 点击选中整列 -->
-                <template v-slot:header>
-                  <el-popover :ref="'column' + index1" placement="right" width="238px" trigger="click">
-                    <el-tabs v-model="activeName1" v-if="sameDay <= index1">
-                      <el-tab-pane label="按班次排班" name="1">
-                        <div class="shiftBox">
-                          <div
-                            class="box"
-                            v-for="(item, index3) in shiftsList"
-                            :key="index3"
-                            @click="headerClick(index1, item)"
-                            :style="{ backgroundColor: item.color }"
-                            :class="item.id == 0 ? 'empty' : ''"
-                          >
-                            {{ item.name }}
-                          </div>
-                        </div>
-                      </el-tab-pane>
-
-                      <el-tab-pane label="按周期排班" name="2">
-                        <div class="shiftBox">
-                          <div
-                            class="box add-line"
-                            v-for="(item, cycle1) in cycleList"
-                            :key="cycle1"
-                            @click="clickCycle(2, index1, item)"
-                            :class="item.id == 0 ? 'empty' : ''"
-                          >
-                            {{ item.name }}
-                          </div>
-                        </div>
-                      </el-tab-pane>
-                    </el-tabs>
-                    <div v-else>历史日期无法排班</div>
-
-                    <div slot="reference" @click="clickColumnIndex(index1)" :class="item.is_rest == 1 ? 'addDate' : ''">
-                      <el-tooltip class="item" effect="dark" content="点击选中整列" placement="top">
-                        <div class="date">
-                          <div class="day">{{ $moment(item.date).format('D') }}</div>
-                          <div class="week">{{ getWeek(item.date) }}</div>
-                        </div>
-                      </el-tooltip>
-                    </div>
-                  </el-popover>
-                </template>
-
-                <!-- 点击选中单元格 -->
-                <template slot-scope="scope">
-                  <el-popover :ref="'pop' + index1" placement="bottom" width="238px" trigger="click">
-                    <el-tabs v-model="activeName2" v-if="sameDay <= index1">
+      <div class="table-wrapper">
+        <!-- 排班表格 -->
+        <el-table
+          ref="scheduleTable"
+          v-loading="loading"
+          :data="tableData"
+          style="width: 100%"
+          border
+          :cell-style="cellStyle"
+          height="100%"
+        >
+          <template v-if="where.date">
+            <!-- 点击选中整行 -->
+            <el-table-column prop="name" label="姓名" width="140" fixed="left" style="background-color: #fff">
+              <template #default="scope">
+                <el-popover placement="bottom" :ref="'row' + scope.$index" width="238px" trigger="click">
+                  <div>
+                    <el-tabs v-model="activeName">
                       <el-tab-pane label="按班次排班" name="1">
                         <div class="shiftBox">
                           <div
                             class="box"
                             v-for="(item, index2) in shiftsList"
                             :key="index2"
-                            @click="clickFn(scope, index1, item)"
+                            @click="clickName(scope, item)"
                             :style="{ backgroundColor: item.color }"
                             :class="item.id == 0 ? 'empty' : ''"
                           >
@@ -224,7 +132,7 @@
                             class="box add-line"
                             v-for="(item, cycle1) in cycleList"
                             :key="cycle1"
-                            @click="clickCycle(3, scope, item, index1)"
+                            @click="clickCycle(1, scope, item)"
                             :class="item.id == 0 ? 'empty' : ''"
                           >
                             {{ item.name }}
@@ -232,14 +140,115 @@
                         </div>
                       </el-tab-pane>
                     </el-tabs>
-                    <div v-else>历史日期无法排班</div>
+                  </div>
 
-                    <div slot="reference" class="btn" v-if="!scope.row.counts[index1]" @click="cellFn(scope, index1)"></div>
+                  <template #reference>
+                    <div>
+                      <el-tooltip class="item" effect="dark" content="点击选中整行" placement="top">
+                        <div class="nameFn" @click="clickRowIndex(scope.row.name)">
+                          {{ scope.row.name }}
+                        </div>
+                      </el-tooltip>
+                    </div>
+                  </template>
+                </el-popover>
+              </template>
+            </el-table-column>
+
+            <el-table-column :prop="item.prop" v-for="(item, index1) in colData" :key="index1">
+              <!-- 点击选中整列 -->
+              <template v-slot:header>
+                <el-popover :ref="'column' + index1" placement="right" width="238px" trigger="click">
+                  <el-tabs v-model="activeName1" v-if="sameDay <= index1">
+                    <el-tab-pane label="按班次排班" name="1">
+                      <div class="shiftBox">
+                        <div
+                          class="box"
+                          v-for="(item, index3) in shiftsList"
+                          :key="index3"
+                          @click="headerClick(index1, item)"
+                          :style="{ backgroundColor: item.color }"
+                          :class="item.id == 0 ? 'empty' : ''"
+                        >
+                          {{ item.name }}
+                        </div>
+                      </div>
+                    </el-tab-pane>
+
+                    <el-tab-pane label="按周期排班" name="2">
+                      <div class="shiftBox">
+                        <div
+                          class="box add-line"
+                          v-for="(item, cycle1) in cycleList"
+                          :key="cycle1"
+                          @click="clickCycle(2, index1, item)"
+                          :class="item.id == 0 ? 'empty' : ''"
+                        >
+                          {{ item.name }}
+                        </div>
+                      </div>
+                    </el-tab-pane>
+                  </el-tabs>
+                  <div v-else>历史日期无法排班</div>
+
+                  <template #reference>
+                    <div @click="clickColumnIndex(index1)" :class="item.is_rest == 1 ? 'addDate' : ''">
+                      <el-tooltip class="item" effect="dark" content="点击选中整列" placement="top">
+                        <div class="date">
+                          <div class="day">{{ dayjs(item.date).format('D') }}</div>
+                          <div class="week">{{ getWeek(item.date) }}</div>
+                        </div>
+                      </el-tooltip>
+                    </div>
+                  </template>
+                </el-popover>
+              </template>
+
+              <!-- 点击选中单元格 -->
+              <template #default="scope">
+                <el-popover :ref="'pop' + index1" placement="bottom" width="238px" trigger="click">
+                  <el-tabs v-model="activeName2" v-if="sameDay <= index1">
+                    <el-tab-pane label="按班次排班" name="1">
+                      <div class="shiftBox">
+                        <div
+                          class="box"
+                          v-for="(item, index2) in shiftsList"
+                          :key="index2"
+                          @click="clickFn(scope, index1, item)"
+                          :style="{ backgroundColor: item.color }"
+                          :class="item.id == 0 ? 'empty' : ''"
+                        >
+                          {{ item.name }}
+                        </div>
+                      </div>
+                    </el-tab-pane>
+
+                    <el-tab-pane label="按周期排班" name="2">
+                      <div class="shiftBox">
+                        <div
+                          class="box add-line"
+                          v-for="(item, cycle1) in cycleList"
+                          :key="cycle1"
+                          @click="clickCycle(3, scope, item, index1)"
+                          :class="item.id == 0 ? 'empty' : ''"
+                        >
+                          {{ item.name }}
+                        </div>
+                      </div>
+                    </el-tab-pane>
+                  </el-tabs>
+                  <div v-else>历史日期无法排班</div>
+
+                  <template #reference>
+                    <div
+                      class="btn"
+                      v-if="!scope.row.counts[index1]"
+                      @click="cellFn(scope, index1)"
+                    ></div>
 
                     <div
-                      slot="reference"
                       class="btn1"
-                      v-if="scope.row.counts[index1]"
+                      v-else
                       :style="{ backgroundColor: scope.row.counts[index1].color }"
                       @click="cellFn(scope, index1)"
                     >
@@ -249,35 +258,44 @@
                           : scope.row.counts[index1].name
                       }}
                     </div>
-                  </el-popover>
-                </template>
-              </el-table-column>
-            </template>
-          </el-table>
-        </div>
-    </el-card>
-    <div class="cr-bottom-button btn-shadow">
-      <el-button size="small" @click="backFn">取消</el-button>
-      <el-button size="small" type="primary" @click="submit">保存</el-button>
+                  </template>
+                </el-popover>
+              </template>
+            </el-table-column>
+          </template>
+        </el-table>
+      </div>
     </div>
+
+    <!-- 底部按钮 -->
+    <FormPageFooter>
+      <el-button @click="backFn">取消</el-button>
+      <el-button type="primary" @click="submit">保存</el-button>
+    </FormPageFooter>
     <!-- 添加周期 -->
     <add-cycle ref="addCycle" @cycleList="getCycleList" :group_id="id"></add-cycle>
     <!-- 班次弹窗 -->
-  </div>
+  </BaseContainer>
 </template>
 
 <script>
-import { toGetWeek } from '@/utils/format'
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
+import { toGetWeek } from '@/utils/format.ts'
 import {
   attendanceShiftListApi,
   rosterCycleListApi,
   getAttendanceArrangeApi,
   saveAttendanceArrangeApi
-} from '@/api/config'
+} from '@/api/config.ts'
+import BaseContainer from '@/components/BaseContainer/index.vue'
+import FormPageHeader from '@/components/FormPageHeader/index.vue'
+import FormPageFooter from '@/components/FormPageFooter/index.vue'
 
 export default {
+  emits: ['backFn'],
   name: 'CrmebOaEntAddSchedul',
-  components: { addCycle: () => import('./components/addCycle') },
+  components: { BaseContainer, FormPageHeader, FormPageFooter, addCycle: defineAsyncComponent(() => import('./components/addCycle')) },
   props: {
     id: {
       type: Number,
@@ -289,6 +307,9 @@ export default {
     }
   },
 
+  computed: {
+    dayjs: () => dayjs
+  },
   data() {
     return {
       where: {
@@ -322,7 +343,7 @@ export default {
   },
 
   mounted() {
-    this.where.date = this.$moment(this.newData.date).format('yyyy-MM')
+    this.where.date = dayjs(this.newData.date).format('YYYY-MM')
     this.getday()
     this.getDataOptionalList().then(() => {
       this.getList()
@@ -333,7 +354,7 @@ export default {
     getday() {
       let date = new Date()
 
-      if (this.$moment(this.where.date).format('YYYY-MM') == this.$moment().format('YYYY-MM')) {
+      if (dayjs(this.where.date).format('YYYY-MM') == dayjs().format('YYYY-MM')) {
         this.sameDay = date.getDate()
       } else {
         this.sameDay = 0
@@ -367,26 +388,26 @@ export default {
 
     // 点击选中单元格
     clickFn(row, index, data) {
-      this.$set(this.tableData[row.$index].counts, [index], data.id == 0 ? 0 : data)
+      this.tableData[row.$index].counts[[index]] = data.id == 0 ? 0 : data
       // 手动关闭
       let ref = 'pop' + index
-      this.$refs[ref][row.$index].doClose()
+      this.$refs[ref][row.$index].hide()
       this.activeCell = false
     },
 
     // 点击选中整行
     clickName(row, data) {
       this.colData.map((item, index) => {
-        if (index < this.sameDay) return;
+        if (index < this.sameDay) return
         if (data.id == 0) {
-          this.$set(this.tableData[row.$index].counts, index, 0)
+          this.tableData[row.$index].counts[index] = 0
         } else {
-          this.$set(this.tableData[row.$index].counts, index, data)
+          this.tableData[row.$index].counts[index] = data
         }
       })
 
       let ref = 'row' + row.$index
-      this.$refs[ref].doClose()
+      this.$refs[ref].hide()
       this.rowIndex = null
       this.activeRow = false
     },
@@ -395,12 +416,12 @@ export default {
     headerClick(val, data) {
       this.columnIndex = val
       this.tableData.forEach((item, index) => {
-        this.$set(item.counts, val, data.id === 0 ? 0 : data)
+        item.counts[val] = data.id === 0 ? 0 : data
       })
 
       this.columnIndex = -2
       let ref = 'column' + val
-      this.$refs[ref][0].doClose()
+      this.$refs[ref][0].hide()
       this.activeColumn = false
     },
 
@@ -410,10 +431,14 @@ export default {
       if (type == 1) {
         if (data.id == 0) {
           if (this.sameDay !== 0) {
-            const counts = this.tableData[row.$index].counts;
-            counts.splice(this.sameDay - 1, counts.length - this.sameDay + 1, ...new Array(counts.length - this.sameDay + 1).fill(0))
+            const counts = this.tableData[row.$index].counts
+            counts.splice(
+              this.sameDay - 1,
+              counts.length - this.sameDay + 1,
+              ...new Array(counts.length - this.sameDay + 1).fill(0)
+            )
           } else {
-            this.tableData[row.$index].counts.fill(0);
+            this.tableData[row.$index].counts.fill(0)
           }
         } else {
           let n = this.colData.length
@@ -440,30 +465,30 @@ export default {
 
           this.rowIndex = null
           let ref = 'row' + row.$index
-          this.$refs[ref].doClose()
+          this.$refs[ref].hide()
         }
       }
       // 选中整列
       if (type == 2) {
         this.tableData.forEach((item, index) => {
           if (data.id == 0) {
-            this.$set(item.counts, row, 0)
+            item.counts[row] = 0
           } else {
-            this.$set(item.counts, row, data.shifts[0])
+            item.counts[row] = data.shifts[0]
           }
         })
         this.columnIndex = -2
         let ref = 'column' + row
-        this.$refs[ref][0].doClose()
+        this.$refs[ref][0].hide()
       }
       if (type == 3) {
         if (data.id == 0) {
-          this.$set(this.tableData[row.$index].counts, index, {})
+          this.tableData[row.$index].counts[index] = {}
         } else {
-          this.$set(this.tableData[row.$index].counts, index, data.shifts[0])
+          this.tableData[row.$index].counts[index] = data.shifts[0]
         }
         let ref = 'pop' + index
-        this.$refs[ref][row.$index].doClose()
+        this.$refs[ref][row.$index].hide()
       }
     },
 
@@ -560,9 +585,9 @@ export default {
       this.getday()
       this.tableData = []
       this.colData = []
-      if (!this.where.date) return;
+      if (!this.where.date) return
       this.loading = true
-      this.where.date = this.$moment(this.where.date).format('yyyy-MM')
+      this.where.date = dayjs(this.where.date).format('YYYY-MM')
       const result = await getAttendanceArrangeApi(this.id, this.where)
       this.tableData = result.data.members.map((per) => {
         return {
@@ -580,6 +605,19 @@ export default {
         }
       })
       this.loading = false
+      // 初次渲染时日期列宽/表头高度尚未稳定，el-table 会按临时表头高度定位固定列（姓名列）body，
+      // 导致固定列整体下移、表格错位（需手动 resize 才恢复）。待 DOM 渲染完成后重新布局校正对齐。
+      this.relayoutTable()
+    },
+
+    // 校正 el-table 固定列与主体的对齐
+    relayoutTable() {
+      this.$nextTick(() => {
+        // 借助 rAF 等待列宽计算与表头高度稳定后再触发布局，避免读取到临时表头高度
+        window.requestAnimationFrame(() => {
+          this.$refs.scheduleTable && this.$refs.scheduleTable.doLayout()
+        })
+      })
     },
 
     /**
@@ -629,7 +667,7 @@ export default {
 
     restFn() {
       this.where.name = ''
-      this.where.date = this.$moment(this.newData.date).format('yyyy-MM')
+      this.where.date = dayjs(this.newData.date).format('YYYY-MM')
     },
 
     getWeek(date) {
@@ -648,7 +686,7 @@ export default {
   padding: 4px 5px;
 }
 .form-box {
-  /deep/ .el-form-item {
+  :deep(.el-form-item) {
     margin-bottom: 10px;
   }
 }
@@ -672,7 +710,7 @@ export default {
   overflow: hidden;
   text-align: center;
 }
-/deep/ .el-table--medium td {
+:deep(.el-table td) {
   padding: 6px 0;
 }
 
@@ -750,7 +788,6 @@ export default {
   font-family: PingFang SC-Regular, PingFang SC;
   font-weight: 400;
   color: rgba(0, 0, 0, 0.8);
-  margin-bottom: 10px;
 }
 
 .flex-box {
@@ -790,30 +827,21 @@ export default {
 .from-s {
   display: inline-block;
 }
-/deep/ .el-icon-back {
-  display: none;
-}
-.card-box {
-  height: calc(100vh - 208px);
-  // overflow-y: scroll;
+.schedul-edit__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-flow: column nowrap;
+  padding: 20px 20px 0;
   font-size: 13px;
   font-family: PingFangSC-Regular, PingFang SC;
   font-weight: 400;
   color: #303133;
-  .main {
-    width: 800px;
-    margin: 0 auto;
-  }
 
-  /deep/.el-card__body {
-    display: flex;
-    flex-flow: column nowrap;
-    height: 100%;
-
-    .table-wrapper {
-      flex: 1;
-      padding-bottom: 20px;
-    }
+  .table-wrapper {
+    flex: 1;
+    min-height: 0;
+    padding-bottom: 20px;
   }
 }
 .addDate {
@@ -831,17 +859,10 @@ export default {
   -webkit-background-clip: text;
 }
 
-/deep/.el-table__body tr.hover-row {
+:deep(.el-table__body tr.hover-row) {
   background-color: transparent !important;
 }
-/deep/ .el-tabs__nav-wrap::after {
+:deep(.el-tabs__nav-wrap::after) {
   height: 1px;
-}
-.cr-bottom-button {
-  position: fixed;
-  left: -20px;
-  right: 0;
-  bottom: 0;
-  width: calc(100% + 220px);
 }
 </style>

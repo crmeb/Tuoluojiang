@@ -4,12 +4,14 @@
 </template>
 
 <script>
-import { fileUpload } from "@/api/public";
+import { fileUpload } from "@/api/public.ts";
 import XmindEditor from "@/components/xmind-editor/index.vue";
+import { processResourceUrl } from '@/utils/resourceUtil.ts'
 import XmindParse from 'simple-mind-map/src/parse/xmind';
 
 export default {
   name: "editXmind",
+  emits: ['startLoading', 'closeLoading'],
   props: {
     url: {
       type: String,
@@ -43,7 +45,7 @@ export default {
   },
   methods: {
     async getXmindFileBlob() {
-      const response = await fetch(this.$processResourceUrl(this.url));
+      const response = await fetch(processResourceUrl(this.url));
       const xmindBlob = await response.blob();
       this.xmindSize = xmindBlob.size / 1024;
       this.xmindJsonData = await XmindParse.parseXmindFile(xmindBlob);

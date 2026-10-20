@@ -1,48 +1,45 @@
 <!-- 项目-我的项目-项目动态页面 -->
 <template>
   <div>
-    <div class="divBox bill-type">
+    <div class="divBox bill-type" :class="divboxCss">
       <div class="title">动态列表</div>
       <el-form :inline="true">
         <div class="flex">
-          <template>
-            <el-form-item class="grey-bg" style="border: none; margin-left: 0; width: 150px"
-              ><el-select v-model="type" size="small" :placeholder="$t('finance.pleaseselect')">
-                <el-option
-                  v-for="(item, index) in typesOptions"
-                  :key="index"
-                  :label="item.label"
-                  :value="item.value"
-                /> </el-select
-            ></el-form-item>
-            <el-form-item
-              ><span class="num">共 {{ type == 1 ? projectTotal : taskTotal }} 项</span></el-form-item
-            >
-            <el-form-item class="select-bar">
-              <el-date-picker
-                v-model="timeVal"
-                size="small"
-                type="daterange"
-                clearable
-                :format="'yyyy/MM/dd'"
-                :value-format="'yyyy/MM/dd'"
-                :range-separator="$t('toptable.to')"
-                :start-placeholder="$t('toptable.startdate')"
-                :end-placeholder="$t('toptable.endingdate')"
-                @change="selectChange"
-              ></el-date-picker>
-            </el-form-item>
-            <el-form-item class="select-bar">
-              <div class="mr10" style="width: 200px">
-                <select-member
-                  :value="userList || []"
-                  :is-search="true"
-                  :placeholder="`请选择操作人`"
-                  @getSelectList="getSelectList"
-                ></select-member>
-              </div>
-            </el-form-item>
-          </template>
+          <el-form-item class="grey-bg oa-input-borderless" style="border: none; margin-left: 0; width: 150px"
+            ><el-select v-model="type" placeholder="请选择">
+              <el-option
+                v-for="(item, index) in typesOptions"
+                :key="index"
+                :label="item.label"
+                :value="item.value"
+              /> </el-select
+          ></el-form-item>
+          <el-form-item
+            ><span class="num">共 {{ type == 1 ? projectTotal : taskTotal }} 项</span></el-form-item
+          >
+          <el-form-item class="select-bar">
+            <el-date-picker
+              v-model="timeVal"
+              type="daterange"
+              clearable
+              format="YYYY/MM/DD"
+              value-format="YYYY/MM/DD"
+              range-separator="至"
+              start-placeholder="开始时间"
+              end-placeholder="结束时间"
+              @change="selectChange"
+            ></el-date-picker>
+          </el-form-item>
+          <el-form-item class="select-bar">
+            <div class="mr10" style="width: 200px">
+              <select-member
+                :value="userList || []"
+                :is-search="true"
+                :placeholder="`请选择操作人`"
+                @getSelectList="getSelectList"
+              ></select-member>
+            </div>
+          </el-form-item>
           <el-form-item>
             <el-tooltip effect="dark" content="重置搜索条件" placement="top">
               <div class="reset" @click="reset"><i class="iconfont iconqingchu"></i></div>
@@ -63,7 +60,7 @@
           <el-table-column prop="created_at" label="操作时间" min-width="150" />
           <el-table-column prop="operator" label="操作人" min-width="100" />
           <el-table-column prop="title" label="操作说明" min-width="600">
-            <template slot-scope="scope">
+            <template #default="scope">
               <span v-html="scope.row.title"></span>
               <span v-if="type == 2 && scope.row.task" class="pointer click-info" @click="taskInfo(scope.row)">
                 #{{ scope.row.task.ident }} {{ scope.row.task.name }}（点击可查看详情）
@@ -71,7 +68,7 @@
             </template>
           </el-table-column>
           <el-table-column v-if="type == 1" type="expand">
-            <template slot-scope="scope" v-if="scope.row.describe.length">
+            <template #default="scope">
               <div class="program-box" v-if="scope.row.describe.length > 0">
                 <div class="flex program-describe" v-for="item in scope.row.describe" :key="item.id">
                   <span class="titles">{{ item.title }}</span>
@@ -81,7 +78,7 @@
             </template>
           </el-table-column>
           <el-table-column v-if="type == 2" type="expand">
-            <template slot-scope="scope">
+            <template #default="scope">
               <div class="program-box">
                 <div v-if="scope.row.describe.length > 0" class="flex expand-describe">
                   <div class="flex expand-left">
@@ -141,6 +138,8 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
 import {
   getDynamicApi,
   getDynamicTaskApi,
@@ -148,32 +147,38 @@ import {
   getProgramTaskSelectApi,
   getProgramVersionSelectApi,
   getProgramMemberApi
-} from '@/api/program'
+} from '@/api/program.ts'
 import editTask from '../programTask/components/editTask'
 export default {
   name: 'programList',
   components: {
     editTask,
-    addTask: () => import('../programTask/components/addTask'),
-    selectMember: () => import('@/components/form-common/select-member')
+    addTask: defineAsyncComponent(() => import('../programTask/components/addTask')),
+    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member'))
+  },
+  props: {
+    noneBg: {
+      type: Boolean,
+      default: false
+    }
   },
   data() {
     return {
       projectList: [],
-      timeVal: [this.$moment().subtract(1, 'months').format('YYYY/MM/DD'), this.$moment().format('YYYY/MM/DD')],
+      timeVal: [dayjs().subtract(1, 'months').format('YYYY/MM/DD'), dayjs().format('YYYY/MM/DD')],
       taskList: [],
       type: this.$route.query.type || 1,
       projectForm: {
         page: 1,
         limit: 15,
-        time: this.$moment().subtract(1, 'months').format('YYYY/MM/DD') + '-' + this.$moment().format('YYYY/MM/DD'),
+        time: dayjs().subtract(1, 'months').format('YYYY/MM/DD') + '-' + dayjs().format('YYYY/MM/DD'),
         uid: '',
         relation_id: this.$route.query.id
       },
       taskForm: {
         page: 1,
         limit: 15,
-        time: this.$moment().subtract(1, 'months').format('YYYY/MM/DD') + '-' + this.$moment().format('YYYY/MM/DD'),
+        time: dayjs().subtract(1, 'months').format('YYYY/MM/DD') + '-' + dayjs().format('YYYY/MM/DD'),
         uid: [],
         program_id: this.$route.query.id
       },
@@ -201,6 +206,13 @@ export default {
           value: 2
         }
       ]
+    }
+  },
+  computed: {
+    divboxCss() {
+      return {
+        "none-bg": this.noneBg
+      }
     }
   },
   created() {
@@ -272,7 +284,7 @@ export default {
     },
     // 选择成员回调
     getSelectList(data) {
-      var testUid = []
+      const testUid = []
       data.forEach((item) => {
         testUid.push(item.value)
       })
@@ -312,11 +324,11 @@ export default {
       this.projectForm.page = 1
       this.taskForm.page = 1
       this.projectForm.time =
-        this.$moment().subtract(1, 'months').format('YYYY/MM/DD') + '-' + this.$moment().format('YYYY/MM/DD')
-      this.timeVal = [this.$moment().subtract(1, 'months').format('YYYY/MM/DD'), this.$moment().format('YYYY/MM/DD')]
+        dayjs().subtract(1, 'months').format('YYYY/MM/DD') + '-' + dayjs().format('YYYY/MM/DD')
+      this.timeVal = [dayjs().subtract(1, 'months').format('YYYY/MM/DD'), dayjs().format('YYYY/MM/DD')]
       this.taskForm.uid = []
       this.taskForm.time =
-        this.$moment().subtract(1, 'months').format('YYYY/MM/DD') + '-' + this.$moment().format('YYYY/MM/DD')
+        dayjs().subtract(1, 'months').format('YYYY/MM/DD') + '-' + dayjs().format('YYYY/MM/DD')
       this.userList = []
       this.confirmData()
     },
@@ -338,7 +350,7 @@ export default {
       const result = await getProgramTaskSelectApi(data)
       result.data.map((item) => {
         if (row.id === item.value) {
-          this.$set(item, 'disabled', true)
+          item.disabled = true
         }
       })
       this.programOptions = result.data
@@ -356,7 +368,7 @@ export default {
       const result = await getProgramVersionSelectApi({ program_id })
       this.programVersionList = result.data
       if (this.programVersionList.length) {
-        this.$set(this.versionVisible, index, true)
+        this.versionVisible[index] = true
       }
     },
     getMemberList(program_id) {
@@ -383,14 +395,18 @@ export default {
   }
 }
 </script>
-
+<style>
+.none-bg {
+  background: none !important;
+  border: none !important;
+}
+</style>
 <style lang="scss" scoped>
 .grey-bg {
-  .el-select,
-  /deep/.el-input__inner {
+  :deep(.el-select__wrapper),
+  :deep(.el-input__wrapper) {
     background: #f0f2f5;
     border-radius: 2px;
-    border: none;
   }
 }
 .title {
@@ -447,7 +463,7 @@ export default {
     line-height: 16px;
     margin-right: 36px;
     margin-bottom: 0;
-    /deep/p {
+    :deep(p) {
       margin-bottom: 14px;
     }
   }
@@ -456,19 +472,19 @@ export default {
   color: #1890ff;
   margin-left: 10px;
 }
-/deep/.icon-no .el-table__expand-icon {
+:deep(.icon-no .el-table__expand-icon) {
   display: none;
 }
-/deep/ .el-table .cell {
+:deep(.el-table .cell) {
   padding-left: 30px;
 }
-/deep/.el-table th.el-table__cell > .cell {
+:deep(.el-table th.el-table__cell > .cell) {
   padding-left: 30px;
 }
-/deep/td.el-table__cell.el-table__expanded-cell {
+:deep(.el-table__cell.el-table__expanded-cell) {
   padding: 0;
 }
-/deep/.el-table td.el-table__cell {
+:deep(.el-table td.el-table__cell) {
   border-bottom: 1px solid #f5f5f5;
 }
 .num {

@@ -1,26 +1,25 @@
-import { deepClone, generateId, getDefaultFormConfig, overwriteObj } from '@/utils/util'
+import { deepClone, generateId, getDefaultFormConfig, overwriteObj } from '@/utils/formDesignerUtils'
 import {
   containers,
   advancedFields,
   basicFields,
   customFields
 } from '@/components/form-designer/widget-panel/widgetsConfig.js'
-import { dashboard_container_schema } from './charts-schema.js'
-import { del } from 'vue'
+
 export function createDesigner(vueInstance) {
   let defaultFormConfig = deepClone(getDefaultFormConfig())
   return {
     widgetList: [],
     formConfig: { cssCode: '' },
-
     selectedId: null,
+    isTabSelected: false,
     selectedWidget: null,
     selectedWidgetName: null, //选中组件名称（唯一）
     vueInstance: vueInstance,
     selectNames: [], //已添加组件名称数组
     formWidget: null, //表单设计容器
-
     cssClassList: [], //自定义样式列表
+    tabIsShow: '',
     containersNames: containers.map((con) => con.type),
     chartContainers: [],
     chartWidgets: [],
@@ -30,6 +29,7 @@ export function createDesigner(vueInstance) {
       steps: []
     },
     widgetRefList: {},
+    dropTargetContext: null,
     addChartContainerSchema(o) {
       this.chartContainers.push(o)
     },
@@ -68,73 +68,314 @@ export function createDesigner(vueInstance) {
         this.saveCurrentHistoryStep()
       }
     },
-    addChartContainerByDbClick(n) {
-      let l
-      if (this.widgetList.length < 1) {
-        l = this.findDashboardContainer()[0]
-      } else {
-        l = this.widgetList[0]
+    getLayoutNumber(value, defaultValue = 0) {
+      const num = Number(value)
+      return Number.isFinite(num) ? num : defaultValue
+    },
+    getLayoutBottom(layout = []) {
+      if (!Array.isArray(layout) || layout.length === 0) {
+        return 0
       }
+      return layout.reduce((maxBottom, item) => {
+        const itemBottom = this.getLayoutNumber(item.y) + this.getLayoutNumber(item.h)
+        return Math.max(maxBottom, itemBottom)
+      }, 0)
+    },
+    getTabAppendPosition(layout = [], widgetOptions = {}) {
+      const maxCols = 12
+      const targetW = this.getLayoutNumber(widgetOptions.w, maxCols)
+      const defaultPos = {
+        x: this.getLayoutNumber(widgetOptions.x, 0),
+        y: this.getLayoutNumber(widgetOptions.y, 0)
+      }
+
+      if (!Array.isArray(layout) || layout.length === 0) {
+        return defaultPos
+      }
+
+      const lastRowY = layout.reduce((maxY, item) => {
+        return Math.max(maxY, this.getLayoutNumber(item.y))
+      }, 0)
+      const lastRowItems = layout.filter((item) => this.getLayoutNumber(item.y) === lastRowY)
+      const lastRowRight = lastRowItems.reduce((maxRight, item) => {
+        const right = this.getLayoutNumber(item.x) + this.getLayoutNumber(item.w)
+        return Math.max(maxRight, right)
+      }, 0)
+
+      if (lastRowRight + targetW <= maxCols) {
+        return { x: lastRowRight, y: lastRowY }
+      }
+
+      return { x: 0, y: this.getLayoutBottom(layout) }
+    },
+    findSelectedTabWidget(container) {
+      if (!container || !Array.isArray(container.widgetList)) {
+        return null
+      }
+      return (
+        container.widgetList.find((item) => {
+          if (item.type !== 'tab') {
+            return false
+          }
+          if (item.id === this.selectedId) {
+            return true
+          }
+          const tabList = item.options && Array.isArray(item.options.tabList) ? item.options.tabList : []
+          return tabList.some((tab) => {
+            const list = Array.isArray(tab.widgetList) ? tab.widgetList : []
+            return list.some((widget) => widget.id === this.selectedId)
+          })
+        }) || null
+      )
+    },
+    getActiveTabPane(tabWidget) {
+      const tabList =
+        tabWidget && tabWidget.options && Array.isArray(tabWidget.options.tabList) ? tabWidget.options.tabList : []
+      if (tabList.length === 0) {
+        return null
+      }
+      const activeValue = tabWidget.options.activeValue
+      return tabList.find((tab) => tab.value === activeValue) || tabList.find((tab) => tab.status === 1) || tabList[0]
+    },
+    ensureTabPaneData(tabPane) {
+      if (!tabPane.options) {
+        tabPane.options = {}
+      }
+      if (!Array.isArray(tabPane.widgetList)) {
+        tabPane.widgetList = []
+      }
+      if (!Array.isArray(tabPane.options.layout)) {
+        tabPane.options.layout = []
+      }
+    },
+    appendWidgetToTabPane(tabPane, widget) {
+      this.ensureTabPaneData(tabPane)
+      const position = this.getTabAppendPosition(tabPane.options.layout, widget.options || {})
+      const layoutItem = {
+        x: position.x,
+        y: position.y,
+        w: this.getLayoutNumber(widget.options && widget.options.w, 12),
+        h: this.getLayoutNumber(widget.options && widget.options.h, 4),
+        i: widget.id
+      }
+      tabPane.widgetList.push(widget)
+      tabPane.options.layout.push(layoutItem)
+    },
+
+    // 点击图表容器组件添加到设计器
+    addChartContainerByDbClick(n, payload = {}) {
+      if (!n || !n.type) {
+        return
+      }
+      if (n.type === 'tab') {
+        this.tabIsShow = n.type
+      }
+      const l = this.findDashboardContainer()
+      if (!l) {
+        return
+      }
+
+      // 克隆并初始化新图表容器
       const s = deepClone(n)
       s.id = 'chartCon' + generateId()
-      s.options.name = s.id
-      const c = {
-        x: s.options.x,
-        y: s.options.y,
-        w: s.options.w,
-        h: s.options.h,
-        i: s.id
+      if (!s.options) {
+        s.options = {}
       }
-      l.options.layout.push(c)
-      l.widgetList.push(s)
-      this.setSelected(s)
-      this.emitHistoryChange()
-      this.widgetList = [l]
-    },
-    addChartByDbClick(n) {
-      const l = this.findDashboardContainer()
-      if (l) {
-        const s = deepClone(n)
-        ;(s.id = 'chart' + generateId()), (s.options.name = s.id)
-        const c = {
-          x: s.options.x,
-          y: s.options.y,
-          w: s.options.w,
-          h: s.options.h,
-          i: s.id
+      s.options.name = s.id
+      const dropContext = payload && payload.dropContext ? payload.dropContext : null
+      const useSelectedTabFallback = !(payload && payload.respectSelectedTab === false)
+
+      let added = false
+      const targetTabPane = this.getTabPaneByDropContext(l, dropContext)
+      if (targetTabPane && s.type !== 'tab') {
+        if (!targetTabPane.widgetList) {
+          targetTabPane.widgetList = []
         }
+        if (!targetTabPane.options) {
+          targetTabPane.options = {}
+        }
+        if (!targetTabPane.options.layout) {
+          targetTabPane.options.layout = []
+        }
+        const c = this.buildGridLayoutItem(s, { x: 0, y: 0, w: 4, h: 4 }, targetTabPane.options.layout)
+        targetTabPane.widgetList.push(s)
+        targetTabPane.options.layout.push(c)
+        this.setSelected(s)
+        this.emitHistoryChange()
+        this.ensureDashboardContainerExists(l)
+        added = true
+      }
+
+      const selectedTabWidget = this.findSelectedTabWidget(l)
+      if (!added && !dropContext && useSelectedTabFallback && selectedTabWidget && s.type !== 'tab') {
+        const activeTab = this.getActiveTabPane(selectedTabWidget)
+        if (activeTab) {
+          // 确保tab有必要的结构
+          if (!activeTab.widgetList) {
+            activeTab.widgetList = []
+          }
+          if (!activeTab.options) {
+            activeTab.options = {}
+          }
+          if (!activeTab.options.layout) {
+            activeTab.options.layout = []
+          }
+
+          const c = this.buildGridLayoutItem(s, { x: 0, y: 0, w: 4, h: 4 }, activeTab.options.layout)
+          activeTab.widgetList.push(s)
+          activeTab.options.layout.push(c)
+          this.setSelected(s)
+          this.emitHistoryChange()
+          this.ensureDashboardContainerExists(l)
+          added = true
+        }
+      }
+
+      // 如果没有添加到tab，则添加到dashboard容器
+      if (!added) {
+        if (!l.options) {
+          l.options = {}
+        }
+        if (!l.options.layout) {
+          l.options.layout = []
+        }
+        if (!l.widgetList) {
+          l.widgetList = []
+        }
+
+        const c = this.buildGridLayoutItem(s, { x: 0, y: 0, w: 4, h: 4 }, l.options.layout)
         l.options.layout.push(c)
         l.widgetList.push(s)
         this.setSelected(s)
         this.emitHistoryChange()
+        this.ensureDashboardContainerExists(l)
+      }
+    },
+    addChartByDbClick(n, payload = {}) {
+      if (!n || !n.type) {
+        return
+      }
+      const l = this.findDashboardContainer()
+      if (l) {
+        const s = deepClone(n)
+        s.id = 'chart' + generateId()
+        if (!s.options) {
+          s.options = {}
+        }
+        s.options.name = s.id
+        const dropContext = payload && payload.dropContext ? payload.dropContext : null
+        const useSelectedTabFallback = !(payload && payload.respectSelectedTab === false)
+
+        let added = false
+
+        const targetTabPane = this.getTabPaneByDropContext(l, dropContext)
+        if (targetTabPane) {
+          if (!targetTabPane.widgetList) {
+            targetTabPane.widgetList = []
+          }
+          if (!targetTabPane.options) {
+            targetTabPane.options = {}
+          }
+          if (!targetTabPane.options.layout) {
+            targetTabPane.options.layout = []
+          }
+
+          const c = this.buildGridLayoutItem(s, { x: 0, y: 0, w: 4, h: 4 }, targetTabPane.options.layout)
+          targetTabPane.widgetList.push(s)
+          targetTabPane.options.layout.push(c)
+          this.setSelected(s)
+          this.emitHistoryChange()
+          this.ensureDashboardContainerExists(l)
+          added = true
+        }
+
+        const selectedTabWidget = this.findSelectedTabWidget(l)
+        if (!added && !dropContext && useSelectedTabFallback && selectedTabWidget) {
+          const activeTab = this.getActiveTabPane(selectedTabWidget)
+          if (activeTab) {
+            // 确保tab有必要的结构
+            if (!activeTab.widgetList) {
+              activeTab.widgetList = []
+            }
+            if (!activeTab.options) {
+              activeTab.options = {}
+            }
+            if (!activeTab.options.layout) {
+              activeTab.options.layout = []
+            }
+
+            const c = this.buildGridLayoutItem(s, { x: 0, y: 0, w: 4, h: 4 }, activeTab.options.layout)
+            activeTab.widgetList.push(s)
+            activeTab.options.layout.push(c)
+            this.setSelected(s)
+            this.emitHistoryChange()
+            this.ensureDashboardContainerExists(l)
+            added = true
+          }
+        }
+
+        // 如果没有添加到tab，则添加到dashboard容器
+        if (!added) {
+          // 默认添加到 dashboard 容器
+          if (!l.options) {
+            l.options = {}
+          }
+          if (!l.options.layout) {
+            l.options.layout = []
+          }
+          if (!l.widgetList) {
+            l.widgetList = []
+          }
+
+          const c = this.buildGridLayoutItem(s, { x: 0, y: 0, w: 4, h: 4 }, l.options.layout)
+          l.options.layout.push(c)
+          l.widgetList.push(s)
+          this.setSelected(s)
+          this.emitHistoryChange()
+          this.ensureDashboardContainerExists(l)
+        }
       }
     },
     findDashboardContainer() {
       if (this.widgetList.length < 1) {
         let s = generateId()
-        return [
-          {
-            type: 'dashboard-container',
-            category: 'container',
-            icon: 'section',
-            internal: true,
-            widgetList: [],
-            options: {
-              name: 'dbCon' + s,
-              layout: []
-            },
-            id: 'dbCon' + s
-          }
-        ]
+        const container = {
+          type: 'dashboard-container',
+          category: 'container',
+          icon: 'section',
+          internal: true,
+          widgetList: [],
+          options: {
+            name: 'dbCon' + s,
+            layout: []
+          },
+          id: 'dbCon' + s
+        }
+        return container
       }
-      //  return console.error('Dashboard container not found'), null
-      // let n = null
-      // return (
-      //   this.widgetList.forEach((l) => {
-      //     l.type === 'dashboard-container' && (n = l)
-      //   }),
-      //   n || (console.error('Dashboard container not found'), null)
-      // )
+
+      // 从widgetList中查找dashboard-container类型的容器
+      for (let i = 0; i < this.widgetList.length; i++) {
+        if (this.widgetList[i].type === 'dashboard-container') {
+          return this.widgetList[i]
+        }
+      }
+
+      // 如果找不到，返回默认的dashboard容器
+      let s = generateId()
+      const container = {
+        type: 'dashboard-container',
+        category: 'container',
+        icon: 'section',
+        internal: true,
+        widgetList: [],
+        options: {
+          name: 'dbCon' + s,
+          layout: []
+        },
+        id: 'dbCon' + s
+      }
+      return container
     },
     loadPresetCssCode(preCssCode) {
       if (this.formConfig.cssCode === '' && !!preCssCode) {
@@ -167,6 +408,9 @@ export function createDesigner(vueInstance) {
 
       if (!!formJson && !!formJson.widgetList) {
         this.clearWidgetRefList()
+        formJson.widgetList.forEach((item) => {
+          item.widgetList.forEach((el) => {})
+        })
         this.widgetList = formJson.widgetList
         modifiedFlag = true
       }
@@ -199,8 +443,33 @@ export function createDesigner(vueInstance) {
         return
       }
       this.selectedWidget = selected
+      this.isTabSelected = false
+
+      // 判断当前高亮的组件是否在tab标签里面
+      const top = this.widgetList[0]
+      if (!!top && !!top.widgetList) {
+        top.widgetList.forEach((item) => {
+          // 直接选中 tab 本身
+
+          if (item.id === selected.id && item.type === 'tab') {
+            this.isTabSelected = true
+            return
+          }
+
+          if (item.type === 'tab' && item.options?.tabList) {
+            // 选中 tab 内部组件
+            item.options.tabList.forEach((tab) => {
+              if (tab.widgetList?.some((w) => w.id === selected.id)) {
+                this.isTabSelected = true
+              }
+            })
+          }
+        })
+      }
+
       if (!!selected.id) {
         this.selectedId = selected.id
+
         this.selectedWidgetName = selected.options.name
       }
     },
@@ -216,7 +485,157 @@ export function createDesigner(vueInstance) {
     clearSelected() {
       this.selectedId = null
       this.selectedWidgetName = null
+      this.tabIsShow = ''
+      this.isTabSelected = false
       this.selectedWidget = null //this.selectedWidget = null
+    },
+    setDropTargetContext(context) {
+      this.dropTargetContext = context || null
+    },
+    consumeDropTargetContext() {
+      const context = this.dropTargetContext
+      this.dropTargetContext = null
+      return context
+    },
+    getTabPaneByDropContext(dashboardContainer, dropContext) {
+      if (
+        !dropContext ||
+        dropContext.type !== 'tab-pane' ||
+        !dashboardContainer ||
+        !Array.isArray(dashboardContainer.widgetList)
+      ) {
+        return null
+      }
+
+      const tabWidget = dashboardContainer.widgetList.find(
+        (widget) => widget && widget.type === 'tab' && widget.id === dropContext.tabId
+      )
+      if (!tabWidget || !tabWidget.options || !Array.isArray(tabWidget.options.tabList)) {
+        return null
+      }
+
+      const normalizeVal = (val) => (val === undefined || val === null ? '' : String(val))
+      const dropPaneValue = normalizeVal(dropContext.paneValue || tabWidget.options.activeValue)
+      const pane = tabWidget.options.tabList.find((tab) => tab && normalizeVal(tab.value) === dropPaneValue)
+      return pane || null
+    },
+    findSelectedTabWidget(dashboardContainer) {
+      if (!dashboardContainer || !dashboardContainer.widgetList || !this.selectedId) {
+        return null
+      }
+
+      for (let i = 0; i < dashboardContainer.widgetList.length; i++) {
+        const widget = dashboardContainer.widgetList[i]
+        if (widget.type !== 'tab' || !widget.options || !widget.options.tabList) {
+          continue
+        }
+
+        if (widget.id === this.selectedId) {
+          return widget
+        }
+
+        const selectedInside = widget.options.tabList.some(
+          (tab) => !!tab.widgetList && tab.widgetList.some((child) => child.id === this.selectedId)
+        )
+        if (selectedInside) {
+          return widget
+        }
+      }
+
+      return null
+    },
+    getActiveTabPane(tabWidget) {
+      if (!tabWidget || !tabWidget.options || !tabWidget.options.tabList || tabWidget.options.tabList.length === 0) {
+        return null
+      }
+
+      const tabList = tabWidget.options.tabList
+      const activeTab = tabList.find((tab) => tab.value === tabWidget.options.activeValue)
+      if (activeTab) {
+        return activeTab
+      }
+
+      const firstEnabledTab = tabList.find((tab) => tab.status === 1)
+      if (firstEnabledTab) {
+        return firstEnabledTab
+      }
+
+      return tabList[0]
+    },
+    ensureDashboardContainerExists(dashboardContainer) {
+      if (!dashboardContainer) {
+        return
+      }
+
+      const existed = this.widgetList.some((widget) => widget.id === dashboardContainer.id)
+      if (!existed) {
+        this.widgetList.push(dashboardContainer)
+      }
+    },
+    buildGridLayoutItem(widget, fallback = {}, targetLayout = null) {
+      const options = (widget && widget.options) || {}
+      const normalizeNum = (val, defaultVal) => {
+        const num = Number(val)
+        return Number.isFinite(num) ? num : defaultVal
+      }
+
+      const gridCols = 12
+      const w = Math.min(Math.max(normalizeNum(options.w, normalizeNum(fallback.w, 4)), 1), gridCols)
+      const h = Math.max(normalizeNum(options.h, normalizeNum(fallback.h, 4)), 0.5)
+      const autoPos = this.findAvailableGridPosition(targetLayout, w, h, gridCols)
+
+      return {
+        x: autoPos.x,
+        y: autoPos.y,
+        w,
+        h,
+        i: (widget && widget.id) || 'chart-' + generateId()
+      }
+    },
+    findAvailableGridPosition(layoutList, w, h, gridCols = 12) {
+      const normalizeNum = (val, defaultVal) => {
+        const num = Number(val)
+        return Number.isFinite(num) ? num : defaultVal
+      }
+
+      if (!Array.isArray(layoutList) || layoutList.length === 0) {
+        return {
+          x: 0,
+          y: 0
+        }
+      }
+
+      const normalizedLayout = layoutList.map((item) => ({
+        x: normalizeNum(item.x, 0),
+        y: normalizeNum(item.y, 0),
+        w: Math.max(normalizeNum(item.w, 1), 1),
+        h: Math.max(normalizeNum(item.h, 1), 0.5)
+      }))
+
+      const maxBottom = normalizedLayout.reduce((max, item) => Math.max(max, item.y + item.h), 0)
+      const yStep = 0.5
+
+      for (let y = 0; y <= maxBottom + 50; y += yStep) {
+        for (let x = 0; x <= gridCols - w; x++) {
+          const hasOverlap = normalizedLayout.some((item) => {
+            const overlapX = x < item.x + item.w && x + w > item.x
+            const overlapY = y < item.y + item.h && y + h > item.y
+            return overlapX && overlapY
+          })
+
+          if (!hasOverlap) {
+            return {
+              x,
+              y: Number(y.toFixed(1))
+            }
+          }
+        }
+      }
+
+      return {
+        x: 0,
+        y: Number((maxBottom + yStep).toFixed(1))
+      }
     },
 
     checkWidgetMove(evt) {
@@ -967,13 +1386,16 @@ export function createDesigner(vueInstance) {
     },
 
     emitEvent(evtName, evtData) {
-      //用于兄弟组件发射事件
+      //用于兄弟组件发射事件（Vue 3 实例不再支持 $on，改用设计器自带的监听表）
+      const handlers = (this.eventHandlers && this.eventHandlers[evtName]) || []
+      handlers.slice().forEach((callback) => callback(evtData))
       this.vueInstance.$emit(evtName, evtData)
     },
 
     handleEvent(evtName, callback) {
       //用于兄弟组件接收事件
-      this.vueInstance.$on(evtName, (data) => callback(data))
+      this.eventHandlers = this.eventHandlers || {}
+      ;(this.eventHandlers[evtName] = this.eventHandlers[evtName] || []).push(callback)
     },
 
     setCssClassList(cssClassList) {

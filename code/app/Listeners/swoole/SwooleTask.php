@@ -15,13 +15,14 @@ declare(strict_types=1);
 
 namespace App\Listeners\swoole;
 
-use crmeb\interfaces\ListenerInterface;
-use crmeb\socket\Room;
-use Hhxsv5\LaravelS\Swoole\Socket\WebSocket;
+use Tuoluojiang\Open\interfaces\ListenerInterface;
+use Tuoluojiang\Open\socket\Room;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Swoole\Server;
+use SwooleTW\Http\Websocket\Facades\Websocket;
+use SwooleTW\Http\Websocket\Websocket as HttpWebsocket;
 
 /**
  * swoole任务事件监听
@@ -96,7 +97,7 @@ class SwooleTask implements ListenerInterface
         /** @var Room $room */
         $room = app()->get(Room::class);
         if (! count($uid) && $data['type'] != 'user') {
-            $fds = $room->userFd($data['type']);
+            $fds = $room->userFd($data['type'], '', (int) $entid);
             foreach ($fds as $fd) {
                 if (! in_array($fd, $except) && $this->server->isEstablished((int) $fd)) {
                     $this->server->push((int) $fd, json_encode($data['data']));
@@ -108,7 +109,7 @@ class SwooleTask implements ListenerInterface
                 if (is_array($id)) {
                     $id = $id['to_uid'] ?? 0;
                 }
-                if (strlen((string) $id) != 32) {
+                if (! $this->isSocketUid($id)) {
                     $id = uid_to_uuid((int) $id);
                     if (! $id) {
                         continue;
@@ -136,5 +137,17 @@ class SwooleTask implements ListenerInterface
         } else {
             Log::error(json_encode($data));
         }
+    }
+
+    /**
+     * WebSocket 登录房间使用 admin.uid，历史数据存在 32/36 位两种 UUID 形态.
+     */
+    protected function isSocketUid(mixed $id): bool
+    {
+        if (! is_string($id)) {
+            return false;
+        }
+
+        return (bool) preg_match('/^[0-9a-fA-F]{32}$|^[0-9a-fA-F-]{36}$/', $id);
     }
 }

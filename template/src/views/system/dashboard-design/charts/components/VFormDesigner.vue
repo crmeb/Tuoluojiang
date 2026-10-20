@@ -12,7 +12,7 @@
           <i class="el-icon" :class="!leftAsideVisible ? 'el-icon-arrow-right' : 'el-icon-arrow-left'"></i>
         </div>
         <el-container class="center-layout-container">
-          <el-main class="form-widget-main">
+          <el-main class="form-widget-main" @click.capture="handleCenterBlankClick">
             <el-scrollbar class="container-scroll-bar">
               <VFormWidget
                 :designer="designer"
@@ -40,13 +40,13 @@
     </el-container>
     <el-dialog
       title="预览"
-      :visible.sync="showPreviewDialogFlag"
+      v-model="showPreviewDialogFlag"
       v-if="showPreviewDialogFlag"
       :show-close="true"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
       center
-      v-dialog-drag
+      draggable
       :destroy-on-close="true"
       :append-to-body="true"
       class="small-padding-dialog"
@@ -82,10 +82,12 @@
 </template>
 
 <script>
-import i18n, { changeLocale } from '@/utils/i18n'
+import i18n, { changeLocale } from '@/utils/i18n.ts'
 import SvgIcon from '@/components/svg-icon-nc'
 import { createDesigner } from '../designer'
 import VFormRender from '@/components/form-render/index'
+import { withApp } from '@/app-context'
+import { loadChartsExtension } from '../charts-loader'
 
 import {
   addWindowResizeHandler,
@@ -95,16 +97,19 @@ import {
   getQueryParam,
   traverseAllWidgets,
   generateId
-} from '@/utils/util'
+} from '@/utils/formDesignerUtils'
 import FieldPanel from './FieldPanel'
 import VFormWidget from './VFormWidget'
 import SettingPanel from './SettingPanel'
 import oaDialog from '@/components/form-common/dialog-form'
-import { changeDashboard } from '@/api/chart'
+import { changeDashboard } from '@/api/chart.ts'
+
+// 本组件由看板设计路由按需加载；在子组件创建前完成属性编辑器和语言包注册。
+withApp(loadChartsExtension)
 
 export default {
+  emits: ['changeTitle'],
   name: 'VFormDesigner',
-  componentName: 'VFormDesigner',
   mixins: [i18n],
   components: {
     SvgIcon,
@@ -237,6 +242,15 @@ export default {
     })
   },
   methods: {
+    handleCenterBlankClick(event) {
+      const target = event.target
+      const clickedInsideWidget =
+        !!target && typeof target.closest === 'function' && !!target.closest('.smartwidget, .vue-resizable-handle')
+
+      if (!clickedInsideWidget) {
+        this.designer.setSelected(null)
+      }
+    },
     submit(data) {
       changeDashboard(this.id, data).then((res) => {
         this.$emit('changeTitle', data.name)
@@ -477,10 +491,15 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+:deep(.smartwidget) {
+  border: none;
+  border-radius: 8px;
+}
+
 .el-container.main {
   background: #fff !important;
 
-  ::v-deep aside {
+  :deep(aside) {
     /* 防止aside样式被外部样式覆盖！！ */
     margin: 0;
     padding: 0;
@@ -613,8 +632,8 @@ div.external-link a {
 }
 
 .container-scroll-bar {
-  ::v-deep .el-scrollbar__wrap,
-  ::v-deep .el-scrollbar__view {
+  :deep(.el-scrollbar__wrap),
+  :deep(.el-scrollbar__view) {
     overflow-x: hidden;
     overflow-y: auto;
   }
@@ -681,7 +700,7 @@ div.external-link a {
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid #f2f6fc;
-  /deep/.title {
+  :deep(.title) {
     font-weight: 500;
     font-size: 18px;
     color: #303133;

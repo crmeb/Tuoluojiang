@@ -16,6 +16,7 @@ export const COMMON_PROPERTIES$1 = {
   controls: 'controls-editor',
   controlsPosition: 'controlsPosition-editor',
   showStops: 'showStops-editor',
+
   displayStyle: 'displayStyle-editor',
   buttonStyle: 'buttonStyle-editor',
   border: 'border-editor',
@@ -36,6 +37,7 @@ export const COMMON_PROPERTIES$1 = {
   showPassword: 'showPassword-editor',
   textContent: 'textContent-editor',
   textAlign: 'textAlign-editor',
+
   fontSize: 'fontSize-editor',
   preWrap: 'preWrap-editor',
   htmlContent: 'htmlContent-editor',
@@ -112,6 +114,7 @@ export const ADVANCED_PROPERTIES$1 = {
   minLength: 'minLength-editor',
   maxLength: 'maxLength-editor',
   showWordLimit: 'showWordLimit-editor',
+  showType: 'showType-editor',
   prefixIcon: 'prefixIcon-editor',
   suffixIcon: 'suffixIcon-editor',
   switchWidth: 'switchWidth-editor',
@@ -212,6 +215,7 @@ export const enLocale_extension = {
     widgetLabel: { card: 'Card', alert: 'Alert' },
     setting: {
       headerHidden: 'Header Hidden',
+
       cardFolded: 'Folded',
       cardShowFold: 'Show Fold',
       cardWidth: 'Width Of Card',

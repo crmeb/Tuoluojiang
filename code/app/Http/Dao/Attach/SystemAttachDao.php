@@ -15,11 +15,11 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Attach;
 
-use App\Http\Dao\BaseDao;
 use App\Http\Model\Attach\SystemAttach;
+use App\Http\Dao\BaseDao;
 use App\Http\Model\BaseModel;
-use crmeb\interfaces\ResourceDaoInterface;
-use crmeb\traits\dao\ListSearchTrait;
+use Tuoluojiang\Open\interfaces\ResourceDaoInterface;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\HigherOrderWhenProxy;
 
@@ -40,8 +40,16 @@ class SystemAttachDao extends BaseDao implements ResourceDaoInterface
      */
     public function move(array $data)
     {
-        $where['id'] = $data['images'];
-        return $this->search($where)->update(['cid' => $data['cid']]);
+        $images = $data['images'];
+        // 将逗号分隔的字符串转换为数组
+        if (is_string($images)) {
+            $images = array_filter(explode(',', $images), fn($v) => $v !== '');
+            $images = array_map('intval', $images);
+        }
+        if (empty($images)) {
+            return false;
+        }
+        return $this->search(['id' => $images])->update(['cid' => $data['pid']]);
     }
 
     public function sumSize($entId)
@@ -59,7 +67,7 @@ class SystemAttachDao extends BaseDao implements ResourceDaoInterface
     public function relationSearch($where)
     {
         $eid          = $where['eid'] ?? 0;
-        $entId        = $where['entid'] ?? 0;
+        $entId        = $where['entid'] ?? 1;
         $relationType = $where['relation_type'] ?? [];
         if (isset($where['eid'])) {
             unset($where['eid']);
@@ -155,5 +163,10 @@ class SystemAttachDao extends BaseDao implements ResourceDaoInterface
         return $this->relationSearch($where)->when(count($with), function ($query) use ($with) {
             $query->with($with);
         })->count();
+    }
+
+    public function getAttachNum(array $where, string $group = 'relation_id', string $field = 'relation_id, COUNT(id) as count')
+    {
+        return $this->search($where)->groupBy($group)->selectRaw($field)->get();
     }
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,10 +17,12 @@ namespace App\Http\Service\Approve;
 
 use App\Http\Dao\Approve\ApproveHolidayTypeDao;
 use App\Http\Service\Admin\AdminInfoService;
-use App\Http\Service\BaseService;
 use Carbon\Carbon;
-use crmeb\traits\service\ResourceServiceTrait;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 
 /**
  * 假期类型.
@@ -37,9 +39,7 @@ class ApproveHolidayTypeService extends BaseService
 
     /**
      * 列表.
-     * @param array|string[] $field
-     * @param string $sort
-     * @throws BindingResolutionException
+     * @param mixed $sort
      */
     public function getList(array $where, array $field = ['*'], $sort = 'sort', array $with = []): array
     {
@@ -49,6 +49,9 @@ class ApproveHolidayTypeService extends BaseService
     /**
      * 保存.
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
      */
     public function saveHolidayType(array $data): mixed
     {
@@ -59,6 +62,9 @@ class ApproveHolidayTypeService extends BaseService
     /**
      * 修改.
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
      */
     public function updateHolidayType(int $id, array $data): mixed
     {
@@ -73,9 +79,11 @@ class ApproveHolidayTypeService extends BaseService
     /**
      * 删除.
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function deleteHolidayType(int $id): int
+    public function deleteHolidayType(int $id): bool|int
     {
         $info = $this->dao->get($id);
         if (! $info) {
@@ -88,6 +96,8 @@ class ApproveHolidayTypeService extends BaseService
     /**
      * 详情.
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
     public function getInfo(array $where, array $field = ['*']): array
@@ -102,6 +112,9 @@ class ApproveHolidayTypeService extends BaseService
     /**
      * 下拉数据.
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
      */
     public function getSelectList(int $uid): array
     {
@@ -158,6 +171,9 @@ class ApproveHolidayTypeService extends BaseService
     /**
      * 核对名称.
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
      */
     private function checkName(string $name, int $id = 0): void
     {

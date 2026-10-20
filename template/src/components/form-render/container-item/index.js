@@ -1,6 +1,6 @@
-import Vue from "vue"
+import { registerGlobalComponent } from '@/app-context'
 
-const requireComponent = require.context('./', false, /\w+\.vue$/)
+const requireComponent = import.meta.glob('./*.vue', { eager: true })
 
 /**
  * 容器组件时递归组件，且内部可以嵌套其他容器，局部注册会找不到组件，必须注册为全局组件，原因不明？！
@@ -18,7 +18,7 @@ export default comps;
 end */
 
 /* 全局注册！！ */
-requireComponent.keys().map(fileName => {
-  let comp = requireComponent(fileName).default;
-  Vue.component(comp.name, comp)
+Object.keys(requireComponent).forEach(fileName => {
+  let comp = requireComponent[fileName].default;
+  registerGlobalComponent(comp.name, comp)
 })

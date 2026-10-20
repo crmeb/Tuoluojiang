@@ -1,7 +1,7 @@
 <template>
   <!-- 公海池客户 -->
   <div>
-    <index activeName="1" :types="3"></index>
+    <index :types="`customer_seas`"></index>
   </div>
 </template>
 

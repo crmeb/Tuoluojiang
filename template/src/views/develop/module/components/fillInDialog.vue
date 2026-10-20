@@ -1,17 +1,17 @@
 <template>
   <div class="oa-dialog">
-    <el-dialog title="邀请填写" :visible.sync="show" width="600px" :before-close="handleClose">
+    <el-dialog title="邀请填写" v-model="show" width="600px" :before-close="handleClose">
       <div>
         <div class="mb20">通过链接邀请：</div>
         <div class="flex">
-          <el-select v-model="form.role_type" style="width: 100%" size="small">
+          <el-select v-model="form.role_type" style="width: 100%">
             <el-option v-for="item in roleOptions" :key="item.value" :label="item.label" :value="item.value">
             </el-option>
           </el-select>
-          <el-button class="ml10" type="primary" size="small" @click="submitFn">复制链接</el-button>
+          <el-button class="ml10" type="primary" @click="submitFn">复制链接</el-button>
         </div>
         <div class="mt20 day">
-          链接有效期：<el-select style="width: 50px" v-model="form.invalid_type" size="small">
+          链接有效期：<el-select style="width: 64px" v-model="form.invalid_type">
             <el-option v-for="item in invalidOptions" :key="item.value" :label="item.label" :value="item.value">
             </el-option>
           </el-select>
@@ -22,11 +22,13 @@
   </div>
 </template>
 <script>
-import { moduleQuestionnaireApi } from '@/api/develop'
-import { roterPre } from '@/settings'
-import { mapMutations } from 'vuex'
-import SettingMer from '@/libs/settingMer'
+import { moduleQuestionnaireApi } from '@/api/develop.ts'
+import { roterPre } from '@/settings.ts'
+import { setShareUnique } from '@/utils/auth.ts'
+import SettingMer from '@/libs/settingMer.ts'
+import { getStorageJson } from '@/utils/storage.ts'
 export default {
+  emits: ['getList'],
   data() {
     return {
       show: false,
@@ -67,7 +69,6 @@ export default {
   },
 
   methods: {
-    ...mapMutations('user', ['SET_UNIQUE']),
     handleClose() {
       this.show = false
     },
@@ -77,15 +78,15 @@ export default {
     },
     submitFn() {
       const oInput = document.createElement('textarea')
-      const userInfo = JSON.parse(localStorage.getItem('userInfo'))
-      const enterprise = JSON.parse(localStorage.getItem('enterprise'))
+      const userInfo = getStorageJson('userInfo', {})
+      const enterprise = getStorageJson('enterprise', {})
       moduleQuestionnaireApi(this.keyName, this.form).then((res) => {
         if (res.status == 200) {
-          this.$store.commit('user/SET_UNIQUE', res.data.unique)
+          setShareUnique(res.data.unique)
           res.data.url = res.data.url + '?role_type=' + res.data.role_type
           const value = `${res.data.url}
-          分享人:${userInfo.name}
-          企业名称:${enterprise.enterprise_name}
+          分享人:${userInfo.name || ''}
+          企业名称:${enterprise.enterprise_name || ''}
           链接有效期:${this.form.invalid_type}天
           `
           oInput.value = value
@@ -106,7 +107,7 @@ export default {
 }
 </script>
 <style scoped lang="scss">
-/deep/.el-dialog__body {
+:deep(.el-dialog__body) {
   padding: 30px 20px;
 }
 .day {
@@ -121,21 +122,14 @@ export default {
   border: 1px solid #dcdfe6;
   background: #f7f7f7;
   border-radius: 6px 6px 6px 6px;
-  /deep/ .el-input--small .el-input__inner {
+  :deep(.el-select__wrapper) {
     padding: 0;
     background: #f7f7f7;
-    border: none;
-    color: #1890ff;
+    box-shadow: none;
   }
-  /deep/.el-select .el-input .el-select__caret {
+  :deep(.el-select__selected-item),
+  :deep(.el-select__caret) {
     color: #1890ff;
-    //   margin-right: 20px;
-  }
-  /deep/ .el-input__suffix {
-    position: absolute;
-
-    top: -2px;
-    right: 0px;
   }
 }
 </style>

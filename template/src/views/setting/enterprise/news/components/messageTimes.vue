@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-dialog
-      :visible.sync="dialogVisible"
+      v-model="dialogVisible"
       :width="messageData.width"
       :title="messageData.title"
       :before-close="handleClose"
@@ -13,7 +13,6 @@
             format="HH:mm"
             value-format="HH:mm"
             v-model="form.date"
-            size="small"
             clearable
             placeholder="选择提醒时间"
           >
@@ -23,32 +22,33 @@
           <div class="item">
             {{ messageData.data.template_type == 'clock_remind' ? '上班前' : '下班后' }}
 
-            <div class="mo-input--number">
-              <el-input-number v-model="hour" controls-position="right" size="small" :min="0"> </el-input-number>
+            <div class="mo-input--number oa-input-borderless">
+              <el-input-number v-model="hour" controls-position="right" :min="0"> </el-input-number>
               <div class="define-append">小时</div>
             </div>
-            <div class="mo-input--number">
-              <el-input-number v-model="minute" controls-position="right" size="small" :min="0"></el-input-number>
+            <div class="mo-input--number oa-input-borderless">
+              <el-input-number v-model="minute" controls-position="right" :min="0"></el-input-number>
               <div class="define-append">分钟</div>
             </div>
             {{ messageData.data.template_type == 'clock_remind' ? '进行上班打卡' : '进行下班打卡' }}
           </div>
         </el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button size="small" @click="handleClose()">{{ $t('public.cancel') }}</el-button>
-        <el-button type="primary" :loading="loading" size="small" @click="handleConfirm()">{{
-          $t('public.ok')
-        }}</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleClose()">取消</el-button>
+          <el-button type="primary" :loading="loading" @click="handleConfirm()">确定</el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>
 
 <script>
-import { messageUpdateApi, upDateMessageApi } from '@/api/setting'
+import { messageUpdateApi, upDateMessageApi } from '@/api/setting.ts'
 
 export default {
+  emits: ['isOk'],
   name: 'MessageTimes',
   components: {},
   props: {
@@ -135,13 +135,9 @@ export default {
   border: 1px solid #dcdfe6;
   display: flex;
   border-radius: 4px;
-
-  ::v-deep .el-input__inner {
-    border: none !important;
-  }
 }
 
-/deep/ .el-date-editor.el-input {
+:deep(.el-date-editor.el-input) {
   width: 100%;
 }
 .define-append {

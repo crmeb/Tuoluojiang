@@ -18,8 +18,8 @@ namespace App\Http\Controller\AdminApi\Notepad;
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Requests\user\UserMemorialCategoryRequest;
 use App\Http\Service\Notepad\NotepadCateService;
-use crmeb\interfaces\ResourceControllerInterface;
-use crmeb\traits\ResourceControllerTrait;
+use Tuoluojiang\Open\interfaces\ResourceControllerInterface;
+use Tuoluojiang\Open\traits\ResourceControllerTrait;
 
 /**
  * 备忘录分类控制器

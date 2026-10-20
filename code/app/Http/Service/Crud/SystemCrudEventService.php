@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -21,23 +21,23 @@ use App\Constants\Crud\CrudFormEnum;
 use App\Constants\Crud\CrudOperatorEnum;
 use App\Constants\Crud\CrudTriggerEnum;
 use App\Constants\Crud\CrudUpdateEnum;
-use App\Http\Dao\BaseDao;
 use App\Http\Dao\Crud\CrudModuleDao;
 use App\Http\Dao\Crud\SystemCrudEventDao;
 use App\Http\Service\Admin\AdminService;
 use App\Http\Service\Approve\ApproveApplyService;
-use App\Http\Service\BaseService;
 use App\Http\Service\Message\MessageService;
 use App\Http\Service\Message\MessageTemplateService;
 use App\Http\Service\Notice\MessageCateService;
 use App\Http\Service\Schedule\ScheduleService;
-use App\Jobs\CrudCronActionJob;
-use App\Jobs\CrudEventRunGetDataJob;
+use App\Jobs\Crud\CrudCronActionJob;
+use App\Jobs\Crud\CrudEventRunGetDataJob;
 use App\Jobs\WebhookJob;
 use App\Task\message\NoticeMessageTask;
 use App\Task\message\SmsMessageTask;
-use crmeb\services\expressionLanguage\ExpressionLanguage;
-use crmeb\utils\MessageType;
+use App\Http\Dao\BaseDao;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\services\expressionLanguage\ExpressionLanguage;
+use Tuoluojiang\Open\utils\MessageType;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Arr;
@@ -45,6 +45,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
@@ -56,6 +57,10 @@ use Psr\Container\NotFoundExceptionInterface;
  */
 class SystemCrudEventService extends BaseService
 {
+    protected const TIMER_ACTION_BATCH_SIZE = 100;
+
+    protected const EVENT_TIMER_CACHE_KEY = 'event_timer_list';
+
     /**
      * SystemCrudEventService constructor.
      */
@@ -82,7 +87,7 @@ class SystemCrudEventService extends BaseService
         $count = $this->dao->count($where);
 
         $crudIds  = array_column($list, 'crud_id');
-        $cateList = app()->make(SystemCrudService::class)->crudIdByCateIds($crudIds);
+        $cateList = app()->get(SystemCrudService::class)->crudIdByCateIds($crudIds);
         $cateIds  = [];
         foreach ($cateList as $item) {
             if ($item['cate_ids']) {
@@ -90,7 +95,7 @@ class SystemCrudEventService extends BaseService
             }
         }
         if ($cateIds) {
-            $cate = app()->make(SystemCrudCateService::class)->idsByNameColumn($cateIds);
+            $cate = app()->get(SystemCrudCateService::class)->idsByNameColumn($cateIds);
             foreach ($list as &$item) {
                 $cateItem = [];
                 foreach ($cateList as $value) {
@@ -171,9 +176,9 @@ class SystemCrudEventService extends BaseService
 
         // 记录
         if ($data['event'] === CrudEventEnum::EVENT_SEND_NOTICE) {
-            $messageService         = app()->make(MessageService::class);
-            $messageCateService     = app()->make(MessageCateService::class);
-            $messageTemplateService = app()->make(MessageTemplateService::class);
+            $messageService         = app()->get(MessageService::class);
+            $messageCateService     = app()->get(MessageCateService::class);
+            $messageTemplateService = app()->get(MessageTemplateService::class);
             $message                = $messageService->get(['crud_id' => $data['crud_id'], 'event_id' => $id], ['*'], ['messageTemplate'])?->toArray();
             $smsTemplate            = $workTemplate = $dingTemplate = $otherTemplate = [];
             if ($message) {
@@ -194,7 +199,7 @@ class SystemCrudEventService extends BaseService
                     }
                 }
             } else {
-                $cateName = app()->make(SystemCrudService::class)->value($data['crud_id'], 'table_name');
+                $cateName = app()->get(SystemCrudService::class)->value($data['crud_id'], 'table_name');
                 $cateInfo = $messageCateService->get(['eq_cate_name' => $cateName]);
                 if (! $cateInfo) {
                     $cateId = $messageCateService->create([
@@ -271,6 +276,24 @@ class SystemCrudEventService extends BaseService
     }
 
     /**
+     * 停用失败的定时触发器.
+     */
+    public function disableTimerEvent(int $id): void
+    {
+        if ($id <= 0) {
+            return;
+        }
+
+        $this->dao->update($id, ['status' => 0]);
+        Cache::tags('event')->clear();
+    }
+
+    public function isTimerEventEnabled(int $id): bool
+    {
+        return $id > 0 && (int) $this->dao->value($id, 'status') === 1;
+    }
+
+    /**
      * 获取事件详情.
      * @email 136327134@qq.com
      * @date 2024/2/29
@@ -284,7 +307,7 @@ class SystemCrudEventService extends BaseService
             throw $this->exception('没有查询到事件详情');
         }
         if ($eventInfo['send_user']) {
-            $eventInfo['send_user'] = app()->make(AdminService::class)->userIdByUserInfo($eventInfo['send_user']);
+            $eventInfo['send_user'] = app()->get(AdminService::class)->userIdByUserInfo($eventInfo['send_user']);
         }
         if (is_array($eventInfo['timer_options'])) {
             $eventInfo['timer_options'] = (object) $eventInfo['timer_options'];
@@ -349,7 +372,7 @@ class SystemCrudEventService extends BaseService
      */
     public function getEventTimerList()
     {
-        $list = Cache::tags('event')->remember('event_list', 3600, function () {
+        $list = Cache::tags('event')->remember(self::EVENT_TIMER_CACHE_KEY, 3600, function () {
             return $this->dao->getEventList(select: [
                 'crud_id', 'name', 'event', 'sort', 'target_crud_id', 'timer',
                 'crud_approve_id', 'send_type', 'send_user', 'notify_type',
@@ -357,6 +380,8 @@ class SystemCrudEventService extends BaseService
                 'additional_search_boolean', 'id', 'timer_type', 'timer_options', 'curl_id',
                 'sms_status', 'system_status', 'work_webhook_url', 'work_webhook_status', 'ding_webhook_url',
                 'ding_webhook_status', 'other_webhook_url', 'other_webhook_status', 'update_field_options',
+                'aggregate_target_search', 'aggregate_target_search_boolean', 'aggregate_data_search',
+                'aggregate_data_search_boolean', 'aggregate_data_field', 'aggregate_field_rule',
             ]);
         });
 
@@ -409,10 +434,10 @@ class SystemCrudEventService extends BaseService
      * @throws \ReflectionException
      * @throws \Throwable
      */
-    public function timerAction(array $item)
+    public function timerAction(array $item, int $lastId = 0)
     {
-        $crudService  = app()->make(SystemCrudService::class);
-        $modelService = app()->make(CrudModuleService::class);
+        $crudService  = app()->get(SystemCrudService::class);
+        $modelService = app()->get(CrudModuleService::class);
         $crudInfo     = $crudService->get(where: $item['crud_id'], with: ['child'])?->toArray();
         if (! $crudInfo) {
             return false;
@@ -428,34 +453,88 @@ class SystemCrudEventService extends BaseService
             }
         } else {
             $viewSearch    = $item['additional_search'] ?? [];
-            $searchBoolean = $item['additional_search_boolean'] == 0 ? 'or' : 'and';
+            $searchBoolean = ($item['additional_search_boolean'] ?? 0) == 0 ? 'or' : 'and';
 
             $list = $modelService
-                ->setTableName($crudInfo['table_name_en'])
+                ->model(tableName: $crudInfo['table_name_en'])
                 ->viewSearch(viewSearch: $viewSearch, boolean: $searchBoolean)
-                ->get()->toArray();
-            if (! $list) {
+                ->when($lastId > 0, function ($query) use ($lastId) {
+                    $query->where('id', '>', $lastId);
+                })
+                ->orderBy('id')
+                ->limit(self::TIMER_ACTION_BATCH_SIZE)
+                ->select(['id'])
+                ->get()
+                ->toArray();
+
+            $dataIds = array_column($list, 'id');
+            if (! $dataIds) {
                 return false;
             }
-            $childInfo = $crudInfo['child'] ?? null;
-            foreach ($list as $data) {
-                $dataId = $data['id'];
-                unset($data['id']);
-                $scheduleData = [];
-                if ($childInfo) {
-                    $scheduleData = $modelService
-                        ->setTableName($childInfo['table_name_en'])->get($dataId)?->toArray();
-                }
-                $this->runEvent(
-                    crudId: $item['crud_id'],
-                    action: CrudTriggerEnum::TRIGGER_TIMER,
-                    event: $item,
-                    dataId: $dataId,
-                    data: $data,
-                    scheduleData: $scheduleData ?: []
-                );
+
+            foreach ($dataIds as $dataId) {
+                CrudCronActionJob::dispatch($item, (int) $dataId);
+            }
+
+            if (count($dataIds) === self::TIMER_ACTION_BATCH_SIZE) {
+                CrudCronActionJob::dispatch($item, 0, (int) end($dataIds));
             }
         }
+    }
+
+    /**
+     * 执行单条定时器数据，避免一个队列任务处理整批数据导致超时。
+     * @return false|void
+     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
+     * @throws \Throwable
+     */
+    public function timerActionData(array $item, int $dataId)
+    {
+        if ($item['event'] === CrudEventEnum::EVENT_GET_DATA) {
+            return $this->timerAction($item);
+        }
+
+        $crudService  = app()->get(SystemCrudService::class);
+        $modelService = app()->get(CrudModuleService::class);
+        $crudInfo     = $crudService->get(where: $item['crud_id'], with: ['child'])?->toArray();
+        if (! $crudInfo) {
+            return false;
+        }
+
+        $viewSearch    = $item['additional_search'] ?? [];
+        $searchBoolean = ($item['additional_search_boolean'] ?? 0) == 0 ? 'or' : 'and';
+        $data          = $modelService
+            ->model(tableName: $crudInfo['table_name_en'])
+            ->viewSearch(viewSearch: $viewSearch, boolean: $searchBoolean)
+            ->where('id', $dataId)
+            ->first()
+            ?->toArray();
+        if (! $data) {
+            return false;
+        }
+
+        unset($data['id']);
+
+        $scheduleData = [];
+        $childInfo    = $crudInfo['child'] ?? null;
+        if ($childInfo) {
+            $scheduleData = $modelService
+                ->model(tableName: $childInfo['table_name_en'])
+                ->get($dataId)
+                ?->toArray();
+        }
+
+        $this->runEvent(
+            crudId: (int) $item['crud_id'],
+            action: CrudTriggerEnum::TRIGGER_TIMER,
+            event: $item,
+            dataId: $dataId,
+            data: $data,
+            scheduleData: $scheduleData ?: []
+        );
     }
 
     /**
@@ -479,11 +558,11 @@ class SystemCrudEventService extends BaseService
         array $scheduleData = [],
         array $originalData = [],
         array $originalScheduleData = []
-    ) {
-        $eventLogService = app()->make(SystemCrudEventLogService::class);
+    ): array {
+        $eventLogService = app()->get(SystemCrudEventLogService::class);
+        $res             = $this->result();
 
         try {
-            $res = $this->result();
             if (in_array($action, $event['action'])) {
                 // 指定字段更新才会触发
                 if ($action === CrudTriggerEnum::TRIGGER_UPDATED && $event['update_field_options']) {
@@ -503,12 +582,12 @@ class SystemCrudEventService extends BaseService
                     }
                 }
 
-                $crudService = app()->make(SystemCrudService::class);
+                $crudService = app()->get(SystemCrudService::class);
                 $crudInfo    = $crudService->get($crudId)?->toArray();
                 if (! $crudInfo) {
                     return $this->result('没有查询到实体信息');
                 }
-                $modelService = app()->make(CrudModuleService::class);
+                $modelService = app()->get(CrudModuleService::class);
 
                 $join  = $crudService->getJoinCrudData($crudId, 1);
                 $model = $modelService->model(crudId: $crudId)->setJoin($join)->withTrashed($action === CrudTriggerEnum::TRIGGER_DELETED);
@@ -551,28 +630,30 @@ class SystemCrudEventService extends BaseService
                         $res = $this->runToDoSchedule($modelService, $model, $crudInfo, $join, $crudId, $action, $event, $eventIds, $dataId, $data, $scheduleData);
                         break;
                 }
-            } else {
-                $res['mesage'] = '没有在触发动作内';
+
+                $result = $res['result'] ? 'success' : 'error';
+
+                $eventLogService->saveLog(
+                    crudId: $crudId,
+                    eventId: $event['id'],
+                    action: $action,
+                    result: $result,
+                    parameter: [
+                        'eventId'      => $eventIds,
+                        'data'         => $data,
+                        'event'        => $event,
+                        'scheduleData' => $scheduleData,
+                    ],
+                    log: [
+                        'message' => $res['mesage'],
+                    ]
+                );
             }
 
-            $result = $res['result'] ? 'success' : 'error';
-
-            $eventLogService->saveLog(
-                crudId: $crudId,
-                eventId: $event['id'],
-                action: $action,
-                result: $result,
-                parameter: [
-                    'eventId'      => $eventIds,
-                    'data'         => $data,
-                    'event'        => $event,
-                    'scheduleData' => $scheduleData,
-                ],
-                log: [
-                    'message' => $res['mesage'],
-                ]
-            );
+        
         } catch (\Throwable $e) {
+            $res = $this->result('执行失败:' . $e->getMessage());
+
             $eventLogService->saveLog(
                 crudId: $crudId,
                 eventId: $event['id'],
@@ -620,6 +701,8 @@ class SystemCrudEventService extends BaseService
                 originalScheduleData: $originalScheduleData
             );
         }
+
+        return $res;
     }
 
     /**
@@ -697,7 +780,7 @@ class SystemCrudEventService extends BaseService
             return $this->result('没有查询到当前更新的数据', true);
         }
 
-        $fieldService = app()->make(SystemCrudFieldService::class);
+        $fieldService = app()->get(SystemCrudFieldService::class);
 
         $updateWhere = [];
 
@@ -738,7 +821,7 @@ class SystemCrudEventService extends BaseService
 
         $formFieldUniqid    = array_column($event['field_options'], 'form_field_uniqid');
         $list               = $fieldService->fieldNameByFieldCrud($formFieldUniqid, $crudInfo['table_name_en']);
-        $expressionLanguage = app()->make(ExpressionLanguage::class);
+        $expressionLanguage = app()->get(ExpressionLanguage::class);
         foreach ($event['field_options'] as $item) {
             $fieldName = $item['form_field_uniqid'];
             $type      = CrudFormEnum::FORM_INPUT;
@@ -990,6 +1073,12 @@ class SystemCrudEventService extends BaseService
 
     public function runGroupAggregate(CrudModuleService $modelService, BaseDao $model, array $crudInfo, int $crudId, string $action, array $event, array $eventIds, int $dataId = 0, array $data = [], array $scheduleData = [])
     {
+        $event['aggregate_field_rule']          = $event['aggregate_field_rule'] ?? [];
+        $event['target_crud_id']                = $event['target_crud_id'] ?? 0;
+        $event['aggregate_data_field']          = $event['aggregate_data_field'] ?? [];
+        $event['aggregate_data_search']         = $event['aggregate_data_search'] ?? [];
+        $event['aggregate_data_search_boolean'] = $event['aggregate_data_search_boolean'] ?? 0;
+
         if (! $event['aggregate_field_rule']) {
             return $this->result('没有聚合规格无法执行');
         }
@@ -1000,19 +1089,43 @@ class SystemCrudEventService extends BaseService
         $viewSearch    = $event['additional_search'] ?? [];
         $searchBoolean = $event['additional_search_boolean'] == 0 ? 'or' : 'and';
 
-        $select = [$crudInfo['table_name_en'] . '.*'];
+        $select       = [$crudInfo['table_name_en'] . '.*'];
+        $fieldService = app()->get(SystemCrudFieldService::class);
+        $crudService  = app()->get(SystemCrudService::class);
+        $searchTableNames = [$crudInfo['table_name_en']];
         foreach ($event['aggregate_data_field'] as $item) {
-            [$alias, $name] = str_contains($item['to_form_field_uniqid'], '.')
-                ? explode('.', $item['to_form_field_uniqid'])
-                : [$crudInfo['table_name_en'], $item['to_form_field_uniqid']];
-            if ($crudInfo['table_name_en'] !== $alias) {
-                $select[] = $alias . '.' . $name . ' as ' . $alias . '_' . $name;
+            if (empty($item['to_form_field_uniqid'])) {
+                continue;
+            }
+
+            $field = $this->parseValidCrudField(
+                field: $item['to_form_field_uniqid'],
+                defaultTableName: $crudInfo['table_name_en'],
+                defaultCrudId: (int) $crudInfo['id'],
+                crudService: $crudService,
+                fieldService: $fieldService
+            );
+            if (! $field) {
+                continue;
+            }
+            $searchTableNames[] = $field['table_name'];
+
+            if ($crudInfo['table_name_en'] !== $field['table_name']) {
+                $select[] = $field['qualified_name'] . ' as ' . $field['table_name'] . '_' . $field['field_name'];
             } else {
-                $select[] = $alias . '.' . $name;
+                $select[] = $field['field_name'];
             }
         }
+        $searchTableNames = array_merge(array_unique($searchTableNames));
 
-        $viewSearch = $modelService->setViewSearch($viewSearch, $crudInfo['id'], 'form_field_uniqid');
+        $viewSearch = $this->filterValidCrudSearch(
+            viewSearch: $modelService->setViewSearch($viewSearch, $crudInfo['id'], 'form_field_uniqid'),
+            defaultTableName: $crudInfo['table_name_en'],
+            defaultCrudId: (int) $crudInfo['id'],
+            crudService: $crudService,
+            fieldService: $fieldService,
+            allowTableNames: $searchTableNames
+        );
 
         $dataInfo = $model->searchWhere(where: [
             [
@@ -1026,9 +1139,19 @@ class SystemCrudEventService extends BaseService
             return $this->result('没有查询到当前更新的数据', true);
         }
 
+        $targetCrudName = $crudService->value($event['target_crud_id'], 'table_name_en');
+        $targetDataSearch = $this->filterValidCrudSearch(
+            viewSearch: $modelService->setViewSearch($event['aggregate_data_search'], $event['target_crud_id']),
+            defaultTableName: $targetCrudName ?: '',
+            defaultCrudId: (int) $event['target_crud_id'],
+            crudService: $crudService,
+            fieldService: $fieldService,
+            allowTableNames: $targetCrudName ? [$targetCrudName] : []
+        );
+
         $modelService->model(crudId: $event['target_crud_id'])
             ->viewSearch(
-                viewSearch: $event['aggregate_data_search'],
+                viewSearch: $targetDataSearch,
                 boolean: $event['aggregate_data_search_boolean'] ? 'and' : 'or'
             )->select()->get()->toArray();
     }
@@ -1056,7 +1179,7 @@ class SystemCrudEventService extends BaseService
         $fieldOptionUniqids = array_column($event['field_options'], 'form_field_uniqid');
 
         $uniqids      = array_unique(array_merge($fieldUniqids, $fieldOptionUniqids));
-        $fieldService = app()->make(SystemCrudFieldService::class);
+        $fieldService = app()->get(SystemCrudFieldService::class);
         $crudField    = $fieldService->fieldNameByFieldCrud($uniqids, $crudInfo['table_name_en']);
 
         $select = $this->getDbSelects($event['field_options'], $crudInfo['table_name_en']);
@@ -1119,7 +1242,7 @@ class SystemCrudEventService extends BaseService
         }
 
         $data               = [];
-        $expressionLanguage = app()->make(ExpressionLanguage::class);
+        $expressionLanguage = app()->get(ExpressionLanguage::class);
         foreach ($event['field_options'] as $item) {
             $field = $item['form_field_uniqid'];
             if (! isset($fields[$field])) {
@@ -1227,7 +1350,7 @@ class SystemCrudEventService extends BaseService
             }
         }
 
-        $fieldService = app()->make(SystemCrudFieldService::class);
+        $fieldService = app()->get(SystemCrudFieldService::class);
         $crudField    = $fieldService->fieldNameByFieldCrud($uniqids, $crudInfo['table_name_en']);
 
         $association = [];
@@ -1309,11 +1432,11 @@ class SystemCrudEventService extends BaseService
             $title = str_replace($string, (string) $value, $title);
         }
 
-        $list = app()->make(AdminService::class)->userIdByUserInfo($event['send_user']);
+        $list = app()->get(AdminService::class)->userIdByUserInfo($event['send_user']);
 
         $sendData = [];
 
-        $messageCateService = app()->make(MessageCateService::class);
+        $messageCateService = app()->get(MessageCateService::class);
         $cateInfo           = $messageCateService->get(['cate_name' => $crudInfo['table_name']]);
         if (! $cateInfo) {
             $cateId = $messageCateService->create([
@@ -1378,6 +1501,11 @@ class SystemCrudEventService extends BaseService
      */
     public function runFieldAggregate(CrudModuleService $modelService, BaseDao $model, array $crudInfo, array $join, int $crudId, string $action, array $event, array $eventIds, int $dataId = 0, array $data = [], array $scheduleData = [])
     {
+        $event['aggregate_field_rule']          = $event['aggregate_field_rule'] ?? [];
+        $event['target_crud_id']                = $event['target_crud_id'] ?? 0;
+        $event['aggregate_data_search']         = $event['aggregate_data_search'] ?? [];
+        $event['aggregate_data_search_boolean'] = $event['aggregate_data_search_boolean'] ?? 0;
+
         if (! $event['aggregate_field_rule']) {
             return $this->result('没有聚合规格无法执行');
         }
@@ -1388,7 +1516,8 @@ class SystemCrudEventService extends BaseService
         $viewSearch       = $event['additional_search'] ?? [];
         $searchBoolean    = $event['additional_search_boolean'] == 0 ? 'or' : 'and';
         $aggSearchBoolean = $event['aggregate_data_search_boolean'] == 0 ? 'or' : 'and';
-        $fieldService     = app()->make(SystemCrudFieldService::class);
+        $fieldService     = app()->get(SystemCrudFieldService::class);
+        $crudService      = app()->get(SystemCrudService::class);
 
         if ($model->isJoin()) {
             $select = [$crudInfo['table_name_en'] . '.*'];
@@ -1396,7 +1525,47 @@ class SystemCrudEventService extends BaseService
             $select = ['*'];
         }
 
-        $viewSearch = $modelService->setViewSearch($viewSearch, $crudInfo['id'], 'form_field_uniqid');
+        $crudTableNames  = [$crudInfo['table_name_en']];
+        $joinTableNames  = array_column($join, 'table_name_en');
+        $searchTableNames = array_merge($crudTableNames, $joinTableNames);
+
+        // 聚合数据条件
+        $aggregateSearch = [];
+        foreach ($event['aggregate_data_search'] as $item) {
+            if (empty($item['form_field_uniqid']) || empty($item['operator'])) {
+                continue;
+            }
+
+            $field = $this->parseValidCrudField(
+                field: $item['form_field_uniqid'],
+                defaultTableName: $crudInfo['table_name_en'],
+                defaultCrudId: (int) $crudInfo['id'],
+                crudService: $crudService,
+                fieldService: $fieldService,
+                allowTableNames: $searchTableNames
+            );
+            if (! $field) {
+                continue;
+            }
+            $aggregateSearch[] = [
+                'alias'      => $field['table_name'],
+                'field_name' => $field['field_name'],
+                'value'      => $item['value'],
+                'operator'   => $item['operator'],
+            ];
+        }
+        //聚合的条件，无法在更新上使用，所以只能放在查询数据里面一起使用
+        $aggregateSearch = $modelService->setViewSearch($aggregateSearch, $crudInfo['id']);
+        $viewSearch = $this->filterValidCrudSearch(
+            viewSearch: $modelService->setViewSearch($viewSearch, $crudInfo['id'], 'form_field_uniqid'),
+            defaultTableName: $crudInfo['table_name_en'],
+            defaultCrudId: (int) $crudInfo['id'],
+            crudService: $crudService,
+            fieldService: $fieldService,
+            allowTableNames: $searchTableNames
+        );
+
+        $viewSearch  = array_merge($viewSearch, $aggregateSearch);
         // 查询当前数据信息
         $dataInfo = $model->searchWhere(where: [
             [
@@ -1410,7 +1579,7 @@ class SystemCrudEventService extends BaseService
             return $this->result('没有查询到当前聚合的数据', true);
         }
 
-        $systemCrud     = app()->make(SystemCrudService::class);
+        $systemCrud     = app()->get(SystemCrudService::class);
         $targetCrudName = $systemCrud->value($event['target_crud_id'], 'table_name_en');
         if (! $targetCrudName) {
             return $this->result('没有查询到目标实体的名称');
@@ -1449,54 +1618,70 @@ class SystemCrudEventService extends BaseService
             ],
         ]);
 
+        $sourceTableNames = array_merge([$crudInfo['table_name_en'], $targetCrudName], $joinTableNames);
+
         // 聚合目标
         foreach ($event['aggregate_field_rule'] as $item) {
-            // 目标字段信息
-            [, $name] = str_contains($item['form_field_uniqid'], '.') ? explode('.', $item['form_field_uniqid']) : [$crudInfo['table_name_en'], $item['form_field_uniqid']];
+            if (empty($item['form_field_uniqid']) || empty($item['operator'])) {
+                continue;
+            }
+
+            $targetField = $this->parseValidCrudField(
+                field: $item['form_field_uniqid'],
+                defaultTableName: $targetCrudName,
+                defaultCrudId: (int) $event['target_crud_id'],
+                crudService: $crudService,
+                fieldService: $fieldService,
+                allowTableNames: [$targetCrudName]
+            );
+            if (! $targetField) {
+                continue;
+            }
+
+            $sourceFieldName = '';
+            if ($item['operator'] !== CrudAggregateEnum::AGGREGATE_COUNT) {
+                if (empty($item['to_form_field_uniqid'])) {
+                    continue;
+                }
+                $sourceField = $this->parseValidCrudField(
+                    field: $item['to_form_field_uniqid'],
+                    defaultTableName: $crudInfo['table_name_en'],
+                    defaultCrudId: (int) $crudInfo['id'],
+                    crudService: $crudService,
+                    fieldService: $fieldService,
+                    allowTableNames: $sourceTableNames
+                );
+                if (! $sourceField) {
+                    continue;
+                }
+                $sourceFieldName = $sourceField['qualified_name'];
+            }
 
             switch ($item['operator']) {
                 case CrudAggregateEnum::AGGREGATE_SUM:
-                    $updateData[$name] = $newModel->sum($item['to_form_field_uniqid']);
+                    $updateData[$targetField['field_name']] = $newModel->sum($sourceFieldName);
                     break;
                 case CrudAggregateEnum::AGGREGATE_COUNT:
-                    $updateData[$name] = $newModel->count();
+                    $updateData[$targetField['field_name']] = $newModel->count();
                     break;
                 case CrudAggregateEnum::AGGREGATE_UNIQID_COUNT:
-                    $updateData[$name] = $newModel->groupBy($item['to_form_field_uniqid'])->count();
+                    $updateData[$targetField['field_name']] = $newModel->groupBy($sourceFieldName)->count();
                     break;
                 case CrudAggregateEnum::AGGREGATE_AVG:
-                    $updateData[$name] = $newModel->avg($item['to_form_field_uniqid']);
+                    $updateData[$targetField['field_name']] = $newModel->avg($sourceFieldName);
                     break;
                 case CrudAggregateEnum::AGGREGATE_MAX:
-                    $updateData[$name] = $newModel->max($item['to_form_field_uniqid']);
+                    $updateData[$targetField['field_name']] = $newModel->max($sourceFieldName);
                     break;
                 case CrudAggregateEnum::AGGREGATE_MIN:
-                    $updateData[$name] = $newModel->min($item['to_form_field_uniqid']);
+                    $updateData[$targetField['field_name']] = $newModel->min($sourceFieldName);
                     break;
             }
         }
 
-        // 聚合数据条件
-        $aggregateSearch = [];
-        foreach ($event['aggregate_data_search'] as $item) {
-            [$alias, $name] = str_contains($item['form_field_uniqid'], '.') ? explode('.', $item['form_field_uniqid']) : [$crudInfo['table_name_en'], $item['form_field_uniqid']];
-
-            $aggregateSearch[] = [
-                'alias'      => $alias,
-                'field_name' => $name,
-                'value'      => $item['value'],
-                'operator'   => $item['operator'],
-            ];
-        }
-
         // 设置最终，更新实体的模型
         try {
-            $aggregateSearch = $modelService->setViewSearch($aggregateSearch, $crudInfo['id']);
-
-            $model = $modelService->model(crudId: $event['target_crud_id'])->setJoin([])->viewSearch(
-                viewSearch: $aggregateSearch,
-                boolean: $aggSearchBoolean
-            );
+            $model = $modelService->model(crudId: $event['target_crud_id'])->setJoin([])->viewSearch();
         } catch (\Throwable $e) {
             return $this->result($e->getMessage());
         }
@@ -1507,6 +1692,94 @@ class SystemCrudEventService extends BaseService
             return $this->result('聚合成功', true);
         }
         return $this->result('缺少更新条件或者更新数据');
+    }
+
+    /**
+     * 解析并校验低代码实体字段，避免无效配置穿透到 SQL 层。
+     */
+    protected function parseValidCrudField(
+        string $field,
+        string $defaultTableName,
+        int $defaultCrudId,
+        SystemCrudService $crudService,
+        SystemCrudFieldService $fieldService,
+        array $allowTableNames = []
+    ): array {
+        $field = trim($field);
+        if ($field === '') {
+            return [];
+        }
+
+        [$tableName, $fieldName] = str_contains($field, '.')
+            ? explode('.', $field, 2)
+            : [$defaultTableName, $field];
+
+        $tableName = trim($tableName);
+        $fieldName = trim($fieldName);
+        if ($tableName === '' || $fieldName === '') {
+            return [];
+        }
+
+        if ($allowTableNames && ! in_array($tableName, $allowTableNames, true)) {
+            return [];
+        }
+
+        $crudId = $tableName === $defaultTableName
+            ? $defaultCrudId
+            : (int) $crudService->value(['table_name_en' => $tableName], 'id');
+
+        if (! $crudId || ! $fieldService->getCrudTableFieldAllCache($crudId, $fieldName)) {
+            return [];
+        }
+
+        if (! Schema::hasColumn($tableName, $fieldName)) {
+            return [];
+        }
+
+        return [
+            'crud_id'        => $crudId,
+            'table_name'     => $tableName,
+            'field_name'     => $fieldName,
+            'qualified_name' => $tableName . '.' . $fieldName,
+        ];
+    }
+
+    /**
+     * 过滤已被删除或未同步到真实表结构的搜索字段。
+     */
+    protected function filterValidCrudSearch(
+        array $viewSearch,
+        string $defaultTableName,
+        int $defaultCrudId,
+        SystemCrudService $crudService,
+        SystemCrudFieldService $fieldService,
+        array $allowTableNames = []
+    ): array {
+        $search = [];
+        foreach ($viewSearch as $item) {
+            if (empty($item['field_name']) || empty($item['operator'])) {
+                continue;
+            }
+
+            $field = $this->parseValidCrudField(
+                field: $item['field_name'],
+                defaultTableName: $defaultTableName,
+                defaultCrudId: $defaultCrudId,
+                crudService: $crudService,
+                fieldService: $fieldService,
+                allowTableNames: $allowTableNames
+            );
+            if (! $field) {
+                continue;
+            }
+
+            if (! str_contains($item['field_name'], '.')) {
+                $item['field_name'] = $field['field_name'];
+            }
+            $search[] = $item;
+        }
+
+        return $search;
     }
 
     /**
@@ -1531,7 +1804,7 @@ class SystemCrudEventService extends BaseService
 
         $isSkipValue = ! (bool) ($event['options']['is_skip_value'] ?? 0);
 
-        $fieldService = app()->make(SystemCrudFieldService::class);
+        $fieldService = app()->get(SystemCrudFieldService::class);
 
         // 设置最终，更新实体的模型
         try {
@@ -1541,7 +1814,7 @@ class SystemCrudEventService extends BaseService
         }
 
         try {
-            $curlInfo = app()->make(SystemCrudCurlService::class)->send($event['curl_id'], [], $data['page'] ?? -1);
+            $curlInfo = app()->get(SystemCrudCurlService::class)->send($event['curl_id'], [], $data['page'] ?? -1);
         } catch (\Throwable $e) {
             Cache::tags('event')->forget('event_curl_' . $event['id']);
             return $this->result($e->getMessage());
@@ -1593,7 +1866,7 @@ class SystemCrudEventService extends BaseService
             }
         }
 
-        $expressionLanguage = app()->make(ExpressionLanguage::class);
+        $expressionLanguage = app()->get(ExpressionLanguage::class);
 
         foreach ($response as $listItem) {
             $updateId = null;
@@ -1662,7 +1935,7 @@ class SystemCrudEventService extends BaseService
             }
             if ($updateId) {
                 $model->update(['id' => $updateId], $dataItem);
-                $modelService->handleEvent(app()->make(SystemCrudService::class)->get($crudId), CrudTriggerEnum::TRIGGER_UPDATED, $updateId, $dataItem, []);
+                $modelService->handleEvent(app()->get(SystemCrudService::class)->get($crudId), CrudTriggerEnum::TRIGGER_UPDATED, $updateId, $dataItem, []);
             } else {
                 $dataItem['created_at'] = $dataItem['updated_at'] = date('Y-m-d H:i:s');
                 if (! isset($dataItem['user_id'])) {
@@ -1672,7 +1945,7 @@ class SystemCrudEventService extends BaseService
                     $dataItem['owner_user_id'] = $crudInfo['user_id'];
                 }
                 $res = $model->create($dataItem);
-                $modelService->handleEvent(app()->make(SystemCrudService::class)->get($crudId), CrudTriggerEnum::TRIGGER_CREATED, $res->id, $dataItem, []);
+                $modelService->handleEvent(app()->get(SystemCrudService::class)->get($crudId), CrudTriggerEnum::TRIGGER_CREATED, $res->id, $dataItem, []);
             }
         }
         if ($curlInfo['pageData']['is_page'] && $curlInfo['pageData']['page_end']) {
@@ -1859,10 +2132,7 @@ class SystemCrudEventService extends BaseService
         if (! $dataExists) {
             return $this->result('数据不满足自动审批条件', true);
         }
-        $userId = uuid_to_uid($this->uuId(false));
-        if (! $userId) {
-            $userId = $dataExists['owner_user_id'];
-        }
+        $userId = $dataExists['owner_user_id'] ?: uuid_to_uid($this->uuId(false));
         unset($originalData['update_user_id']);
         app()->get(ApproveApplyService::class)->saveCrudApply(
             crudId: $crudId,
@@ -1946,7 +2216,7 @@ class SystemCrudEventService extends BaseService
         }
 
         try {
-            app()->make(SystemCrudCurlService::class)->send($event['curl_id'], [
+            app()->get(SystemCrudCurlService::class)->send($event['curl_id'], [
                 'action' => $action,
                 'data'   => $dataInfo,
             ]);
@@ -2036,7 +2306,7 @@ class SystemCrudEventService extends BaseService
             unset($tableName, $fieldName);
         }
 
-        $fieldService = app()->make(SystemCrudFieldService::class);
+        $fieldService = app()->get(SystemCrudFieldService::class);
         $crudField    = $fieldService->fieldNameByFieldCrud($uniqids, $crudInfo['table_name_en']);
 
         $association = [];
@@ -2173,7 +2443,7 @@ class SystemCrudEventService extends BaseService
             'fail_time'  => $endTimeDate,
         ];
 
-        app()->make(ScheduleService::class)->saveSchedule($dataInfo['user_id'], 1, $schedule);
+        app()->get(ScheduleService::class)->saveSchedule($dataInfo['user_id'], 1, $schedule);
 
         return $this->result('执行成功', true);
     }

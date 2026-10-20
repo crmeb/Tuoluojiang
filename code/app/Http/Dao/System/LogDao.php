@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,16 +15,14 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\System;
 
-use App\Http\Dao\BaseDao;
 use App\Http\Model\Admin\Admin;
-use App\Http\Model\BaseModel;
 use App\Http\Model\System\Log;
-use crmeb\traits\dao\JoinSearchTrait;
-use crmeb\traits\dao\ListSearchTrait;
+use App\Http\Dao\BaseDao;
+use App\Http\Model\BaseModel;
+use Tuoluojiang\Open\traits\dao\JoinSearchTrait;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 /**
  * Class LogDao.
@@ -36,7 +34,7 @@ class LogDao extends BaseDao
 
     public $table = 'enterprise_log';
 
-    protected int $maxCount;
+    protected array $logIndexCache = [];
 
     /**
      * 设置模型.
@@ -45,13 +43,12 @@ class LogDao extends BaseDao
      */
     public function getModel(bool $need = true)
     {
-        $this->maxCount = (int) env('DB_SUBTABLE_COUNT', 1000000);
-        $model          = parent::getModel();
+        $model = parent::getModel();
         if ($need) {
-            $model->setTable($this->getTableName());
+            $model->setTable($this->table);
             return $this->getJoinModel('uid', 'uid', model: $model);
         }
-        return $model->setTable($this->getTableName());
+        return $model->setTable($this->table);
     }
 
     /**
@@ -60,67 +57,168 @@ class LogDao extends BaseDao
      */
     public function getLogList(array $where, int $page = 0, int $limit = 0, array $with = []): array
     {
-        [$count, $allIds, $maxNum] = $this->searchInfo($where, $page, $limit);
-        $list                      = [];
-        $prefix                    = env('DB_PREFIX', 'eb_');
-        if ($count) {
-            $ids   = array_column($allIds, 'id');
-            $union = [];
-            for ($i = 0; $i <= $maxNum; ++$i) {
-                $tableName = $prefix . $this->table . '_' . $i;
-                $field     = $tableName . '.id,' . $tableName . '.event_name,' . $tableName . '.uid,' . $tableName . '.terminal,' . $tableName . '.method,' . $tableName . '.last_ip,'
-                    . $tableName . '.created_at,' . $tableName . '.path';
-                $union[] = 'SELECT distinct ' . $field . ',' . $prefix . 'admin.name as user_name FROM ' . $tableName . ' inner join ' . $prefix . 'admin on ' . $tableName . '.uid = ' . $prefix . 'admin.uid WHERE ' . $tableName . '.id in (' . implode(',', $ids) . ') ORDER BY ' . $tableName . '.id DESC';
-            }
-            $sql  = implode(' UNION ', $union);
-            $res  = DB::select('SELECT * FROM (' . $sql . ') as l');
-            $list = $this->getModel(false)->hydrate($res)->toArray();
+        [$count, $list] = $this->getMergedPageList($where, $page, $limit, $this->getLogSelectFields());
+        if ($list) {
+            $list = Log::hydrate($list)->toArray();
         }
         return compact('list', 'count');
     }
 
     /**
-     * @param mixed $where
-     * @param mixed $page
-     * @param mixed $limit
+     * 清理超过保留时间的日志.
+     */
+    public function deleteExpiredLogs(string $expiredAt, int $batchSize = 5000): int
+    {
+        $deleted = 0;
+        do {
+            $ids = DB::table($this->table)
+                ->where('created_at', '<', $expiredAt)
+                ->orderBy('id')
+                ->limit($batchSize)
+                ->pluck('id')
+                ->all();
+
+            if (! $ids) {
+                break;
+            }
+
+            $deleted += DB::table($this->table)->whereIn('id', $ids)->delete();
+        } while (count($ids) === $batchSize);
+
+        return $deleted;
+    }
+
+    /**
      * @throws BindingResolutionException
      */
     public function searchInfo($where, $page, $limit): array
     {
-        $maxNum = DB::table('sub_table')->where('table_name', $this->table)->value('num');
-        $allIds = [];
-        $count  = 0;
-        for ($i = $maxNum; $i >= 0; --$i) {
-            if ($limit) {
-                $res = $this->getModel(false)
-                    ->setTable($this->table . '_' . $i)
-                    ->when(isset($where['entid']), function ($query) use ($where) {
-                        $query->where('entid', $where['entid']);
-                    })
-                    ->when(isset($where['event_name']) && $where['event_name'], function ($query) use ($where) {
-                        $query->where('event_name', 'like', '%' . $where['event_name'] . '%');
-                    })
-                    ->when($page && $limit, function ($query) use ($page, $limit) {
-                        $query->forPage($page, $limit);
-                    })
-                    ->orderByDesc('id')
-                    ->time($where['time'] ?? '')
-                    ->select(['id'])
-                    ->get()->toArray();
-                if ($limit >= count($allIds)) {
-                    $allIds = array_merge($allIds, $res);
-                    $limit  = $limit - count($allIds);
-                }
-            }
-            $count += $this->getModel(false)
-                ->setTable($this->table . '_' . $i)
-                ->when(isset($where['entid']), function ($query) use ($where) {
-                    $query->where('entid', $where['entid']);
-                })->when(isset($where['event_name']) && $where['event_name'], function ($query) use ($where) {
-                    $query->where('event_name', 'like', '%' . $where['event_name'] . '%');
-                })->time($where['time'] ?? '')->count();
+        if (! $limit) {
+            return [(clone $this->buildLogTableQuery($where))->count(), []];
         }
-        return [$count, $allIds, $maxNum];
+        return $this->getMergedPageList($where, $page, $limit, ['id', 'created_at']);
+    }
+
+    /**
+     * 构建日志查询条件.
+     */
+    protected function buildLogTableQuery(array $where, string $forceIndex = '')
+    {
+        $query = DB::table($this->table);
+        if ($forceIndex && $this->logIndexExists($forceIndex)) {
+            $query->forceIndex($forceIndex);
+        }
+        $query->when(isset($where['entid']), function ($query) use ($where) {
+            $query->where('entid', $where['entid']);
+        })->when(isset($where['event_name']) && $where['event_name'], function ($query) use ($where) {
+            $query->where('event_name', 'like', '%' . $where['event_name'] . '%');
+        })->when(isset($where['user_name']) && $where['user_name'], function ($query) use ($where) {
+            $query->where('user_name', 'like', '%' . $where['user_name'] . '%');
+        })->when(isset($where['path']) && $where['path'], function ($query) use ($where) {
+            $query->where('path', 'like', '%' . $where['path'] . '%');
+        });
+        $this->scopeTime($query, $where['time'] ?? '', 'created_at');
+        return $query;
+    }
+
+    /**
+     * 判断日志列表排序索引是否存在.
+     */
+    protected function logIndexExists(string $indexName): bool
+    {
+        if (isset($this->logIndexCache[$indexName])) {
+            return $this->logIndexCache[$indexName];
+        }
+        $table = DB::getTablePrefix() . $this->table;
+        $index = DB::getPdo()->quote($indexName);
+        return $this->logIndexCache[$indexName] = ! empty(DB::select("SHOW INDEX FROM `{$table}` WHERE Key_name = {$index}"));
+    }
+
+    /**
+     * 分页读取日志，避免一次加载过多数据.
+     */
+    protected function getMergedPageList(array $where, int $page, int $limit, array $fields): array
+    {
+        $sortByTime = ! empty($where['time']);
+        $forceIndex = isset($where['entid']) ? ($sortByTime ? 'idx_entid_created_id' : 'idx_entid_id') : ($sortByTime ? 'idx_created_id' : '');
+        $query      = $this->buildLogTableQuery($where, $forceIndex);
+        $count      = (clone $query)->count();
+
+        if (! $limit) {
+            return [$count, []];
+        }
+
+        $query->select($fields);
+        if ($sortByTime) {
+            $query->orderByDesc('created_at')->orderByDesc('id');
+        } else {
+            $query->orderByDesc('id');
+        }
+        $list = $query->forPage($page ?: 1, $limit)->get()->map(fn ($item) => (array) $item)->toArray();
+        return [$count, $list];
+    }
+
+    /**
+     * 日志列表返回字段.
+     */
+    protected function getLogSelectFields(): array
+    {
+        return [
+            'id',
+            'event_name',
+            'uid',
+            'terminal',
+            'method',
+            'last_ip',
+            'created_at',
+            'path',
+            'user_name',
+        ];
+    }
+
+    /**
+     * 查询构造器手动补齐日志时间筛选.
+     */
+    protected function scopeTime($query, string $time, string $field)
+    {
+        if (! $time) {
+            return;
+        }
+        if (str_contains($time, '-')) {
+            [$startTime, $endTime] = array_pad(explode('-', $time, 2), 2, '');
+            $startTime             = str_replace('/', '-', trim($startTime));
+            $endTime               = str_replace('/', '-', trim($endTime));
+            if ($startTime && $endTime) {
+                if (! str_contains($startTime, ':') && ! str_contains($endTime, ':')) {
+                    $query->whereDate($field, '>=', $startTime)->whereDate($field, '<', date('Y-m-d', datetime_timestamp($endTime) + 86400));
+                    return;
+                }
+                $query->whereBetween($field, [$startTime, $startTime === $endTime ? date('Y-m-d H:i:s', datetime_timestamp($endTime) + 86400) : $endTime]);
+                return;
+            }
+            if ($startTime) {
+                $query->where($field, '>=', $startTime);
+                return;
+            }
+            if ($endTime) {
+                $query->where($field, '<', $endTime);
+                return;
+            }
+        }
+        match ($time) {
+            'today'      => $query->whereBetween($field, [now()->startOfDay()->toDateTimeString(), now()->endOfDay()->toDateTimeString()]),
+            'yesterday'  => $query->whereBetween($field, [now()->subDay()->startOfDay()->toDateTimeString(), now()->subDay()->endOfDay()->toDateTimeString()]),
+            'week'       => $query->whereBetween($field, [now()->startOfWeek()->toDateTimeString(), now()->endOfWeek()->toDateTimeString()]),
+            'last week'  => $query->whereBetween($field, [now()->subWeek()->startOfWeek()->toDateTimeString(), now()->subWeek()->endOfWeek()->toDateTimeString()]),
+            'month'      => $query->whereBetween($field, [now()->startOfMonth()->toDateTimeString(), now()->endOfMonth()->toDateTimeString()]),
+            'last month' => $query->whereBetween($field, [now()->subMonth()->startOfMonth()->toDateTimeString(), now()->subMonth()->endOfMonth()->toDateTimeString()]),
+            'year'       => $query->whereBetween($field, [now()->startOfYear()->toDateTimeString(), now()->endOfYear()->toDateTimeString()]),
+            'last year'  => $query->whereBetween($field, [now()->subYear()->startOfYear()->toDateTimeString(), now()->subYear()->endOfYear()->toDateTimeString()]),
+            'quarter'    => $query->whereBetween($field, [now()->startOfQuarter()->toDateTimeString(), now()->endOfQuarter()->toDateTimeString()]),
+            'lately7'    => $query->whereBetween($field, [now()->subDays(6)->startOfDay()->toDateTimeString(), now()->endOfDay()->toDateTimeString()]),
+            'lately30'   => $query->whereBetween($field, [now()->subDays(29)->startOfDay()->toDateTimeString(), now()->endOfDay()->toDateTimeString()]),
+            default      => null,
+        };
     }
 
     /**
@@ -136,69 +234,5 @@ class LogDao extends BaseDao
     protected function setModelB(): string
     {
         return Admin::class;
-    }
-
-    /**
-     * 创建表.
-     */
-    protected function createTable(string $tableName, int $suffix = 0)
-    {
-        Schema::create($tableName, function (Blueprint $table) {
-            $table->bigIncrements('id')->comment('id');
-            $table->string('uid', 36)->default('')->index()->comment('用户ID');
-            $table->string('user_name', 64)->default('')->index()->comment('管理员姓名');
-            $table->string('path', 128)->default('')->comment('链接');
-            $table->string('method', 20)->default('')->comment('访问方式');
-            $table->string('event_name', 60)->default('')->comment('行为');
-            $table->integer('entid')->index()->default(0)->comment('企业ID');
-            $table->string('type', 32)->default('')->index()->comment('类型');
-            $table->string('terminal', 100)->default('')->index()->comment('访问终端');
-            $table->ipAddress('last_ip')->comment('访问ip');
-            $table->timestamps();
-
-            $table->index(['uid', 'entid'], 'entid_uid');
-
-            $table->engine    = 'InnoDB';
-            $table->charset   = 'utf8';
-            $table->collation = 'utf8_unicode_ci';
-        });
-        if ($suffix) {
-            $query = 'ALTER TABLE ' . $tableName . ' AUTO_INCREMENT=' . ($this->maxCount * $suffix);
-            DB::statement($query);
-        }
-    }
-
-    /**
-     * 获取表名.
-     * @return mixed|string
-     */
-    protected function getTableName()
-    {
-        return DB::transaction(function () {
-            $res = DB::table('sub_table')->where('table_name', $this->table)->first(['sub_table_name', 'num', 'count']);
-            if (! $res) {
-                $tableName = $this->table . '_' . 0;
-                $suffix    = $count = 0;
-                DB::table('sub_table')->insert(['table_name' => $this->table, 'sub_table_name' => $tableName, 'num' => $suffix]);
-            } else {
-                $tableName = $res->sub_table_name;
-                $suffix    = (int) $res->num;
-                $count     = (int) $res->count;
-            }
-            if (! Schema::hasTable($tableName)) {
-                $this->createTable($tableName, $suffix);
-                DB::table('sub_table')->where('table_name', $this->table)->update(['count' => 0]);
-            } elseif (! $count) {
-                DB::table('sub_table')->where('table_name', $this->table)->update(['count' => DB::table($tableName)->count()]);
-            }
-            if ($count >= ((int) env('DB_SUBTABLE_COUNT', 1000000) - 1)) {
-                $tableName = $this->table . '_' . ($suffix + 1);
-                if (! Schema::hasTable($tableName)) {
-                    $this->createTable($tableName, $suffix);
-                    DB::table('sub_table')->where('table_name', $this->table)->update(['count' => 0]);
-                }
-            }
-            return $tableName;
-        });
     }
 }

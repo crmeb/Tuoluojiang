@@ -1,10 +1,10 @@
 <template>
   <div>
-    <el-dialog title="新增消息类型" :visible.sync="show" width="600px" :before-close="handleClose">
+    <el-dialog title="新增消息类型" v-model="show" width="600px" :before-close="handleClose">
       <div>
         <el-form :model="formData" label-width="80px">
           <el-form-item label="类型名称：">
-            <el-input v-model="formData.name" size="small" placeholder="请输入消息类型名称"></el-input>
+            <el-input v-model="formData.name" placeholder="请输入消息类型名称"></el-input>
           </el-form-item>
           <el-form-item label="类型图标：">
             <div v-if="imageUrl" class="avatar">
@@ -24,15 +24,17 @@
         </el-form>
       </div>
 
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="handleClose" size="small">取 消</el-button>
-        <el-button type="primary" size="small">确 定</el-button>
-      </span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="handleClose">取 消</el-button>
+          <el-button type="primary">确 定</el-button>
+        </span>
+      </template>
     </el-dialog>
 
     <el-dialog
       :before-close="handleImgClose"
-      :visible.sync="dialogVisible"
+      v-model="dialogVisible"
       title="选择图片"
       v-bind="$attrs"
       width="850px"
@@ -112,7 +114,7 @@ export default {
       display: block;
     }
   }
-  /deep/ .el-upload {
+  :deep(.el-upload) {
     width: 95px;
     height: 65px;
   }

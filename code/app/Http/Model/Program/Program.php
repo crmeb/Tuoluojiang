@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,9 +16,9 @@ declare(strict_types=1);
 namespace App\Http\Model\Program;
 
 use App\Http\Model\Admin\Admin;
+use App\Http\Model\Customer\Customer;
+use App\Http\Model\Customer\Order;
 use App\Http\Model\BaseModel;
-use App\Http\Model\Client\Contract;
-use App\Http\Model\Client\Customer;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -45,6 +45,21 @@ class Program extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'          => 'integer',
+        'value'       => 'integer',
+        'uid'         => 'integer',
+        'eid'         => 'integer',
+        'cid'         => 'integer',
+        'creator_uid' => 'integer',
+        'start_date'  => 'date:Y-m-d',
+        'end_date'    => 'date:Y-m-d',
+        'status'      => 'integer',
+        'created_at'  => 'datetime:Y-m-d H:i:s',
+        'updated_at'  => 'datetime:Y-m-d H:i:s',
+        'deleted_at'  => 'datetime:Y-m-d H:i:s',
+    ];
 
     /**
      * 隐藏字段.
@@ -95,12 +110,12 @@ class Program extends BaseModel
     }
 
     /**
-     * 关联合同.
+     * 关联订单.
      * @return HasOne
      */
     public function contract()
     {
-        return $this->hasOne(Contract::class, 'id', 'cid')->select(['contract_name', 'id']);
+        return $this->hasOne(Order::class, 'id', 'cid')->select(['contract_name', 'id']);
     }
 
     /**
@@ -173,11 +188,14 @@ class Program extends BaseModel
      */
     public function scopeCid($query, $value): void
     {
-        if (is_array($value)) {
-            $query->whereIn('cid', $value);
-        } elseif ($value !== '') {
-            $query->where('cid', $value);
-        }
+        $query->whereIn('cid', function ($que) use ($value) {
+            $que->from('contract')->select('id')->where('contract_name', 'like', '%' . $value . '%');
+        });
+//        if (is_array($value)) {
+//            $query->whereIn('cid', $value);
+//        } elseif ($value !== '') {
+//            $query->where('cid', $value);
+//        }
     }
 
     /**
@@ -187,11 +205,14 @@ class Program extends BaseModel
      */
     public function scopeEid($query, $value): void
     {
-        if (is_array($value)) {
-            $query->whereIn('eid', $value);
-        } elseif ($value !== '') {
-            $query->where('eid', $value);
-        }
+        $query->whereIn('eid', function ($que) use ($value) {
+            $que->from('customer')->select('id')->where('customer_name', 'like', '%' . $value . '%');
+        });
+//        if (is_array($value)) {
+//            $query->whereIn('eid', $value);
+//        } elseif ($value !== '') {
+//            $query->where('eid', $value);
+//        }
     }
 
     /**

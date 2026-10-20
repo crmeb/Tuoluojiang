@@ -11,52 +11,52 @@
             row-key="id"
             :loading="loading"
             default-expand-all
-            :height="tableHeight"
+            :height="TABLE_HEIGHT"
             :tree-props="{ children: 'children' }"
           >
-            <el-table-column prop="name" :label="$t('user.work.assessmentname')" min-width="130" />
-            <el-table-column prop="period" :label="$t('toptable.assessmentcycle')" min-width="100">
-              <template slot-scope="scope">
+            <el-table-column prop="name" label="考核名称" min-width="130" />
+            <el-table-column prop="period" label="考核周期" min-width="100">
+              <template #default="scope">
                 <span>{{ getPeriodText(scope.row.period) }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="score" :label="$t('user.work.qssessmentscore')" min-width="100" />
-            <el-table-column prop="level" :label="$t('access.assessmentgrade')" min-width="100" />
-            <el-table-column prop="check.name" :label="$t('user.work.assessor')" min-width="100" />
-            <el-table-column prop="status" :label="$t('hr.assessmentstatus')" min-width="120">
-              <template slot-scope="scope">
+            <el-table-column prop="score" label="考核得分" min-width="100" />
+            <el-table-column prop="level" label="考核等级" min-width="100" />
+            <el-table-column prop="check.name" label="考核人" min-width="100" />
+            <el-table-column prop="status" label="考核状态" min-width="120">
+              <template #default="scope">
                 <el-tag :type="getStatusTag(scope.row.status).type">{{ getStatusTag(scope.row.status).text }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="start_time" :label="$t('access.starttime')" min-width="100">
-              <template slot-scope="scope">
-                {{ $moment(scope.row.start_time).format('yyyy-MM-DD') }}
+            <el-table-column prop="start_time" label="考核开始时间" min-width="100">
+              <template #default="scope">
+                {{ dayjs(scope.row.start_time).format('YYYY-MM-DD') }}
               </template>
             </el-table-column>
-            <el-table-column prop="end_time" :label="$t('access.endtime')" min-width="100">
-              <template slot-scope="scope">
-                {{ $moment(scope.row.end_time).format('yyyy-MM-DD') }}
+            <el-table-column prop="end_time" label="考核结束时间" min-width="100">
+              <template #default="scope">
+                {{ dayjs(scope.row.end_time).format('YYYY-MM-DD') }}
               </template>
             </el-table-column>
-            <el-table-column prop="address" :label="$t('public.operation')" fixed="right" width="240">
-              <template slot-scope="scope">
-                <el-button v-if="scope.row.status !== 1" type="text" @click="handleCheck(scope.row, 'check')">
+            <el-table-column prop="address" label="操作" fixed="right" width="240">
+              <template #default="scope">
+                <el-button v-if="scope.row.status !== 1" type="primary" link @click="handleCheck(scope.row, 'check')">
                   查看
                 </el-button>
 
                 <el-button
                   v-if="scope.row.status > 0 && scope.row.status < 5"
-                  type="text"
+                  type="primary" link
                   @click="handleCheck(scope.row, 'selfEdit')"
                 >
                   {{ scope.row.status === 1 ? '自评' : '修改自评' }}
                 </el-button>
 
                 <el-button
-                  type="text"
+                  type="primary" link
                   v-if="scope.row.status !== 0 && scope.row.status !== 1"
                   @click="handleScore(scope.row)"
-                  >{{ $t('access.scoringrecord') }}</el-button
+                  >评分记录</el-button
                 >
               </template>
             </el-table-column>
@@ -74,25 +74,34 @@
           </div>
         </div>
       </div>
-      <default-page v-else :index="0" :min-height="420" />
+      <default-page v-else :index="25" :imgWidth="`150px`" :min-height="420" />
     </div>
     <score-dialog ref="scoreDialog" :config="config" />
   </div>
 </template>
 
 <script>
-import { userAssessSubord } from '@/api/user'
-import Common from '@/components/user/accessCommon'
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { userAssessSubord } from '@/api/user.ts'
+import Common from '@/components/user/accessCommon.ts'
 
+import oaFromBox from '@/components/common/oaFromBox'
 export default {
+  emits: ['selfHandleCheck'],
   name: 'Self',
   components: {
-    defaultPage: () => import('@/components/common/defaultPage'),
-    scoreDialog: () => import('./scoreDialog'),
-    oaFromBox: () => import('@/components/common/oaFromBox')
+    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage')),
+    scoreDialog: defineAsyncComponent(() => import('./scoreDialog')),
+    oaFromBox
+  },
+  computed: {
+    dayjs: () => dayjs
   },
   data() {
     return {
+      TABLE_HEIGHT,
       tableData: [],
       where: {
         page: 1,
@@ -177,7 +186,7 @@ export default {
     },
     handleScore(row) {
       this.config = {
-        title: this.$t('access.scoringrecord'),
+        title: '评分记录',
         width: '720px',
         id: row.id
       }
@@ -188,13 +197,13 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/deep/ .el-form-item {
+:deep(.el-form-item) {
   margin-bottom: 14px;
 }
-/deep/ .el-table th {
+:deep(.el-table th) {
   background-color: #f7fbff;
 }
-/deep/ .from-s .flex-row .el-form-item {
+:deep(.from-s .flex-row .el-form-item) {
   margin-right: 10px;
   margin-left: 0;
 }

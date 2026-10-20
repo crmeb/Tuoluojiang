@@ -29,4 +29,14 @@ interface LogInterface
      * 新增日志记录.
      */
     public function createLog(string $userId, int $entId, string $userName, string $type): bool;
+
+    /**
+     * 新增已整理的日志记录.
+     */
+    public function createLogFromData(array $data): bool;
+
+    /**
+     * 清理过期日志.
+     */
+    public function deleteExpiredLogs(int $months = 12): int;
 }

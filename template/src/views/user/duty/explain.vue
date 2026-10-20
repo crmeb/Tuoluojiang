@@ -1,125 +1,138 @@
 <template>
   <div class="divBox">
-    <el-card class="employees-card-bottom">
-      <!-- 头部 -->
-      <el-form :inline="true" class="from-s" @submit.native.prevent>
-        <div class="flex-row flex-col">
-          <div>
-            <el-tabs v-model="activeVal" class="tabs" @tab-click="activeClick">
-              <el-tab-pane label="我的岗位职责" name="1" />
-              <el-tab-pane label="下级岗位职责" name="2" />
-            </el-tabs>
+    <div class="box-height">
+      <el-card class="employees-card-bottom">
+        <!-- 头部 -->
+        <el-form :inline="true" class="from-s" @submit.prevent>
+          <div class="flex-row flex-col">
+            <div>
+              <el-tabs v-model="activeVal" class="tabs" @tab-change="activeClick">
+                <el-tab-pane label="我的岗位职责" name="1" />
+                <el-tab-pane label="下级岗位职责" name="2" />
+              </el-tabs>
+            </div>
+          </div>
+        </el-form>
+        <div class="splitLine mb20"></div>
+        <!-- 我的岗位职责 -->
+        <div v-if="activeVal == 1" class="main">
+          <div v-if="detailData.duty" class="detail-box">
+            <div class="title">{{ detailData.name }}岗位职责</div>
+            <div class="content" v-html="detailData.duty" @click="replayImgShow($event)" />
+          </div>
+          <div v-else>
+            <default-page v-height :index="12" :min-height="580" />
           </div>
         </div>
-      </el-form>
-      <div class="splitLine mb20"></div>
-      <!-- 我的岗位职责 -->
-      <div v-if="activeVal == 1" class="main">
-        <div v-if="detailData.duty" class="detail-box">
-          <div class="title">{{ detailData.name }}岗位职责</div>
-          <div class="content" v-html="detailData.duty" @click="replayImgShow($event)" />
+        <!-- 下级岗位职责 -->
+        <div v-if="activeVal == 2" class="table-box">
+          <div class="inTotal flex">
+            共 {{ totalSubmit }} 条
+            <el-input
+              v-model="where.name"
+              class="search-input"
+              clearable
+              placeholder="请输入姓名搜索"
+              prefix-icon="el-icon-search"
+              @change="getList(1)"
+              @keyup.stop.prevent.enter="getList(1)"
+            ></el-input>
+          </div>
+
+          <oa-table
+            :tableOptions="tableOptions"
+            :height="TABLE_HEIGHT"
+            :tableData="tableData"
+            :total="totalSubmit"
+            :loading="false"
+            @handleSizeChange="handleSizeChange"
+            @handleCurrentChange="handleCurrentChange"
+          >
+            <template #job="{ row }">
+              <span>{{ row.job ? row.job.name : '--' }}</span>
+            </template>
+
+            <template #frames="{ row }">
+              <div v-for="(item, index) in row.frames" :key="index" class="frame-name over-text">
+                <span class="icon-h">
+                  {{ item.name
+                  }}<span v-show="item.is_mastart === 1 && row.frames.length > 1" title="主部门">(主)</span>
+                  <span v-show="item.is_admin == 1" class="guan" title="主管">(管)</span>
+                </span>
+              </div>
+            </template>
+
+            <template #options="{ row }">
+              <el-button type="primary" link @click="onCheck(row)">查看</el-button>
+              <el-button v-if="row.operate" type="primary" link @click="onEdit(row)">编辑</el-button>
+            </template>
+          </oa-table>
+        </div>
+      </el-card>
+      <!-- 查看 -->
+      <el-drawer :before-close="handleClose" v-model="checkDrawer" direction="rtl" size="60%" title="岗位职责表">
+        <div v-if="detailDataInfo" class="check-box">
+          <div class="content mt14" v-html="detailDataInfo" @click="replayImgShow($event)" />
         </div>
         <div v-else>
-          <default-page v-height :index="12" :min-height="580" />
+          <default-page v-height :index="14" :min-height="580" />
         </div>
-      </div>
-      <!-- 下级岗位职责 -->
-      <div v-if="activeVal == 2" class="table-box">
-        <div class="inTotal flex">
-          共 {{ totalSubmit }} 条
-          <el-input
-            v-model="where.name"
-            class="search-input"
-            clearable
-            placeholder="请输入姓名搜索"
-            prefix-icon="el-icon-search"
-            size="small"
-            @change="getList(1)"
-            @keyup.native.stop.prevent.enter="getList(1)"
-          ></el-input>
+      </el-drawer>
+      <!-- 编辑 -->
+      <el-drawer
+        :before-close="handleClose"
+        v-model="editDrawer"
+        :close-on-click-modal="false"
+        direction="rtl"
+        size="60%"
+        title="编辑岗位职责表"
+      >
+        <div class="check-box">
+          <div class="user-name">
+            <span>人员姓名：</span>
+            <span class="text">{{ userName }}</span>
+          </div>
+          <div class="boder">
+            <component
+              :is="loadEdit"
+              ref="ueditorFrom"
+              :border="true"
+              :content="content"
+              :height="height"
+              @input="ueditorEdit"
+            />
+          </div>
         </div>
-
-        <oa-table
-          :tableOptions="tableOptions"
-          :height="tableHeight"
-          :tableData="tableData"
-          :total="totalSubmit"
-          :loading="false"
-          @handleSizeChange="handleSizeChange"
-          @handleCurrentChange="handleCurrentChange"
-        >
-          <template #frames="{ row }">
-            <div v-for="(item, index) in row.frames" :key="index" class="frame-name over-text">
-              <span class="icon-h">
-                {{ item.name }}<span v-show="item.is_mastart === 1 && row.frames.length > 1" title="主部门">(主)</span>
-                <span v-show="item.is_admin == 1" class="guan" title="主管">(管)</span>
-              </span>
-            </div>
-          </template>
-
-          <template #options="{ row }">
-            <el-button size="small" type="text" @click="onCheck(row)">查看</el-button>
-            <el-button v-if="row.operate" size="small" type="text" @click="onEdit(row)">编辑</el-button>
-          </template>
-        </oa-table>
-      </div>
-    </el-card>
-    <!-- 查看 -->
-    <el-drawer :before-close="handleClose" :visible.sync="checkDrawer" direction="rtl" size="60%" title="岗位职责表">
-      <div v-if="detailDataInfo" class="check-box">
-        <div class="content mt14" v-html="detailDataInfo" @click="replayImgShow($event)" />
-      </div>
-      <div v-else>
-        <default-page v-height :index="14" :min-height="580" />
-      </div>
-    </el-drawer>
-    <!-- 编辑 -->
-    <el-drawer
-      :before-close="handleClose"
-      :visible.sync="editDrawer"
-      :wrapperClosable="false"
-      direction="rtl"
-      size="60%"
-      title="编辑岗位职责表"
-    >
-      <div class="check-box">
-        <div class="user-name">
-          <span>人员姓名：</span>
-          <span class="text">{{ userName }}</span>
+        <div class="button from-foot-btn fix btn-shadow">
+          <el-button @click="editDrawer = false">取消</el-button>
+          <el-button :loading="loading" type="primary" @click="handleConfirm">保存</el-button>
         </div>
-        <div class="boder">
-          <component
-            :is="loadEdit"
-            ref="ueditorFrom"
-            :border="true"
-            :content="content"
-            :height="height"
-            @input="ueditorEdit"
-          />
-        </div>
-      </div>
-      <div class="button from-foot-btn fix btn-shadow">
-        <el-button size="small" @click="editDrawer = false">{{ $t('public.cancel') }}</el-button>
-        <el-button :loading="loading" size="small" type="primary" @click="handleConfirm">保存</el-button>
-      </div>
-    </el-drawer>
-    <image-viewer ref="imageViewer" :srcList="srcList"></image-viewer>
+      </el-drawer>
+      <image-viewer ref="imageViewer" :srcList="srcList"></image-viewer>
+    </div>
   </div>
 </template>
 
 <script>
+import { mapStores } from 'pinia'
+import { useUserStore } from '@/stores/user.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
 import ueditorFrom from '@/components/form-common/oa-wangeditor'
 import oaTable from '@/components/form-common/oa-table'
 import defaultPage from '@/components/common/defaultPage'
 import imageViewer from '@/components/common/imageViewer'
-import { endJobInfoApi } from '@/api/enterprise'
-import { subordinateApi, mineAnalysis, subordinateInfoApi, putSubordinateApi } from '@/api/user'
+import { endJobInfoApi } from '@/api/enterprise.ts'
+import { subordinateApi, mineAnalysis, subordinateInfoApi, putSubordinateApi } from '@/api/user.ts'
 
 export default {
   name: 'Duty',
   components: { defaultPage, ueditorFrom, imageViewer, oaTable },
+  computed: {
+    ...mapStores(useUserStore)
+  },
   data() {
     return {
+      TABLE_HEIGHT,
       activeVal: '1',
       loading: false,
       userName: '',
@@ -151,9 +164,8 @@ export default {
         },
         {
           label: '职位',
-          render: (row) => {
-            return <span>{row.job ? row.job.name : '--'}</span>
-          }
+          type: 'slot',
+          name: 'job'
         },
         {
           label: '部门',
@@ -178,7 +190,7 @@ export default {
   },
   methods: {
     async userEntInfo() {
-      const jobId = this.$store.state.user.userInfo.job.id
+      const jobId = this.userStore.userInfo.job.id
 
       if (jobId) {
         this.handleDetail(jobId)
@@ -295,7 +307,7 @@ export default {
   margin: 0 auto;
 }
 .detail-box {
-  /deep/ .el-scrollbar__wrap {
+  :deep(.el-scrollbar__wrap) {
     overflow-x: hidden;
   }
   color: #666666;
@@ -309,23 +321,23 @@ export default {
   }
   .content {
     margin-top: 30px;
-    /deep/ p {
+    :deep(p) {
       text-indent: 2em;
       font-size: 14px;
       line-height: 1.5;
     }
-    /deep/ img {
+    :deep(img) {
       cursor: pointer;
     }
 
-    /deep/ table {
+    :deep(table) {
       border: 1px solid #ccc;
     }
 
-    /deep/ table th {
+    :deep(table th) {
       border: 1px solid #ccc;
     }
-    /deep/ table td {
+    :deep(table td) {
       padding: 10px 5px;
       border: 1px solid #ccc;
     }
@@ -344,26 +356,26 @@ export default {
   }
 }
 .check-box {
-  /deep/ .el-scrollbar__wrap {
+  :deep(.el-scrollbar__wrap) {
     overflow-x: hidden;
   }
   color: #666666;
   padding: 0px 20px 0 24px;
 
   .content {
-    /deep/ p {
+    :deep(p) {
       text-indent: 2em;
       font-size: 14px;
       line-height: 1.5;
     }
-    /deep/ table {
+    :deep(table) {
       border: 1px solid #ccc;
     }
 
-    /deep/ table th {
+    :deep(table th) {
       border: 1px solid #ccc;
     }
-    /deep/ table td {
+    :deep(table td) {
       padding: 10px 5px;
       border: 1px solid #ccc;
     }
@@ -382,11 +394,11 @@ export default {
   font-size: 13px;
   color: #303133;
 }
-/deep/ .el-form-item {
+:deep(.el-form-item) {
   padding-bottom: 0;
 }
 
-/deep/ .el-tabs__nav-wrap::after {
+:deep(.el-tabs__nav-wrap::after) {
   content: '';
   position: absolute;
   left: 0;
@@ -394,7 +406,7 @@ export default {
   width: 100%;
   height: 0;
 }
-/deep/.el-select {
+:deep(.el-select) {
   width: 100%;
 }
 .flex {

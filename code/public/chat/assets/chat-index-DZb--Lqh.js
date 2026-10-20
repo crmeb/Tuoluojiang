@@ -1,1 +1,0 @@
-import{C as t}from"./chat-message-input-B46LcCu4.js";import{_ as e}from"./chat-welcome-CDatEILM.js";import{_ as a,c,w as _,o as r,a as s}from"./index-DXU4G7YZ.js";const i={};function m(p,f){const n=e,o=t;return r(),c(o,null,{default:_(()=>[s(n)]),_:1})}const d=a(i,[["render",m]]);export{d as default};

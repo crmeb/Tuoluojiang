@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,8 +17,8 @@ namespace App\Http\Service\User;
 
 use App\Http\Dao\User\UserCardPerfectDao;
 use App\Http\Service\BaseService;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 
 class UserCardPerfectService extends BaseService implements ResourceServicesInterface
@@ -41,12 +41,12 @@ class UserCardPerfectService extends BaseService implements ResourceServicesInte
 
     public function resourceCreate(array $other = []): array
     {
-        // TODO: Implement resourceCreate() method.
+        return [];
     }
 
     public function resourceEdit(int $id, array $other = []): array
     {
-        // TODO: Implement resourceEdit() method.
+        return [];
     }
 
     /**

@@ -16,9 +16,9 @@ declare(strict_types=1);
 namespace App\Http\Dao\Crud;
 
 use App\Constants\Crud\CrudFormEnum;
-use App\Http\Dao\BaseDao;
 use App\Http\Model\Crud\SystemCrudField;
-use crmeb\traits\dao\BatchSearchTrait;
+use App\Http\Dao\BaseDao;
+use Tuoluojiang\Open\traits\dao\BatchSearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -37,6 +37,15 @@ class SystemCrudFieldDao extends BaseDao
     public function updateMain(int $crudId, int $id)
     {
         return $this->getModel()->where('id', '<>', $id)->where('crud_id', $crudId)->update(['is_main' => 0]);
+    }
+
+    /**
+     * 获取数据字典字段.
+     * @return mixed
+     */
+    public function getDataDictIds(int $crudId)
+    {
+        return array_column($this->getModel()->where('data_dict_id', '<>', 0)->where('crud_id', $crudId)->select(['data_dict_id'])->get()->toArray(), 'data_dict_id');
     }
 
     /**
@@ -154,9 +163,9 @@ class SystemCrudFieldDao extends BaseDao
             ->get()->toArray();
     }
 
-    public function fieldByList(array|int $crudId, array $fields, int $isForm = 1)
+    public function fieldByList(array|int $crudId, array $fields, int $isForm = 1, bool $isIdShow = false)
     {
-        return $this->getModel()->whereNotIn('field_name_en', ['deleted_at', 'id'])
+        return $this->getModel()->whereNotIn('field_name_en', $isIdShow ? ['deleted_at'] : ['deleted_at', 'id'])
             ->whereIn('crud_id', is_array($crudId) ? $crudId : [$crudId])
             ->whereIn('field_name_en', $fields)
             ->when($isForm, fn ($q) => $q->where('is_form', 1))
@@ -168,7 +177,7 @@ class SystemCrudFieldDao extends BaseDao
                 'id', 'crud_id', 'field_name_en', 'data_dict_id', 'options',
                 'association_crud_id', 'field_name', 'form_value', 'field_type',
                 'form_field_uniqid', 'is_default_value_not_null', 'create_modify',
-                'update_modify', 'is_uniqid',
+                'update_modify', 'is_uniqid', 'association_show_type', 'customize_items', 'data_type',
             ])
             ->get()->toArray();
     }

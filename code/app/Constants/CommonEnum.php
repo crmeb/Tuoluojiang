@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace App\Constants;
 
-use crmeb\utils\MessageType;
+use Tuoluojiang\Open\utils\MessageType;
 
 final class CommonEnum
 {

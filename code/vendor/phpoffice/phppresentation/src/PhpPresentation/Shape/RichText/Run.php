@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of PHPPresentation - A pure PHP library for reading and writing
  * presentations documents.
@@ -10,57 +11,53 @@
  * file that was distributed with this source code. For the full list of
  * contributors, visit https://github.com/PHPOffice/PHPPresentation/contributors.
  *
- * @link        https://github.com/PHPOffice/PHPPresentation
- * @copyright   2009-2015 PHPPresentation contributors
+ * @see        https://github.com/PHPOffice/PHPPresentation
+ *
  * @license     http://www.gnu.org/licenses/lgpl.txt LGPL version 3
  */
+
+declare(strict_types=1);
 
 namespace PhpOffice\PhpPresentation\Shape\RichText;
 
 use PhpOffice\PhpPresentation\Style\Font;
 
 /**
- * Rich text run
+ * Rich text run.
  */
 class Run extends TextElement implements TextElementInterface
 {
     /**
-     * Font
+     * Font.
      *
-     * @var \PhpOffice\PhpPresentation\Style\Font
+     * @var Font
      */
     private $font;
 
     /**
-     * Create a new \PhpOffice\PhpPresentation\Shape\RichText\Run instance
-     *
      * @param string $pText Text
      */
     public function __construct($pText = '')
     {
-        // Initialise variables
+        // Initialize variables
         $this->setText($pText);
         $this->font = new Font();
     }
 
     /**
-     * Get font
-     *
-     * @return \PhpOffice\PhpPresentation\Style\Font
+     * Get font.
      */
-    public function getFont()
+    public function getFont(): Font
     {
         return $this->font;
     }
 
     /**
-     * Set font
+     * Set font.
      *
-     * @param  \PhpOffice\PhpPresentation\Style\Font                  $pFont Font
-     * @throws \Exception
-     * @return \PhpOffice\PhpPresentation\Shape\RichText\TextElementInterface
+     * @return self
      */
-    public function setFont(Font $pFont = null)
+    public function setFont(?Font $pFont = null)
     {
         $this->font = $pFont;
 
@@ -68,11 +65,9 @@ class Run extends TextElement implements TextElementInterface
     }
 
     /**
-     * Get hash code
-     *
-     * @return string Hash code
+     * Get hash code.
      */
-    public function getHashCode()
+    public function getHashCode(): string
     {
         return md5($this->getText() . $this->font->getHashCode() . __CLASS__);
     }

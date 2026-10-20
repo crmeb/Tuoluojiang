@@ -15,10 +15,10 @@
         @treeChange="treeChange"
       ></oaFromBox>
 
-      <div v-loading="loading" class="mt10">
+      <div class="mt10">
         <oa-table
-          :height="tableHeight"
-          :loading="false"
+          :height="TABLE_HEIGHT"
+          :loading="loading"
           :tableData="tableData"
           :tableOptions="tableOptions"
           :total="total"
@@ -33,37 +33,42 @@
               </div>
               <el-popover v-else placement="top" trigger="hover" width="250">
                 <div>{{ row.name || '- -' }}</div>
-                <div slot="reference" class="line1 point" style="max-width: 200px" @click="goTask(row)">
-                  {{ row.name || '- -' }}
-                </div>
+                <template #reference>
+                  <div class="line1 point" style="max-width: 200px" @click="goTask(row)">
+                    {{ row.name || '- -' }}
+                  </div>
+                </template>
               </el-popover>
             </div>
           </template>
 
           <template #status="{ row }">
-            <el-tag v-if="row.status == 1" effect="plain" type="warning">已暂停</el-tag>
-            <el-tag v-else-if="row.status == 2" effect="plain" type="info">已关闭</el-tag>
-            <el-tag v-else-if="row.end_date && nowTime() > row.end_date" effect="plain" type="danger">已延期</el-tag>
-            <el-tag v-else-if="row.start_date && nowTime() < row.start_date" effect="plain" type="success"
-              >待开始</el-tag
-            >
-            <el-tag v-else effect="plain">进行中</el-tag>
+            <el-tag :type="row.display_status.type" effect="plain">{{ row.display_status.label }}</el-tag>
           </template>
 
           <template #admins="{ row }">
-            <img :src="row.admins[0].avatar" alt="" class="img" />
-            <span>{{ row.admins[0].name }}</span>
+            <img v-if="row.admins?.[0]" :src="getAvatarSrc(row.admins[0])" alt="" class="img" />
+            <span>{{ row.admins?.[0]?.name || '--' }}</span>
+          </template>
+
+          <template #progress="{ row }">
+            <!-- :text-inside="true"
+              :stroke-width="16" -->
+            <el-progress :percentage="getProgress(row.task_statistics)"></el-progress>
+          </template>
+
+          <template #taskCount="{ row }">
+            <span>{{ row.task_statistics.incomplete }}/{{ row.task_statistics.total }}</span>
           </template>
         </oa-table>
-
       </div>
     </el-card>
 
     <!-- 新建项目 -->
     <el-drawer
       :before-close="handleClose"
-      :visible.sync="taskDrawer"
-      :wrapper-closable="false"
+      v-model="taskDrawer"
+      :close-on-click-modal="false"
       size="1120px"
       title="新建项目"
     >
@@ -80,21 +85,27 @@
 </template>
 
 <script>
-import { getProgramListApi, deleteProgramApi } from '@/api/program'
-import { customerSelectApi, selectContractListApi } from '@/api/enterprise'
-import { roterPre } from '@/settings'
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { getAvatarSrc } from '@/utils/avatar.ts'
+import { getProgramListApi, deleteProgramApi } from '@/api/program.ts'
+import { customerSelectApi } from '@/api/enterprise.ts'
+import { roterPre } from '@/settings.ts'
 
+import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'programList',
   components: {
-    oaFromBox: () => import('@/components/common/oaFromBox'),
-    oaTable: () => import('@/components/form-common/oa-table'),
-    addProgram: () => import('./components/addProgram'),
-    taskDrawer: () => import('../programTask/index'),
-    dynamicsDrawer: () => import('./dynamics')
+    oaFromBox,
+    oaTable: defineAsyncComponent(() => import('@/components/form-common/oa-table')),
+    addProgram: defineAsyncComponent(() => import('./components/addProgram')),
+    taskDrawer: defineAsyncComponent(() => import('../programTask/index')),
+    dynamicsDrawer: defineAsyncComponent(() => import('./dynamics'))
   },
   data() {
     return {
+      TABLE_HEIGHT,
       loading: false,
       tableData: [],
       tableFrom: {
@@ -110,7 +121,6 @@ export default {
       },
       total: 0,
       customerList: [],
-      contractList: [],
       taskDrawer: false,
       taskTitle: '',
       programId: 0,
@@ -176,23 +186,12 @@ export default {
         {
           field_name: '关联客户',
           field_name_en: 'eid',
-          form_value: 'checkbox',
-          multiple: true,
-          props: {
-            collapseTags: true
-          },
-          data_dict: []
+          form_value: 'input'
         },
         {
-          field_name: '关联合同',
+          field_name: '关联订单',
           field_name_en: 'cid',
-          form_value: 'checkbox',
-          multiple: true,
-          props: {
-            collapseTags: true,
-            value: []
-          },
-          data_dict: []
+          form_value: 'input'
         },
         {
           form_value: 'manage'
@@ -233,34 +232,17 @@ export default {
           // width: '140px'
         },
         {
+          label: '项目进度',
+          type: 'slot',
+          name: 'progress'
+        },
+        {
           label: '未完成/总任务数',
-          // width: '120px',
-          render: (row) => {
-            return (
-              <span>
-                {row.task_statistics.incomplete}/{row.task_statistics.total}
-              </span>
-            )
-          }
+          type: 'slot',
+          name: 'taskCount'
         }
       ],
       treeDefault: 0
-    }
-  },
-  watch: {
-    'tableFrom.eid'(val) {
-      // if (this.search.length > 0) {
-      //   for (let i = 0; i < this.search.length; i++) {
-      //     if (this.search[i].field_name_en == 'cid') {
-      //       this.search[i].props.disabled = !val.length
-      //       this.search[i].data_dict = []
-      //       break
-      //     }
-      //   }
-      // }
-      if (val.length) {
-        this.getContractList(val)
-      }
     }
   },
   created() {
@@ -270,8 +252,26 @@ export default {
     this.getTableData()
   },
   methods: {
+    getAvatarSrc,
     handleClose() {
       this.taskDrawer = false
+    },
+    getDisplayStatus(row = {}) {
+      const status = Number(row.status)
+      const total = Number(row.task_statistics?.total || 0)
+      const incomplete = Number(row.task_statistics?.incomplete || 0)
+
+      if (status === 1) return { label: '已暂停', type: 'warning' }
+      if (status === 2) return { label: '已关闭', type: 'info' }
+      if (total > 0 && incomplete === 0) return { label: '已完成', type: 'success' }
+      if (row.end_date && this.nowTime() > row.end_date) return { label: '已延期', type: 'danger' }
+      if (row.start_date && this.nowTime() < row.start_date) return { label: '待开始', type: 'success' }
+      return { label: '进行中', type: 'primary' }
+    },
+    // 项目进度 = 已完成任务数 / 总任务数，接口只给未完成数，需先换算
+    getProgress({ incomplete = 0, total = 0 } = {}) {
+      if (!total) return 0
+      return Math.round(((total - incomplete) / total) * 100)
     },
     nowTime() {
       const now = new Date()
@@ -287,7 +287,10 @@ export default {
       this.loading = true
       let data = tableFrom ? tableFrom : this.tableFrom
       const res = await getProgramListApi(data)
-      this.tableData = res.data.list
+      this.tableData = res.data.list.map((item) => ({
+        ...item,
+        display_status: this.getDisplayStatus(item)
+      }))
       this.total = res.data.count
       this.loading = false
       if (type === 1) {
@@ -309,32 +312,6 @@ export default {
     async getCustomer() {
       const result = await customerSelectApi()
       this.customerList = result.data
-      for (let i = 0; i < this.search.length; i++) {
-        if (this.search[i].field_name_en == 'eid') {
-          this.search[i].data_dict = result.data
-          break
-        }
-      }
-    },
-    getContractList(eid) {
-      if (eid) {
-        this.getContract(eid)
-      }
-    },
-    // 获取合同数据
-    async getContract(eid) {
-      const result = await selectContractListApi({ data: eid })
-      this.contractList = result.data
-      for (let j = 0; j < result.data.length; j++) {
-        result.data[j].value = result.data[j].id
-        result.data[j].name = result.data[j].title
-      }
-      for (let i = 0; i < this.search.length; i++) {
-        if (this.search[i].field_name_en == 'cid') {
-          this.search[i].data_dict = result.data
-          break
-        }
-      }
     },
     pageChange(page) {
       this.tableFrom.page = page
@@ -360,7 +337,7 @@ export default {
     },
     // 删除项目
     handleDelete(row) {
-      this.$modalSure('删除项目，同时会删除项目中的工作项！你确定要删除该项目吗').then(() => {
+      modalSure('删除项目，同时会删除项目中的工作项！你确定要删除该项目吗').then(() => {
         deleteProgramApi(row.id).then((res) => {
           this.getTableData()
           this.$refs.addProgram.handleClose()
@@ -368,7 +345,7 @@ export default {
       })
     },
     async setPayStatus(row, status) {
-      var data = {
+      const data = {
         id: row.id,
         name: row.name,
         status
@@ -443,9 +420,10 @@ export default {
   vertical-align: top;
   margin-right: 4px;
 }
-/deep/.el-table .cell {
+:deep(.el-table .cell) {
   line-height: 26px;
 }
+
 .point {
   cursor: pointer;
   &:hover {
@@ -475,11 +453,15 @@ export default {
     font-weight: 400;
   }
 }
-/deep/.el-drawer__header {
+:deep(.el-drawer__header) {
   padding: 10px 24px 10px 20px;
   font-size: 14px;
 }
 .flex-between {
   height: 32px;
+}
+
+:deep() .el-progress__text {
+  font-size: 13px !important;
 }
 </style>

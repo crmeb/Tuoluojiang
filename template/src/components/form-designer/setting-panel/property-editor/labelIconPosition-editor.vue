@@ -9,7 +9,7 @@
 </template>
 
 <script>
-  import i18n from "@/utils/i18n"
+  import i18n from "@/utils/i18n.ts"
 
   export default {
     name: "labelIconPosition-editor",
@@ -35,4 +35,3 @@
 <style scoped>
 
 </style>
-@/utils/i18ns

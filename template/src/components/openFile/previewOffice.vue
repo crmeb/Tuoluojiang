@@ -5,7 +5,7 @@
 </template>
 
 <script>
-// .https://view.xdocin.com/view?src=
+import { resolveAbsoluteResourceUrl } from '@/utils/resourceUtil.ts'
 export default {
   name: '',
   props: {
@@ -21,8 +21,9 @@ export default {
   },
 
   mounted() {
-    this.officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(this.url)}`
-    // this.officeUrl = `https://view.officeapps.live.com/op/view.aspx?src=${this.url}`
+    // 微软在线预览要求传入可公网访问的绝对地址，相对路径需先补全域名
+    const absoluteUrl = resolveAbsoluteResourceUrl(this.url || '')
+    this.officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absoluteUrl)}`
   }
 }
 </script>

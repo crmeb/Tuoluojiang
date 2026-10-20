@@ -15,9 +15,9 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Attendance;
 
-use App\Http\Dao\BaseDao;
 use App\Http\Model\Attendance\ClockRecord;
-use crmeb\traits\dao\ListSearchTrait;
+use App\Http\Dao\BaseDao;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
 
 /**
  * 打卡记录Dao

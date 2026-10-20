@@ -16,10 +16,8 @@ declare(strict_types=1);
 namespace App\Http\Controller\AdminApi;
 
 use App\Constants\CommonEnum;
-use crmeb\utils\Arr;
-use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Routing\Controller;
-use Lauthz\EnforcerManager;
+use App\Http\Requests\ApiRequest;
+use App\Http\Controller\BaseController;
 
 /**
  * 基础控制器
@@ -29,20 +27,17 @@ use Lauthz\EnforcerManager;
  * @property array $userInfo 登录工作台用户信息
  * @property int $entId 当前工作台企业ID
  * @property array $entInfo 当前工作台公司信息
+ * @property ApiRequest $request
+ * @OA\Info(
+ *     title="Your API Title",
+ *     version="1.0.0",
+ *     description="Description of your API"
+ * )
+ * @mixin BaseController
  */
-class AuthController extends Controller
+class AuthController extends BaseController
 {
     public string $origin = CommonEnum::ORIGIN_WEB;
-
-    /**
-     * @var Application|(Application&\request)|mixed|\request
-     */
-    public mixed $request;
-
-    /**
-     * @var Application|(Application&EnforcerManager)|EnforcerManager|mixed
-     */
-    public mixed $enforcer;
 
     /**
      * @var string[]
@@ -54,58 +49,4 @@ class AuthController extends Controller
         'entId'    => 'entId',
         'userInfo' => 'userInfo',
     ];
-
-    protected $service;
-
-    /**
-     * AuthController constructor.
-     */
-    public function __construct()
-    {
-        $this->request  = app('request');
-        $this->enforcer = app('enforcer');
-        if (! $this->request->hasMacro('postMore')) {
-            $this->request->macro('postMore', function (array $params, bool $suffix = false) {
-                return Arr::more(app()->request, $params, $suffix);
-            });
-        }
-        if (! $this->request->hasMacro('getMore')) {
-            $this->request->macro('getMore', function (array $params, bool $suffix = false) {
-                return Arr::more(app()->request, $params, $suffix, 'query');
-            });
-        }
-    }
-
-    /**
-     * 获取属性.
-     * @param mixed $name
-     * @return mixed
-     */
-    public function __get($name)
-    {
-        if (in_array($name, array_keys($this->rule))) {
-            return $this->request->{$this->rule[$name]}();
-        }
-        throw new \BadMethodCallException(__('common.empty.property', ['name' => $name]));
-    }
-
-    /**
-     * 失败返回.
-     * @param null $message
-     * @return mixed
-     */
-    public function fail($message = null, array $data = [], array $replace = [], int $tips = 1)
-    {
-        return app('json')->fail($message, $data, $replace, $tips);
-    }
-
-    /**
-     * 成功返回.
-     * @param null $message
-     * @return mixed
-     */
-    public function success($message = null, array $data = [], array $replace = [], int $tips = 1)
-    {
-        return app('json')->success($message, $data, $replace, $tips);
-    }
 }

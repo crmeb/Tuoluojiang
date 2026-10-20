@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -37,9 +37,20 @@ class Attach extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'            => 'integer',
+        'entid'         => 'integer',
+        'cid'           => 'integer',
+        'up_type'       => 'integer',
+        'way'           => 'integer',
+        'relation_type' => 'integer',
+        'relation_id'   => 'integer',
+        'created_at'    => 'datetime:Y-m-d H:i:s',
+        'updated_at'    => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * 附件路径.
-     * @param mixed $value
      */
     public function getAttDirAttribute($value): string
     {
@@ -48,7 +59,6 @@ class Attach extends BaseModel
 
     /**
      * 压缩路径.
-     * @param mixed $value
      */
     public function getThumbDirAttribute($value): string
     {
@@ -57,8 +67,6 @@ class Attach extends BaseModel
 
     /**
      * ID作用域
-     * @param mixed $query
-     * @param mixed $value
      * @return string
      */
     public function scopeId($query, $value)
@@ -74,8 +82,6 @@ class Attach extends BaseModel
 
     /**
      * 分类id作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeCid($query, $value)
     {
@@ -84,8 +90,6 @@ class Attach extends BaseModel
 
     /**
      * 分类企业id作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeEntids($query, $value)
     {
@@ -94,8 +98,6 @@ class Attach extends BaseModel
 
     /**
      * 分类企业id作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeEntid($query, $value)
     {
@@ -105,7 +107,6 @@ class Attach extends BaseModel
     /**
      * name作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeName($query, $value)
@@ -119,8 +120,6 @@ class Attach extends BaseModel
 
     /**
      * relation_type作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeRelationType($query, $value)
     {

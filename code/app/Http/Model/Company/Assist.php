@@ -16,8 +16,8 @@ declare(strict_types=1);
 namespace App\Http\Model\Company;
 
 use App\Http\Model\Admin\Admin;
-use App\Http\Model\BaseModel;
 use App\Http\Model\Frame\Frame;
+use App\Http\Model\BaseModel;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Database\Query\Builder;
@@ -46,10 +46,16 @@ class Assist extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'main_id'    => 'integer',
+        'aux_id'     => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * main_id作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeMainId($query, $value)

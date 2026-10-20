@@ -35,10 +35,19 @@ class CompanyInvite extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'entid'      => 'integer',
+        'frame_id'   => 'integer',
+        'is_verify'  => 'integer',
+        'fail_time'  => 'datetime:Y-m-d H:i:s',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * uniqued作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeStatus($query, $value)
@@ -51,7 +60,6 @@ class CompanyInvite extends BaseModel
     /**
      * status作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeEntid($query, $value)
@@ -64,7 +72,6 @@ class CompanyInvite extends BaseModel
     /**
      * frame_id作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeFrameId($query, $value)

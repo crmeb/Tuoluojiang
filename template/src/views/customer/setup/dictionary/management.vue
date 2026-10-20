@@ -4,10 +4,12 @@
       <el-row>
         <el-col :span="24">
           <el-page-header>
-            <div slot="title" @click="backFn">
-              <i class="el-icon-arrow-left"></i>
-              {{ query.name }}
-            </div>
+            <template #title>
+              <div @click="backFn">
+                <i class="el-icon-arrow-left"></i>
+                {{ query.name }}
+              </div>
+            </template>
           </el-page-header>
         </el-col>
       </el-row>
@@ -19,8 +21,8 @@
           <div class="felx-row flex-col">
             <div>
               <el-form-item v-if="is_Show !== 1">
-                <el-button type="primary" size="small" @click="addFinance">新增数据</el-button>
-                <el-button size="small" @click="batchDelete">批量删除</el-button>
+                <el-button type="primary" @click="addFinance">新增数据</el-button>
+                <el-button @click="batchDelete">批量删除</el-button>
               </el-form-item>
             </div>
           </div>
@@ -42,7 +44,7 @@
         <el-table-column prop="name" label="数据名称/ID"> </el-table-column>
         <el-table-column prop="value" label="数据值"></el-table-column>
         <el-table-column prop="status" label="状态">
-          <template slot-scope="scope">
+          <template #default="scope">
             <el-switch
               v-model="scope.row.status"
               active-text="启用"
@@ -54,25 +56,21 @@
           </template>
         </el-table-column>
         <el-table-column prop="mark" label="备注">
-          <template slot-scope="scope">
+          <template #default="scope">
             <span>{{ scope.row.mark || '--' }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="sort" label="排序"> </el-table-column>
         <el-table-column prop="created_at" label="创建时间">
-          <template slot-scope="scope">
+          <template #default="scope">
             <span>{{ scope.row.created_at || '--' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="address" :label="$t('public.operation')" width="250">
-          <template slot-scope="scope">
-            <el-button type="text" v-if="scope.row.level < level" @click="childLevel(scope.row)">添加子级</el-button>
-            <el-button type="text" @click="editFn(scope.row)" v-if="scope.row.is_default !== 1">编辑</el-button>
-            <template>
-              <el-button type="text" @click="handleDelete(scope.row)" v-if="scope.row.is_default !== 1">{{
-                $t('public.delete')
-              }}</el-button>
-            </template>
+        <el-table-column prop="address" label="操作" width="250">
+          <template #default="scope">
+            <el-button type="primary" link v-if="scope.row.level < level" @click="childLevel(scope.row)">添加子级</el-button>
+            <el-button type="primary" link @click="editFn(scope.row)" v-if="scope.row.is_default !== 1">编辑</el-button>
+            <el-button type="primary" link @click="handleDelete(scope.row)" v-if="scope.row.is_default !== 1">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -81,7 +79,9 @@
 </template>
 
 <script>
-import { roterPre } from '@/settings'
+import { modalSure } from '@/libs/public.ts'
+import modalForm from '@/libs/modal-form.ts'
+import { roterPre } from '@/settings.ts'
 import {
   getDictDataListApi,
   getDictDataCreateApi,
@@ -89,7 +89,7 @@ import {
   getDictDataPutApi,
   getDictDataDeleteApi,
   getDictDatainfoApi
-} from '@/api/form'
+} from '@/api/form.ts'
 export default {
   name: 'CrmebOaEntManagement',
   data() {
@@ -109,7 +109,7 @@ export default {
       level: 0,
       is_default: 0,
       tableData: [],
-      is_Show:false
+      is_Show: false
     }
   },
 
@@ -143,14 +143,14 @@ export default {
         return this.$message.error('请先选择要删除的数据')
       }
       let id = this.ids.join(',')
-      await this.$modalSure('你确定要删除这条内容吗')
+      await modalSure('你确定要删除这条内容吗')
       await getDictDataDeleteApi(id)
       await this.getList(true)
     },
 
     // 新增
     addFinance() {
-      this.$modalForm(getDictDataCreateApi({ type_id: this.query.id })).then(({ message }) => {
+      modalForm(getDictDataCreateApi({ type_id: this.query.id })).then(({ message }) => {
         this.getList()
       })
     },
@@ -160,21 +160,21 @@ export default {
         type_id: this.query.id,
         pid: row.value
       }
-      this.$modalForm(getDictDataCreateApi(data)).then(({ message }) => {
+      modalForm(getDictDataCreateApi(data)).then(({ message }) => {
         this.getList(true)
       })
     },
 
     // 编辑
     editFn(row) {
-      this.$modalForm(getDictDataEditeApi(row.id)).then(({ message }) => {
+      modalForm(getDictDataEditeApi(row.id)).then(({ message }) => {
         this.getList()
       })
     },
 
     // 删除
     async handleDelete(row) {
-      await this.$modalSure('你确定要删除这条内容吗')
+      await modalSure('你确定要删除这条内容吗')
       await getDictDataDeleteApi(row.id)
       await this.getList(true)
     },
@@ -234,7 +234,7 @@ export default {
 .card-box {
   min-height: calc(100vh - 215px);
 }
-/deep/ .el-icon-back {
+:deep(.el-icon-back) {
   display: none;
 }
 .title-box {
@@ -250,10 +250,10 @@ export default {
     margin: 0;
   }
 }
-/deep/.el-page-header__left::after {
+:deep(.el-page-header__left::after) {
   display: none;
 }
-/deep/.el-page-header__title {
+:deep(.el-page-header__title) {
   font-weight: 500;
   font-size: 17px;
   color: #303133;

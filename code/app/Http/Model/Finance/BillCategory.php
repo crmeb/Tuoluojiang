@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,7 +16,7 @@ declare(strict_types=1);
 namespace App\Http\Model\Finance;
 
 use App\Http\Model\BaseModel;
-use crmeb\traits\model\PathAttrTrait;
+use Tuoluojiang\Open\traits\model\PathAttrTrait;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Query\Builder;
 
@@ -45,6 +45,17 @@ class BillCategory extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'         => 'integer',
+        'value'      => 'integer',
+        'entid'      => 'integer',
+        'level'      => 'integer',
+        'sort'       => 'integer',
+        'pid'        => 'integer',
+        'types'      => 'integer',
+        'contact_id' => 'integer',
+    ];
 
     /**
      * @return HasOne
@@ -82,11 +93,6 @@ class BillCategory extends BaseModel
 
     /**
      * types作用域
-     * <<<<<<< HEAD.
-     * @param Builder $query
-     * @param mixed $value
-     * @return mixed
-     *               =======
      */
     public function scopeTypesLike($query, $value)
     {

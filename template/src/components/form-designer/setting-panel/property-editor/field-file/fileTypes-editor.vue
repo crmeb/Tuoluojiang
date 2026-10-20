@@ -1,11 +1,13 @@
 <template>
   <el-form-item>
-    <span slot="label"
-      >{{ i18nt('designer.setting.fileTypes') }}
-      <el-tooltip effect="light" :content="i18nt('designer.setting.fileTypesHelp')">
-        <i class="el-icon-info"></i
-      ></el-tooltip>
-    </span>
+    <template #label>
+      <span
+        >{{ i18nt('designer.setting.fileTypes') }}
+        <el-tooltip effect="light" :content="i18nt('designer.setting.fileTypesHelp')">
+          <i class="el-icon-info"></i
+        ></el-tooltip>
+      </span>
+    </template>
     <el-select
       multiple
       allow-create
@@ -20,7 +22,7 @@
 </template>
 
 <script>
-import i18n from '@/utils/i18n'
+import i18n from '@/utils/i18n.ts'
 
 export default {
   name: 'file-fileTypes-editor',
@@ -45,4 +47,3 @@ export default {
 
 <style scoped>
 </style>
-@/utils/i18ns

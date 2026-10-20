@@ -19,7 +19,7 @@ use App\Constants\CustomEnum\LiaisonEnum;
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Middleware\AuthOpenApi;
 use App\Http\Service\Admin\AdminService;
-use App\Http\Service\Client\CustomerLiaisonService;
+use App\Http\Service\Customer\LiaisonService;
 use App\Http\Service\Config\FormService;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\Container\ContainerExceptionInterface;
@@ -37,7 +37,7 @@ use Spatie\RouteAttributes\Attributes\Resource;
 #[Middleware([AuthOpenApi::class])]
 class OpenLiaisonController extends AuthController
 {
-    public function __construct(CustomerLiaisonService $services)
+    public function __construct(LiaisonService $services)
     {
         parent::__construct();
         $this->service = $services;
@@ -54,7 +54,7 @@ class OpenLiaisonController extends AuthController
     {
         $eid = (int) $this->request->post('eid', 0);
         if ($eid < 1) {
-            return $this->fail('客户数据异常');
+            return $this->fail('请选择关联客户');
         }
 
         $data = $this->request->postMore($service->getRequestFields(LiaisonEnum::LIAISON));
@@ -62,7 +62,7 @@ class OpenLiaisonController extends AuthController
         if ($uid && ! $adminService->exists(['id' => $uid, 'status' => 1])) {
             return $this->fail('业务员不存在');
         }
-        $res = $this->service->saveLiaison($data, $eid, (int)$uid);
+        $res = $this->service->saveLiaison($data, $eid, $uid);
         return $this->success('common.insert.succ', ['id' => $res->id]);
     }
 

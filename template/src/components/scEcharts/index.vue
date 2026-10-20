@@ -5,11 +5,11 @@
 
 <script>
 import * as echarts from 'echarts'
-import T from './echarts-theme-T.js'
+import T from './echarts-theme-T.ts'
 import 'echarts-liquidfill'
 echarts.registerTheme('T', T)
 const unwarp = (obj) => obj && (obj.__v_raw || obj.valueOf() || obj)
-import { EventBus } from '@/libs/bus'
+import { EventBus } from '@/libs/bus.ts'
 
 export default {
   ...echarts,
@@ -25,7 +25,8 @@ export default {
   data() {
     return {
       isActivat: false,
-      myChart: null
+      myChart: null,
+      resizeTimer: null
     }
   },
   inject: ['previewState', 'getScreenWidth'],
@@ -68,6 +69,16 @@ export default {
   },
   deactivated() {
     this.isActivat = false
+  },
+  beforeUnmount() {
+    if (this.resizeTimer) {
+      clearTimeout(this.resizeTimer)
+      this.resizeTimer = null
+    }
+    if (this.myChart) {
+      this.myChart.dispose()
+      this.myChart = null
+    }
   },
   mounted() {
     this.isActivat = true

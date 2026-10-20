@@ -15,12 +15,12 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Company;
 
+use App\Http\Model\Admin\Admin;
+use App\Http\Model\Admin\AdminInfo;
+use App\Http\Model\Company\UserJobAnalysis;
 use App\Http\Dao\BaseDao;
 use App\Http\Model\BaseModel;
-use App\Http\Model\Company\CompanyUser;
-use App\Http\Model\Company\UserCard;
-use App\Http\Model\Company\UserJobAnalysis;
-use crmeb\traits\dao\ListSearchTrait;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Traits\Conditionable;
@@ -64,9 +64,8 @@ class CompanyUserDao extends BaseDao
             ->when($frameIds, fn ($q) => $q->whereIn('id', fn ($query) => $query->from('frame_assist')
                 ->whereIn('frame_id', $frameIds)
                 ->select(['user_id'])))
-            ->when($name !== '', fn ($q) => $q->whereIn('uid', fn ($query) => $query->from('enterprise_user_card')
+            ->when($name !== '', fn ($q) => $q->whereIn('id', fn ($query) => $query->from('admin_info')
                 ->where('name', 'like', '%' . $name . '%')
-                ->where('entid', $entid)
                 ->select(['uid'])));
     }
 
@@ -98,7 +97,6 @@ class CompanyUserDao extends BaseDao
     }
 
     /**
-     * @param mixed $where
      * @return BaseModel|Conditionable|mixed
      * @throws \ReflectionException
      * @throws BindingResolutionException
@@ -133,7 +131,7 @@ class CompanyUserDao extends BaseDao
 
         $table = $this->getModel(false)->getTable();
 
-        $cardModel = app()->get(UserCard::class);
+        $cardModel = app()->get(AdminInfo::class);
         $cardTable = $cardModel->getTable();
 
         /** @var UserJobAnalysis $jsonModel */
@@ -142,13 +140,13 @@ class CompanyUserDao extends BaseDao
 
         return $this->getModel(false)
             ->join($jobTable, $jobTable . '.uid', '=', $table . '.id', 'left')
-            ->join($cardTable, $cardTable . '.id', '=', $table . '.card_id', 'left')
-            ->where($table . '.verify', 1)->where($cardTable . '.status', 1)
-            ->where($table . '.entid', $entId)->whereIn($cardTable . '.type', [0, 1, 2, 3])
+            ->join($cardTable, $cardTable . '.id', '=', $table . '.id', 'left')
+            ->where($cardTable . '.status', 1)
+            ->whereIn($cardTable . '.type', [0, 1, 2, 3])
             ->when(isset($where['uid']), fn ($q) => $q->whereIn($table . '.id', $where['uid']))
             ->when(isset($where['job']) && $where['job'], fn ($q) => $q->where($table . '.job', $where['job']))
-            ->when(isset($where['search']) && $where['search'], fn ($q) => $q->whereIn($table . '.uid', fn ($q) => $q->from('enterprise_user_card')
-                ->where('entid', $entId)->where('status', 1)->whereIn($cardTable . '.type', [0, 1, 2, 3])
+            ->when(isset($where['search']) && $where['search'], fn ($q) => $q->whereIn($table . '.uid', fn ($q) => $q->from('admin_info')
+                ->where('status', 1)->whereIn($cardTable . '.type', [0, 1, 2, 3])
                 ->where('name', 'like', '%' . $where['search'] . '%')->select(['uid']))->select(['id']));
     }
 
@@ -210,6 +208,6 @@ class CompanyUserDao extends BaseDao
      */
     protected function setModel()
     {
-        return CompanyUser::class;
+        return Admin::class;
     }
 }

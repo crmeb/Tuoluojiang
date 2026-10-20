@@ -3,7 +3,7 @@
     <div class="card-box">
       <el-card :body-style="{ padding: '20px 20px 0' }" class="box-card">
         <div class="setting-container">
-          <el-form ref="elForm" :model="formData" :rules="rules" size="medium">
+          <el-form ref="elForm" :model="formData" :rules="rules" size="default" label-width="125px">
             <div class="card-list">
               <div class="head">
                 <span class="line">|</span>
@@ -16,7 +16,7 @@
                   :inactive-value="0"
                   active-color="#1890ff"
                   active-text="开启"
-                  inactive-color="#909399"
+                  inactive-color="#cccccc"
                   inactive-text="关闭"
                 >
                 </el-switch>
@@ -28,11 +28,10 @@
                     clearable
                     placeholder="请输入正整数"
                     show-word-limit
-                    size="small"
                     style="width: 350px"
                     type="number"
                   >
-                    <template slot="suffix">天</template>
+                    <template #suffix>天</template>
                   </el-input>
                   <div class="info">用于设置客户在未成交状态滞留多少天自动退回公海</div>
                 </el-form-item>
@@ -42,11 +41,10 @@
                     clearable
                     placeholder="请输入正整数"
                     show-word-limit
-                    size="small"
                     style="width: 350px"
                     type="number"
                   >
-                    <template slot="suffix">天</template>
+                    <template #suffix>天</template>
                   </el-input>
                   <div class="info">用于设置未成交状态的客户，多少天未跟进自动退回公海</div>
                 </el-form-item>
@@ -56,11 +54,10 @@
                     clearable
                     placeholder="请输入正整数"
                     show-word-limit
-                    size="small"
                     style="width: 350px"
                     type="number"
                   >
-                    <template slot="suffix">天</template>
+                    <template #suffix>天</template>
                   </el-input>
                   <div class="info">用于客户退回公海提前多少天进行提醒</div>
                 </el-form-item>
@@ -79,7 +76,7 @@
                   :inactive-value="0"
                   active-color="#1890ff"
                   active-text="开启"
-                  inactive-color="#909399"
+                  inactive-color="#cccccc"
                   inactive-text="关闭"
                 >
                 </el-switch>
@@ -91,28 +88,28 @@
                     clearable
                     placeholder="请输入正整数"
                     show-word-limit
-                    size="small"
                     style="width: 350px"
                     type="number"
                   >
-                    <template slot="suffix">个</template>
+                    <template #suffix>个</template>
                   </el-input>
                   <div class="info">用于设置每个销售员最多可以拥有多少个暂未成交状态的客户</div>
                 </el-form-item>
               </template>
             </div>
-            <el-form-item>
-              <el-button size="small" type="primary" @click="saveEvt">保存</el-button>
-            </el-form-item>
           </el-form>
         </div>
       </el-card>
+      <div class="cr-bottom-button">
+        <el-button type="primary" @click="saveEvt">保存</el-button>
+      </div>
     </div>
   </div>
 </template>
 <script>
 export default {
-  name: 'FollowRules',
+  emits: ['returnData', 'saveEvt'],
+  name: 'ReturnRule',
   props: {
     formData: {
       default: () => {},
@@ -202,14 +199,21 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+.cr-bottom-button {
+  left: 14px;
+  right: 14px;
+  width: initial;
+}
 .card-box {
   font-size: 13px;
   font-family: PingFangSC-Regular, PingFang SC;
   font-weight: 400;
   color: #303133;
   .box-card {
+    height: calc(100vh - 180px);
+    overflow-y: auto;
     .setting-container {
-      width: 300px;
+      width: 460px;
       margin: 0 auto;
       // padding-bottom: 20px;
       .head {
@@ -248,18 +252,18 @@ export default {
     }
   }
 }
-/deep/.el-card.is-always-shadow {
+:deep(.el-card.is-always-shadow) {
   border: none;
 }
-/deep/.el-form-item__label {
+:deep(.el-form-item__label) {
   line-height: 36px;
 }
 .el-form-item::before,
 .el-form-item::after {
   display: none;
 }
-/deep/.el-form-item__content::before,
-/deep/.el-form-item__content::after {
+:deep(.el-form-item__content::before),
+:deep(.el-form-item__content::after) {
   display: none;
 }
 </style>

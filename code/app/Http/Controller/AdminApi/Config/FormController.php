@@ -15,6 +15,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controller\AdminApi\Config;
 
+use App\Constants\CustomEnum\CustomEnum;
+use App\Constants\System\ViewSearchEnum;
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Middleware\AuthAdmin;
 use App\Http\Middleware\AuthEnterprise;
@@ -24,24 +26,17 @@ use App\Http\Service\Config\SalesmanCustomService;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
+use Spatie\RouteAttributes\Attributes\Delete;
 use Spatie\RouteAttributes\Attributes\Get;
 use Spatie\RouteAttributes\Attributes\Middleware;
 use Spatie\RouteAttributes\Attributes\Post;
 use Spatie\RouteAttributes\Attributes\Prefix;
 use Spatie\RouteAttributes\Attributes\Put;
-use Spatie\RouteAttributes\Attributes\Resource;
 
 /**
  * 自定义表单.
  */
 #[Prefix('ent/config/form')]
-#[Resource('cate', false, except: ['edit', 'create'], names: [
-    'index'   => '自定义表单列表',
-    'store'   => '保存自定义表单分组',
-    'show'    => '修改自定义表单分组状态',
-    'update'  => '修改自定义表单分组',
-    'destroy' => '删除自定义表单分组',
-], parameters: ['cate' => 'id'])]
 #[Middleware(['auth.admin', 'ent.auth', 'ent.log'])]
 class FormController extends AuthController
 {
@@ -58,6 +53,7 @@ class FormController extends AuthController
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
+    #[Get('cate', '自定义表单列表')]
     public function index(): mixed
     {
         $types = $this->request->get('types', '');
@@ -69,9 +65,9 @@ class FormController extends AuthController
 
     /**
      * 保存分类.
-     * @param mixed $types
      * @throws BindingResolutionException
      */
+    #[Post('cate/{id}', '保存自定义表单分组')]
     public function store($types, FormCateRequest $request): mixed
     {
         if (! $types) {
@@ -84,10 +80,10 @@ class FormController extends AuthController
 
     /**
      * 修改分类.
-     * @param mixed $id
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
+    #[Put('cate/{id}', '修改自定义表单分组')]
     public function update($id, FormCateRequest $request): mixed
     {
         if (! $id) {
@@ -101,10 +97,10 @@ class FormController extends AuthController
 
     /**
      * 删除.
-     * @param mixed $id
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
+    #[Delete('cate/{id}', '删除自定义表单分组')]
     public function destroy($id): mixed
     {
         if (! $id) {
@@ -117,9 +113,9 @@ class FormController extends AuthController
 
     /**
      * 更新分组状态
-     * @param mixed $id
      * @throws BindingResolutionException
      */
+    #[Get('cate/{id}', '修改自定义表单分组状态')]
     public function show($id): mixed
     {
         if (! $id) {
@@ -183,7 +179,7 @@ class FormController extends AuthController
             return $this->fail(__('common.empty.attrs'));
         }
 
-        return $this->success($service->salesmanCustomField(auth('admin')->id(), (int) $customType));
+        return $this->success($service->salesmanCustomField(auth('admin')->id(), $customType));
     }
 
     /**
@@ -202,8 +198,21 @@ class FormController extends AuthController
             ['data', []],
         ], true);
 
-        $service->saveSalesmanCustomField((int) uuid_to_uid($this->uuid), (int) $customType, $selectType, $data);
+        $service->saveSalesmanCustomField(auth('admin')->id(), $customType, $selectType, $data);
         return $this->success('common.update.succ');
+    }
+
+    /**
+     * 线索转换客户字段数据.
+     */
+    #[Put('data/convert/{customType}', '保存线索转客户字段')]
+    public function setConvert($customType = ViewSearchEnum::VIEW_CUSTOMER)
+    {
+        [$data] = $this->request->postMore([
+            ['data', []],
+        ], true);
+        $this->service->saveConvert($data, $customType, CustomEnum::CLUE);
+        return $this->success('保存成功');
     }
 
     protected function getCateRequestFields(): array

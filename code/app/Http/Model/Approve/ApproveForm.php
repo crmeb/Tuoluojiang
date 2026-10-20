@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -44,9 +44,17 @@ class ApproveForm extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'user_id'    => 'integer',
+        'card_id'    => 'integer',
+        'approve_id' => 'integer',
+        'required'   => 'integer',
+        'sort'       => 'integer',
+    ];
+
     /**
      * 完整表单内容提取.
-     * @param mixed $value
      * @return mixed
      */
     public function getContentAttribute($value)
@@ -56,7 +64,6 @@ class ApproveForm extends BaseModel
 
     /**
      * 完整表单内容提取.
-     * @param mixed $value
      * @return mixed
      */
     public function setContentAttribute($value)
@@ -66,7 +73,6 @@ class ApproveForm extends BaseModel
 
     /**
      * 表单信息提取.
-     * @param mixed $value
      * @return mixed
      */
     public function getPropsAttribute($value)
@@ -76,7 +82,6 @@ class ApproveForm extends BaseModel
 
     /**
      * 表单信息提取.
-     * @param mixed $value
      * @return mixed
      */
     public function setPropsAttribute($value)
@@ -86,7 +91,6 @@ class ApproveForm extends BaseModel
 
     /**
      * 表单信息提取.
-     * @param mixed $value
      * @return mixed
      */
     public function getUniquedAttribute($value)
@@ -96,7 +100,6 @@ class ApproveForm extends BaseModel
 
     /**
      * 表单选项提取.
-     * @param mixed $value
      * @return mixed
      */
     public function getOptionsAttribute($value)
@@ -106,7 +109,6 @@ class ApproveForm extends BaseModel
 
     /**
      * 表单选项提取.
-     * @param mixed $value
      * @return mixed
      */
     public function setOptionsAttribute($value)
@@ -116,7 +118,6 @@ class ApproveForm extends BaseModel
 
     /**
      * 表单配置提取.
-     * @param mixed $value
      * @return mixed
      */
     public function getConfigAttribute($value)
@@ -126,7 +127,6 @@ class ApproveForm extends BaseModel
 
     /**
      * 表单配置提取.
-     * @param mixed $value
      * @return mixed
      */
     public function setConfigAttribute($value)
@@ -155,7 +155,6 @@ class ApproveForm extends BaseModel
     /**
      * id作用域
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeId($query, $value)
     {
@@ -169,7 +168,6 @@ class ApproveForm extends BaseModel
     /**
      * id作用域
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeNotid($query, $value)
     {
@@ -181,7 +179,6 @@ class ApproveForm extends BaseModel
     /**
      * approve_id作用域
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeApproveId($query, $value)
     {
@@ -196,7 +193,6 @@ class ApproveForm extends BaseModel
     /**
      * entid作用域
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeEntid($query, $value)
     {
@@ -208,7 +204,6 @@ class ApproveForm extends BaseModel
     /**
      * uniqued作用域
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeUniqued($query, $value)
     {
@@ -220,7 +215,6 @@ class ApproveForm extends BaseModel
     /**
      * 非uniqued作用域
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeNotUniqued($query, $value)
     {
@@ -232,7 +226,6 @@ class ApproveForm extends BaseModel
     /**
      * 职级.
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeNameLike($query, $value)

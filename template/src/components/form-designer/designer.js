@@ -1,11 +1,10 @@
-import { deepClone, generateId, getDefaultFormConfig, overwriteObj } from '@/utils/util'
+import { deepClone, generateId, getDefaultFormConfig, overwriteObj } from '@/utils/formDesignerUtils'
 import {
   containers,
   advancedFields,
   basicFields,
   customFields
 } from '@/components/form-designer/widget-panel/widgetsConfig.js'
-import { del } from 'vue'
 
 export function createDesigner(vueInstance) {
   let defaultFormConfig = deepClone(getDefaultFormConfig())
@@ -23,7 +22,7 @@ export function createDesigner(vueInstance) {
 
     cssClassList: [], //自定义样式列表
     containersNames: containers.map((con) => con.type),
-    chartContainers:[],
+    chartContainers: [],
     historyData: {
       index: -1, //index: 0,
       maxStep: 20,
@@ -103,12 +102,16 @@ export function createDesigner(vueInstance) {
       return modifiedFlag
     },
     setNamesList(selected) {
+      if (!this.selectNames) {
+        this.selectNames = []
+      }
       if (!selected) {
         return
       }
       if (!!selected.id && !this.containersNames.includes(selected.type)) {
         this.selectNames.push(selected.options.name)
       }
+     
     },
     setSelected(selected) {
       if (!selected) {
@@ -762,6 +765,7 @@ export function createDesigner(vueInstance) {
     },
 
     copyNewFieldWidget(origin) {
+ 
       let newWidget = deepClone(origin)
       let tempId = generateId()
       newWidget.id = newWidget.type.replace(/-/g, '') + tempId
@@ -773,6 +777,7 @@ export function createDesigner(vueInstance) {
     },
 
     copyNewContainerWidget(origin) {
+         
       let newCon = deepClone(origin)
       newCon.id = newCon.type.replace(/-/g, '') + generateId()
       newCon.options.name = newCon.id
@@ -885,13 +890,16 @@ export function createDesigner(vueInstance) {
     },
 
     emitEvent(evtName, evtData) {
-      //用于兄弟组件发射事件
+      //用于兄弟组件发射事件（Vue 3 实例不再支持 $on，改用设计器自带的监听表）
+      const handlers = (this.eventHandlers && this.eventHandlers[evtName]) || []
+      handlers.slice().forEach((callback) => callback(evtData))
       this.vueInstance.$emit(evtName, evtData)
     },
 
     handleEvent(evtName, callback) {
       //用于兄弟组件接收事件
-      this.vueInstance.$on(evtName, (data) => callback(data))
+      this.eventHandlers = this.eventHandlers || {}
+      ;(this.eventHandlers[evtName] = this.eventHandlers[evtName] || []).push(callback)
     },
 
     setCssClassList(cssClassList) {
@@ -954,14 +962,17 @@ export function createDesigner(vueInstance) {
       this.formConfig = deepClone(this.historyData.steps[this.historyData.index].formConfig)
       this.selectNames = deepClone(this.historyData.steps[this.historyData.index].selectNames)
     },
-    deleteHistoryStepNames(name){
-      let index = this.selectNames.findIndex(item => item === name)
-      this.selectNames.splice(index, 1)
+    deleteHistoryStepNames(name) {
+      let index = this.selectNames.findIndex((item) => item === name)
+      if (index !== -1) {
+        this.selectNames.splice(index, 1)
+      }
     },
     redoHistoryStep() {
       if (this.historyData.index !== this.historyData.steps.length - 1) {
         this.historyData.index++
       }
+
       this.widgetList = deepClone(this.historyData.steps[this.historyData.index].widgetList)
       this.formConfig = deepClone(this.historyData.steps[this.historyData.index].formConfig)
       this.selectNames = deepClone(this.historyData.steps[this.historyData.index].selectNames)
@@ -974,7 +985,7 @@ export function createDesigner(vueInstance) {
     redoEnabled() {
       return this.historyData.index < this.historyData.steps.length - 1
     },
-    initHistoryData(){
+    initHistoryData() {
       this.historyData = {
         index: -1,
         maxStep: 10,

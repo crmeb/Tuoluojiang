@@ -27,12 +27,12 @@
 
 <script>
 import { dashboard_container_schema } from '@/views/system/dashboard-design/charts/charts-schema'
-import { deepClone, mlShortcutkeys } from '@/utils/util'
-import { getDashboardDesign, changeDashboardDesign } from '@/api/chart'
-import { getDefaultFormConfig, generateId } from '@/utils/util'
+import { deepClone } from '@/utils/formDesignerUtils'
+import { getDashboardDesign, changeDashboardDesign } from '@/api/chart.ts'
+import { getDefaultFormConfig, generateId } from '@/utils/formDesignerUtils'
 import VFormDesigner from './components/VFormDesigner.vue'
 import SvgIcon from '@/components/svg-icon-nc'
-import { getDatabaseApi } from '@/api/develop'
+import { getDatabaseApi } from '@/api/develop.ts'
 
 export default {
   components: {
@@ -61,6 +61,13 @@ export default {
       title: '统计看板设计'
     }
   },
+  created() {
+    // iconfont Symbol 图标库（约 1.37MB，677 个 symbol）体积较大，
+    // 且只有本页及其子组件的 SvgIcon(@/components/svg-icon-nc) 通过 <use xlink:href="#iconXxx"> 引用它，
+    // 因此只在进入本页时按需拉取。
+    // 注意：满地的 <i class="iconfont iconXxx"> 走的是 @/assets/iconfont/*.css 的字体方案，与此无关。
+    import('@/icons/iconfont/icon')
+  },
   mounted() {
     this.chartId = this.$route.query.chartId
     let type = this.$route.query.type
@@ -72,10 +79,11 @@ export default {
     let key = this.isMobile ? 'mobileChartData' : 'chartData'
     this.initFormConfig(key)
 
-    mlShortcutkeys(() => {
-      window.advancedDevMode = !window.advancedDevMode
-      this.designerConfig.componentLib = !!window.advancedDevMode
-    })
+    // 2.3注释1.14号
+    // mlShortcutkeys(() => {
+    //   window.advancedDevMode = !window.advancedDevMode
+    //   this.designerConfig.componentLib = !!window.advancedDevMode
+    // })
   },
   methods: {
     changeTitle(title) {
@@ -108,23 +116,35 @@ export default {
           })
         })
         localStorage.setItem('allEntityName', JSON.stringify(allEntityName))
-      });
+      })
     },
     async initFormConfig(key) {
       this.loading = true
-
       const task1 = this.getdatabaseList()
       const task2 = getDashboardDesign(this.chartId)
 
-      let [_, res] = await Promise.all([task1, task2]);
+      let [_, res] = await Promise.all([task1, task2])
 
       if (res) {
         this.title = res.data.name
         if (!res.data[key]) {
           this.clearCanvas()
         } else {
-          let blankFormJson = JSON.parse(res.data[key])
-          this.$refs.dbDesignerRef.setFormJson(blankFormJson)
+          const chartData = JSON.parse(res.data[key])
+
+          chartData.widgetList.forEach((widget) => {
+            widget.widgetList.forEach((el) => {
+              if (!el.options.hasOwnProperty('showTips')) {
+                el.options.showTips = 0
+                el.options.tips = ''
+              }
+            })
+          })
+
+          this.$nextTick(() => {
+            this.$refs.dbDesignerRef.setFormJson(chartData)
+          })
+
           if (this.isMobile) {
             this.$refs.dbDesignerRef.changeLayoutType('H5')
           }
@@ -174,21 +194,22 @@ export default {
     async saveDesign() {
       this.loading = true
       let param = {
-        // entity: 'Chart',
         formModel: {},
         id: this.chartId
       }
+
       if (this.isMobile) {
         param.formModel.mobileChartData = JSON.stringify(this.$refs.dbDesignerRef.getFormJson(false))
       } else {
         param.formModel.chartData = JSON.stringify(this.$refs.dbDesignerRef.getFormJson(false))
       }
+
       await changeDashboardDesign(param.id, param.formModel).then((res) => {
         this.loading = false
       })
     }
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.clearCanvas()
   }
 }

@@ -6,13 +6,18 @@
       }}</span>
       </div>
     
-    &copy;{{ $moment().format('YYYY') }} 陀螺匠. All Rights Reserved. Version {{ title || 'v1.5' }}
+    &copy;{{ dayjs().format('YYYY') }} 陀螺匠. All Rights Reserved. Version {{ title || 'v1.5' }}
   </div>
 </template>
 
 <script>
+import dayjs from 'dayjs'
+import { getStorageJson } from '@/utils/storage.ts'
 export default {
   name: 'CrmebOaEntCopyright',
+  computed: {
+    dayjs: () => dayjs
+  },
   data() {
     return {
       title: '',
@@ -39,9 +44,8 @@ export default {
     }
   },
   mounted() {
-    this.title = JSON.parse(localStorage.getItem('sitedata'))
-      ? JSON.parse(localStorage.getItem('sitedata')).version_name
-      : ''
+    const sitedata = getStorageJson('sitedata')
+    this.title = sitedata ? sitedata.version_name : ''
   },
 
   methods: {
@@ -58,7 +62,6 @@ export default {
   color: #808695;
   font-size: 14px;
   width: 100%;
-  background-color: #f0f2f5;
   height: 65px;
   margin-top: 15px;
 }

@@ -17,7 +17,7 @@
 </template>
 
 <script>
-import { roterPre } from '@/settings'
+import { roterPre } from '@/settings.ts'
 export default {
   name: 'Page404',
   data() {
@@ -35,11 +35,8 @@ export default {
 
 <style lang="scss" scoped>
 .wscn-http404-container {
-  transform: translate(-50%, -50%);
-  position: absolute;
-  top: 40%;
-  left: 50%;
   .wscn-http404 {
+    margin: 15vh auto 0;
     position: relative;
     width: 1200px;
     padding: 0 50px;

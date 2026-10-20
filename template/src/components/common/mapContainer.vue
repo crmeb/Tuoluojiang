@@ -13,29 +13,21 @@
         v-model="address"
         @change="searchKeyWord"
       >
-        <el-button 
-          type="primary" 
-          slot="append" 
-          icon="el-icon-search" 
-          @click="searchKeyWord"
-        >
-        </el-button>
+        <template #append>
+          <el-button type="primary" icon="el-icon-search" @click="searchKeyWord"> </el-button>
+        </template>
       </el-input>
-      
+
       <!-- 搜索结果列表 -->
       <div class="map_search_result" v-if="show">
         <ul>
-          <li 
-            v-for="(item, index) in poiList" 
-            :key="index" 
-            @click="markerResult(item)"
-          >
+          <li v-for="(item, index) in poiList" :key="index" @click="markerResult(item)">
             {{ item.name }}
           </li>
         </ul>
       </div>
     </div>
-    
+
     <!-- 地图容器 -->
     <div id="allmap"></div>
   </div>
@@ -51,39 +43,40 @@ window._AMapSecurityConfig = {
 
 export default {
   name: 'MapContainer',
+  emits: ['select'],
   props: {
     // 位置信息对象
     positionInfo: {
       type: Object,
       default: () => ({
         address: '',
-        lng: 116.397428,  // 默认北京中心点经度
-        lat: 39.90923,    // 默认北京中心点纬度
+        lng: 116.397428, // 默认北京中心点经度
+        lat: 39.90923, // 默认北京中心点纬度
         effective_range: 1000
       })
     }
   },
-  
+
   data() {
     return {
-      address: '',          // 搜索地址
-      marker: null,         // 地图标记点
+      address: '', // 搜索地址
+      marker: null, // 地图标记点
       placeSearchComponent: null, // 地点搜索组件
-      show: false,          // 是否显示搜索结果
-      poiList: [],         // 搜索结果列表
+      show: false, // 是否显示搜索结果
+      poiList: [], // 搜索结果列表
       effective_range: 1000, // 有效范围(米)
-      radius: 200,         // 标记点范围半径
-      map: null,           // 地图实例
-      geocoder: null,      // 地理编码实例
-      geolocation: null    // 定位实例
+      radius: 200, // 标记点范围半径
+      map: null, // 地图实例
+      geocoder: null, // 地理编码实例
+      geolocation: null // 定位实例
     }
   },
-  
+
   mounted() {
     this.initMap()
     this.address = this.positionInfo.address
   },
-  
+
   watch: {
     // 监听位置信息变化
     positionInfo: {
@@ -92,6 +85,15 @@ export default {
         this.address = newVal.address
       },
       deep: true
+    },
+    effective_range(value) {
+      if (this.map) {
+        this.map.getAllOverlays().forEach((item) => {
+          if (item instanceof AMap.Circle) {
+            item.setRadius(value)
+          }
+        })
+      }
     }
   },
 
@@ -115,37 +117,36 @@ export default {
             'AMap.CitySearch'
           ],
           resizeEnable: true
-        }).then((AMap) => {
-          // 创建地图实例
-          this.map = new AMap.Map('allmap', {
-            resizeEnable: true,
-            zoom: 14,
-            viewMode: '3D',
-            center: [this.positionInfo.lng, this.positionInfo.lat]
+        })
+          .then((AMap) => {
+            // 创建地图实例
+            this.map = new AMap.Map('allmap', {
+              resizeEnable: true,
+              zoom: 14,
+              viewMode: '3D',
+              center: [this.positionInfo.lng, this.positionInfo.lat]
+            })
+
+            // 添加地图控件
+            this.map.addControl(new AMap.Scale())
+            this.map.addControl(new AMap.ToolBar())
+
+            // 初始化地理编码和搜索功能
+            this.geocoder = new AMap.Geocoder({
+              radius: 1000,
+              extensions: 'all',
+              city: '全国'
+            })
+
+            this.mapSearchInit()
+            this.getCurrentLocation()
+
+            // 根据初始经纬度获取地址
+            this.getAddressByLngLat(this.positionInfo.lng, this.positionInfo.lat)
+
+            resolve()
           })
-          
-          // 添加地图控件
-          this.map.addControl(new AMap.Scale())
-          this.map.addControl(new AMap.ToolBar())
-          
-          // 初始化地理编码和搜索功能
-          this.geocoder = new AMap.Geocoder({ 
-            radius: 1000, 
-            extensions: 'all', 
-            city: '全国' 
-          })
-          
-          this.mapSearchInit()
-          this.getCurrentLocation()
-          
-          // 根据初始经纬度获取地址
-          this.getAddressByLngLat(
-            this.positionInfo.lng, 
-            this.positionInfo.lat
-          )
-          
-          resolve()
-        }).catch(reject)
+          .catch(reject)
       })
     },
 
@@ -173,7 +174,7 @@ export default {
         enableHighAccuracy: true,
         zoomToAccuracy: true
       })
-      
+
       this.geolocation.getCurrentPosition((status, result) => {
         if (status == 'complete') {
           this.onComplete(result)
@@ -188,7 +189,7 @@ export default {
      * @param {Object} data - 定位数据
      */
     onComplete(data) {
-      const [lng, lat] = data.position
+      const { lng, lat } = data.position
       this.dynamicSign(lng, lat, this.radius)
     },
 
@@ -217,11 +218,7 @@ export default {
      * @param {Object} data - 位置数据
      */
     showLocation(data) {
-      this.dynamicSign(
-        this.positionInfo.lng, 
-        this.positionInfo.lat, 
-        this.radius
-      )
+      this.dynamicSign(this.positionInfo.lng, this.positionInfo.lat, this.radius)
     },
 
     /**
@@ -239,7 +236,7 @@ export default {
         riseOnHover: true,
         bubble: true
       })
-      
+
       // 创建范围圆
       const circle = new AMap.Circle({
         center: new AMap.LngLat(lng, lat),
@@ -250,7 +247,7 @@ export default {
         fillColor: '#1890ff',
         fillOpacity: 0.35
       })
-      
+
       // 清除并重新添加标记
       this.map.clearMap()
       this.map.add([marker, circle])
@@ -287,9 +284,9 @@ export default {
     markerClick(e) {
       const { lng, lat } = e.lnglat
       this.dynamicSign(lng, lat, this.radius)
-      
+
       this.getAddressByLngLat(lng, lat)
-      
+
       // 通知父组件位置变化
       this.$emit('select', {
         address: this.address,
@@ -306,7 +303,7 @@ export default {
     markerResult(data) {
       this.show = false
       this.address = data.name
-      
+
       // 创建新标记点
       const marker = new AMap.Marker({
         position: [Number(data.location.lng), Number(data.location.lat)],
@@ -314,16 +311,16 @@ export default {
         cursor: 'move',
         riseOnHover: true
       })
-      
+
       this.map.clearMap()
       this.map.add(marker)
-      
+
       // 居中显示并添加范围圆
       setTimeout(() => {
         this.map.setCenter(data.location)
         this.dynamicSign(data.location.lng, data.location.lat, 200)
       }, 50)
-      
+
       // 通知父组件
       this.$emit('select', {
         address: this.address,
@@ -331,7 +328,7 @@ export default {
         lat: data.location.lat,
         effective_range: this.effective_range
       })
-      
+
       marker.on('dragend', this.markerClick)
     }
   }
@@ -367,20 +364,20 @@ export default {
   height: 300px;
   width: 400px;
   background-color: #f5f5f5;
-  opacity: 0.6;
+  opacity: 0.9;
   overflow-y: scroll;
-  
+
   ul {
     padding-left: 0;
   }
-  
+
   li {
     line-height: 35px;
     color: #000;
     height: 35px;
     padding-left: 15px;
     border-bottom: 1px dashed #909199;
-    
+
     &:hover {
       color: blue;
       font-weight: bolder;
@@ -388,25 +385,23 @@ export default {
   }
 }
 
-/* Element UI 样式覆盖 */
-::v-deep {
-  .el-form-item {
+/* 地图搜索表单样式 */
+:deep(.el-form-item) {
     margin-bottom: 0 !important;
-  }
-  
-  .el-input__suffix {
+}
+
+:deep(.el-input__suffix) {
     position: absolute;
     top: 10px;
-  }
-  
-  .el-input-group__append {
+}
+
+:deep(.el-input-group__append) {
     top: 0;
-    
+
     button.el-button {
       background-color: #1890ff;
       color: #fff;
       border-radius: 0 4px 4px 0;
     }
-  }
 }
 </style>

@@ -1,27 +1,28 @@
 <template>
   <div class="box-container">
     <el-drawer
-      :visible.sync="drawer"
+      v-model="drawer"
       direction="rtl"
       :before-close="handleClose"
       size="760px"
       :modal="true"
-      :wrapper-closable="true"
     >
-      <div slot="title">
-        <div class="tab-box">
-          <div
-            v-for="(item, index) in tabList"
-            :key="index"
-            class="tab-item"
-            :class="{ on: index == tabCur }"
-            @click="handleTab(item, index)"
-          >
-            {{ item.title }}
+      <template #header>
+        <div>
+          <div class="tab-box">
+            <div
+              v-for="(item, index) in tabList"
+              :key="index"
+              class="tab-item"
+              :class="{ on: index == tabCur }"
+              @click="handleTab(item, index)"
+            >
+              {{ item.title }}
+            </div>
           </div>
         </div>
-      </div>
-      <el-form :inline="true" label-width="80px" @submit.native.prevent class="flex">
+      </template>
+      <el-form :inline="true" label-width="80px" @submit.prevent class="flex">
         <el-form-item class="select-bar el-input--small">
           <div style="width: 200px">
             <select-department
@@ -34,7 +35,7 @@
         </el-form-item>
 
         <el-form-item class="select-bar">
-          <el-input v-model="where.name" @change="handleOk" placeholder="请输入被考核人姓名" size="small"></el-input>
+          <el-input v-model="where.name" @change="handleOk" placeholder="请输入被考核人姓名"></el-input>
         </el-form-item>
 
         <el-tooltip effect="dark" content="重置搜索条件" placement="top">
@@ -46,12 +47,12 @@
           <el-table-column prop="name" label="成员姓名" min-width="140"></el-table-column>
           <el-table-column prop="frame.name" label="部门" min-width="140" />
           <el-table-column prop="job.name" label="职位" min-width="140">
-            <template slot-scope="scope">
+            <template #default="scope">
               <span>{{ scope.row.job ? scope.row.job.name : '-' }}</span>
             </template>
           </el-table-column>
           <el-table-column prop="verify" label="直属上级领导" min-width="140">
-            <template slot-scope="scope">
+            <template #default="scope">
               <span>{{ scope.row.super && scope.row.super ? scope.row.super.name : '-' }}</span>
             </template>
           </el-table-column>
@@ -72,12 +73,13 @@
 </template>
 
 <script>
-import { assessPlanUserListApi } from '@/api/enterprise'
+import { defineAsyncComponent } from 'vue'
+import { assessPlanUserListApi } from '@/api/enterprise.ts'
 
 export default {
   name: 'assessBox',
   components: {
-    selectDepartment: () => import('@/components/form-common/select-department')
+    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department'))
   },
   data() {
     return {
@@ -163,7 +165,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/deep/.el-drawer__header {
+:deep(.el-drawer__header) {
   border-bottom: 1px solid #d8d8d8;
   padding-bottom: 14px;
   margin-bottom: 0;
@@ -172,7 +174,7 @@ export default {
   margin-top: 2px;
   // margin-left: 14px;
 }
-/deep/ .el-drawer__body {
+:deep(.el-drawer__body) {
   padding: 20px;
   overflow-y: auto;
 }
@@ -193,14 +195,14 @@ export default {
   }
 }
 .label1 {
-  /deep/ .el-form-item__label {
+  :deep(.el-form-item__label) {
     width: 55px !important;
   }
 }
 .select-bar {
   display: flex;
 }
-/deep/.el-form-item__content {
+:deep(.el-form-item__content) {
   flex: 1;
 }
 .plan-footer-one {

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of PHPPresentation - A pure PHP library for reading and writing
  * presentations documents.
@@ -10,47 +11,50 @@
  * file that was distributed with this source code. For the full list of
  * contributors, visit https://github.com/PHPOffice/PHPPresentation/contributors.
  *
- * @link        https://github.com/PHPOffice/PHPPresentation
- * @copyright   2009-2015 PHPPresentation contributors
+ * @see        https://github.com/PHPOffice/PHPPresentation
+ *
  * @license     http://www.gnu.org/licenses/lgpl.txt LGPL version 3
  */
+
+declare(strict_types=1);
 
 namespace PhpOffice\PhpPresentation\Writer;
 
 use PhpOffice\Common\Adapter\Zip\ZipArchiveAdapter;
 use PhpOffice\Common\XMLWriter;
+use PhpOffice\PhpPresentation\Exception\DirectoryNotFoundException;
+use PhpOffice\PhpPresentation\Exception\InvalidParameterException;
 use PhpOffice\PhpPresentation\PhpPresentation;
 use PhpOffice\PhpPresentation\Shape\Drawing\AbstractDrawingAdapter;
+use PhpOffice\PhpPresentation\Shape\Drawing\File;
 
 /**
- * \PhpOffice\PhpPresentation\Writer\Serialized
+ * \PhpOffice\PhpPresentation\Writer\Serialized.
  */
 class Serialized extends AbstractWriter implements WriterInterface
 {
     /**
-     * Create a new \PhpOffice\PhpPresentation\Writer\Serialized
-     *
-     * @param \PhpOffice\PhpPresentation\PhpPresentation $pPhpPresentation
+     * Create a new \PhpOffice\PhpPresentation\Writer\Serialized.
      */
-    public function __construct(PhpPresentation $pPhpPresentation = null)
+    public function __construct(?PhpPresentation $pPhpPresentation = null)
     {
         // Set PhpPresentation
-        $this->setPhpPresentation($pPhpPresentation);
+        $this->setPhpPresentation($pPhpPresentation ?? new PhpPresentation());
 
         // Set ZIP Adapter
         $this->setZipAdapter(new ZipArchiveAdapter());
     }
 
     /**
-     * Save PhpPresentation to file
-     *
-     * @param  string    $pFilename
-     * @throws \Exception
+     * Save PhpPresentation to file.
      */
-    public function save($pFilename)
+    public function save(string $pFilename): void
     {
         if (empty($pFilename)) {
-            throw new \Exception("Filename is empty.");
+            throw new InvalidParameterException('pFilename', '');
+        }
+        if (!is_dir(dirname($pFilename))) {
+            throw new DirectoryNotFoundException(dirname($pFilename));
         }
         $oPresentation = $this->getPhpPresentation();
 
@@ -63,10 +67,12 @@ class Serialized extends AbstractWriter implements WriterInterface
         // Add media
         $slideCount = $oPresentation->getSlideCount();
         for ($i = 0; $i < $slideCount; ++$i) {
-            for ($j = 0; $j < $oPresentation->getSlide($i)->getShapeCollection()->count(); ++$j) {
-                if ($oPresentation->getSlide($i)->getShapeCollection()->offsetGet($j) instanceof AbstractDrawingAdapter) {
-                    $imgTemp = $oPresentation->getSlide($i)->getShapeCollection()->offsetGet($j);
-                    $objZip->addFromString('media/' . $imgTemp->getIndexedFilename(), file_get_contents($imgTemp->getPath()));
+            foreach ($oPresentation->getSlide($i)->getShapeCollection() as $shape) {
+                if ($shape instanceof AbstractDrawingAdapter) {
+                    $objZip->addFromString(
+                        'media/' . $shape->getImageIndex() . '/' . pathinfo($shape->getPath(), PATHINFO_BASENAME),
+                        file_get_contents($shape->getPath())
+                    );
                 }
             }
         }
@@ -79,14 +85,13 @@ class Serialized extends AbstractWriter implements WriterInterface
     }
 
     /**
-     * Serialize PhpPresentation object to XML
+     * Serialize PhpPresentation object to XML.
      *
-     * @param  PhpPresentation $pPhpPresentation
-     * @param  string        $pFilename
-     * @return string        XML Output
-     * @throws \Exception
+     * @param string $pFilename
+     *
+     * @return string XML Output
      */
-    private function writeSerialized(PhpPresentation $pPhpPresentation = null, $pFilename = '')
+    protected function writeSerialized(?PhpPresentation $pPhpPresentation = null, $pFilename = '')
     {
         // Clone $pPhpPresentation
         $pPhpPresentation = clone $pPhpPresentation;
@@ -94,9 +99,14 @@ class Serialized extends AbstractWriter implements WriterInterface
         // Update media links
         $slideCount = $pPhpPresentation->getSlideCount();
         for ($i = 0; $i < $slideCount; ++$i) {
-            for ($j = 0; $j < $pPhpPresentation->getSlide($i)->getShapeCollection()->count(); ++$j) {
-                if ($pPhpPresentation->getSlide($i)->getShapeCollection()->offsetGet($j) instanceof AbstractDrawingAdapter) {
-                    $pPhpPresentation->getSlide($i)->getShapeCollection()->offsetGet($j)->setPath('zip://' . $pFilename . '#media/' . $pPhpPresentation->getSlide($i)->getShapeCollection()->offsetGet($j)->getIndexedFilename(), false);
+            foreach ($pPhpPresentation->getSlide($i)->getShapeCollection() as $shape) {
+                if ($shape instanceof AbstractDrawingAdapter) {
+                    $imgPath = 'zip://' . $pFilename . '#media/' . $shape->getImageIndex() . '/' . pathinfo($shape->getPath(), PATHINFO_BASENAME);
+                    if ($shape instanceof File) {
+                        $shape->setPath($imgPath, false);
+                    } else {
+                        $shape->setPath($imgPath);
+                    }
                 }
             }
         }

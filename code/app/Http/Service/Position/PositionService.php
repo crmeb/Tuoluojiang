@@ -18,13 +18,15 @@ namespace App\Http\Service\Position;
 use App\Http\Dao\Position\PositionDao;
 use App\Http\Model\BaseModel;
 use App\Http\Service\BaseService;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\services\FormService as Form;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\services\FormService as Form;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 
 /**
  * 企业职级
@@ -46,7 +48,7 @@ class PositionService extends BaseService implements ResourceServicesInterface
      * @param array|string[] $field
      * @param null $sort
      */
-    public function getList(array $where, array $field = ['*'], $sort = null, array $with = []): array
+    public function getList(array $where, array $field = ['*'], $sort = 'sort', array $with = []): array
     {
         [$page, $limit] = $this->getPageValue();
         $list           = $this->dao->getList($where, $field, $page, $limit, $sort, $with + [
@@ -76,7 +78,7 @@ class PositionService extends BaseService implements ResourceServicesInterface
      */
     public function resourceCreate(array $other = []): array
     {
-        return $this->elForm('添加职级', $this->getRankRuleForm(collect($other)), '/ent/rank');
+        return $this->createElementForm('添加职级', $this->getRankRuleForm(collect($other)), '/ent/rank');
     }
 
     /**
@@ -90,7 +92,7 @@ class PositionService extends BaseService implements ResourceServicesInterface
         if (! $rankInfo) {
             throw $this->exception('修改的职级不存在');
         }
-        return $this->elForm('编辑职级', $this->getRankRuleForm(collect($rankInfo->toArray())), '/ent/rank/' . $id, 'put');
+        return $this->createElementForm('编辑职级', $this->getRankRuleForm(collect($rankInfo->toArray())), '/ent/rank/' . $id, 'put');
     }
 
     /**
@@ -141,8 +143,10 @@ class PositionService extends BaseService implements ResourceServicesInterface
     /**
      * 删除.
      * @param mixed $id
-     * @return int|mixed
+     * @return mixed
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
     public function resourceDelete($id, ?string $key = null)
@@ -176,9 +180,21 @@ class PositionService extends BaseService implements ResourceServicesInterface
     }
 
     /**
+     * 职级下拉数据.
+     * @throws BindingResolutionException
+     * @throws \ReflectionException
+     */
+    public function getSelectList(array $where = [], array $field = ['id', 'name', 'alias']): array
+    {
+        return $this->dao->getList($where, $field, 0, 0, 'id');
+    }
+
+    /**
      * 获取职级表单规则.
      * @return array
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
     protected function getRankRuleForm(Collection $collection)
@@ -191,6 +207,7 @@ class PositionService extends BaseService implements ResourceServicesInterface
             Form::input('name', '职级名称', $collection->get('name'))->required()->maxlength(20)->showWordLimit(true),
             Form::input('alias', '职级别名', $collection->get('alias'))->required()->maxlength(20)->showWordLimit(true),
             Form::textarea('info', '职级描述', $collection->get('info'))->rows(5),
+            Form::number('sort', '排序', $collection->get('sort', 0))->min(0)->max(999999)->precision(0),
         ];
     }
 }

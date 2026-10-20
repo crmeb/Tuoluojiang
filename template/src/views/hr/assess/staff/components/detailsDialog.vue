@@ -1,22 +1,22 @@
 <template>
-  <el-dialog :title="config.title" :visible.sync="dialogVisible" :width="config.width" :before-close="handleClose">
+  <el-dialog :title="config.title" v-model="dialogVisible" :width="config.width" :before-close="handleClose">
     <div class="current">
       <el-scrollbar style="height: 100%;">
         <div v-if="tableData.length > 0" class="current-list">
           <div class="total-score">
             <p>
-              <span class="total-score-name">{{ $t('access.totalscore') }}:</span>
+              <span class="total-score-name">总分:</span>
               <span class="number">{{ assessInfo.max }}</span>
             </p>
             <p v-for="(item, index) in tableData" :key="index">
               <span class="total-score-name">{{ item.name }}:</span> <span class="number">{{ sum(index) }}</span>
             </p>
             <p>
-              <span class="total-score-name">{{ $t('access.totalscore1') }}:</span>
+              <span class="total-score-name">当前得分:</span>
               <span class="number">{{ totalSum() }}</span>
             </p>
           </div>
-          <div v-for="(item, index) in tableData" :key="index" class="current-table">
+          <div v-for="(item, index) in tableData" :key="index" class="current-table oa-input-borderless">
             <div class="current-table-title">
               <div v-if="!testAccess">
                 <span
@@ -28,50 +28,49 @@
                     type="text"
                 /></span>
                 <span
-                  >{{ $t('access.dimensionweight')
-                  }}<el-input-number v-model="item.ratio" :controls="false" :min="0" :max="item.weight" />%</span
+                  >维度权重<el-input-number v-model="item.ratio" :controls="false" :min="0" :max="item.weight" />%</span
                 >
               </div>
               <div v-else>
                 <span>{{ item.name }}</span>
                 <span>
-                  {{ assessInfo.types == 0 ? $t('access.dimensionweight') : $t('access.dimensionscore') }}
+                  {{ assessInfo.types == 0 ? '维度权重' : '维度分数' }}
                   {{ item.ratio }}
                   {{ assessInfo.types == 0 ? '%' : '' }}
                 </span>
               </div>
             </div>
             <el-table :data="item.target" style="width: 100%;" row-key="id" default-expand-all>
-              <el-table-column prop="name" :label="$t('access.targetname')" min-width="100">
-                <template slot-scope="scope">
+              <el-table-column prop="name" label="指标名称" min-width="100">
+                <template #default="scope">
                   <el-input v-if="!testAccess" v-model="scope.row.name" type="text" />
                   <span v-else>{{ scope.row.name }}</span>
                 </template>
               </el-table-column>
-              <el-table-column prop="content" :label="$t('access.targetexplain')" min-width="200">
-                <template slot-scope="scope">
+              <el-table-column prop="content" label="指标说明" min-width="200">
+                <template #default="scope">
                   <el-input v-if="!testAccess" v-model="scope.row.content" type="text" />
                   <span v-else>{{ scope.row.content }}</span>
                 </template>
               </el-table-column>
-              <el-table-column prop="finish_info" :label="$t('access.completion')" min-width="180">
-                <template slot-scope="scope">
+              <el-table-column prop="finish_info" label="完成情况 (自评)" min-width="180">
+                <template #default="scope">
                   <el-input v-if="testAccess" v-model="scope.row.finish_info" type="text" />
                   <span v-else>{{ scope.row.finish_info }}</span>
                 </template>
               </el-table-column>
-              <el-table-column prop="check_info" :label="$t('access.higherevaluation')" min-width="180">
-                <template slot-scope="scope">
+              <el-table-column prop="check_info" label="上级评价" min-width="180">
+                <template #default="scope">
                   <el-input v-if="!testAccess" v-model="scope.row.check_info" type="text" placeholder="上级评价" />
                   <span v-if="testAccess">{{ scope.row.check_info }}</span>
                 </template>
               </el-table-column>
               <el-table-column
                 prop="ratio"
-                :label="assessInfo.types == 0 ? $t('access.weight') : $t('access.score')"
+                :label="assessInfo.types == 0 ? '权重' : '分数'"
                 min-width="100"
               >
-                <template slot-scope="scope">
+                <template #default="scope">
                   <div class="current-task">
                     <el-input v-if="!testAccess" v-model="scope.row.ratio" type="text" />
                     <span v-else>{{ scope.row.ratio }}</span>
@@ -79,8 +78,8 @@
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column v-if="assessInfo.types == 0" prop="task" :label="$t('access.degree')" min-width="100">
-                <template slot-scope="scope">
+              <el-table-column v-if="assessInfo.types == 0" prop="task" label="完成度 (自评)" min-width="100">
+                <template #default="scope">
                   <div class="current-task">
                     <el-progress
                       type="circle"
@@ -94,21 +93,21 @@
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column v-else prop="task" :label="$t('access.completion1')" min-width="100">
-                <template slot-scope="scope">
+              <el-table-column v-else prop="task" label="自评分" min-width="100">
+                <template #default="scope">
                   <div class="current-task">
                     <el-input v-if="testAccess" v-model="scope.row.finish_ratio" type="text" />
                     <span v-else>{{ scope.row.finish_ratio }}</span>
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column prop="score" :label="$t('access.superiorgrade')" min-width="60">
-                <template slot-scope="scope">
+              <el-table-column prop="score" label="上级评分" min-width="80">
+                <template #default="scope">
                   <div class="current-task">
                     <el-input-number
                       v-if="!testAccess"
                       v-model="scope.row.score"
-                      :placeholder="$t('access.score')"
+                      placeholder="分数"
                       :controls="false"
                       :min="0"
                       :max="100"
@@ -227,7 +226,7 @@ export default {
 .current {
   height: 520px;
   width: 100%;
-  /deep/ .el-scrollbar__wrap {
+  :deep(.el-scrollbar__wrap) {
     overflow-x: hidden;
   }
 }
@@ -270,26 +269,26 @@ export default {
       color: #000000;
     }
   }
-  /deep/ .el-input-number--medium {
+  :deep(.el-input-number) {
     width: 30px;
   }
-  /deep/ .el-table th > .cell {
+  :deep(.el-table th > .cell) {
     font-weight: normal;
     font-size: 13px;
   }
-  /deep/ .el-table--medium td {
+  :deep(.el-table td) {
     padding: 3px 0;
   }
-  >>> .el-input__inner {
-    height: 28px;
-    line-height: 28px;
-    border: none;
-    font-size: 13px;
-    padding: 0 0 0 3px;
-    text-align: left;
+  :deep(.el-input__wrapper) {
+    min-height: 28px;
+    padding-left: 3px;
     background-color: transparent;
   }
-  /deep/ .el-table--enable-row-hover {
+  :deep(.el-input__inner) {
+    font-size: 13px;
+    text-align: left;
+  }
+  :deep(.el-table--enable-row-hover) {
     .el-table__body tr:hover > td {
       background: transparent;
     }
@@ -300,16 +299,9 @@ export default {
   .current-task {
     display: flex;
     align-items: center;
-    >>> .el-input--medium,
-    .el-input-number--medium {
+    :deep(.el-input),
+    .el-input-number {
       width: 30px;
-    }
-    >>> .el-input__inner {
-      width: 100%;
-      border: none;
-      background-color: transparent;
-      padding: 0 0 0 3px;
-      text-align: left;
     }
   }
 }
@@ -339,11 +331,10 @@ export default {
   }
 }
 .current-footer {
-  margin-top: 20px;
   padding-top: 20px;
-  border-top: 4px solid #f0f2f5;
+  border-top: 1px solid #f0f2f5;
 }
-/deep/ .el-scrollbar__bar.is-vertical {
+:deep(.el-scrollbar__bar.is-vertical) {
   width: 0;
 }
 </style>

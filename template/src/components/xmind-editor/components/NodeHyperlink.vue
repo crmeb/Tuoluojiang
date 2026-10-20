@@ -1,31 +1,36 @@
 <template>
-  <el-dialog class="nodeHyperlinkDialog" title="超链接" :visible.sync="dialogVisible" :width="isMobile ? '90%' : '50%'"
+  <el-dialog class="nodeHyperlinkDialog" title="超链接" v-model="dialogVisible" :width="isMobile ? '90%' : '50%'"
     :top="isMobile ? '20px' : '15vh'">
     <div class="item">
       <span class="name">链接</span>
-      <el-input v-model="link" size="mini" placeholder="请在此输入链接地址" @keyup.native.stop @keydown.native.stop
+      <el-input v-model="link" placeholder="请在此输入链接地址" @keyup.stop @keydown.stop
         @blur="handleUrl()">
-        <el-select v-model="protocol" slot="prepend" style="width: 80px;">
-          <el-option label="https" value="https"></el-option>
-          <el-option label="http" value="http"></el-option>
-          <el-option label="无" value="none"></el-option>
-        </el-select>
+        <template #prepend>
+          <el-select v-model="protocol" style="width: 80px;">
+            <el-option label="https" value="https"></el-option>
+            <el-option label="http" value="http"></el-option>
+            <el-option label="无" value="none"></el-option>
+          </el-select>
+        </template>
       </el-input>
     </div>
     <div class="item">
       <span class="name">名称</span>
-      <el-input v-model="linkTitle" size="mini" @keyup.native.stop @keydown.native.stop></el-input>
+      <el-input v-model="linkTitle" @keyup.stop @keydown.stop></el-input>
     </div>
-    <span slot="footer" class="dialog-footer">
-      <el-button @click="cancel">取 消</el-button>
-      <el-button type="primary" @click="confirm">确 定</el-button>
-    </span>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="cancel">取 消</el-button>
+        <el-button type="primary" @click="confirm">确 定</el-button>
+      </span>
+    </template>
   </el-dialog>
 </template>
 
 <script>
+import { EventBus } from '@/libs/bus.ts'
 import { isMobile } from 'simple-mind-map/src/utils/index'
-import { NODE_ACTIVE, SHOW_NODE_LINK } from '../event-constant';
+import { NODE_ACTIVE, SHOW_NODE_LINK } from '../event-constant.ts';
 
 
 export default {
@@ -41,12 +46,12 @@ export default {
     }
   },
   created() {
-    this.$bus.$on(NODE_ACTIVE, this.handleNodeActive)
-    this.$bus.$on(SHOW_NODE_LINK, this.handleShowNodeLink)
+    EventBus.$on(NODE_ACTIVE, this.handleNodeActive)
+    EventBus.$on(SHOW_NODE_LINK, this.handleShowNodeLink)
   },
-  beforeDestroy() {
-    this.$bus.$off(NODE_ACTIVE, this.handleNodeActive)
-    this.$bus.$off(SHOW_NODE_LINK, this.handleShowNodeLink)
+  beforeUnmount() {
+    EventBus.$off(NODE_ACTIVE, this.handleNodeActive)
+    EventBus.$off(SHOW_NODE_LINK, this.handleShowNodeLink)
   },
   methods: {
     handleNodeActive(...args) {

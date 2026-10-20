@@ -15,10 +15,10 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Notice;
 
-use App\Http\Dao\BaseDao;
 use App\Http\Model\News\News;
 use App\Http\Model\News\NewsVisit;
-use crmeb\traits\dao\ListSearchTrait;
+use App\Http\Dao\BaseDao;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Facades\Config;
 use Psr\Container\ContainerExceptionInterface;

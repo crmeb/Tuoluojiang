@@ -1,0 +1,138 @@
+[
+  {
+    "id": "read_schedule",
+    "question": "我今天下午要干什么",
+    "expect": {
+      "decision": "thin_react",
+      "prefetch_rag": false,
+      "first_round_business_tools": false,
+      "may_call": ["load_tools", "schedule_*"]
+    },
+    "notes": "读日程：模型先 load_tools(schedule)，再调日程查询工具；本地不得词面路由。"
+  },
+  {
+    "id": "read_cross_module",
+    "question": "本月业务员业绩排行，顺便看看我的考勤",
+    "expect": {
+      "decision": "thin_react",
+      "prefetch_rag": false,
+      "may_call": ["load_tools", "finance_rank_analysis", "attendance_*"]
+    },
+    "notes": "跨模块：允许多次 load_tools；无 keyword 时每次仅挂 moduleCore 短名单。"
+  },
+  {
+    "id": "write_create_customer",
+    "question": "帮我创建一个客户叫极点科技",
+    "expect": {
+      "decision": "thin_react",
+      "write_gates": ["confirm_required"],
+      "may_call": ["load_tools", "customer_create"]
+    },
+    "notes": "写创建：确认卡保留；本地不得因关键词预检拦截或错挂写工具。"
+  },
+  {
+    "id": "write_input_resume",
+    "question": "（补参续跑）用户提交 input_required 后的字段",
+    "expect": {
+      "decision": "thin_react",
+      "write_gates": ["input_required", "confirm_required"]
+    },
+    "notes": "补参卡与确认卡续跑路径不变；routingQuestion 仅保留写重试/缺参补充拼接。"
+  },
+  {
+    "id": "knowledge_qa",
+    "question": "请假流程是什么",
+    "expect": {
+      "decision": "thin_react",
+      "prefetch_rag": false,
+      "may_call": ["search_knowledge"]
+    },
+    "notes": "知识问答：不预取 RAG；模型按需 search_knowledge。"
+  },
+  {
+    "id": "chitchat",
+    "question": "你好",
+    "expect": {
+      "decision": "thin_react",
+      "prefetch_rag": false,
+      "tools_optional": true
+    },
+    "notes": "闲聊：可直接正文回复，不强制 load_tools / search_knowledge。"
+  },
+  {
+    "id": "guest_sandbox",
+    "question": "帮我请明天的假",
+    "expect": {
+      "decision": "thin_react",
+      "guest": true,
+      "forbid": ["sql", "local_write_tools"]
+    },
+    "notes": "访客：禁 SQL 与本地写；确认/补参卡不适用写本地业务。"
+  },
+  {
+    "id": "crm_payment_success",
+    "question": "给订单 99 发起回款审批",
+    "expect": {
+      "decision": "thin_react",
+      "first_round_business_tools": false,
+      "write_gates": ["confirm_required"],
+      "may_call": ["load_tools", "customer_biz_form_get", "payment_create", "approve_process_get"],
+      "forbid": ["approve_type_list", "preload"]
+    },
+    "notes": "回款：先 load_tools(customer) 再 customer_biz_form_get(biz=payment)→写确认→payment_create；无词面预置。"
+  },
+  {
+    "id": "crm_payment_needs_selection",
+    "question": "（回款确认后缺抄送人）选人后再次确认",
+    "expect": {
+      "decision": "thin_react",
+      "write_gates": ["confirm_required", "input_required"],
+      "may_call": ["payment_create"],
+      "persist": ["write_pending_id"]
+    },
+    "notes": "confirm→needs_selection→选人→再确认→成功；write_pending_id 须落 DB。"
+  },
+  {
+    "id": "crm_payment_missing_fields",
+    "question": "发起回款但必填字段不全",
+    "expect": {
+      "decision": "thin_react",
+      "write_gates": ["confirm_required", "input_required"],
+      "may_call": ["load_tools", "customer_biz_form_get", "payment_create"]
+    },
+    "notes": "缺字段：确认卡可编辑或 input_required，不得当不可重试硬失败直接收口。"
+  },
+  {
+    "id": "crm_payment_forbid_approve_type_list",
+    "question": "帮我回款",
+    "expect": {
+      "decision": "thin_react",
+      "first_round_business_tools": false,
+      "may_call": ["load_tools", "customer_biz_form_get", "payment_create"],
+      "forbid": ["approve_type_list", "approve_form_get", "preload"]
+    },
+    "notes": "误走 approve_type_list 为失败；首轮无业务工具预置，须 load_tools。"
+  },
+  {
+    "id": "crm_renewal",
+    "question": "帮这个订单续费",
+    "expect": {
+      "decision": "thin_react",
+      "may_call": ["load_tools", "customer_biz_form_get", "renewal_create"],
+      "write_gates": ["confirm_required"],
+      "forbid": ["approve_type_list", "preload"]
+    },
+    "notes": "续费：customer_biz_form_get(biz=renewal)→写确认→renewal_create。"
+  },
+  {
+    "id": "crm_invoice",
+    "question": "申请开票",
+    "expect": {
+      "decision": "thin_react",
+      "may_call": ["load_tools", "customer_biz_form_get", "invoice_apply"],
+      "write_gates": ["confirm_required"],
+      "forbid": ["approve_type_list", "preload"]
+    },
+    "notes": "开票：customer_biz_form_get(biz=invoice_issue)→invoice_apply。"
+  }
+]

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,7 +18,6 @@ namespace App\Http\Controller\AdminApi\Company;
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Requests\enterprise\user\EnterpriseUserCardRequest;
 use App\Http\Service\Admin\AdminService;
-use App\Http\Service\Company\CompanyUserCardService;
 use App\Http\Service\Company\CompanyUserChangeService;
 use App\Http\Service\Frame\FrameService;
 use FormBuilder\Exception\FormBuilderException;
@@ -42,10 +41,9 @@ use Spatie\RouteAttributes\Attributes\Put;
 #[Middleware(['auth.admin', 'ent.auth', 'ent.log'])]
 class UserCardController extends AuthController
 {
-    public function __construct(CompanyUserCardService $service)
+    public function __construct()
     {
         parent::__construct();
-        $this->service = $service;
     }
 
     /**
@@ -181,6 +179,7 @@ class UserCardController extends AuthController
             ['frames', []],
             ['manage_frame', [], 'manage_frames'],
         ]);
+        $frameInfo['main_id'] = $frameInfo['main_id'] ?: collect($frameInfo['frame_id'] ?? [])->first();
         if ($frameInfo['frame_id'] && ! $frameInfo['main_id']) {
             return $this->fail('必须选择一个主部门');
         }
@@ -206,7 +205,11 @@ class UserCardController extends AuthController
         $succ = $err = 0;
         foreach ($data as $val) {
             try {
-                $service->createAdmin($val, type: (int) $type, import: true);
+                if (isset($val['frames'])) {
+                    unset($val['frames']);
+                }
+
+                $service->createAdmin(array_merge($val, ['photo' => '', 'works' => [], 'educations' => [], 'work_time' => '']), type: (int) $type, import: true);
                 ++$succ;
             } catch (\Exception $e) {
                 ++$err;
@@ -305,6 +308,7 @@ class UserCardController extends AuthController
             ['frames', []],
             ['manage_frame', [], 'manage_frames'],
         ]);
+        $other['main_id'] = $other['main_id'] ?: collect($other['frame_id'] ?? [])->first();
         if ($other['frame_id'] && ! $other['main_id']) {
             return $this->fail('必须选择一个主部门');
         }
@@ -400,12 +404,12 @@ class UserCardController extends AuthController
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
-    public function show($id, $status)
+    public function show(AdminService $service, $id, $status)
     {
         if (! $id) {
             return $this->fail('common.empty.attrs');
         }
-        $this->service->updateUserStatus((int) $id, (int) $status, $this->entId);
+        $service->updateUserStatus((int) $id, (int) $status, $this->entId);
 
         return $this->success('common.update.succ');
     }
@@ -435,7 +439,7 @@ class UserCardController extends AuthController
      * @throws \ReflectionException
      */
     #[Delete('batch', '批量删除档案')]
-    public function batchDestroy(): mixed
+    public function batchDestroy(AdminService $service): mixed
     {
         [$id] = $this->request->postMore([
             ['id', []],
@@ -443,7 +447,7 @@ class UserCardController extends AuthController
         if (! $id) {
             return $this->fail('common.empty.attrs');
         }
-        $this->service->deleteBatchUserCard((array) $id, $this->entId);
+        $service->deleteBatchUserCard((array) $id, $this->entId);
 
         return $this->success('删除成功');
     }
@@ -454,7 +458,7 @@ class UserCardController extends AuthController
      * @throws BindingResolutionException
      */
     #[Post('batch', '批量设置成员进入部门')]
-    public function batchSetFrame(): mixed
+    public function batchSetFrame(AdminService $service): mixed
     {
         [$frameId, $userId, $mastartId] = $this->request->postMore([
             ['frame_id', []],
@@ -467,7 +471,7 @@ class UserCardController extends AuthController
         if (! $userId) {
             return $this->fail('至少选择一个用户进行设置');
         }
-        $this->service->batchSetFrame($frameId, $userId, (int) $mastartId, $this->entId);
+        $service->batchSetFrame($frameId, $userId, (int) $mastartId, $this->entId);
 
         return $this->success('批量加入成功');
     }
@@ -483,21 +487,6 @@ class UserCardController extends AuthController
     public function sendPerfect(AdminService $service, int $id = 0): mixed
     {
         $url = $service->sendPerfect(auth('admin')->id(), $id);
-
-        return $this->success('操作成功', compact('url'));
-    }
-
-    /**
-     * 邀请面试.
-     *
-     * @throws BindingResolutionException
-     * @throws ContainerExceptionInterface
-     * @throws \ReflectionException
-     */
-    #[Get('interview', '邀请面试')]
-    public function sendInterview(): mixed
-    {
-        $url = $this->service->sendPerfect($this->uuid, $this->entId, 0, true);
 
         return $this->success('操作成功', compact('url'));
     }

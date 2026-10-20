@@ -7,7 +7,6 @@
       :show-all-levels="false"
       filterable
       :disabled="!designer.selectedId"
-      size="small"
       :props="props"
       @change="changeEntity"
       clearable
@@ -26,8 +25,9 @@
   </el-form-item>
 </template>
 <script>
-import { databaseListApi, getDatabaseApi } from '@/api/develop'
+import { databaseListApi, getDatabaseApi } from '@/api/develop.ts'
 export default {
+  emits: ['optionModelChange', 'update:optionModel', 'clearSearch'],
   name: 'dataEntity-editor',
   props: {
     designer: Object,
@@ -46,11 +46,6 @@ export default {
         emitPath: false //绑定的内容只获取最后一级的value值。
       }
     }
-  },
-  computed: {
-    // ...mapState({
-    //   unSystemEntityList: (state) => state.common.unSystemEntityList
-    // })
   },
   watch: {
     optionModel: {

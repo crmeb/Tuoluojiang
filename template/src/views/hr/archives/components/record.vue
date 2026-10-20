@@ -1,75 +1,78 @@
 <template>
   <div class="table-box">
     <el-dialog
-      :visible.sync="dialogVisible"
-      :width="title == '调薪弹窗' ? '680px' : '470px'"
+      class="hr-archives-record-dialog"
       :show-close="status == 'add' ? false : true"
+      v-model="dialogVisible"
+      :width="title == '调薪弹窗' ? '680px' : '470px'"
       append-to-body
     >
-      <div class="header" slot="title">
-        <span>{{ title }}</span>
-        <el-link :underline="false" icon="el-icon-edit-outline" @click="editFn" v-if="status == 'add'"
-          >编辑字段</el-link
-        >
-      </div>
+      <template #header>
+        <div class="header">
+          <span>{{ title }}</span>
+          <el-link v-if="status == 'add'" underline="never" icon="el-icon-edit-outline" @click="editFn"
+            >编辑字段</el-link
+          >
+        </div>
+      </template>
       <div class="line" />
 
-      <div class="from" v-if="status == 'add'">
+      <div v-if="status == 'add'" class="from">
         <el-form
-          ref="formName"
-          label-width="100px"
-          label-position="right"
-          class="demo-dynamic"
           v-if="title !== '调薪弹窗'"
+          ref="formName"
+          class="demo-dynamic"
+          label-position="right"
+          label-width="100px"
         >
           <el-form-item
-            label="生效时间:"
             :rules="[{ type: 'date', required: true, message: '请选择日期', trigger: 'change' }]"
+            label="生效时间:"
           >
-            <el-date-picker v-model="take_date" value-format="yyyy-MM-dd" type="date" placeholder="选择日期">
+            <el-date-picker v-model="take_date" placeholder="选择日期" type="date" value-format="YYYY-MM-DD">
             </el-date-picker>
           </el-form-item>
 
           <div v-for="(item, index) in fromItem" :key="index">
             <el-form-item :label="item.label">
               <el-input
-                :placeholder="item.placeholder"
-                type="number"
-                maxLength="9"
-                @input="handleInput(item.value, index)"
                 v-model="item.value"
+                :placeholder="item.placeholder"
+                maxLength="9"
+                type="number"
                 @blur="blurVal(item.value, index)"
+                @input="handleInput(item.value, index)"
               ></el-input>
             </el-form-item>
           </div>
           <el-form-item label="调薪备注：" prop="desc">
             <el-input
-              type="textarea"
-              style="width: 260px"
-              placeholder="请输入调薪备注，最多可输入200字"
               v-model="mark"
               maxlength="200"
+              placeholder="请输入调薪备注，最多可输入200字"
+              style="width: 260px"
+              type="textarea"
             ></el-input>
           </el-form-item>
           <el-form-item class="footer">
-            <el-button @click="restFn" class="btn">取消</el-button>
-            <el-button type="primary" :loading="loading" @click="okFn('formName')" class="btn">确定</el-button>
+            <el-button class="btn" @click="restFn">取消</el-button>
+            <el-button :loading="loading" class="btn" type="primary" @click="okFn('formName')">确定</el-button>
           </el-form-item>
         </el-form>
 
         <el-form
-          ref="formName"
-          label-width="120px"
-          label-position="right"
-          class="demo-dynamic"
           v-if="title == '调薪弹窗'"
+          ref="formName"
+          class="demo-dynamic"
+          label-position="right"
+          label-width="120px"
         >
           <el-form-item
-            label="生效时间:"
             :rules="[{ type: 'date', required: true, message: '请选择日期', trigger: 'change' }]"
+            label="生效时间:"
           >
             <div class="change-item">
-              <el-date-picker v-model="take_date" value-format="yyyy-MM-dd" type="date" placeholder="选择日期">
+              <el-date-picker v-model="take_date" placeholder="选择日期" type="date" value-format="YYYY-MM-DD">
               </el-date-picker>
             </div>
           </el-form-item>
@@ -80,62 +83,64 @@
                 <el-input v-model="item.num" :disabled="true" class="disabled-item"> </el-input>
                 <i class="el-icon-d-arrow-right"></i>
                 <el-input
-                  :placeholder="item.placeholder"
-                  @input="handleInput(item.value, index)"
-                  type="number"
-                  maxLength="9"
                   v-model="item.value"
+                  :placeholder="item.placeholder"
+                  maxLength="9"
+                  type="number"
+                  @input="handleInput(item.value, index)"
                 ></el-input>
               </div>
             </el-form-item>
           </div>
           <el-form-item label="调薪备注：" prop="desc">
             <el-input
-              type="textarea"
-              placeholder="请输入调薪备注信息，最多可输入200字"
               v-model="mark"
               maxlength="200"
+              placeholder="请输入调薪备注信息，最多可输入200字"
+              type="textarea"
             ></el-input>
           </el-form-item>
           <el-form-item class="footer">
-            <el-button @click="restFn" class="btn">取消</el-button>
-            <el-button type="primary" @click="okFn('formName')" class="btn">确定</el-button>
+            <el-button class="btn" @click="restFn">取消</el-button>
+            <el-button class="btn" type="primary" @click="okFn('formName')">确定</el-button>
           </el-form-item>
         </el-form>
       </div>
       <!-- 添加表单 -->
 
-      <div class="addForm" v-if="status === 'edit'">
+      <div v-if="status === 'edit'" class="addForm">
         <div class="assess-right v-height-flag">
           <div>
             <draggable
               v-model="fromItem"
+              animation="1000"
               chosen-class="chosen"
               force-fallback="true"
               group="people"
-              animation="1000"
-              @start="onStart"
               @end="onEnd"
+              @start="onStart"
+              tag="transition-group"
+              item-key="id"
             >
-              <transition-group>
-                <div v-for="(item, index) in fromItem" :key="index" class="item-list">
+              <template #item="{ element: item, index }">
+                <div class="item-list">
                   <i class="icon iconfont icontuodong item-drag"></i>
-                  <el-input v-model="item.label" clearables show-word-limit placeholder="请输入表单字段" />
+                  <el-input v-model="item.label" clearable placeholder="请输入表单字段" show-word-limit />
                   <i
+                    v-if="item.sort !== 1 && item.sort !== 2"
                     class="el-icon-remove item-remove"
                     @click="handleDelete(index)"
-                    v-if="item.sort !== 1 && item.sort !== 2"
                   ></i>
                 </div>
-              </transition-group>
+              </template>
             </draggable>
-            <el-button class="add-type mt14" type="text" @click="handleAddType()">
+            <el-button class="add-type mt14" type="primary" link @click="handleAddType()">
               <i class="el-icon-plus"></i> 添加</el-button
             >
 
             <div class="footer">
-              <el-button @click="handleResetFn" class="btn">取消</el-button>
-              <el-button type="primary" @click="handleConfirm" class="btn">确定</el-button>
+              <el-button class="btn" @click="handleResetFn">取消</el-button>
+              <el-button class="btn" type="primary" @click="handleConfirm">确定</el-button>
             </div>
           </div>
         </div>
@@ -145,9 +150,10 @@
 </template>
 <script>
 import draggable from 'vuedraggable'
-import { getSalary, getSalaryContent, putSalaryContent, latelySalaryContent } from '@/api/enterprise'
+import { getSalary, getSalaryContent, putSalaryContent, latelySalaryContent } from '@/api/enterprise.ts'
 
 export default {
+  emits: ['getSalaryList'],
   name: '',
   components: {
     draggable
@@ -220,8 +226,8 @@ export default {
     }
   },
   created() {
-    var nowDate = new Date()
-    var date = {
+    const nowDate = new Date()
+    const date = {
       year: nowDate.getFullYear(),
       month: nowDate.getMonth() + 1,
       day: nowDate.getDate()
@@ -321,7 +327,7 @@ export default {
           return el.label === ''
         })
         if (status) {
-          this.$message.warning(this.$t('customer.message05'))
+          this.$message.warning('名称不能为空')
         } else {
           this.fromItem.push({
             sort: '',
@@ -375,15 +381,15 @@ export default {
 
     // 确定动态表单
     handleConfirm() {
-      var data = []
+      const data = []
       if (this.fromItem.length <= 0) {
-        this.$message.warning(this.$t('customer.message05'))
+        this.$message.warning('名称不能为空')
       } else {
         const status = this.fromItem.some((el, index) => {
           return el.label === ''
         })
         if (status) {
-          this.$message.warning(this.$t('customer.message05'))
+          this.$message.warning('名称不能为空')
         } else {
           const len = this.fromItem.length
           this.fromItem.map((value, index) => {
@@ -415,17 +421,9 @@ export default {
 }
 </script>
 
-<style scoped lang="scss">
+<style lang="scss" scoped>
 .mt15 {
   margin-top: 15px;
-}
-/deep/ .el-dialog {
-  height: 600px;
-  overflow: auto;
-}
-/deep/ .el-dialog::-webkit-scrollbar {
-  height: 0;
-  width: 0;
 }
 
 .line {
@@ -445,7 +443,7 @@ export default {
   .disabled-item {
     width: 50%;
   }
-  /deep/ .el-date-editor {
+  :deep(.el-date-editor) {
     width: 242px;
   }
   .el-icon-d-arrow-right {
@@ -466,7 +464,7 @@ export default {
     font-weight: 700;
   }
 }
-/deep/.el-scrollbar__wrap {
+:deep(.el-scrollbar__wrap) {
   margin-right: -17px !important;
   margin-bottom: -17px !important;
   margin-left: 20px;
@@ -477,21 +475,20 @@ export default {
 .item {
   display: flex;
 }
-/deep/ .el-dialog__body {
-  padding: 0px 20px 10px 20px;
-}
-/deep/ .el-input {
+:deep(.el-input) {
   width: 260px;
 }
-/deep/ .el-form-item__label {
+:deep(.el-form-item__label) {
   font-size: 12px !important;
   font-weight: 500;
 }
-/deep/ .el-input__inner {
-  height: 28px;
+:deep(.el-input__wrapper) {
+  min-height: 28px;
+}
+:deep(.el-input__inner) {
   font-size: 13px;
 }
-/deep/ .el-form-item {
+:deep(.el-form-item) {
   margin-bottom: 10px;
 }
 .footer {
@@ -509,5 +506,20 @@ input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
   -webkit-appearance: none !important;
   margin: 0;
+}
+</style>
+
+<style lang="scss">
+// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
+.el-dialog.hr-archives-record-dialog {
+  height: 600px;
+  overflow: auto;
+}
+.el-dialog.hr-archives-record-dialog::-webkit-scrollbar {
+  height: 0;
+  width: 0;
+}
+.el-dialog.hr-archives-record-dialog .el-dialog__body {
+  padding: 0px 20px 10px 20px;
 }
 </style>

@@ -33,6 +33,40 @@ class CloudShareService extends BaseService
     }
 
     /**
+     * 合并空间已有成员权限，避免编辑空间时只提交新增成员导致原成员被清空.
+     *
+     * @throws BindingResolutionException
+     * @throws \ReflectionException
+     */
+    public function mergeSpaceRules(int $folderId, array $rule): array
+    {
+        $incoming = collect($rule)
+            ->filter(fn ($item) => ! empty($item['uid']))
+            ->keyBy('uid');
+
+        $exists = $this->dao->select(['folder_id' => $folderId], with: ['auth'])?->toArray() ?? [];
+        foreach ($exists as $item) {
+            $uid = $item['to_uid'] ?? '';
+            if (! $uid || $incoming->has($uid)) {
+                continue;
+            }
+
+            $auth = $item['auth'] ?? [];
+            $incoming->put($uid, [
+                'uid'      => $uid,
+                'value'    => $item['user_id'] ?? 0,
+                'create'   => $auth['create'] ?? 0,
+                'read'     => $auth['read'] ?? 1,
+                'update'   => $auth['update'] ?? 0,
+                'download' => $auth['download'] ?? 0,
+                'delete'   => $auth['delete'] ?? 0,
+            ]);
+        }
+
+        return $incoming->values()->all();
+    }
+
+    /**
      * 分享列表.
      * @param mixed $where
      * @return array
@@ -57,10 +91,6 @@ class CloudShareService extends BaseService
      */
     public function spaceShare(mixed $folder, array $rule, $name = null)
     {
-        $count = app()->get(AdminService::class)->count(['status' => 1, 'uid' => array_column($rule, 'uid')]);
-        if ($count != count($rule)) {
-            throw $this->exception('请选择有效的员工');
-        }
         $validator = ['download' => '下载', 'update' => '更新', 'create' => '创建', 'delete' => '删除'];
         foreach ($rule as $k => $item) {
             if (! $item['uid']) {
@@ -106,12 +136,17 @@ class CloudShareService extends BaseService
      */
     public function getRules(int $fileId, int $uid, int $spaceId)
     {
-        app()->get(CloudFileService::class)->checkAuth($spaceId, $uid, $fileId);
-        $list = $this->dao->select(['folder_id' => $spaceId], with: ['user'])?->toArray();
-
-        $data  = app()->get(CloudAuthService::class)->select(['folder_id' => $fileId])?->toArray();
-        $auths = [];
+        $authService = app()->get(CloudAuthService::class);
+        $fileService = app()->get(CloudFileService::class);
+        $fileService->checkAuth($spaceId, $uid, $fileId);
+        $list     = $this->dao->select(['folder_id' => $spaceId], with: ['user'])?->toArray();
+        $path     = $fileService->value($fileId, 'path');
+        $path     = array_map('intval', explode('/', trim($path, '/')));
+        $adminUid = $fileService->value(['id' => $path[0] ?? 0], 'user_id');
+        $data     = $this->parentAuth($fileId, $fileService, $authService);
+        $auths    = [];
         foreach ($data as $item) {
+            $item['is_admin']        = intval($adminUid == $item['user_id']);
             $auths[$item['user_id']] = $item;
         }
         foreach ($list as $k => $item) {
@@ -131,19 +166,16 @@ class CloudShareService extends BaseService
     public function setRules(int $fileId, int $uid, int $spaceId, array $rule = [])
     {
         app()->get(CloudFileService::class)->checkAuth($spaceId, $uid, $fileId);
-        $admin   = app()->get(AdminService::class);
-        $userIds = $admin->column(['status' => 1, 'uid' => array_column($rule, 'uid')], 'uid');
-        return $this->transaction(function () use ($fileId, $rule, $userIds, $admin) {
+        $admin   = app(AdminService::class)->column(['status' => 1, 'uid' => array_column($rule, 'uid')], 'id', 'uid');
+        return $this->transaction(function () use ($fileId, $rule, $admin) {
             $now = now()->toDateTimeString();
             $this->dao->delete(['folder_id' => $fileId]);
-            $auths = [];
-            $make  = app()->get(CloudAuthService::class);
-            foreach ($rule as $item) {
-                if (in_array($item['uid'], $userIds)) {
-                    $auths[] = [
-                        'user_id'    => $admin->value(['uid' => $item['uid']], 'id'),
-                        'uid'        => $item['uid'],
+            $auths = collect($rule)->filter(fn ($item)=>isset($item['uid']) && array_key_exists($item['uid'], $admin))
+                ->map(function ($item) use ($fileId, $now, $admin) {
+                    return [
                         'folder_id'  => $fileId,
+                        'uid'        => $item['uid'],
+                        'user_id'    => $admin[$item['uid']],
                         'create'     => $item['create'] ?? 0,
                         'read'       => $item['read'] ?? 0,
                         'update'     => $item['update'] ?? 0,
@@ -151,9 +183,8 @@ class CloudShareService extends BaseService
                         'delete'     => $item['delete'] ?? 0,
                         'created_at' => $now,
                     ];
-                }
-            }
-            return $auths && $make->dao->insert($auths);
+                })->toArray();
+            return $auths && app(CloudAuthService::class)->insert($auths);
         });
     }
 
@@ -200,5 +231,24 @@ class CloudShareService extends BaseService
             $folder->saveOrFail();
             $this->dao->insert($shares);
         });
+    }
+
+    /**
+     * 获取父级权限.
+     * @return array
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    private function parentAuth(?int $fileId, CloudFileService $fileService, CloudAuthService $authService)
+    {
+        if (! $fileId) {
+            return [];
+        }
+
+        $data = $authService->select(['folder_id' => $fileId])?->toArray();
+        if (! $data) {
+            return $this->parentAuth((int) $fileService->value($fileId, 'pid'), $fileService, $authService);
+        }
+        return $data;
     }
 }

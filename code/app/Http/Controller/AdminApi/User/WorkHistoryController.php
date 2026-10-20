@@ -18,8 +18,8 @@ namespace App\Http\Controller\AdminApi\User;
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Requests\enterprise\user\EnterpriseUserWorkRequest;
 use App\Http\Service\User\UserWorkHistoryService;
-use crmeb\interfaces\ResourceControllerInterface;
-use crmeb\traits\ResourceControllerTrait;
+use Tuoluojiang\Open\interfaces\ResourceControllerInterface;
+use Tuoluojiang\Open\traits\ResourceControllerTrait;
 
 /**
  * 工作经历

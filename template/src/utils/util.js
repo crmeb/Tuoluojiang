@@ -2,15 +2,8 @@
 import Clipboard from 'clipboard'
 
 export const addWindowResizeHandler = function (handler) {
-  let oldHandler = window.onresize
-  if (typeof window.onresize != 'function') {
-    window.onresize = handler
-  } else {
-    window.onresize = function () {
-      oldHandler()
-      handler()
-    }
-  }
+  window.addEventListener('resize', handler)
+  return () => window.removeEventListener('resize', handler)
 }
 
 /**
@@ -181,7 +174,9 @@ export function copyToClipboard(content, clickEvent, $message, successMsg, error
  * @returns
  */
 export const getPreviewNum = (showDecimalPlaces, decimalPlaces, thousandsSeparator, val) => {
-  let previewStr = val
+  let previewStr = val !== '' && val !== null && val !== undefined && Number.isFinite(Number(val))
+    ? Number(Number(val).toPrecision(14))
+    : val
   if (showDecimalPlaces) {
     previewStr = Number(previewStr).toFixed(decimalPlaces)
   }
@@ -195,7 +190,8 @@ export const mlShortcutkeys = (cb) => {
     altKeyFlag = 0,
     mKeyFlag = 0,
     lKeyFlag = 0
-  document.onkeydown = (e) => {
+
+  const handleKeyDown = (e) => {
     let keyCode = e.keyCode || e.which || e.charCode
     if (keyCode === 16) { // shift
       shiftKeyFlag = 1
@@ -210,7 +206,8 @@ export const mlShortcutkeys = (cb) => {
       cb()
     }
   }
-  document.onkeyup = (e) => {
+
+  const handleKeyUp = (e) => {
     let keyCode = e.keyCode || e.which || e.charCode
     if (keyCode === 16) { // shift
       shiftKeyFlag = 0
@@ -221,5 +218,14 @@ export const mlShortcutkeys = (cb) => {
     } else if (keyCode === 77 || keyCode === 109) { // m or M
       mKeyFlag = 0
     }
+  }
+
+  document.addEventListener('keydown', handleKeyDown)
+  document.addEventListener('keyup', handleKeyUp)
+
+  // 返回清理函数
+  return () => {
+    document.removeEventListener('keydown', handleKeyDown)
+    document.removeEventListener('keyup', handleKeyUp)
   }
 }

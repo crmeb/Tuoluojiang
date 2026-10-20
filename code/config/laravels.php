@@ -5,35 +5,63 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
  *  | Author: 陀螺匠 Team <admin@tuoluojiang.com>
  *  +----------------------------------------------------------------------
  */
-use App\Jobs\AssessAbnormalCronJob;
-use App\Jobs\AssessAutoEndCronJob;
-use App\Jobs\AssessCronJob;
-use App\Jobs\AssessEvaluateCronJob;
-use App\Jobs\AttendStatisticsCronJob;
-use App\Jobs\ContractRemindCronJob;
-use App\Jobs\ContractRenewRemindCronJob;
-use App\Jobs\ContractStatusCronJob;
-use App\Jobs\CrudEventCronJob;
-use App\Jobs\CustomerFollowCronJob;
-use App\Jobs\CustomerReturnCronJob;
-use App\Jobs\CustomerReturnRemindCronJob;
+use App\Jobs\Assess\AssessAbnormalCronJob;
+use App\Jobs\Assess\AssessAutoEndCronJob;
+use App\Jobs\Assess\AssessCronJob;
+use App\Jobs\Assess\AssessEvaluateCronJob;
+use App\Jobs\Attend\AttendCalcApplyRecordCronJob;
+use App\Jobs\Attend\AttendDailyTaskCronJob;
+use App\Jobs\Attend\AttendPersonalPushCronJob;
+use App\Jobs\Attend\AttendShiftRemindCronJob;
+use App\Jobs\Attend\AttendStatisticsCronJob;
+use App\Jobs\Attend\AttendTeamPushCronJob;
+use App\Jobs\Customer\ClueAutoReturnCronJob;
+use App\Jobs\Customer\ClueRemindCronJob;
+use App\Jobs\Customer\ClueReturnCronJob;
+use App\Jobs\Customer\ContractRemindCronJob;
+use App\Jobs\Customer\ContractRenewRemindCronJob;
+use App\Jobs\Customer\ContractStatusCronJob;
+use App\Jobs\Customer\CustomerFollowCronJob;
+use App\Jobs\Customer\CustomerReturnCronJob;
+use App\Jobs\Customer\CustomerReturnRemindCronJob;
+use App\Jobs\Crud\CrudEventCronJob;
 use App\Jobs\DailyCronJob;
 use App\Jobs\ScheduleCronJob;
+use App\Jobs\Work\WorkCheckInCronJob;
+use App\Jobs\Work\WorkCronJob;
+use App\Jobs\Work\WorkMessageSaveCronJob;
+use App\Jobs\WorkExternalContact\WorkMediaDeleteCronJob;
+use App\Jobs\WorkExternalContact\WorkMediaUploadCronJob;
+use App\Jobs\WorkExternalContact\WorkMessagingAddCronJob;
+use App\Jobs\WorkExternalContact\WorkMessagingCensusCronJob;
+use App\Jobs\WorkExternalContact\WorkMessagingResultCronJob;
+use App\Jobs\WorkExternalContact\WorkMomentResultCronJob;
+use App\Listeners\McpCleaner;
+use App\Listeners\RequestStateCleaner;
 use App\Listeners\RoleCleaner;
+use App\Listeners\StaticCleaner;
+use App\Listeners\swoole\DatabaseCleaner;
+use App\Listeners\swoole\RedisCleaner;
 use App\Listeners\swoole\SwooleStart;
-use crmeb\socket\WebsocketHandler;
+use App\Listeners\WorkCleaner;
+use Tuoluojiang\Open\socket\WebsocketHandler;
 use Hhxsv5\LaravelS\Illuminate\Cleaners\AuthCleaner;
 use Hhxsv5\LaravelS\Illuminate\Cleaners\JWTCleaner;
 use Hhxsv5\LaravelS\Illuminate\Cleaners\RequestCleaner;
 use Hhxsv5\LaravelS\Illuminate\Cleaners\SessionCleaner;
 use Swoole\Table;
+
+$swooleLogDir = storage_path(sprintf('logs/%s/%s', date('Y'), date('m')));
+if (! is_dir($swooleLogDir) && ! @mkdir($swooleLogDir, 0755, true) && ! is_dir($swooleLogDir)) {
+    $swooleLogDir = storage_path('logs');
+}
 
 return [
     /*
@@ -238,12 +266,29 @@ return [
             ContractRenewRemindCronJob::class, // 合同金额续费相关定时任务
             ContractRemindCronJob::class, // 合同定时任务
             ScheduleCronJob::class, // 日程提醒
-            AttendStatisticsCronJob::class, // 考勤数据创建
+            AttendStatisticsCronJob::class, // 考勤短提醒（每分钟）
+            AttendDailyTaskCronJob::class, // 考勤数据创建（每天00:01）
+            AttendShiftRemindCronJob::class, // 班次提醒创建（每天00:30）
+            AttendCalcApplyRecordCronJob::class, // 审批考勤计算（每天01:00）
+            AttendTeamPushCronJob::class, // 团队考勤推送（日/周/月报）
+            AttendPersonalPushCronJob::class, // 个人考勤推送（周/月报）
             CustomerReturnCronJob::class, // 客户自动退回公海
             CustomerReturnRemindCronJob::class, // 客户退回提醒
             CustomerFollowCronJob::class, // 客户跟进提醒
             ContractStatusCronJob::class, // 合同状态变更
             CrudEventCronJob::class, // 实体触发器定时执行
+            WorkMessageSaveCronJob::class, // 工作消息保存定时任务
+            WorkCronJob::class, // 企业架构信息同步
+            WorkCheckInCronJob::class, // 企业架构信息同步
+            WorkMediaDeleteCronJob::class, // 删除未关联企微素材定时任务
+            WorkMediaUploadCronJob::class, // 上传正常企微素材定时任务
+            WorkMessagingAddCronJob::class, // 企微群发定时任务
+            WorkMessagingResultCronJob::class, // 定时获取群发任务结果
+            WorkMomentResultCronJob::class, // 定时获取朋友圈结果
+            WorkMessagingCensusCronJob::class, // 统计群发消息结果
+            ClueReturnCronJob::class, // 线索退回提醒
+            ClueRemindCronJob::class, // 线索跟进提醒
+            ClueAutoReturnCronJob::class, // 线索自动退回
         ],
 
         // Max waiting time of reloading
@@ -252,7 +297,7 @@ return [
         // Enable the global lock to ensure that only one instance starts the timer
         // when deploying multiple instances.
         // This feature depends on Redis https://laravel.com/docs/8.x/redis
-        'global_lock'     => false,
+        'global_lock'     => env('LARAVELS_TIMER_GLOBAL_LOCK', true),
         'global_lock_key' => config('app.name', 'Laravel'),
     ],
 
@@ -268,34 +313,36 @@ return [
     */
 
     'swoole_tables' => ! is_win() ? [
-        'user' => [// 高性能内存数据库
-            'size'   => 2048,
+        // WebSocket 在线态：仅存 fd 索引热数据，列宽按真实字段收敛
+        'user' => [
+            'size'   => 4096,
             'column' => [
-                ['name' => 'fd', 'type' => Table::TYPE_INT, 'size' => 1024],
-                ['name' => 'type', 'type' => Table::TYPE_STRING, 'size' => 1024],
-                ['name' => 'ent_id', 'type' => Table::TYPE_INT, 'size' => 1024],
-                ['name' => 'uid', 'type' => Table::TYPE_STRING, 'size' => 1024],
-                ['name' => 'to_uid', 'type' => Table::TYPE_STRING, 'size' => 1024],
-                ['name' => 'tourist', 'type' => Table::TYPE_INT, 'size' => 1024],
+                ['name' => 'fd', 'type' => Table::TYPE_INT, 'size' => 8],
+                ['name' => 'type', 'type' => Table::TYPE_STRING, 'size' => 16],
+                ['name' => 'ent_id', 'type' => Table::TYPE_INT, 'size' => 8],
+                ['name' => 'uid', 'type' => Table::TYPE_STRING, 'size' => 64],
+                ['name' => 'to_uid', 'type' => Table::TYPE_STRING, 'size' => 64],
+                ['name' => 'tourist', 'type' => Table::TYPE_INT, 'size' => 1],
             ],
         ],
+        // 定时任务调度热数据；JSON 大字段仍写入但列宽按实际上限收缩（不再统一 1024）
         'task' => [
-            'size'   => 20480,
+            'size'   => 2048,
             'column' => [
-                ['name' => 'id', 'type' => Table::TYPE_INT, 'size' => 1024],
-                ['name' => 'name', 'type' => Table::TYPE_STRING, 'size' => 1024],
-                ['name' => 'func', 'type' => Table::TYPE_STRING, 'size' => 1024],
-                ['name' => 'period', 'type' => Table::TYPE_STRING, 'size' => 1024],
-                ['name' => 'persist', 'type' => Table::TYPE_INT, 'size' => 1024],
-                ['name' => 'run_count', 'type' => Table::TYPE_INT, 'size' => 1024],
-                ['name' => 'exe_count', 'type' => Table::TYPE_INT, 'size' => 1024],
-                ['name' => 'interval', 'type' => Table::TYPE_STRING, 'size' => 1024],
+                ['name' => 'id', 'type' => Table::TYPE_INT, 'size' => 8],
+                ['name' => 'name', 'type' => Table::TYPE_STRING, 'size' => 128],
+                ['name' => 'func', 'type' => Table::TYPE_STRING, 'size' => 512],
+                ['name' => 'period', 'type' => Table::TYPE_STRING, 'size' => 16],
+                ['name' => 'persist', 'type' => Table::TYPE_INT, 'size' => 1],
+                ['name' => 'run_count', 'type' => Table::TYPE_INT, 'size' => 8],
+                ['name' => 'exe_count', 'type' => Table::TYPE_INT, 'size' => 8],
+                ['name' => 'interval', 'type' => Table::TYPE_STRING, 'size' => 256],
                 ['name' => 'parameter', 'type' => Table::TYPE_STRING, 'size' => 1024],
-                ['name' => 'uniqued', 'type' => Table::TYPE_STRING, 'size' => 1024],
-                ['name' => 'rate', 'type' => Table::TYPE_INT, 'size' => 1024],
-                ['name' => 'end_time', 'type' => Table::TYPE_STRING, 'size' => 1024],
-                ['name' => 'created_at', 'type' => Table::TYPE_STRING, 'size' => 1024],
-                ['name' => 'updated_at', 'type' => Table::TYPE_STRING, 'size' => 1024],
+                ['name' => 'uniqued', 'type' => Table::TYPE_STRING, 'size' => 64],
+                ['name' => 'rate', 'type' => Table::TYPE_INT, 'size' => 8],
+                ['name' => 'end_time', 'type' => Table::TYPE_STRING, 'size' => 32],
+                ['name' => 'created_at', 'type' => Table::TYPE_STRING, 'size' => 32],
+                ['name' => 'updated_at', 'type' => Table::TYPE_STRING, 'size' => 32],
             ],
         ],
     ] : [],
@@ -334,6 +381,14 @@ return [
         JWTCleaner::class,
         RequestCleaner::class,
         RoleCleaner::class,
+        WorkCleaner::class,
+        // 请求态统一清理（权限上下文 / AI 流式残留等）
+        RequestStateCleaner::class,
+        StaticCleaner::class,
+        McpCleaner::class,
+        // 数据库和 Redis：失败再重连，避免每请求 ping
+        DatabaseCleaner::class,
+        RedisCleaner::class,
     ],
 
     /*
@@ -378,7 +433,8 @@ return [
         'open_tcp_nodelay' => true,
         'pid_file'         => storage_path('laravels.pid'),
         'log_level'        => env('LARAVELS_LOG_LEVEL', 4),
-        'log_file'         => storage_path(sprintf('logs/%s/%s/swoole-%s.log', date('Y'), date('m'), date('d'))),
+        'log_file'         => $swooleLogDir . sprintf('/swoole-%s.log', date('d')),
+        'log_rotation'     => defined('SWOOLE_LOG_ROTATION_SINGLE') ? SWOOLE_LOG_ROTATION_SINGLE : 0,
         'document_root'    => base_path('public'),
         // 接收数据缓存区大小B.
         'package_max_length' => 60 * 1024 * 1024,
@@ -391,23 +447,24 @@ return [
         'enable_reuse_port'  => true,
         'enable_coroutine'   => true,
         'upload_tmp_dir'     => @is_writable('/dev/shm/') ? '/dev/shm' : '/tmp',
-        'http_compression'   => env('LARAVELS_HTTP_COMPRESSION', true),
+        'http_compression'   => env('LARAVELS_HTTP_COMPRESSION', false),
     ],
 
     'hot_reload' => [
         'enable'  => true,
         'name'    => [],
-        'include' => [app_path(), base_path('crmeb'), config_path()],
+        'include' => [app_path(), base_path('tuoluojiang'), config_path()],
         'exclude' => [],
     ],
     // 队列进程数量
-    'queue_worker_num' => swoole_cpu_num(),
+    'queue_worker_num' => env('LARAVELS_QUEUE_WORKER_NUM', swoole_cpu_num()),
     'queue'            => [
-        'enable'  => true,
-        'sleep'   => 3,    // 没有任务可用时的睡眠秒数
-        'tries'   => 1,    // 任务失败重试次数
-        'rest'    => 0,    // 任务之间的休息秒数
-        'memory'  => 128,  // 以兆字节为单位的内存限制
-        'timeout' => 60,   // 任务处理时间超时秒数
+        'queue_name' => env('REDIS_QUEUE', 'CRMEB_OA'),
+        'enable'     => true,
+        'sleep'      => 3,    // 没有任务可用时的睡眠秒数
+        'tries'      => 1,    // 任务失败重试次数
+        'rest'       => 0,    // 任务之间的休息秒数
+        'memory'     => env('LARAVELS_QUEUE_MEMORY', 96),  // 以兆字节为单位的内存限制
+        'timeout'    => max(900, (int) env('LARAVELS_QUEUE_TIMEOUT', 900)), // 任务处理时间超时秒数
     ],
 ];

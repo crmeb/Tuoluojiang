@@ -17,10 +17,10 @@ namespace App\Http\Service\Config;
 
 use App\Constants\CacheEnum;
 use App\Http\Dao\Config\SystemStorageDao;
-use App\Http\Service\BaseService;
 use App\Http\Service\Other\UploadService;
-use crmeb\exceptions\AdminException;
-use crmeb\services\FormService as FormBuilder;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\exceptions\AdminException;
+use Tuoluojiang\Open\services\FormService as FormBuilder;
 use FormBuilder\Exception\FormBuilderException;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Carbon;
@@ -92,7 +92,7 @@ class SystemStorageService extends BaseService
         ];
 
         $rule = array_merge($ruleConfig, $rule);
-        return $this->elForm('添加云空间', $rule, '/ent/config/storage/' . $type);
+        return $this->createElementForm('添加云空间', $rule, '/ent/config/storage/' . $type);
     }
 
     /**
@@ -157,19 +157,19 @@ class SystemStorageService extends BaseService
         $config = $this->getStorageConfig($type);
         $rule   = [
             FormBuilder::hidden('type', $type),
-            FormBuilder::input('accessKey', 'AccessKeyId', $config['accessKey'] ?? '')->required(),
-            FormBuilder::input('secretKey', 'AccessKeySecret', $config['secretKey'] ?? '')->required(),
+            FormBuilder::input('accessKey', 'AccessKey', $config['accessKey'] ?? '')->required(),
+            FormBuilder::input('secretKey', 'SecretKey', $config['secretKey'] ?? '')->required(),
         ];
 
         if ($type === 4) {
-            $rule[] = FormBuilder::input('appid', 'APPID', $config['appid'] ?? '')->required();
+            $rule[] = FormBuilder::input('appid', 'AppId', $config['appid'] ?? '')->required();
         }
 
-        if ($type === 5) {
-            $rule[] = FormBuilder::input('storageRegion', 'storageRegion', $config['storageRegion'] ?? '')->required();
+        if ($type == 5 || $type == 6) {
+            $rule[] = FormBuilder::input('storageRegion', 'Endpoint', $config['storageRegion'] ?? '')->required();
         }
 
-        return $this->elForm('配置信息', $rule, '/ent/config/storage/config');
+        return $this->createElementForm('配置信息', $rule, '/ent/config/storage/config');
     }
 
     /**
@@ -225,7 +225,7 @@ class SystemStorageService extends BaseService
             if (! $accessKey || ! $secretKey) {
                 return true;
             }
-            $make = app()->make(SystemConfigService::class);
+            $make = app()->get(SystemConfigService::class);
             switch ($type) {
                 case 2:// 七牛
                     $make->update(['key' => 'qiniu_accessKey'], ['value' => $accessKey]);
@@ -248,6 +248,7 @@ class SystemStorageService extends BaseService
                 case 6:// oss 华为云
                     $make->update(['key' => 'hw_accessKey'], ['value' => $accessKey]);
                     $make->update(['key' => 'hw_secretKey'], ['value' => $secretKey]);
+                    $make->update(['key' => 'hw_storage_region'], ['value' => $storageRegion]);
                     break;
                 case 7:// oss 天翼云
                     $make->update(['key' => 'ty_accessKey'], ['value' => $accessKey]);
@@ -266,9 +267,6 @@ class SystemStorageService extends BaseService
     {
         // 保存配置信息
         $this->saveConfig($type, $data);
-        if ($this->dao->count(['name' => $data['name'] . '-' . sys_config('tengxun_appid')])) {
-            throw new AdminException('云空间名称不能重复');
-        }
         // 保存云存储
         $data['type'] = $type;
         $upload       = UploadService::init($type);
@@ -276,20 +274,33 @@ class SystemStorageService extends BaseService
         if ($res === false) {
             throw new AdminException($upload->getError());
         }
-        if ($type === 3) {
-            $data['region'] = $this->getReagionHost($type, $data['region']);
+        $data['region'] = $this->getReagionHost($type, $data['region']);
+        switch ($type) {
+            case 2:
+                $data['access_key'] = sys_config('qiniu_accessKey');
+                break;
+            case 3:
+                $data['access_key'] = sys_config('accessKey');
+                break;
+            case 4:
+                if ($this->dao->count(['name' => $data['name'] . '-' . sys_config('tengxun_appid')])) {
+                    throw new AdminException('云空间名称不能重复');
+                }
+                $data['access_key'] = sys_config('tengxun_accessKey');
+                $data['name']       = $data['name'] . '-' . sys_config('tengxun_appid');
+                $data['domain']     = $this->getDomain($type, $data['name'], $data['region'], sys_config('tengxun_appid') ?: '');
+                break;
+            case 5:
+                $data['access_key'] = sys_config('jd_accessKey');
+                break;
+            case 6:
+                $data['access_key'] = sys_config('hw_accessKey');
+                break;
+            case 7:
+                $data['access_key'] = sys_config('ty_accessKey');
+                break;
         }
-        $data['domain'] = $this->getDomain($type, $data['name'], $data['region'], sys_config('tengxun_appid'));
-        if ($type === 2) {
-            $domianList     = $upload->getDomian($data['name']);
-            $data['domain'] = $domianList[count($domianList) - 1];
-        } else {
-            $data['cname'] = $data['domain'];
-        }
-        $data['access_key'] = sys_config('tengxun_accessKey');
-        $data['name']       = $data['name'] . '-' . sys_config('tengxun_appid');
         Cache::tags([CacheEnum::TAG_CONFIG])->flush();
-
         return $this->dao->create($data);
     }
 
@@ -397,38 +408,35 @@ class SystemStorageService extends BaseService
                     }
                     $config = $this->getStorageConfig($type);
                     foreach ($list as $item) {
-                        if (! $this->dao->exists(['name' => $item['Name'], 'access_key' => $config['accessKey']])) {
-                            $this->dao->create([
-                                'type'       => $type,
-                                'access_key' => $config['accessKey'],
-                                'name'       => $item['Name'],
-                                'region'     => $item['Location'],
-                                'acl'        => 'public-read',
-                                'status'     => 0,
-                                'domain'     => $this->getDomain($type, $item['Name'], $item['Location']),
-                                'is_delete'  => 0,
-                                'created_at' => Carbon::parse($item['CreationDate'])->toDateTimeString(),
-                            ]);
-                        }
+                        $this->dao->firstOrCreate(['name' => $item['Name'], 'access_key' => $config['accessKey']], [
+                            'type'       => $type,
+                            'access_key' => $config['accessKey'],
+                            'name'       => $item['Name'],
+                            'region'     => $item['Location'],
+                            'acl'        => 'public-read',
+                            'status'     => 0,
+                            'domain'     => $this->getDomain($type, $item['Name'], $item['Location']) ?: "obs.{$item['name']}.{$item['Location']}.myhuaweicloud.com",
+                            'is_delete'  => 0,
+                            'created_at' => Carbon::parse($item['CreationDate'])->toDateTimeString(),
+                        ]);
                     }
                     break;
             }
-            Cache::tags([CacheEnum::TAG_CONFIG])->flush();
         } catch (\Exception $e) {
             throw new AdminException($e->getMessage());
         }
-        return true;
+        return Cache::tags([CacheEnum::TAG_CONFIG])->flush();
     }
 
     /**
      * @return mixed|string
      */
-    public function getReagionHost(int $type, string $reagion)
+    public function getReagionHost(int $type, string $region)
     {
-        $upload      = UploadService::init($type);
-        $reagionList = $upload->getRegion();
-        foreach ($reagionList as $item) {
-            if (strstr($item['value'], $reagion) !== false) {
+        $upload     = UploadService::init($type);
+        $regionList = $upload->getRegion();
+        foreach ($regionList as $item) {
+            if (str_contains($item['value'], $region)) {
                 return $item['value'];
             }
         }
@@ -491,7 +499,7 @@ class SystemStorageService extends BaseService
             FormBuilder::input('domain', '空间域名', $storage['domain']),
             FormBuilder::input('cdn', 'cdn域名', $storage['cdn']),
         ];
-        return $this->elForm('修改空间域名', $rule, '/ent/config/storage/domain/' . $id);
+        return $this->createElementForm('修改空间域名', $rule, '/ent/config/storage/domain/' . $id);
     }
 
     /**

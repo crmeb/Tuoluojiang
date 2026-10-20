@@ -1,16 +1,26 @@
 <template>
   <div class="divBox">
-    <div class="content">
+    <div class="content box-height">
       <div class="left">
         <el-card class="left-card">
-          <LeftNavigation :componentStatus="initData" @pageJump="pageJump" @getImageUrl="getImageUrl"
-            :imageUrl="imageUrl" :user="user"></LeftNavigation>
+          <LeftNavigation
+            :componentStatus="initData"
+            @pageJump="pageJump"
+            @getImageUrl="getImageUrl"
+            :imageUrl="imageUrl"
+            :user="user"
+          ></LeftNavigation>
         </el-card>
       </div>
       <div class="right">
         <el-card class="right-card">
-          <formItemDataList :componentStatus="initData" @getPhoto="getPhoto" @hiddenSave="hiddenSave" :user="user"
-            ref="formItemData" />
+          <formItemDataList
+            :componentStatus="initData"
+            @getPhoto="getPhoto"
+            @hiddenSave="hiddenSave"
+            :user="user"
+            ref="formItemData"
+          />
         </el-card>
       </div>
       <!-- 侧边推送 -->
@@ -38,12 +48,16 @@
               <div class="text">
                 <div>{{ val.enterprise.enterprise_name }}</div>
                 <!-- 提取样式为类名，提高代码可维护性 -->
-                <span :class="{ 'status-success': val.status === 1, 'status-fail': val.status === 2 }"
-                  v-if="val.types === 0">
+                <span
+                  :class="{ 'status-success': val.status === 1, 'status-fail': val.status === 2 }"
+                  v-if="val.types === 0"
+                >
                   {{ val.status === 1 ? '已发送个人简历信息' : '拒绝发送个人简历信息' }}
                 </span>
-                <span :class="{ 'status-success': val.status === 1, 'status-fail': val.status === 2 }"
-                  v-if="val.types === 1">
+                <span
+                  :class="{ 'status-success': val.status === 1, 'status-fail': val.status === 2 }"
+                  v-if="val.types === 1"
+                >
                   {{ val.status === 1 ? '已完善个人档案信息' : '拒绝完善个人档案信息' }}
                 </span>
               </div>
@@ -59,24 +73,33 @@
       </el-card>
 
       <div class="cr-bottom-button btn-shadow">
-        <el-button size="small" @click="restFn">重置</el-button>
-        <el-button type="primary" size="small" @click="submit">保存</el-button>
+        <el-button @click="restFn">重置</el-button>
+        <el-button type="primary" @click="submit">保存</el-button>
       </div>
     </div>
   </div>
 </template>
 <script>
+import { mapStores } from 'pinia'
+import { useAppStore } from '@/stores/app.ts'
+import { defineAsyncComponent } from 'vue'
+// mounted 里要通过 ref 调它的 getResume，异步加载会让 ref 在加载完成前为空，故同步引入
+import formItemDataList from '@/views/hr/archives/components/formItemDataList.vue'
+import { modalSure } from '@/libs/public.ts'
 import formOptions from '@/views/hr/archives/mixins/index.js'
-import { getPerfectIndex, putPerfectAgree, putPerfectRefuse } from '@/api/user'
+import { getPerfectIndex, putPerfectAgree, putPerfectRefuse } from '@/api/user.ts'
 
 export default {
   name: 'one',
   components: {
-    LeftNavigation: () => import('@/views/hr/archives/components/LeftNavigation.vue'),
-    formItemDataList: () => import('@/views/hr/archives/components/formItemDataList.vue')
+    LeftNavigation: defineAsyncComponent(() => import('@/views/hr/archives/components/LeftNavigation.vue')),
+    formItemDataList
   },
   props: {},
   mixins: [formOptions],
+  computed: {
+    ...mapStores(useAppStore)
+  },
   data() {
     return {
       initData: { componentName: 'addDrawerIsShow', type: 'add' },
@@ -123,7 +146,7 @@ export default {
       this.loading = false
     },
     getPerfectIndex() {
-      this.$store.commit('app/SET_PARENTCUR', 100)
+      this.appStore.setSidebarParentCur(100)
       let data = {
         status: 0
       }
@@ -134,19 +157,34 @@ export default {
 
     // 同意
     putPerfectAgree(data) {
-      putPerfectAgree(data.id).then((res) => {
-        this.getPerfectIndex()
-        this.page = 1
-        this.getRefuse()
-      })
+      // 封装异步操作，提高代码可读性和可维护性
+      const saveResumeAndConfirm = async () => {
+        try {
+          await this.$refs.formItemData.saveResume(this.imageUrl)
+          await modalSure('您确定将左侧填写的档案信息同步给企业吗')
+          await putPerfectAgree(data.id)
+          this.getPerfectIndex()
+          this.page = 1
+          this.getRefuse()
+        } catch (error) {
+          if (error.message.includes('您取消了操作')) {
+            return
+          }
+        }
+      }
+
+      // 执行异步操作
+      saveResumeAndConfirm()
     },
 
     // 拒绝
     putPerfectRefuse(data) {
-      putPerfectRefuse(data.id).then((res) => {
-        this.getPerfectIndex()
-        this.page = 1
-        this.getRefuse()
+      modalSure('您确定取消档案信息同步吗').then(() => {
+        putPerfectRefuse(data.id).then((res) => {
+          this.getPerfectIndex()
+          this.page = 1
+          this.getRefuse()
+        })
       })
     },
     // 记录
@@ -190,6 +228,9 @@ export default {
 }
 </script>
 <style scoped lang="scss">
+.divBox {
+  position: relative;
+}
 .content {
   display: flex;
 
@@ -205,25 +246,19 @@ export default {
 .status-fail {
   color: #ed4014;
 }
-
 .cr-bottom-button {
-  position: fixed;
+  position: absolute;
+  left: 0px;
   right: 0;
-  left: 0;
   bottom: 0;
   width: 100%;
-  background: #fff !important;
-  text-align: center;
-  padding: 14px 0;
-  z-index: 1;
-  box-shadow: 2px 0px 4px 0px rgba(0, 0, 0, 0.06);
 }
 
-/deep/.el-card {
+:deep(.el-card) {
   border: none;
 }
 
-/deep/ .assess-left .head-portrait .avatar {
+:deep(.assess-left .head-portrait .avatar) {
   margin-top: 0px !important;
 }
 
@@ -287,7 +322,7 @@ export default {
   align-items: center;
 }
 
-/deep/ .head-portrait .avatar-uploader-icon {
+:deep(.head-portrait .avatar-uploader-icon) {
   width: 90px !important;
   height: 110px !important;
   line-height: 110px !important;
@@ -418,19 +453,11 @@ export default {
   }
 }
 
-/deep/ .from-foot-btn {
+:deep(.from-foot-btn) {
   width: calc(100% - 0px);
 }
 
-/deep/ .el-card__body {
+:deep(.el-card__body) {
   padding: 0;
-}
-
-.divBox {
-  // margin-top: -50px !important;
-  margin-left: -145px;
-  position: relative;
-  padding-top: 0px;
-  margin-top: 0;
 }
 </style>

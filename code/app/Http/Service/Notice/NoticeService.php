@@ -16,10 +16,10 @@ declare(strict_types=1);
 namespace App\Http\Service\Notice;
 
 use App\Http\Dao\Notice\NoticeDao;
+use App\Http\Service\Frame\FrameService;
 use App\Http\Model\BaseModel;
 use App\Http\Service\BaseService;
-use App\Http\Service\Frame\FrameService;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Concerns\BuildsQueries;
 use Illuminate\Database\Eloquent\Model;
@@ -260,7 +260,7 @@ class NoticeService extends BaseService
      */
     public function getNotReadCount($where, $userId)
     {
-        $noticeIds       = app()->get(NoticeVisitService::class)->dao->setDefaultSort('created_at')->column(['user_id' => $userId], 'notice_id');
+        $noticeIds       = app()->get(NoticeVisitService::class)->column(['user_id' => $userId], 'notice_id');
         $where['not_id'] = $noticeIds;
         return $this->dao->count($where);
     }

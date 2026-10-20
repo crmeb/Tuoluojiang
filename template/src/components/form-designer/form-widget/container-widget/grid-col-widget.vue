@@ -6,7 +6,7 @@
     :class="[selected ? 'selected' : '', customClass]"
     :style="colHeightStyle"
     :key="widget.id"
-    @click.native.stop="selectWidget(widget)"
+    @click.stop="selectWidget(widget)"
   >
     <draggable
       :list="widget.widgetList"
@@ -16,34 +16,20 @@
       @add="(evt) => onGridDragAdd(evt, widget.widgetList)"
       @update="onGridDragUpdate"
       :move="checkContainerMove"
+      tag="div"
+      class="form-widget-list"
+      :item-key="$draggableKey"
     >
-      <transition-group name="fade" tag="div" class="form-widget-list">
-        <template v-for="(subWidget, swIdx) in widget.widgetList">
-          <template v-if="'container' === subWidget.category">
-            <component
-              :is="subWidget.type + '-widget'"
-              :widget="subWidget"
-              :designer="designer"
-              :key="subWidget.id"
-              :parent-list="widget.widgetList"
-              :index-of-parent-list="swIdx"
-              :parent-widget="widget"
-            ></component>
-          </template>
-          <template v-else>
-            <component
-              :is="subWidget.type + '-widget'"
-              :field="subWidget"
-              :designer="designer"
-              :key="subWidget.id"
-              :parent-list="widget.widgetList"
-              :index-of-parent-list="swIdx"
-              :parent-widget="widget"
-              :design-state="true"
-            ></component>
-          </template>
-        </template>
-      </transition-group>
+      <template #item="{ element: subWidget, index: swIdx }">
+        <component
+          :is="subWidget.type === 'tab' ? 'form-tab-widget' : subWidget.type + '-widget'"
+          v-bind="subWidget.category === 'container' ? { widget: subWidget } : { field: subWidget, designState: true }"
+          :designer="designer"
+          :parent-list="widget.widgetList"
+          :index-of-parent-list="swIdx"
+          :parent-widget="widget"
+        ></component>
+      </template>
     </draggable>
 
     <div class="grid-col-action" v-if="designer.selectedId === widget.id && widget.type === 'grid-col'">
@@ -80,14 +66,13 @@
 
 <script>
 import Draggable from 'vuedraggable'
-import i18n from '@/utils/i18n'
+import i18n from '@/utils/i18n.ts'
 import FieldComponents from '@/components/form-designer/form-widget/field-widget/index'
 import refMixinDesign from '@/components/form-designer/refMixinDesign'
 import containerMixin from '@/components/form-designer/form-widget/container-widget/containerMixin'
 
 export default {
   name: 'GridColWidget',
-  componentName: 'GridColWidget',
   mixins: [i18n, refMixinDesign, containerMixin],
   inject: ['refList'],
   components: {
@@ -234,6 +219,11 @@ export default {
 
     onGridDragAdd(evt, subList) {
       const newIndex = evt.newIndex
+      if (subList[newIndex].type === 'details') {
+        this.widget.widgetList.splice(newIndex, 1)
+        this.$message.error('栅格列暂不支持添加明细表')
+        return false
+      }
       if (!!subList[newIndex]) {
         this.designer.setSelected(subList[newIndex])
         this.designer.setNamesList(subList[newIndex])
@@ -350,4 +340,3 @@ export default {
   }
 }
 </style>
-@/utils/i18ns

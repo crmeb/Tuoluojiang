@@ -2,17 +2,16 @@
   <div class="station">
     <el-drawer
       :title="formData.title"
-      :visible.sync="drawer"
+      v-model="drawer"
       :direction="direction"
       :modal="true"
-      :wrapper-closable="true"
       :before-close="handleClose"
       :size="formData.width"
     >
       <formCreate v-if="rules.length > 0" ref="fc" :option="option" :rule="rules" />
       <div class="button from-foot-btn fix btn-shadow">
-        <el-button @click="drawer = false">{{ $t('public.cancel') }}</el-button>
-        <el-button type="primary" @click="handleConfirm('ruleForm')">{{ $t('public.ok') }}</el-button>
+        <el-button @click="drawer = false">取消</el-button>
+        <el-button type="primary" @click="handleConfirm('ruleForm')">确定</el-button>
       </div>
     </el-drawer>
   </div>
@@ -20,10 +19,11 @@
 
 <script>
 import formCreate from '@form-create/element-ui'
-import request from '@/api/request'
+import request from '@/api/request.ts'
 import ueditorFrom from '@/components/form-common/oa-wangeditor'
 formCreate.component('ueditorFrom', ueditorFrom)
 export default {
+  emits: ['isOk', 'changData'],
   name: 'Index',
   components: { formCreate: formCreate.$form() },
   props: {
@@ -64,7 +64,7 @@ export default {
               closeBtn: false,
               okBtn: false,
               onLoad: (e) => {
-                e.fApi = this.$refs.fc.$f
+                e.fApi = this.$refs.fc.fapi
               }
             }
           }
@@ -90,7 +90,7 @@ export default {
     },
     // 提交
     handleConfirm() {
-      this.$refs.fc.$f.submit((formDatas, fApi) => {
+      this.$refs.fc.fapi.submit((formDatas, fApi) => {
         if (this.formData.hasOwnProperty('options')) {
           formDatas = Object.assign(formDatas, this.formData.options)
         }
@@ -102,27 +102,27 @@ export default {
         } else {
           this.$emit('changData', formDatas)
         }
-      })
+      }).catch(() => {}) // 校验不通过时 reject，错误已显示在表单上
     }
   }
 }
 </script>
 
 <style lang="scss" scoped>
-.station /deep/.edui-editor-iframeholder {
+.station :deep(.edui-editor-iframeholder) {
   height: 300px !important;
 }
-.station /deep/ .el-textarea__inner {
+.station :deep(.el-textarea__inner) {
   height: 120px;
   resize: none;
 }
-.station /deep/.el-drawer__body {
+.station :deep(.el-drawer__body) {
   padding: 20px 20px 50px 20px;
 }
-.button /deep/.el-button {
+.button :deep(.el-button) {
   line-height: 0.3;
 }
-/deep/.tips {
+:deep(.tips) {
   font-size: 13px;
   color: #999;
   margin-bottom: 20px;
@@ -133,7 +133,7 @@ export default {
   border-top: 1px solid #e6ebf5;
   text-align: right;
 }
-/deep/.el-cascader {
+:deep(.el-cascader) {
   width: 100%;
 }
 </style>

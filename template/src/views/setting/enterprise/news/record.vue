@@ -18,17 +18,17 @@
           >
           </oaFromBox>
           <div class="table-box">
-            <el-table ref="table" :data="tableData" :height="tableHeight">
+            <el-table ref="table" :data="tableData" :height="TABLE_HEIGHT">
               <el-table-column prop="title" label="消息标题" min-width="100" show-overflow-tooltip />
               <el-table-column prop="user.name" label="接收人" min-width="100" />
               <el-table-column prop="message" label="消息内容" min-width="240" show-overflow-tooltip />
               <el-table-column prop="cate_name" label="消息类型" min-width="100" show-overflow-tooltip />
               <el-table-column prop="created_at" label="发送时间" min-width="100" />
 
-              <el-table-column :label="$t('toptable.operation')" width="100" fixed="right">
-                <template slot-scope="scope">
+              <el-table-column label="操作" width="100" fixed="right">
+                <template #default="scope">
                   <el-button
-                    type="text"
+                    type="primary" link
                     v-for="(item, index) in scope.row.buttons"
                     :key="index"
                     @click="handleDetails(scope.row, item)"
@@ -59,16 +59,20 @@
 </template>
 
 <script>
-import { getCompanyMessageApi, messageCateApi } from '@/api/setting'
+import { defineAsyncComponent } from 'vue'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { getCompanyMessageApi, messageCateApi } from '@/api/setting.ts'
+import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'Apply',
   components: {
-    messageHandlePopup: () => import('@/components/common/messageHandlePopup'),
-    oaFromBox: () => import('@/components/common/oaFromBox'),
-    tree: () => import('./components/tree')
+    messageHandlePopup: defineAsyncComponent(() => import('@/components/common/messageHandlePopup')),
+    oaFromBox,
+    tree: defineAsyncComponent(() => import('./components/tree'))
   },
   data() {
     return {
+      TABLE_HEIGHT,
       tableData: [],
       options: [],
       messageData: {},
@@ -120,7 +124,7 @@ export default {
         this.total = res.data.messageNum
         if (this.tableData && this.tableData.length > 0) {
           this.tableData.forEach((value) => {
-            value.message_template.sort((a, b) => {
+            value.message_template?.sort((a, b) => {
               return a.type - b.type
             }) //升序
           })
@@ -176,7 +180,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/deep/ .el-table__row {
+:deep(.el-table__row) {
   height: 56px;
 }
 </style>

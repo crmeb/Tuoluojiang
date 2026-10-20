@@ -1,67 +1,88 @@
-<!-- 状态切换开关组件 -->
+<!--
+  状态切换开关组件
+  封装 el-switch，提供统一的状态切换交互
+-->
 <template>
   <div class="composite-selector">
     <!-- 显示名称 -->
-    <span>{{name}}：</span>
+    <span>{{ name }}：</span>
     <!-- 开关组件 -->
     <el-switch
       v-model="internalValue"
       :active-text="activeText"
-      :inactive-text="inactiveText">
+      :inactive-text="inactiveText"
+    >
     </el-switch>
   </div>
 </template>
 
 <script>
+/**
+ * 状态切换开关组件
+ *
+ * @component SwitchStatus
+ * @description 封装 Element Plus 的 el-switch 组件，支持 Vue 3 v-model 双向绑定
+ * @example
+ * <switch-status
+ *   v-model="isEnabled"
+ *   name="启用状态"
+ *   active-text="开启"
+ *   inactive-text="关闭"
+ *   @change="handleChange"
+ * />
+ */
+import { computed } from 'vue'
+
 export default {
-  name: 'switchStatus',
+  name: 'SwitchStatus',
+  emits: ['update:modelValue', 'change'],
   props: {
-    // 开关状态值
-    value: {
-      default: true,
-      type: Boolean
+    /**
+     * 开关状态值（支持 v-model）
+     * @model
+     */
+    modelValue: {
+      type: Boolean,
+      default: true
     },
-    // 开启状态显示文本
+    /**
+     * 开启状态显示文本
+     */
     activeText: {
-      default: undefined,
-      type: String
+      type: String,
+      default: undefined
     },
-    // 关闭状态显示文本
+    /**
+     * 关闭状态显示文本
+     */
     inactiveText: {
-      default: undefined,
-      type: String
+      type: String,
+      default: undefined
     },
-    // 开关名称
+    /**
+     * 开关名称
+     * 显示在开关左侧作为标签
+     */
     name: {
-      default: undefined,
-      type: String
+      type: String,
+      default: undefined
     }
   },
-  data() {
-    return {
-      // 内部维护的开关状态
-      internalValue: this.value
-    };
-  },
-  // 可以添加watch监听internalValue变化并触发事件
-  watch: {
-    internalValue(newVal) {
-      this.$emit('input', newVal);
-      this.$emit('change', newVal);
-    }
+  setup(props, { emit }) {
+    const internalValue = computed({
+      get: () => props.modelValue,
+      set: (newVal) => {
+        emit('update:modelValue', newVal)
+        emit('change', newVal)
+      }
+    })
+
+    return { internalValue }
   }
-};
+}
 </script>
 
 <style scoped lang="scss">
-/* 选择器样式 */
-.el-select .el-input {
-  width: 130px;
-}
-/* 输入框前置选择器样式 */
-.el-input-group__prepend .el-select {
-  width: 100px;
-}
 /* 复合选择器容器样式 */
 .composite-selector {
   display: flex;

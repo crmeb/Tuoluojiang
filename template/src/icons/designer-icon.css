@@ -1,0 +1,41 @@
+/**
+ * 表单设计器专用图标（原 src/icons/iconfont.css）。
+ *
+ * 这几个图标必须挂在**独立的** font-family 上，不能再叫 "iconfont"：
+ * 项目里 src/assets/iconfont/*.css 已经用 "iconfont" 这个族名注册了另外两份字体，
+ * 同名 @font-face 不是互相覆盖，而是合并成同一个族的多个候选 face，浏览器再按
+ * 声明顺序**从后往前**逐字符挑第一个真正含该字形的 face。本文件引入得最早，
+ * 优先级最低，四个码位又恰好都被后引入的字体占用，结果是四个图标全部被遮蔽——
+ * 页面上画出来的是别人的图标，且不报任何错。改成独立族名后不再参与那场竞争。
+ *
+ * 同理，图标类名一律限定在 .designer-icon 之下，避免 .icon-hide / .icon-drag
+ * 这种通用名污染全局。
+ */
+@font-face {
+  font-family: 'designer-icon';
+  src: url('designer-icon.ttf?t=1620643511304') format('truetype');
+}
+
+.designer-icon {
+  font-family: 'designer-icon' !important;
+  font-size: 16px;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.designer-icon.icon-insertcolumn:before {
+  content: '\e753';
+}
+
+.designer-icon.icon-insertrow:before {
+  content: '\e754';
+}
+
+.designer-icon.icon-hide:before {
+  content: '\e76b';
+}
+
+.designer-icon.icon-drag:before {
+  content: '\e61d';
+}

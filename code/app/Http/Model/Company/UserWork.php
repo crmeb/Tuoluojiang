@@ -44,12 +44,14 @@ class UserWork extends BaseModel
         'end_time'   => 'datetime:Y-m-d',
         'created_at' => 'datetime:Y-m-d H:i:s',
         'updated_at' => 'datetime:Y-m-d H:i:s',
+        'id'         => 'integer',
+        'user_id'    => 'integer',
+        'card_id'    => 'integer',
     ];
 
     /**
      * id作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeId($query, $value)

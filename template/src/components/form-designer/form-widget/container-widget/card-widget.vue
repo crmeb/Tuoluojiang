@@ -13,19 +13,23 @@
     <el-card
       :key="widget.id"
       class="card-container"
-      @click.native.stop="selectWidget(widget)"
+      @click.stop="selectWidget(widget)"
       :shadow="widget.options.shadow"
       :style="{ width: widget.options.cardWidth + '!important' || '' }"
       :class="[selected ? 'selected' : '', !!widget.options.folded ? 'folded' : '', customClass]"
     >
-      <div slot="header" class="header clear-fix pointer" v-if="widget.options.cardHeader" @click="toggleCard">
-        <span>{{ widget.options.label }}</span>
-        <i
-          v-if="widget.options.showFold"
-          class="float-right"
-          :class="[!widget.options.folded ? 'el-icon-arrow-down' : 'el-icon-arrow-up']"
-        ></i>
-      </div>
+      <template #header>
+        <div class="header clear-fix pointer" v-if="widget.options.cardHeader" >
+          <span>{{ widget.options.label }}</span>
+
+          <i
+          @click="toggleCard"
+            v-if="widget.options.showFold"
+            class="float-right"
+            :class="[!widget.options.folded ? 'el-icon-arrow-down' : 'el-icon-arrow-up']"
+          ></i>
+        </div>
+      </template>
       <draggable
         :list="widget.widgetList"
         v-bind="{ group: 'dragGroup', ghostClass: 'ghost', animation: 200 }"
@@ -33,43 +37,28 @@
         @add="(evt) => onContainerDragAdd(evt, widget.widgetList)"
         @update="onContainerDragUpdate"
         :move="checkContainerMove"
+        tag="div"
+        class="form-widget-list"
+        :item-key="$draggableKey"
       >
-        <transition-group name="fade" tag="div" class="form-widget-list">
-          <template v-for="(subWidget, swIdx) in widget.widgetList">
-            <template v-if="'container' === subWidget.category">
-              <component
-                :is="subWidget.type + '-widget'"
-                :widget="subWidget"
-                :designer="designer"
-                :key="subWidget.id"
-                :parent-list="widget.widgetList"
-                :index-of-parent-list="swIdx"
-                :parent-widget="widget"
-                @fieldShowFn="fieldShowFn"
-              ></component>
-            </template>
-            <template v-else>
-              <component
-                :is="subWidget.type + '-widget'"
-                :field="subWidget"
-                :designer="designer"
-                :key="subWidget.id"
-                :parent-list="widget.widgetList"
-                :index-of-parent-list="swIdx"
-                :parent-widget="widget"
-                :design-state="true"
-                @fieldShowFn="fieldShowFn"
-              ></component>
-            </template>
-          </template>
-        </transition-group>
+        <template #item="{ element: subWidget, index: swIdx }">
+          <component
+            :is="subWidget.type === 'tab' ? 'form-tab-widget' : subWidget.type + '-widget'"
+            v-bind="subWidget.category === 'container' ? { widget: subWidget } : { field: subWidget, designState: true }"
+            :designer="designer"
+            :parent-list="widget.widgetList"
+            :index-of-parent-list="swIdx"
+            :parent-widget="widget"
+            @fieldShowFn="fieldShowFn"
+          ></component>
+        </template>
       </draggable>
     </el-card>
   </container-wrapper>
 </template>
 
 <script>
-import i18n from '@/utils/i18n'
+import i18n from '@/utils/i18n.ts'
 import containerMixin from '@/components/form-designer/form-widget/container-widget/containerMixin'
 import Draggable from 'vuedraggable'
 import ContainerWrapper from '@/components/form-designer/form-widget/container-widget/container-wrapper'
@@ -78,7 +67,6 @@ import refMixinDesign from '@/components/form-designer/refMixinDesign'
 
 export default {
   name: 'card-widget',
-  componentName: 'ContainerWidget',
   mixins: [i18n, containerMixin, refMixinDesign],
   inject: ['refList'],
   components: {
@@ -102,6 +90,22 @@ export default {
       return this.widget.options.customClass || ''
     }
   },
+  watch: {
+    'widget.options': {
+      handler(newVal) {
+      },
+      deep: true,
+      immediate: true
+    },
+    'widget.options.showFold': {
+      handler(newVal, oldVal) {
+       if(!newVal){
+        this.widget.options.folded = false
+       }
+      },
+      immediate: true
+    }
+  },
   created() {
     this.initRefList()
   },
@@ -116,11 +120,7 @@ export default {
     },
     fieldShowFn(val) {
       this.widget.widgetList.forEach((item) => {
-        if (item.id == val.id) {
-          item.isShow = true
-        } else {
-          item.isShow = false
-        }
+        item.isShow = item.id == val.id
       })
     },
 
@@ -134,6 +134,14 @@ export default {
      */
     setFolded(folded) {
       this.widget.options.folded = !!folded
+    },
+
+    /**
+     * 设置是否显示折叠按钮
+     * @param showFold
+     */
+    setShowFold(showFold) {
+      this.widget.options.showFold = showFold
     }
   }
 }
@@ -152,13 +160,13 @@ export default {
   }
 }
 
-::v-deep .el-card__header {
+:deep(.el-card__header) {
   padding: 0;
 }
 .header {
   padding: 10px 12px;
 }
-.folded ::v-deep .el-card__body {
+.folded :deep(.el-card__body) {
   display: none;
 }
 

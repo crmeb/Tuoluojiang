@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,8 +15,10 @@ declare(strict_types=1);
 
 namespace App\Http\Model\Storage;
 
+use App\Http\Model\Admin\Admin;
+use App\Http\Model\Frame\Frame;
 use App\Http\Model\BaseModel;
-use crmeb\traits\model\TimeDataTrait;
+use Tuoluojiang\Open\traits\model\TimeDataTrait;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -29,6 +31,20 @@ class Storage extends BaseModel
     use TimeDataTrait;
 
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'         => 'integer',
+        'cid'        => 'integer',
+        'entid'      => 'integer',
+        'stock'      => 'integer',
+        'used'       => 'integer',
+        'types'      => 'integer',
+        'status'     => 'integer',
+        'link_id'    => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+        'deleted_at' => 'datetime:Y-m-d H:i:s',
+    ];
 
     protected $table = 'storage';
 
@@ -66,7 +82,6 @@ class Storage extends BaseModel
 
     /**
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeTypes($query, $value)
     {
@@ -77,7 +92,6 @@ class Storage extends BaseModel
 
     /**
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeStatus($query, $value)
     {
@@ -88,7 +102,6 @@ class Storage extends BaseModel
 
     /**
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeStock($query, $value)
     {
@@ -103,7 +116,6 @@ class Storage extends BaseModel
 
     /**
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeNameLike($query, $value)
     {
@@ -116,7 +128,6 @@ class Storage extends BaseModel
 
     /**
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeDistinct($query, $value)
     {
@@ -133,5 +144,15 @@ class Storage extends BaseModel
     public function record()
     {
         return $this->hasMany(StorageRecord::class, 'storage_id', 'id');
+    }
+    public function receiveUser()
+    {
+        return $this->hasOneThrough(Admin::class, StorageRecord::class, 'storage_id', 'id', 'id', 'user_id')
+            ->orderBy('storage_record.created_at', 'desc')->where('storage_record.status', 1)->where('storage_record.types', 1);
+    }
+    public function receiveFrame()
+    {
+        return $this->hasOneThrough(Frame::class, StorageRecord::class, 'storage_id', 'id', 'id', 'frame_id')
+            ->orderBy('storage_record.created_at', 'desc')->where('storage_record.status', 1)->where('storage_record.types', 1);
     }
 }

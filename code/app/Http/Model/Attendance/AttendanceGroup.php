@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace App\Http\Model\Attendance;
 
+use App\Constants\AttendanceGroupEnum;
 use App\Http\Model\Admin\Admin;
 use App\Http\Model\BaseModel;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
@@ -39,6 +40,27 @@ class AttendanceGroup extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'                => 'integer',
+        'type'              => 'integer',
+        'effective_range'   => 'integer',
+        'repair_allowed'    => 'integer',
+        'is_limit_time'     => 'integer',
+        'limit_time'        => 'integer',
+        'is_limit_number'   => 'integer',
+        'limit_number'      => 'integer',
+        'is_photo'          => 'integer',
+        'is_map'            => 'integer',
+        'is_wifi'           => 'integer',
+        'is_external'       => 'integer',
+        'is_external_note'  => 'integer',
+        'is_external_photo' => 'integer',
+        'uid'               => 'integer',
+        'created_at'        => 'datetime:Y-m-d H:i:s',
+        'updated_at'        => 'datetime:Y-m-d H:i:s',
+        'deleted_at'        => 'datetime:Y-m-d H:i:s',
+    ];
 
     protected $hidden = [
         'deleted_at',
@@ -175,8 +197,25 @@ class AttendanceGroup extends BaseModel
     {
         if (is_array($value)) {
             $query->whereIn('id', $value);
-        } elseif ($value !== '') {
+        } else {
             $query->where('id', $value);
         }
+    }
+
+    /**
+     * UID 作用域
+     * @param mixed $query
+     * @param mixed $value
+     */
+    public function scopeAuthUid($query, $value): void
+    {
+        $query->where(function ($query) use ($value) {
+            $query->where('uid', $value)->orWhereIn('id', fn ($q) => $q->from('attendance_group_member')->where(['type' => AttendanceGroupEnum::ADMIN, 'member' => $value])->select(['group_id']));
+        });
+    }
+
+    public function wifi()
+    {
+        return $this->hasMany(AttendanceWifi::class, 'group_id', 'id');
     }
 }

@@ -28,7 +28,7 @@ class FileAdapter implements Adapter, BatchAdapter, UpdatableAdapter
     /**
      * @var string
      */
-    protected $filePath;
+    protected string $filePath;
 
     /**
      * FileAdapter constructor.
@@ -109,6 +109,7 @@ class FileAdapter implements Adapter, BatchAdapter, UpdatableAdapter
         while ($line = fgets($file)) {
             $this->loadPolicyLine(trim($line), $model);
         }
+        
         fclose($file);
     }
 

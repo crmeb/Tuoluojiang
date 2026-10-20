@@ -23,7 +23,7 @@
                       <el-row :gutter="20">
                         <el-col class="notice-left" :class="item.cover ? '' : 'width'">
                           <p class="title1">
-                            <span class="tag" v-if="item.is_top === 1" size="mini">置顶</span>
+                            <span class="tag" v-if="item.is_top === 1">置顶</span>
                             <span class="over-text"> {{ item.title }}</span>
                           </p>
                           <p class="info over-text2">{{ item.info }}</p>
@@ -62,18 +62,25 @@
             </div>
           </div>
         </el-card>
-        <notice-detail v-else :data="detailData" @handleNoticeDetail="handleNoticeDetail"></notice-detail>
+        <notice-detail
+          v-else
+          :data="detailData"
+          :loading="detailLoading"
+          @handleNoticeDetail="handleNoticeDetail"
+        ></notice-detail>
       </el-col>
 
       <!-- 右侧最公告 -->
       <el-col class="flex-right">
         <el-card class="news-right">
-          <div slot="header" class="clearfix">
-            <div class="news-title">
-              <span class="before"></span>
-              最新公告
+          <template #header>
+            <div class="clearfix">
+              <div class="news-title">
+                <span class="before"></span>
+                最新公告
+              </div>
             </div>
-          </div>
+          </template>
           <ul class="news-content" v-if="nweNoticeData.length > 0">
             <li v-for="(item, index) in nweNoticelist" :key="'new' + item.id" @click="itemDetail(item.id)">
               <el-row :gutter="20">
@@ -109,13 +116,17 @@
 </template>
 
 <script>
-import { noticeCategoryApi, noticeDetailApi, noticeListApi, allArticlesApi } from '@/api/administration'
-import settings from '@/settings'
+import { defineAsyncComponent } from 'vue'
+import { noticeCategoryApi, noticeDetailApi, noticeListApi, allArticlesApi } from '@/api/administration.ts'
+import settings from '@/settings.ts'
+
+import noticeImg from '@/assets/images/notice.png'
+
 export default {
   name: 'IndexVue',
   components: {
-    noticeDetail: () => import('./components/noticeDetail'),
-    defaultPage: () => import('@/components/common/defaultPage')
+    noticeDetail: defineAsyncComponent(() => import('./components/noticeDetail')),
+    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage'))
   },
   data() {
     return {
@@ -124,15 +135,18 @@ export default {
         limit: 10,
         cate_id: '',
         name: '',
-        status: 1
+        status: 1,
+        is_read: 0
       },
       noticeNav: [],
       total: 0,
       tableData: [],
-      defaultImage: require('@/assets/images/notice.png'),
+      defaultImage: noticeImg,
       navIndex: true,
       nweNoticeData: [],
-      isDetail: false,
+      // 携带 id 进入时直接渲染详情视图，避免先闪一下列表
+      isDetail: !!this.$route.query.id,
+      detailLoading: false,
       detailData: {},
       activeName: '0'
     }
@@ -140,21 +154,21 @@ export default {
   computed: {
     nweNoticelist() {
       if (this.nweNoticeData.length > 5) {
-        return this.nweNoticeData.splice(0, 5)
+        return this.nweNoticeData.slice(0, 5)
       } else {
         return this.nweNoticeData
       }
     }
   },
   mounted() {
-    this.getTargetCate()
-    // const limit = Math.floor((window.innerHeight - 240) / 155)
-    // this.where.limit = limit > 0 ? limit : this.where.limit
-    this.getAllArticles()
-    this.getNewTableData()
+    // 优先发起详情请求，保证带 id 进入时详情内容最快呈现
     if (this.$route.query.id) {
       this.itemDetail(this.$route.query.id)
     }
+    this.getTargetCate()
+
+    this.getNewTableData()
+    this.getTableData()
   },
   methods: {
     handleSizeChange(val) {
@@ -162,9 +176,14 @@ export default {
       this.getTableData()
     },
     handleClick(e) {
-      const index = Number(e.name)
+      const index = Number(e.paneName)
       const data = this.noticeNav[index]
-      this.where.cate_id = data.id
+      if (data.is_read == 0) {
+        this.where.is_read = 0
+      } else {
+        this.where.cate_id = data.id
+        this.where.is_read = ''
+      }
 
       this.where.page = 1
       if (index == 0) {
@@ -204,19 +223,36 @@ export default {
     getTargetCate() {
       noticeCategoryApi({ is_show: 1 }).then((res) => {
         this.noticeNav = res.data ? res.data : []
-        this.noticeNav.unshift({
-          cate_name: '全部',
-          id: 0
-        })
+        this.noticeNav.unshift(
+          {
+            cate_name: '未读',
+            id: 1,
+            is_read: 0
+          },
+
+          {
+            cate_name: '全部',
+            id: 0
+          }
+        )
       })
     },
     // 获取详情页
     itemDetail(id) {
-      noticeDetailApi(id).then((res) => {
-        this.detailData = res.data
-        this.isDetail = true
-        this.getNewTableData()
-      })
+      // 先切到详情视图并进入 loading，接口返回后再填充内容
+      this.isDetail = true
+      this.detailLoading = true
+      noticeDetailApi(id)
+        .then((res) => {
+          this.detailData = res.data
+          this.getNewTableData()
+        })
+        .catch(() => {
+          this.handleNoticeDetail()
+        })
+        .finally(() => {
+          this.detailLoading = false
+        })
     },
     handleSearch() {
       this.where.page = 1
@@ -248,7 +284,7 @@ export default {
     display: flex;
     justify-content: space-between;
     .card-box {
-      height: calc(100vh - 77px);
+      height: calc(100vh - 82px);
     }
   }
   .notice-box {
@@ -266,8 +302,8 @@ export default {
   .flex-left {
     width: calc(100% - 320px);
     .main {
-      max-width: 800px;
-      margin: 0 auto;
+      // max-width: 800px;
+      // margin: 0 auto;
     }
   }
 }
@@ -277,7 +313,7 @@ export default {
   width: calc(100% - 20px);
 }
 
-.mt0 /deep/ .divBox .el-pagination {
+.mt0 :deep(.divBox .el-pagination) {
   margin-top: 0px;
 }
 .pagination {
@@ -289,7 +325,7 @@ export default {
   width: 100% !important;
 }
 .table-box {
-  /deep/ .el-table th {
+  :deep(.el-table th) {
     background-color: #f5f5f5;
   }
   .table-img {
@@ -297,10 +333,10 @@ export default {
     height: auto;
   }
 }
-/deep/ .el-scrollbar__wrap {
+:deep(.el-scrollbar__wrap) {
   overflow-x: hidden;
 }
-/deep/ .el-scrollbar__thumb {
+:deep(.el-scrollbar__thumb) {
   display: none;
 }
 .content {
@@ -314,19 +350,19 @@ export default {
 
     border-bottom: 1px solid #eeeeee;
     position: relative;
-    /deep/ .el-tabs__header {
+    :deep(.el-tabs__header) {
       margin: 0;
     }
-    /deep/ .el-tabs__nav-scroll {
+    :deep(.el-tabs__nav-scroll) {
       // padding: 0 20px;
     }
-    /deep/ .el-tabs__item.is-active {
+    :deep(.el-tabs__item.is-active) {
       color: #1890ff !important;
     }
-    /deep/ .el-tabs__nav-wrap::after {
+    :deep(.el-tabs__nav-wrap::after) {
       height: 1px;
     }
-    /deep/ .el-tabs__item {
+    :deep(.el-tabs__item) {
       height: 35px;
       font-size: 14px;
       font-family: PingFang SC-中黑体, PingFang SC;
@@ -405,7 +441,7 @@ export default {
           margin: 10px 0;
           display: flex;
           align-items: flex-start;
-          /deep/ .el-tag--warning {
+          :deep(.el-tag--warning) {
             background-color: #ffba00;
             color: #ffffff;
             font-size: 13px;
@@ -556,11 +592,11 @@ export default {
   border-radius: 4px 4px 4px 4px;
   min-height: calc(100vh - 77px);
   opacity: 1;
-  /deep/ .el-card__header {
+  :deep(.el-card__header) {
     padding: 12px 20px 0 20px;
     border-bottom: none;
   }
-  /deep/ .el-card__body {
+  :deep(.el-card__body) {
     padding-top: 0;
     padding-bottom: 0;
   }
@@ -568,7 +604,7 @@ export default {
 .page-fixed {
   position: relative;
 }
-/deep/.el-pagination {
+:deep(.el-pagination) {
   margin-top: 40px;
 }
 </style>

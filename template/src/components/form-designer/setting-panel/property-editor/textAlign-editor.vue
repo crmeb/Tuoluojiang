@@ -1,18 +1,18 @@
 <template>
   <el-form-item :label="i18nt('designer.setting.textAlign')" v-if="(selectedWidget.type === 'static-text')">
     <el-radio-group v-model="optionModel.textAlign" class="radio-group-custom">
-      <el-radio-button label="left">
+      <el-radio-button value="left">
         {{i18nt('designer.setting.leftAlign')}}</el-radio-button>
-      <el-radio-button label="center">
+      <el-radio-button value="center">
         {{i18nt('designer.setting.centerAlign')}}</el-radio-button>
-      <el-radio-button label="right">
+      <el-radio-button value="right">
         {{i18nt('designer.setting.rightAlign')}}</el-radio-button>
     </el-radio-group>
   </el-form-item>
 </template>
 
 <script>
-  import i18n from "@/utils/i18n"
+  import i18n from "@/utils/i18n.ts"
 
   export default {
     name: "textAlign-editor",
@@ -27,10 +27,9 @@
 
 <style lang="scss" scoped>
   .radio-group-custom {
-    ::v-deep .el-radio-button__inner {
+    :deep(.el-radio-button__inner) {
       padding-left: 12px;
       padding-right: 12px;
     }
   }
 </style>
-@/utils/i18ns

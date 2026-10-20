@@ -2,7 +2,7 @@
   <div class="oa-dialog">
     <el-dialog
       title="导入数据"
-      :visible.sync="show"
+      v-model="show"
       width="789px"
       :before-close="handleClose"
       :close-on-click-modal="false"
@@ -63,11 +63,12 @@
   </div>
 </template>
 <script>
-import XLSX from 'xlsx'
-import { crudImportApi, crudModuleInfoApi } from '@/api/develop'
-import { formatBytes } from '@/libs/public'
+import { readFirstSheetRows } from '@/utils/excel/readSheet.ts'
+import { crudImportApi, crudModuleInfoApi } from '@/api/develop.ts'
+import { formatBytes } from '@/utils/file.ts'
 import exportExcel from '@/components/common/exportExcel'
 export default {
+  emits: ['getList'],
   name: '',
   components: { exportExcel },
   props: {},
@@ -141,50 +142,16 @@ export default {
     },
 
     // 导入
-    exportDataFn(file) {
+    async exportDataFn(file) {
       if (!file.file) {
         return
       }
-      const that = this
-      // 拿取文件对象
-      var f = file.file
-      // 用FileReader来读取
-      var reader = new FileReader()
-      // 重写FileReader上的readAsBinaryString方法
-      FileReader.prototype.readAsBinaryString = function (f) {
-        var binary = ''
-        var wb // 读取完成的数据
-        var outdata // 你需要的数据
-        var reader = new FileReader()
-        reader.onload = function () {
-          // 读取成Uint8Array，再转换为Unicode编码（Unicode占两个字节）
-          var bytes = new Uint8Array(reader.result)
-          var length = bytes.byteLength
-          for (var i = 0; i < length; i++) {
-            binary += String.fromCharCode(bytes[i])
-          }
-          // 接下来就是xlsx了，具体可看api
-          wb = XLSX.read(binary, {
-            type: 'binary',
-            cellDates: true
-          })
-          outdata = XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]])
-          const arrData = outdata.split('\n')
-          const arrRes = []
-          for (let i = that.columnNumber; i < arrData.length; i++) {
-            if (arrData[i] === '') {
-              continue
-            } else {
-              const result = arrData[i].split(',');
-              if (result.every(i => i === "")) continue
-              arrRes.push(result)
-            }
-          }
-          that.importExcelData(arrRes)
-        }
-        reader.readAsArrayBuffer(f)
+      try {
+        const rows = await readFirstSheetRows(file.file)
+        this.importExcelData(rows.slice(1))
+      } catch (error) {
+        this.$message.error('文件解析失败，请检查文件格式')
       }
-      reader.readAsBinaryString(f)
     },
 
     importExcelData(arrRes) {
@@ -197,6 +164,15 @@ export default {
         }
       }
 
+      data = data.map((item) => {
+        const newItem = {}
+        for (const key in item) {
+          if (key.trim() !== '') {
+            newItem[key] = item[key]
+          }
+        }
+        return newItem
+      })
       crudImportApi(this.keyName, { import: data })
         .then((res) => {
           if (res.status == 200) {
@@ -256,27 +232,28 @@ export default {
   .upload-demo {
     width: 100%;
     height: 312px;
-    /deep/ .el-upload {
+    :deep(.el-upload) {
       width: 100%;
       height: 100%;
       border-color: #dddddd;
     }
-    /deep/ .el-upload .el-upload-dragger {
+    :deep(.el-upload .el-upload-dragger) {
       width: 100%;
       height: 100%;
       border-color: #dddddd;
     }
   }
   .img {
-    // display: block;
     width: 64px;
     height: 73px;
-    margin: 90px 0 18px 0;
+    margin: 0 auto;
+    margin-top: 90px;
+    margin-bottom: 18px;
   }
   .img-ok {
     width: 39px;
     height: 39px;
-    margin: 102px 0 14px 0;
+    margin: 102px auto 14px auto;
   }
   .text-ok {
     font-weight: 600;
@@ -286,13 +263,13 @@ export default {
   .img-gif {
     width: 75px;
     height: 75px;
-    margin: 85px 0 21px 0;
+    margin: 85px auto 21px auto;
   }
   .icontishi2 {
     display: inline-block;
     font-size: 39px;
     color: red;
-    margin: 91px 0 14px 0;
+    margin: 91px auto 14px auto;
   }
 }
 .el-upload__tip {

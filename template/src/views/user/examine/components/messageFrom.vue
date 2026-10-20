@@ -1,26 +1,40 @@
 <template>
   <div>
-    <div class="mb10 title">留言</div>
-    <div v-for="(item, index) in reply" :key="index" class="acea-row row-between mb25">
-      <div class="flex-between" style="width: 100%">
+    <div class="title">
+      <span class="shu mr10"></span>
+      留言
+    </div>
+    <div v-for="(item, index) in reply" :key="index" class="acea-row mb10">
+      <div style="width: 100%">
         <div class="mb15 flex">
           <div class="pic mr10">
             <img :src="item.card.avatar" />
           </div>
-          <div>
-            <span class="fonts">{{ item.card.name }}</span>
+          <div style="width: 100%">
+            <div class="between-box">
+              <div>
+                <div class="fonts">
+                  <span>{{ item.card.name }}</span>
 
-            <div class="fonts mt5">{{ item.content }}</div>
-          </div>
-        </div>
-        <div class="del">
-          <div class="time">{{ item.created_at }}</div>
-          <div
-            v-if="$store.state.user.userInfo.uid === item.card.uid"
-            @click="del(item.id)"
-            class="el-icon-delete mr5 mt10"
-          >
-            删除
+                  <span class="time">{{ item.created_at }}</span>
+                </div>
+
+                <div class="fonts content">{{ item.content }}</div>
+              </div>
+              <div class="del">
+                <div
+                  v-if="userStore.userInfo.uid === item.card.uid"
+                  @click="del(item.id)"
+                  class="el-icon-delete mr5 mt10"
+                >
+                  删除
+                </div>
+              </div>
+            </div>
+
+            <div class="mt10" v-if="item.files.length > 0">
+              <upload-list :file-list="item.files"></upload-list>
+            </div>
           </div>
         </div>
       </div>
@@ -29,9 +43,16 @@
 </template>
 
 <script>
-import { approveReplyApi, approveReplyDelApi } from '@/api/business'
+import { mapStores } from 'pinia'
+import { useUserStore } from '@/stores/user.ts'
+import { defineAsyncComponent } from 'vue'
+import { approveReplyApi, approveReplyDelApi } from '@/api/business.ts'
 export default {
+  emits: ['upDate'],
   name: 'MessageFrom',
+  components: {
+    uploadList: defineAsyncComponent(() => import('@/components/form-common/oa-uploadList'))
+  },
   props: {
     examineData: {
       type: Object,
@@ -39,6 +60,9 @@ export default {
         return {}
       }
     }
+  },
+  computed: {
+    ...mapStores(useUserStore)
   },
   data() {
     return {
@@ -76,22 +100,34 @@ export default {
 
 <style scoped lang="scss">
 .title {
-  font-size: 13px;
-  color: #666666;
+  display: flex;
+  align-items: center;
+  font-family: PingFang SC, PingFang SC;
+  font-weight: 500;
+  font-size: 14px;
+  color: #303133;
+  margin-bottom: 20px;
 }
+.shu {
+  width: 3px;
+  height: 16px;
+  background: #1890ff;
+  display: inline-block;
+}
+
 .clear {
   clear: both;
+}
+.between-box {
+  display: flex;
+  justify-content: space-between;
 }
 .add {
   float: right;
 }
-.inpBox {
-  background-color: #f9f9f9;
-  /deep/.el-textarea__inner {
-    border: none;
-    resize: none;
-    background-color: #f9f9f9;
-  }
+.acea-row {
+  display: flex;
+  justify-content: space-between;
 }
 .pic {
   width: 38px;
@@ -107,20 +143,29 @@ export default {
   max-width: 400px;
   font-family: PingFang SC, PingFang SC;
   font-weight: 500;
+  font-size: 14px;
+  color: #303133;
+}
+.content {
+  font-family: PingFang SC, PingFang SC;
+  font-weight: 400;
   font-size: 13px;
   color: #303133;
+  margin-top: 8px;
 }
 .time {
   font-family: PingFang SC, PingFang SC;
   font-weight: 400;
-  font-size: 11px;
+  font-size: 12px;
   color: #909399;
+  margin-left: 4px;
 }
 .del {
   cursor: pointer;
   font-family: PingFang SC, PingFang SC;
   font-weight: 400;
   font-size: 13px;
-  color: #909399;
+  color: #606266;
+  margin-left: 8px;
 }
 </style>

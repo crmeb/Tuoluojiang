@@ -24,7 +24,7 @@
           <div class="pr20">
             <el-table :data="list" ref="table" row-key="col1" style="width: 100%" class="table ml20">
               <el-table-column prop="position" label="职位" min-width="100" fixed="left">
-                <template slot="header" slot-scope="scope">
+                <template #header="scope">
                   <select-member ref="selectMember" @getSelectList="getSelectList">
                     <template v-slot:custom>
                       <div class="department" @click.stop="selectPosition">
@@ -34,8 +34,8 @@
                   </select-member>
                 </template>
 
-                <template slot-scope="scope">
-                  <el-select v-model="scope.row.col1" size="mini" placeholder="请选择">
+                <template #default="scope">
+                  <el-select v-model="scope.row.col1" placeholder="请选择">
                     <el-option
                       v-for="item in position"
                       :key="item.id"
@@ -50,18 +50,20 @@
 
               <el-table-column label="知识水平(A)">
                 <el-table-column prop="col2" label="专业知识水平" min-width="130">
-                  <template slot="header" slot-scope="scope">
+                  <template #header="scope">
                     <el-popover
                       placement="top"
                       width="400"
                       trigger="hover"
                       content="专业知识水平指对该职位要求从事的职业领域的理论、实际方法与专门性知识的了解"
                     >
-                      <div slot="reference">专业知识水平 <span class="el-icon-info"></span></div>
+                      <template #reference>
+                        <div>专业知识水平 <span class="el-icon-info"></span></div>
+                      </template>
                     </el-popover>
                   </template>
-                  <template slot-scope="scope">
-                    <el-select v-model="scope.row.col2" size="mini" placeholder="请选择">
+                  <template #default="scope">
+                    <el-select v-model="scope.row.col2" placeholder="请选择">
                       <el-option
                         v-for="item in professionalKnowledge"
                         :key="item.id"
@@ -74,18 +76,20 @@
                 </el-table-column>
 
                 <el-table-column prop="col3" label="管理诀窍" min-width="100">
-                  <template slot="header" slot-scope="scope">
+                  <template #header="scope">
                     <el-popover
                       placement="top"
                       width="400"
                       trigger="hover"
                       content="管理诀窍是指在领导和管理他人时所需的技巧和策略，包括有效沟通、目标设定、团队建设等方面的知识和技能"
                     >
-                      <div slot="reference">管理诀窍 <span class="el-icon-info"></span></div>
+                      <template #reference>
+                        <div>管理诀窍 <span class="el-icon-info"></span></div>
+                      </template>
                     </el-popover>
                   </template>
-                  <template slot-scope="scope">
-                    <el-select v-model="scope.row.col3" size="mini" placeholder="请选择">
+                  <template #default="scope">
+                    <el-select v-model="scope.row.col3" placeholder="请选择">
                       <el-option v-for="item in managementKnowHow" :key="item.id" :label="item.label" :value="item.id">
                       </el-option>
                     </el-select>
@@ -93,18 +97,20 @@
                 </el-table-column>
 
                 <el-table-column prop="col4" label="人际关系技巧" min-width="100">
-                  <template slot="header" slot-scope="scope">
+                  <template #header="scope">
                     <el-popover
                       placement="top"
                       width="400"
                       trigger="hover"
                       content="人际关系技巧是指在与他人相处和合作时，建立良好关系、处理冲突、激发合作等方面的技巧和能力"
                     >
-                      <div slot="reference">人际关系技巧<span class="el-icon-info"></span></div>
+                      <template #reference>
+                        <div>人际关系技巧<span class="el-icon-info"></span></div>
+                      </template>
                     </el-popover>
                   </template>
-                  <template slot-scope="scope">
-                    <el-select v-model="scope.row.col4" size="mini" placeholder="请选择">
+                  <template #default="scope">
+                    <el-select v-model="scope.row.col4" placeholder="请选择">
                       <el-option
                         v-for="item in interpersonalRelationship"
                         :key="item.id"
@@ -117,11 +123,10 @@
                 </el-table-column>
 
                 <el-table-column prop="col5" label="评分" min-width="70">
-                  <template slot-scope="scope">
+                  <template #default="scope">
                     <el-select
                       v-model="scope.row.col5"
                       :disabled="!score[getScore(scope.row.col2, scope.row.col3, scope.row.col4)]"
-                      size="mini"
                       placeholder="请选择"
                       @change="positionScore(scope.row)"
                     >
@@ -139,47 +144,50 @@
 
               <el-table-column label="解决问题(B)">
                 <el-table-column prop="col6" label="思维环境" min-width="120">
-                  <template slot="header" slot-scope="scope">
+                  <template #header="scope">
                     <el-popover
                       placement="top"
                       width="400"
                       trigger="hover"
                       content="思维环境是指工作中需要运用特定的思维方式和技巧的情境或背景"
                     >
-                      <div slot="reference">思维环境 <span class="el-icon-info"></span></div>
+                      <template #reference>
+                        <div>思维环境 <span class="el-icon-info"></span></div>
+                      </template>
                     </el-popover>
                   </template>
-                  <template slot-scope="scope">
-                    <el-select v-model="scope.row.col6" size="mini" placeholder="请选择">
+                  <template #default="scope">
+                    <el-select v-model="scope.row.col6" placeholder="请选择">
                       <el-option v-for="item in environment" :key="item.id" :label="item.label" :value="item.id">
                       </el-option>
                     </el-select>
                   </template>
                 </el-table-column>
                 <el-table-column prop="col7" label="思维难度" min-width="100">
-                  <template slot="header" slot-scope="scope">
+                  <template #header="scope">
                     <el-popover
                       placement="top"
                       width="400"
                       trigger="hover"
                       content="思维难度指的是问题的复杂程度或解决问题所需的认知挑战程度"
                     >
-                      <div slot="reference">思维难度 <span class="el-icon-info"></span></div>
+                      <template #reference>
+                        <div>思维难度 <span class="el-icon-info"></span></div>
+                      </template>
                     </el-popover>
                   </template>
-                  <template slot-scope="scope">
-                    <el-select v-model="scope.row.col7" size="mini" placeholder="请选择">
+                  <template #default="scope">
+                    <el-select v-model="scope.row.col7" placeholder="请选择">
                       <el-option v-for="item in difficulty" :key="item.id" :label="item.label" :value="item.id">
                       </el-option>
                     </el-select>
                   </template>
                 </el-table-column>
                 <el-table-column prop="col8" label="评分" min-width="70">
-                  <template slot-scope="scope">
+                  <template #default="scope">
                     <el-select
                       v-model="scope.row.col8"
                       :disabled="!solve[getSolve(scope.row.col6, scope.row.col7)]"
-                      size="mini"
                       placeholder="请选择"
                       @change="positionScore(scope.row)"
                     >
@@ -197,61 +205,66 @@
 
               <el-table-column label="承担责任(C)">
                 <el-table-column prop="col9" min-width="120">
-                  <template slot="header" slot-scope="scope">
+                  <template #header="scope">
                     <el-popover
                       placement="top"
                       width="400"
                       trigger="hover"
                       content="行动自由度指的是在职位中能够自主决策和采取行动的程度"
                     >
-                      <div slot="reference">行动自由度 <span class="el-icon-info"></span></div>
+                      <template #reference>
+                        <div>行动自由度 <span class="el-icon-info"></span></div>
+                      </template>
                     </el-popover>
                   </template>
-                  <template slot-scope="scope">
-                    <el-select v-model="scope.row.col9" size="mini" placeholder="请选择">
+                  <template #default="scope">
+                    <el-select v-model="scope.row.col9" placeholder="请选择">
                       <el-option v-for="item in free" :key="item.id" :label="item.label" :value="item.id"> </el-option>
                     </el-select>
                   </template>
                 </el-table-column>
                 <el-table-column prop="col10" min-width="100">
-                  <template slot="header" slot-scope="scope">
+                  <template #header="scope">
                     <el-popover
                       placement="top"
                       width="400"
                       trigger="hover"
                       content="职务责任是指职位所要承担的具体职责和义务"
                     >
-                      <div slot="reference">职务责任 <span class="el-icon-info"></span></div>
+                      <template #reference>
+                        <div>职务责任 <span class="el-icon-info"></span></div>
+                      </template>
                     </el-popover>
                   </template>
-                  <template slot-scope="scope">
-                    <el-select v-model="scope.row.col10" size="mini" placeholder="请选择">
+                  <template #default="scope">
+                    <el-select v-model="scope.row.col10" placeholder="请选择">
                       <el-option v-for="item in responsibility" :key="item.id" :label="item.label" :value="item.id">
                       </el-option>
                     </el-select>
                   </template>
                 </el-table-column>
                 <el-table-column prop="col11" min-width="110">
-                  <template slot="header" slot-scope="scope">
+                  <template #header="scope">
                     <el-popover
                       placement="top"
                       width="400"
                       trigger="hover"
                       content="职务影响结果指的是职位对于组织和业务结果的影响程度"
                     >
-                      <div slot="reference">职务影响结果 <span class="el-icon-info"></span></div>
+                      <template #reference>
+                        <div>职务影响结果 <span class="el-icon-info"></span></div>
+                      </template>
                     </el-popover>
                   </template>
-                  <template slot-scope="scope">
-                    <el-cascader v-model="scope.row.col11" size="mini" :options="influence"></el-cascader>
+                  <template #default="scope">
+                    <el-cascader v-model="scope.row.col11" :options="influence"></el-cascader>
                   </template>
                 </el-table-column>
                 <el-table-column prop="col12" label="评分" min-width="70">
-                  <template slot-scope="scope">
+                  <template #default="scope">
                     <el-select
                       v-model="scope.row.col12"
                       :disabled="!bear[getBear(scope.row.col9, scope.row.col10, scope.row.col11)]"
-                      size="mini"
                       placeholder="请选择"
                       @change="positionScore(scope.row)"
                     >
@@ -268,70 +281,79 @@
               </el-table-column>
 
               <el-table-column>
-                <template slot="header" slot-scope="scope">
+                <template #header="scope">
                   <el-popover
                     placement="top"
                     width="400"
                     trigger="hover"
                     content="通过技能、解决问题能力和职务责任的不同要求，区分不同类型的职位，以对各种职位进行划分，实行不同的薪酬结构。α：知识水平与解决问题权重(20<α<80) ；β：承担责任权重"
                   >
-                    <div slot="reference">权重设置<span class="el-icon-info"></span></div>
+                    <template #reference>
+                      <div>权重设置<span class="el-icon-info"></span></div>
+                    </template>
                   </el-popover>
                 </template>
                 <el-table-column min-width="100">
-                  <template slot="header" slot-scope="scope">
+                  <template #header="scope">
                     <div>（α）</div>
                   </template>
-                  <template slot-scope="scope">
+                  <template #default="scope">
                     <el-input
                       class="input"
                       v-model="scope.row.col13"
                       type="number"
-                      size="mini"
                       min="20"
                       max="80"
                       placeholder="请输入整数"
                       @change="positionScore(scope.row)"
                     >
-                      <i slot="suffix" style="font-style: normal; margin-right: 10px">%</i>
+                      <template #suffix>
+                        <i style="font-style: normal; margin-right: 10px">%</i>
+                      </template>
                     </el-input>
                   </template>
                 </el-table-column>
                 <el-table-column min-width="100">
-                  <template slot="header" slot-scope="scope">
+                  <template #header="scope">
                     <div>（β）</div>
                   </template>
-                  <template slot-scope="scope">
-                    <el-input class="input" v-model="scope.row.col14" size="mini" disabled placeholder="自动计算">
-                      <i slot="suffix" style="font-style: normal; margin-right: 10px">%</i></el-input
+                  <template #default="scope">
+                    <el-input class="input" v-model="scope.row.col14" disabled placeholder="自动计算">
+                      <template #suffix>
+                        <i style="font-style: normal; margin-right: 10px">%</i>
+                      </template></el-input
                     >
                   </template>
                 </el-table-column>
               </el-table-column>
-              <el-table-column min-width="80">
-                <template slot="header" slot-scope="scope">
+              <el-table-column min-width="110">
+                <template #header="scope">
                   <el-popover placement="top" width="250" trigger="hover" content="岗位分数= αA*(1+B) + βC">
-                    <div slot="reference">岗位分数 <span class="el-icon-info"></span></div>
+                    <template #reference>
+                      <div>岗位分数 <span class="el-icon-info"></span></div>
+                    </template>
                   </el-popover>
                 </template>
-                <template slot-scope="scope">
-                  <el-input v-model="scope.row.col15" size="mini" disabled placeholder="自动计算"></el-input>
+                <template #default="scope">
+                  <el-input v-model="scope.row.col15" disabled placeholder="自动计算"></el-input>
                 </template>
               </el-table-column>
-              <el-table-column min-width="80"
-                ><template slot="header" slot-scope="scope">
+              <el-table-column min-width="110"
+                ><template #header="scope">
                   <el-popover placement="top" width="250" trigger="hover" content="岗位系数=岗位分数/最低岗位分数">
-                    <div slot="reference">岗位系数 <span class="el-icon-info"></span></div>
+                    <template #reference>
+                      <div>岗位系数 <span class="el-icon-info"></span></div>
+                    </template>
                   </el-popover>
                 </template>
-                <template slot-scope="scope">
-                  <el-input v-model="scope.row.col16" size="mini" disabled placeholder="自动计算"></el-input>
+                <template #default="scope">
+                  <el-input v-model="scope.row.col16" disabled placeholder="自动计算"></el-input>
                 </template>
               </el-table-column>
-              <el-table-column label="操作" width="100" fixed="right">
-                <template slot-scope="scope">
-                  <el-button v-if="scope.row.col1" type="text" @click="openHistory(scope)">历史</el-button>
-                  <el-button type="text" @click="deleteFn(scope)">删除</el-button>
+              <el-table-column label="操作" width="110" fixed="right">
+                <template #default="scope">
+                  <el-button v-if="scope.row.col1" type="primary" link @click="openHistory(scope)">历史</el-button>
+                  <el-button type="primary" link @click="deleteFn(scope)">删除</el-button>
                 </template>
               </el-table-column>
             </el-table>
@@ -340,8 +362,8 @@
         </el-card>
 
         <div class="cr-bottom-button btn-shadow">
-          <el-button size="small" @click="exportExcelData">下载</el-button>
-          <el-button size="small" :loading="loading" type="primary" @click="submit()">保存</el-button>
+          <el-button @click="exportExcelData">下载</el-button>
+          <el-button :loading="loading" type="primary" @click="submit()">保存</el-button>
         </div>
       </div>
     </template>
@@ -354,17 +376,20 @@
   </div>
 </template>
 <script>
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
+import { modalSure } from '@/libs/public.ts'
 import Sortable from 'sortablejs'
 import data from './mixins/index.js'
-import { jobSelectApi, hayGroupApi, getHayGroupApi, putHayGroupApi } from '@/api/config.js'
+import { jobSelectApi, hayGroupApi, getHayGroupApi, putHayGroupApi } from '@/api/config.ts'
 
 export default {
   mixins: [data],
   components: {
-    tableList: () => import('./components/tableList'),
-    selectMember: () => import('@/components/form-common/select-member'),
-    historyList: () => import('./components/historyList'),
-    exportExcel: () => import('@/components/common/exportExcel')
+    tableList: defineAsyncComponent(() => import('./components/tableList')),
+    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
+    historyList: defineAsyncComponent(() => import('./components/historyList')),
+    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel'))
   },
   data() {
     return {
@@ -440,7 +465,7 @@ export default {
     // 删除
     deleteFn(data) {
       if (data.row.col15) {
-        this.$modalSure('你确定要删除这条数据吗').then(() => {
+        modalSure('你确定要删除这条数据吗').then(() => {
           this.list.splice(data.$index, 1)
         })
       } else {
@@ -456,7 +481,7 @@ export default {
       this.list.map((item) => {
         this.selectedList.push(item.col1)
       })
-      var list = {
+      const list = {
         col1: null,
         col2: null,
         col3: null,
@@ -610,7 +635,7 @@ export default {
       this.selectedList = []
       this.type = 'add'
       this.title = '新增评估表'
-      this.name = '评估表' + this.$moment(new Date()).format('YYYYMMDD')
+      this.name = '评估表' + dayjs(new Date()).format('YYYYMMDD')
       this.addANewLine()
       setTimeout(() => {
         this.rowDrop()
@@ -654,7 +679,7 @@ export default {
 
     // 表格拖拽函数
     rowDrop() {
-      const tbody = this.$refs.table.$el.querySelectorAll('.el-table__body-wrapper > table > tbody')[0]
+      const tbody = this.$refs.table.$el.querySelectorAll('.el-table__body-wrapper tbody')[0]
       Sortable.create(tbody, {
         animation: 300,
         onEnd: (e) => {
@@ -711,12 +736,11 @@ export default {
     font-size: 18px;
     font-weight: 700;
     font-family: PingFangSC-Semibold, PingFang SC;
-    /deep/ .el-input--medium {
-      font-size: 18px !important;
+    :deep(.el-input) {
+      font-size: 18px;
 
-      .el-input__inner {
-        border: none;
-        font-size: 18px;
+      .el-input__wrapper {
+        box-shadow: none;
       }
     }
   }
@@ -759,35 +783,37 @@ export default {
 
 .divBox {
   .input {
-    /deep/.el-input__suffix {
+    :deep(.el-input__suffix) {
       position: absolute;
       top: 2px;
     }
   }
-  /deep/ .el-icon-back {
+  :deep(.el-icon-back) {
     display: none;
   }
-  /deep/ .el-table thead.is-group th {
+  :deep(.el-table thead.is-group th) {
     background-color: rgba(247, 251, 255, 1);
     border-color: #ebeef5;
   }
-  /deep/ .el-table td {
+  :deep(.el-table td) {
     border: none;
   }
   .el-table {
     border: none;
-    /deep/ .el-input--mini {
+    :deep(.el-select__wrapper) {
       font-size: 12px;
     }
-    /deep/ .cell {
+    :deep(.cell) {
       padding-left: 6px;
       padding-right: 0;
     }
-    /deep/ .el-input__inner {
+    :deep(.el-input__wrapper) {
       padding: 3px 6px;
+    }
+    :deep(.el-input__inner) {
       font-size: 13px;
     }
-    /deep/ .el-input__suffix {
+    :deep(.el-input__suffix) {
       right: 0;
     }
   }
@@ -835,7 +861,7 @@ export default {
     }
   }
 }
-/deep/.el-table__fixed::before {
+:deep(.el-table__inner-wrapper::before) {
   height: 0;
 }
 </style>

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,7 +18,7 @@ namespace App\Http\Service\Rank;
 use App\Constants\CacheEnum;
 use App\Http\Dao\Position\PositionRelationDao;
 use App\Http\Service\BaseService;
-use crmeb\services\FormService as Form;
+use Tuoluojiang\Open\services\FormService as Form;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -55,7 +55,7 @@ class RankRelationService extends BaseService
      */
     public function resourceCreate(array $other = []): array
     {
-        return $this->elForm('添加职级类型', $this->getRankFormRule(collect([])), '/ent/enterprise/rankType');
+        return $this->createElementForm('添加职级类型', $this->getRankFormRule(collect([])), '/ent/enterprise/rankType');
     }
 
     /**
@@ -69,7 +69,7 @@ class RankRelationService extends BaseService
         if (! $rankInfo) {
             throw $this->exception('修改的职级类型不存在');
         }
-        return $this->elForm('修改职级类型', $this->getRankFormRule(collect($rankInfo->toArray())), '/ent/enterprise/rankType/' . $id, 'put');
+        return $this->createElementForm('修改职级类型', $this->getRankFormRule(collect($rankInfo->toArray())), '/ent/enterprise/rankType/' . $id, 'put');
     }
 
     /**
@@ -97,7 +97,6 @@ class RankRelationService extends BaseService
 
     /**
      * 删除职级类型.
-     * @param mixed $id
      * @return mixed|void
      * @throws BindingResolutionException
      */
@@ -114,8 +113,6 @@ class RankRelationService extends BaseService
 
     /**
      * 获取未使用职级.
-     * @param mixed $cate_id
-     * @param mixed $levelIds
      * @return array
      * @throws BindingResolutionException
      * @throws \ReflectionException

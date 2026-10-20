@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,7 +16,8 @@ declare(strict_types=1);
 namespace App\Http\Dao\Company;
 
 use App\Constants\AssessEnum;
-use App\Http\Dao\BaseDao;
+use App\Constants\NoticeEnum;
+use App\Events\SystemMessageEvent;
 use App\Http\Model\Company\UserAssess;
 use App\Http\Service\Admin\AdminService;
 use App\Http\Service\Assess\AssessScoreService;
@@ -24,11 +25,12 @@ use App\Http\Service\Assess\AssessSpaceService;
 use App\Http\Service\Assess\AssessTargetService;
 use App\Http\Service\Assess\UserAssessScoreService;
 use App\Http\Service\Frame\FrameService;
+use App\Task\message\StatusChangeTask;
 use App\Task\message\UserAssessEndRemind;
-use App\Task\message\UserAssessEvaluateRemind;
-use crmeb\traits\dao\BatchSearchTrait;
-use crmeb\traits\dao\GroupDateSearchTrait;
-use crmeb\traits\dao\TogetherSearchTrait;
+use App\Http\Dao\BaseDao;
+use Tuoluojiang\Open\traits\dao\BatchSearchTrait;
+use Tuoluojiang\Open\traits\dao\GroupDateSearchTrait;
+use Tuoluojiang\Open\traits\dao\TogetherSearchTrait;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Builder;
@@ -55,19 +57,42 @@ class CompanyUserAssessDao extends BaseDao
      */
     public function getUserAssessMode(array $where, array $field = ['*'], int $page = 0, int $limit = 0, $sort = null, array $with = [])
     {
-        $status = $where['status'] ?? '';
-        $types  = $where['type'] ?? '';
-        $handle = isset($where['handle']) && $where['handle'] !== '' ? $where['handle'] : '';
+        $status     = $where['status'] ?? '';
+        $types      = $where['type'] ?? '';
+        $handle     = (int) ($where['handle'] ?? 0) === 1 ? 1 : '';
+        $orCheckUid = isset($where['or_check_uid']) && $where['or_check_uid'] !== '' ? (int) $where['or_check_uid'] : 0;
+        $testUids   = $where['test_uid'] ?? null;
+        $filterTestUids = $where['filter_test_uid'] ?? [];
         if (isset($where['date']) && $where['date']) {
             $date = $where['date'];
             unset($where['time'], $where['date']);
         } else {
             $date = '';
         }
-        unset($where['type'], $where['status'], $where['verify'], $where['handle']);
+        unset($where['type'], $where['status'], $where['verify'], $where['handle'], $where['or_check_uid'], $where['filter_test_uid']);
+        // 数据权限 ∪ 考核人：由下方 where 闭包处理，避免 search 先 AND 再 OR
+        if ($orCheckUid) {
+            unset($where['test_uid']);
+        }
 
         return $this->setTimeField('start_time')->search($where)->select($field)
-            ->when($page && $limit, function ($query) use ($page, $limit) {
+            ->when($orCheckUid, function ($query) use ($orCheckUid, $testUids) {
+                $query->where(function ($query) use ($orCheckUid, $testUids) {
+                    $hasScope = is_array($testUids) ? count($testUids) > 0 : ($testUids !== null && $testUids !== '');
+                    if ($hasScope) {
+                        $query->where(function ($query) use ($testUids) {
+                            is_array($testUids)
+                                ? $query->whereIn('test_uid', $testUids)
+                                : $query->where('test_uid', $testUids);
+                        })->orWhere('check_uid', $orCheckUid);
+                    } else {
+                        $query->where('check_uid', $orCheckUid);
+                    }
+                });
+            })->when($filterTestUids, function ($query) use ($filterTestUids) {
+                // 人员筛选必须 AND 可见范围，不能参与数据权限或考核职责的并集。
+                $query->whereIn('test_uid', $filterTestUids);
+            })->when($page && $limit, function ($query) use ($page, $limit) {
                 $query->forPage($page, $limit);
             })->when($limit, function ($query) use ($limit) {
                 $query->limit($limit);
@@ -95,19 +120,28 @@ class CompanyUserAssessDao extends BaseDao
                         $query->where('status', 1)->where('is_show', 1);
                 }
             })->when($status !== '', function ($query) use ($status) {
-                switch ((int) $status) {
-                    case 0:// 目标制定期
-                        $query->where('make_time', '>', now()->toDateTimeString())->where('make_status', '<>', 1);
-                        break;
-                    case 5:// 未开始
-                        $query->where('start_time', '>', now()->toDateTimeString());
-                        break;
-                    case -1:
-                        $query->where('make_time', '<', now()->toDateTimeString())->where('make_status', 0);
-                        break;
-                    default:
-                        $query->where('status', $status)->where('start_time', '<', now()->toDateTimeString());
+                if (! is_array($status)) {
+                    $status = [$status];
                 }
+                $query->where(function ($query) use ($status) {
+                    foreach ($status as $item) {
+                        $query->OrWhere(function ($query) use ($item) {
+                            switch ((int) $item) {
+                                case 0:// 目标制定期
+                                    $query->where('status', $item);
+                                    break;
+                                case 5:// 未开始
+                                    $query->where('start_time', '>', now()->toDateTimeString());
+                                    break;
+                                case -1:
+                                    $query->where('make_time', '<', now()->toDateTimeString())->where('make_status', 0);
+                                    break;
+                                default:
+                                    $query->where('status', $item)->where('start_time', '<', now()->toDateTimeString());
+                            }
+                        });
+                    }
+                });
             })->when($date !== '', function ($query) use ($date) {
                 $query->whereDate('start_time', $date);
             })->with($with);
@@ -126,8 +160,9 @@ class CompanyUserAssessDao extends BaseDao
     public function getUserAssessList(array $where, array $userIds, int $userId, array $field = ['*'], int $page = 0, int $limit = 0, $sort = null, array $with = [])
     {
         $scoreService = app()->get(AssessScoreService::class);
-        $data         = $this->getUserAssessMode($where, $field, $page, $limit, $sort, $with)->get()->each(function ($item) use ($scoreService) {
-            if (strtotime($item['start_time']) > time()) {
+        $data         = $this->getUserAssessMode($where, $field, $page, $limit, $sort, $with)->get()->toArray();
+        foreach ($data as &$item) {
+            if (datetime_timestamp($item['start_time']) > time()) {
                 $item['status'] = 5;
             }
             if ($item['status'] > 2) {
@@ -136,7 +171,8 @@ class CompanyUserAssessDao extends BaseDao
                 $item['level'] = '暂无';
                 $item['score'] = '未评分';
             }
-        })->toArray();
+        }
+        unset($item);
         $count = $this->getUserAssessMode($where, $userIds, $userId)->count();
 
         return [$data, $count];
@@ -159,7 +195,7 @@ class CompanyUserAssessDao extends BaseDao
             return [];
         }
         $assessInfo = $assessInfo->toArray();
-        if (strtotime($assessInfo['start_time']) > time()) {
+        if (datetime_timestamp($assessInfo['start_time']) > time()) {
             $assessInfo['status'] = 5;
         }
 
@@ -234,7 +270,18 @@ class CompanyUserAssessDao extends BaseDao
                 $res                  = $this->search(['id' => $id])->update($edit);
                 if ($res) {
                     // 上级评价发送提醒给自己分数
-                    Task::deliver(new UserAssessEvaluateRemind($info['entid'], $info, $name, $total));
+                    event(new SystemMessageEvent(
+                        type: NoticeEnum::ASSESS_EVALUATE_RESULT_TYPE,
+                        params: [
+                            '考核名称'     => $info['name'],
+                            '上级评价得分' => $total,
+                        ],
+                        receiverIds: (int) $info['test_uid'],
+                        other: ['id' => $id],
+                        linkId: $id,
+                        linkStatus: $info['status']
+                    ));
+                    Task::deliver(new StatusChangeTask(AssessEnum::LINK_NOTICE, AssessEnum::ASSESS_VERIFY, 1, $id));
                 }
             }
         }
@@ -269,7 +316,7 @@ class CompanyUserAssessDao extends BaseDao
         $status = $where['status'];
         unset($where['status']);
 
-        return $this->search($where)->select($field)->when($status !== '', function ($query) use ($status) {
+        $data = $this->search($where)->select($field)->when($status !== '', function ($query) use ($status) {
             switch ((int) $status) {
                 case 0:// 目标制定期
                     $query->where('make_time', '>', now()->toDateTimeString())->where('make_status', '<>', 1);
@@ -289,8 +336,9 @@ class CompanyUserAssessDao extends BaseDao
             $query->limit($limit);
         })->when($group, function ($query) use ($group) {
             $query->groupBy($group);
-        })->with($with)->get()->each(function ($item) {
-            if (strtotime($item['start_time']) > time()) {
+        })->with($with)->get()->toArray();
+        foreach ($data as &$item) {
+            if (datetime_timestamp($item['start_time']) > time()) {
                 $item['status'] = 5;
             }
             if ($item['status'] > 2) {
@@ -299,7 +347,10 @@ class CompanyUserAssessDao extends BaseDao
                 $item['level'] = '暂无';
                 $item['score'] = '未评分';
             }
-        })->toArray();
+        }
+        unset($item);
+
+        return $data;
     }
 
     /**

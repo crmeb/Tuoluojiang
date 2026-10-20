@@ -1,41 +1,49 @@
 <!-- @FileDescription: 全局公用上传文件组件  -->
 <template>
   <div>
-    <div class="uploadBox" v-if="!onlyRead">
+    <div class="uploadBox" v-if="allowUpload">
       <el-upload
-        class="upload-demo mr10 mb15"
+        class="upload-demo mr10"
+        :class="fileList.length > 0 ? 'mb12' : ''"
         action="##"
         :headers="myHeaders"
         :show-file-list="false"
         :http-request="uploadServerLog"
-        multiple
+        :multiple="maxLength > 1"
       >
-        <el-button
-          v-if="!percentShow"
-          :disabled="(fileList.length >= maxLength && maxLength !== 0) || disabled"
-          size="small"
-          >添加</el-button
-        >
+        <el-button v-if="!percentShow" :disabled="disabled">
+          <span class="iconfont iconshangchuan" />
+          上传文件
+        </el-button>
+
         <div class="addText" v-else>
           <img src="../../assets/images/loading.gif" alt="" class="l_gif" />
         </div>
       </el-upload>
     </div>
 
-    <upload-list v-if="fileList.length > 0" :file-list="fileList" :show-close="!onlyRead"></upload-list>
+    <upload-list
+      :isTwoColumnShow="isTwoColumnShow"
+      v-if="fileList.length"
+      :file-list="fileList"
+      :show-close="!onlyRead && !disabled"
+      @fileDelete="fileDelete"
+    ></upload-list>
   </div>
 </template>
 
 <script>
-import { uploader } from '@/utils/uploadCloud'
-import i18n from '@/utils/i18n'
-import helper from '@/libs/helper'
+import { defineAsyncComponent } from 'vue'
+import { uploader } from '@/utils/uploadCloud.ts'
+import i18n from '@/utils/i18n.ts'
+import helper from '@/libs/helper.ts'
 
 export default {
-  name: 'Index',
+  emits: ['update:modelValue', 'getVal'],
+  name: 'OaUpload',
   mixins: [i18n],
   props: {
-    value: {
+    modelValue: {
       type: Array,
       default: () => []
     },
@@ -51,7 +59,12 @@ export default {
     },
     maxLength: {
       type: Number,
-      default: 0
+      default: 1
+    },
+    isTwoColumnShow: {
+      // 附件展示两列
+      type: Boolean,
+      default: false
     },
     maxSize: {
       type: Number,
@@ -66,11 +79,12 @@ export default {
     onlyRead: { type: Boolean, default: false }
   },
   components: {
-    uploadList: () => import('@/components/form-common/oa-uploadList')
+    uploadList: defineAsyncComponent(() => import('@/components/form-common/oa-uploadList'))
   },
   data() {
     return {
-      fileList: this.value,
+      // data() 早于 computed 初始化，这里不能读 this.value
+      fileList: this.modelValue,
       percentShow: false,
       leftPercent: 0,
       leftTime: 0,
@@ -81,7 +95,15 @@ export default {
       uploadSize: 50
     }
   },
-  computed: {},
+  computed: {
+    // Vue 3 的 v-model 走 modelValue，保留 value 供组件内部沿用
+    value() {
+      return this.modelValue
+    },
+    allowUpload() {
+      return this.fileList.length < this.maxLength && !this.onlyRead
+    }
+  },
   watch: {
     value(n) {
       this.fileList = n
@@ -90,7 +112,7 @@ export default {
   methods: {
     clearFiles() {
       this.fileList = []
-      this.$emit('input', [])
+      this.$emit('update:modelValue', [])
     },
     // 进度条模拟时间
     progress(data) {
@@ -102,6 +124,12 @@ export default {
       this.leftPercent = Math.round(data * 100)
       this.leftTime = Math.round(this.fakeTotalTime * (1 - data)) // fakeTotalTime 可以给个假的总的时间，例如10s
     },
+    fileDelete(index) {
+      this.fileList.splice(index, 1)
+
+      this.$emit('update:modelValue', this.fileList)
+      this.$emit('getVal', this.fileList)
+    },
 
     // 上传文件方法
     async uploadServerLog(params) {
@@ -112,7 +140,8 @@ export default {
           return extFileName.toLowerCase() === ft.toLowerCase()
         })
       } else {
-        this.fileTypes = helper.uploadTypes
+        while (this.fileTypes.pop()) {}
+        this.fileTypes.push(...helper.uploadTypes)
         fileTypeCheckResult = this.fileTypes.some((ft) => {
           return extFileName.toLowerCase() === ft.toLowerCase()
         })
@@ -157,7 +186,7 @@ export default {
               file_url: res.data.url
             })
 
-            this.$emit('input', this.fileList)
+            this.$emit('update:modelValue', this.fileList)
             this.$emit('getVal', this.fileList)
           }
         })
@@ -171,7 +200,7 @@ export default {
         this.fileList.findIndex((item) => item.name === file.name),
         1
       )
-      this.$emit('input', this.fileList)
+      this.$emit('update:modelValue', this.fileList)
     }
   }
 }
@@ -179,27 +208,49 @@ export default {
 
 <style scoped lang="scss">
 .uploadBox {
-  /deep/.el-upload-list__item-thumbnail {
+  :deep(.el-upload-list__item-thumbnail) {
     width: 44px !important;
     height: 44px !important;
     margin-left: -83px !important;
     margin-top: -3px;
   }
-  /deep/.el-upload-list__item-name {
+  :deep(.el-upload-list__item-name) {
     line-height: 42px !important;
     margin-left: -36px !important;
     width: auto !important;
     margin-right: 0 !important;
   }
-  /deep/.el-upload-list__item {
+  :deep(.el-upload-list__item) {
     height: 60px !important;
     background: #f5f5f5 !important;
     border: none;
     width: 220px !important;
     margin-top: 10px !important;
   }
+
+  .upload-demo {
+    line-height: initial;
+  }
 }
 .percent {
   margin-top: 20px;
+}
+:deep(.el-button) {
+  height: 32px;
+  padding: 0 12px;
+  font-family: PingFang SC, PingFang SC;
+  font-weight: 400;
+  font-size: 13px;
+  color: #606266;
+
+  & > span {
+    display: flex;
+    height: 100%;
+    align-items: center;
+
+    .iconfont {
+      margin-right: 4px;
+    }
+  }
 }
 </style>

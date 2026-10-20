@@ -16,7 +16,7 @@ declare(strict_types=1);
 namespace App\Http\Model\System;
 
 use App\Http\Model\BaseModel;
-use crmeb\traits\model\TimeDataTrait;
+use Tuoluojiang\Open\traits\model\TimeDataTrait;
 use Illuminate\Database\Query\Builder;
 
 /**

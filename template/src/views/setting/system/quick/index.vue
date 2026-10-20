@@ -20,40 +20,41 @@
               ></oaFromBox>
             </div>
             <div class="mt14 table-box">
-              <el-table :data="tableData" style="width: 100%" row-key="id" :height="tableHeight" default-expand-all>
+              <el-table :data="tableData" style="width: 100%" row-key="id" :height="TABLE_HEIGHT" default-expand-all>
                 <el-table-column prop="name" label="标题" min-width="100">
-                  <template slot-scope="scope">
+                  <template #default="scope">
                     <div class="over-text2">{{ scope.row.name }}</div>
                   </template>
                 </el-table-column>
                 <el-table-column prop="pc_url" label="pc端地址" min-width="120">
-                  <template slot-scope="scope">
+                  <template #default="scope">
                     <div class="over-text2">{{ scope.row.pc_url }}</div>
                   </template>
                 </el-table-column>
                 <el-table-column prop="uni_url" label="移动端地址" min-width="120">
-                  <template slot-scope="scope">
+                  <template #default="scope">
                     <div class="over-text2">{{ scope.row.uni_url }}</div>
                   </template>
                 </el-table-column>
                 <el-table-column prop="name" label="封面" min-width="80">
-                  <template slot-scope="scope">
+                  <template #default="scope">
                     <img v-if="scope.row.image" class="table-img" :src="scope.row.image" alt="" />
-                    <img v-else class="table-img" src="../../../../assets/images/index/quick-icon-09.png" alt="" />
+                    <span v-else>--</span>
+                    <!-- <img v-else class="table-img" src="../../../../assets/images/index/quick-icon-09.png" alt="" /> -->
                   </template>
                 </el-table-column>
                 <el-table-column prop="card.name" label="pc端显示" min-width="80">
-                  <template slot-scope="scope">
+                  <template #default="scope">
                     <span>{{ scope.row.pc_show === 1 ? '显示' : '隐藏' }}</span>
                   </template>
                 </el-table-column>
                 <el-table-column prop="card.name" label="移动端显示" min-width="90">
-                  <template slot-scope="scope">
+                  <template #default="scope">
                     <span>{{ scope.row.uni_show === 1 ? '显示' : '隐藏' }}</span>
                   </template>
                 </el-table-column>
                 <el-table-column prop="status" label="状态" min-width="80">
-                  <template slot-scope="scope">
+                  <template #default="scope">
                     <el-switch
                       v-model="scope.row.status"
                       active-text="开启"
@@ -64,13 +65,11 @@
                     />
                   </template>
                 </el-table-column>
-                <el-table-column prop="describe" :label="$t('public.operation')" fixed="right" width="120">
-                  <template slot-scope="scope">
-                    <el-button type="text" @click="handleEdit(scope.row)" v-hasPermi="['system:quick:edit']">{{
-                      $t('public.edit')
-                    }}</el-button>
-                    <el-button type="text" @click="handleDelete(scope.row.id)" v-hasPermi="['system:quick:delete']">
-                      {{ $t('public.delete') }}
+                <el-table-column prop="describe" label="操作" fixed="right" width="120">
+                  <template #default="scope">
+                    <el-button type="primary" link @click="handleEdit(scope.row)" v-hasPermi="['system:quick:edit']">编辑</el-button>
+                    <el-button type="primary" link @click="handleDelete(scope.row.id)" v-hasPermi="['system:quick:delete']">
+                      删除
                     </el-button>
                   </template>
                 </el-table-column>
@@ -95,6 +94,9 @@
 </template>
 
 <script>
+import { modalSure } from '@/libs/public.ts'
+import modalForm from '@/libs/modal-form.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
 import left from './components/left'
 import {
   configQuickCreateApi,
@@ -102,16 +104,18 @@ import {
   configQuickEditApi,
   configQuickListApi,
   configQuickShowApi
-} from '@/api/setting'
+} from '@/api/setting.ts'
 
+import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'SystemQuick',
   components: {
     left,
-    oaFromBox: () => import('@/components/common/oaFromBox')
+    oaFromBox
   },
   data() {
     return {
+      TABLE_HEIGHT,
       where: {
         page: 1,
         limit: 15,
@@ -172,7 +176,7 @@ export default {
       this.getTableData()
     },
     handleNews() {
-      this.$modalForm(configQuickCreateApi({ cid: this.where.cid })).then(({ message }) => {
+      modalForm(configQuickCreateApi({ cid: this.where.cid })).then(({ message }) => {
         this.getTableData()
       })
     },
@@ -182,12 +186,12 @@ export default {
       this.getTableData()
     },
     handleEdit(row) {
-      this.$modalForm(configQuickEditApi(row.id)).then(({ message }) => {
+      modalForm(configQuickEditApi(row.id)).then(({ message }) => {
         this.getTableData()
       })
     },
     async handleDelete(id) {
-      await this.$modalSure('你确定要删除这条内容吗')
+      await modalSure('你确定要删除这条内容吗')
       await configQuickDeleteApi(id)
 
       await this.getTableData()
@@ -218,15 +222,15 @@ export default {
 .assess-right {
   padding: 14px;
   border-left: 1px solid #eeeeee;
-  /deep/ .el-card__header {
+  :deep(.el-card__header) {
     border-bottom: none;
     padding: 0;
   }
 }
-/deep/ .el-row,
-/deep/ .el-card,
-/deep/ .el-card__body,
-/deep/ .el-col {
+:deep(.el-row),
+:deep(.el-card),
+:deep(.el-card__body),
+:deep(.el-col) {
   height: 100%;
 }
 .right-con {
@@ -239,7 +243,7 @@ export default {
 }
 .select-bar {
   margin-bottom: 0;
-  /deep/ .el-input-group__append {
+  :deep(.el-input-group__append) {
     top: 0;
     button {
       color: #fff;

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -68,12 +68,13 @@ class AttendanceArrangeController extends AuthController
     {
         $request->scene('__FUNCTION__')->check();
         $data = $request->postMore($this->getRequestFields());
-        $this->service->saveArrange($data);
+        $this->service->saveArrange($data, auth('admin')->id());
         return $this->success('common.insert.succ');
     }
 
     /**
      * 修改.
+     * @param mixed $groupId
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
@@ -87,7 +88,7 @@ class AttendanceArrangeController extends AuthController
             ['date', ''],
             ['data', []],
         ], true);
-        $this->service->updateArrange((int) $groupId, $date, $data);
+        $this->service->updateArrange((int) $groupId, $date, $data, auth('admin')->id());
         return $this->success('common.operation.succ');
     }
 

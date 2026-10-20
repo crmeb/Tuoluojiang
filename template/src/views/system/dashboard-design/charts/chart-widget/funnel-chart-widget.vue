@@ -10,7 +10,7 @@
 
 <script>
 import myEcharts from '@/components/scEcharts/chart-widget.vue'
-import { queryChartData } from '@/api/chart'
+import { queryChartData } from '../chartQuery.ts'
 import { getPreviewNum } from '@/utils/util'
 
 export default {
@@ -116,7 +116,11 @@ export default {
     async getChartData(options, type) {
       this.loading = true
       this.dataList = []
-      let res = await queryChartData(options, type)
+          let chartData = JSON.stringify({
+    widgetList: this.designer.widgetList,
+    formConfig: this.designer.formConfig
+  })
+      let res = await queryChartData(options, type,chartData)
       if (res && res.status === 200) {
         let { setChartConf } = this.cutField.options
         this.option.legend = {

@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace App\Task\customer;
 
-use App\Http\Service\Client\ClientRemindService;
+use App\Http\Service\Customer\RemindService;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Support\Facades\Log;
 
@@ -33,7 +33,7 @@ class BillRemindTask extends Task
     public function handle()
     {
         try {
-            app()->get(ClientRemindService::class)->remind($this->entId, $this->id, $this->userId);
+            app()->get(RemindService::class)->remind($this->entId, $this->id, $this->userId);
         } catch (\Throwable $e) {
             Log::error(__CLASS__ . ':' . $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine(), 'trace' => $e->getTrace()]);
         }

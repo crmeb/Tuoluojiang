@@ -9,10 +9,20 @@
 </template>
 
 <script>
+import formCreate from '../config/viewForm'
+
 export default {
+  emits: ['update:modelValue'],
   name: 'Validate',
+  components: { formCreate: formCreate.$form() },
   props: {
-    value: Array,
+    modelValue: Array,
+  },
+  computed: {
+    // Vue 3 的 v-model 走 modelValue，保留 value 供组件内部沿用
+    value() {
+      return this.modelValue
+    },
   },
   watch: {
     value(n) {
@@ -25,11 +35,11 @@ export default {
       option: {
         form: {
           labelPosition: 'top',
-          size: 'mini',
+          size: 'small',
           labelWidth: '90px',
         },
         submitBtn: false,
-        formData: this.parseValue(this.value),
+        formData: this.parseValue(this.modelValue),
       },
       rule: [
         {
@@ -167,7 +177,7 @@ export default {
         });
         val = [...validate];
       }
-      this.$emit('input', val);
+      this.$emit('update:modelValue', val);
     },
     parseValue(n) {
       let val = {

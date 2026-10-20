@@ -12,7 +12,7 @@
 <script>
 import explain from './components/explain'
 export default {
-  name: 'Explain',
+  name: 'MentScore',
   components: {
     explain
   }
@@ -21,8 +21,10 @@ export default {
 
 <style lang="scss" scoped>
 .divBox {
+  position: relative;
+  height: 100%;
   padding-bottom: 0;
-  margin-bottom: 10px;
+  // margin-bottom: 10px;
 }
 .card-box {
   height: calc(100vh - 130px);

@@ -5,7 +5,7 @@
       <div class="mb15">
         <el-button class="add-task" @click="addTask">
           <i class="el-icon-plus" />
-          {{ $t('calendar.addtask') }}
+          添加任务
           <i class="el-icon-bell icon-task-dell" />
         </el-button>
       </div>
@@ -22,7 +22,7 @@
             <div class="task-list-right">
               <p>{{ item.content }}</p>
               <p>
-                <span>{{ $t('customer.reminderdata') }}:</span>
+                <span>提醒时间:</span>
                 <span>{{ item.remind_day }} {{ item.remind_time }}</span>
               </p>
             </div>
@@ -46,7 +46,7 @@
               <div class="task-list-right">
                 <p>{{ item.content }}</p>
                 <p>
-                  <span>{{ $t('customer.reminderdata') }}:</span>
+                  <span>提醒时间:</span>
                   <span>{{ item.remind_day }} {{ item.remind_time }}</span>
                 </p>
               </div>
@@ -63,12 +63,14 @@
 </template>
 
 <script>
+import dayjs from 'dayjs'
 import dialogForm from './components/index'
 import calendarBar from '@/views/user/calendar/components/calendarBar'
 import checkDialog from '@/views/user/calendar/components/checkDialog'
 import defaultPage from '@/components/common/defaultPage'
-import { dealtScheduleListApi, dealtScheduleRecordApi } from '@/api/user'
+import { dealtScheduleListApi, dealtScheduleRecordApi } from '@/api/user.ts'
 export default {
+  emits: ['handDealt'],
   name: 'WorkDealt',
   components: {
     calendarBar,
@@ -84,7 +86,7 @@ export default {
       repeatData: {},
       itemArray: [],
       types: [],
-      time: this.$moment(this.time).format('yyyy-MM-DD'),
+      time: dayjs(this.time).format('YYYY-MM-DD'),
       dateTime: null,
       complete: true
     }
@@ -93,14 +95,14 @@ export default {
   methods: {
     handleDate(data) {
       this.time = data.time
-      const t = this.$moment(new Date()).format('HH:mm:ss')
+      const t = dayjs(new Date()).format('HH:mm:ss')
       this.dateTime = data.time + ' ' + t
       this.types = data.type
       this.getList()
     },
     addTask() {
       this.formBoxConfig = {
-        title: this.$t('calendar.addtask'),
+        title: '添加任务',
         edit: false,
         data: {
           types: 'personal'
@@ -139,7 +141,7 @@ export default {
         this.handleList()
       } else {
         this.formBoxConfig = {
-          title: this.$t('calendar.edittask'),
+          title: '编辑任务',
           edit: true,
           width: '500px',
           data: this.itemArray
@@ -153,7 +155,7 @@ export default {
     },
     handleItemClick(item) {
       this.repeatData = {
-        title: this.$t('calendar.checktask'),
+        title: '查看任务',
         width: '480px',
         data: item
       }

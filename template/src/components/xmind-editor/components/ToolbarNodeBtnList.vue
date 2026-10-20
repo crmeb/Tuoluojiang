@@ -1,63 +1,63 @@
 <template>
   <div class="toolbarNodeBtnList" :class="[dir]">
-    <template v-for="item in list">
+    <template v-for="item in list" :key="item">
       <div v-if="item === 'back'" class="toolbarBtn" :class="{
         disabled: readonly || backEnd
-      }" @click="$bus.$emit(EXEC_COMMAND, 'BACK')">
+      }" @click="emitBus(EXEC_COMMAND, 'BACK')">
         <span class="icon xmind-iconfont iconhoutui-shi"></span>
         <span class="text">回退</span>
       </div>
       <div v-if="item === 'forward'" class="toolbarBtn" :class="{
         disabled: readonly || forwardEnd
-      }" @click="$bus.$emit(EXEC_COMMAND, 'FORWARD')">
+      }" @click="emitBus(EXEC_COMMAND, 'FORWARD')">
         <span class="icon xmind-iconfont iconqianjin1"></span>
         <span class="text">前进</span>
       </div>
       <div v-if="item === 'siblingNode'" class="toolbarBtn" :class="{
         disabled: activeNodes.length <= 0 || hasRoot || hasGeneralization
-      }" @click="$bus.$emit(EXEC_COMMAND, 'INSERT_NODE')">
+      }" @click="emitBus(EXEC_COMMAND, 'INSERT_NODE')">
         <span class="icon xmind-iconfont iconjiedian"></span>
         <span class="text">同级节点</span>
       </div>
       <div v-if="item === 'childNode'" class="toolbarBtn" :class="{
         disabled: activeNodes.length <= 0 || hasGeneralization
-      }" @click="$bus.$emit(EXEC_COMMAND, 'INSERT_CHILD_NODE')">
+      }" @click="emitBus(EXEC_COMMAND, 'INSERT_CHILD_NODE')">
         <span class="icon xmind-iconfont icontianjiazijiedian"></span>
         <span class="text">子节点</span>
       </div>
       <div v-if="item === 'deleteNode'" class="toolbarBtn" :class="{
         disabled: activeNodes.length <= 0
-      }" @click="$bus.$emit(EXEC_COMMAND, 'REMOVE_NODE')">
+      }" @click="emitBus(EXEC_COMMAND, 'REMOVE_NODE')">
         <span class="icon xmind-iconfont iconshanchu"></span>
         <span class="text">删除节点</span>
       </div>
       <div v-if="item === 'image'" class="toolbarBtn" :class="{
         disabled: activeNodes.length <= 0
-      }" @click="$bus.$emit(SHOW_NODE_IMAGE)">
+      }" @click="emitBus(SHOW_NODE_IMAGE)">
         <span class="icon xmind-iconfont iconimage"></span>
         <span class="text">图片</span>
       </div>
       <div v-if="item === 'link'" class="toolbarBtn" :class="{
         disabled: activeNodes.length <= 0
-      }" @click="$bus.$emit(SHOW_NODE_LINK)">
+      }" @click="emitBus(SHOW_NODE_LINK)">
         <span class="icon xmind-iconfont iconchaolianjie"></span>
         <span class="text">超链接</span>
       </div>
       <div v-if="item === 'note'" class="toolbarBtn" :class="{
         disabled: activeNodes.length <= 0
-      }" @click="$bus.$emit(SHOW_NODE_NOTE)">
+      }" @click="emitBus(SHOW_NODE_NOTE)">
         <span class="icon xmind-iconfont iconflow-Mark"></span>
         <span class="text">备注</span>
       </div>
       <div v-if="item === 'tag'" class="toolbarBtn" :class="{
         disabled: activeNodes.length <= 0
-      }" @click="$bus.$emit(SHOW_NODE_TAG)">
+      }" @click="emitBus(SHOW_NODE_TAG)">
         <span class="icon xmind-iconfont iconbiaoqian"></span>
         <span class="text">标签</span>
       </div>
       <div v-if="item === 'summary'" class="toolbarBtn" :class="{
         disabled: activeNodes.length <= 0 || hasRoot || hasGeneralization
-      }" @click="$bus.$emit(EXEC_COMMAND, 'ADD_GENERALIZATION')">
+      }" @click="emitBus(EXEC_COMMAND, 'ADD_GENERALIZATION')">
         <span class="icon xmind-iconfont icongaikuozonglan"></span>
         <span class="text">概要</span>
       </div>
@@ -67,6 +67,7 @@
 </template>
 
 <script>
+import { EventBus } from '@/libs/bus.ts'
 import {
   BACK_FORWARD,
   EXEC_COMMAND,
@@ -76,7 +77,7 @@ import {
   SHOW_NODE_LINK,
   SHOW_NODE_NOTE,
   SHOW_NODE_TAG
-} from '../event-constant';
+} from '../event-constant.ts';
 
 export default {
   props: {
@@ -134,16 +135,20 @@ export default {
   created() {
     Object.entries(this.listenEventMap)
       .forEach(([eventName, handler]) => {
-        this.$bus.$on(eventName, handler);
+        EventBus.$on(eventName, handler);
       });
   },
-  beforeDestroy() {
+  beforeUnmount() {
     Object.entries(this.listenEventMap)
       .forEach(([eventName, handler]) => {
-        this.$bus.$off(eventName, handler);
+        EventBus.$off(eventName, handler);
       });
   },
   methods: {
+    emitBus(...args) {
+      EventBus.$emit(...args)
+    },
+
 
     // 监听模式切换
     onModeChange(mode) {

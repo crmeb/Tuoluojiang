@@ -16,11 +16,17 @@ const typeOptions = [
     value: 'textarea',
     type: 'input'
   },
-  // {
-  //   label: '级联选择',
-  //   value: 'cascader',
-  //   type: 'select'
-  // },
+  {
+    label: '人员(单选)',
+    value: 'singleMember',
+    type: 'member'
+  },
+  {
+    label: '人员(多选)',
+    value: 'multipleMember',
+    type: 'member'
+  },
+
   {
     label: '下拉单选',
     value: 'single',
@@ -45,6 +51,11 @@ const typeOptions = [
     label: '日期控件',
     value: 'date',
     type: 'date'
+  },
+  {
+    label: '日期时间控件',
+    value: 'datetime',
+    type: 'datetime'
   },
   {
     label: '图片选择控件',
@@ -78,7 +89,7 @@ const maxDisabledList = [
   '8ae68ada',
   'contract_followed'
 ]
-let typeDisabled = ['text', 'number', 'textarea', 'date', 'images', 'file', 'oaWangeditor']
+let typeDisabled = ['text', 'number', 'textarea', 'date', 'datetime', 'images', 'file', 'oaWangeditor', 'member']
 const contractList = ['customer_status', 'customer_followed', 'contract_status', 'contract_followed', 'signing_status']
 
 export default {

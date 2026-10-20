@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,20 +17,24 @@ namespace App\Http\Service\Config;
 
 use App\Constants\CacheEnum;
 use App\Http\Dao\Config\DictDataDao;
+use App\Task\system\BatchUpdateDictTask;
 use App\Http\Model\BaseModel;
 use App\Http\Service\BaseService;
-use App\Task\system\BatchUpdateDictTask;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\services\FormService;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\services\FormService;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
+/**
+ * @mixin DictDataDao
+ */
 class DictDataService extends BaseService implements ResourceServicesInterface
 {
     use ResourceServiceTrait;
@@ -80,16 +84,20 @@ class DictDataService extends BaseService implements ResourceServicesInterface
         });
     }
 
-    public function getList(array $where, array $field = ['*'], $sort = 'sort', array $with = []): array
+    public function getList(array $where, array $field = ['*'], $sort = ['sort', 'id'], array $with = []): array
     {
         [$page, $limit] = $this->getPageValue();
-        return Cache::tags([CacheEnum::TAG_DICT])->remember(md5(json_encode($where) . $page . $limit), (int) sys_config('system_cache_ttl', 3600), function () use ($where, $field, $with, $page, $limit, $sort) {
+        $data           = Cache::tags([CacheEnum::TAG_DICT])->remember(md5(json_encode($where) . $page . $limit), (int) sys_config('system_cache_ttl', 3600), function () use ($where, $field, $with, $page, $limit, $sort) {
+            if ($where['level'] > 1) {
+                unset($where['level']);
+            }
             $list = $this->dao->setDefaultSort($sort)->select($where, $field, $with, $page, $limit)->each(function (&$item) use ($where) {
                 $item['hasChildren'] = $this->dao->count(['pid' => $item['value'], 'type_name' => $where['type_name']]);
             });
             $count = $this->dao->count($where);
-            return $this->listData($list, $count);
+            return json_encode($this->listData($list, $count), JSON_UNESCAPED_UNICODE);
         });
+        return json_decode($data, true);
     }
 
     /**
@@ -103,16 +111,16 @@ class DictDataService extends BaseService implements ResourceServicesInterface
     public function getTreeData(array $where, array $field = ['id', 'pid', 'name', 'status', 'type_id', 'type_name', 'color', 'value'], array $with = []): array
     {
         $where['status'] = 1;
-        return Cache::tags([CacheEnum::TAG_DICT])->remember(md5('tree' . json_encode($where) . json_encode($field)), (int) sys_config('system_cache_ttl', 3600), function () use ($where, $field, $with) {
+        $data            = Cache::tags([CacheEnum::TAG_DICT])->remember(md5('tree' . json_encode($where) . json_encode($field)), (int) sys_config('system_cache_ttl', 3600), function () use ($where, $field, $with) {
             if (isset($where['level']) && $where['level'] > 1) {
                 unset($where['level']);
             }
-            $list = $this->dao->setDefaultSort(['sort' => 'desc', 'id' => 'desc'])->select($where, $field, $with)?->toArray();
-            foreach ($list as &$item) {
+            $list = collect($this->dao->setDefaultSort(['sort' => 'desc', 'id' => 'asc'])->select($where, $field, $with)?->toArray())->each(function (&$item) {
                 $item['checkbox'] = false;
-            }
-            return get_tree_children($list, keyName: 'value');
+            })->values()->all();
+            return json_encode(get_tree_children($list, keyName: 'value'), JSON_UNESCAPED_UNICODE);
         });
+        return json_decode($data, true);
     }
 
     /**
@@ -120,7 +128,7 @@ class DictDataService extends BaseService implements ResourceServicesInterface
      */
     public function resourceCreate(array $other = []): array
     {
-        return $this->elForm('新增字典数据', $this->getFormRule(collect($other)), '/ent/config/dict_data');
+        return $this->createElementForm('新增字典数据', $this->getFormRule(collect($other)), '/ent/config/dict_data');
     }
 
     /**
@@ -130,15 +138,15 @@ class DictDataService extends BaseService implements ResourceServicesInterface
      */
     public function resourceSave(array $data)
     {
-        if ($data['value'] == '' || is_null($data['value'])) {
-            throw $this->exception('请填写正确的数据值');
-        }
         if (! $data['pid']) {
             $data['level'] = 1;
         } else {
-            $data['level'] = $this->dao->value(['value' => $data['pid']], 'level') + 1;
+            $data['level'] = $this->dao->value(['value' => $data['pid'], 'type_id' => $data['type_id']], 'level') + 1;
         }
         $type = app()->get(DictTypeService::class)->get($data['type_id'], ['level', 'ident'])?->toArray();
+        if (empty($data['value'])) {
+            $data['value'] = $this->getUniqueValue($type['ident']);
+        }
         if ($data['level'] > $type['level']) {
             throw $this->exception('已超出字典最大层级限制');
         }
@@ -163,7 +171,7 @@ class DictDataService extends BaseService implements ResourceServicesInterface
         if (! $info) {
             throw $this->exception('修改的字典数据不存在');
         }
-        return $this->elForm('修改字典数据', $this->getFormRule(collect($info)), '/ent/config/dict_data/' . $id, 'PUT');
+        return $this->createElementForm('修改字典数据', $this->getFormRule(collect($info)), '/ent/config/dict_data/' . $id, 'PUT');
     }
 
     /**
@@ -174,21 +182,25 @@ class DictDataService extends BaseService implements ResourceServicesInterface
      */
     public function resourceUpdate($id, array $data)
     {
-        if (! $data['value']) {
-            throw $this->exception('请填写正确的数据值');
-        }
         if (! $data['pid']) {
             $data['level'] = 1;
         } else {
             $data['level'] = $this->dao->value(['value' => $data['pid'], 'type_id' => $data['type_id']], 'level') + 1;
         }
         $type = app()->get(DictTypeService::class)->get($data['type_id'], ['level', 'ident'])?->toArray();
+        if (empty($data['value'])) {
+            $data['value'] = $this->getUniqueValue($type['ident']);
+        }
         if ($data['level'] > $type['level']) {
             throw $this->exception('已超出字典最大层级限制');
         }
         $data['type_name'] = $type['ident'];
         if ($this->dao->exists(['not_id' => $id, 'value' => $data['value'], 'type_name' => $data['type_name']])) {
             throw $this->exception('字典数据值已存在, 请勿重复添加');
+        }
+        $is_default = $this->dao->value(['id' => $id], 'is_default');
+        if ($is_default) {
+            unset($data['value']);
         }
         $res = $this->transaction(function () use ($id, $data) {
             $oldLevel     = $this->dao->value(['id' => $id], 'level');
@@ -222,9 +234,64 @@ class DictDataService extends BaseService implements ResourceServicesInterface
      */
     public function resourceDelete($id, ?string $key = null)
     {
-        $id     = explode(',', $id);
-        $subIds = $this->getSubData($id);
-        $res    = $this->dao->delete(['id' => $subIds, 'is_default' => 0]);
+        $ids = array_values(array_filter(explode(',', (string) $id), fn ($item) => $item !== ''));
+        if (! $ids) {
+            return 0;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $table        = '`' . str_replace('`', '``', DB::getTablePrefix() . $this->dao->getTable()) . '`';
+        DB::statement('DROP TEMPORARY TABLE IF EXISTS dict_data_delete_ids');
+        DB::statement('DROP TEMPORARY TABLE IF EXISTS dict_data_delete_frontier');
+        DB::statement('DROP TEMPORARY TABLE IF EXISTS dict_data_delete_next');
+        DB::statement('CREATE TEMPORARY TABLE dict_data_delete_ids (id BIGINT PRIMARY KEY) ENGINE=InnoDB');
+        DB::statement('CREATE TEMPORARY TABLE dict_data_delete_frontier (id BIGINT PRIMARY KEY) ENGINE=InnoDB');
+        DB::statement('CREATE TEMPORARY TABLE dict_data_delete_next (id BIGINT PRIMARY KEY) ENGINE=InnoDB');
+        try {
+            DB::statement(
+                <<<SQL
+INSERT IGNORE INTO dict_data_delete_frontier (id)
+SELECT id FROM {$table}
+WHERE id IN ({$placeholders})
+SQL,
+                $ids
+            );
+            DB::statement('INSERT IGNORE INTO dict_data_delete_ids (id) SELECT id FROM dict_data_delete_frontier');
+
+            while (true) {
+                DB::statement('TRUNCATE TABLE dict_data_delete_next');
+                $inserted = DB::affectingStatement(
+                    <<<SQL
+INSERT IGNORE INTO dict_data_delete_next (id)
+SELECT child.id
+FROM {$table} child
+INNER JOIN {$table} parent ON child.pid = parent.value AND child.type_id = parent.type_id
+INNER JOIN dict_data_delete_frontier ON dict_data_delete_frontier.id = parent.id
+LEFT JOIN dict_data_delete_ids ON dict_data_delete_ids.id = child.id
+WHERE dict_data_delete_ids.id IS NULL
+SQL
+                );
+                if (! $inserted) {
+                    break;
+                }
+                DB::statement('INSERT IGNORE INTO dict_data_delete_ids (id) SELECT id FROM dict_data_delete_next');
+                DB::statement('TRUNCATE TABLE dict_data_delete_frontier');
+                DB::statement('INSERT IGNORE INTO dict_data_delete_frontier (id) SELECT id FROM dict_data_delete_next');
+            }
+
+            $res = DB::delete(
+                <<<SQL
+DELETE dict_data_source
+FROM {$table} dict_data_source
+INNER JOIN dict_data_delete_ids ON dict_data_delete_ids.id = dict_data_source.id
+WHERE dict_data_source.is_default = 0
+SQL
+            );
+        } finally {
+            DB::statement('DROP TEMPORARY TABLE IF EXISTS dict_data_delete_ids');
+            DB::statement('DROP TEMPORARY TABLE IF EXISTS dict_data_delete_frontier');
+            DB::statement('DROP TEMPORARY TABLE IF EXISTS dict_data_delete_next');
+        }
         Cache::tags([CacheEnum::TAG_DICT, CacheEnum::TAG_CUSTOMER])->flush();
         return $res;
     }
@@ -234,14 +301,28 @@ class DictDataService extends BaseService implements ResourceServicesInterface
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
-    public function getNamesByValue(string $ident, mixed $value): array
+    public function getNamesByValue(string $ident, mixed $value): mixed
     {
-        if ($value === '') {
+        if ($value === '' || is_null($value)) {
             return [];
         }
-
         return Cache::tags([CacheEnum::TAG_DICT])->remember(md5('names_' . $ident . json_encode($value)), (int) sys_config('system_cache_ttl', 3600), function () use ($value, $ident) {
-            return $this->dao->setDefaultSort(['level' => 'asc'])->column(['dict_value' => $value, 'type_name' => $ident], 'name');
+            return is_array($value) ? $this->dao->setDefaultSort(['level' => 'asc'])->column(['dict_value' => $value, 'type_name' => $ident], 'name') : $this->dao->setDefaultSort(['level' => 'asc'])->get(['dict_value' => $value, 'type_name' => $ident], ['name', 'value', 'color']);
+        });
+    }
+
+    /**
+     * 单选字典回显.
+     * @throws BindingResolutionException
+     * @throws \ReflectionException
+     */
+    public function getRadio(string $ident, null|int|string $value): mixed
+    {
+        if ($value === '' || is_null($value)) {
+            return [];
+        }
+        return Cache::tags([CacheEnum::TAG_DICT])->remember(md5('radio_name_' . $ident . json_encode($value)), (int) sys_config('system_cache_ttl', 3600), function () use ($value, $ident) {
+            return $this->dao->setDefaultSort(['level' => 'asc'])->get(['dict_value' => $value, 'type_name' => $ident], ['name', 'value', 'color'])?->toArray();
         });
     }
 
@@ -261,7 +342,7 @@ class DictDataService extends BaseService implements ResourceServicesInterface
     }
 
     /**
-     * 获取默认合同分类数据.
+     * 获取默认订单分类数据.
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
@@ -341,6 +422,32 @@ class DictDataService extends BaseService implements ResourceServicesInterface
     }
 
     /**
+     * 根据值获取数据的id.
+     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
+     */
+    public function getValuesByIds(mixed $name, int $id): array
+    {
+        $values = [];
+        $name   = array_filter(explode('/', $name));
+        if (! $name) {
+            return $values;
+        }
+        $where = ['name_eq' => $name, 'type_id' => $id, 'status' => 1];
+
+        $list = $this->dao->column($where, 'value', 'name');
+        foreach ($name as $tmpValue) {
+            if (isset($list[$tmpValue])) {
+                $values[] = $list[$tmpValue];
+            }
+        }
+
+        return $values;
+    }
+
+    /**
      * 根据类型获取value.
      * @throws BindingResolutionException
      * @throws \ReflectionException
@@ -392,29 +499,6 @@ class DictDataService extends BaseService implements ResourceServicesInterface
     }
 
     /**
-     * 获取下级数据ID.
-     * @param mixed $id
-     * @param mixed $ids
-     * @param mixed $field
-     * @return array
-     * @throws BindingResolutionException
-     * @throws \ReflectionException
-     */
-    private function getSubData($id, $ids = [], $field = ['id', 'value', 'pid'])
-    {
-        $list = toArray($this->dao->select(['id' => $id], $field));
-        if ($list) {
-            $ids   = array_merge($ids, array_column($list, 'id'));
-            $child = toArray($this->dao->select(['pid' => array_column($list, 'value')], $field));
-            if ($child) {
-                return $this->getSubData(array_column($child, 'id'), $ids, $field);
-            }
-            return $ids;
-        }
-        return array_merge($ids, array_column($list, 'id'));
-    }
-
-    /**
      * 获取表单规则.
      * @return array
      */
@@ -436,7 +520,7 @@ class DictDataService extends BaseService implements ResourceServicesInterface
         }
         $value = $collection->get('value', '');
         if (! $value) {
-            $value = $this->dao->count(['type_name' => $type->ident]) + 1;
+            $value = $this->getUniqueValue($type->ident);
         }
         $form[]                      = FormService::input('name', '数据名称', $collection->get('name', ''))->required();
         $type->level == 1 && $form[] = FormService::color('color', '颜色标识', $collection->get('color', '#303133') ?: '#303133');
@@ -445,6 +529,26 @@ class DictDataService extends BaseService implements ResourceServicesInterface
         $form[]                      = FormService::radio('status', '状态', (int) $collection->get('status', 1))->options([['value' => 1, 'label' => '启用'], ['value' => 0, 'label' => '停用']]);
         $form[]                      = FormService::textarea('mark', '备注', $collection->get('mark', ''))->placeholder('请输入备注信息，最多可输入200字')->maxlength(200);
         return $form;
+    }
+
+    /**
+     * 获取唯一字典值
+     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
+     */
+    private function getUniqueValue(string $ident): int
+    {
+        $existingValues = $this->dao->column(['type_name' => $ident], 'value');
+        $existingValues = array_map(function ($item) {
+            return is_numeric($item) ? (int) $item : $item;
+        }, $existingValues);
+        $candidate = 1;
+        while (in_array($candidate, $existingValues, true)) {
+            ++$candidate;
+        }
+        return $candidate;
     }
 
     private function subData($id, $type_id, $count = 1, $ids = [])

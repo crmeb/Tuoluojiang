@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,9 +17,9 @@ namespace App\Http\Service\Other;
 
 use App\Http\Dao\Other\TaskDao;
 use App\Http\Service\BaseService;
-use crmeb\options\TaskOptions;
-use crmeb\utils\Arr;
-use crmeb\utils\Task;
+use Tuoluojiang\Open\options\TaskOptions;
+use Tuoluojiang\Open\utils\Arr;
+use Tuoluojiang\Open\utils\Task;
 use Illuminate\Contracts\Container\BindingResolutionException;
 
 /**
@@ -165,8 +165,8 @@ class TaskService extends BaseService
             ->uniqued($options->uniqued)
             ->end_time($options->end_time)
             ->updateAt(now()->timezone(config('app.timezone'))->toDateString())
-            ->event($options->className && $options->action
-                ? [$options->className, $options->action] : $options->className)
+            ->event($options->className && $options->action ?
+                [$options->className, $options->action] : $options->className)
             ->push();
     }
 }

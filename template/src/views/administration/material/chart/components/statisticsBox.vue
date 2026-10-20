@@ -6,16 +6,15 @@
           <el-date-picker
             v-model="timeVal"
             :clearable="false"
-            :end-placeholder="$t('toptable.endingdate')"
-            :picker-options="pickerOptions"
-            :placeholder="$t('toptable.selecttime')"
-            :range-separator="$t('toptable.to')"
-            :start-placeholder="$t('toptable.startdate')"
+            end-placeholder="结束时间"
+            v-bind="$pickerProps(pickerOptions)"
+            placeholder="选择时间"
+            range-separator="至"
+            start-placeholder="开始时间"
             class="time"
-            format="yyyy/MM/dd"
-            size="small"
+            format="YYYY/MM/DD"
             type="daterange"
-            value-format="yyyy/MM/dd"
+            value-format="YYYY/MM/DD"
             @change="onchangeTime"
           />
         </el-form-item>
@@ -30,46 +29,38 @@
 </template>
 
 <script>
+import dayjs from 'dayjs'
+import pickerOptions from '@/libs/pickerOptions.ts'
 export default {
+  emits: ['confirmData'],
   name: 'FormBox',
   data() {
     return {
       timeVal: [
-        this.$moment().subtract(30, 'days').format('YYYY/MM/DD'),
-        this.$moment(new Date()).format('YYYY/MM/DD')
+        dayjs().subtract(30, 'days').format('YYYY/MM/DD'),
+        dayjs(new Date()).format('YYYY/MM/DD')
       ],
-      pickerOptions: this.$pickerOptionsTimeEle,
+      pickerOptions,
       tableFrom: {
         time:
-          this.$moment().subtract(30, 'days').format('YYYY/MM/DD') +
+          dayjs().subtract(30, 'days').format('YYYY/MM/DD') +
           '-' +
-          this.$moment(new Date()).format('YYYY/MM/DD'),
+          dayjs(new Date()).format('YYYY/MM/DD'),
         type: ''
       }
     }
   },
-  computed: {
-    lang: function () {
-      return this.$store.getters.lang
-    }
-  },
-  watch: {
-    lang() {
-      this.setOptions()
-    }
-  },
   methods: {
-    setOptions() {},
     selectType() {
       this.confirmData()
     },
     reset() {
       this.timeVal = [
-        this.$moment().subtract(30, 'days').format('YYYY/MM/DD'),
-        this.$moment(new Date()).format('YYYY/MM/DD')
+        dayjs().subtract(30, 'days').format('YYYY/MM/DD'),
+        dayjs(new Date()).format('YYYY/MM/DD')
       ]
       ;(this.tableFrom.time =
-        this.$moment().subtract(30, 'days').format('YYYY/MM/DD') + '-' + this.$moment(new Date()).format('YYYY/MM/DD')),
+        dayjs().subtract(30, 'days').format('YYYY/MM/DD') + '-' + dayjs(new Date()).format('YYYY/MM/DD')),
         this.confirmData()
     },
     // 选择时间区域
@@ -93,8 +84,5 @@ export default {
 <style lang="scss" scoped>
 .el-form-item {
   margin-bottom: 0;
-}
-/deep/.el-form-item--medium .el-form-item__content {
-  line-height: 30px;
 }
 </style>

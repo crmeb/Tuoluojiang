@@ -1,13 +1,19 @@
 <script>
+import xitongImg from '@/assets/images/empty/xitong.png';
+import duanxinImg from '@/assets/images/empty/duanxin.png';
+import qiweiImg from '@/assets/images/empty/qiwei.png';
+import dingdingImg from '@/assets/images/empty/dingding.png';
+import qitaImg from '@/assets/images/empty/qita.png';
+
 const messagePushData = [
   {
-    icon: require('@/assets/images/empty/xitong.png'),
+    icon: xitongImg,
     name: '系统通知',
     is_edit: false,
     status: 'system_status'
   },
   {
-    icon: require('@/assets/images/empty/duanxin.png'),
+    icon: duanxinImg,
     name: '短信',
     status: 'sms_status',
     is_edit: false,
@@ -15,7 +21,7 @@ const messagePushData = [
     placeholder: '请输入一号通中短信模板编号'
   },
   {
-    icon: require('@/assets/images/empty/qiwei.png'),
+    icon: qiweiImg,
     name: '企微BOT',
     is_edit: false,
     status: 'work_webhook_status',
@@ -23,7 +29,7 @@ const messagePushData = [
     placeholder: '请输入企业微信机器人生成的Webhook'
   },
   {
-    icon: require('@/assets/images/empty/dingding.png'),
+    icon: dingdingImg,
     name: '钉钉BOT',
     is_edit: false,
     status: 'ding_webhook_status',
@@ -31,7 +37,7 @@ const messagePushData = [
     placeholder: '请输入钉钉机器人生成的Webhook'
   },
   {
-    icon: require('@/assets/images/empty/qita.png'),
+    icon: qitaImg,
     name: '其他BOT',
     is_edit: false,
     status: 'other_webhook_status',

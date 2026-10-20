@@ -44,6 +44,7 @@ class SystemCrudQuestionnaireService extends BaseService
         '/^system\/attach_cate[a-zA-Z_\/]+$/',
         '/^system\/attach[a-zA-Z_\/]+$/',
         '/^dict\/data\/tree$/',
+        '/^attach\/imgs(\/.*)?$/i'
     ];
 
     public function __construct(SystemCrudQuestionnaireDao $dao)
@@ -67,7 +68,7 @@ class SystemCrudQuestionnaireService extends BaseService
         $data['status']  = 1;
         $data['url']     = sys_config('site_url') . '/q/' . $data['unique'];
 
-        $service = app()->make(SystemCrudService::class);
+        $service = app(SystemCrudFieldService::class);
 
         $fieldNameEn = $crud->table_name_en . '_ip';
         $hasColumn   = Schema::hasColumn($crud->table_name_en, $fieldNameEn);
@@ -129,8 +130,15 @@ class SystemCrudQuestionnaireService extends BaseService
      */
     public function checkUniqueisLogin(Request $request)
     {
-        // 获取问卷唯一标识
+        // 获取问卷唯一标识（支持 header 和 Referer 两种方式）
         $unique = $request->header('Curd-Unique');
+        if (! $unique) {
+            // 从 Referer 解析问卷唯一标识
+            $referer = $request->header('Referer');
+            if ($referer && preg_match('/[?&]unique=([^&]+)/', $referer, $matches)) {
+                $unique = $matches[1];
+            }
+        }
         if (! $unique) {
             return true;
         }
@@ -163,9 +171,9 @@ class SystemCrudQuestionnaireService extends BaseService
             if (! $id) {
                 return true;
             }
-            $associationCrudId = app()->make(SystemCrudFieldService::class)->value($id, 'association_crud_id');
+            $associationCrudId = app()->get(SystemCrudFieldService::class)->value($id, 'association_crud_id');
             // 获取当前问卷关联的关联实体
-            $associationCrudList = app()->make(SystemCrudFieldService::class)->getAssociationCrudId($questionnaire->crud_id, 1);
+            $associationCrudList = app()->get(SystemCrudFieldService::class)->getAssociationCrudId($questionnaire->crud_id, 1);
             $associationCrudIds  = array_column($associationCrudList, 'association_crud_id');
             if (! in_array($associationCrudId, $associationCrudIds)) {
                 return true;
@@ -173,7 +181,7 @@ class SystemCrudQuestionnaireService extends BaseService
         }
 
         // 没有登陆返回当前问卷的用户信息
-        $userInfo = app()->make(AdminService::class)->get($questionnaire->user_id);
+        $userInfo = app()->get(AdminService::class)->get($questionnaire->user_id);
         if (! $userInfo) {
             return true;
         }

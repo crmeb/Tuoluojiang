@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,7 +16,7 @@ declare(strict_types=1);
 namespace App\Http\Model\Notepad;
 
 use App\Http\Model\BaseModel;
-use crmeb\traits\model\PathAttrTrait;
+use Tuoluojiang\Open\traits\model\PathAttrTrait;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Query\Builder;
 
@@ -39,6 +39,14 @@ class NotepadCategory extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'pid'        => 'integer',
+        'types'      => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * @return HasOne
      */
@@ -50,7 +58,6 @@ class NotepadCategory extends BaseModel
     /**
      * name作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeNameLike($query, $value)
@@ -63,7 +70,6 @@ class NotepadCategory extends BaseModel
     /**
      * name作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeName($query, $value)
@@ -76,7 +82,6 @@ class NotepadCategory extends BaseModel
     /**
      * name作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeUid($query, $value)
@@ -89,7 +94,6 @@ class NotepadCategory extends BaseModel
     /**
      * pid作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopePidLike($query, $value)
@@ -102,7 +106,6 @@ class NotepadCategory extends BaseModel
     /**
      * pid作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopePid($query, $value)
@@ -115,7 +118,6 @@ class NotepadCategory extends BaseModel
     /**
      * id作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeNotId($query, $value)
@@ -130,7 +132,6 @@ class NotepadCategory extends BaseModel
     /**
      * id作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeId($query, $value)
@@ -151,8 +152,6 @@ class NotepadCategory extends BaseModel
 
     /**
      * path作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopePath($query, $value)
     {

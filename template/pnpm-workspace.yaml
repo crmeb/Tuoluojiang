@@ -1,0 +1,19 @@
+allowBuilds:
+  '@parcel/watcher': false
+  '@vue-office/docx': true
+  core-js: true
+  cos-js-sdk-v5: true
+  ejs: true
+  es5-ext: true
+  esbuild: true
+  fsevents: true
+  husky: true
+  vue-demi: true
+  yorkie: true
+patchedDependencies:
+  mammoth@1.13.0: patches/mammoth@1.13.0.patch
+  qrcodejs2@0.0.2: patches/qrcodejs2@0.0.2.patch
+# 间接依赖的安全修复：上游包尚未发布升级版本时在这里强制提升到已修复版本（同一大版本内）
+overrides:
+  'cos-js-sdk-v5>fast-xml-parser': ^4.5.7
+  '@xmldom/xmldom': ^0.8.15

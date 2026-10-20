@@ -1,0 +1,39 @@
+# PHP 镜像构建上下文为 server/，仅需 docker/php 下少量文件；其余一律排除以加速 build。
+.git
+.github
+.idea
+.vscode
+.codegraph
+**/.DS_Store
+
+# 依赖与运行时产物（运行时由 volume 挂载，勿打进 build context）
+/vendor
+/node_modules
+/storage
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore
+
+# 测试与文档
+/tests
+/docs
+/docs-detailed
+/coverage
+.phpunit.result.cache
+.php-cs-fixer.cache
+
+# Docker 运行时数据与无关服务文件
+/docker/mysql/data
+/docker/mysql/logs
+/docker/redis/data
+/docker/.docker.instance.env
+
+# 杂项
+*.md
+!/docker/README.md
+.env
+.env.*
+!.env.example
+*.log
+*.sql.gz
+/public/uploads
+/public/storage

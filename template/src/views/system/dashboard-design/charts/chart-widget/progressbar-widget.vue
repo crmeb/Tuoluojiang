@@ -20,7 +20,7 @@
 
 <script>
 import myEcharts from '@/components/scEcharts/chart-widget.vue'
-import { queryChartData } from '@/api/chart'
+import { queryChartData } from '../chartQuery.ts'
 
 export default {
   name: 'progressbar-widget',
@@ -232,13 +232,18 @@ export default {
     async getChartData(options, type) {
       this.loading = true
       try {
-        let res = await queryChartData(options, type)
+          let chartData = JSON.stringify({
+    widgetList: this.designer.widgetList,
+    formConfig: this.designer.formConfig
+  })
+        let res = await queryChartData(options, type,chartData)
         if (res && res.status === 200) {
           let { chartStyle, setDimensional, setChartConf } = options
           let { targetValue, metrics } = setDimensional
           this.myOption = chartStyle == 1 ? this.donutChartOption : this.wavesChart
           let maxNum = targetValue || 1
           let cutNum = res.data.value
+          let remainingNum = this.toSafeNumber(maxNum - cutNum)
           this.cutCompleted = cutNum
           let point = Math.round((cutNum / maxNum) * 100)
           this.percentage = point > 100 ? 100 : point
@@ -252,9 +257,9 @@ export default {
             this.myOption.series[0].data[0].value = cutNum
             this.myOption.series[0].data[0].name =
               metrics[0].alias + '：' + this.getPreviewNum(cutNum) + (this.numericUnits ? this.numericUnits : '')
-            this.myOption.series[0].data[1].value = maxNum - cutNum
+            this.myOption.series[0].data[1].value = Math.max(remainingNum, 0)
             this.myOption.series[0].data[1].name =
-              '剩余：' + this.getPreviewNum(maxNum - cutNum) + (this.numericUnits ? this.numericUnits : '')
+              '剩余：' + this.getPreviewNum(remainingNum) + (this.numericUnits ? this.numericUnits : '')
             this.myOption.series[0].data[0].label.show = setChartConf.numShow
             this.myOption.series[0].data[1].label.show = setChartConf.numShow
           } else {
@@ -292,7 +297,7 @@ export default {
     },
     getPreviewNum(val) {
       let { thousandsSeparator, showDecimalPlaces, decimalPlaces } = this.metricsConf
-      let newVal = val
+      let newVal = this.toSafeNumber(val)
 
       if (showDecimalPlaces) {
         newVal = Number(newVal).toFixed(decimalPlaces)
@@ -301,6 +306,11 @@ export default {
         newVal = this.numberToCurrencyNo(newVal)
       }
       return newVal
+    },
+    toSafeNumber(value) {
+      return value !== '' && value !== null && value !== undefined && Number.isFinite(Number(value))
+        ? Number(Number(value).toPrecision(14))
+        : value
     },
     numberToCurrencyNo(value) {
       if (!value) return 0
@@ -332,7 +342,7 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  /deep/ .el-progress-bar__innerText {
+  :deep(.el-progress-bar__innerText) {
     color: #fff !important;
   }
 }

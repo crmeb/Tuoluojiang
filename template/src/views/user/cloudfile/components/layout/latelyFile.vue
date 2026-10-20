@@ -3,37 +3,115 @@
   <div class="content">
     <div class="v-height-flag">
       <template v-if="fileData && fileData.length > 0">
-        <div class="first-header">
-          <p>
-            文件名称
-            <!-- <el-checkbox
-              :key="0"
-              v-model="menuIds"
-              :disabled="fileData.length <= 0"
-              :label="0"
-              @change="checkChange(1)"
-            >
-              {{ checked ? $t('file.reverse') : $t('file.all') }}
-            </el-checkbox> -->
-          </p>
-          <p v-if="fileStyle.style === 1">文件大小</p>
-          <p v-if="fileStyle.style === 1">创建人</p>
-          <p v-if="fileStyle.style === 1">{{ $t('file.updatetime') }}</p>
-          <p v-if="fileStyle.style === 1">操作</p>
-        </div>
-        <div id="listview" class="v-height-flag">
+        <!-- 列表布局 (fileStyle.style === 1) -->
+
+        <el-table
+          v-if="fileStyle.style === 1"
+          :data="fileData"
+          :show-header="true"
+          :row-class-name="tableRowClassName"
+          @row-contextmenu="rightClick"
+          style="width: 100%"
+          class="mt10"
+        >
+          <!-- 文件名称列 -->
+          <el-table-column prop="name" label="文件名称" min-width="320">
+            <template #default="scope">
+              <div
+                class="file-name-cell"
+                @dblclick="getItemFile(scope.row)"
+                @click="itemCheckChange(scope.row)"
+                @contextmenu.prevent.stop="rightClick($event, scope.row, scope.$index)"
+              >
+                <i
+                  v-if="scope.row.type === 0"
+                  class="icon iconfont"
+                  :class="getFileTypeIconfont(scope.row.type, scope.row.file_ext)"
+                />
+                <img
+                  v-if="scope.row.type === 1"
+                  alt=""
+                  class="folder-icon"
+                  src="../../../../../assets/images/cloud/file.png"
+                />
+                <span>{{ scope.row.name }}{{ scope.row.file_ext ? '.' + scope.row.file_ext : '' }}</span>
+              </div>
+            </template>
+          </el-table-column>
+
+          <!-- 文件大小列 -->
+          <el-table-column prop="file_size" label="文件大小" min-width="120">
+            <template #default="scope">
+              {{ formatBytesFn(scope.row.file_size) }}
+            </template>
+          </el-table-column>
+
+          <!-- 创建人列 -->
+          <el-table-column label="创建人" min-width="150">
+            <template #default="scope">
+              <div class="creator-cell">
+                <img :src="scope.row.user ? scope.row.user.avatar : ''" alt="" class="avatar" />
+                {{ scope.row.user ? scope.row.user.name : '--' }}
+              </div>
+            </template>
+          </el-table-column>
+
+          <!-- 更新时间列 -->
+          <el-table-column prop="updated_at" label="更新时间" min-width="180" />
+
+          <!-- 操作列 -->
+          <el-table-column label="操作" width="150">
+            <template #default="scope">
+              <div class="operation-cell">
+                <el-popover
+                  :ref="`pop-${scope.$index}`"
+                  :offset="30"
+                  :width="40"
+                  placement="bottom-start"
+                  trigger="click"
+                  @after-enter="handleShow(scope.$index)"
+                >
+                  <div class="right-item-list">
+                    <div
+                      v-if="scope.row.type !== 1 && openTypes.includes(scope.row.file_ext)"
+                      class="right-item"
+                      @click="getItemFile(scope.row)"
+                    >
+                      打开
+                    </div>
+                    <div v-if="scope.row.type !== 1" class="right-item" @click="fileDownLoad(scope.row)">
+                      下载
+                    </div>
+                    <div v-if="scope.row.type !== 1" class="right-item" @click="shareOther(scope.row)">分享</div>
+                    <el-divider v-if="scope.row.type !== 1" />
+                    <div class="right-item" @click="getMoveDialog(scope.row, 1)">移动至</div>
+                    <div v-if="scope.row.type === 1" class="right-item" @click="addAuthor(scope.row)">
+                      目录权限
+                    </div>
+                    <div v-if="scope.row.type !== 1" class="right-item" @click="getMoveDialog(scope.row, 2)">
+                      复制到
+                    </div>
+                    <!-- <div class="right-item" @click="setRenameItem(scope.row, scope.$index)">重命名</div> -->
+                    <el-divider />
+                    <div class="right-item" @click="getFolderDelete(scope.row)">删除</div>
+                    <div class="right-item" @click="getFileAttribute(scope.row)">属性</div>
+                  </div>
+                  <template #reference>
+                    <i class="icon iconfont icongengduo1 pointer" />
+                  </template>
+                </el-popover>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <!-- 网格布局 (fileStyle.style === 2) - 完全还原原始样式 -->
+        <div id="listview" class="v-height-flag" v-else>
           <div v-height>
             <el-scrollbar style="height: 100%">
-              <ul :class="fileStyle.style === 1 ? 'content-ul' : 'infeed-ul'" class="public-ul">
+              <ul class="public-ul infeed-ul">
                 <li v-for="(item, index) in fileData" :key="index" :class="menuIds.includes(item.id) ? 'active' : ''">
                   <div class="content-left pointer">
-                    <!-- <el-checkbox
-                      :key="item.id"
-                      v-model="menuIds"
-                      :label="item.id"
-                      :style="{ display: menuIds.includes(item.id) ? 'block' : 'none' }"
-                      @change="checkChange(2)"
-                    /> -->
                     <p
                       v-if="renameIndex !== index"
                       class="public-title"
@@ -51,19 +129,16 @@
                         <span v-if="item.type !== 1" class="file">.{{ item.file_ext }}</span>
                       </template>
 
-                      <span v-if="item.file_ext" :class="fileStyle.style == 1 ? 'public-title' : 'over-text'"
-                        >{{ item.name }}.{{ item.file_ext }}</span
-                      >
+                      <span v-if="item.file_ext" class="over-text">{{ item.name }}.{{ item.file_ext }}</span>
                       <span v-else class="over-text">{{ item.name }}</span>
                     </p>
                     <p v-else class="public-title">
                       <img v-if="fileIsImage('image/jpegs')" :src="item.file_url" class="image" />
-
                       <i v-else :class="getFileType(item.type, item.file_url)" class="icon iconfont" />
                       <input
                         :id="'input' + index"
                         v-model="item.name"
-                        :placeholder="$t('file.placeholder10')"
+                        placeholder="请输入文件名称"
                         autofocus="autofocus"
                         class="rename-input"
                         maxlength="30"
@@ -71,17 +146,7 @@
                       />
                     </p>
                   </div>
-                  <div v-if="fileStyle.style === 1">{{ formatBytesFn(item.file_size) }}</div>
-                  <div v-if="fileStyle.style === 1">
-                    <img :src="item.user ? item.user.avatar : ''" alt="" class="img" />{{
-                      item.user ? item.user.name : '--'
-                    }}
-                  </div>
-
-                  <div v-if="fileStyle.style === 1">
-                    {{ item.updated_at }}
-                  </div>
-                  <div v-if="fileStyle.style === 1" class="icon-star">
+                  <div class="icon-star" v-if="fileStyle.style === 1">
                     <div class="icon-star-right pointer">
                       <el-popover
                         :ref="`pop-${index}`"
@@ -101,46 +166,48 @@
                           </div>
 
                           <div v-if="item.type !== 1" class="right-item" @click="fileDownLoad(item)">
-                            {{ $t('public.download') }}
+                            下载
                           </div>
                           <div v-if="item.type !== 1" class="right-item" @click="shareOther(item)">分享</div>
                           <el-divider v-if="item.type !== 1" />
-                          <div class="right-item" @click="getMoveDialog(item, 1)">{{ $t('file.moveto') }}</div>
+                          <div class="right-item" @click="getMoveDialog(item, 1)">移动至</div>
                           <div v-if="item.type === 1" class="right-item" @click="addAuthor(item)">
-                            {{ $t('file.directory') }}
+                            目录权限
                           </div>
                           <div v-if="item.type !== 1" class="right-item" @click="getMoveDialog(item, 2)">
-                            {{ $t('file.copyto') }}
+                            复制到
                           </div>
-                          <div class="right-item" @click="setRenameItem(item, index)">{{ $t('file.rename') }}</div>
+                          <!-- <div class="right-item" @click="setRenameItem(item, index)">重命名</div> -->
                           <el-divider />
-                          <div class="right-item" @click="getFolderDelete(item)">{{ $t('public.delete') }}</div>
-                          <div class="right-item" @click="getFileAttribute(item)">{{ $t('file.attribute') }}</div>
+                          <div class="right-item" @click="getFolderDelete(item)">删除</div>
+                          <div class="right-item" @click="getFileAttribute(item)">属性</div>
                         </div>
-                        <i slot="reference" class="icon iconfont icongengduo1" />
+                        <template #reference>
+                          <i class="icon iconfont icongengduo1" />
+                        </template>
                       </el-popover>
                     </div>
                   </div>
                 </li>
               </ul>
-              <el-pagination
-                :current-page="where.page"
-                :page-size="where.limit"
-                :page-sizes="[10, 15, 20]"
-                :total="total"
-                class="page-fixed"
-                layout="total, prev, pager, next, jumper"
-                @size-change="handleSizeChange"
-                @current-change="pageChange"
-              />
             </el-scrollbar>
           </div>
         </div>
+        <el-pagination
+          :current-page="where.page"
+          :page-size="where.limit"
+          :page-sizes="[10, 15, 20]"
+          :total="total"
+          class="page-fixed"
+          layout="total, prev, pager, next, jumper"
+          @size-change="handleSizeChange"
+          @current-change="pageChange"
+        />
       </template>
       <default-page v-else v-height :index="7" :min-height="510" />
     </div>
     <!-- 图片查看弹窗 -->
-    <el-image-viewer v-if="isImage" :on-close="closeImageViewer" :url-list="srcList" />
+    <el-image-viewer v-if="isImage" @close="closeImageViewer" :url-list="srcList" />
     <image-viewer ref="imageViewer" :src-list="srcList"></image-viewer>
     <!-- 分享弹窗 -->
     <!--    <share-dialog :id="id" ref="shareDialog" @isOk="isOk" />-->
@@ -149,35 +216,34 @@
     <!-- 文件属性详情侧滑 -->
     <file-attribute ref="fileAttribute" :form-data="formBoxConfig" />
     <!-- 列表点击右键弹窗 -->
-    <right-click ref="rightClick" :config-data="rightData" @handleRightClick="handleRightClick" />
+    <right-click ref="rightClick" :latelyFile="true" :config-data="rightData" @handleRightClick="handleRightClick" />
     <!-- 设置目录权限弹窗 -->
     <author-dialog ref="authorDialog" :from-data="fromData" />
   </div>
 </template>
 
 <script>
-import { formatBytes } from '@/libs/public'
-import helper from '@/libs/helper'
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import helper from '@/libs/helper.ts'
 import {
   folderSpaceEntDeleteApi,
   folderSpaceEntRenameApi,
   folderSpaceEntViewApi,
   folderRecentlyListApi
-} from '@/api/cloud'
-import file from '@/utils/file'
-Vue.use(file)
-import Vue from 'vue'
+} from '@/api/cloud.ts'
+import { fileDownLoad, fileIsImage, fileTypeName, formatBytes, getFileTypeIconfont, trim } from '@/utils/file.ts'
 export default {
-  name: 'SpaceFile',
+  emits: ['totalFn', 'shareItemFile', 'openItemFile', 'handlerMyFile'],
+  name: 'LatelyFile',
   components: {
-    imageViewer: () => import('@/components/common/imageViewer'),
-    moveDialog: () => import('../moveDialog'),
-    fileAttribute: () => import('../fileAttribute'),
-    ElImageViewer: () => import('element-ui/packages/image/src/image-viewer'),
-    rightClick: () => import('../rightClick'),
-    defaultPage: () => import('@/components/common/defaultPage'),
-    authorDialog: () => import('../authorDialog'),
-    oaDialog: () => import('@/components/form-common/dialog-form')
+    imageViewer: defineAsyncComponent(() => import('@/components/common/imageViewer')),
+    moveDialog: defineAsyncComponent(() => import('../moveDialog')),
+    fileAttribute: defineAsyncComponent(() => import('../fileAttribute')),
+    rightClick: defineAsyncComponent(() => import('../rightClick')),
+    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage')),
+    authorDialog: defineAsyncComponent(() => import('../authorDialog')),
+    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form'))
   },
   props: {
     fileStyle: {
@@ -191,7 +257,7 @@ export default {
       default: 4
     },
     spaceId: {
-      type: Number | String,
+      type: [Number, String],
       default: 0
     },
     pageLimit: {
@@ -199,7 +265,7 @@ export default {
       default: 0
     },
     wps_type: {
-      type: String | Number,
+      type: [String, Number],
       default: '0'
     },
     spaceType: {
@@ -222,7 +288,7 @@ export default {
       },
       total: 0,
       openTypes: helper.openType,
-      breadcrumbArray: [{ name: this.$t('file.allfiles'), pid: '' }],
+      breadcrumbArray: [{ name: '全部文件', pid: '' }],
       id: 0,
       isImage: false,
       srcList: [],
@@ -243,27 +309,36 @@ export default {
       rightClickIndex: -1,
       fromData: {},
       pageHeight: 0,
-      prevHeight: 0
+      prevHeight: 0,
+      isLayoutChanging: false // 标记是否正在进行布局切换
     }
   },
   mounted() {},
-  computed: {
-    lang: function () {
-      return this.$store.getters.lang
-    }
-  },
   watch: {
-    lang() {
-      this.setOptions()
-    },
     pageLimit(val) {
-      this.where.limit = val
+      // 只有当limit发生实质性变化且不是布局切换时才重新获取数据
+      if (val !== this.where.limit && !this.isLayoutChanging) {
+        this.where.limit = val
+        this.getTreeData()
+      } else {
+        this.where.limit = val
+      }
+    },
+    'fileStyle.style'(newVal, oldVal) {
+      // 标记正在进行布局切换
+      this.isLayoutChanging = true
+      if (newVal !== oldVal) {
+        this.$nextTick(() => {
+          // 布局切换完成后取消标记
+          this.isLayoutChanging = false
+        })
+      }
     }
   },
   methods: {
-    setOptions() {
-      this.breadcrumbArray[0].name = this.$t('file.allfiles')
-    },
+    fileDownLoad,
+    fileIsImage,
+    getFileTypeIconfont,
     pageChange(page) {
       this.where.page = page
       this.getTreeData()
@@ -289,7 +364,7 @@ export default {
         page: this.where.page,
         limit: this.pageLimit,
         pid: this.where.pid,
-        file_type: this.fileTypeName(this.fileStyle.type),
+        file_type: fileTypeName(this.fileStyle.type),
         keyword: keyword || this.fileStyle.keyword,
         is_del: this.where.is_del
       }
@@ -319,6 +394,12 @@ export default {
     shareOther(item) {
       this.$emit('shareItemFile', item)
     },
+
+    // 表格行样式类名
+    tableRowClassName({ row, rowIndex }) {
+      return this.menuIds.includes(row.id) ? 'selected-row' : ''
+    },
+
     // 点击item项
     getItemFile(item) {
       if (item.type == 1) {
@@ -395,7 +476,7 @@ export default {
     },
     addAuthor(row) {
       this.fromData = {
-        title: this.$t('file.setdirectory'),
+        title: '设置目录权限',
         fid: this.spaceId,
         id: row.id,
         edit: 1
@@ -415,7 +496,7 @@ export default {
     },
     // 删除
     getFolderDelete(item) {
-      this.$modalSure('您确定要加入回收站').then(() => {
+      modalSure('您确定要加入回收站').then(() => {
         let spaceId = this.spaceType == 'recently' ? item.pid : this.spaceId
         folderSpaceEntDeleteApi(spaceId, item.id).then((res) => {
           if (this.where.page > 1 && this.fileData.length <= 1) {
@@ -442,7 +523,7 @@ export default {
         item.name = this.renameName
         return false
       }
-      if (this.renameName !== this.trim(item.name)) {
+      if (this.renameName !== trim(item.name)) {
         this.getFolderRename(item, { name: item.name })
       }
     },
@@ -459,7 +540,7 @@ export default {
     },
     getFileAttribute(item) {
       this.formBoxConfig = {
-        title: this.$t('file.fileattribute'),
+        title: '文件属性',
         is_file: false,
         fid: item.pid,
         id: item.id,
@@ -488,7 +569,9 @@ export default {
       if (this.rightClickIndex > -1) {
         this.rightClickIndex = -1
       } else {
-        this.$refs[`pop-${this.activeValue}`][0].doClose()
+        const pop = this.$refs[`pop-${this.activeValue}`]
+        const popover = Array.isArray(pop) ? pop[0] : pop
+        popover?.hide()
       }
     },
     rightClick(event, item, index) {
@@ -532,7 +615,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/deep/.el-dialog {
+:deep(.el-dialog) {
   border-radius: 8px;
 }
 .radio {
@@ -545,12 +628,12 @@ export default {
   }
 }
 .box {
-  /deep/ .el-dialog__header {
+  :deep(.el-dialog__header) {
     padding: 0 !important;
   }
 }
 
-/deep/ .el-dialog__body {
+:deep(.el-dialog__body) {
   padding-left: 10px;
 }
 .img {
@@ -563,58 +646,121 @@ export default {
 
 .content {
   .header-caption {
-    /deep/ .el-breadcrumb__inner {
+    :deep(.el-breadcrumb__inner) {
       cursor: pointer;
     }
   }
-  /deep/ .el-scrollbar__wrap {
+  :deep(.el-scrollbar__wrap) {
     overflow-x: hidden;
   }
 
-  .first-header {
-    background-color: #f7fbff;
-    border-bottom: none;
-    margin-bottom: 0;
-    display: flex;
-    align-items: center;
-    padding: 10px 15px;
-
-    p {
-      margin: 0;
-      padding: 0;
-      font-family: PingFang SC, PingFang SC;
-      font-weight: 500 !important;
-      font-size: 13px;
-      color: #303133;
+  // Element UI Table 样式覆盖
+  :deep(.el-table) {
+    // 调整行高与原来一致
+    th,
+    td {
+      padding: 15px 0;
     }
-    p:nth-of-type(1) {
-      width: 40%;
+
+    .el-table__header-wrapper,
+    .el-table__header-wrapper table,
+    .el-table__header-wrapper tr,
+    .el-table__header-wrapper th,
+    .el-table__header-wrapper .cell {
+      cursor: default;
+    }
+
+    .el-table__body-wrapper tr,
+    .el-table__body-wrapper td,
+    .el-table__body-wrapper .cell {
+      cursor: pointer;
+    }
+
+    .file-name-cell {
       display: flex;
       align-items: center;
+      height: 24px;
+      line-height: 24px;
+      cursor: pointer;
+
       i {
         margin-right: 15px;
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+        line-height: 20px;
+        flex-shrink: 0;
       }
-      /deep/ .el-checkbox {
+
+      .folder-icon {
+        width: 20px;
+        height: 20px;
         margin-right: 15px;
+        flex-shrink: 0;
+      }
+
+      span {
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
     }
-    p:nth-of-type(2) {
-      width: 12%;
+
+    .creator-cell {
+      display: flex;
+      align-items: center;
+      height: 24px;
+      line-height: 24px;
+
+      .avatar {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        margin-right: 6px;
+        vertical-align: middle;
+        flex-shrink: 0;
+      }
     }
-    p:nth-of-type(3) {
-      width: 12%;
+
+    .operation-cell {
+      text-align: center;
+      height: 24px;
+      line-height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      .icongengduo1 {
+        font-size: 18px;
+        cursor: pointer;
+        color: #909399;
+
+        &:hover {
+          color: #409eff;
+        }
+      }
     }
-    p:nth-of-type(4) {
-      width: 17%;
+
+    // 其他列的垂直居中
+    .cell {
+      height: 24px;
+      line-height: 24px;
+      display: flex;
+      align-items: center;
     }
-    p:nth-of-type(5) {
-      width: 17%;
-      text-align: end;
+
+    // 选中行样式
+    .selected-row {
+      background-color: #ecf5ff !important;
+    }
+
+    // 鼠标悬停效果
+    tr:hover {
+      background-color: #f5f7fa !important;
     }
   }
-  .collect {
-    cursor: pointer;
-  }
+
   .public-ul {
     padding: 0;
     margin: 0;
@@ -622,14 +768,12 @@ export default {
     li {
       display: flex;
       align-items: center;
-      // .over-text {
-      //   white-space: normal;
-      // }
     }
-    /deep/ .el-checkbox__label {
+    :deep(.el-checkbox__label) {
       display: none;
     }
   }
+
   .content-ul {
     li {
       display: flex;
@@ -654,7 +798,7 @@ export default {
         i {
           margin-right: 15px;
         }
-        /deep/ .el-checkbox {
+        :deep(.el-checkbox) {
           margin-right: 15px;
           display: block !important;
         }
@@ -685,7 +829,6 @@ export default {
         display: flex;
         align-items: center;
         line-height: 24px;
-        // width: calc(100% - 40px);
         .image {
           width: 30px;
           max-height: 25px;
@@ -702,6 +845,7 @@ export default {
       }
     }
   }
+
   .infeed-ul {
     display: flex;
     flex-wrap: wrap;
@@ -721,14 +865,14 @@ export default {
       p {
         margin: 0;
       }
-      /deep/ .el-checkbox {
+      :deep(.el-checkbox) {
         padding-left: 10px;
         display: none;
       }
       .content-left {
         width: 100%;
         text-align: center;
-        /deep/ .el-checkbox {
+        :deep(.el-checkbox) {
           position: absolute;
           left: 0;
           top: 10px;
@@ -772,7 +916,7 @@ export default {
       }
       &:hover {
         background-color: #f5f5f5;
-        /deep/ .el-checkbox {
+        :deep(.el-checkbox) {
           display: block !important;
         }
       }
@@ -781,27 +925,39 @@ export default {
       }
     }
   }
-}
-.folder {
-  margin-top: 10px;
-  width: 70px;
-  height: 65px;
-}
-.file {
-  width: 110px;
-  margin: 0 auto;
-  display: inline-block;
-  display: flex;
 
-  width: 55px;
-  height: 66px;
-  background: url('../../../../../assets/images/cloud/file-box.png') no-repeat;
-  background-size: 55px 66px;
-  color: #fff !important;
-  text-align: center;
-  line-height: 66px;
+  .folder {
+    margin-top: 10px;
+    width: 70px;
+    height: 65px;
+  }
+
+  .file {
+    width: 110px;
+    margin: 0 auto;
+    display: inline-block;
+    display: flex;
+    width: 55px;
+    height: 66px;
+    background: url('../../../../../assets/images/cloud/file-box.png') no-repeat;
+    background-size: 55px 66px;
+    color: #fff !important;
+    text-align: center;
+    line-height: 66px;
+  }
+  .collect {
+    cursor: pointer;
+  }
 }
+
 .page-fixed {
-  position: relative;
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  z-index: 99;
+  background: transparent;
+  padding: 0;
+  border: none;
+  box-shadow: none;
 }
 </style>

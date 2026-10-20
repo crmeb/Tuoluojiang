@@ -1,20 +1,21 @@
 <template>
   <div>
     <el-dialog
+      class="hr-tool-haish-assessment-history-list-dialog"
       title="历史记录"
-      :visible.sync="dialogVisible"
+      v-model="dialogVisible"
       width="700px"
       :append-to-body="true"
       :before-close="handleClose"
     >
-      <el-table :data="tableData" style="width: 100%;">
+      <el-table :data="tableData" style="width: 100%">
         <el-table-column prop="position.name" label="职位" width="150"> </el-table-column>
         <el-table-column prop="col15" label="岗位分数" width="140"> </el-table-column>
         <el-table-column prop="card.name" label="创建人"> </el-table-column>
         <el-table-column prop="updated_at" label="更新时间" min-width="150"> </el-table-column>
         <el-table-column label="操作" width="120" fixed="right">
-          <template slot-scope="scope">
-            <el-button type="text" @click="apply(scope.row)">使用</el-button>
+          <template #default="scope">
+            <el-button type="primary" link @click="apply(scope.row)">使用</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -33,8 +34,9 @@
 </template>
 
 <script>
-import { putHayHistoryApi } from '@/api/config.js';
+import { putHayHistoryApi } from '@/api/config.ts'
 export default {
+  emits: ['applyFn'],
   name: 'CrmebOaEntHistoryList',
 
   data() {
@@ -43,56 +45,60 @@ export default {
       total: 0,
       where: {
         page: 1,
-        limit: 15,
+        limit: 15
       },
       id: 0,
-      tableData: [],
-    };
+      tableData: []
+    }
   },
 
   mounted() {},
 
   methods: {
     openBox(data) {
-      this.index = data.$index;
-      this.dialogVisible = true;
-      this.id = data.row.col1;
-      this.getList(this.id);
+      this.index = data.$index
+      this.dialogVisible = true
+      this.id = data.row.col1
+      this.getList(this.id)
     },
     handleClose() {
-      this.dialogVisible = false;
+      this.dialogVisible = false
     },
     async getList(id) {
       const result = await putHayHistoryApi(id, this.where)
-      this.total = result.data.count;
-      this.tableData = result.data.list;
+      this.total = result.data.count
+      this.tableData = result.data.list
     },
     pageChange(page) {
-      this.where.page = page;
-      this.getList(this.id);
+      this.where.page = page
+      this.getList(this.id)
     },
     handleSizeChange(val) {
-      this.where.limit = val;
-      this.getList(this.id);
+      this.where.limit = val
+      this.getList(this.id)
     },
     // 使用
     apply(data) {
-      this.handleClose();
-      this.$emit('applyFn', data, this.index);
-    },
-  },
-};
+      this.handleClose()
+      this.$emit('applyFn', data, this.index)
+    }
+  }
+}
 </script>
 
 <style lang="scss" scoped>
-/deep/ .el-dialog__body {
-  padding-top: 15px;
-  padding-right: 0;
-  border-top: 1px solid #dcdfe6;
-}
 .paginationClass {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+}
+</style>
+
+<style lang="scss">
+// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
+.el-dialog.hr-tool-haish-assessment-history-list-dialog .el-dialog__body {
+  padding-top: 15px;
+  padding-right: 0;
+  border-top: 1px solid #dcdfe6;
 }
 </style>

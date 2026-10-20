@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,12 +16,12 @@ declare(strict_types=1);
 namespace App\Http\Model\Finance;
 
 use App\Http\Model\Admin\Admin;
-use App\Http\Model\BaseModel;
-use App\Http\Model\Client\ClientBill;
-use App\Http\Model\Client\Contract;
-use App\Http\Model\Client\Customer;
+use App\Http\Model\Customer\Customer;
+use App\Http\Model\Customer\Order;
+use App\Http\Model\Customer\Payment;
 use App\Http\Model\System\Attach;
-use crmeb\traits\model\TimeDataTrait;
+use App\Http\Model\BaseModel;
+use Tuoluojiang\Open\traits\model\TimeDataTrait;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
@@ -46,6 +46,21 @@ class Bill extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'         => 'integer',
+        'entid'      => 'integer',
+        'user_id'    => 'integer',
+        'cate_id'    => 'integer',
+        'num'        => 'decimal:2',
+        'edit_time'  => 'datetime:Y-m-d H:i:s',
+        'types'      => 'integer',
+        'type_id'    => 'integer',
+        'link_id'    => 'integer',
+        'order_id'   => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
 
     /**
      * 一对一关联企业用户.
@@ -120,6 +135,15 @@ class Bill extends BaseModel
         }
     }
 
+    public function scopeUserId($query, $value): void
+    {
+        if (is_array($value)) {
+            $query->whereIn('user_id', $value);
+        } elseif ($value !== '') {
+            $query->where('user_id', $value);
+        }
+    }
+
     /**
      * 附件一对多关联.
      *
@@ -158,7 +182,7 @@ class Bill extends BaseModel
      */
     public function clientBill()
     {
-        return $this->hasOne(ClientBill::class, 'id', 'link_id');
+        return $this->hasOne(Payment::class, 'id', 'link_id');
     }
 
     /**
@@ -167,16 +191,16 @@ class Bill extends BaseModel
      */
     public function client()
     {
-        return $this->hasOneThrough(Customer::class, ClientBill::class, 'id', 'id', 'link_id', 'eid');
+        return $this->hasOneThrough(Customer::class, Payment::class, 'id', 'id', 'link_id', 'eid');
     }
 
     /**
-     * 一对一关联合同.
+     * 一对一关联订单.
      * @return HasOneThrough
      */
     public function contract()
     {
-        return $this->hasOneThrough(Contract::class, ClientBill::class, 'id', 'id', 'link_id', 'cid');
+        return $this->hasOneThrough(Order::class, Payment::class, 'id', 'id', 'link_id', 'cid');
     }
 
     /**

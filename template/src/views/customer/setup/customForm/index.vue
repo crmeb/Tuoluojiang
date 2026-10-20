@@ -1,30 +1,28 @@
 <template>
   <div class="divBox">
-    <el-card v-loading="loadingBox" class="card-box">
-      <div slot="header" class="acea-row row-between row-middle card-header">
-        <div>
-          <el-tabs v-model="activeName" @tab-click="handleClick">
-            <el-tab-pane label="添加客户" name="1">
-              <span slot="label"> 添加客户 </span>
-            </el-tab-pane>
-            <el-tab-pane label="添加合同" name="2">
-              <span slot="label"> 添加合同 </span>
-            </el-tab-pane>
-            <el-tab-pane label="添加联系人" name="3">
-              <span slot="label">
-                添加联系人
-                <el-popover content="列表支持拖动排序" placement="top-start" trigger="hover" width="200">
-                  <i slot="reference" class="iconfont iconshuoming"></i>
-                </el-popover>
-              </span>
-            </el-tab-pane>
-          </el-tabs>
+    <el-card v-loading="loadingBox" class="card-box box-height">
+      <template #header>
+        <div class="acea-row row-between row-middle card-header">
+          <div>
+            <el-tabs v-model="activeName" @tab-change="handleClick">
+              <el-tab-pane label="线索表单" name="4" />
+              <el-tab-pane label="客户表单" name="1" />
+              <el-tab-pane label="商机表单" name="5" />
+              <el-tab-pane label="订单表单" name="2" />
+              <el-tab-pane label="联系人表单" name="3" />
+              <el-tab-pane label="产品表单" name="6" />
+            </el-tabs>
+          </div>
+          <div class="flex">
+            <div v-if="activeName == 4" class="sheBox mr10" @click="settingClue">
+              <span class="el-icon-setting"></span>
+            </div>
+
+            <el-button @click="addGroup">新增分组</el-button>
+            <el-button :loading="loading" type="primary" @click="submitFrom">保存</el-button>
+          </div>
         </div>
-        <div>
-          <el-button size="small" @click="addGroup">新增分组</el-button>
-          <el-button :loading="loading" size="small" type="primary" @click="submitFrom">保存</el-button>
-        </div>
-      </div>
+      </template>
 
       <!-- 表单名称 -->
       <div v-for="(item, index1) in dataList" :key="index1" class="wrapper-item">
@@ -33,7 +31,16 @@
             <span>{{ item.title }}</span>
           </div>
           <div class="headerRight">
-            <el-tooltip content="显示隐藏分组" effect="dark" placement="top">
+            <!-- <el-switch
+              v-if="item.ident == 'product'"
+              v-model="item.required"
+              :active-value="1"
+              :inactive-value="0"
+              active-text="必填"
+              inactive-text="选填"
+            /> -->
+
+            <el-tooltip content="显示隐藏分组" effect="dark" placement="top" v-if="item.ident != 'product'">
               <span v-if="item.status == 0" class="iconfont iconyincang pointer" @click="showCate(item)" />
               <span v-else class="iconfont icondakai pointer" @click="showCate(item)" />
             </el-tooltip>
@@ -41,7 +48,7 @@
               <span class="iconfont iconbianji1 pointer" @click="editCate(item)" />
             </el-tooltip>
 
-            <template v-if="item.enable_delete == 1">
+            <template v-if="item.enable_delete == 1 && item.ident != 'product'">
               <el-tooltip content="删除" effect="dark" placement="top">
                 <span class="iconfont iconshanchu pointer" @click="deleteCate(item.id)" />
               </el-tooltip>
@@ -52,33 +59,32 @@
         <!-- 表格 -->
         <el-table ref="table" :data="item.data" class="table" row-key="id" style="width: 100%">
           <el-table-column fixed="left" label="字段名称" min-width="130px" prop="id">
-            <template slot-scope="scope">
-              <el-input v-model="scope.row.key_name" class="input" placeholder="请输入" size="small"> </el-input>
+            <template #default="scope">
+              <el-input v-model="scope.row.key_name" class="input" placeholder="请输入"> </el-input>
             </template>
           </el-table-column>
           <!-- 字段类型 -->
           <el-table-column label="字段类型" min-width="130px" prop="type">
-            <template slot-scope="scope">
+            <template #default="scope">
               <el-select
                 v-model="scope.row.type"
                 :disabled="scope.row.enable_delete !== 1"
-                size="small"
                 @change="scope.row.dict_ident = ''"
               >
-                <el-option v-for="item in typeOptions" :label="item.label" :value="item.value"> </el-option>
+                <el-option v-for="(item, index) in typeOptions" :key="index" :label="item.label" :value="item.value">
+                </el-option>
               </el-select>
             </template>
           </el-table-column>
           <!-- 关联字典 -->
           <el-table-column label="关联字典" min-width="150px" prop="cate_id">
-            <template slot-scope="scope">
+            <template #default="scope">
               <el-select
                 v-model="scope.row.dict_ident"
                 :disabled="scope.row.enable_delete !== 1 || typeDisabled.includes(scope.row.type)"
                 clearable
                 filterable
                 placeholder="请选择关联字典"
-                size="small"
                 @change="getDictData(scope.row.dict_ident, index1, scope.$index)"
               >
                 <el-option v-for="(item, index) in dictList" :key="index" :label="item.name" :value="item.ident">
@@ -88,7 +94,7 @@
           </el-table-column>
           <!-- 是否必填 -->
           <el-table-column label="是否必填" prop="required">
-            <template slot-scope="scope">
+            <template #default="scope">
               <el-switch
                 v-model="scope.row.required"
                 :active-value="1"
@@ -100,7 +106,7 @@
           </el-table-column>
           <!-- 唯一校验 -->
           <el-table-column label="唯一校验" prop="uniqued">
-            <template slot-scope="{ row }">
+            <template #default="{ row }">
               <el-switch
                 v-model="row.uniqued"
                 :active-value="1"
@@ -112,27 +118,36 @@
             </template>
           </el-table-column>
           <el-table-column label="提示信息" min-width="110px" prop="placeholder">
-            <template slot-scope="{ row }">
-              <el-input v-model="row.placeholder" class="input" placeholder="请输入" size="small"> </el-input>
+            <template #default="{ row }">
+              <el-input v-model="row.placeholder" class="input" placeholder="请输入"> </el-input>
             </template>
           </el-table-column>
           <!-- 默认值 -->
           <el-table-column label="默认值" min-width="180px" prop="value">
-            <template slot-scope="{ row }">
+            <template #default="{ row }">
               <el-input
                 v-if="getTypes(row.type, 'select', 'radio', 'checked')"
                 v-model="row.value"
                 :disabled="row.type == 'file' || row.type == 'images'"
                 class="input"
                 placeholder="请输入默认值"
-                size="small"
               >
               </el-input>
 
-              <el-select v-else-if="row.type == 'radio'" v-model="row.value" placeholder="请选择默认值" size="small">
+              <el-select v-else-if="row.type == 'radio'" v-model="row.value" placeholder="请选择默认值">
                 <el-option v-for="el in row.optionItems" :key="el.value" :label="el.name" :value="el.value">
                 </el-option>
               </el-select>
+              <el-select
+                v-else-if="row.type == 'checked'"
+                multiple
+                v-model="row.value"
+                placeholder="请选择默认值"
+              >
+                <el-option v-for="el in row.optionItems" :key="el.value" :label="el.name" :value="el.value">
+                </el-option>
+              </el-select>
+
               <el-cascader
                 v-else
                 v-model="row.value"
@@ -152,7 +167,7 @@
           </el-table-column>
           <!-- 边界值 -->
           <el-table-column min-width="380">
-            <template slot="header" slot-scope="scope">
+            <template #header="scope">
               <el-popover placement="top" trigger="hover" width="300">
                 <div class="tips-popover">
                   文本框、文本域的边界值为字数限制；<br />
@@ -160,29 +175,29 @@
                   下拉复选、复选按钮的边界值为选中数量；<br />日期控件的边界值为时间范围<br />
                   图片选择控件、附件控件的边界值为上传数量。
                 </div>
-                <div slot="reference">边界值 <span class="el-icon-info"></span></div>
+                <template #reference>
+                  <div>边界值 <span class="el-icon-info"></span></div>
+                </template>
               </el-popover>
             </template>
-            <template slot-scope="scope">
-              <div v-if="scope.row.type !== 'date'" class="flex">
+            <template #default="scope">
+              <div v-if="!['date', 'datetime', 'single'].includes(scope.row.type)" class="flex">
                 <el-input-number
                   v-model="scope.row.min"
                   :disabled="maxDisabledList.includes(scope.row.key) || scope.row.type === 'oaWangeditor'"
                   :max="99999999"
-                  :min="1"
+                  :min="0"
                   controls-position="right"
-                  size="small"
                   style="width: 130px"
                 ></el-input-number>
-
                 <span class="m5"> - </span>
+
                 <el-input-number
                   v-model="scope.row.max"
                   :disabled="maxDisabledList.includes(scope.row.key) || scope.row.type === 'oaWangeditor'"
                   :max="99999999"
-                  :min="1"
+                  :min="0"
                   controls-position="right"
-                  size="small"
                   style="width: 130px"
                 ></el-input-number>
                 <!-- 选择数字控制小数点 -->
@@ -192,38 +207,38 @@
                   :max="10"
                   :min="0"
                   controls-position="right"
-                  size="small"
                   style="width: 100px; margin-left: 5px"
                 ></el-input-number>
               </div>
               <div v-else class="flex">
-                <el-date-picker
+                <span class="m5"> 不支持设置边界值 </span>
+                <!-- <el-date-picker
                   v-model="scope.row.min"
-                  :format="'yyyy-MM-dd'"
-                  :value-format="'yyyy-MM-dd'"
+                  format="YYYY-MM-DD"
+                  value-format="YYYY-MM-DD"
                   clearable
                   placeholder="请选择"
                   size="small"
                   style="width: 130px"
-                  type="date"
+                  :type="scope.row.type == 'datetime' ? 'datetime' : 'date'"
                 ></el-date-picker>
                 <span class="m5"> - </span>
                 <el-date-picker
                   v-model="scope.row.max"
-                  :format="'yyyy-MM-dd'"
-                  :value-format="'yyyy-MM-dd'"
+                  format="YYYY-MM-DD"
+                  value-format="YYYY-MM-DD"
                   clearable
                   placeholder="请选择"
                   size="small"
                   style="width: 130px"
-                  type="date"
-                ></el-date-picker>
+                  :type="scope.row.type == 'datetime' ? 'datetime' : 'date'"
+                ></el-date-picker> -->
               </div>
             </template>
           </el-table-column>
           <!-- 状态 -->
           <el-table-column label="状态" prop="status">
-            <template slot-scope="{ row }">
+            <template #default="{ row }">
               <el-switch
                 v-model="row.status"
                 :active-value="1"
@@ -235,18 +250,40 @@
             </template>
           </el-table-column>
           <el-table-column fixed="right" label="操作" min-width="150px" prop="address">
-            <template slot-scope="scope">
-              <el-button type="text" @click="moveFn(scope.row)">移动分组</el-button>
-              <el-button v-if="scope.row.enable_delete == 1" type="text" @click="deleteFn(scope, index1)"
+            <template #default="scope">
+              <el-button type="primary" link @click="moveFn(scope.row)">移动分组</el-button>
+              <el-button v-if="scope.row.enable_delete == 1" type="primary" link @click="deleteFn(scope, index1)"
                 >删除</el-button
               >
             </template>
           </el-table-column>
+          <template #empty>
+            <div>
+              {{
+                ['5', '2'].includes(activeName) && item.ident == 'product'
+                  ? '产品清单的字段在添加产品信息中维护'
+                  : '暂无数据'
+              }}
+            </div>
+          </template>
         </el-table>
-        <div class="add-row">
+        <div class="add-row" v-if="item.ident != 'product'">
           <span class="pointer" @click.stop="addANewLine(index1)"><span class="el-icon-plus mr5"></span>添加字段</span>
         </div>
       </div>
+      <!-- <div v-if="['5', '2'].includes(activeName)" style="border: 1px solid #e6ebf5">
+        <div class="flex-center bgcColor">
+          <div class="headerLeft">
+            <span>产品清单</span>
+          </div>
+          <div class="headerRight">
+            <el-tooltip content="编辑" effect="dark" placement="top">
+              <span class="iconfont iconbianji1 pointer" @click="editCate(item)" />
+            </el-tooltip>
+          </div>
+        </div>
+        <div class="productTips">产品清单的字段在添加产品信息中维护</div>
+      </div> -->
     </el-card>
 
     <!-- 新增分组弹窗组件 -->
@@ -258,11 +295,22 @@
       :fromData="fromData"
       @submit="submit"
     ></oaDialog>
+    <!-- 线索转客户 -->
+    <clueToCustomers
+      ref="clueToCustomers"
+      v-if="clueList.length > 0"
+      :clueList="clueList"
+      @gridData="gridData"
+    ></clueToCustomers>
   </div>
 </template>
 <script>
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
 import Sortable from 'sortablejs'
+import { configConvertApi } from '@/api/client.ts'
 import common from './components/customCommon'
+import { createDictTreeCache } from '@/utils/dictTreeCache.ts'
 import {
   getFormListApi,
   formCateSaveApi,
@@ -272,11 +320,12 @@ import {
   getDictListApi,
   formCateSaveDataApi,
   formCateMoveApi
-} from '@/api/form'
+} from '@/api/form.ts'
 export default {
   name: '',
   components: {
-    oaDialog: () => import('@/components/form-common/dialog-form')
+    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form')),
+    clueToCustomers: defineAsyncComponent(() => import('././components/clueToCustomers'))
   },
   data() {
     return {
@@ -290,6 +339,7 @@ export default {
         labelWidth: '80px',
         btnText: '确定'
       },
+      clueList: [],
       formConfig: [],
       formDataInit: {},
       label: '1',
@@ -310,10 +360,15 @@ export default {
       typeDisabled: common.typeDisabled, // 字段类型选项
       dictList: [], // 字典选项
       groupList: [], // 分组列表
-      activeName: '1',
+      activeName: '4',
       contractList: common.contractList,
       maxDisabledList: common.maxDisabledList
     }
+  },
+
+  created() {
+    // 本页内复用的字典树缓存，离开页面随实例释放
+    this.dictTreeCache = createDictTreeCache()
   },
 
   mounted() {
@@ -321,11 +376,11 @@ export default {
     this.getList()
   },
 
-  beforeDestroy() {
-    this.$store.commit('user/REMOVE_FORMDIC', [])
-  },
 
   methods: {
+    gridData(val) {
+      configConvertApi('customer', { data: val }).then((res) => {})
+    },
     // 组合新增分组表单内容
     addGroupingData() {
       this.formConfig = [
@@ -373,17 +428,14 @@ export default {
         level: '',
         types: dict_ident
       }
-      this.$store
-        .dispatch('user/getDictList', data)
-        .then((res) => {
+      this.dictTreeCache
+        .load(data)
+        .then((list) => {
           setTimeout(() => {
-            const result = res.find((item) => item.dict_ident == dict_ident)
-            this.dataList[index1].data[index].optionItems = result.list
+            this.dataList[index1].data[index].optionItems = list
           }, 300)
         })
-        .catch((err) => {
-          console.log(err, 'err')
-        })
+        .catch(() => undefined)
     },
 
     // 获取分组集合
@@ -414,7 +466,12 @@ export default {
           if (val.dict_type_id == 0) {
             val.dict_type_id = ''
           }
-          if (val.type == 'date' && typeof val.max !== 'string' && typeof val.min !== 'string') {
+          if (
+            val.type == 'date' &&
+            val.type == 'datetime' &&
+            typeof val.max !== 'string' &&
+            typeof val.min !== 'string'
+          ) {
             val.max = ''
             val.min = ''
           }
@@ -428,11 +485,10 @@ export default {
               types: val.dict_ident
             }
             if (val.dict_ident) {
-              this.$store.dispatch('user/getDictList', data).then((res) => {
+              this.dictTreeCache.load(data).then((list) => {
                 setTimeout(() => {
-                  const resultDict = res.find((item) => item.dict_ident == val.dict_ident)
-                  if (resultDict.list) {
-                    val.optionItems = resultDict.list
+                  if (list) {
+                    val.optionItems = list
                   }
                 }, 300)
               })
@@ -440,12 +496,20 @@ export default {
           }
         })
       })
+      if (this.activeName == 4) {
+        this.clueList = result.data
+      }
       this.dataList = result.data
       this.getGroupList()
       this.loadingBox = false
       setTimeout(() => {
         this.rowDrop()
       }, 300)
+    },
+
+    // 设置线索客户关联
+    settingClue() {
+      this.$refs.clueToCustomers.openBox()
     },
 
     // 移动分组
@@ -483,7 +547,7 @@ export default {
 
     // 删除
     deleteFn(row, index) {
-      this.$modalSure('你确定要删除这条数据吗').then(() => {
+      modalSure('你确定要删除这条数据吗').then(() => {
         this.dataList[index].data.splice(row.$index, 1)
       })
     },
@@ -495,7 +559,8 @@ export default {
         status: row.status === 1 ? 0 : 1
       }
       await formCatePutApi(this.cate_id, data)
-      await this.getList()
+      row.status = row.status === 1 ? 0 : 1
+      // await this.getList()
     },
 
     // 保存表单
@@ -569,7 +634,7 @@ export default {
 
     // 删除分组
     async deleteCate(id) {
-      await this.$modalSure('确认删除此数据吗')
+      await modalSure('确认删除此数据吗')
       await formCateDeleteApi(id)
       await this.getList()
     },
@@ -584,7 +649,7 @@ export default {
 
     // 自动新增行
     addANewLine(index) {
-      var list = {
+      const list = {
         key_name: '',
         type: '',
         dictionary: '',
@@ -613,9 +678,10 @@ export default {
     // 表格拖拽排序
     rowDrop() {
       let list = this.$refs.table
-      if (list.length == 0) return
+      if (!Array.isArray(list) || list.length === 0) return
       list.map((item, index) => {
-        const tbody = item.$el.querySelectorAll('.el-table__body-wrapper > table > tbody')[0]
+        const tbody = item?.$el?.querySelector('.el-table__body-wrapper tbody')
+        if (!tbody) return
         Sortable.create(tbody, {
           animation: 300,
           onEnd: (e) => {
@@ -638,10 +704,27 @@ export default {
   justify-content: space-between;
   align-items: center;
 }
+.sheBox {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  border: 1px solid #dcdfe6;
+  line-height: 32px;
+  text-align: center;
+  margin-left: 10px;
+  cursor: pointer;
+  .el-icon-setting {
+    cursor: pointer;
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: #909399;
+  }
+}
 .bgcColor {
   padding: 0 14px;
   width: 100%;
   height: 44px;
+  background: #f5f7fa;
 }
 .tips {
   font-size: 12px;
@@ -698,7 +781,7 @@ export default {
   font-family: PingFangSC-Regular, PingFang SC;
   font-weight: 400;
   color: #303133;
-  /deep/.el-card__header {
+  :deep(.el-card__header) {
     padding: 0 20px;
   }
 }
@@ -712,7 +795,7 @@ export default {
   bottom: 0;
   width: calc(100% + 220px);
 }
-/deep/.card-header {
+:deep(.card-header) {
   .el-tabs__header {
     margin: 0;
   }
@@ -722,6 +805,10 @@ export default {
   .el-tabs__item {
     height: 60px;
     line-height: 60px;
+
+    &:not(.is-active) {
+      font-weight: 500;
+    }
   }
 }
 .wrapper-item {
@@ -729,5 +816,14 @@ export default {
   &:last-child {
     margin-bottom: 0;
   }
+}
+.productTips {
+  font-size: 14px;
+  height: 44px;
+  line-height: 44px;
+  text-align: center;
+}
+:deep(.el-table__inner-wrapper::before) {
+  background-color: #fff;
 }
 </style>

@@ -56,9 +56,9 @@
                 <table width="100%" v-if="index === 0">
                     <tr>
                         <td class="td1">环境检测</td>
-                        <td class="td1" width="25%">推荐配置</td>
-                        <td class="td1" width="25%">最低要求</td>
-                        <td class="td1" width="25%">当前状态</td>
+                        <td class="td1" width="20%">推荐配置</td>
+                        <td class="td1" width="20%">最低要求</td>
+                        <td class="td1" width="20%">当前状态</td>
                     </tr>
                     @foreach($configData as $config)
                         <tr>
@@ -84,17 +84,19 @@
                 <table width="100%" v-else>
                     <tr>
                         <td class="td1">权限检查</td>
-                        <td class="td1" width="25%">推荐配置</td>
-                        <td class="td1" width="25%">写入</td>
-                        <td class="td1" width="25%">读取</td>
+                        <td class="td1" width="20%">推荐配置</td>
+                        <td class="td1" width="20%">读取</td>
+                        <td class="td1" width="20%">写入</td>
                     </tr>
                     @foreach($files as $file)
                         <tr>
-                            <td>{{$file}}</td>
-                            <td>读写</td>
+                            <td>{{$file['path']}}</td>
+                            <td>{{$file['readable'] && $file['writable'] ? '读写' : '读取'}}</td>
                             <td>
                                 <div class="ls-td">
-                                    @if(is_readable(base_path($file)))
+                                    @if(! $file['readable'])
+                                        无需检测
+                                    @elseif(is_readable(base_path($file['path'])))
                                         <img class="yes" src="/install/images/yes.png" alt="对">
                                     @else
                                         <img class="no" src="/install/images/warring.png" alt="错">
@@ -103,7 +105,9 @@
                             </td>
                             <td>
                                 <div class="ls-td">
-                                    @if(is_writeable(base_path($file)))
+                                    @if(! $file['writable'])
+                                        无需写入
+                                    @elseif(is_writeable(base_path($file['path'])))
                                         <img class="yes" src="/install/images/yes.png" alt="对">
                                     @else
                                         <img class="no" src="/install/images/warring.png" alt="错">

@@ -15,9 +15,9 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use crmeb\exceptions\EntException;
-use crmeb\interfaces\ApiMiddlewareInterface;
-use crmeb\traits\MiddlewareTrait;
+use Tuoluojiang\Open\exceptions\EntException;
+use Tuoluojiang\Open\interfaces\ApiMiddlewareInterface;
+use Tuoluojiang\Open\traits\MiddlewareTrait;
 use Illuminate\Http\Request;
 
 /**

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -40,6 +40,16 @@ class AttendanceArrange extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'group_id'   => 'integer',
+        'uid'        => 'integer',
+        'date'       => 'datetime:Y-m-d H:i:s',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+        'deleted_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     protected $hidden = [
         'deleted_at',
     ];
@@ -58,8 +68,6 @@ class AttendanceArrange extends BaseModel
 
     /**
      * date作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeAttendDate($query, $value): void
     {
@@ -72,17 +80,14 @@ class AttendanceArrange extends BaseModel
 
     /**
      * 考勤时间.
-     * @param mixed $value
      */
     public function getDateAttribute($value): string
     {
-        return $value && ! str_contains($value, '0000-00-00') ? date('Y-m-d', strtotime($value)) : '0000-00-00';
+        return $value && ! str_contains($value, '0000-00-00') ? date('Y-m-d', datetime_timestamp($value)) : '0000-00-00';
     }
 
     /**
      * date作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeDate($query, $value): void
     {
@@ -93,8 +98,6 @@ class AttendanceArrange extends BaseModel
 
     /**
      * date作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeMonth($query, $value): void
     {
@@ -105,8 +108,6 @@ class AttendanceArrange extends BaseModel
 
     /**
      * uid作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeUId($query, $value): void
     {

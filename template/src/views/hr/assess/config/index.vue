@@ -16,12 +16,14 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
+import { roterPre } from '@/settings'
 export default {
   name: 'Index',
   components: {
-    explain: () => import('./components/explain'),
-    process: () => import('./components/process'),
-    plan: () => import('./components/plan')
+    explain: defineAsyncComponent(() => import('./components/explain')),
+    process: defineAsyncComponent(() => import('./components/process')),
+    plan: defineAsyncComponent(() => import('./components/plan'))
   },
   data() {
     return {
@@ -53,13 +55,13 @@ export default {
   padding-bottom: 0;
   margin-bottom: 0;
 }
-/deep/ .el-tabs__header {
+:deep(.el-tabs__header) {
   margin-bottom: 0;
 }
 .form-wrapper {
   position: relative;
 }
-/deep/ .el-tabs__nav-wrap::after {
+:deep(.el-tabs__nav-wrap::after) {
   display: none;
 }
 .right-box {

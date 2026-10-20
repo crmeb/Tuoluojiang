@@ -23,29 +23,22 @@ use PhpCsFixer\Tokenizer\Tokens;
  *
  * @author Dariusz Rumiński <dariusz.ruminski@gmail.com>
  *
+ * @readonly
+ *
  * @internal
  */
 final class TokenizerLinter implements LinterInterface
 {
-    /**
-     * {@inheritdoc}
-     */
     public function isAsync(): bool
     {
         return false;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function lintFile(string $path): LintingResultInterface
     {
         return $this->lintSource(FileReader::createSingleton()->read($path));
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function lintSource(string $source): LintingResultInterface
     {
         try {
@@ -58,7 +51,7 @@ final class TokenizerLinter implements LinterInterface
             Tokens::fromCode($source);
 
             return new TokenizerLintingResult();
-        } catch (\ParseError|\CompileError $e) {
+        } catch (\CompileError|\ParseError $e) {
             return new TokenizerLintingResult($e);
         }
     }

@@ -1,0 +1,107 @@
+# 陀螺匠 OA Docker 编排（单机开发 / 可多实例并行）
+# 通过 .docker.env 中的 INSTANCE_NAME 与 HOST_*_PORT 隔离项目名、容器名、端口与数据卷。
+name: ${INSTANCE_NAME:-tuoluojiang}
+
+services:
+  # PHP + LaravelS 服务
+  php:
+    # 标签带 target，避免 base/ocr 互相覆盖 latest
+    image: ${PHP_IMAGE_NAME:-tuoluojiang-php}:${PHP_IMAGE_TARGET:-ocr}
+    platform: ${PHP_PLATFORM:-linux/amd64}
+    build:
+      context: ..
+      dockerfile: docker/php/Dockerfile
+      # base=无 OCR 轻量镜像；ocr=含 tesseract/ImageMagick 的完整镜像（默认）
+      target: ${PHP_IMAGE_TARGET:-ocr}
+    container_name: ${INSTANCE_NAME:-tuoluojiang}_php
+    restart: unless-stopped
+    ports:
+      - "${HOST_APP_PORT:-20300}:20200"
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+    volumes:
+      - ..:/var/www:delegated
+      - ./php/config/php.ini:/usr/local/etc/php/conf.d/custom.ini:ro
+      - ./php/entrypoint.sh:/usr/local/bin/entrypoint.sh
+    working_dir: /var/www
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "php -r 'exit(@fsockopen(\"127.0.0.1\",20200) ? 0 : 1);'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+    # Linux 下让容器可通过 host.docker.internal 访问宿主机 MySQL/服务
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - app_network
+
+  # MySQL 服务（默认仅绑 127.0.0.1，避免公网直连；远程用 SSH 隧道）
+  mysql:
+    image: m.daocloud.io/docker.io/library/mysql:8.0
+    container_name: ${INSTANCE_NAME:-tuoluojiang}_mysql
+    restart: unless-stopped
+    ports:
+      - "${HOST_PUBLISH_BIND:-127.0.0.1}:${HOST_MYSQL_PORT:-3376}:3306"
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-123456}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-tuoluojiang}
+      - MYSQL_ROOT_HOST=${MYSQL_ROOT_HOST:-%}
+    volumes:
+      - ./mysql/config/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+      - mysql_data:/var/lib/mysql
+      - ${MYSQL_LOG_PATH:-./mysql/logs}:/var/log/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --explicit_defaults_for_timestamp=true
+      - --lower_case_table_names=1
+      - --max_allowed_packet=128M
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+    networks:
+      - app_network
+
+  # Redis Stack（含 RediSearch；默认仅绑 127.0.0.1，远程用 SSH 隧道）
+  redis:
+    image: m.daocloud.io/docker.io/redis/redis-stack-server:7.4.0-v3
+    container_name: ${INSTANCE_NAME:-tuoluojiang}_redis
+    restart: unless-stopped
+    ports:
+      - "${HOST_PUBLISH_BIND:-127.0.0.1}:${HOST_REDIS_PORT:-6389}:6379"
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - REDIS_ARGS=--dir /data --appendonly yes --appendfsync everysec --bind 0.0.0.0 --port 6379 --databases 16
+    volumes:
+      - ${REDIS_DATA_PATH:-./redis/data}:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    name: ${INSTANCE_NAME:-tuoluojiang}_mysql_data
+    driver: local
+  redis_data:
+    name: ${INSTANCE_NAME:-tuoluojiang}_redis_data
+    driver: local

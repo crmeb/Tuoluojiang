@@ -21,13 +21,15 @@
     <UserDetails ref="userDetails" :actionType="actionType" :tabtypes="tabtypes" @getList="getList" />
 
     <!-- 邀请链接 -->
-    <el-dialog :before-close="handleClose" :title="linkTitle" :visible.sync="linkShow" top="20%" width="560px">
+    <el-dialog :before-close="handleClose" :title="linkTitle" v-model="linkShow" top="20%" width="560px">
       <span>{{ linkTable }}</span>
       <div class="tips">提示：{{ linkContent }}</div>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="linkShow = false">取 消</el-button>
-        <el-button type="primary" @click="copy">复制邀请链接</el-button>
-      </span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="linkShow = false">取 消</el-button>
+          <el-button type="primary" @click="copy">复制邀请链接</el-button>
+        </span>
+      </template>
     </el-dialog>
 
     <!-- 离职弹窗 -->
@@ -43,11 +45,12 @@
 </template>
 
 <script>
-import { perfectCard, deleteCard, formalCard, quitCard, importCardApi, getTemp, getInterview } from '@/api/enterprise'
-import file from '@/utils/file'
-import Vue from 'vue'
-
-Vue.use(file)
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import modalForm from '@/libs/modal-form.ts'
+import { perfectCard, deleteCard, formalCard, quitCard, importCardApi, getTemp, getInterview } from '@/api/enterprise.ts'
+import { fileLinkDownLoad } from '@/utils/file.ts'
+import { getStorageJson } from '@/utils/storage.ts'
 export default {
   props: {
     componentName: {
@@ -83,7 +86,7 @@ export default {
           label: '离职时间：',
           placeholder: '选择时间',
           key: 'quit_time',
-          format: 'yyyy-MM-dd'
+          format: 'YYYY-MM-DD'
         },
         {
           type: 'input',
@@ -152,7 +155,7 @@ export default {
 
     // 删除: 单个
     onDelete(data) {
-      this.$modalSure(this.$t('business.message10')).then(() => {
+      modalSure('你确定要删除该员工吗').then(() => {
         deleteCard(data.id).then((res) => {
           this.$refs.dynamic.getList()
         })
@@ -166,7 +169,7 @@ export default {
 
     // 点击转正
     onWorker(data) {
-      this.$modalForm(formalCard(data.id)).then(({ message }) => {
+      modalForm(formalCard(data.id)).then(({ message }) => {
         this.getList()
       })
     },
@@ -193,7 +196,7 @@ export default {
     // 导出上传模板
     async exportTemplate() {
       const result = await getTemp()
-      this.fileLinkDownLoad(result.data.url, '员工档案导入模板.xlsx')
+      fileLinkDownLoad(result.data.url, '员工档案导入模板.xlsx')
     },
 
     // 选择交接人员关闭
@@ -205,7 +208,6 @@ export default {
     changeMastart(data) {
       this.userList = data
     },
-    
 
     // 打开邀请链接弹窗
     async invitationFn(data, type) {
@@ -262,26 +264,26 @@ export default {
     // 复制邀请链接
     copy() {
       const oInput = document.createElement('input')
-      const name = JSON.parse(localStorage.getItem('enterprise'))
+      const name = getStorageJson('enterprise', {})
       let value = ''
 
       if (this.tabtypes == 0) {
         value =
           '【' +
-          name.enterprise_name +
+          (name.enterprise_name || '') +
           '】邀请您填写求职登记表' +
           ',' +
           '请您点击链接使用手机号验证登录' +
           this.url +
           ' 感谢您的配合，我们期待您的加入！'
       } else if (this.tabtypes === 1 && this.dataType === 1) {
-        let realName = JSON.parse(localStorage.getItem('userInfo'))
+        let realName = getStorageJson('userInfo', {})
         value =
           '【' +
-          realName.real_name +
+          (realName.real_name || '') +
           '】邀请您加入' +
           '【' +
-          name.enterprise_name +
+          (name.enterprise_name || '') +
           '】' +
           '自动化办公系统，请您点击链接使用手机号验证码登录，同意加入企业并完善个人档案' +
           this.url +
@@ -292,7 +294,7 @@ export default {
           this.copyName +
           '】邀请您加入' +
           '【' +
-          name.enterprise_name +
+          (name.enterprise_name || '') +
           '】' +
           '自动化办公系统，请您点击链接使用手机号验证码登录，同意加入企业并完善个人档案' +
           this.url +
@@ -306,7 +308,7 @@ export default {
           '请点击链接使用手机号验证登录' +
           this.url +
           ' 在「个人简历」中完善信息之后，发送给【' +
-          name.enterprise_name +
+          (name.enterprise_name || '') +
           '】'
       }
 
@@ -341,28 +343,28 @@ export default {
   },
 
   components: {
-    Table: () => import('./components/table.vue'),
+    Table: defineAsyncComponent(() => import('./components/table.vue')),
     // 在职员工
-    jobEmployees: () => import('./components/index/employees.vue'),
+    jobEmployees: defineAsyncComponent(() => import('./components/index/employees.vue')),
     // 未入职员工
-    notNewEmployees: () => import('./components/index/notEmployees.vue'),
+    notNewEmployees: defineAsyncComponent(() => import('./components/index/notEmployees.vue')),
     // 离职员工
-    resignedEmployee: () => import('./components/index/quitEmployees.vue'),
+    resignedEmployee: defineAsyncComponent(() => import('./components/index/quitEmployees.vue')),
     // 档案信息弹窗
-    UserDetails: () => import('./components/userDetails.vue'),
+    UserDetails: defineAsyncComponent(() => import('./components/userDetails.vue')),
 
-    oaDialog: () => import('@/components/form-common/dialog-form'),
+    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form')),
     // 导入
-    importExcel: () => import('@/components/common/importExcel')
+    importExcel: defineAsyncComponent(() => import('@/components/common/importExcel'))
   }
 }
 </script>
 
 <style lang="scss" scoped>
-/deep/ .el-form-item__content {
+:deep(.el-form-item__content) {
   flex: 1;
 }
-/deep/ .input-with-select .el-input-group__prepend {
+:deep(.input-with-select .el-input-group__prepend) {
   background-color: #fff;
 }
 .tips {
@@ -438,14 +440,14 @@ export default {
   font-size: 11px;
   color: #666;
 }
-/deep/ .el-page-header__title {
+:deep(.el-page-header__title) {
   font-size: 13px;
 }
-/deep/ .el-page-header__content {
+:deep(.el-page-header__content) {
   font-size: 17px;
   font-weight: 500;
 }
-/deep/.el-dialog__body {
+:deep(.el-dialog__body) {
   padding-bottom: 0;
 }
 </style>

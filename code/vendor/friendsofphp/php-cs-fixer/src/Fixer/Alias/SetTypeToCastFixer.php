@@ -24,9 +24,6 @@ use PhpCsFixer\Tokenizer\Tokens;
 
 final class SetTypeToCastFixer extends AbstractFunctionReferenceFixer
 {
-    /**
-     * {@inheritdoc}
-     */
     public function getDefinition(): FixerDefinitionInterface
     {
         return new FixerDefinition(
@@ -48,24 +45,18 @@ settype($bar, "null");
     /**
      * {@inheritdoc}
      *
-     * Must run after NoBinaryStringFixer.
+     * Must run after NoBinaryStringFixer, NoUselessConcatOperatorFixer.
      */
     public function getPriority(): int
     {
         return 0;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function isCandidate(Tokens $tokens): bool
     {
         return $tokens->isAllTokenKindsFound([T_CONSTANT_ENCAPSED_STRING, T_STRING, T_VARIABLE]);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function applyFix(\SplFileInfo $file, Tokens $tokens): void
     {
         $map = [
@@ -135,7 +126,7 @@ settype($bar, "null");
 
             // --- Test type ------------------------------
 
-            $type = strtolower(trim($tokens[$secondArgumentStart]->getContent(), '"\'"'));
+            $type = strtolower(trim($tokens[$secondArgumentStart]->getContent(), '"\''));
 
             if ('null' !== $type && !isset($map[$type])) {
                 continue; // we don't know how to map
@@ -156,13 +147,16 @@ settype($bar, "null");
             );
 
             if ('null' === $type) {
-                $this->findSettypeNullCall($tokens, $functionNameIndex, $argumentToken);
+                $this->fixSettypeNullCall($tokens, $functionNameIndex, $argumentToken);
             } else {
                 $this->fixSettypeCall($tokens, $functionNameIndex, $argumentToken, new Token($map[$type]));
             }
         }
     }
 
+    /**
+     * @return list<list<int>>
+     */
     private function findSettypeCalls(Tokens $tokens): array
     {
         $candidates = [];
@@ -225,7 +219,7 @@ settype($bar, "null");
         $tokens->removeTrailingWhitespace($functionNameIndex + 6); // 6 = number of inserted tokens -1 for offset correction
     }
 
-    private function findSettypeNullCall(
+    private function fixSettypeNullCall(
         Tokens $tokens,
         int $functionNameIndex,
         Token $argumentToken

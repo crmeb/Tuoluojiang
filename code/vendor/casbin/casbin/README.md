@@ -1,8 +1,7 @@
 PHP-Casbin
 ====
 
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/php-casbin/php-casbin/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/php-casbin/php-casbin/?branch=master)
-[![Default](https://github.com/php-casbin/php-casbin/workflows/build/badge.svg?branch=master)](https://github.com/php-casbin/php-casbin/actions)
+[![PHPUnit](https://github.com/php-casbin/php-casbin/actions/workflows/phpunit.yml/badge.svg)](https://github.com/php-casbin/php-casbin/actions/workflows/phpunit.yml)
 [![Coverage Status](https://coveralls.io/repos/github/php-casbin/php-casbin/badge.svg)](https://coveralls.io/github/php-casbin/php-casbin)
 [![Latest Stable Version](https://poser.pugx.org/casbin/casbin/v/stable)](https://packagist.org/packages/casbin/casbin)
 [![Total Downloads](https://poser.pugx.org/casbin/casbin/downloads)](https://packagist.org/packages/casbin/casbin)
@@ -25,7 +24,7 @@ production-ready | production-ready | production-ready | production-ready
 [![python](https://casbin.org/img/langs/python.png)](https://github.com/casbin/pycasbin) | [![dotnet](https://casbin.org/img/langs/dotnet.png)](https://github.com/casbin/Casbin.NET) | [![c++](https://casbin.org/img/langs/cpp.png)](https://github.com/casbin/casbin-cpp) | [![rust](https://casbin.org/img/langs/rust.png)](https://github.com/casbin/casbin-rs)
 ----|----|----|----
 [PyCasbin](https://github.com/casbin/pycasbin) | [Casbin.NET](https://github.com/casbin/Casbin.NET) | [Casbin-CPP](https://github.com/casbin/casbin-cpp) | [Casbin-RS](https://github.com/casbin/casbin-rs)
-production-ready | production-ready | beta-test | production-ready
+production-ready | production-ready | production-ready | production-ready
 
 ## Installation
 
@@ -190,11 +189,11 @@ Priority | [priority_model.conf](https://github.com/php-casbin/php-casbin/blob/m
 
 ## Middlewares
 
-Authz middlewares for web frameworks: https://casbin.org/docs/en/middlewares
+Authz middlewares for web frameworks: https://casbin.org/docs/middlewares
 
 ## Our adopters
 
-https://casbin.org/docs/en/adopters
+https://casbin.org/docs/adopters
 
 ## Contributors
 
@@ -230,5 +229,5 @@ This project is licensed under the [Apache 2.0 license](LICENSE).
 
 If you have any issues or feature requests, please contact us. PR is welcomed.
 - https://github.com/php-casbin/php-casbin/issues
-- techlee@qq.com
+- leeqvip@gmail.com
 - Tencent QQ group: [546057381](//shang.qq.com/wpa/qunwpa?idkey=8ac8b91fc97ace3d383d0035f7aa06f7d670fd8e8d4837347354a31c18fac885)

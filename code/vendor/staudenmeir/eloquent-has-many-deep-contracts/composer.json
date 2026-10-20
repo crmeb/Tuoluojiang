@@ -1,0 +1,22 @@
+{
+    "name": "staudenmeir/eloquent-has-many-deep-contracts",
+    "description": "Contracts for staudenmeir/eloquent-has-many-deep",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jonas Staudenmeir",
+            "email": "mail@jonas-staudenmeir.de"
+        }
+    ],
+    "require": {
+        "php": "^8.0.2",
+        "illuminate/database": "^9.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Staudenmeir\\EloquentHasManyDeepContracts\\": "src/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

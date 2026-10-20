@@ -13,6 +13,7 @@
 import echarts from 'echarts'
 
 export default {
+  emits: ['pieChange'],
   name: 'Index',
   props: {
     // 图表容器样式配置
@@ -38,9 +39,9 @@ export default {
     }
   },
   computed: {
-    // 生成随机图表容器ID，避免多实例冲突
+    // 使用组件实例唯一ID生成容器ID，避免多实例冲突
     echarts() {
-      return 'echarts' + Math.ceil(Math.random() * 100)
+      return 'echarts' + this.$.uid
     }
   },
   watch: {
@@ -60,7 +61,7 @@ export default {
       window.addEventListener('resize', this.wsFunc)
     })
   },
-  beforeDestroy() {
+  beforeUnmount() {
     // 组件销毁前清理资源
     window.removeEventListener('resize', this.wsFunc)
     if (!this.myChart) {
@@ -73,7 +74,7 @@ export default {
   methods: {
     // 窗口大小变化处理函数
     wsFunc() {
-      this.myChart.resize()
+      this.myChart?.resize()
     },
 
     // 初始化并设置图表
@@ -118,8 +119,10 @@ export default {
           })
           // 查找对应图例项
           index = option.series[0].data.findIndex((item) => item.name === e.name)
-          e.id = option.series[0].data[index].id
-
+          if (index !== -1) {
+            e.id = option.series[0].data[index].id
+          }
+          
           // 触发自定义事件
           that.$emit('pieChange', e)
         })

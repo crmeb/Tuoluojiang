@@ -1,20 +1,10 @@
 <!-- 新增考勤设置页面 -->
 <template>
-  <div class="divBox">
-    <el-card :body-style="{ padding: '14px' }" class="station-header">
-      <el-row>
-        <el-col :span="24">
-          <el-page-header :content="type == 'add' ? '新增考勤组页面' : '编辑考勤组页面'">
-            <div slot="title" @click="backFn">
-              <i class="el-icon-arrow-left"></i>
-              返回
-            </div>
-          </el-page-header>
-        </el-col>
-      </el-row>
-    </el-card>
+  <BaseContainer class="attendance-form none-padding">
+    <!-- 顶部：返回 + 标题 -->
+    <FormPageHeader :title="type == 'add' ? '新增考勤组页面' : '编辑考勤组页面'" @back="backFn" />
 
-    <el-card class="card-box mt14">
+    <div class="attendance-form__body">
       <!-- 步骤条 -->
       <div class="step">
         <span :class="activeIndex == 1 ? 'active' : ''" class="public">1</span>
@@ -41,38 +31,44 @@
           >
           </el-alert>
         </div>
-        <el-form ref="ruleForm" class="demo-ruleForm" label-width="120px" @submit.native.prevent>
+        <el-form ref="ruleForm" class="demo-ruleForm" label-width="120px" @submit.prevent>
           <!-- 第一步 -->
           <template v-if="activeIndex == 1">
             <div class="from-item-title mb15">
-              <span>{{ $t('setting.info.essentialinformation') }}</span>
+              <span>基本信息</span>
             </div>
             <!-- 基本信息 -->
             <div class="form-box">
               <div class="form-item">
                 <el-form-item>
-                  <span slot="label"><span class="color-tab">* </span>考勤组名称：</span>
-                  <el-input v-model="from.name" clearable placeholder="请输入考勤组名称" size="small" />
+                  <template #label>
+                    <span><span class="color-tab">* </span>考勤组名称：</span>
+                  </template>
+                  <el-input v-model="from.name" clearable placeholder="请输入考勤组名称" />
                 </el-form-item>
               </div>
               <div class="form-item">
                 <el-form-item>
-                  <span slot="label"><span class="color-tab">* </span>考勤人员：</span>
+                  <template #label>
+                    <span><span class="color-tab">* </span>考勤人员：</span>
+                  </template>
                   <el-radio-group v-model="from.type">
-                    <el-radio class="mb14" label="1">按部门添加</el-radio>
+                    <el-radio class="mb14" label="1" value="1">按部门添加</el-radio>
                     <span class="tips"
                       >用于本部门所有人员均需参加考勤的情况；若所选择的部门有新员工加入，则该人员自动加入考勤人员之中</span
                     >
-                    <el-radio label="0">按人员添加</el-radio
+                    <el-radio label="0" value="0">按人员添加</el-radio
                     ><span class="tips"> 用于特殊个例人员需要参加考勤的情况</span>
                   </el-radio-group>
                 </el-form-item>
               </div>
               <div class="form-item">
                 <el-form-item>
-                  <span slot="label"
-                    ><span class="color-tab">* </span>需要考勤{{ from.type == 1 ? '部门' : '人员' }}：</span
-                  >
+                  <template #label>
+                    <span
+                      ><span class="color-tab">* </span>需要考勤{{ from.type == 1 ? '部门' : '人员' }}：</span
+                    >
+                  </template>
                   <select-member
                     v-if="from.type == 0"
                     :placeholder="`选择需要考勤人员`"
@@ -96,7 +92,9 @@
               </div>
               <div class="form-item">
                 <el-form-item>
-                  <span slot="label">排除考勤成员：</span>
+                  <template #label>
+                    <span>排除考勤成员：</span>
+                  </template>
                   <select-member
                     :placeholder="`请选择人员`"
                     :value="filterList || []"
@@ -110,7 +108,9 @@
 
               <div class="form-item">
                 <el-form-item>
-                  <span slot="label"><span class="color-tab">* </span>考勤组管理员：</span>
+                  <template #label>
+                    <span><span class="color-tab">* </span>考勤组管理员：</span>
+                  </template>
                   <select-member
                     :placeholder="`请选择人员`"
                     :value="adminList || []"
@@ -133,13 +133,15 @@
             <div class="form-box">
               <div class="form-item">
                 <el-form-item>
-                  <span slot="label"><span class="color-tab">* </span>考勤班次：</span>
+                  <template #label>
+                    <span><span class="color-tab">* </span>考勤班次：</span>
+                  </template>
                   <div class="select plan-footer-one" @click="openShift">
                     <div class="flex-box">
                       <div
                         v-for="(item, index) in shiftsList"
                         :key="index"
-                        :style="{ backgroundColor: item.color }"
+                        :style="{ color: item.color }"
                         class="shift-tag"
                       >
                         {{ item.name }}
@@ -162,31 +164,78 @@
           <!-- 第二步 -->
           <template v-if="activeIndex == 2">
             <div class="from-item-title mb10 mt14">
+              <span>选择考勤方式</span>
+            </div>
+            <div class="form-box">
+              <div class="form-item">
+                <el-form-item label-width="100px">
+                  <template #label>
+                    <span>考勤方式：</span>
+                  </template>
+                  <el-checkbox v-model="from.is_map">地理范围</el-checkbox>
+                  <el-checkbox v-model="from.is_wifi"> WIFI信息 </el-checkbox>
+                  <el-tooltip
+                    class="item"
+                    effect="dark"
+                    content="WIFI 打卡仅在 App 端生效，H5 端不生效"
+                    placement="top"
+                  >
+                    <i class="el-icon-info"></i>
+                  </el-tooltip>
+                </el-form-item>
+                <el-form-item label-width="100px" v-if="from.is_wifi">
+                  <template #label>
+                    <span>WIFI信息：</span>
+                  </template>
+                  <div class="wifi-info-list">
+                    <div v-for="(item, index) in from.wifi_data" :key="index">
+                      <el-input v-model="item.name" style="width: 180px" placeholder="请输入WIFI名称" />
+                      <el-input
+                        v-model="item.mac"
+                        style="width: 180px"
+                        placeholder="请输入路由器 mac 地址"
+                      />
+                      <el-button type="danger" @click="deleteWifiFn(index)">删除</el-button>
+                    </div>
+                    <el-button type="primary" @click="addWifiFn">新增WIFI信息</el-button>
+                  </div>
+                </el-form-item>
+              </div>
+            </div>
+            <div class="from-item-title mb10 mt14" v-if="from.is_map">
               <span>选择考勤范围</span>
             </div>
-            <div class="mapBox">
+            <div class="mapBox" v-if="from.is_map">
               <div class="map">
                 <mapContainer :positionInfo="from" @select="selectMap"></mapContainer>
               </div>
               <div class="map pl60">
-                <el-form class="invoice-body" label-width="110px">
+                <el-form class="invoice-body" label-width="110px" @submit.prevent>
                   <div class="form-item">
                     <el-form-item>
-                      <span slot="label">考勤详细地址：</span>
+                      <template #label>
+                        <span>考勤详细地址：</span>
+                      </template>
                       <p>{{ from.address }}</p>
                     </el-form-item>
                   </div>
                   <div class="form-item">
                     <el-form-item>
-                      <span slot="label">经纬度坐标：</span>
+                      <template #label>
+                        <span>经纬度坐标：</span>
+                      </template>
                       <p>{{ from.lng }} &emsp;{{ from.lat }}</p>
                     </el-form-item>
                   </div>
                   <div class="form-item">
                     <el-form-item>
-                      <span slot="label">有效范围：</span>
-                      <el-input id="tipinput" v-model="from.effective_range" size="small" style="width: 100px">
-                        <i slot="suffix" style="font-style: normal; margin-right: 10px">米</i></el-input
+                      <template #label>
+                        <span>有效范围：</span>
+                      </template>
+                      <el-input id="tipinput" v-model="from.effective_range" style="width: 100px">
+                        <template #suffix>
+                          <i style="font-style: normal; margin-right: 10px">米</i>
+                        </template></el-input
                       >
                       <!-- <p>{{ from.effective_range }}米</p> -->
                     </el-form-item>
@@ -197,12 +246,13 @@
                   <span>设置地点名称</span>
                 </div>
                 <el-form-item>
-                  <span slot="label"><span class="color-tab">* </span>考勤地点名称：</span>
+                  <template #label>
+                    <span><span class="color-tab">* </span>考勤地点名称：</span>
+                  </template>
                   <el-input
                     v-model="from.location_name"
                     clearable
                     placeholder="请输入地点"
-                    size="small"
                     style="width: 350px"
                   />
                   <div>
@@ -222,17 +272,21 @@
             <div v-if="from.repair_allowed" class="form-box">
               <div class="form-item">
                 <el-form-item label-width="100px">
-                  <span slot="label">补卡类型：</span>
+                  <template #label>
+                    <span>补卡类型：</span>
+                  </template>
                   <el-checkbox-group v-model="from.repair_type">
-                    <el-checkbox label="1">缺卡</el-checkbox>
-                    <el-checkbox label="2">迟到</el-checkbox>
-                    <el-checkbox label="3">严重迟到</el-checkbox>
-                    <el-checkbox label="4">早退</el-checkbox>
-                    <el-checkbox label="5">地点异常</el-checkbox>
+                    <el-checkbox label="1" value="1">缺卡</el-checkbox>
+                    <el-checkbox label="2" value="2">迟到</el-checkbox>
+                    <el-checkbox label="3" value="3">严重迟到</el-checkbox>
+                    <el-checkbox label="4" value="4">早退</el-checkbox>
+                    <el-checkbox label="5" value="5">地点异常</el-checkbox>
                   </el-checkbox-group>
                 </el-form-item>
                 <el-form-item label-width="100px">
-                  <span slot="label">补卡时间：</span>
+                  <template #label>
+                    <span>补卡时间：</span>
+                  </template>
                   <el-checkbox v-model="from.is_limit_time">限制补卡时间</el-checkbox>
                   <div v-if="from.is_limit_time" class="fz12">
                     可申请过去
@@ -247,7 +301,9 @@
                   </div>
                 </el-form-item>
                 <el-form-item label-width="100px">
-                  <span slot="label">补卡次数：</span>
+                  <template #label>
+                    <span>补卡次数：</span>
+                  </template>
                   <el-checkbox v-model="from.is_limit_number">限制补卡次数</el-checkbox>
                   <div v-if="from.is_limit_number" class="fz12">
                     每人每月补卡次数上限
@@ -311,23 +367,23 @@
               </el-table-column>
               <el-table-column label="周期天数" prop="cycle"> </el-table-column>
               <el-table-column fixed="right" label="操作" width="180">
-                <template slot-scope="scope">
-                  <el-button type="text" @click="editFn(scope.row)">编辑</el-button>
-                  <el-button type="text" @click="deleteFn(scope.row)">删除</el-button>
+                <template #default="scope">
+                  <el-button type="primary" link @click="editFn(scope.row)">编辑</el-button>
+                  <el-button type="primary" link @click="deleteFn(scope.row)">删除</el-button>
                 </template>
               </el-table-column>
             </el-table>
           </template>
         </el-form>
       </div>
-    </el-card>
+    </div>
 
     <!-- 底部按钮 -->
-    <div class="cr-bottom-button">
-      <el-button v-if="activeIndex !== 1" size="small" @click="activeIndex = activeIndex - 1">上一步</el-button>
-      <el-button v-if="activeIndex !== 4" size="small" type="primary" @click="nextStep()">下一步</el-button>
-      <el-button v-if="activeIndex == 4" size="small" type="primary" @click="submit()">保存</el-button>
-    </div>
+    <FormPageFooter>
+      <el-button v-if="activeIndex !== 1" @click="activeIndex = activeIndex - 1">上一步</el-button>
+      <el-button v-if="activeIndex !== 4" type="primary" @click="nextStep()">下一步</el-button>
+      <el-button v-if="activeIndex == 4" type="primary" @click="submit()">保存</el-button>
+    </FormPageFooter>
 
     <!-- 新增排班周期 -->
     <add-cycle ref="addCycle" @cycleList="getCycleList"></add-cycle>
@@ -335,11 +391,17 @@
     <shift-list ref="shiftList" @selected="selected"></shift-list>
     <!-- 打开未参与考勤组人员弹窗 -->
     <not-join ref="notJoin" @otherFiltersFn="otherFiltersFn"></not-join>
-  </div>
+  </BaseContainer>
 </template>
 <script>
-import { roterPre } from '@/settings'
-import { mapGetters } from 'vuex'
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { roterPre } from '@/settings.ts'
+import { mapState } from 'pinia'
+import { useUserStore } from '@/stores/user.ts'
+import BaseContainer from '@/components/BaseContainer/index.vue'
+import FormPageHeader from '@/components/FormPageHeader/index.vue'
+import FormPageFooter from '@/components/FormPageFooter/index.vue'
 import {
   repeatCheckApi,
   saveAttendanceGroup,
@@ -348,19 +410,22 @@ import {
   attendanceGroupDetailsApi,
   putAttendanceGroup,
   repeatCheckMemberApi
-} from '@/api/config'
+} from '@/api/config.ts'
 export default {
-  name: 'newAttendance',
+  name: 'AddContent',
   components: {
-    mapContainer: () => import('@/components/common/mapContainer'),
-    addCycle: () => import('./components/addCycle'),
-    selectDepartment: () => import('@/components/form-common/select-department'),
-    selectMember: () => import('@/components/form-common/select-member'),
-    shiftList: () => import('./components/shiftList'),
-    notJoin: () => import('./components/notJoin')
+    BaseContainer,
+    FormPageHeader,
+    FormPageFooter,
+    mapContainer: defineAsyncComponent(() => import('@/components/common/mapContainer')),
+    addCycle: defineAsyncComponent(() => import('./components/addCycle')),
+    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department')),
+    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
+    shiftList: defineAsyncComponent(() => import('./components/shiftList')),
+    notJoin: defineAsyncComponent(() => import('./components/notJoin'))
   },
   computed: {
-    ...mapGetters(['userInfo'])
+    ...mapState(useUserStore, ['userInfo'])
   },
   data() {
     return {
@@ -386,10 +451,13 @@ export default {
         limit_time: 30,
         is_limit_number: true,
         limit_number: 3,
+        is_map: false,
         is_photo: true,
+        is_wifi: false,
         is_external: true,
         is_external_note: true,
-        is_external_photo: true
+        is_external_photo: true,
+        wifi_data: []
       },
       shiftsList: [], // 选中班次列表
       userList: [], // 考勤组成员
@@ -414,22 +482,23 @@ export default {
     } else {
       // this.repeatCheckMember()
       this.type = 'add'
-      let data = []
-      data.push(this.userInfo.card)
-      if (data.length > 0) {
-        data.map((item) => {
-          let val = {
-            name: item.name,
-            avatar: item.avatar,
-            id: item.id
-          }
-          this.adminList.push(val)
-        })
+      if (this.userInfo.card) {
+        const { name, avatar, id } = this.userInfo.card;
+        this.adminList.push({ id, name, avatar });
       }
     }
   },
 
   methods: {
+    deleteWifiFn(index) {
+      this.from.wifi_data.splice(index, 1)
+    },
+    addWifiFn() {
+      this.from.wifi_data.push({
+        name: '',
+        mac: ''
+      })
+    },
     otherFiltersFn(data) {
       this.from.other_filters = data
     },
@@ -501,8 +570,12 @@ export default {
         this.from.is_limit_number = res.data.is_limit_number == 1 ? true : false
         this.from.is_limit_time = res.data.is_limit_time == 1 ? true : false
         this.from.is_photo = res.data.is_photo == 1 ? true : false
+        this.from.is_map = res.data.is_map == 1 ? true : false
+        this.from.is_wifi = res.data.is_wifi == 1 ? true : false
         this.from.limit_number = res.data.limit_number
         this.from.limit_time = res.data.limit_time
+        this.from.wifi_data = res.data.wifi
+        this.from.repair_allowed = res.data.repair_allowed == 1 ? true : false
         let members = []
         members = res.data.members.map((item) => item.id)
         repeatCheckApi({
@@ -545,24 +618,17 @@ export default {
     nextStep() {
       if (this.activeIndex == 1) {
         if (this.frames.length !== 0 && this.from.type == '1') {
-          this.frames.map((item) => {
-            this.from.members.push(item.id)
-          })
+          this.from.members = this.frames.map((item) => item.id)
         }
         if (this.userList.length !== 0 && this.from.type == '0') {
-          this.userList.map((item) => {
-            this.from.members.push(item.value)
-          })
+          this.from.members = this.userList.map((item) => item.value)
         }
         if (this.adminList.length !== 0) {
-          this.adminList.map((item) => {
-            this.from.admins.push(item.value)
-          })
+          this.from.admins = this.adminList.map((item) => item.value)
         }
-        if (this.shiftsList.length !== 0)
-          this.shiftsList.map((item) => {
-            this.from.shifts.push(item.id)
-          })
+        if (this.shiftsList.length !== 0) {
+          this.from.shifts = this.shiftsList.map((item) => item.id)
+        }
         let set = new Set(this.from.shifts)
         this.from.shifts = Array.from(set)
         if (!this.from.name) return this.$message.error('请输入考勤组名称')
@@ -574,6 +640,9 @@ export default {
         this.from.step = 'one'
         this.saveFn(this.from)
       } else if (this.activeIndex == 2) {
+        if (!this.from.is_map && !this.from.is_wifi) {
+          return this.$message.error('请至少选择一种考勤方式')
+        }
         this.from.step = 'two'
         this.saveFn(this.from)
       } else if (this.activeIndex == 3) {
@@ -593,15 +662,33 @@ export default {
 
     // 保存接口
     async saveFn(data) {
+      const updateCycleList = () => {
+        this.$refs.addCycle.getList()
+      }
+
       if (this.activeIndex === 1 && this.type === 'add') {
         const res = await saveAttendanceGroup(data)
         if (res.status === 200) {
           this.id = res.data.id
+          this.type = 'edit'
           this.activeIndex = this.activeIndex + 1
+          this.$route.query.id = this.id
+          updateCycleList()
         }
       } else {
+        let wifi_data = []
+        if (data.is_wifi) {
+          wifi_data = data.wifi_data.filter((item) => item.name && item.mac)
+          if (wifi_data.length <= 0) {
+            return this.$message.error('请至少输入一条wifi配置!')
+          }
+        }
         const res = await putAttendanceGroup(this.id, data)
+        if (wifi_data.length > 0) {
+          data.wifi_data = wifi_data
+        }
         if (res.status === 200) {
+          this.activeIndex === 1 && updateCycleList()
           this.activeIndex = this.activeIndex + 1
         }
       }
@@ -634,7 +721,7 @@ export default {
     },
 
     deleteFn(val) {
-      this.$modalSure('你确定要删除这条数据吗').then(() => {
+      modalSure('你确定要删除这条数据吗').then(() => {
         deleteGroupListApi(val.id).then((res) => {
           this.getCycleList()
         })
@@ -722,13 +809,6 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-.cr-bottom-button {
-  position: fixed;
-  left: -20px;
-  right: 0;
-  bottom: 0;
-  width: calc(100% + 220px);
-}
 .pl60 {
   padding-top: 20px;
 }
@@ -746,18 +826,18 @@ export default {
   font-size: 12px;
   color: #909399;
 }
-/deep/ .el-radio {
+:deep(.el-radio) {
   margin-right: 10px;
 }
-/deep/ .el-radio-group {
+:deep(.el-radio-group) {
   // margin-top: 10px;
 }
 
 .invoice-body {
-  /deep/ .el-form-item {
+  :deep(.el-form-item) {
     margin-bottom: 0;
   }
-  /deep/ .el-form-item__label {
+  :deep(.el-form-item__label) {
     font-size: 12px !important;
     font-weight: 400;
     color: #909399 !important;
@@ -772,13 +852,16 @@ export default {
     line-height: 18px;
   }
 }
-.card-box {
-  height: calc(100vh - 201px);
-  overflow-y: scroll;
+.attendance-form__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px;
   font-size: 13px;
   font-family: PingFangSC-Regular, PingFang SC;
   font-weight: 400;
   color: #303133;
+
   .main {
     width: 800px;
     margin: 0 auto;
@@ -810,19 +893,11 @@ export default {
     font-weight: 700;
     background-color: #1890ff;
     font-family: PingFangSC-Semibold, PingFang SC;
-
-    /deep/ .el-input--medium {
-      font-size: 20px;
-
-      .el-input__inner {
-        border: none;
-      }
-    }
   }
 }
 
 .el-icon-info {
-  color: #1890ff;
+  color: #909399;
 }
 .add-row {
   cursor: pointer;
@@ -836,45 +911,39 @@ export default {
   margin-bottom: 10px;
 }
 
-/deep/ .el-icon-back {
-  display: none;
-}
 .form-box {
   .form-item {
     width: 100%;
     margin-bottom: 20px;
-    /deep/ .el-form-item {
+    :deep(.el-form-item) {
       margin-bottom: 0;
     }
-    /deep/.el-checkbox__input.is-checked + .el-checkbox__label {
+    :deep(.el-checkbox__input.is-checked + .el-checkbox__label) {
       color: #303133;
     }
-    /deep/ .el-form-item__label {
+    :deep(.el-form-item__label) {
       font-size: 13px;
       font-family: PingFangSC-Regular, PingFang SC;
       font-weight: 400;
       color: #303133;
     }
 
-    /deep/ .el-input--small .el-input__inner {
+    :deep(.el-input .el-input__inner) {
       font-size: 12px;
     }
-    /deep/.el-form-item--medium .el-radio {
-      line-height: 0;
-    }
 
-    /deep/ .el-form-item__content {
+    :deep(.el-form-item__content) {
       width: calc(100% - 110px);
     }
-    /deep/ .el-select {
+    :deep(.el-select) {
       width: 100%;
     }
-    /deep/ .el-textarea__inner {
+    :deep(.el-textarea__inner) {
       resize: none;
     }
   }
 }
-/deep/ .el-checkbox__label {
+:deep(.el-checkbox__label) {
   font-size: 13px;
   font-family: PingFangSC-Regular, PingFang SC;
   font-weight: 400;
@@ -905,7 +974,6 @@ export default {
   display: inline;
   font-size: 12px;
   color: #909399;
-  font-size: 400 !important;
 }
 .fz12 {
   font-size: 12px;
@@ -944,7 +1012,7 @@ export default {
 .step-text {
   margin-left: 8px;
   margin-right: 8px;
-  font-size: 16px;
+  font-size: 14px;
   font-family: PingFangSC-Regular, PingFang SC;
   font-weight: 400;
   cursor: default;
@@ -972,15 +1040,12 @@ export default {
   margin-left: 8px;
   // cursor: pointer;
 }
-/deep/.el-card__body {
-  padding: 20px 0;
-}
 .alert {
   width: 100%;
   padding: 20px 0;
   padding-top: 0;
 }
-/deep/ .el-alert {
+:deep(.el-alert) {
   padding-left: 30px;
   border: 1px solid #1890ff;
   color: #1890ff;
@@ -989,15 +1054,16 @@ export default {
   line-height: 1;
   margin-bottom: 10px;
 }
-/deep/ .el-alert--info .el-alert__description {
+:deep(.el-alert--info .el-alert__description) {
   color: #303133;
   font-size: 13px;
   font-weight: 500;
 }
-/deep/ .el-alert__icon.is-big {
+:deep(.el-alert__icon.is-big) {
   font-size: 16px;
   width: 15px;
 }
+
 .plan-footer-one {
   cursor: pointer;
   background-color: #fff;
@@ -1024,10 +1090,10 @@ export default {
     padding: 0 10px;
     font-size: 12px;
     height: 28px;
-    color: #fff;
+    color: #333;
     border-radius: 4px;
-    background-color: pink;
     line-height: 28px;
+    border: 1px solid currentColor;
   }
 
   span {

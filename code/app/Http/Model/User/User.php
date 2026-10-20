@@ -15,8 +15,8 @@ declare(strict_types=1);
 
 namespace App\Http\Model\User;
 
-use crmeb\interfaces\TimeDataInterface;
-use crmeb\traits\model\TimeDataTrait;
+use Tuoluojiang\Open\interfaces\TimeDataInterface;
+use Tuoluojiang\Open\traits\model\TimeDataTrait;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as AuthUser;
@@ -62,9 +62,19 @@ class User extends AuthUser implements JWTSubject, TimeDataInterface
      * @var string[]
      */
     protected $casts = [
-        'created_at' => 'datetime:Y-m-d H:i:s',
-        'updated_at' => 'datetime:Y-m-d H:i:s',
-        'uid'        => 'string',
+        'created_at'  => 'datetime:Y-m-d H:i:s',
+        'updated_at'  => 'datetime:Y-m-d H:i:s',
+        'uid'         => 'string',
+        'age'         => 'integer',
+        'entid'       => 'integer',
+        'uni_online'  => 'integer',
+        'birthday'    => 'datetime:Y-m-d H:i:s',
+        'login_count' => 'integer',
+        'marriage'    => 'integer',
+        'sex'         => 'integer',
+        'status'      => 'integer',
+        'is_init'     => 'integer',
+        'delete'      => 'datetime:Y-m-d H:i:s',
     ];
 
     protected $hidden = ['password'];

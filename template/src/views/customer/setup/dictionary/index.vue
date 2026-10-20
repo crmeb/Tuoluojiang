@@ -25,7 +25,7 @@
                 <el-input
                   v-model="where.name"
                   size="small"
-                  @keyup.native.stop.prevent.enter="getUserWorkList"
+                  @keyup.stop.prevent.enter="getUserWorkList"
                   clearable
                   style="width: 250px"
                   @change="getList(true)"
@@ -52,7 +52,7 @@
           <!-- <div class="inTotal">共有 {{ total }} 条</div> -->
           <el-table
             :data="tableData"
-            :height="tableHeight"
+            :height="TABLE_HEIGHT"
             @selection-change="handleSelectionChange"
             style="width: 100%"
             row-key="id"
@@ -62,7 +62,7 @@
             <el-table-column prop="name" label="字典名称" show-overflow-tooltip> </el-table-column>
             <el-table-column prop="ident" label="字典标识" show-overflow-tooltip> </el-table-column>
             <el-table-column prop="type" label="状态" show-overflow-tooltip>
-              <template slot-scope="scope">
+              <template #default="scope">
                 <el-switch
                   :disabled="scope.row.is_default === 1"
                   v-model="scope.row.status"
@@ -75,20 +75,20 @@
               </template>
             </el-table-column>
             <el-table-column prop="mark" label="备注" min-width="150" show-overflow-tooltip>
-              <template slot-scope="scope">
+              <template #default="scope">
                 <span>{{ scope.row.mark || '--' }}</span>
               </template>
             </el-table-column>
             <el-table-column prop="created_at" label="创建时间" show-overflow-tooltip>
-              <template slot-scope="scope">
+              <template #default="scope">
                 <span>{{ scope.row.created_at || '--' }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="address" :label="$t('public.operation')" width="250">
-              <template slot-scope="scope">
-                <el-button type="text" v-if="scope.row.is_default !== 1" @click="editFn(scope.row.id)">编辑</el-button>
-                <el-button type="text" @click="dataFn(scope.row)">数据管理</el-button>
-                <el-button type="text" v-if="scope.row.is_default !== 1" @click="handleDelete(scope.row)"
+            <el-table-column prop="address" label="操作" width="250">
+              <template #default="scope">
+                <el-button type="primary" link v-if="scope.row.is_default !== 1" @click="editFn(scope.row.id)">编辑</el-button>
+                <el-button type="primary" link @click="dataFn(scope.row)">数据管理</el-button>
+                <el-button type="primary" link v-if="scope.row.is_default !== 1" @click="handleDelete(scope.row)"
                   >删除</el-button
                 >
               </template>
@@ -113,15 +113,20 @@
 </template>
 
 <script>
-import { roterPre } from '@/settings'
-import { getDictListApi, getDictCreateApi, getDictEditApi, getDictPutShowApi, getDictDeleteShowApi } from '@/api/form'
+import { modalSure } from '@/libs/public.ts'
+import modalForm from '@/libs/modal-form.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { roterPre } from '@/settings.ts'
+import { getDictListApi, getDictCreateApi, getDictEditApi, getDictPutShowApi, getDictDeleteShowApi } from '@/api/form.ts'
+import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'FinanceList',
   components: {
-    oaFromBox: () => import('@/components/common/oaFromBox')
+    oaFromBox
   },
   data() {
     return {
+      TABLE_HEIGHT,
       tableData: [],
       loadingBox: false,
       ids: [],
@@ -195,7 +200,7 @@ export default {
         return this.$message.error('请先选择要删除的数据')
       }
       let id = this.ids.join(',')
-      await this.$modalSure('你确定要批量删除这条内容吗')
+      await modalSure('你确定要批量删除这条内容吗')
       await getDictDeleteShowApi(id)
       let totalPage = Math.ceil((this.total - this.ids.length) / this.where.limit)
       let currentPage = this.where.page > totalPage ? totalPage : this.where.page
@@ -216,14 +221,14 @@ export default {
 
     // 新增
     addFinance() {
-      this.$modalForm(getDictCreateApi()).then(({ message }) => {
+      modalForm(getDictCreateApi()).then(({ message }) => {
         this.getList()
       })
     },
 
     // 编辑
     editFn(id) {
-      this.$modalForm(getDictEditApi(id)).then(({ message }) => {
+      modalForm(getDictEditApi(id)).then(({ message }) => {
         this.getList()
       })
     },
@@ -236,7 +241,7 @@ export default {
 
     // 删除
     async handleDelete(row) {
-      await this.$modalSure('你确定要删除这条内容吗')
+      await modalSure('你确定要删除这条内容吗')
       await getDictDeleteShowApi(row.id)
       let totalPage = Math.ceil((this.total - 1) / this.where.limit)
       let currentPage = this.where.page > totalPage ? totalPage : this.where.page
@@ -272,13 +277,15 @@ export default {
       this.where.status = ''
       this.getList()
     },
-    confirmData(where) {
+    confirmData(where, resetState) {
       if (where == 'reset') {
         this.where = {
           name: '',
           status: '',
           limit: 15,
-          page: 1
+          page: 1,
+          // 排序等由搜索栏维护的默认参数，重置后需一并带回
+          ...resetState
         }
       } else {
         this.where = { ...this.where, ...where }

@@ -37,6 +37,15 @@ class CloudShare extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'user_id'    => 'integer',
+        'folder_id'  => 'integer',
+        'auth_id'    => 'integer',
+        'entid'      => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     public function user()
     {
         return $this->hasOne(Admin::class, 'id', 'user_id');

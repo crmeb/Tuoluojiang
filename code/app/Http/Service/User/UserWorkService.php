@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,10 +16,11 @@ declare(strict_types=1);
 namespace App\Http\Service\User;
 
 use App\Http\Model\User\UserWorkDao;
+use App\Http\Service\Admin\AdminInfoService;
 use App\Http\Service\BaseService;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\services\FormService;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\services\FormService;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -72,7 +73,7 @@ class UserWorkService extends BaseService implements ResourceServicesInterface
      */
     public function resourceCreate(array $other = []): array
     {
-        return $this->elForm('添加工作经历', $this->createWorkRule(collect()), '/ent/work');
+        return $this->createElementForm('添加工作经历', $this->createWorkRule(collect()), '/ent/work');
     }
 
     /**
@@ -86,7 +87,7 @@ class UserWorkService extends BaseService implements ResourceServicesInterface
             throw $this->exception('修改的工作经历不存在');
         }
 
-        return $this->elForm('修改工作经历', $this->createWorkRule(collect($info->toArray())), '/ent/work/' . $id, 'PUT');
+        return $this->createElementForm('修改工作经历', $this->createWorkRule(collect($info->toArray())), '/ent/work/' . $id, 'PUT');
     }
 
     /**
@@ -96,8 +97,8 @@ class UserWorkService extends BaseService implements ResourceServicesInterface
      */
     public function resourceSave(array $data)
     {
-        /** @var EnterpriseUserCardService $service */
-        $service = app()->get(EnterpriseUserCardService::class);
+        /** @var AdminInfoService $service */
+        $service = app()->get(AdminInfoService::class);
         if (! $service->exists($data['card_id'])) {
             throw $this->exception('企业名片不存在');
         }

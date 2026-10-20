@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -41,6 +41,18 @@ class SystemCrudApprove extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'         => 'integer',
+        'crud_id'    => 'integer',
+        'user_id'    => 'integer',
+        'status'     => 'integer',
+        'types'      => 'integer',
+        'sort'       => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+        'deleted_at' => 'datetime:Y-m-d H:i:s',
+    ];
 
     protected $hidden = [
         'deleted_at',
@@ -85,7 +97,6 @@ class SystemCrudApprove extends BaseModel
     /**
      * id作用域
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeId($query, $value)
     {
@@ -99,7 +110,6 @@ class SystemCrudApprove extends BaseModel
     /**
      * id作用域
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeNotid($query, $value)
     {
@@ -111,7 +121,6 @@ class SystemCrudApprove extends BaseModel
     /**
      * status作用域
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeStatus($query, $value)
     {
@@ -121,7 +130,6 @@ class SystemCrudApprove extends BaseModel
     /**
      * 名称模糊查询.
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeNameLike($query, $value)

@@ -1,48 +1,53 @@
 <template>
   <div>
     <el-dialog
-      :visible.sync="dialogVisible"
+      class="user-memorandum-move-dialog"
+      v-model="dialogVisible"
       title="移动到"
       width="480px"
       :append-to-body="true"
       :before-close="handleClose"
     >
-      <div class="tree-box mt10">
-        <el-scrollbar style="height: 100%">
+      <div class="tree-box">
+        <div class="move-search oa-input-borderless">
+          <el-input v-model="searchKey" placeholder="搜索" prefix-icon="el-icon-search" clearable />
+        </div>
+        <el-scrollbar style="height: calc(100% - 42px)">
           <el-tree
             ref="tree"
-            :data="treeData"
+            :data="displayTreeData"
             :props="defaultProps"
             :highlight-current="true"
             :default-expanded-keys="[1]"
             :expand-on-click-node="false"
             node-key="id"
+            :indent="16"
             @node-click="handleClick"
           >
-            <div slot-scope="{ node, data }" class="custom-tree-node">
-              <span class="flex-box">
-                <i v-if="data.icon" class="el-icon-s-home" :icon-class="data.icon" />
-                <i v-else class="icon iconfont iconwenjianjia color-file" />
-                {{ data.name }}
-              </span>
-            </div>
+            <template #default="{ node, data }">
+              <div class="custom-tree-node">
+                <i class="tree-icon iconfont iconwenjianjia1 folder-icon" />
+                <span class="over-text" :title="data.name">{{ data.name }}</span>
+              </div>
+            </template>
           </el-tree>
         </el-scrollbar>
       </div>
-      <div slot="footer" class="dialog-footer text-right">
-        <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
-        <el-button size="small" type="primary" :loading="saveLoading" @click="handleSave">{{
-          $t('public.ok')
-        }}</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer text-right">
+          <el-button @click="handleClose">取消</el-button>
+          <el-button type="primary" :loading="saveLoading" @click="handleSave">确定</el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>
 
 <script>
-import { memorialCateListApi, memorialEditApi } from '@/api/user'
+import { memorialCateListApi, memorialEditApi } from '@/api/user.ts'
 
 export default {
+  emits: ['handlerMove'],
   name: 'MoveDialog',
   props: {
     moveData: {
@@ -57,6 +62,7 @@ export default {
       dialogVisible: false,
       name: '1',
       treeData: [],
+      searchKey: '', // 目录搜索关键字
       defaultProps: {
         children: 'children',
         label: 'name'
@@ -69,11 +75,56 @@ export default {
       saveLoading: false
     }
   },
+  computed: {
+    // 搜索过滤：保留名称命中的文件夹及其父级链，便于定位上下文
+    displayTreeData() {
+      const kw = this.searchKey.trim().toLowerCase()
+      if (!kw) return this.treeData
+      const filter = (nodes) => {
+        const result = []
+        ;(nodes || []).forEach((node) => {
+          if (Array.isArray(node.children) && node.children.length) {
+            const children = filter(node.children)
+            if (children.length) {
+              result.push({ ...node, children })
+              return
+            }
+          }
+          if (String(node.name || '').toLowerCase().includes(kw)) result.push({ ...node })
+        })
+        return result
+      }
+      return filter(this.treeData)
+    }
+  },
+  watch: {
+    // 搜索时展开全部命中层级，避免结果藏在折叠目录里
+    searchKey(val) {
+      if (!val) return
+      this.$nextTick(() => {
+        const nodesMap = this.$refs.tree && this.$refs.tree.store.nodesMap
+        nodesMap &&
+          Object.values(nodesMap).forEach((node) => {
+            node.expanded = true
+          })
+      })
+    }
+  },
   mounted() {},
   methods: {
     async menuList() {
       const result = await memorialCateListApi()
-      this.treeData = result.data.tree
+      // 递归移除空 children：无下级的目录按叶子处理，不展示展开箭头
+      const removeEmptyChildren = (nodes) => {
+        ;(nodes || []).forEach((n) => {
+          if (Array.isArray(n.children)) {
+            if (n.children.length) removeEmptyChildren(n.children)
+            else delete n.children
+          }
+        })
+        return nodes
+      }
+      this.treeData = removeEmptyChildren(result.data.tree || [])
     },
     handleClose() {
       this.dialogVisible = false
@@ -118,51 +169,106 @@ export default {
 </script>
 
 <style scoped lang="scss">
-/deep/ .el-dialog__body {
-  padding: 0 !important;
-}
 .tab-move {
-  /deep/ .el-tabs__nav-wrap::after {
+  :deep(.el-tabs__nav-wrap::after) {
     height: 0;
   }
-  /deep/ .el-tabs__header {
+  :deep(.el-tabs__header) {
     margin: 0;
   }
-  /deep/ .el-tabs__active-bar {
+  :deep(.el-tabs__active-bar) {
     height: 0;
   }
-  /deep/ .el-tabs__item {
+  :deep(.el-tabs__item) {
     padding-bottom: 15px;
     height: 0;
     line-height: 0;
   }
 }
-/deep/ .el-tabs__item.is-active {
+:deep(.el-tabs__item.is-active) {
   color: #303133;
   font-weight: 600;
 }
 .tree-box {
   height: 340px;
-  /deep/ .el-scrollbar__wrap {
-    overflow-x: hidden;
-  }
 
-  .flex-box {
-    display: flex;
-    align-items: center;
-    .iconfont {
-      font-size: 14px;
-      margin-right: 10px;
+  .move-search {
+    padding: 10px 10px 0;
+
+    :deep(.el-input__wrapper) {
+      background-color: #f2f3f5;
+      border-radius: 6px;
     }
   }
 
-  /deep/ .el-tree-node__content {
-    height: 30px;
+  :deep(.el-scrollbar__wrap) {
+    overflow-x: hidden;
+  }
+
+  // 与左侧目录树样式统一
+  :deep(.el-tree) {
+    background: transparent;
+    padding: 4px 10px 0;
+  }
+
+  :deep(.el-tree-node__expand-icon) {
+    color: #8a919f;
+    font-size: 12px;
+  }
+
+  // 无下级的目录不展示展开箭头（保持占位对齐）
+  :deep(.el-tree-node__expand-icon.is-leaf) {
+    color: transparent;
+  }
+
+  :deep(.el-tree-node__content) {
+    height: 44px;
+    border-radius: 4px;
+    font-family: PingFang SC, PingFang SC;
+    font-size: 14px;
+    color: #303133;
+
+    &:hover {
+      background-color: #e9ebee;
+    }
+  }
+
+  :deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
+    background: #e8f4ff;
+  }
+
+  :deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node) {
+    font-weight: 600;
+    color: #1890ff;
+  }
+
+  .custom-tree-node {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    // 不在此处裁剪：负外边距图标的左缘会被切掉，标题截断由 .over-text 自身处理
+
+    .tree-icon {
+      margin-right: 4px;
+      margin-left: -4px;
+      font-size: 14px;
+      color: #606266;
+    }
+
+    .over-text {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
   }
 }
+</style>
 
-.el-icon-s-home {
-  color: #ffca28;
-  font-size: 14px;
+<style lang="scss">
+// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
+.el-dialog.user-memorandum-move-dialog .el-dialog__body {
+  padding: 0 !important;
 }
 </style>

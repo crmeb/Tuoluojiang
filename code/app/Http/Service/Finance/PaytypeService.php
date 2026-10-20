@@ -17,7 +17,7 @@ namespace App\Http\Service\Finance;
 
 use App\Http\Dao\Finance\PaytypeDao;
 use App\Http\Service\BaseService;
-use crmeb\services\FormService as Form;
+use Tuoluojiang\Open\services\FormService as Form;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Collection;
 
@@ -59,7 +59,7 @@ class PaytypeService extends BaseService
      */
     public function resourceCreate(): array
     {
-        return $this->elForm('支付方式', $this->getRankRuleForm(collect()), '/ent/pay_type');
+        return $this->createElementForm('支付方式', $this->getRankRuleForm(collect()), '/ent/pay_type');
     }
 
     /**
@@ -73,7 +73,7 @@ class PaytypeService extends BaseService
         if (! $rankInfo) {
             throw $this->exception('修改的支付方式不存在');
         }
-        return $this->elForm('支付方式', $this->getRankRuleForm(collect($rankInfo->toArray())), '/ent/pay_type/' . $id, 'put');
+        return $this->createElementForm('支付方式', $this->getRankRuleForm(collect($rankInfo->toArray())), '/ent/pay_type/' . $id, 'put');
     }
 
     /**
@@ -155,7 +155,7 @@ class PaytypeService extends BaseService
             return '';
         }
         $entId = $entId ?: 1;
-        $info  = $this->get(['id' => $id, 'entid' => $entId], ['id', 'name']);
+        $info  = $this->dao->get(['id' => $id, 'entid' => $entId], ['id', 'name']);
         if (! $info) {
             throw $this->exception('支付方式异常');
         }

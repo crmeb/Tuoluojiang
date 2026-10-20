@@ -16,7 +16,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\enterprise;
 
 use App\Http\Requests\ApiValidate;
-use crmeb\utils\Regex;
+use Tuoluojiang\Open\utils\Regex;
 
 class UserEntRequest extends ApiValidate
 {

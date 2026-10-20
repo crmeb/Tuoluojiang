@@ -17,7 +17,7 @@ namespace App\Http\Model\Company;
 
 use App\Http\Model\Admin\Admin;
 use App\Http\Model\BaseModel;
-use crmeb\traits\model\TimeDataTrait;
+use Tuoluojiang\Open\traits\model\TimeDataTrait;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
@@ -39,6 +39,21 @@ class UserAssessScore extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'         => 'integer',
+        'entid'      => 'integer',
+        'assessid'   => 'integer',
+        'userid'     => 'integer',
+        'check_uid'  => 'integer',
+        'test_uid'   => 'integer',
+        'score'      => 'decimal:2',
+        'total'      => 'decimal:2',
+        'grade'      => 'integer',
+        'types'      => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
 
     public function getInfoAttribute($val)
     {
@@ -73,8 +88,6 @@ class UserAssessScore extends BaseModel
     }
 
     /**
-     * @param mixed $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeUserid($query, $value)
@@ -83,8 +96,6 @@ class UserAssessScore extends BaseModel
     }
 
     /**
-     * @param mixed $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeTypes($query, $value)
@@ -93,8 +104,6 @@ class UserAssessScore extends BaseModel
     }
 
     /**
-     * @param mixed $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeAssessid($query, $value)

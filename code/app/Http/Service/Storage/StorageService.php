@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,8 +18,8 @@ namespace App\Http\Service\Storage;
 use App\Constants\CacheEnum;
 use App\Http\Dao\Storage\StorageDao;
 use App\Http\Service\BaseService;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Facades\Cache;
 use Psr\Container\ContainerExceptionInterface;
@@ -52,6 +52,7 @@ class StorageService extends BaseService implements ResourceServicesInterface
      */
     public function getList(array $where, array $field = ['id', 'cid', 'creater', 'name', 'specs', 'factory', 'units', 'mark', 'remark', 'stock', 'used', 'number', 'types', 'status', 'created_at'], $sort = 'id', array $with = []): array
     {
+        Cache::tags([CacheEnum::TAG_STORAGE])->flush();
         $where = Cache::tags([CacheEnum::TAG_STORAGE])->remember(md5(json_encode($where)), (int) sys_config('system_cache_ttl', 3600), function () use ($where) {
             if ($where['types'] == 1 && $where['status'] == 1 && $where['receive']) {
                 $recordService = app()->get(StorageRecordService::class);
@@ -73,17 +74,16 @@ class StorageService extends BaseService implements ResourceServicesInterface
             return $where;
         });
         return parent::getList($where, $field, $sort, $with + [
-            'cate' => function ($query) {
-                $query->select(['id', 'pid', 'cate_name', 'path']);
-            },
-            'record' => function ($query) {
-                $query->where('status', 0)->select(['storage_id', 'price', 'num']);
-            }, ]);
+            'receiveUser' => fn ($query) => $query->select(['admin.id', 'name','storage_record.created_at']),
+            'receiveFrame' => fn ($query) => $query->select(['frame.id', 'name','storage_record.created_at']),
+            'cate' => fn ($query) => $query->select(['id', 'pid', 'cate_name', 'path']),
+            'record' => fn ($query) => $query->where('status', 0)->select(['storage_id', 'price', 'num']),
+            ]);
     }
 
     public function resourceCreate(array $other = []): array
     {
-        // TODO: Implement resourceCreate() method.
+        return [];
     }
 
     /**
@@ -162,7 +162,7 @@ class StorageService extends BaseService implements ResourceServicesInterface
 
     public function resourceEdit(int $id, array $other = []): array
     {
-        // TODO: Implement resourceEdit() method.
+        return [];
     }
 
     /**
@@ -193,8 +193,13 @@ class StorageService extends BaseService implements ResourceServicesInterface
 
     /**
      * 修改物资分类.
+     * @param array $ids
+     * @param int $cateId
      * @return int
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
      */
     public function updateCate(array $ids, int $cateId)
     {

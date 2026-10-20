@@ -13,18 +13,18 @@
         <el-input-number v-model.number="colItem.options.span" :min="1" :max="24"
                          @change="(newValue, oldValue) => spanChanged(selectedWidget, colItem, colIdx, newValue, oldValue)"
                          class="cell-span-input"></el-input-number>
-        <el-button circle plain size="mini" type="danger" @click="deleteCol(selectedWidget, colIdx)"
+        <el-button circle plain type="danger" @click="deleteCol(selectedWidget, colIdx)"
                    icon="el-icon-minus" class="col-delete-button"></el-button>
       </li>
       <div>
-        <el-button type="text" @click="addNewCol(selectedWidget)">{{i18nt('designer.setting.addColumn')}}</el-button>
+        <el-button type="primary" link @click="addNewCol(selectedWidget)">{{i18nt('designer.setting.addColumn')}}</el-button>
       </div>
     </el-form-item>
   </div>
 </template>
 
 <script>
-  import i18n from "@/utils/i18n"
+  import i18n from "@/utils/i18n.ts"
 
   export default {
     name: "gutter-editor",
@@ -40,12 +40,6 @@
         curGrid.cols.forEach((colItem) => {
           spanSum += colItem.options.span
         })
-        if (spanSum > 24) {
-          //this.$message.info('列栅格之和超出24')
-          console.log('列栅格之和超出24')
-          //TODO: 语言字符串资源化
-        }
-
         this.designer.saveCurrentHistoryStep()
       },
 
@@ -79,4 +73,3 @@
   }
 
 </style>
-@/utils/i18ns

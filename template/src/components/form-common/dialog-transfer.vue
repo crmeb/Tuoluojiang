@@ -3,7 +3,7 @@
   <div class="delete-info-dialog">
     <el-dialog
       :title="dialogTitle"
-      :visible.sync="tableItemDialogVisible"
+      :model-value="tableItemDialogVisible"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
       width="700px"
@@ -21,22 +21,33 @@
           @left-check-change="leftCheckChange"
           @right-check-change="rightCheckChange"
         >
-          <span slot-scope="{ option }" draggable="!option.disabled" @dragstart="drag($event, option)">
-            {{ option.name }}
-          </span>
+          <template #default="{ option }">
+            <span draggable="!option.disabled" @dragstart="drag($event, option)">
+              <template v-if="isInRightList(option)">
+                <i
+                  class="iconfont icontuodong"
+                  :style="{ cursor: option.disabled ? 'not-allowed' : 'grab', marginRight: '8px' }"
+                ></i>
+              </template>
+              {{ option.name }}
+            </span>
+          </template>
         </el-transfer>
       </div>
-      <span slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="handleConfirm">确 定</el-button>
-      </span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="primary" @click="handleConfirm">确 定</el-button>
+        </span>
+      </template>
     </el-dialog>
   </div>
 </template>
 
 <script>
 import Sortable from 'sortablejs'
-import { cloneDeep } from 'lodash' //避免修改父组件传过来的数据
+import { cloneDeep } from 'lodash-es' //避免修改父组件传过来的数据
 export default {
+  emits: ['handleCloseTableItem', 'handleConfirmVisible'],
   name: 'visible-item-table-dialog',
   props: {
     dialogTitle: {
@@ -108,8 +119,8 @@ export default {
           if (!temp || temp === 'undefined') {
             return
           } // 解决右边最后一项从右边拖左边，有undefined的问题
-          // this.$set(this.visibleValue, oldIndex, this.visibleValue[newIndex]) //这种赋值方法会导致数据更新视图未更新，排序后顺序展示错乱，强制更新也无效,原博主是这么赋值的，仅供参考
-          // this.$set(this.visibleValue, newIndex, temp)
+          // this.visibleValue[oldIndex] = this.visibleValue[newIndex] //这种赋值方法会导致数据更新视图未更新，排序后顺序展示错乱，强制更新也无效,原博主是这么赋值的，仅供参考
+          // this.visibleValue[newIndex] = temp
           let _arr = this.visibleValue.splice(oldIndex, 1)
           this.visibleValue.splice(newIndex, 0, _arr[0])
         }
@@ -183,6 +194,10 @@ export default {
   },
 
   methods: {
+    // 判断当前项是否在右侧列表中
+    isInRightList(option) {
+      return this.visibleValue.includes(option.field)
+    },
     //关闭弹框
     handleClose() {
       this.$emit('handleCloseTableItem')
@@ -216,7 +231,7 @@ export default {
 
 <style lang="scss" scoped>
 .delete-info-dialog {
-  /deep/ .el-dialog__body {
+  :deep(.el-dialog__body) {
     max-height: 500px;
     overflow-y: auto;
   }
@@ -237,19 +252,19 @@ export default {
     }
   }
 }
+.icontuodong {
+  font-size: 13px;
+  color: #909399;
+}
 
-/deep/.el-transfer {
+:deep(.el-transfer) {
+  // 面板总高 400px：头部 40px + 主体 360px（列表高度同样取这个变量）
+  --el-transfer-panel-body-height: 360px;
   display: flex;
   align-items: center;
 
   .el-transfer-panel {
-    width: 40%; // 设置左右穿梭面板的宽度
-    height: 400px;
-  }
-
-  // 调整穿梭框中列表项的样式
-  .el-transfer-panel__list {
-    height: 350px;
+    width: 50%; // 设置左右穿梭面板的宽度
   }
 
   .el-transfer__buttons {
@@ -269,12 +284,9 @@ export default {
   }
 }
 
-/deep/.el-transfer__buttons {
+:deep(.el-transfer__buttons) {
   width: 100px;
   display: flex;
   flex-direction: column-reverse; // 使按钮垂直反向排列
-}
-.el-transfer-panel__list {
-  height: auto;
 }
 </style>

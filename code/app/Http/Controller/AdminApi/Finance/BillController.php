@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -19,11 +19,9 @@ use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Requests\enterprise\bill\BillRequest;
 use App\Http\Service\Finance\BillLogService;
 use App\Http\Service\Finance\BillService;
-use crmeb\interfaces\ResourceControllerInterface;
-use crmeb\traits\ResourceControllerTrait;
+use Tuoluojiang\Open\interfaces\ResourceControllerInterface;
+use Tuoluojiang\Open\traits\ResourceControllerTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
-use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\NotFoundExceptionInterface;
 use Spatie\RouteAttributes\Attributes\Get;
 use Spatie\RouteAttributes\Attributes\Middleware;
 use Spatie\RouteAttributes\Attributes\Post;
@@ -55,11 +53,11 @@ class BillController extends AuthController implements ResourceControllerInterfa
     }
 
     /**
-     * 财务流水列表.
+     * 财务流水列表
      * @return mixed
      * @throws BindingResolutionException
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
+     * @throws \Psr\Container\ContainerExceptionInterface
+     * @throws \Psr\Container\NotFoundExceptionInterface
      * @throws \ReflectionException
      */
     #[Post('/list', '获取财务流水列表接口')]
@@ -101,7 +99,7 @@ class BillController extends AuthController implements ResourceControllerInterfa
             ['cate_ids', []],
         ], true);
         $cateIds = $this->service->handleCateId($cateIds);
-        return $this->success($this->service->getRankAnalysis($time, (int) $cateId, (int) $types, $cateIds));
+        return $this->success($this->service->getRankAnalysis($time, (int)$cateId, (int)$types, $cateIds));
     }
 
     /**
@@ -111,10 +109,10 @@ class BillController extends AuthController implements ResourceControllerInterfa
     #[Get('record/{id}', '财务流水记录')]
     public function logs(BillLogService $service, $id): mixed
     {
-        if (! $id) {
+        if (!$id) {
             return $this->fail('common.empty.attrs');
         }
-        $where = ['bill_list_id' => (int) $id, 'entid' => $this->entId];
+        $where = ['bill_list_id' => (int)$id, 'entid' => $this->entId];
         return $this->success($service->getList($where));
     }
 
@@ -156,7 +154,7 @@ class BillController extends AuthController implements ResourceControllerInterfa
     /**
      * 搜索字段.
      *
-     * @return array|string[][]
+     * @return array|\string[][]
      */
     protected function getSearchField(): array
     {

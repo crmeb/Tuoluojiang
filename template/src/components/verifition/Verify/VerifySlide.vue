@@ -70,9 +70,9 @@
  * VerifySlide
  * @description 滑块
  * */
-import { aesEncrypt } from './../utils/ase'
+import { aesEncrypt } from './../utils/ase.ts'
 import { resetSize } from './../utils/util'
-import { getModuleCaptchaApi, saveModuleCaptchaApi } from '@/api/develop'
+import { getModuleCaptchaApi, saveModuleCaptchaApi } from '@/api/develop.ts'
 
 //  "captchaType":"blockPuzzle",
 export default {
@@ -187,6 +187,16 @@ export default {
     this.$el.onselectstart = function () {
       return false
     }
+    // 绑定具名事件处理函数
+    this._bindMove = (e) => this.move(e)
+    this._bindEnd = () => this.end()
+  },
+  beforeUnmount() {
+    // 组件销毁时移除全局事件监听
+    window.removeEventListener('touchmove', this._bindMove)
+    window.removeEventListener('mousemove', this._bindMove)
+    window.removeEventListener('touchend', this._bindEnd)
+    window.removeEventListener('mouseup', this._bindEnd)
   },
   methods: {
     init() {
@@ -195,42 +205,21 @@ export default {
       this.$nextTick(() => {
         const setSize = this.resetSize(this) // 重新设置宽度高度
         for (const key in setSize) {
-          this.$set(this.setSize, key, setSize[key])
+          this.setSize[key] = setSize[key]
         }
         this.$parent.$emit('ready', this)
       })
 
-      var _this = this
+      // 先移除旧的监听器，再重新添加，避免累积
+      window.removeEventListener('touchmove', this._bindMove)
+      window.removeEventListener('mousemove', this._bindMove)
+      window.removeEventListener('touchend', this._bindEnd)
+      window.removeEventListener('mouseup', this._bindEnd)
 
-      window.removeEventListener('touchmove', function (e) {
-        _this.move(e)
-      })
-      window.removeEventListener('mousemove', function (e) {
-        _this.move(e)
-      })
-
-      // 鼠标松开
-      window.removeEventListener('touchend', function () {
-        _this.end()
-      })
-      window.removeEventListener('mouseup', function () {
-        _this.end()
-      })
-
-      window.addEventListener('touchmove', function (e) {
-        _this.move(e)
-      })
-      window.addEventListener('mousemove', function (e) {
-        _this.move(e)
-      })
-
-      // 鼠标松开
-      window.addEventListener('touchend', function () {
-        _this.end()
-      })
-      window.addEventListener('mouseup', function () {
-        _this.end()
-      })
+      window.addEventListener('touchmove', this._bindMove)
+      window.addEventListener('mousemove', this._bindMove)
+      window.addEventListener('touchend', this._bindEnd)
+      window.addEventListener('mouseup', this._bindEnd)
     },
 
     // 鼠标按下

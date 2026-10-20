@@ -1,0 +1,53 @@
+{
+  "name": "mochat/wework-finance-sdk",
+  "type": "library",
+  "keywords": [
+    "php",
+    "hyperf",
+    "mochat",
+    "wework",
+    "wework finance SDK"
+  ],
+  "description": "WeWorkFinanceSDK Of MoChat",
+  "autoload": {
+    "psr-4": {
+      "MoChat\\WeWorkFinanceSDK\\": "src/"
+    },
+    "files": [
+      "src/Functions.php"
+    ]
+  },
+  "require": {
+    "php": ">=7.3",
+    "ext-openssl": "*",
+    "ext-json": "*"
+  },
+  "require-dev": {
+    "friendsofphp/php-cs-fixer": "^2.14",
+    "phpstan/phpstan": "^0.12",
+    "phpunit/phpunit": "^6.2",
+    "swoole/ide-helper": "dev-master"
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "MoChatTest\\": "tests"
+    }
+  },
+  "suggest": {
+    "ext-wxwork_finance_sdk": "*",
+    "php": ">=7.4"
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "scripts": {
+    "test": "vendor/bin/phpunit -c phpunit.xml --colors=always",
+    "analyse": "phpstan analyse --memory-limit 1024M -l 0 ./src",
+    "cs-fix": "php-cs-fixer fix $1"
+  },
+  "extra": {
+    "hyperf": {
+      "config": "MoChat\\WeWorkFinanceSDK\\ConfigProvider"
+    }
+  }
+}

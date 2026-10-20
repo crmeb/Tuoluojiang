@@ -2,19 +2,19 @@
   <div>
     <ul class="tab-list">
       <li class="font-weight800">
-        <span>{{ $t('finance.serialnumber') }}</span>
-        <span>{{ $t('finance.type') }}</span>
-        <span>{{ $t('finance.amountmoney') }}</span>
-        <span>{{ $t('finance.proportion') }}</span>
+        <span>序号</span>
+        <span>类型</span>
+        <span>金额</span>
+        <span>占比率</span>
       </li>
     </ul>
     <ul class="tab-list tab-animate" @mouseenter="stop()" @mouseleave="up()">
-      <li v-for="(item, index) in tableData" :class="{ 'animate-up': animateUp }" v-if="index < 10" :key="index">
+      <li v-for="(item, index) in displayTableData" :class="{ 'animate-up': animateUp }" :key="index">
         <span>
-          <el-button type="info" size="mini" circle>{{ index + 1 }}</el-button>
+          <el-button type="info" circle>{{ index + 1 }}</el-button>
         </span>
         <span v-if="item.cate_id > 0">{{ item.name }}</span>
-        <span v-else>{{ $t('finance.other') }}</span>
+        <span v-else>其它</span>
         <span>{{ item.sum }}</span>
         <span>
           <el-progress :text-inside="true" :stroke-width="20" :percentage="Number(item.ratio)" />
@@ -41,6 +41,11 @@ export default {
       timer: null
     }
   },
+  computed: {
+    displayTableData() {
+      return Array.isArray(this.tableData) ? this.tableData.slice(0, 10) : []
+    }
+  },
   methods: {
     scrollAnimate() {
       // 超出范围在后再进行滚动
@@ -63,11 +68,11 @@ export default {
     up() {
       // this.scrollAnimate()
     },
-    destroyed() {
+    unmounted() {
       clearInterval(this.timer)
     }
   },
-  beforeDestroy() {
+  beforeUnmount() {
     clearInterval(this.timer)
     this.timer = null
   }
@@ -82,7 +87,7 @@ export default {
   color: #000000;
   position: relative;
   z-index: 2;
-  >>> .el-carousel__item {
+  :deep(.el-carousel__item) {
     height: 40px;
   }
   li {

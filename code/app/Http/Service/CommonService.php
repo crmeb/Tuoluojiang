@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,15 +18,16 @@ namespace App\Http\Service;
 use App\Constants\CacheEnum;
 use App\Http\Contract\Common\CommonInterface;
 use App\Http\Service\Attach\AttachService;
-use App\Http\Service\File\FileAuthService;
-use App\Http\Service\File\FileService;
 use App\Http\Service\System\SystemCityService;
-use crmeb\exceptions\UploadException;
-use crmeb\services\SmsService;
-use crmeb\services\UploadService;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\exceptions\UploadException;
+use Tuoluojiang\Open\services\SmsService;
+use Tuoluojiang\Open\services\UploadService;
+use GuzzleHttp\Client;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Str;
 use Mews\Captcha\Captcha;
 
 class CommonService extends BaseService implements CommonInterface
@@ -133,10 +134,26 @@ class CommonService extends BaseService implements CommonInterface
             $option['upload_type'] = sys_config('upload_type', 1) ?? 1;
         }
         try {
+            $mime = 'image/png';
+            if (preg_match('/^data:([^;]+);base64,(.*)$/s', $file, $matches)) {
+                $mime = $matches[1];
+                $file = $matches[2];
+            }
+            $content = base64_decode($file, true);
+            if ($content === false || $content === '') {
+                throw new UploadException('无效的文件内容');
+            }
+
+            $ext = match ($mime) {
+                'image/jpeg', 'image/jpg' => 'jpg',
+                'image/gif'               => 'gif',
+                'image/webp'              => 'webp',
+                default                   => 'png',
+            };
             $path   = $this->make_path('attach', 2, true, $option['entId'] ?: 0);
             $upload = UploadService::init($option['upload_type']);
-            $res    = $upload->to($path)->validate()->uploadByBase64($file);
-            if ($res === false) {
+            $res    = $upload->to($path)->stream($content, date('YmdHis') . rand(0, 9999) . '.' . $ext);
+            if (! $res) {
                 throw new UploadException($upload->getError());
             }
             $fileInfo = $upload->getUploadInfo();
@@ -159,25 +176,41 @@ class CommonService extends BaseService implements CommonInterface
                 ]);
             }
             return [
-                'name'    => $res->fileName,
+                'name'    => $fileInfo['name'],
                 'old_url' => '',
-                'new_url' => link_file($res->filePath),
+                'new_url' => link_file($fileInfo['dir']),
             ];
         } catch (\Exception $e) {
             throw new UploadException($e->getMessage());
         }
     }
 
-    public function uploadFromUrl(string $url, array $option): array
+    public function uploadFromUrl(string $url, array $option = []): array
     {
         if (! isset($option['upload_type']) || $option['upload_type'] == 1) {
-            $option['upload_type'] = sys_config('upload_type', 1) ?? 1;
+            $option['upload_type'] = sys_config('upload_type', 1);
         }
         try {
+            $client   = new Client(['timeout' => 30]);
+            $response = $client->get($url, [
+                'allow_redirects' => true,
+            ]);
+            if ($response->getStatusCode() !== 200) {
+                throw new UploadException('远程文件请求失败，链接无效或文件不存在');
+            }
+            $fileContentType = $response->getHeaderLine('Content-Type');
+            $fileName        = basename(parse_url($url, PHP_URL_PATH));
+            if (empty($fileName) || ! str_contains($fileName, '.')) {
+                $fileExt  = $this->getExtensionFromContentType($fileContentType);
+                $fileName = Str::uuid() . '.' . ($fileExt ?: 'bin');
+            } else {
+                $fileInfo = pathinfo($fileName);
+                $fileName = $fileInfo['filename'] . '_' . Str::random(8) . '.' . $fileInfo['extension'];
+            }
             $path   = $this->make_path('attach', 2, true, $option['entId'] ?: 0);
             $upload = UploadService::init($option['upload_type']);
-            $res    = $upload->to($path)->validate()->uploadByUrl($url);
-            if ($res === false) {
+            $res    = $upload->to($path)->validate()->stream($response->getBody()->getContents(), $fileName);
+            if (! $res) {
                 throw new UploadException($upload->getError());
             }
             $fileInfo = $upload->getUploadInfo();
@@ -194,13 +227,13 @@ class CommonService extends BaseService implements CommonInterface
                     'cid'           => $option['pid'] ?? 0,
                     'uid'           => $option['uuid'] ?? '',
                     'way'           => $option['way'] ?? 0,
-                    'entid'         => $option['entId'] ?? 0,
+                    'entid'         => $option['entId'] ?? 1,
                     'relation_type' => $option['link_type'] ?? '',
                     'relation_id'   => $option['link_id'] ?? 0,
                 ]);
             }
             return [
-                'name'    => $res->fileName,
+                'name'    => $fileInfo['name'],
                 'old_url' => $url,
                 'new_url' => link_file($res->filePath),
             ];
@@ -212,48 +245,6 @@ class CommonService extends BaseService implements CommonInterface
     public function getCityTree(): array
     {
         return app()->get(SystemCityService::class)->cityTree();
-    }
-
-    public function downloadFileUrl(int $version, string $type, int|string $fileId, string $uuid): string
-    {
-        switch ($type) {
-            case 'apply':
-                $data = [
-                    'url'  => '/template/apply.xlsx',
-                    'name' => '邀请成员表格模板.xlsx',
-                    'type' => 'local',
-                ];
-                return get_download_url('', $data);
-                break;
-            case 'folder':
-                if (! $fileId || ! $folder = app()->get(FileService::class)->get(['file_sn' => $fileId, 'type' => 0])) {
-                    throw $this->exception('资源不存在');
-                }
-                if (! $folder->entid) {
-                    $auth = app()->get(FileAuthService::class)->checkAuth($folder->id, $uuid);
-                } else {
-                    $auth = (bool) app()->get(FileService::class)->get(['id' => explode('/', trim($folder->path, '/'))[0], 'uid' => $uuid, 'type' => 1]);
-                    if (! $auth) {
-                        $auth  = app()->get(FileAuthService::class)->checkEntAuth($uuid, explode('/', trim($folder->path, '/'))[0], FileAuthService::DOWNLOAD_AUTH);
-                        $auth2 = app()->get(FileAuthService::class)->checkEntPathAuth($uuid, $folder, FileAuthService::DOWNLOAD_AUTH);
-                        if ($auth2) {
-                            $auth = $auth2;
-                        }
-                    }
-                }
-                if ($auth !== true) {
-                    if (! $auth || ! $auth->download) {
-                        throw $this->exception('您没有权限下载文件');
-                    }
-                }
-                return get_download_url($fileId, $version ? ['version' => $version, 'folder' => 1] : ['folder' => 1]);
-                break;
-            default:
-                if (! $fileId) {
-                    throw $this->exception('缺少FileId');
-                }
-                return get_download_url($fileId, $version ? ['version' => $version] : []);
-        }
     }
 
     /**
@@ -281,7 +272,7 @@ class CommonService extends BaseService implements CommonInterface
                 break;
         }
         try {
-            if (is_dir(public_path('uploads') . $path) == true || mkdir(public_path('uploads') . $path, 0777, true) == true) {
+            if (is_dir(public_path('uploads') . $path) || mkdir(public_path('uploads') . $path, 0777, true)) {
                 return trim(str_replace(DIRECTORY_SEPARATOR, '/', $path), '.');
             }
             return '';

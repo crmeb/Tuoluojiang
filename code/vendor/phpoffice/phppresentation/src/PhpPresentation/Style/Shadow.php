@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of PHPPresentation - A pure PHP library for reading and writing
  * presentations documents.
@@ -10,122 +11,114 @@
  * file that was distributed with this source code. For the full list of
  * contributors, visit https://github.com/PHPOffice/PHPPresentation/contributors.
  *
- * @link        https://github.com/PHPOffice/PHPPresentation
- * @copyright   2009-2015 PHPPresentation contributors
+ * @see        https://github.com/PHPOffice/PHPPresentation
+ *
  * @license     http://www.gnu.org/licenses/lgpl.txt LGPL version 3
  */
+
+declare(strict_types=1);
 
 namespace PhpOffice\PhpPresentation\Style;
 
 use PhpOffice\PhpPresentation\ComparableInterface;
+use PhpOffice\PhpPresentation\Exception\NotAllowedValueException;
 
 /**
- * \PhpOffice\PhpPresentation\Style\Shadow
+ * \PhpOffice\PhpPresentation\Style\Shadow.
  */
 class Shadow implements ComparableInterface
 {
-    /* Shadow alignment */
-    const SHADOW_BOTTOM = 'b';
-    const SHADOW_BOTTOM_LEFT = 'bl';
-    const SHADOW_BOTTOM_RIGHT = 'br';
-    const SHADOW_CENTER = 'ctr';
-    const SHADOW_LEFT = 'l';
-    const SHADOW_TOP = 't';
-    const SHADOW_TOP_LEFT = 'tl';
-    const SHADOW_TOP_RIGHT = 'tr';
+    public const TYPE_SHADOW_INNER = 'innerShdw';
+    public const TYPE_SHADOW_OUTER = 'outerShdw';
+    public const TYPE_REFLECTION = 'reflection';
+
+    // Shadow alignment
+    public const SHADOW_BOTTOM = 'b';
+    public const SHADOW_BOTTOM_LEFT = 'bl';
+    public const SHADOW_BOTTOM_RIGHT = 'br';
+    public const SHADOW_CENTER = 'ctr';
+    public const SHADOW_LEFT = 'l';
+    public const SHADOW_TOP = 't';
+    public const SHADOW_TOP_LEFT = 'tl';
+    public const SHADOW_TOP_RIGHT = 'tr';
 
     /**
-     * Visible
+     * Visible.
      *
-     * @var boolean
+     * @var bool
      */
-    private $visible;
+    private $visible = false;
 
     /**
-     * Blur radius
-     *
-     * Defaults to 6
+     * Blur radius.
      *
      * @var int
      */
-    private $blurRadius;
+    private $blurRadius = 6;
 
     /**
-     * Shadow distance
-     *
-     * Defaults to 2
+     * Shadow distance.
      *
      * @var int
      */
-    private $distance;
+    private $distance = 2;
 
     /**
-     * Shadow direction (in degrees)
+     * Shadow direction (in degrees).
      *
      * @var int
      */
-    private $direction;
+    private $direction = 0;
 
     /**
-     * Shadow alignment
+     * Shadow alignment.
      *
      * @var string
      */
-    private $alignment;
+    private $alignment = self::SHADOW_BOTTOM_RIGHT;
 
     /**
-     * Color
-     *
-     * @var \PhpOffice\PhpPresentation\Style\Color
+     * @var null|Color
      */
     private $color;
 
     /**
-     * Alpha
-     *
      * @var int
      */
-    private $alpha;
+    private $alpha = 50;
 
     /**
-     * Hash index
-     *
      * @var string
+     */
+    private $type = self::TYPE_SHADOW_OUTER;
+
+    /**
+     * Hash index.
+     *
+     * @var int
      */
     private $hashIndex;
 
     /**
-     * Create a new \PhpOffice\PhpPresentation\Style\Shadow
+     * Create a new \PhpOffice\PhpPresentation\Style\Shadow.
      */
     public function __construct()
     {
-        // Initialise values
-        $this->visible    = false;
-        $this->blurRadius = 6;
-        $this->distance   = 2;
-        $this->direction  = 0;
-        $this->alignment  = self::SHADOW_BOTTOM_RIGHT;
-        $this->color      = new Color(Color::COLOR_BLACK);
-        $this->alpha      = 50;
+        $this->color = new Color(Color::COLOR_BLACK);
     }
 
     /**
-     * Get Visible
-     *
-     * @return boolean
+     * Get Visible.
      */
-    public function isVisible()
+    public function isVisible(): bool
     {
         return $this->visible;
     }
 
     /**
-     * Set Visible
-     *
-     * @param  boolean                    $pValue
-     * @return self
+     * Set Visible.
      */
-    public function setVisible($pValue = false)
+    public function setVisible(bool $pValue = false): self
     {
         $this->visible = $pValue;
 
@@ -133,22 +126,17 @@ class Shadow implements ComparableInterface
     }
 
     /**
-     * Get Blur radius
-     *
-     * @return int
+     * Get Blur radius.
      */
-    public function getBlurRadius()
+    public function getBlurRadius(): int
     {
         return $this->blurRadius;
     }
 
     /**
-     * Set Blur radius
-     *
-     * @param  int                        $pValue
-     * @return self
+     * Set Blur radius.
      */
-    public function setBlurRadius($pValue = 6)
+    public function setBlurRadius(int $pValue = 6): self
     {
         $this->blurRadius = $pValue;
 
@@ -156,22 +144,19 @@ class Shadow implements ComparableInterface
     }
 
     /**
-     * Get Shadow distance
-     *
-     * @return int
+     * Get Shadow distance.
      */
-    public function getDistance()
+    public function getDistance(): int
     {
         return $this->distance;
     }
 
     /**
-     * Set Shadow distance
+     * Set Shadow distance.
      *
-     * @param  int                        $pValue
-     * @return self
+     * @return $this
      */
-    public function setDistance($pValue = 2)
+    public function setDistance(int $pValue = 2): self
     {
         $this->distance = $pValue;
 
@@ -179,22 +164,17 @@ class Shadow implements ComparableInterface
     }
 
     /**
-     * Get Shadow direction (in degrees)
-     *
-     * @return int
+     * Get Shadow direction (in degrees).
      */
-    public function getDirection()
+    public function getDirection(): int
     {
         return $this->direction;
     }
 
     /**
-     * Set Shadow direction (in degrees)
-     *
-     * @param  int                        $pValue
-     * @return self
+     * Set Shadow direction (in degrees).
      */
-    public function setDirection($pValue = 0)
+    public function setDirection(int $pValue = 0): self
     {
         $this->direction = $pValue;
 
@@ -202,22 +182,17 @@ class Shadow implements ComparableInterface
     }
 
     /**
-     * Get Shadow alignment
-     *
-     * @return int
+     * Get Shadow alignment.
      */
-    public function getAlignment()
+    public function getAlignment(): string
     {
         return $this->alignment;
     }
 
     /**
-     * Set Shadow alignment
-     *
-     * @param  string                        $pValue
-     * @return self
+     * Set Shadow alignment.
      */
-    public function setAlignment($pValue = self::SHADOW_BOTTOM_RIGHT)
+    public function setAlignment(string $pValue = self::SHADOW_BOTTOM_RIGHT): self
     {
         $this->alignment = $pValue;
 
@@ -225,23 +200,17 @@ class Shadow implements ComparableInterface
     }
 
     /**
-     * Get Color
-     *
-     * @return \PhpOffice\PhpPresentation\Style\Color
+     * Get Color.
      */
-    public function getColor()
+    public function getColor(): ?Color
     {
         return $this->color;
     }
 
     /**
-     * Set Color
-     *
-     * @param  \PhpOffice\PhpPresentation\Style\Color  $pValue
-     * @throws \Exception
-     * @return self
+     * Set Color.
      */
-    public function setColor(Color $pValue = null)
+    public function setColor(?Color $pValue = null): self
     {
         $this->color = $pValue;
 
@@ -249,22 +218,17 @@ class Shadow implements ComparableInterface
     }
 
     /**
-     * Get Alpha
-     *
-     * @return int
+     * Get Alpha.
      */
-    public function getAlpha()
+    public function getAlpha(): int
     {
         return $this->alpha;
     }
 
     /**
-     * Set Alpha
-     *
-     * @param  int                        $pValue
-     * @return self
+     * Set Alpha.
      */
-    public function setAlpha($pValue = 0)
+    public function setAlpha(int $pValue = 0): self
     {
         $this->alpha = $pValue;
 
@@ -272,38 +236,67 @@ class Shadow implements ComparableInterface
     }
 
     /**
-     * Get hash code
-     *
-     * @return string Hash code
+     * Get Type.
      */
-    public function getHashCode()
+    public function getType(): string
     {
-        return md5(($this->visible ? 't' : 'f') . $this->blurRadius . $this->distance . $this->direction . $this->alignment . $this->color->getHashCode() . $this->alpha . __CLASS__);
+        return $this->type;
     }
 
     /**
-     * Get hash index
+     * Set Type.
+     */
+    public function setType(string $pValue = self::TYPE_SHADOW_OUTER): self
+    {
+        if (!in_array(
+            $pValue,
+            [self::TYPE_REFLECTION, self::TYPE_SHADOW_INNER, self::TYPE_SHADOW_OUTER]
+        )) {
+            throw new NotAllowedValueException($pValue, [self::TYPE_REFLECTION, self::TYPE_SHADOW_INNER, self::TYPE_SHADOW_OUTER]);
+        }
+
+        $this->type = $pValue;
+
+        return $this;
+    }
+
+    /**
+     * Get hash code.
+     *
+     * @return string Hash code
+     */
+    public function getHashCode(): string
+    {
+        return md5(($this->visible ? 't' : 'f') . $this->blurRadius . $this->distance . $this->direction . $this->alignment . $this->type . $this->color->getHashCode() . $this->alpha . __CLASS__);
+    }
+
+    /**
+     * Get hash index.
      *
      * Note that this index may vary during script execution! Only reliable moment is
      * while doing a write of a workbook and when changes are not allowed.
      *
-     * @return string Hash index
+     * @return null|int Hash index
      */
-    public function getHashIndex()
+    public function getHashIndex(): ?int
     {
         return $this->hashIndex;
     }
 
     /**
-     * Set hash index
+     * Set hash index.
      *
      * Note that this index may vary during script execution! Only reliable moment is
      * while doing a write of a workbook and when changes are not allowed.
      *
-     * @param string $value Hash index
+     * @param int $value Hash index
+     *
+     * @return $this
      */
-    public function setHashIndex($value)
+    public function setHashIndex(int $value)
     {
         $this->hashIndex = $value;
+
+        return $this;
     }
 }

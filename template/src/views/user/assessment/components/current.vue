@@ -27,18 +27,19 @@
         />
       </div>
     </div>
-    <default-page v-else :index="0" />
+    <default-page v-else :index="25" :imgWidth="`150px`" />
   </div>
 </template>
 <script>
-import Common from '@/components/user/accessCommon'
-import { userAssessExplain, userAssessSubord } from '@/api/user'
+import { defineAsyncComponent } from 'vue'
+import Common from '@/components/user/accessCommon.ts'
+import { userAssessExplain, userAssessSubord } from '@/api/user.ts'
 export default {
   name: 'Current',
   components: {
-    goalSetting: () => import('./goalSetting'),
-    execution: () => import('./execution'),
-    defaultPage: () => import('@/components/common/defaultPage')
+    goalSetting: defineAsyncComponent(() => import('./goalSetting')),
+    execution: defineAsyncComponent(() => import('./execution')),
+    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage'))
   },
   data() {
     return {
@@ -112,11 +113,12 @@ export default {
 .current-con {
   position: relative;
   .current-btn {
-    position: absolute;
+    position: relative;
     left: 0;
-    top: 3px;
+    top: 0;
     width: 100%;
     z-index: 4;
+    margin-bottom: 12px;
     button {
       padding: 6px 16px;
       font-size: 13px;
@@ -129,44 +131,6 @@ export default {
       background-color: #1890ff;
       color: #ffffff;
       border-color: transparent;
-    }
-  }
-}
-.current-list {
-  .current-table {
-    margin: 15px 0;
-    /deep/ .current-table-title {
-      padding: 5px 0;
-      background-color: #f7f8fa;
-      span {
-        font-size: 13px;
-      }
-      span:first-of-type {
-        padding-left: 10px;
-        font-size: 13px;
-        font-weight: bold;
-        color: #000000;
-      }
-    }
-    /deep/ .el-table th > .cell {
-      font-weight: normal;
-      font-size: 13px;
-    }
-    /deep/ .el-table--medium td {
-      padding: 6px 0;
-    }
-    >>> .el-input__inner {
-      height: 28px;
-      line-height: 28px;
-    }
-    .current-task {
-      display: flex;
-      >>> .el-input__inner {
-        width: 30px;
-        border: none;
-        background-color: transparent;
-        padding: 0 0 0 3px;
-      }
     }
   }
 }

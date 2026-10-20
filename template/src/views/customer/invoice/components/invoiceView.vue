@@ -2,36 +2,38 @@
 <template>
   <div class="station">
     <el-drawer
+      class="customer-invoice-view-drawer"
       :title="formData.title"
-      :visible.sync="drawer"
+      v-model="drawer"
       :direction="direction"
       :modal="true"
       :show-close="true"
-      :wrapper-closable="true"
       :append-to-body="true"
       :before-close="handleClose"
       :size="formData.width"
     >
-      <div class="invoice-title" slot="title">
-        <el-row class="invoice-header">
-          <el-col class="invoice-left">
-            <div class="invoice-logo"><i class="icon iconfont iconfapiao"></i></div>
-          </el-col>
-          <el-col v-if="drawer">
-            <div class="txt1">{{ delData.title }}</div>
-            <div class="txt2">
-              <span class="title1">发票状态：</span>
-              <span class="tab-btn" :class="getInvoiceColor(delData.status)">
-                {{ getInvoiceStatus(delData.status) }}
-              </span>
-
-              <span class="title">{{ $t('customer.invoicingpay') }}：</span
-              ><span class="info2">{{ delData.amount }}</span>
+      <template #header>
+        <div class="invoice-title">
+          <div class="invoice-header">
+            <div class="invoice-left">
+              <div class="invoice-logo"><i class="icon iconfont iconfapiao"></i></div>
             </div>
-          </el-col>
-        </el-row>
-      </div>
-      <el-tabs v-model="tabIndex" type="border-card" @tab-click="handleClick" :tab-position="tabPosition">
+            <div v-if="drawer">
+              <div class="txt1">{{ delData.title }}</div>
+              <div class="txt2">
+                <span class="title1">发票状态：</span>
+                <span class="tab-btn" :class="getInvoiceColor(delData.status)">
+                  {{ getInvoiceStatus(delData.status) }}
+                </span>
+
+                <span class="title">开票金额(元)：</span
+                ><span class="info2">{{ delData.amount }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+      <el-tabs v-model="tabIndex" type="border-card" @tab-change="handleClick" :tab-position="tabPosition">
         <el-tab-pane label="发票信息" name="1"></el-tab-pane>
         <el-tab-pane label="关联付款单" name="2"></el-tab-pane>
         <el-tab-pane label="操作记录" name="3"></el-tab-pane>
@@ -40,43 +42,55 @@
         <!-- 发票信息 -->
         <el-form label-width="110px" v-if="tabIndex == 1" class="invoice-body">
           <div class="from-item-title mb15">
-            <span>{{ $t('setting.info.essentialinformation') }}</span>
+            <span>基本信息</span>
           </div>
           <div class="form-box">
             <div class="form-item">
               <el-form-item>
-                <span slot="label">客户名称：</span>
-                <p>{{ delData.client ? delData.client.name : '--' }}</p>
+                <template #label>
+                  <span>客户名称：</span>
+                </template>
+                <p>{{ getCustomerName(delData) }}</p>
               </el-form-item>
             </div>
             <div class="form-item" v-if="delData.treaty">
               <el-form-item>
-                <span slot="label">合同名称：</span>
+                <template #label>
+                  <span>订单名称：</span>
+                </template>
                 <p>{{ delData.treaty ? delData.treaty.contract_name : '--' }}</p>
               </el-form-item>
             </div>
             <div class="form-item">
               <el-form-item>
-                <span slot="label">付款金额(元)：</span>
+                <template #label>
+                  <span>付款金额(元)：</span>
+                </template>
                 <p>{{ delData.price }}</p>
               </el-form-item>
             </div>
             <div class="form-item">
               <el-form-item>
-                <span slot="label" class="item-label">发票类目：</span>
+                <template #label>
+                  <span class="item-label">发票类目：</span>
+                </template>
                 <p>{{ delData.category ? delData.category.name : '' }}</p>
               </el-form-item>
             </div>
 
             <div class="form-item">
               <el-form-item>
-                <span slot="label">{{ $t('customer.invoicingdate') }}：</span>
+                <template #label>
+                  <span>期望开票日期：</span>
+                </template>
                 <p>{{ delData.bill_date }}</p>
               </el-form-item>
             </div>
             <div class="form-item">
               <el-form-item>
-                <span slot="label">{{ $t('public.remarks') }}：</span>
+                <template #label>
+                  <span>备注：</span>
+                </template>
                 <p>{{ delData.mark || '--' }}</p>
               </el-form-item>
             </div>
@@ -84,43 +98,55 @@
           <div class="line" />
 
           <div class="from-item-title mt15 mb15">
-            <span>{{ $t('customer.invoiceinformation') }}</span>
+            <span>发票信息</span>
           </div>
           <div class="form-box">
             <div class="form-item">
               <el-form-item>
-                <span slot="label">{{ $t('customer.invoicingpay') }}：</span>
+                <template #label>
+                  <span>开票金额(元)：</span>
+                </template>
                 <p>{{ delData.amount }}</p>
               </el-form-item>
             </div>
             <div class="form-item">
               <el-form-item>
-                <span slot="label">{{ $t('customer.headerinformation') }}：</span>
+                <template #label>
+                  <span>发票类型：</span>
+                </template>
                 <p>{{ getInvoiceTitle(Number(delData.types)) }}</p>
               </el-form-item>
             </div>
             <div class="form-item">
               <el-form-item>
-                <span slot="label">{{ $t('customer.invoiceheader') }}：</span>
+                <template #label>
+                  <span>发票抬头：</span>
+                </template>
                 <p>{{ delData.title }}</p>
               </el-form-item>
             </div>
             <div class="form-item" v-if="delData.types > 1">
               <el-form-item>
-                <span slot="label">{{ $t('customer.paytaxes') }}：</span>
+                <template #label>
+                  <span>纳税人识别号：</span>
+                </template>
                 <p>{{ delData.ident }}</p>
               </el-form-item>
             </div>
 
             <div class="form-item" v-if="delData.types > 2">
               <el-form-item>
-                <span slot="label">地址、电话：</span>
+                <template #label>
+                  <span>地址、电话：</span>
+                </template>
                 <p>{{ delData.address }} {{ delData.tel }}</p>
               </el-form-item>
             </div>
             <div class="form-item" v-if="delData.types > 2">
               <el-form-item>
-                <span slot="label">开户行及账号：</span>
+                <template #label>
+                  <span>开户行及账号：</span>
+                </template>
                 <p>{{ delData.bank }} {{ delData.account }}</p>
               </el-form-item>
             </div>
@@ -130,12 +156,14 @@
 
           <!-- 邮寄信息 -->
           <div class="from-item-title mt15 mb15">
-            <span>{{ $t('customer.mailinginformation') }}</span>
+            <span>邮寄信息</span>
           </div>
           <div class="form-box">
             <div class="form-item">
               <el-form-item>
-                <span slot="label">开票要求：</span>
+                <template #label>
+                  <span>开票要求：</span>
+                </template>
                 <p>
                   {{ delData.collect_type == 'mail' ? '电子' : '纸质' }}
                 </p>
@@ -143,7 +171,9 @@
             </div>
             <div class="form-item" v-if="delData.status !== 0 && delData.status !== -1">
               <el-form-item>
-                <span slot="label">发送方式：</span>
+                <template #label>
+                  <span>发送方式：</span>
+                </template>
                 <p>
                   {{ delData.invoice_type == 'mail' ? '邮箱' : '快递' }}
                 </p>
@@ -152,24 +182,32 @@
             <template v-if="delData.status !== 0 && delData.status !== -1">
               <div class="form-item" v-if="delData.invoice_type !== 'mail'">
                 <el-form-item>
-                  <span slot="label">{{ $t('customer.contacts') }}：</span>
+                  <template #label>
+                    <span>联系人：</span>
+                  </template>
                   <p>{{ delData.collect_name }}</p>
                 </el-form-item>
               </div>
               <div class="form-item" v-if="delData.invoice_type !== 'mail'">
                 <el-form-item>
-                  <span slot="label">{{ $t('customer.contactnumber') }}：</span>
+                  <template #label>
+                    <span>联系电话：</span>
+                  </template>
                   <p>{{ delData.collect_tel }}</p>
                 </el-form-item>
               </div>
 
               <div class="form-item">
                 <el-form-item v-if="delData.invoice_type === 'mail'">
-                  <span slot="label"> {{ $t('customer.emailaddress') }} ：</span>
+                  <template #label>
+                    <span> 邮箱地址 ：</span>
+                  </template>
                   <p>{{ delData.invoice_address }}</p>
                 </el-form-item>
                 <el-form-item v-else>
-                  <span slot="label">邮箱信息：</span>
+                  <template #label>
+                    <span>邮箱信息：</span>
+                  </template>
                   <p>{{ delData.invoice_address }}</p>
                 </el-form-item>
               </div>
@@ -177,24 +215,32 @@
             <template v-else>
               <div class="form-item" v-if="delData.collect_type !== 'mail'">
                 <el-form-item>
-                  <span slot="label">{{ $t('customer.contacts') }}：</span>
+                  <template #label>
+                    <span>联系人：</span>
+                  </template>
                   <p>{{ delData.collect_name }}</p>
                 </el-form-item>
               </div>
               <div class="form-item" v-if="delData.collect_type !== 'mail'">
                 <el-form-item>
-                  <span slot="label">{{ $t('customer.contactnumber') }}：</span>
+                  <template #label>
+                    <span>联系电话：</span>
+                  </template>
                   <p>{{ delData.collect_tel }}</p>
                 </el-form-item>
               </div>
 
               <div class="form-item">
                 <el-form-item v-if="delData.collect_type === 'mail'">
-                  <span slot="label"> {{ $t('customer.emailaddress') }} ：</span>
+                  <template #label>
+                    <span> 邮箱地址 ：</span>
+                  </template>
                   <p>{{ delData.collect_email }}</p>
                 </el-form-item>
                 <el-form-item v-else>
-                  <span slot="label">邮箱信息：：</span>
+                  <template #label>
+                    <span>邮箱信息：：</span>
+                  </template>
                   <p>{{ delData.mail_address }}</p>
                 </el-form-item>
               </div>
@@ -204,44 +250,56 @@
           <div class="line" />
           <!-- 开票信息 -->
           <div class="from-item-title mt15 mb15">
-            <span>{{ $t('customer.billinginformation') }}</span>
+            <span>开票信息</span>
           </div>
           <div class="form-box">
             <div class="form-item">
               <el-form-item>
-                <span slot="label">开票结果：</span>
+                <template #label>
+                  <span>开票结果：</span>
+                </template>
                 <p>{{ getInvoiceStatus(delData.status) }}</p>
               </el-form-item>
             </div>
             <div class="form-item" v-if="delData.status !== 0 && delData.status !== -1">
               <el-form-item>
-                <span slot="label">审核备注：</span>
+                <template #label>
+                  <span>审核备注：</span>
+                </template>
                 <p v-if="delData.status == -1">--</p>
                 <p v-else>{{ delData.remark || '--' }}</p>
               </el-form-item>
             </div>
             <div class="form-item" v-if="delData.file && delData.file.length > 0">
               <el-form-item>
-                <span slot="label">开票凭证：</span>
+                <template #label>
+                  <span>开票凭证：</span>
+                </template>
                 <img :src="delData.file[0].thumb_dir" alt="" class="item-img" />
               </el-form-item>
             </div>
             <div class="form-item" v-if="delData.status !== 0">
               <el-form-item>
-                <span slot="label">操作时间：</span>
+                <template #label>
+                  <span>操作时间：</span>
+                </template>
                 <p>{{ delData.updated_at || '--' }}</p>
               </el-form-item>
             </div>
 
             <div class="form-item">
               <el-form-item>
-                <span slot="label">申请人：</span>
+                <template #label>
+                  <span>申请人：</span>
+                </template>
                 <p>{{ delData.card ? delData.card.name : '--' }}</p>
               </el-form-item>
             </div>
             <div class="form-item">
               <el-form-item>
-                <span slot="label">申请时间：</span>
+                <template #label>
+                  <span>申请时间：</span>
+                </template>
                 <p>{{ delData.created_at || '--' }}</p>
               </el-form-item>
             </div>
@@ -250,14 +308,14 @@
 
         <!-- 关联付款单 -->
         <div v-if="tabIndex == 2" class="invoice-body mr20">
-          <el-table :data="tableData" style="width: 100%;">
+          <el-table :data="tableData" style="width: 100%">
             <el-table-column prop="bill_no" label="付款单号" min-width="180"> </el-table-column>
-            <el-table-column prop="treaty.contract_name" label="合同名称" min-width="150"> </el-table-column>
+            <el-table-column prop="treaty.contract_name" label="订单名称" min-width="150"> </el-table-column>
 
             <el-table-column prop="types" label="业务类型" min-width="200">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <span v-if="scope.row.types === 0">回款记录</span>
-                <span v-if="scope.row.types === 1">续费记录 - {{ scope.row.renew.title }}</span>
+                <span v-if="scope.row.types === 1">续费记录 - {{ scope.row.renew ? scope.row.renew.title : '--' }}</span>
               </template>
             </el-table-column>
             <el-table-column prop="num" label="付款金额(元)" min-width="150"> </el-table-column>
@@ -275,30 +333,43 @@
           </div>
           <el-steps direction="vertical" space="100" class="set" :active="1" v-if="recordList.length !== 0">
             <el-step v-for="(item, index) in recordList" :key="index">
-              <div slot="icon">
-                <span class="iconfont iconfapiaoxiangqing-caozuojilu"></span>
-              </div>
-              <div slot="description">
-                <div class="operationBox" :class="item.operation_name == '申请开票' ? 'removeBorderLine' : ''">
-                  <div class="header">
-                    <div class="left">{{ item.operation_name }}</div>
-                    <div class="right">
-                      {{ item.card.name }}
-                      <el-divider direction="vertical" />
-                      {{ item.created_at }}
+              <template #icon>
+                <div>
+                  <span class="iconfont iconfapiaoxiangqing-caozuojilu"></span>
+                </div>
+              </template>
+              <template #description>
+                <div>
+                  <div class="operationBox" :class="item.operation_name == '申请开票' ? 'removeBorderLine' : ''">
+                    <div class="header">
+                      <div class="left">{{ item.operation_name }}</div>
+                      <div class="right">
+                        {{ item.card ? item.card.name : '--' }}
+                        <el-divider direction="vertical" />
+                        {{ item.created_at }}
+                      </div>
+                    </div>
+
+                    <div class="footer" v-if="item.operation_name !== '申请开票'">
+                      <el-form label-width="110px" :row-style="{ height: '32px' }" class="description">
+                        <el-form-item :label="details.name" v-for="(details, index) in item.operation" :key="index">
+                          <span v-if="details.name !== '开票凭证：'" class="content">{{ details.val || '--' }}</span>
+                          <template v-else>
+                            <img
+                              v-for="(url, fileIndex) in normalizeFiles(details.val)"
+                              :key="fileIndex"
+                              :src="url"
+                              alt=""
+                              class="item-img"
+                              @click="handlePictureCardPreview(url)"
+                            />
+                          </template>
+                        </el-form-item>
+                      </el-form>
                     </div>
                   </div>
-
-                  <div class="footer" v-if="item.operation_name !== '申请开票'">
-                    <el-form label-width="110px" :row-style="{ height: '32px' }" class="description">
-                      <el-form-item :label="details.name" v-for="(details, index) in item.operation" :key="index">
-                        <span v-if="details.name !== '开票凭证：'" class="content">{{ details.val }}</span>
-                        <img :src="details.val" alt="" v-else class="item-img" />
-                      </el-form-item>
-                    </el-form>
-                  </div>
                 </div>
-              </div>
+              </template>
             </el-step>
           </el-steps>
         </div>
@@ -308,20 +379,19 @@
         class="button from-foot-btn fix btn-shadow"
         v-if="formData.follType && formData.follType === 'fd' && delData.status === 0"
       >
-        <el-button size="small" type="primary" @click="handleInvoicing">审核</el-button>
+        <el-button type="primary" @click="handleInvoicing">审核</el-button>
       </div>
-      <el-image-viewer v-if="isImage" :on-close="closeImageViewer" :url-list="srcList" />
+      <el-image-viewer v-if="isImage" @close="closeImageViewer" :url-list="srcList" />
     </el-drawer>
     <invoicing-dialog ref="invoicingDialog" :config="invoicingDialog" @isOk="isOk" />
   </div>
 </template>
 
 <script>
-import file from '@/utils/file'
-import { paymentRecordApi, operationRecordApi } from '@/api/enterprise'
-import Vue from 'vue'
-Vue.use(file)
-import { getInvoiceClassName, getInvoiceText, getInvoiceType } from '@/libs/customer'
+import { defineAsyncComponent } from 'vue'
+import { paymentRecordApi, operationRecordApi } from '@/api/enterprise.ts'
+import { clientInvoiceDetailApi } from '@/api/client.ts'
+import { getInvoiceClassName, getInvoiceText, getInvoiceType } from '@/libs/customer.ts'
 export default {
   name: 'InvoiceView',
   props: {
@@ -333,8 +403,7 @@ export default {
     }
   },
   components: {
-    ElImageViewer: () => import('element-ui/packages/image/src/image-viewer'),
-    invoicingDialog: () => import('@/views/fd/invoice/components/invoicingDialog')
+    invoicingDialog: defineAsyncComponent(() => import('@/views/fd/invoice/components/invoicingDialog'))
   },
   data() {
     return {
@@ -364,7 +433,16 @@ export default {
       this.drawer = false
       this.tabIndex = '1'
     },
-    openBox() {
+    async openBox(id) {
+      this.delData = this.formData.data || {}
+      if (id || this.delData.id) {
+        try {
+          const res = await clientInvoiceDetailApi(id || this.delData.id)
+          this.delData = Object.assign({}, this.delData, res.data || {})
+        } catch (error) {
+          this.$message.error(error.message || '获取发票详情失败')
+        }
+      }
       this.drawer = true
     },
     // 开票
@@ -387,11 +465,21 @@ export default {
     getInvoiceTitle(id) {
       return getInvoiceType(id)
     },
+    getCustomerName(row) {
+      return (row.client && (row.client.name || row.client.customer_name)) ||
+        (row.customer && (row.customer.name || row.customer.customer_name)) ||
+        row.customer_name ||
+        '--'
+    },
+    normalizeFiles(value) {
+      if (!value) return []
+      return Array.isArray(value) ? value : [value]
+    },
     // 关联付款单
     paymentRecordApi() {
       let data = {
         invoice_id: this.delData.id,
-        eid: this.delData.eid
+        eid: this.delData.eid || this.delData.client?.id || this.delData.customer?.id || ''
       }
       paymentRecordApi(data).then((res) => {
         this.tableData = res.data.list
@@ -424,9 +512,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.station /deep/.el-drawer__body {
-  padding: 20px 20px 50px 20px;
-}
 .item-img {
   width: 40px;
   height: 40px;
@@ -465,28 +550,28 @@ export default {
   }
 }
 .set {
-  /deep/ .el-step__icon.is-text {
+  :deep(.el-step__icon.is-text) {
     border: none;
   }
   .iconfapiaoxiangqing-caozuojilu {
     font-size: 13px;
     color: #1890ff;
   }
-  /deep/ .el-step__line {
+  :deep(.el-step__line) {
     width: 1px;
     background-color: #ebeef4;
   }
-  /deep/ .el-step__icon {
+  :deep(.el-step__icon) {
     margin-top: 20px;
     height: 12px;
   }
-  /deep/ .el-step.is-vertical .el-step__line {
+  :deep(.el-step.is-vertical .el-step__line) {
     top: 20px;
     bottom: -18px;
   }
 }
 
-.description /deep/ .el-form-item {
+.description :deep(.el-form-item) {
   margin-bottom: 0px;
 }
 .removeBorderLine {
@@ -505,11 +590,14 @@ export default {
   color: #303133;
   line-height: 12px;
 }
-/deep/ .el-step.is-vertical .el-step__main {
+:deep(.el-step.is-vertical .el-step__main) {
   width: 800px;
 }
+:deep(.el-tabs__item) {
+  line-height: 40px !important;
+}
 
-/deep/ .el-tabs__item.is-active {
+:deep(.el-tabs__item.is-active) {
   border-right-color: transparent !important;
   border-left-color: transparent !important;
   &::after {
@@ -562,62 +650,65 @@ export default {
   }
   .footer {
     padding: 20px 20px 8px 0px;
-    /deep/ .el-form-item {
+    :deep(.el-form-item) {
       margin-bottom: 12px;
     }
 
-    /deep/ .el-form-item__label {
+    :deep(.el-form-item__label) {
       line-height: 18px;
     }
-    /deep/.el-form-item__content {
+    :deep(.el-form-item__content) {
       line-height: 18px;
     }
   }
 }
-/deep/ .el-drawer__header {
-  height: 85px !important;
-  padding: 14px 18px;
+
+:deep(.el-tabs__content) {
+  padding: 0;
 }
-/deep/ .el-tabs__header {
+:deep(.el-form--inline .el-form-item) {
+  display: flex;
+}
+:deep(.el-tabs__header) {
   background-color: #f7fbff;
   border-bottom: none;
 }
-/deep/ .el-tabs__content {
-  padding: 0;
-}
-/deep/ .el-tabs__nav-wrap::after {
+:deep(.el-tabs__nav-wrap::after) {
   height: 0;
 }
-/deep/ .el-tabs__active-bar {
+:deep(.el-tabs__active-bar) {
   top: 0;
 }
-.el-tabs--border-card {
+:deep(.el-input__inner) {
+  text-align: left;
+}
+:deep(.el-tabs--border-card) {
   height: 39px;
   position: fixed;
-  top: 85px;
+  top: 80px;
   width: 100%;
   z-index: 4;
   background-color: transparent;
   border: none;
   box-shadow: none;
 }
-/deep/ .el-step.is-vertical .el-step__title {
+:deep(.el-step.is-vertical .el-step__title) {
   font-size: 14px;
   font-family: PingFangSC-Medium, PingFang SC;
   font-weight: 500;
   color: #303133;
   margin-left: 10px;
 }
-/deep/ .el-form--inline .el-form-item {
+:deep(.el-form--inline .el-form-item) {
   display: flex;
 }
-/deep/ .el-input-number--medium {
+:deep(.el-input-number) {
   width: 100%;
   .el-input__inner {
     text-align: left;
   }
 }
-/deep/ .el-date-editor {
+:deep(.el-date-editor) {
   width: 100%;
 }
 .invoice-body {
@@ -711,7 +802,7 @@ export default {
   .contract-list {
     width: 100%;
     height: 100%;
-    /deep/ .el-button--medium {
+    :deep(.el-button) {
       font-size: 13px;
     }
     .icon-cover {
@@ -732,16 +823,16 @@ export default {
   justify-content: space-between;
   .form-item {
     width: 49%;
-    /deep/ .el-form-item__content {
+    :deep(.el-form-item__content) {
       width: calc(100% - 110px);
     }
-    /deep/ .el-select--medium {
+    :deep(.el-select) {
       width: 100%;
     }
-    /deep/ .el-form-item {
+    :deep(.el-form-item) {
       margin-bottom: 0;
     }
-    /deep/ .el-textarea__inner {
+    :deep(.el-textarea__inner) {
       resize: none;
     }
 
@@ -761,7 +852,7 @@ export default {
   div {
     display: inline-block;
   }
-  /deep/ .el-upload--picture-card {
+  :deep(.el-upload--picture-card) {
     width: 98px;
     height: 98px;
     line-height: 102px;
@@ -769,7 +860,7 @@ export default {
   .upload-icon {
     font-size: 98px;
   }
-  /deep/ .el-upload-list--picture-card .el-upload-list__item {
+  :deep(.el-upload-list--picture-card .el-upload-list__item) {
     width: 98px;
     height: 98px;
     line-height: 1;
@@ -796,9 +887,20 @@ export default {
   border-top: 1px solid #e6ebf5;
   text-align: right;
 }
-/deep/ .el-form-item__label {
+:deep(.el-form-item__label) {
   font-size: 12px !important;
   font-weight: 400;
   color: #909399 !important;
+}
+</style>
+
+<style lang="scss">
+// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
+.customer-invoice-view-drawer .el-drawer__body {
+  padding: 20px 20px 50px 20px;
+}
+.customer-invoice-view-drawer .el-drawer__header {
+  height: 85px !important;
+  padding: 14px 18px;
 }
 </style>

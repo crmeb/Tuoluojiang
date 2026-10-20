@@ -5,9 +5,9 @@
       <el-avatar class="header-img" :size="36" :src="myHeader"></el-avatar>
       <div class="reply-info" v-show="!showReply">
         <div
+          ref="replyInput"
           tabindex="0"
           contenteditable="true"
-          id="replyInput"
           spellcheck="false"
           placeholder="请输入您的评论"
           class="reply-input pointer"
@@ -17,7 +17,7 @@
         ></div>
       </div>
       <div class="reply-ueditor" v-if="showReply">
-        <ueditor-form
+        <component
           is="ueditorFrom"
           :border="true"
           ref="ueditorFrom"
@@ -25,13 +25,13 @@
           :type="`simple`"
           :headers="true"
           :content="formData.describe"
-          :placeholder="'发表您的看法...'"
+          placeholder="发表您的看法..."
           @input="ueditorEdit"
         />
       </div>
       <div class="reply-btn-box" v-show="showReply">
         <el-button class="reply-btn" @click="cancelComment">取消</el-button>
-        <el-button size="medium" @click="sendComment" type="primary">评论</el-button>
+        <el-button size="default" @click="sendComment" type="primary">评论</el-button>
       </div>
     </div>
 
@@ -106,7 +106,7 @@
             ></div>
           </div>
           <div class="reply-btn-box">
-            <el-button class="reply-btn" size="medium" @click="sendCommentReply(i, j)" type="primary"
+            <el-button class="reply-btn" size="default" @click="sendCommentReply(i, j)" type="primary"
               >发表评论</el-button
             >
           </div>
@@ -114,44 +114,46 @@
       </div>
     </div>
     <div v-if="!list.length" class="default">
-      <default-page :index="17" :min-height="300"></default-page>
+      <default-page :index="17" :min-height="200" imgWidth="160px"></default-page>
     </div>
     <image-viewer ref="imageViewer" :src-list="srcList"></image-viewer>
   </div>
 </template>
 <script>
+import { defineAsyncComponent } from 'vue'
+import { getStorageJson } from '@/utils/storage.ts'
 import imageViewer from '@/components/common/imageViewer'
 
 const clickoutside = {
   // 初始化指令
-  bind(el, binding, vnode) {
+  beforeMount(el, binding) {
     function documentHandler(e) {
       // 这里判断点击的元素是否是本身，是本身，则返回
       if (el.contains(e.target)) {
         return false
       }
       // 判断指令中是否绑定了函数
-      if (binding.expression) {
+      if (typeof binding.value === 'function') {
         // 如果绑定了函数 则调用那个函数，此处binding.value就是handleClose方法
         binding.value(e)
       }
     }
-    // 给当前元素绑定个私有变量，方便在unbind中可以解除事件监听
+    // 给当前元素绑定个私有变量，方便在unmounted中可以解除事件监听
     el.vueClickOutside = documentHandler
     document.addEventListener('click', documentHandler)
   },
-  update() {},
-  unbind(el, binding) {
+  unmounted(el) {
     // 解除事件监听
     document.removeEventListener('click', el.vueClickOutside)
     delete el.vueClickOutside
   }
 }
 export default {
+  emits: ['sendComment', 'deleteReply'],
   name: 'ArticleComment',
   components: {
-    ueditorFrom: () => import('@/components/form-common/oa-wangeditor'),
-    defaultPage: () => import('@/components/common/defaultPage'),
+    ueditorFrom: defineAsyncComponent(() => import('@/components/form-common/oa-wangeditor')),
+    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage')),
     imageViewer
   },
   props: {
@@ -174,8 +176,8 @@ export default {
       replyComment: '',
       myName: '',
       isEdit: false,
-      myHeader: JSON.parse(localStorage.getItem('userInfo')).avatar,
-      myId: JSON.parse(localStorage.getItem('userInfo')).id,
+      myHeader: getStorageJson('userInfo', {}).avatar,
+      myId: getStorageJson('userInfo', {}).id,
       to: '',
       toId: -1,
       formData: {
@@ -199,16 +201,15 @@ export default {
 
   methods: {
     inputFocus() {
-      var replyInput = document.getElementById('replyInput')
-      replyInput.style.padding = '8px 8px'
+      this.$refs.replyInput.style.padding = "8px 8px";
     },
     showReplyBtn() {
       this.btnShow = true
     },
     hideReplyBtn() {
-      this.btnShow = false
-      replyInput.style.padding = '10px'
-      replyInput.style.border = 'none'
+      this.btnShow = false;
+      this.$refs.replyInput.style.padding = "10px";
+      this.$refs.replyInput.style.border = "none";
     },
     showReplyInput(i, name, id) {
       this.list[this.index].inputShow = false
@@ -438,7 +439,7 @@ export default {
       font-size: 14px;
       color: #303133;
       display: inline-block;
-      /deep/ p {
+      :deep(p) {
         img {
           width: 148px;
         }
@@ -456,7 +457,7 @@ export default {
     background-color: #f7fbff;
   }
 }
-/deep/.el-avatar > img {
+:deep(.el-avatar > img) {
   width: 100% !important;
   height: 100% !important;
 }
@@ -467,11 +468,11 @@ export default {
   padding: 20px 0 0 20px;
   color: #909399;
 }
-/deep/.w-e-text-container {
+:deep(.w-e-text-container) {
   padding-top: 10px;
 }
 .rich_text {
-  /deep/ p {
+  :deep(p) {
     img {
       width: 90%;
     }

@@ -15,13 +15,16 @@
 </template>
 
 <script>
+import { modalSure } from '@/libs/public.ts'
+import modalForm from '@/libs/modal-form.ts'
 import {
   assessTargetCateApi,
   assessTargetCateEditApi,
   assessTargetCateListApi,
   targetCateDeleteApi
-} from '@/api/enterprise'
+} from '@/api/enterprise.ts'
 export default {
+  emits: ['eventOptionData'],
   name: 'DepartmentNot',
   props: {
     type: {
@@ -69,17 +72,17 @@ export default {
       })
     },
     addCate() {
-      this.$modalForm(assessTargetCateApi(this.type)).then(({ message }) => {
+      modalForm(assessTargetCateApi(this.type)).then(({ message }) => {
         this.getTargetCate()
       })
     },
     addDivsion() {
-      this.$modalForm(assessTargetCateEditApi(this.activeValue)).then(({ message }) => {
+      modalForm(assessTargetCateEditApi(this.activeValue)).then(({ message }) => {
         this.getTargetCate()
       })
     },
     hanleDelete() {
-      this.$modalSure('你确定要删除这条指标模板分类吗').then(() => {
+      modalSure('你确定要删除这条指标模板分类吗').then(() => {
         targetCateDeleteApi(this.activeValue).then((res) => {
           this.getTargetCate()
         })

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,10 +15,9 @@ declare(strict_types=1);
 
 namespace App\Http\Model\Config;
 
-use App\Constants\CacheEnum;
+use App\Observers\SystemConfigObserver;
 use App\Http\Model\BaseModel;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Cache;
 
 /**
  * Class Config.
@@ -37,11 +36,23 @@ class Config extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'          => 'integer',
+        'cate_id'     => 'integer',
+        'upload_type' => 'integer',
+        'width'       => 'integer',
+        'high'        => 'integer',
+        'sort'        => 'integer',
+        'entid'       => 'integer',
+        'is_show'     => 'integer',
+        'created_at'  => 'datetime:Y-m-d H:i:s',
+        'updated_at'  => 'datetime:Y-m-d H:i:s',
+    ];
+
     public static function boot()
     {
         parent::boot();
-        static::updated(fn () => Cache::tags([CacheEnum::TAG_CONFIG])->flush());
-        static::created(fn () => Cache::tags([CacheEnum::TAG_CONFIG])->flush());
+        static::observe(SystemConfigObserver::class);
     }
 
     /**

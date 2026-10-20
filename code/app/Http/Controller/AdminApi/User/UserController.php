@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,14 +16,13 @@ declare(strict_types=1);
 namespace App\Http\Controller\AdminApi\User;
 
 use App\Constants\CacheEnum;
-use App\Constants\MenuEnum;
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Requests\user\UserRequest;
 use App\Http\Service\Admin\AdminInfoService;
 use App\Http\Service\Admin\AdminService;
 use App\Http\Service\Company\CompanyApplyService;
 use App\Http\Service\System\MenusService;
-use App\Http\Service\System\RolesService;
+use App\Http\Service\System\ModulePermissionService;
 use App\Http\Service\User\UserCardPerfectService;
 use App\Http\Service\User\UserResumeService;
 use Illuminate\Contracts\Container\BindingResolutionException;
@@ -61,12 +60,13 @@ class UserController extends AuthController
     #[Get('userInfo', '获取当前用户信息')]
     public function userInfo()
     {
-        $info = $this->service->getInfo(auth('admin')->id(), ['id', 'uid', 'password', 'phone', 'name', 'avatar'], [
+        $info = $this->service->getInfo(auth('admin')->id(), ['id', 'uid', 'password', 'phone', 'name', 'avatar', 'work_member_id'], [
             'info' => fn ($query) => $query->select(['email', 'uid']),
         ]);
         if ($info['info']) {
             $info['email'] = $info['info']['email'];
         }
+        $info['mcpKey'] = $this->service->getMcpKey((int) auth('admin')->id());
         return $this->success($info);
     }
 
@@ -78,15 +78,27 @@ class UserController extends AuthController
      * @throws NotFoundExceptionInterface
      */
     #[Get('menus', '获取当前用户菜单')]
-    public function menus(RolesService $service, MenusService $menusService)
+    public function menus(MenusService $menusService, ModulePermissionService $modulePermissionService)
     {
-        $menus = Cache::tags([CacheEnum::TAG_ROLE])->remember(md5('menus_admin' . $this->uuid), (int) sys_config('system_cache_ttl', 3600), function () use ($service, $menusService) {
-            $menu    = $menusService->getMenusForUser($this->uuid, 1);
-            $roleIds = $service->getRolesForUser($this->uuid, 1, false);
-            $roles   = $menusService->column(['ids' => $roleIds, 'type' => MenuEnum::TYPE_BUTTON, 'status' => 1], 'unique_auth');
-            return compact('menu', 'roles');
+        $authUser = auth('admin')->user();
+        $adminId  = (int) auth('admin')->id();
+        $userId   = $authUser->is_admin ? 'all' : $adminId;
+        $cacheKey = 'user:menus:' . $this->entId . ':' . $userId . ':' . $adminId;
+        $data     = Cache::tags([CacheEnum::TAG_ROLE])->remember($cacheKey, (int) sys_config('system_cache_ttl', 3600), function () use ($menusService, $modulePermissionService, $userId, $adminId) {
+            $menu = $menusService->getUserMenus($userId);
+            if (! $menu) {
+                return [];
+            }
+            $roles       = $menusService->getUserButtons($userId);
+            $permissions = $modulePermissionService->getUserAllPermissions($adminId);
+            return compact('menu', 'roles', 'permissions');
         });
-        return $this->success($menus);
+
+        if (! $data || empty($data['menu'])) {
+            return $this->fail('暂无权限访问,请联系管理员分配权限!');
+        }
+
+        return $this->success($data);
     }
 
     /**
@@ -140,6 +152,21 @@ class UserController extends AuthController
     }
 
     /**
+     * 更新当前用户 MCP Key.
+     *
+     * @return mixed
+     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
+     */
+    #[Put('mcp_key', '更新当前用户McpKey')]
+    public function updateMcpKey()
+    {
+        return $this->success(['mcpKey' => $this->service->refreshMcpKey((int) auth('admin')->id())]);
+    }
+
+    /**
      * 验证密码规范.
      * @return mixed
      * @throws ValidationException
@@ -148,11 +175,12 @@ class UserController extends AuthController
     public function checkPwd(UserRequest $request)
     {
         $request->scene('update_password')->check();
-        return $this->success('验证成功');
+        return $this->success('验证成功', tips: 0);
     }
 
     /**
      * 处理企业邀请.
+     * @param mixed $id
      * @return mixed
      */
     public function apply(CompanyApplyService $services, UserCardPerfectService $perfectServices, $id)

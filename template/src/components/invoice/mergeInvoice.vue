@@ -1,16 +1,16 @@
-<!-- 合同-关联付款单的申请发票页面 -->
+<!-- 订单-关联付款单的申请发票页面 -->
 <template>
   <div>
     <div class="station">
       <el-drawer
+      class="invoice-merge-invoice-drawer"
         :append-to-body="true"
         :before-close="handleClose"
         :direction="direction"
         :modal="true"
         :size="formData.width"
         :title="formData.title"
-        :visible.sync="drawer"
-        :wrapper-closable="true"
+        v-model="drawer"
       >
         <!-- 步骤条 -->
         <div class="step">
@@ -28,12 +28,13 @@
         </div>
         <!-- 表格 -->
         <div v-if="activeIndex == 1" class="mt20">
-          <el-button v-if="formData.type == 'edit'" class="mb14" size="small" type="primary" @click="addPaymentFn"
+          <el-button v-if="formData.type == 'edit'" class="mb14" type="primary" @click="addPaymentFn"
             >添加其他付款单</el-button
           >
           <paymentTable
             ref="paymentTable"
             :edit="edit"
+            :ids="rules.bill_id"
             :tableData="tableData1"
             @handleSelectionFn="handleSelectionChange"
             @totalFn="totalFn"
@@ -43,12 +44,17 @@
         <!-- 基本信息 -->
         <div v-if="activeIndex == 2" class="mt20">
           <div class="mb50">
-            <approval-edit ref="approval" :commandId="commandId" :parameterData="parameterData"></approval-edit>
+            <approval-edit
+              ref="approval"
+              :commandId="commandId"
+              :parameterData="parameterData"
+              @isOk="isOkFn"
+            ></approval-edit>
           </div>
         </div>
         <div class="button from-foot-btn fix btn-shadow">
-          <el-button size="small" @click="handleClose">{{ activeIndex == 1 ? '取消' : '上一步' }}</el-button>
-          <el-button size="small" type="primary" @click="handleConfirm()">
+          <el-button @click="handleClose">{{ activeIndex == 1 ? '取消' : '上一步' }}</el-button>
+          <el-button type="primary" @click="handleConfirm()">
             {{ activeIndex == 1 ? '下一步' : '确定' }}
           </el-button>
         </div>
@@ -56,7 +62,7 @@
 
       <el-dialog
         :append-to-body="true"
-        :visible.sync="addPayment"
+        v-model="addPayment"
         title="选择申请开票付款单"
         width="1100px"
         @close="cancelFn"
@@ -64,8 +70,8 @@
         <div class="line" />
         <paymentTable :edit="edit" :ids="rules.bill_id" :tableData="tableData2" @handleSelectionFn="pushTableFn" />
         <div class="footer">
-          <el-button class="btn" size="small" @click="cancelFn">取消</el-button>
-          <el-button class="btn" size="small" type="primary" @click="okFn">确定</el-button>
+          <el-button class="btn" @click="cancelFn">取消</el-button>
+          <el-button class="btn" type="primary" @click="okFn">确定</el-button>
         </div>
       </el-dialog>
     </div>
@@ -73,11 +79,16 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
 import paymentTable from './paymentTable'
 
-import { clientInvoiceSaveApi, uninvoicedListApi, clientInvoicePutApi } from '@/api/enterprise'
-import helper from '@/libs/helper'
+import { uninvoicedListApi } from '@/api/enterprise.ts'
+import { clientInvoiceSaveApi, clientInvoicePutApi } from '@/api/client.ts'
+import helper from '@/libs/helper.ts'
+import { getStorageJson } from '@/utils/storage.ts'
 export default {
+  emits: ['getTableData', 'isOk'],
   name: 'MergeInvoice',
   props: {
     contractInvoice: {
@@ -99,12 +110,12 @@ export default {
   },
   components: {
     paymentTable,
-    approvalEdit: () => import('./approvalEdit')
+    approvalEdit: defineAsyncComponent(() => import('./approvalEdit'))
   },
   data() {
     const checkIdent = (rule, value, callback) => {
       if (!value && this.rules.invoiceType > 1) {
-        return callback(new Error(this.$t('customer.placeholder47')))
+        return callback(new Error('请输入纳税人识别号'))
       } else if (!helper.identReg.test(value)) {
         return callback(new Error('税号输入不合法'))
       } else {
@@ -127,13 +138,13 @@ export default {
       categoryList: [], // 发票类目
       invoiceOptions: [
         // 发票类型
-        { value: 1, label: this.$t('customer.personalinvoice') },
-        { value: 2, label: this.$t('customer.enterpriseinvoice') },
-        { value: 3, label: this.$t('customer.specialinvoice') }
+        { value: 1, label: '个人普通发票' },
+        { value: 2, label: '企业普通发票' },
+        { value: 3, label: '企业专用发票' }
       ],
       methodOptions: [
-        { value: 'express', label: this.$t('customer.express') },
-        { value: 'mail', label: this.$t('customer.mail') }
+        { value: 'express', label: '快递' },
+        { value: 'mail', label: '邮件' }
       ],
       activeIndex: 1,
       withdraw: '',
@@ -161,19 +172,19 @@ export default {
       },
       newFormData: {},
       rule: {
-        name: [{ required: true, message: this.$t('customer.placeholder42'), trigger: 'blur' }],
-        amount: [{ required: true, message: this.$t('customer.placeholder44'), trigger: 'blur' }],
-        billDate: [{ required: true, message: this.$t('customer.placeholder65'), trigger: 'blur' }],
-        title: [{ required: true, message: this.$t('customer.placeholder46'), trigger: 'blur' }],
+        name: [{ required: true, message: '请输入发票名称', trigger: 'blur' }],
+        amount: [{ required: true, message: '请输入开票金额', trigger: 'blur' }],
+        billDate: [{ required: true, message: '请选择期望开票时间', trigger: 'blur' }],
+        title: [{ required: true, message: '请输入抬头信息', trigger: 'blur' }],
         ident: [{ required: true, validator: checkIdent, trigger: 'blur' }],
         category_id: [{ required: true, message: '请选择发票类目', trigger: 'change' }],
         collect_name: [{ required: true, message: '电话号码不能为空', trigger: 'blur' }],
         collect_tel: [{ required: true, message: '电话号码不能为空', trigger: 'blur' }],
         collect_email: [{ required: true, message: '邮箱地址不能为空', trigger: 'blur' }],
         mail_address: [{ required: true, message: '邮寄地址不能为空', trigger: 'blur' }],
-        address: [{ required: true, message: this.$t('customer.placeholder56'), trigger: 'blur' }],
-        bank: [{ required: true, message: this.$t('customer.placeholder48'), trigger: 'blur' }],
-        account: [{ required: true, message: this.$t('customer.placeholder49'), trigger: 'blur' }],
+        address: [{ required: true, message: '请输入邮寄详细地址', trigger: 'blur' }],
+        bank: [{ required: true, message: '请输入开户行', trigger: 'blur' }],
+        account: [{ required: true, message: '请输入开户账号', trigger: 'blur' }],
         tel: [{ required: true, message: '电话号码不能为空', trigger: 'blur' }]
       }
     }
@@ -221,12 +232,12 @@ export default {
         if (this.edit == 'edit') {
           this.editPaymentRecord()
           this.$nextTick(() => {
-            this.$refs.paymentTable.edit = 'edit'
+            this.$refs.paymentTable.editLocal = 'edit'
           })
         } else {
           this.getPaymentRecord()
         }
-        this.rules.billDate = this.$moment(new Date()).format('YYYY-MM-DD')
+        this.rules.billDate = dayjs(new Date()).format('YYYY-MM-DD')
       }, 300)
       this.drawer = true
     },
@@ -237,7 +248,7 @@ export default {
     okFn() {
       this.rules.bill_id = []
       let totalAmount = []
-      let list = JSON.parse(localStorage.getItem('paymentOrderList'))
+      let list = getStorageJson('paymentOrderList', [])
       this.pushTable.forEach((item) => {
         list.push(item)
         this.addPayment = false
@@ -252,6 +263,11 @@ export default {
       let newtol = totalAmount.map(Number)
       this.rules.price = newtol.reduce((x, y) => x + y).toFixed(2)
       this.rules.amount = this.rules.price
+    },
+
+    isOkFn() {
+      this.drawer = false
+      this.$emit('getTableData')
     },
 
     // 去重方法
@@ -285,12 +301,11 @@ export default {
     getPaymentRecord() {
       let data = {
         eid: '',
-        cid: '',
-        withdraw: this.withdraw
+        cid: ''
       }
 
-      data.eid = this.newFormData.data.eid
-      data.cid = this.newFormData.data.cid
+      data.eid = this.newFormData.data.eid || ''
+      data.cid = this.newFormData.data.cid || ''
 
       uninvoicedListApi(data).then((res) => {
         this.tableData1 = res.data
@@ -370,10 +385,10 @@ export default {
       } else {
         if (this.commandId) {
           this.$refs.approval.handleConfirm()
-          setTimeout(() => {
-            this.drawer = false
-            this.$emit('getTableData')
-          }, 2000)
+          // setTimeout(() => {
+          //   // this.drawer = false
+          //   this.$emit('getTableData')
+          // }, 2000)
         } else {
           this.$refs.tableform.validate((valid) => {
             if (valid) {
@@ -385,8 +400,8 @@ export default {
                 category_id: this.rules.category_id
               }
 
-              let categoryList = JSON.parse(localStorage.getItem('categoryList'))
-              if (categoryList && categoryList.length !== 0) {
+              let categoryList = getStorageJson('categoryList', [])
+              if (categoryList.length !== 0) {
                 var flag = categoryList.find((cur) => cur.eid == data.eid)
                 if (flag) {
                   categoryList.map((item) => {
@@ -443,9 +458,9 @@ export default {
         this.rest()
       } else {
         this.activeIndex = 1
-        let list = JSON.parse(localStorage.getItem('paymentOrderList'))
+        let list = getStorageJson('paymentOrderList', [])
         this.$nextTick(() => {
-          this.$set(this, 'tableData1', list)
+          this.tableData1 = list
         })
 
         this.getPayment()
@@ -453,7 +468,7 @@ export default {
     },
     rest() {
       this.activeIndex = 1
-      for (key in this.rules) {
+      for (const key in this.rules) {
         this.rules[key] = ''
       }
       this.rules.price = '0'
@@ -469,14 +484,14 @@ export default {
 <style lang="scss" scoped>
 .public {
   display: inline-block;
-  width: 28px;
-  height: 28px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   text-align: center;
-  line-height: 28px;
-  font-size: 16px;
+  line-height: 20px;
+  font-size: 13px;
   font-family: PingFangSC-Semibold, PingFang SC;
-  font-weight: 600;
+  font-weight: 400;
   border-radius: 50%;
   border: 1px solid #dcdfe6;
   color: #c0c4cc;
@@ -514,10 +529,10 @@ export default {
 .step-text {
   margin-left: 8px;
   margin-right: 8px;
-  font-size: 16px;
+  font-size: 13px;
   font-family: PingFangSC-Regular, PingFang SC;
   font-weight: 400;
-  color: #909399;
+  color: #606266;
 }
 .step {
   display: flex;
@@ -533,13 +548,9 @@ export default {
   border-bottom: 1px solid #e9e9e9;
 }
 .activeText {
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 400;
   color: #303133;
-}
-/deep/ .el-drawer__body {
-  margin-right: 20px;
-  margin-left: 20px;
 }
 .invoice {
   margin: 20px 20px 20px 20px;
@@ -548,7 +559,7 @@ export default {
     height: auto;
   }
 }
-/deep/ .el-input-number {
+:deep(.el-input-number) {
   width: 100%;
   .el-input__inner {
     text-align: left;
@@ -568,13 +579,13 @@ export default {
   justify-content: space-between;
   .form-item {
     width: 49%;
-    /deep/ .el-form-item__content {
+    :deep(.el-form-item__content) {
       width: calc(100% - 110px);
     }
-    /deep/ .el-select {
+    :deep(.el-select) {
       width: 100%;
     }
-    /deep/ .el-textarea__inner {
+    :deep(.el-textarea__inner) {
       resize: none;
     }
   }
@@ -584,7 +595,7 @@ export default {
   padding: 20px 20px;
   padding-bottom: 0;
 }
-/deep/ .el-alert {
+:deep(.el-alert) {
   padding-left: 30px;
   border: 1px solid #1890ff;
   color: #1890ff;
@@ -593,16 +604,24 @@ export default {
   line-height: 1;
   margin-bottom: 10px;
 }
-/deep/ .el-alert--info .el-alert__description {
+:deep(.el-alert--info .el-alert__description) {
   color: #303133;
   font-size: 13px;
   font-weight: 500;
 }
-/deep/ .el-alert__icon.is-big {
+:deep(.el-alert__icon.is-big) {
   font-size: 16px;
   width: 15px;
 }
 .mb50 {
   margin-bottom: 50px;
+}
+</style>
+
+<style lang="scss">
+// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
+.invoice-merge-invoice-drawer .el-drawer__body {
+  margin-right: 20px;
+  margin-left: 20px;
 }
 </style>

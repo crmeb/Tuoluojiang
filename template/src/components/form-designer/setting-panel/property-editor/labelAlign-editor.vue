@@ -1,18 +1,18 @@
 <template>
   <el-form-item :label="i18nt('designer.setting.labelAlign')" v-if="!noLabelSetting && (selectedWidget.type !== 'button')">
     <el-radio-group v-model="optionModel.labelAlign" class="radio-group-custom">
-      <el-radio-button label="label-left-align">
+      <el-radio-button value="label-left-align">
         {{i18nt('designer.setting.leftAlign')}}</el-radio-button>
-      <el-radio-button label="label-center-align">
+      <el-radio-button value="label-center-align">
         {{i18nt('designer.setting.centerAlign')}}</el-radio-button>
-      <el-radio-button label="label-right-align">
+      <el-radio-button value="label-right-align">
         {{i18nt('designer.setting.rightAlign')}}</el-radio-button>
     </el-radio-group>
   </el-form-item>
 </template>
 
 <script>
-  import i18n from "@/utils/i18n"
+  import i18n from "@/utils/i18n.ts"
 
   export default {
     name: "labelAlign-editor",
@@ -34,10 +34,9 @@
 
 <style lang="scss" scoped>
   .radio-group-custom {
-    ::v-deep .el-radio-button__inner {
+    :deep(.el-radio-button__inner) {
       padding-left: 12px;
       padding-right: 12px;
     }
   }
 </style>
-@/utils/i18ns

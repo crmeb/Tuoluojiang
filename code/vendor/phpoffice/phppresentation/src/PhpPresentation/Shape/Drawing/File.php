@@ -1,89 +1,98 @@
 <?php
 
+/**
+ * This file is part of PHPPresentation - A pure PHP library for reading and writing
+ * presentations documents.
+ *
+ * PHPPresentation is free software distributed under the terms of the GNU Lesser
+ * General Public License version 3 as published by the Free Software Foundation.
+ *
+ * For the full copyright and license information, please read the LICENSE
+ * file that was distributed with this source code. For the full list of
+ * contributors, visit https://github.com/PHPOffice/PHPPresentation/contributors.
+ *
+ * @see        https://github.com/PHPOffice/PHPPresentation
+ *
+ * @license     http://www.gnu.org/licenses/lgpl.txt LGPL version 3
+ */
+
+declare(strict_types=1);
+
 namespace PhpOffice\PhpPresentation\Shape\Drawing;
+
+use PhpOffice\Common\File as CommonFile;
+use PhpOffice\PhpPresentation\Exception\FileNotFoundException;
 
 class File extends AbstractDrawingAdapter
 {
     /**
      * @var string
      */
-    protected $path;
+    protected $path = '';
 
     /**
-     * Get Path
-     *
-     * @return string
+     * Get Path.
      */
-    public function getPath()
+    public function getPath(): string
     {
         return $this->path;
     }
 
     /**
-     * Set Path
+     * Set Path.
      *
-     * @param  string                      $pValue      File path
-     * @param  boolean                     $pVerifyFile Verify file
-     * @throws \Exception
-     * @return \PhpOffice\PhpPresentation\Shape\Drawing
+     * @param string $pValue File path
+     * @param bool $pVerifyFile Verify file
      */
-    public function setPath($pValue = '', $pVerifyFile = true)
+    public function setPath(string $pValue = '', bool $pVerifyFile = true): self
     {
         if ($pVerifyFile) {
             if (!file_exists($pValue)) {
-                throw new \Exception("File $pValue not found!");
+                throw new FileNotFoundException($pValue);
             }
         }
         $this->path = $pValue;
 
         if ($pVerifyFile) {
-            if ($this->width == 0 && $this->height == 0) {
-                list($this->width, $this->height) = getimagesize($this->getPath());
+            if (0 == $this->width && 0 == $this->height) {
+                [$this->width, $this->height] = getimagesize($this->getPath());
             }
         }
 
         return $this;
     }
 
-    /**
-     * @return string
-     */
-    public function getContents()
+    public function getContents(): string
     {
-        return file_get_contents($this->getPath());
+        return CommonFile::fileGetContents($this->getPath());
     }
 
-
-    /**
-     * @return string
-     */
-    public function getExtension()
+    public function getExtension(): string
     {
         return pathinfo($this->getPath(), PATHINFO_EXTENSION);
     }
 
-    /**
-     * @throws \Exception
-     * @return string
-     */
-    public function getMimeType()
+    public function getMimeType(): string
     {
-        if (!file_exists($this->getPath())) {
-            throw new \Exception('File '.$this->getPath().' does not exist');
+        if (!CommonFile::fileExists($this->getPath())) {
+            throw new FileNotFoundException($this->getPath());
         }
-        $image = getimagesize($this->getPath());
-        return image_type_to_mime_type($image[2]);
+        $image = getimagesizefromstring(CommonFile::fileGetContents($this->getPath()));
+
+        if (is_array($image)) {
+            return image_type_to_mime_type($image[2]);
+        }
+
+        return mime_content_type($this->getPath());
     }
 
-    /**
-     * @return string
-     */
-    public function getIndexedFilename()
+    public function getIndexedFilename(): string
     {
         $output = str_replace('.' . $this->getExtension(), '', pathinfo($this->getPath(), PATHINFO_FILENAME));
         $output .= $this->getImageIndex();
-        $output .= '.'.$this->getExtension();
+        $output .= '.' . $this->getExtension();
         $output = str_replace(' ', '_', $output);
+
         return $output;
     }
 }

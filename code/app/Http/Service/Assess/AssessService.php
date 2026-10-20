@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,21 +17,25 @@ namespace App\Http\Service\Assess;
 
 use App\Constants\AssessEnum;
 use App\Constants\CacheEnum;
+use App\Constants\NoticeEnum;
+use App\Constants\TodoEnum;
+use App\Events\BusinessDataChangeEvent;
+use App\Events\SystemMessageEvent;
 use App\Http\Contract\Assess\AssessInterface;
 use App\Http\Dao\Company\CompanyUserAssessDao;
 use App\Http\Service\Admin\AdminInfoService;
 use App\Http\Service\Admin\AdminService;
-use App\Http\Service\BaseService;
 use App\Http\Service\Frame\FrameAssistService;
 use App\Http\Service\Frame\FrameService;
 use App\Http\Service\Other\TaskService;
+use App\Task\message\StatusChangeTask;
 use App\Task\message\UserAssessAppealRemind;
 use App\Task\message\UserAssessAppealResRemind;
 use App\Task\message\UserAssessEndRemind;
-use App\Task\message\UserAssessEvaluateRemind;
 use App\Task\message\UserAssessReleaseRemind;
-use crmeb\options\TaskOptions;
-use crmeb\services\FormService;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\options\TaskOptions;
+use Tuoluojiang\Open\services\FormService;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
@@ -52,6 +56,14 @@ class AssessService extends BaseService implements AssessInterface
 
     /**
      * 获取绩效列表.
+     *
+     * 筛选约定：
+     * - type=1 考核记录：数据权限可见 ∪ 考核人为登录人
+     * - type=1 待处理：上级评价状态且考核人为登录人
+     * - type=2 待处理：考核审批人为登录人且状态为绩效审核
+     * - type=2 考核记录：数据权限可见 ∪ 考核审批人为登录人
+     * - filter_test_uid：用户选择的被考核人，始终与上述可见范围取交集
+     *
      * @return array
      * @throws BindingResolutionException
      * @throws ContainerExceptionInterface
@@ -62,40 +74,56 @@ class AssessService extends BaseService implements AssessInterface
     {
         $entId        = 1;
         $frameService = app()->get(FrameService::class);
+        $isPending    = (int) ($where['handle'] ?? 0) === 1;
+        $scopeTestUid = array_values(array_filter(array_map('intval', (array) ($where['test_uid'] ?? []))));
         switch ($types) {
             case 0:// 我的自评
                 $where['test_uid'] = [$uid];
                 $where['is_show']  = 1;
                 break;
-            case 1:// 上级评价
-                if ($where['handle']) {
-                    $uids              = $frameService->getLevelSub($uid);
-                    $where['test_uid'] = array_intersect($where['test_uid'], $uids);
+            case 1:// 部门考核
+                if ($isPending) {
+                    // 待处理：上级评价状态 + 考核人为登录人（状态由 handle+type 在 Dao 中限定）
+                    unset($where['test_uid']);
+                    $where['check_uid'] = $uid;
+                } else {
+                    // 考核记录：数据权限可见 OR 考核人为登录人
+                    $where['test_uid']     = $scopeTestUid;
+                    $where['or_check_uid'] = $uid;
                 }
                 break;
-            case 2:// 审核列表
-                $uids              = $frameService->getLevelSub($uid, 2);
-                $where['test_uid'] = array_intersect($where['test_uid'], $uids);
+            case 2:// 绩效审核
+                // 考核审批人 = 被考核人二级上级，对应登录人二级下级
+                $verifyTestUids = array_values(array_filter(array_map('intval', (array) $frameService->getLevelSub($uid, 2))));
+                if ($isPending) {
+                    // 待处理：考核审批人为登录人 + 状态绩效审核
+                    $where['test_uid'] = $verifyTestUids ?: [0];
+                } else {
+                    // 考核记录：数据权限可见 OR 考核审批人为登录人
+                    $where['test_uid'] = array_values(array_unique(array_merge($scopeTestUid, $verifyTestUids))) ?: [0];
+                }
                 break;
             default:
                 $types = '';
         }
-        $where['type']  = $types;
-        [$page, $limit] = $this->getPageValue();
+        $where['type']   = $types;
+        $where['handle'] = $isPending ? 1 : '';
+        [$page, $limit]  = $this->getPageValue();
         $scoreList      = app()->get(AssessScoreService::class)->getScoreList($entId);
-        $data           = $this->dao->getUserAssessMode($where, ['*'], $page, $limit, 'id', ['test', 'check', 'frame'])->get()
-            ->each(function ($item) use ($uid, $scoreList) {
-                if (strtotime($item['start_time']) > time()) {
-                    $item['status'] = 5;
-                }
-                if ($item['status'] > 2) {
-                    $item['level'] = $scoreList[$item['grade']] ?? '无';
-                } else {
-                    $item['level'] = '--';
-                    $item['score'] = '--';
-                }
-                $item['verify'] = $this->dao->getVerifyInfo($uid);
-            });
+        $data           = $this->dao->getUserAssessMode($where, ['*'], $page, $limit, 'id', ['test', 'check', 'frame'])->get()->toArray();
+        foreach ($data as &$item) {
+            if (datetime_timestamp($item['start_time']) > time()) {
+                $item['status'] = 5;
+            }
+            if ($item['status'] > 2) {
+                $item['level'] = $scoreList[$item['grade']] ?? '无';
+            } else {
+                $item['level'] = '--';
+                $item['score'] = '--';
+            }
+            $item['verify'] = $this->dao->getVerifyInfo($uid);
+        }
+        unset($item);
         $count = $this->dao->getUserAssessMode($where)->count();
 
         return $this->listData($data, $count);
@@ -116,8 +144,9 @@ class AssessService extends BaseService implements AssessInterface
         [$page, $limit] = $this->getPageValue();
         $data           = $this->dao->getUserAssessMode($where, ['*'], $page, $limit, ['start_time', 'id'], [
             'frame', 'test', 'check',
-        ])->get()->each(function ($item) use ($scoreList) {
-            if (strtotime($item['start_time']) > time()) {
+        ])->get()->toArray();
+        foreach ($data as &$item) {
+            if (datetime_timestamp($item['start_time']) > time()) {
                 $item['status'] = 5;
             }
             if ($item['status'] > 2) {
@@ -127,7 +156,8 @@ class AssessService extends BaseService implements AssessInterface
                 $item['score'] = '--';
             }
             $item['verify'] = $this->dao->getVerifyInfo($item['test_uid']);
-        });
+        }
+        unset($item);
         $count = $this->dao->getUserAssessMode($where)->count();
         return $this->listData($data, $count);
     }
@@ -144,12 +174,12 @@ class AssessService extends BaseService implements AssessInterface
     public function getAssessInfo($id)
     {
         $assessInfo = $this->dao->get($id, ['*'], [
-            'frame', 'check', 'test',
+            'frame', 'check' => fn ($q) => $q->with('job:id,name'), 'test' => fn ($q) => $q->with('job:id,name'),
         ])?->toArray();
         if (! $assessInfo) {
             throw $this->exception('考核记录不存在');
         }
-        if (strtotime($assessInfo['start_time']) > time()) {
+        if (datetime_timestamp($assessInfo['start_time']) > time()) {
             $assessInfo['status'] = 5;
         }
         if ($assessInfo['status'] > 2) {
@@ -176,17 +206,13 @@ class AssessService extends BaseService implements AssessInterface
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function getAssessExplain(int $id, string $uuid, int $entId)
+    public function getAssessExplain(int $id, int $uid)
     {
         $assessInfo = $this->dao->get($id);
         if (! $assessInfo) {
             throw $this->exception('考核记录不存在');
         }
-        $assessInfo = $assessInfo->toArray();
-        if ($assessInfo['entid'] != $entId) {
-            throw $this->exception('您暂无权限查看该考核记录');
-        }
-        $uid          = uuid_to_uid($uuid, $entId);
+        $assessInfo   = $assessInfo->toArray();
         $replyService = app()->get(AssessReplyService::class);
         $field        = ['user_id', 'content', 'types', 'status', 'updated_at'];
         $reply        = $replyService->dao->setDefaultSort('id')->select(['assessid' => $assessInfo['id'], 'is_own' => 0], $field, ['user']) ?? [];
@@ -348,6 +374,7 @@ class AssessService extends BaseService implements AssessInterface
             $update['test_status'] = 2;
         }
         $this->dao->update($id, $update);
+        $this->syncAssessTodo($id);
     }
 
     /**
@@ -357,7 +384,7 @@ class AssessService extends BaseService implements AssessInterface
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function setSuperiorAssess(int $id, array $data, int $entId, bool $isSubmit = false, string $reply = '', string $hideReply = ''): void
+    public function setSuperiorAssess(int $id, int $uid, array $data, int $entId, bool $isSubmit = false, string $reply = '', string $hideReply = ''): void
     {
         app()->get(AssessSpaceService::class)->updateSuperAssess($id, $data, $entId);
         $info = toArray($this->dao->get($id));
@@ -386,11 +413,10 @@ class AssessService extends BaseService implements AssessInterface
                     'check_status' => 1,
                 ]);
             }
-            $userId = uuid_to_uid($this->uuId(false), $entId);
             app()->get(UserAssessScoreService::class)->create([
                 'entid'     => $entId,
                 'assessid'  => $id,
-                'userid'    => $userId,
+                'userid'    => $uid,
                 'test_uid'  => $info['test_uid'],
                 'check_uid' => $info['check_uid'],
                 'score'     => $score,
@@ -398,11 +424,23 @@ class AssessService extends BaseService implements AssessInterface
                 'total'     => $info['total'],
                 'types'     => 0,
             ]);
-            Task::deliver(new UserAssessEvaluateRemind($info['entid'], $info, $info['name'], $score));
+            event(new SystemMessageEvent(
+                type: NoticeEnum::ASSESS_EVALUATE_RESULT_TYPE,
+                params: [
+                    '考核名称'     => $info['name'],
+                    '上级评价得分' => $score,
+                ],
+                receiverIds: (int) $info['test_uid'],
+                other: ['id' => $id],
+                linkId: $id,
+                linkStatus: $info['status']
+            ));
+            Task::deliver(new StatusChangeTask(AssessEnum::LINK_NOTICE, AssessEnum::ASSESS_VERIFY, 1, $id));
         } else {
             $update['check_status'] = 2;
         }
         $this->dao->update($id, $update);
+        $this->syncAssessTodo($id);
     }
 
     /**
@@ -412,7 +450,7 @@ class AssessService extends BaseService implements AssessInterface
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function setExamineAssess(int $id, array $data, int $entId, bool $isSubmit = false): void
+    public function setExamineAssess(int $id, int $uid, array $data, int $entId, bool $isSubmit = false): void
     {
         app()->get(AssessSpaceService::class)->updateSuperAssess($id, $data, $entId);
         $info = toArray($this->dao->get($id));
@@ -437,11 +475,10 @@ class AssessService extends BaseService implements AssessInterface
                     'verify_status' => 1,
                 ]);
             }
-            $userId = uuid_to_uid($this->uuId(false), $entId);
             app()->get(UserAssessScoreService::class)->create([
                 'entid'     => $entId,
                 'assessid'  => $id,
-                'userid'    => $userId,
+                'userid'    => $uid,
                 'test_uid'  => $info['test_uid'],
                 'check_uid' => $info['check_uid'],
                 'score'     => $score,
@@ -453,6 +490,7 @@ class AssessService extends BaseService implements AssessInterface
         } else {
             $this->dao->update($id, ['verify_status' => 2]);
         }
+        $this->syncAssessTodo($id);
     }
 
     /**
@@ -466,15 +504,18 @@ class AssessService extends BaseService implements AssessInterface
      */
     public function getAssessCensusLine($where, $uid)
     {
+        $uids = [];
         switch ($where['types']) {
             case 2:// 人事
+                $uids = array_values(array_filter(array_map('intval', (array) ($where['uid'] ?? []))));
+                unset($where['frame_id']);
                 break;
             case 1:// 下级
-                $uids = $where['uid'];
+                $uids = array_values(array_filter(array_map('intval', (array) ($where['uid'] ?? []))));
                 unset($where['frame_id']);
                 break;
             default:// 自己
-                $uids = [$uid];
+                $uids = [(int) $uid];
         }
         unset($where['uid']);
         $where['time'] && is_string($where['time']) && [$where['start'], $where['end']] = explode('-', $where['time']);
@@ -487,6 +528,7 @@ class AssessService extends BaseService implements AssessInterface
         }
         $dayCount = ($endTime - $startTime) / 86400 + 1;
         $timeType = '%H';
+        $xAxis = [];
         switch ($where['period']) {
             case 1:// 周考核
                 $num = $dayCount / 7;
@@ -611,14 +653,13 @@ class AssessService extends BaseService implements AssessInterface
      *
      * @param mixed $where
      * @param mixed $uid
-     * @param mixed $entId
      * @return array
      * @throws BindingResolutionException
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function getAssessStatistics($where, $uid, $entId)
+    public function getAssessStatistics(array $where, int $uid)
     {
         $testUid = [];
         if ($where['test_uid']) {
@@ -630,8 +671,7 @@ class AssessService extends BaseService implements AssessInterface
         } else {
             $where['test_uid'] = app()->get(AdminInfoService::class)->column(['type' => [1, 2, 3]], 'id');
         }
-        $score = toArray(app()->get(AssessScoreService::class)->select(['entid' => $entId], ['min', 'max', 'name', 'level']));
-        $uid   = uuid_to_uid($uid, $entId);
+        $score = toArray(app()->get(AssessScoreService::class)->select(['entid' => 1], ['min', 'max', 'name', 'level']));
         switch ($where['types']) {
             case 2:
                 break;
@@ -707,6 +747,7 @@ class AssessService extends BaseService implements AssessInterface
 
         return $this->transaction(function () use ($id, $info, $entId, $status) {
             $res1 = $this->dao->update($id, ['is_show' => $status, 'status' => $status, 'make_status' => $status]);
+            $res1 && $this->syncAssessTodo((int) $id);
             if ($status) {
                 // 考核目标发布提醒
                 Task::deliver(new UserAssessReleaseRemind($entId, $info['test_uid'], $info));
@@ -754,7 +795,7 @@ class AssessService extends BaseService implements AssessInterface
         $form = [
             FormService::textarea('mark', '删除原因', '')->placeholder('请输入删除原因')->required(),
         ];
-        return $this->elForm('删除绩效考核', $form, '/ent/assess/delete/' . $id, 'DELETE');
+        return $this->createElementForm('删除绩效考核', $form, '/ent/assess/delete/' . $id, 'DELETE');
     }
 
     /**
@@ -762,19 +803,17 @@ class AssessService extends BaseService implements AssessInterface
      *
      * @param mixed $id
      * @param mixed $mark
-     * @param mixed $uuid
-     * @param mixed $entid
+     * @param mixed $uid
      * @return mixed
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
-    public function deleteAssess($id, $mark, $uuid, $entid)
+    public function deleteAssess($id, $mark, $uid)
     {
         if (! $mark) {
             throw $this->exception('删除失败，您填写删除原因！');
         }
         $info         = $this->dao->get($id);
-        $uid          = uuid_to_uid($uuid, $entid);
         $spaceService = app()->get(AssessSpaceService::class);
         $info['info'] = $spaceService->getAssess((int) $id);
         $save         = [
@@ -820,34 +859,31 @@ class AssessService extends BaseService implements AssessInterface
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
-    public function assessAppeal(int $assessid, string $uuid, int $entid, array $data)
+    public function assessAppeal(int $assessId, string $uid, array $data)
     {
         $types   = $data['types']; // 类型
         $content = $data['content']; // 类型
         if (! $content) {
             throw $this->exception('请填写内容');
         }
-        $assessInfo = $this->dao->get($assessid);
+        $assessInfo = $this->dao->get($assessId);
         if (! $assessInfo) {
             throw $this->exception('考核记录不存在');
         }
-        if ($assessInfo['entid'] != $entid) {
-            throw $this->exception('考核记录不存在');
-        }
-        $uid          = uuid_to_uid($uuid, $entid);
         $replyService = app()->get(AssessReplyService::class);
         if ($types) {
-            $replyService->update(['assessid' => $assessid, 'user_id' => $assessInfo['test_uid'], 'types' => 1], ['status' => 1]);
+            $replyService->update(['assessid' => $assessId, 'user_id' => $assessInfo['test_uid'], 'types' => 1], ['status' => 1]);
             $res = $replyService->create([
-                'assessid' => $assessid,
-                'entid'    => $entid,
+                'assessid' => $assessId,
+                'entid'    => 1,
                 'user_id'  => $uid,
                 'content'  => $content,
                 'types'    => 1,
                 'status'   => 2,
             ]);
+            $this->dao->update($assessId, ['status' => AssessEnum::ASSESS_REJECT]);
             // 绩效申诉结果
-            Task::deliver(new UserAssessAppealResRemind($entid, $assessInfo->toArray()));
+            Task::deliver(new UserAssessAppealResRemind(1, $assessInfo->toArray()));
         } else {
             if ($assessInfo['test_uid'] != $uid) {
                 throw $this->exception('您暂无权限操作该考核记录');
@@ -859,16 +895,32 @@ class AssessService extends BaseService implements AssessInterface
                 throw $this->exception('申诉失败，考核已结束');
             }
             $res = $replyService->create([
-                'assessid' => $assessid,
-                'entid'    => $entid,
+                'assessid' => $assessId,
+                'entid'    => 1,
                 'user_id'  => $assessInfo['test_uid'],
                 'content'  => $content,
                 'types'    => 1,
             ]);
+            $this->dao->update($assessId, ['status' => AssessEnum::ASSESS_APPEAL]);
             // 绩效申诉提醒
-            Task::deliver(new UserAssessAppealRemind($entid, $assessInfo->toArray()));
+            Task::deliver(new UserAssessAppealRemind(1, $assessInfo->toArray()));
         }
+        $this->syncAssessTodo((int) $assessId, $types ? [(int) $uid] : []);
         return $res;
+    }
+
+    private function syncAssessTodo(int $assessId, array $userIds = []): void
+    {
+        if (! $assessId) {
+            return;
+        }
+
+        try {
+            foreach (TodoEnum::ASSESS_TYPES as $type) {
+                BusinessDataChangeEvent::dispatch($type, $assessId, 'update', $userIds);
+            }
+        } catch (\Throwable) {
+        }
     }
 
     /**
@@ -931,24 +983,25 @@ class AssessService extends BaseService implements AssessInterface
         }
         $assessUid   = $this->dao->column(['period' => $period, 'start_time' => $start, 'end_time' => $end], 'test_uid');
         $abnormalUid = array_diff($planUid, $assessUid);
+        $normalUid = app(AdminInfoService::class)->column(['type' => [1, 2, 3]], 'id');
+        $abnormalUid = array_intersect($abnormalUid, $normalUid);
         if (! $abnormalUid) {
             return [];
         }
-        $listData = app()->get(AdminService::class)->getList(
-            ['id' => $abnormalUid],
-            ['id', 'name', 'avatar', 'job'],
-            with: [
-                'job' => fn ($q) => $q->select(['id', 'name']),
-                'frame',
-                'super' => fn ($q) => $q->select(['admin.id', 'name']),
-            ]
-        );
+        $service = app(AdminService::class);
+        [$page, $limit] = $this->getPageValue();
+        $list = $service->select(['id' => $abnormalUid], ['id', 'name', 'avatar', 'job'],[
+            'job' => fn ($q) => $q->select(['id', 'name']),
+            'frame',
+            'super' => fn ($q) => $q->select(['admin.id', 'name']),
+        ], $page, $limit)?->toArray();
+        $count = $service->count(['id' => $abnormalUid]);
         $frameService = app()->get(FrameService::class);
-        foreach ($listData['list'] as &$value) {
-            $value['super'] = $value['super'] ?: $frameService->getFrameAdmin((int) $value['frame']['id'], $entId, ['id', 'name']);
+        foreach ($list as &$value) {
+            $value['super'] = $value['super'] ?: ($value['frame'] ? $frameService->getFrameAdmin((int) $value['frame']['id'], $entId, ['id', 'name']) : null);
             $value['title'] = $title;
         }
-        return $listData;
+        return ['list' => $list, 'count' => $count];
     }
 
     /**
@@ -1020,6 +1073,14 @@ class AssessService extends BaseService implements AssessInterface
             }
         }
         return $count;
+    }
+
+    public function toEval(int $id)
+    {
+        $info              = $this->dao->get($id);
+        $info->status      = 2;
+        $info->test_status = 1;
+        $info->save();
     }
 
     /**

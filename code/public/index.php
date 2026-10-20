@@ -1,5 +1,17 @@
 <?php
 
+declare(strict_types=1);
+/**
+ *  +----------------------------------------------------------------------
+ *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
+ *  +----------------------------------------------------------------------
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
+ *  +----------------------------------------------------------------------
+ *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
+ *  +----------------------------------------------------------------------
+ *  | Author: 陀螺匠 Team <admin@tuoluojiang.com>
+ *  +----------------------------------------------------------------------
+ */
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Request;
 
@@ -16,8 +28,8 @@ define('LARAVEL_START', microtime(true));
 |
 */
 
-if (file_exists(__DIR__.'/../storage/framework/maintenance.php')) {
-    require __DIR__.'/../storage/framework/maintenance.php';
+if (file_exists(__DIR__ . '/../storage/framework/maintenance.php')) {
+    require __DIR__ . '/../storage/framework/maintenance.php';
 }
 
 /*
@@ -31,7 +43,7 @@ if (file_exists(__DIR__.'/../storage/framework/maintenance.php')) {
 |
 */
 
-require __DIR__.'/../vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 
 /*
 |--------------------------------------------------------------------------
@@ -44,7 +56,7 @@ require __DIR__.'/../vendor/autoload.php';
 |
 */
 
-$app = require_once __DIR__.'/../bootstrap/app.php';
+$app = require_once __DIR__ . '/../bootstrap/app.php';
 
 $kernel = $app->make(Kernel::class);
 

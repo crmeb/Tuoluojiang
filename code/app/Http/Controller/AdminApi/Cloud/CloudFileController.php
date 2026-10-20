@@ -211,13 +211,11 @@ final class CloudFileController extends AuthController
     }
 
     /**
-     * 保存云存储文件.
+     * 保存云存储文件
+     * @return mixed
      * @throws BindingResolutionException
      * @throws ContainerExceptionInterface
-     * @throws Exception
      * @throws NotFoundExceptionInterface
-     * @throws OssException
-     * @throws \PhpOffice\PhpWord\Exception\Exception
      * @throws \ReflectionException
      */
     #[Post('save', '保存云存储文件')]

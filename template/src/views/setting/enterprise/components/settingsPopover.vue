@@ -1,14 +1,18 @@
 <template>
   <div>
-    <el-popover placement="bottom" width="80" trigger="manual" v-model="showPopover" popper-class="time-popover">
-      <div v-for="(item, index) in list.length > 0 ? list : crudList" :key="index" class="item-box"
-        @click="rowFn(item)">
+    <el-popover placement="bottom" trigger="manual" :visible="showPopover" popper-class="time-popover">
+      <div
+        v-for="(item, index) in list.length > 0 ? list : crudList"
+        :key="index"
+        class="item-box"
+        @click="rowFn(item)"
+      >
         {{ item.label }}
       </div>
       <template #reference>
         <div @click="showPopover = true">
           <slot>
-            <el-button type="text" size="small" v-if="!icon">批量设置</el-button>
+            <el-button type="primary" link v-if="!icon">批量设置</el-button>
             <span v-else class="iconfont iconxitong-xitongshezhi-cebian"></span>
           </slot>
         </div>
@@ -18,6 +22,7 @@
 </template>
 <script>
 export default {
+  emits: ['handClick'],
   name: '',
   props: {
     icon: {
@@ -60,14 +65,14 @@ export default {
     }
   },
   mounted() {
-    window.addEventListener('click', this.handleClosePopover);
+    window.addEventListener('click', this.handleClosePopover)
   },
-  destroyed() {
-    window.removeEventListener('click', this.handleClosePopover);
+  unmounted() {
+    window.removeEventListener('click', this.handleClosePopover)
   },
   methods: {
     handleClosePopover(e) {
-      if (this.$el.contains(e.target) || !this.showPopover) return;
+      if (this.$el.contains(e.target) || !this.showPopover) return
       this.showPopover = false
     },
     rowFn(item) {

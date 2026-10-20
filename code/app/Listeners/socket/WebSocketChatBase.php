@@ -15,8 +15,9 @@ declare(strict_types=1);
 
 namespace App\Listeners\socket;
 
-use crmeb\services\ApiResponseService;
-use crmeb\socket\WebsocketHandler;
+use Tuoluojiang\Open\services\ApiResponseService;
+use Tuoluojiang\Open\socket\WebsocketHandler;
+use Illuminate\Http\Request;
 
 /**
  * 聊天事件基类
@@ -69,6 +70,9 @@ abstract class WebSocketChatBase
         $this->roomName = array_shift($result);
 
         if (method_exists($this, $method) && ! in_array($method, $this->noContainMethod)) {
+            if (! app()->bound('request')) {
+                app()->instance('request', Request::create('/'));
+            }
             return $this->{$method}(...$result);
         }
     }

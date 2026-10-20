@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,7 +18,7 @@ namespace App\Http\Service\Notice;
 use App\Constants\CacheEnum;
 use App\Http\Dao\Category\MessageCategoryDao;
 use App\Http\Service\BaseService;
-use crmeb\services\synchro\Message;
+use Tuoluojiang\Open\services\synchro\Message;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Facades\Cache;
 use Psr\Container\ContainerExceptionInterface;
@@ -55,11 +55,12 @@ class MessageCateService extends BaseService
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function getUniNoticeCate(int $userId): array
+    public function getUniNoticeCate(int $userId, int $entId = 1): array
     {
         $noticeService = app()->get(NoticeRecordService::class);
         $list          = $this->getListByCache(['uni_show' => 1]);
-        return array_values(array_filter(array_map(function ($item) use ($noticeService, $userId) {
+        $uuid          = uid_to_uuid($userId) ?: (string) $userId;
+        return array_values(array_filter(array_map(function ($item) use ($noticeService, $userId, $entId, $uuid) {
             if (isset($item['children'])) {
                 $cateIds   = array_column($item['children'], 'id');
                 $cateIds[] = $item['id'];
@@ -77,18 +78,20 @@ class MessageCateService extends BaseService
                     Cache::add($key, $cateIds, $ttl);
                 }
             }
-            $data['count'] = $noticeService->dao->count([
-                'uid'     => [$userId],
-                'is_read' => 0,
+            $where = [
+                'entid'   => $entId,
+                'to_uid'  => $userId,
+                'uid'     => $uuid,
                 'cate_id' => $cateIds,
-            ]);
+            ];
+
+            $data['count'] = $noticeService->dao->setWhere(array_merge($where, [
+                'is_read' => 0,
+            ]))->count();
             $data['id']        = $item['id'];
             $data['cate_name'] = $item['cate_name'];
             $data['pic']       = $item['pic'];
-            $data['item']      = toArray($noticeService->dao->get([
-                'uid'     => [$userId],
-                'cate_id' => $cateIds,
-            ], ['id', 'message', 'created_at'], sort: 'created_at'));
+            $data['item']      = toArray($noticeService->dao->setWhere($where, ['id', 'message', 'created_at'], 0, 1, 'created_at')->first());
             if ($data['item']) {
                 return $data;
             }

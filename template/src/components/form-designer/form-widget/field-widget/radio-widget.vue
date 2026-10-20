@@ -16,14 +16,14 @@
       ref="fieldEditor"
       v-model="fieldModel"
       :disabled="field.options.disabled"
-      :size="field.options.size"
+      :size="toElSize(field.options.size)"
       @change="handleChangeEvent"
     >
       <template v-if="!!field.options.buttonStyle">
         <el-radio-button
-          v-for="(item, index) in field.options.optionItems"
+          v-for="(item, index) in optionItems"
           :key="index"
-          :label="item[field.options.valueName] || item.value"
+          :value="item[field.options.valueName] || item.value"
           :disabled="item.disabled"
           :border="field.options.border"
           :style="{ display: field.options.displayStyle }"
@@ -32,9 +32,9 @@
       </template>
       <template v-else>
         <el-radio
-          v-for="(item, index) in field.options.optionItems"
+          v-for="(item, index) in optionItems"
           :key="index"
-          :label="item[field.options.valueName] || item.value"
+          :value="item[field.options.valueName] || item.value"
           :disabled="item.disabled"
           :border="field.options.border"
           :style="{ display: field.options.displayStyle }"
@@ -50,14 +50,12 @@
 
 <script>
 import FormItemWrapper from './form-item-wrapper'
-import emitter from '@/utils/emitter'
-import i18n, { translate } from '@/utils/i18n'
+import i18n, { translate } from '@/utils/i18n.ts'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
 
 export default {
   name: 'radio-widget',
-  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
-  mixins: [emitter, fieldMixin, i18n],
+  mixins: [fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -95,13 +93,23 @@ export default {
     }
   },
   computed: {
+    optionItems() {
+      const { data_type, optionItems, customizeItems } = this.field.options
+      // 仅当 data_type 为 1 时使用 customizeItems，其他情况统一使用 optionItems
+      if (data_type === 1) {
+        this.fieldModel = Number(this.fieldModel) // 仅在需要时转换类型
+        return customizeItems
+      }
+      return optionItems
+    },
     contentForReadMode() {
       let str = ''
-      this.field.options.optionItems.map((item) => {
+      this.optionItems.map((item) => {
         if (item.value == this.fieldModel) {
           str = item.name
         }
       })
+
       return str
     }
   },
@@ -114,7 +122,11 @@ export default {
          需要在父组件created中初始化！！ */
     this.initOptionItems()
     this.initFieldModel()
-    this.fieldModel = this.fieldModel + ''
+    const isNumber = typeof this.fieldModel === 'number' && !isNaN(this.fieldModel)
+    if (isNumber) {
+      this.fieldModel = this.fieldModel + ''
+    }
+
     this.registerToRefList()
     this.initEventHandler()
     this.buildFieldRules()
@@ -126,7 +138,7 @@ export default {
     this.$nextTick(() => {})
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     this.unregisterFromRefList()
   },
 
@@ -137,4 +149,3 @@ export default {
 <style lang="scss" scoped>
 @import '../../../../styles/global.scss'; //* form-item-wrapper已引入，还需要重复引入吗？ *//
 </style>
-@/utils/i18ns

@@ -1,124 +1,125 @@
 ﻿<!-- 财务-账目记录-收支统计页面 -->
 <template>
-  <div class="divBox">
-    <el-card class="mb12">
-      <statisticsBox ref="formBox" @confirmData="confirmData" />
-    </el-card>
-    <el-card class="mb12">
-      <div class="statistics-title">
-        {{ $t('finance.businesstrends') }}
-      </div>
-      <echartBox :option-data="optionData" :styles="styles1" />
-    </el-card>
-    <el-row :gutter="24">
-      <el-col :lg="12">
-        <el-card>
-          <div class="pie-tab">
-            <el-row>
-              <el-col :span="12" class="pie-title">
-                {{ $t('finance.incometrends') }}
-              </el-col>
-              <el-col :span="12" class="text-right pie-select">
-                <el-button
-                  v-if="tableDataIncome.length > 0"
-                  class="tab-btn"
-                  icon="el-icon-sort"
-                  size="mini"
-                  @click="clickTab(1)"
-                >
-                  {{ $t('finance.switchstyles') }}
-                </el-button>
-              </el-col>
-            </el-row>
-            <div v-if="tableDataIncome.length > 0">
-              <div v-if="!pieChartBtn1" class="mt10">
-                <el-breadcrumb separator-class="el-icon-arrow-right">
-                  <el-breadcrumb-item
-                    v-for="(item, index) in incomeList"
-                    :key="index"
-                    :class="{ breadcrumb: active == item.name }"
-                    ><span @click="changeActive(item, index)">{{ item.name }}</span></el-breadcrumb-item
+  <div class="box">
+    <div class="box-height">
+      <el-card class="mb12 background-card">
+        <statisticsBox ref="formBox" @confirmData="confirmData" />
+      </el-card>
+      <el-card class="mb12">
+        <div class="statistics-title">
+          营业趋势
+        </div>
+        <echartBox :option-data="optionData" :styles="styles1" />
+      </el-card>
+      <el-row :gutter="24">
+        <el-col :lg="12">
+          <el-card>
+            <div class="pie-tab">
+              <el-row>
+                <el-col :span="12" class="pie-title">
+                  收入占比分析
+                </el-col>
+                <el-col :span="12" class="text-right pie-select">
+                  <el-button
+                    v-if="tableDataIncome.length > 0"
+                    class="tab-btn"
+                    icon="el-icon-sort"
+                    @click="clickTab(1)"
                   >
-                </el-breadcrumb>
+                    切换样式
+                  </el-button>
+                </el-col>
+              </el-row>
+              <div v-if="tableDataIncome.length > 0">
+                <div v-if="!pieChartBtn1" class="mt10">
+                  <el-breadcrumb separator-icon="el-icon-arrow-right">
+                    <el-breadcrumb-item
+                      v-for="(item, index) in incomeList"
+                      :key="index"
+                      :class="{ breadcrumb: active == item.name }"
+                      ><span @click="changeActive(item, index)">{{ item.name }}</span></el-breadcrumb-item
+                    >
+                  </el-breadcrumb>
+                </div>
+                <echartBox
+                  v-if="!pieChartBtn1"
+                  :option-data="pieChartData1"
+                  :styles="styles1"
+                  :type="`fd`"
+                  @pieChange="pieChange"
+                />
+                <div v-else class="pie-list">
+                  <tabListChart ref="tabListChart01" :table-data="tableDataIncome" />
+                </div>
               </div>
-              <echartBox
-                v-if="!pieChartBtn1"
-                :option-data="pieChartData1"
-                :styles="styles1"
-                :type="`fd`"
-                @pieChange="pieChange"
-              />
-              <div v-else class="pie-list">
-                <tabListChart ref="tabListChart01" :table-data="tableDataIncome" />
+              <div v-else>
+                <default-page :index="10" :min-height="336" />
               </div>
             </div>
-            <div v-else>
-              <default-page :index="10" :min-height="336" />
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :lg="12">
-        <el-card>
-          <div class="pie-tab">
-            <el-row>
-              <el-col :span="12" class="pie-title">
-                {{ $t('finance.expendtrends') }}
-              </el-col>
-              <el-col :span="12" class="text-right pie-select">
-                <el-button
-                  v-if="tableDataExpend.length > 0"
-                  class="tab-btn"
-                  icon="el-icon-sort"
-                  size="mini"
-                  @click="clickTab(2)"
-                >
-                  {{ $t('finance.switchstyles') }}
-                </el-button>
-              </el-col>
-            </el-row>
-            <div v-if="tableDataExpend.length > 0">
-              <div v-if="!pieChartBtn2" class="mt10">
-                <el-breadcrumb separator-class="el-icon-arrow-right">
-                  <el-breadcrumb-item
-                    v-for="(item, index) in expenditureList"
-                    :key="index"
-                    :class="{ breadcrumb: expenditure == item.name }"
-                    ><span @click="changeExpenditure(item, index)">{{ item.name }}</span></el-breadcrumb-item
+          </el-card>
+        </el-col>
+        <el-col :lg="12">
+          <el-card>
+            <div class="pie-tab">
+              <el-row>
+                <el-col :span="12" class="pie-title">
+                  支出占比分析
+                </el-col>
+                <el-col :span="12" class="text-right pie-select">
+                  <el-button
+                    v-if="tableDataExpend.length > 0"
+                    class="tab-btn"
+                    icon="el-icon-sort"
+                    @click="clickTab(2)"
                   >
-                </el-breadcrumb>
+                    切换样式
+                  </el-button>
+                </el-col>
+              </el-row>
+              <div v-if="tableDataExpend.length > 0">
+                <div v-if="!pieChartBtn2" class="mt10">
+                  <el-breadcrumb separator-icon="el-icon-arrow-right">
+                    <el-breadcrumb-item
+                      v-for="(item, index) in expenditureList"
+                      :key="index"
+                      :class="{ breadcrumb: expenditure == item.name }"
+                      ><span @click="changeExpenditure(item, index)">{{ item.name }}</span></el-breadcrumb-item
+                    >
+                  </el-breadcrumb>
+                </div>
+                <echartBox
+                  v-if="!pieChartBtn2"
+                  :option-data="pieChartData2"
+                  :styles="styles1"
+                  :type="`fd`"
+                  @pieChange="pieChange"
+                />
+                <div v-else class="pie-list">
+                  <tabListChart ref="tabListChart02" :table-data="tableDataExpend" />
+                </div>
               </div>
-              <echartBox
-                v-if="!pieChartBtn2"
-                :option-data="pieChartData2"
-                :styles="styles1"
-                :type="`fd`"
-                @pieChange="pieChange"
-              />
-              <div v-else class="pie-list">
-                <tabListChart ref="tabListChart02" :table-data="tableDataExpend" />
+              <div v-else>
+                <default-page :index="11" :min-height="336" />
               </div>
             </div>
-            <div v-else>
-              <default-page :index="11" :min-height="336" />
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+          </el-card>
+        </el-col>
+      </el-row>
+    </div>
   </div>
 </template>
 
 <script>
-import { billChartApi, billChangeBie } from '@/api/enterprise'
-import { numberFormat } from '@/utils/numberFormat'
+import { defineAsyncComponent } from 'vue'
+import { billChartApi, billChangeBie } from '@/api/enterprise.ts'
+import { numberFormat } from '@/utils/numberFormat.ts'
 export default {
   name: 'FinanceChart',
   components: {
-    statisticsBox: () => import('./components/statisticsBox'),
-    echartBox: () => import('@/components/common/echarts'),
-    tabListChart: () => import('./components/tabListChart'),
-    defaultPage: () => import('@/components/common/defaultPage')
+    statisticsBox: defineAsyncComponent(() => import('./components/statisticsBox')),
+    echartBox: defineAsyncComponent(() => import('@/components/common/echarts')),
+    tabListChart: defineAsyncComponent(() => import('./components/tabListChart')),
+    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage'))
   },
   data() {
     return {
@@ -271,7 +272,7 @@ export default {
           trigger: 'axis'
         },
         legend: {
-          data: [this.$t('finance.revenueamount'), this.$t('finance.expenditureamount')],
+          data: ['收入金额', '支出金额'],
           show: true,
           right: 10,
           top: 0
@@ -304,7 +305,7 @@ export default {
         },
         yAxis: {
           type: 'value',
-          name: this.$t('finance.amountmoney'),
+          name: '金额',
           nameTextStyle: {
             color: '#CCCCCC'
           },
@@ -324,7 +325,7 @@ export default {
         },
         series: [
           {
-            name: this.$t('finance.totalrevenue'),
+            name: '总收入',
             type: 'line',
             itemStyle: {
               normal: {
@@ -338,7 +339,7 @@ export default {
             data: []
           },
           {
-            name: this.$t('finance.totalexpenditure'),
+            name: '总支出',
             type: 'line',
             itemStyle: {
               normal: {
@@ -430,7 +431,7 @@ export default {
         ],
         series: [
           {
-            name: this.$t('finance.sourceincome'),
+            name: '收入来源',
             type: 'pie',
             radius: '55%',
             right: '40%',
@@ -521,7 +522,7 @@ export default {
         ],
         series: [
           {
-            name: this.$t('finance.sourceexpenditure'),
+            name: '支出去向',
             type: 'pie',
             radius: '55%',
             right: '40%',
@@ -601,7 +602,12 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.el-breadcrumb /deep/ .el-breadcrumb__inner {
+.box {
+  margin: 14px;
+  margin-top: 1px;
+  box-sizing: border-box;
+}
+.el-breadcrumb :deep(.el-breadcrumb__inner) {
   color: #1890ff;
 
   span {
@@ -610,7 +616,7 @@ export default {
     font-size: 14px;
   }
 }
-.breadcrumb /deep/ .el-breadcrumb__inner {
+.breadcrumb :deep(.el-breadcrumb__inner) {
   color: #909399;
 
   span {
@@ -624,9 +630,7 @@ export default {
   color: #000000;
   font-weight: 600;
 }
-.divBox {
-  height: auto !important;
-}
+
 .el-row {
   margin-right: 0px !important;
 }
@@ -643,18 +647,13 @@ export default {
     font-size: 13px;
     margin: 1px 0 0 15px;
     color: #111111;
-    >>> i {
+    :deep(i) {
       transform: rotate(-90deg);
       font-size: 15px;
     }
   }
-  /deep/ .tab-btn:hover {
+  :deep(.tab-btn:hover) {
     background-color: transparent;
-  }
-  .pie-select {
-    /deep/ .el-input--mini {
-      width: 80px;
-    }
   }
   .pie-title {
     font-size: 15px;
@@ -694,7 +693,7 @@ export default {
     }
   }
 }
-/deep/ .el-drawer__body {
+:deep(.el-drawer__body) {
   height: 100%;
   overflow-y: auto;
 }

@@ -1,8 +1,8 @@
 <template>
   <!-- 查看账目详情侧滑弹窗 -->
   <div>
-    <el-drawer :before-close="handleClose" :visible.sync="drawer" direction="rtl" size="450px" title="查看账目详情">
-      <el-tabs v-model="tabIndex" tab-position="top" type="border-card" @tab-click="handleClick">
+    <el-drawer :before-close="handleClose" v-model="drawer" direction="rtl" size="450px" title="查看账目详情">
+      <el-tabs v-model="tabIndex" tab-position="top" type="border-card" @tab-change="handleClick">
         <el-tab-pane label="账目信息" name="1" />
         <el-tab-pane label="操作记录" name="2" />
 
@@ -13,51 +13,73 @@
               <div class="form-box">
                 <div class="form-item">
                   <el-form-item>
-                    <span slot="label">收支时间：</span>
+                    <template #label>
+                      <span>收支时间：</span>
+                    </template>
                     <p>{{ delData.edit_time }}</p>
                   </el-form-item>
                   <el-form-item>
-                    <span slot="label">账目类型：</span>
+                    <template #label>
+                      <span>账目类型：</span>
+                    </template>
                     <p>{{ delData.types == 0 ? '支出' : '收入' }}</p>
                   </el-form-item>
 
                   <el-form-item>
-                    <span slot="label">收支金额(元)：</span>
+                    <template #label>
+                      <span>收支金额(元)：</span>
+                    </template>
                     <p>{{ delData.num }}</p>
                   </el-form-item>
                   <el-form-item>
-                    <span slot="label">收支方式：</span>
+                    <template #label>
+                      <span>收支方式：</span>
+                    </template>
                     <p>{{ delData.pay_type }}</p>
                   </el-form-item>
                   <el-form-item>
-                    <span slot="label">账目分类：</span>
+                    <template #label>
+                      <span>账目分类：</span>
+                    </template>
                     <p>{{ delData.cate ? delData.cate.name : '--' }}</p>
                   </el-form-item>
                   <el-form-item>
-                    <span slot="label">备注：</span>
+                    <template #label>
+                      <span>备注：</span>
+                    </template>
                     <p class="remarks-wrap">
-                      {{ delData.client_bill ? delData.client_bill.mark : delData.mark }}
+                      {{ delData.client_bill ? delData.client_bill.mark||'--' : delData.mark||'--' }}
                     </p>
                   </el-form-item>
                   <el-form-item>
-                    <span slot="label">数据来源：</span>
-                    <p>{{ delData.link_id > 0 ? '合同账目' : '手动添加' }}</p>
+                    <template #label>
+                      <span>数据来源：</span>
+                    </template>
+                    <p>{{ delData.link_id > 0 ? '订单账目' : '手动添加' }}</p>
                   </el-form-item>
                   <el-form-item>
-                    <span slot="label">客户名称：</span>
+                    <template #label>
+                      <span>客户名称：</span>
+                    </template>
                     <p>{{ delData.client ? delData.client.customer_name : '--' }}</p>
                   </el-form-item>
                   <el-form-item>
-                    <span slot="label">合同名称：</span>
+                    <template #label>
+                      <span>订单名称：</span>
+                    </template>
                     <p>{{ delData.contract ? delData.contract.title : '--' }}</p>
                   </el-form-item>
 
                   <el-form-item>
-                    <span slot="label">付款单号：</span>
+                    <template #label>
+                      <span>付款单号：</span>
+                    </template>
                     <p>{{ delData.client_bill ? delData.client_bill.bill_no : '--' }}</p>
                   </el-form-item>
                   <el-form-item>
-                    <span slot="label">业务员：</span>
+                    <template #label>
+                      <span>业务员：</span>
+                    </template>
                     <p>
                       {{
                         delData.user
@@ -69,13 +91,15 @@
                     </p>
                   </el-form-item>
                   <el-form-item>
-                    <span slot="label">付款凭证：</span>
+                    <template #label>
+                      <span>付款凭证：</span>
+                    </template>
 
                     <upload-file
                       v-if="delData.attachs && delData.attachs.length > 0"
                       :only-image="false"
                       :onlyRead="true"
-                      :value="delData.attachs"
+                      :model-value="delData.attachs"
                     ></upload-file>
                     <!-- <div v-if="imageUrl">
                       <img :src="imageUrl" alt="" class="attachsImg" @click="handlePictureCardPreview(imageUrl)" />
@@ -83,7 +107,9 @@
                     <div v-else>--</div>
                   </el-form-item>
                   <el-form-item>
-                    <span slot="label">创建时间：</span>
+                    <template #label>
+                      <span>创建时间：</span>
+                    </template>
                     <p>{{ delData.created_at }}</p>
                   </el-form-item>
                 </div>
@@ -94,66 +120,70 @@
           <!-- 操作记录 -->
           <div v-if="tabIndex == 2" class="invoice-body1">
             <div v-if="recordList.length == 0" class="default">
-              <img alt="" class="img" src="../../../../../assets/images/defd.png" />
+              <img alt="" class="img" src="../../../../../assets/images/none-009.png" />
               <div class="text">暂无操作记录</div>
             </div>
             <el-steps v-if="recordList.length !== 0" :active="1" class="set" direction="vertical" space="130px">
               <el-step v-for="(item, index) in recordList" :key="index">
-                <div slot="icon">
-                  <span class="iconfont iconfapiaoxiangqing-caozuojilu"></span>
-                </div>
-                <div slot="description">
-                  <div :class="item.operation_name == '申请开票' ? 'removeBorderLine' : ''" class="operationBox">
-                    <div class="header">
-                      <div class="left">{{ item.operation_name }}</div>
-                      <div class="right">
-                        {{ item.card.name }}
-                        <el-divider direction="vertical" />
-                        {{ item.created_at }}
+                <template #icon>
+                  <div>
+                    <span class="iconfont iconfapiaoxiangqing-caozuojilu"></span>
+                  </div>
+                </template>
+                <template #description>
+                  <div>
+                    <div :class="item.operation_name == '申请开票' ? 'removeBorderLine' : ''" class="operationBox">
+                      <div class="header">
+                        <div class="left">{{ item.operation_name }}</div>
+                        <div class="right">
+                          {{ item.card.name }}
+                          <el-divider direction="vertical" />
+                          {{ item.created_at }}
+                        </div>
+                      </div>
+
+                      <div v-if="item.operation_name !== '申请开票'" class="footer">
+                        <el-form :row-style="{ height: '32px' }" class="description" label-width="100px">
+                          <el-form-item v-for="(details, index) in item.operation" :key="index" :label="details.name">
+                            <template v-if="details.val.after">
+                              <img
+                                v-if="details.val.before"
+                                :src="details.val.before"
+                                alt=""
+                                class="item-img"
+                                @click="handlePictureCardPreview(details.val.before)"
+                              />
+                              <span v-else>--</span>
+                              <span class="ml10 mr10"> 改为</span>
+                              <img
+                                v-if="details.val.after"
+                                :src="details.val.after"
+                                alt=""
+                                @click="handlePictureCardPreview(details.val.after)"
+                                class="item-img"
+                              />
+                              <span v-else>--</span>
+                            </template>
+
+                            <span v-else class="content">{{ details.val }}</span>
+                          </el-form-item>
+                        </el-form>
                       </div>
                     </div>
-
-                    <div v-if="item.operation_name !== '申请开票'" class="footer">
-                      <el-form :row-style="{ height: '32px' }" class="description" label-width="100px">
-                        <el-form-item v-for="(details, index) in item.operation" :key="index" :label="details.name">
-                          <template v-if="details.val.after">
-                            <img
-                              v-if="details.val.before"
-                              :src="details.val.before"
-                              alt=""
-                              class="item-img"
-                              @click="handlePictureCardPreview(details.val.before)"
-                            />
-                            <span v-else>--</span>
-                            <span class="ml10 mr10"> 改为</span>
-                            <img
-                              v-if="details.val.after"
-                              :src="details.val.after"
-                              alt=""
-                              @click="handlePictureCardPreview(details.val.after)"
-                              class="item-img"
-                            />
-                            <span v-else>--</span>
-                          </template>
-
-                          <span v-else class="content">{{ details.val }}</span>
-                        </el-form-item>
-                      </el-form>
-                    </div>
                   </div>
-                </div>
+                </template>
               </el-step>
             </el-steps>
           </div>
         </div>
       </el-tabs>
     </el-drawer>
-    <el-image-viewer v-if="isImage" :on-close="closeImageViewer" :url-list="srcList" />
+    <el-image-viewer v-if="isImage" @close="closeImageViewer" :url-list="srcList" />
   </div>
 </template>
 <script>
-import { billRecordApi } from '@/api/enterprise'
-import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
+import { billRecordApi } from '@/api/enterprise.ts'
+import { ElImageViewer } from 'element-plus'
 import uploadFile from '@/components/form-common/oa-upload'
 
 export default {
@@ -238,14 +268,13 @@ export default {
   cursor: pointer;
 }
 .default {
-  width: 500px;
   display: flex;
   flex-direction: column;
   align-items: center;
   margin-top: 200px;
   .img {
-    width: 200px;
-    height: 150px;
+    width: 128px;
+    height: 128px;
   }
   .text {
     font-size: 14px;
@@ -260,32 +289,32 @@ export default {
   overflow-y: auto;
 }
 
-.description /deep/ .el-form-item {
+.description :deep(.el-form-item) {
   margin-bottom: 10px;
 }
 
-/deep/ .el-form-item__label {
+:deep(.el-form-item__label) {
   font-size: 13px !important;
   font-weight: 400;
   color: #909399 !important;
 }
 .set {
-  /deep/ .el-step__icon.is-text {
+  :deep(.el-step__icon.is-text) {
     border: none;
   }
   .iconfapiaoxiangqing-caozuojilu {
     font-size: 13px;
     color: #1890ff;
   }
-  /deep/ .el-step__line {
+  :deep(.el-step__line) {
     width: 1px;
     background-color: #ebeef4;
   }
-  /deep/ .el-step__icon {
+  :deep(.el-step__icon) {
     margin-top: 20px;
     height: 12px;
   }
-  /deep/ .el-step.is-vertical .el-step__line {
+  :deep(.el-step.is-vertical .el-step__line) {
     top: 20px;
     bottom: -18px;
   }
@@ -322,13 +351,13 @@ export default {
   }
   .footer {
     padding: 20px 20px 20px 0px;
-    /deep/ .el-form-item {
+    :deep(.el-form-item) {
       // margin-bottom: 12px;
     }
-    /deep/ .el-form-item__label {
+    :deep(.el-form-item__label) {
       line-height: 18px;
     }
-    /deep/.el-form-item__content {
+    :deep(.el-form-item__content) {
       line-height: 18px;
     }
   }
@@ -369,18 +398,17 @@ export default {
   flex-wrap: wrap;
   justify-content: space-between;
   .form-item {
-    width: 49%;
-    /deep/ .el-form-item__content {
+    :deep(.el-form-item__content) {
       width: calc(100% - 110px);
       font-size: 13px !important;
     }
-    /deep/ .el-select--medium {
+    :deep(.el-select) {
       width: 100%;
     }
-    /deep/ .el-form-item {
+    :deep(.el-form-item) {
       margin-bottom: 0;
     }
-    /deep/ .el-textarea__inner {
+    :deep(.el-textarea__inner) {
       resize: none;
     }
 
@@ -393,7 +421,7 @@ export default {
     }
   }
 }
-/deep/ .el-tabs__item.is-active {
+:deep(.el-tabs__item.is-active) {
   border-right-color: transparent !important;
   border-left-color: transparent !important;
   &::after {
@@ -406,32 +434,31 @@ export default {
     top: 0;
   }
 }
-/deep/ .el-tabs__header {
+:deep(.el-tabs__header) {
   background-color: #f7fbff;
   border-bottom: none;
 }
-/deep/ .el-tabs__content {
+:deep(.el-tabs__content) {
   padding: 0;
 }
-/deep/ .el-tabs__nav-wrap::after {
+:deep(.el-tabs__nav-wrap::after) {
   height: 0;
 }
-/deep/ .el-tabs__active-bar {
+:deep(.el-tabs__active-bar) {
   top: 0;
 }
 .el-tabs--border-card {
   height: 39px;
-  position: fixed;
   width: 100%;
   z-index: 4;
   background-color: transparent;
   border: none;
   box-shadow: none;
 }
-/deep/.el-drawer__header {
+:deep(.el-drawer__header) {
   border-bottom: 0;
 }
-/deep/.el-tabs__header .el-tabs__item {
+:deep(.el-tabs__header .el-tabs__item) {
   line-height: 40px;
 }
 </style>

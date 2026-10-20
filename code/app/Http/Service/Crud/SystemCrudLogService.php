@@ -20,8 +20,8 @@ use App\Constants\Crud\CrudLogTypeEnum;
 use App\Http\Dao\Crud\SystemCrudLogDao;
 use App\Http\Model\Crud\SystemCrud;
 use App\Http\Service\Admin\AdminService;
-use App\Http\Service\BaseService;
 use App\Http\Service\Frame\FrameService;
+use App\Http\Service\BaseService;
 use Illuminate\Contracts\Container\BindingResolutionException;
 
 /**
@@ -42,11 +42,11 @@ class SystemCrudLogService extends BaseService
     {
         $data = $this->getList(where: ['crud_id' => $systemCrud->id, 'data_id' => $id], sort: 'id', with: ['user' => fn ($q) => $q->select('id', 'name', 'avatar')]);
 
-        $moduleService    = app()->make(CrudModuleService::class);
-        $crudService      = app()->make(SystemCrudService::class);
-        $adminService     = app()->make(AdminService::class);
-        $frameService     = app()->make(FrameService::class);
-        $crudFieldService = app()->make(SystemCrudFieldService::class);
+        $moduleService    = app()->get(CrudModuleService::class);
+        $crudService      = app()->get(SystemCrudService::class);
+        $adminService     = app()->get(AdminService::class);
+        $frameService     = app()->get(FrameService::class);
+        $crudFieldService = app()->get(SystemCrudFieldService::class);
         foreach ($data['list'] as &$item) {
             $item['field_name'] = '';
             $item['share_user'] = [
@@ -69,7 +69,7 @@ class SystemCrudLogService extends BaseService
                     break;
                 default:
                     if ($item['change_field_name_en']) {
-                        $fieldInfo = $crudFieldService->get(['crud_id' => $item['data_crud_id'], 'field_name_en' => $item['change_field_name_en']], ['field_name', 'form_value', 'data_dict_id', 'association_crud_id']);
+                        $fieldInfo = $crudFieldService->get(['crud_id' => $item['data_crud_id'], 'field_name_en' => $item['change_field_name_en']], ['field_name', 'form_value', 'data_dict_id', 'association_crud_id', 'customize_items', 'data_type']);
                         if (! $fieldInfo) {
                             break;
                         }
@@ -112,8 +112,10 @@ class SystemCrudLogService extends BaseService
                                     value: [$item['change_field_name_en'] => $item['before_value']],
                                     column: [
                                         $item['change_field_name_en'] => [
-                                            'data_dict_id' => $fieldInfo['data_dict_id'],
-                                            'form_value'   => $fieldInfo['form_value'],
+                                            'data_dict_id'    => $fieldInfo['data_dict_id'],
+                                            'form_value'      => $fieldInfo['form_value'],
+                                            'customize_items' => $fieldInfo['customize_items'],
+                                            'data_type'       => $fieldInfo['data_type'],
                                         ],
                                     ]
                                 );
@@ -122,8 +124,10 @@ class SystemCrudLogService extends BaseService
                                     value: [$item['change_field_name_en'] => $item['after_value']],
                                     column: [
                                         $item['change_field_name_en'] => [
-                                            'data_dict_id' => $fieldInfo['data_dict_id'],
-                                            'form_value'   => $fieldInfo['form_value'],
+                                            'data_dict_id'    => $fieldInfo['data_dict_id'],
+                                            'form_value'      => $fieldInfo['form_value'],
+                                            'customize_items' => $fieldInfo['customize_items'],
+                                            'data_type'       => $fieldInfo['data_type'],
                                         ],
                                     ]
                                 );

@@ -1,8 +1,8 @@
 ﻿<template>
   <div>
     <div class="v-height-flag">
-      <el-row class="plan-title">
-        <el-row class="p30">
+      <div class="plan-title">
+        <div class="p30">
           <el-tabs v-model="planIndex" @tab-click="handleClick">
             <el-tab-pane
               v-for="(item, index) in periodOptions"
@@ -12,18 +12,18 @@
               class="is-active"
             />
           </el-tabs>
-        </el-row>
-      </el-row>
+        </div>
+      </div>
       <div class="box">
-        <el-row :span="24" class="mb20">
+        <div class="mb20">
           <div class="form-list">
-            <label for="" style="margin-top: 0"><span class="color-tab">*</span> {{ $t('access.openstatus') }}：</label>
+            <label for="" style="margin-top: 0"><span class="color-tab">*</span> 开启状态：</label>
             <el-col :span="12" class="form-list-con">
               <el-switch
                 v-model="from.status"
-                :active-text="$t('hr.open')"
+                active-text="开启"
                 :active-value="1"
-                :inactive-text="$t('hr.close')"
+                inactive-text="关闭"
                 :inactive-value="0"
               />
             </el-col>
@@ -36,7 +36,6 @@
                   v-if="planIndex == 1"
                   v-model="from.remindDays"
                   placeholder="请选择创建考核提醒日期"
-                  size="small"
                   style="flex: 100%"
                 >
                   <el-option
@@ -54,13 +53,12 @@
                     :min="1"
                     :precision="0"
                     placeholder="请选择创建考核提醒日期"
-                    size="small"
                   />
                   <p class="days">号</p>
                 </div>
                 <div v-if="planIndex >= 3" class="flex">
                   <!-- <el-col :span="12" > -->
-                  <el-select v-model="from.remindMonth" class="plan-add" placeholder="请选择月份" size="small">
+                  <el-select v-model="from.remindMonth" class="plan-add" placeholder="请选择月份">
                     <el-option
                       v-for="(item, index) in months"
                       :key="'month' + index"
@@ -77,7 +75,6 @@
                       :min="1"
                       :precision="0"
                       placeholder="请选择创建考核提醒日期"
-                      size="small"
                     ></el-input-number>
                     <p class="days">号</p>
                   </div>
@@ -94,8 +91,7 @@
                   <el-col :span="12">
                     <el-select
                       v-model="from.make"
-                      :placeholder="$t('finance.pleaseselect')"
-                      size="small"
+                      placeholder="请选择"
                       style="flex: 100%"
                       @change="handleMake"
                     >
@@ -113,12 +109,11 @@
                       :controls="false"
                       :max="3650"
                       :min="0"
-                      :placeholder="$t('access.numberofdays')"
+                      placeholder="请输入天数"
                       :precision="0"
-                      size="small"
                     >
                     </el-input-number>
-                    <p class="days">{{ $t('access.day') }}</p>
+                    <p class="days">天</p>
                   </el-col>
                 </el-row>
               </el-col>
@@ -133,8 +128,7 @@
                   <el-col :span="12">
                     <el-select
                       v-model="from.eval"
-                      :placeholder="$t('finance.pleaseselect')"
-                      size="small"
+                      placeholder="请选择"
                       style="flex: 100%"
                     >
                       <el-option
@@ -151,11 +145,10 @@
                       :controls="false"
                       :max="100"
                       :min="0"
-                      :placeholder="$t('access.numberofdays')"
+                      placeholder="请输入天数"
                       :precision="0"
-                      size="small"
                     />
-                    <p class="days">{{ $t('access.day') }}</p>
+                    <p class="days">天</p>
                   </el-col>
                 </el-row>
               </el-col>
@@ -173,8 +166,7 @@
                     <el-input
                       v-model="from.verify"
                       :disabled="true"
-                      :placeholder="$t('access.superiorevaluation')"
-                      size="small"
+                      placeholder="上级评价结束后"
                     />
                   </el-col>
                   <el-col :span="12" class="plan-days">
@@ -183,11 +175,10 @@
                       :controls="false"
                       :max="100"
                       :min="0"
-                      :placeholder="$t('access.numberofdays')"
+                      placeholder="请输入天数"
                       :precision="0"
-                      size="small"
                     />
-                    <p class="days">{{ $t('access.day') }}</p>
+                    <p class="days">天</p>
                   </el-col>
                 </el-row>
               </el-col>
@@ -199,8 +190,8 @@
             <el-row :gutter="14">
               <el-col :span="12" class="resource-check">
                 <el-radio-group v-model="from.resource">
-                  <el-radio label="1">按部门添加</el-radio>
-                  <el-radio label="0">按人员添加</el-radio>
+                  <el-radio label="1" value="1">按部门添加</el-radio>
+                  <el-radio label="0" value="0">按人员添加</el-radio>
                 </el-radio-group>
               </el-col>
 
@@ -213,20 +204,20 @@
           </div>
           <div class="form-list">
             <label for=""
-              ><span class="color-tab">*</span> {{ from.resource == 0 ? $t('access.assessee') : '被考核部门' }}：</label
+              ><span class="color-tab">*</span> {{ from.resource == 0 ? '被考核人员' : '被考核部门' }}：</label
             >
-            <el-col :span="22" class="form-list-con" style="width: 40%">
+            <el-col :span="22" class="form-list-con" style="flex: 0 0 40%; max-width: 40%">
               <select-member
                 v-if="from.resource == 0"
                 :value="departmentObj.userList || []"
-                :placeholder="$t('access.tips15')"
+                placeholder="未选择被考核人时默认全员参与"
                 @getSelectList="getSelectList"
                 style="width: 100%"
               ></select-member>
               <select-department
                 v-if="from.resource == 1"
                 :value="departmentObj.frames || []"
-                :placeholder="$t('access.tips15')"
+                placeholder="未选择被考核人时默认全员参与"
                 @changeMastart="changeMastart"
                 style="width: 100%"
               ></select-department>
@@ -234,14 +225,12 @@
           </div>
           <div class="form-list" style="margin-top: 10px">
             <label for=""></label>
-            <el-button type="text" @click="handlePreserve(2)">保存查看被考核人员详情</el-button>
+            <el-button type="primary" link @click="handlePreserve(2)">保存查看被考核人员详情</el-button>
           </div>
-        </el-row>
+        </div>
       </div>
       <div class="cr-bottom-button">
-        <el-button :loading="loading" size="small" type="primary" @click="handlePreserve(1)">{{
-          $t('public.save')
-        }}</el-button>
+        <el-button :loading="loading" type="primary" @click="handlePreserve(1)">保存</el-button>
       </div>
     </div>
 
@@ -250,14 +239,15 @@
 </template>
 
 <script>
-import Common from '@/components/user/accessCommon'
-import { assessPlanGetApi, assessPlanPutApi } from '@/api/enterprise'
+import { defineAsyncComponent } from 'vue'
+import Common from '@/components/user/accessCommon.ts'
+import { assessPlanGetApi, assessPlanPutApi } from '@/api/enterprise.ts'
 export default {
   name: 'Plan',
   components: {
-    selectMember: () => import('@/components/form-common/select-member'),
-    selectDepartment: () => import('@/components/form-common/select-department'),
-    assessBox: () => import('./assessBox')
+    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
+    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department')),
+    assessBox: defineAsyncComponent(() => import('./assessBox'))
   },
   data() {
     return {
@@ -327,11 +317,13 @@ export default {
       this.from.remindDays = data.create_time
       this.from.remindMonth = data.create_month
       if (data.assess_type === 1) {
-        this.departmentObj.frames = data.test_frame
+        // 接口未配置被考核部门时返回 null，需兜底为数组
+        this.departmentObj.frames = data.test_frame || []
         this.departmentObj.userList = []
       } else {
         let list = []
-        data.test.map((item) => {
+        const testUsers = data.test_user || data.test || []
+        testUsers.map((item) => {
           let card = {
             value: item.id,
             name: item.name,
@@ -345,7 +337,7 @@ export default {
       this.handleMake(this.from.make)
     },
     handleClick(number) {
-      this.planIndex = number.name
+      this.planIndex = number.paneName
       if (this.planIndex == 3) {
         this.months = 12
       } else if (this.planIndex == 4) {
@@ -378,26 +370,22 @@ export default {
 
     // 选择部门弹窗
     changeMastart(data) {
-      if (data.length > 0) {
-        this.departmentObj.frames = data
-      } else {
-        this.departmentObj.frames = []
-      }
+      this.departmentObj.frames = data && data.length > 0 ? data : []
     },
     // 选择成员弹窗
     getSelectList(data) {
-      this.departmentObj.userList = data
+      this.departmentObj.userList = data || []
     },
 
     handlePreserve(type) {
       if (this.from.name == '') {
-        this.$message.error(this.$t('access.tips06'))
+        this.$message.error('请填写名称')
       } else if (this.days.makeDays == '') {
-        this.$message.error(this.$t('access.tips07'))
+        this.$message.error('请填写目标定制天数')
       } else if (this.days.evalDays == '') {
-        this.$message.error(this.$t('access.tips08'))
+        this.$message.error('请填写上级评价天数')
       } else if (this.days.verifyDays == '') {
-        this.$message.error(this.$t('access.tips09'))
+        this.$message.error('请填写上级审核天数')
       } else if (this.days.makeDays > this.afterMaxDay) {
         this.days.makeDays = this.afterMaxDay
         this.$message.error('目标制定时间超过了最大天数')
@@ -469,16 +457,17 @@ export default {
   }
 }
 .cr-bottom-button {
-  position: fixed;
-  left: -20px;
+  position: absolute;
+  left: 0px;
   right: 0;
-  bottom: 0;
-  width: calc(100% + 220px);
+  bottom: -56px;
+  width: 100%;
+  border-radius: 0 0 8px 8px;
 }
-/deep/ .el-scrollbar__wrap {
+:deep(.el-scrollbar__wrap) {
   padding-right: 60px;
 }
-/deep/ .el-tabs__item {
+:deep(.el-tabs__item) {
   line-height: 24px;
 }
 .form-list {
@@ -486,25 +475,33 @@ export default {
   margin-top: 20px;
   margin-right: 20px;
 
-  label {
+  // 只命中行标题：Element Plus 的 el-radio 根节点也是 label
+  > label {
     margin-top: 8px;
     width: 20%;
     text-align: right;
     font-weight: normal;
     font-size: 13px;
   }
-  /deep/ .el-radio-group {
+  :deep(.el-radio-group) {
     display: flex;
     min-width: 500px;
     .el-radio {
       margin-bottom: 0;
     }
   }
-  /deep/ .el-row {
+  :deep(.el-row) {
     width: 80%;
   }
   .resource-check {
     width: 120px;
+    // 旧版 el-radio 同为 label，会继承行标题的 20% 宽度、右对齐与 8px 上边距，这里按原尺寸还原
+    :deep(.el-radio) {
+      width: 100px;
+      height: 16px;
+      margin-top: 8px;
+      text-align: right;
+    }
   }
   .resource-text {
     width: calc(100% - 160px);
@@ -527,10 +524,14 @@ export default {
     color: #909399;
     margin-top: 10px;
   }
-  /deep/ .el-select {
+  :deep(.el-select) {
     width: 100%;
   }
   .form-list-con {
+    // Element Plus 的开关外层高 32px，旧版为 20px
+    :deep(.el-switch) {
+      height: 20px;
+    }
     .plan-icon {
       color: #666666;
       padding: 0 10px;
@@ -540,7 +541,7 @@ export default {
     position: relative;
     width: calc(50%);
     margin-left: 0px;
-    /deep/ .el-input-number--small {
+    :deep(.el-input-number) {
       width: 100%;
     }
     .days {
@@ -554,8 +555,11 @@ export default {
   .plan-days {
     position: relative;
     width: calc(50% - 14px);
+    // Element Plus 的 el-col 用 flex-basis 定宽，需同步扣除左边距，否则会换行
+    flex: 0 0 calc(50% - 14px);
+    max-width: calc(50% - 14px);
     margin-left: 14px;
-    /deep/ .el-input-number--small {
+    :deep(.el-input-number) {
       width: 100%;
     }
     .days {
@@ -566,10 +570,10 @@ export default {
       top: 8px;
     }
   }
-  /deep/ .el-input-number--medium {
+  :deep(.el-input-number) {
     width: 100%;
   }
-  /deep/ .el-input__inner {
+  :deep(.el-input__inner) {
     text-align: left;
     font-size: 13px;
     width: 100%;
@@ -586,7 +590,7 @@ export default {
     margin-left: 0;
   }
 }
-/deep/ .el-radio {
+:deep(.el-radio) {
   margin-bottom: 14px;
   display: block;
   &:last-of-type {

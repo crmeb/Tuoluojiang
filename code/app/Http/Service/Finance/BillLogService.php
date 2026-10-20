@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,7 +18,7 @@ namespace App\Http\Service\Finance;
 use App\Http\Dao\Finance\BillLogDao;
 use App\Http\Model\BaseModel;
 use App\Http\Service\BaseService;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 
@@ -63,7 +63,7 @@ class BillLogService extends BaseService
     public function getList(array $where, array $field = ['*'], $sort = 'created_at', array $with = ['card']): array
     {
         [$page, $limit] = $this->getPageValue();
-        $list           = $this->dao->getList($where, $field, $page, $limit, $sort, $with);
+        $list = $this->dao->getList($where, $field, $page, $limit, $sort, $with);
         foreach ($list as &$item) {
             $item['operation_name'] = $this->operationType[$item['type']] ?? '';
         }
@@ -78,7 +78,7 @@ class BillLogService extends BaseService
      */
     public function saveRecord(int $entId, int $billListId, int $uid, int $type, array $param)
     {
-        if (! isset($this->operationType[$type])) {
+        if (!isset($this->operationType[$type])) {
             throw $this->exception('操作类型错误');
         }
 
@@ -89,7 +89,7 @@ class BillLogService extends BaseService
             'bill_list_id' => $billListId,
             'operation'    => $this->generatorOperation($billListId, $type, $param),
         ]);
-        if (! $res) {
+        if (!$res) {
             throw $this->exception('操作记录添加失败');
         }
         return $res;
@@ -135,11 +135,11 @@ class BillLogService extends BaseService
      */
     public function getBillChange(int $billListId, array $before): ?array
     {
-        $info = app()->get(BillService::class)->get($billListId, with: ['file' => fn ($q) => $q->select(['id', 'name', 'att_dir as url', 'relation_id'])])?->toArray();
-        if (! $info) {
+        $info = app()->get(BillService::class)->get($billListId, with: ['file' => fn($q) => $q->select(['id', 'name', 'att_dir as url', 'relation_id'])])?->toArray();
+        if (!$info) {
             return [];
         }
-        $record                                         = [];
+        $record = [];
         $before['types'] != $info['types'] && $record[] = ['name' => '记账类型：', 'val' => ($this->types[$before['types']] ?? '') . ' 改为 ' . $this->types[$info['types']] ?? ''];
 
         if ($before['cate_id'] != $info['cate_id']) {
@@ -149,10 +149,10 @@ class BillLogService extends BaseService
             $record[]            = ['name' => '账目分类：', 'val' => $beforeName . ' 改为 ' . $afterName];
         }
 
-        $before['num'] != $info['num'] && $record[]                                                               = ['name' => '账目金额：', 'val' => ($before['num'] ?? '') . ' 改为 ' . ($info['num'] ?? '')];
-        $before['pay_type'] != $info['pay_type'] && $record[]                                                     = ['name' => '支付方式：', 'val' => $before['pay_type'] . ' 改为 ' . $info['pay_type']];
-        $before['edit_time'] != $info['edit_time'] && $record[]                                                   = ['name' => '收支时间：', 'val' => ($before['edit_time'] ?? '') . ' 改为 ' . ($info['edit_time'] ?? '')];
-        $before['mark'] != $info['mark'] && $record[]                                                             = ['name' => '备注：', 'val' => $before['mark'] . ' 改为 ' . $info['mark']];
+        $before['num'] != $info['num'] && $record[] = ['name' => '账目金额：', 'val' => ($before['num'] ?? '') . ' 改为 ' . ($info['num'] ?? '')];
+        $before['pay_type'] != $info['pay_type'] && $record[] = ['name' => '支付方式：', 'val' => $before['pay_type'] . ' 改为 ' . $info['pay_type']];
+        $before['edit_time'] != $info['edit_time'] && $record[] = ['name' => '收支时间：', 'val' => ($before['edit_time'] ?? '') . ' 改为 ' . ($info['edit_time'] ?? '')];
+        $before['mark'] != $info['mark'] && $record[] = ['name' => '备注：', 'val' => $before['mark'] . ' 改为 ' . $info['mark']];
         ($before['file'] ? $before['file']['id'] : []) != ($info['file'] ? $info['file']['id'] : []) && $record[] = ['name' => '支付凭证：', 'val' => [
             'before' => $before['file']['url'] ? link_file($before['file']['url']) : '',
             'after'  => $info['file']['url'] ? link_file($info['file']['url']) : '',

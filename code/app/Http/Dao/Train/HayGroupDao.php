@@ -15,10 +15,10 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Train;
 
+use App\Http\Model\Company\HayGroup;
 use App\Http\Dao\BaseDao;
 use App\Http\Model\BaseModel;
-use App\Http\Model\Company\HayGroup;
-use crmeb\traits\dao\ListSearchTrait;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Concerns\BuildsQueries;
 

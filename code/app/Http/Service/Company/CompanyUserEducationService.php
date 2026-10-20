@@ -18,9 +18,9 @@ namespace App\Http\Service\Company;
 use App\Http\Dao\Company\CompanyUserEducationDao;
 use App\Http\Service\Admin\AdminService;
 use App\Http\Service\BaseService;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\services\FormService;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\services\FormService;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -52,7 +52,7 @@ class CompanyUserEducationService extends BaseService implements ResourceService
      */
     public function resourceCreate(array $other = []): array
     {
-        return $this->elForm('添加教育经历', $this->createEducationRule(collect($other)), '/ent/education');
+        return $this->createElementForm('添加教育经历', $this->createEducationRule(collect($other)), '/ent/education');
     }
 
     /**
@@ -66,7 +66,7 @@ class CompanyUserEducationService extends BaseService implements ResourceService
             throw $this->exception('修改的信息不存在');
         }
 
-        return $this->elForm('修改教育经历', $this->createEducationRule(collect($info->toArray())), '/ent/education/' . $id, 'put');
+        return $this->createElementForm('修改教育经历', $this->createEducationRule(collect($info->toArray())), '/ent/education/' . $id, 'put');
     }
 
     /**

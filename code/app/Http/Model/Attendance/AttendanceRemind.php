@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -34,10 +34,32 @@ class AttendanceRemind extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'                       => 'integer',
+        'shift_id'                 => 'integer',
+        'shift_num'                => 'integer',
+        'one_shift_time'           => 'datetime:Y-m-d H:i:s',
+        'one_shift_remind'         => 'datetime:Y-m-d H:i:s',
+        'one_shift_remind_push'    => 'integer',
+        'one_shift_remind_short'   => 'datetime:Y-m-d H:i:s',
+        'two_shift_time'           => 'datetime:Y-m-d H:i:s',
+        'two_shift_remind'         => 'datetime:Y-m-d H:i:s',
+        'two_shift_remind_push'    => 'integer',
+        'two_shift_remind_short'   => 'datetime:Y-m-d H:i:s',
+        'three_shift_time'         => 'datetime:Y-m-d H:i:s',
+        'three_shift_remind'       => 'datetime:Y-m-d H:i:s',
+        'three_shift_remind_push'  => 'integer',
+        'three_shift_remind_short' => 'datetime:Y-m-d H:i:s',
+        'four_shift_time'          => 'datetime:Y-m-d H:i:s',
+        'four_shift_remind'        => 'datetime:Y-m-d H:i:s',
+        'four_shift_remind_push'   => 'integer',
+        'four_shift_remind_short'  => 'datetime:Y-m-d H:i:s',
+        'created_at'               => 'datetime:Y-m-d H:i:s',
+        'updated_at'               => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * created_at作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeDate($query, $value): void
     {
@@ -48,13 +70,11 @@ class AttendanceRemind extends BaseModel
 
     public function getDateAttribute(): string
     {
-        return date('Y-m-d', strtotime($this->attributes['created_at']));
+        return date('Y-m-d', datetime_timestamp($this->attributes['created_at']));
     }
 
     /**
      * 待推送作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeToBePushed($query, $value): void
     {
@@ -75,8 +95,6 @@ class AttendanceRemind extends BaseModel
 
     /**
      * ID 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeId($query, $value): void
     {

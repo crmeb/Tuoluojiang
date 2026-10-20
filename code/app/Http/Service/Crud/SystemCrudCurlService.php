@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,10 +18,10 @@ namespace App\Http\Service\Crud;
 use App\Http\Dao\Crud\SystemCrudCurlDao;
 use App\Http\Model\BaseModel;
 use App\Http\Service\BaseService;
-use crmeb\exceptions\ApiException;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\services\HttpService;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\exceptions\ApiException;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\services\HttpService;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
@@ -259,7 +259,7 @@ class SystemCrudCurlService extends BaseService implements ResourceServicesInter
 
     public function resourceDelete($id, ?string $key = null)
     {
-        if (app()->make(SystemCrudEventService::class)->count(['curl_id' => $id])) {
+        if (app()->get(SystemCrudEventService::class)->count(['curl_id' => $id])) {
             throw $this->exception('已经关联触发器，暂时无法删除，请先解除触发器关联的接口');
         }
         return $this->dao->delete($id, $key);

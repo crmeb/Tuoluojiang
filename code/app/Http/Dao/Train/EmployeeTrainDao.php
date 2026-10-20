@@ -15,8 +15,8 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Train;
 
-use App\Http\Dao\BaseDao;
 use App\Http\Model\Company\EmployeeTrain;
+use App\Http\Dao\BaseDao;
 
 /**
  * 员工培训Dao.

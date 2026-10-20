@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,9 +16,12 @@ declare(strict_types=1);
 namespace App\Http\Model\Approve;
 
 use App\Http\Model\Admin\Admin;
-use App\Http\Model\BaseModel;
+use App\Http\Model\Crud\SystemCrudApprove;
 use App\Http\Model\Crud\SystemCrudApproveRule;
-use crmeb\traits\model\TimeDataTrait;
+use App\Http\Model\Frame\Frame;
+use App\Http\Model\Frame\FrameAssist;
+use App\Http\Model\BaseModel;
+use Tuoluojiang\Open\traits\model\TimeDataTrait;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -45,6 +48,23 @@ class ApproveApply extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'user_id'    => 'integer',
+        'entid'      => 'integer',
+        'card_id'    => 'integer',
+        'approve_id' => 'integer',
+        'examine'    => 'integer',
+        'status'     => 'integer',
+        'crud_id'    => 'integer',
+        'link_id'    => 'integer',
+        'apply_id'   => 'integer',
+        'is_recall'  => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+        'deleted_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     protected $hidden = [
         'deleted_at',
     ];
@@ -55,7 +75,26 @@ class ApproveApply extends BaseModel
      */
     public function approve()
     {
-        return $this->hasOne(Approve::class, 'id', 'approve_id');
+        return $this->hasOne(Approve::class, 'id', 'approve_id')->withTrashed();
+    }
+
+    /**
+     * 一对一关联.
+     * @return HasOne
+     */
+    public function crudApprove()
+    {
+        return $this->hasOne(SystemCrudApprove::class, 'id', 'approve_id')->withTrashed();
+    }
+
+    /**
+     * 审批配置多态访问器：根据crud_id返回对应的审批配置.
+     * 需要预加载 approve 和 crudApprove 关联后使用.
+     * @return Approve|SystemCrudApprove|null
+     */
+    public function getApproveConfigAttribute()
+    {
+        return $this->crud_id ? $this->crudApprove : $this->approve;
     }
 
     /**
@@ -65,6 +104,24 @@ class ApproveApply extends BaseModel
     public function card()
     {
         return $this->hasOne(Admin::class, 'id', 'user_id')->select(['id', 'name', 'avatar', 'uid', 'phone']);
+    }
+
+    public function frame()
+    {
+        return $this->hasOneThrough(
+            Frame::class,
+            FrameAssist::class,
+            'user_id',
+            'id',
+            'user_id',
+            'frame_id'
+        )->where('frame_assist.is_mastart', 1)
+            ->select([
+                'frame.id',
+                'frame.name',
+                'frame.user_count',
+                'frame_assist.is_mastart',
+            ]);
     }
 
     /**
@@ -82,6 +139,15 @@ class ApproveApply extends BaseModel
     public function users()
     {
         return $this->hasMany(ApproveUser::class, 'apply_id', 'id')->groupBy(['node_id']);
+    }
+
+    /**
+     * 兼容旧版调用：审批人关联.
+     * @return HasMany
+     */
+    public function approve_users()
+    {
+        return $this->users();
     }
 
     /**
@@ -133,11 +199,7 @@ class ApproveApply extends BaseModel
      */
     public function scopeId($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereIn('id', $value);
-        } elseif ($value !== '') {
-            $query->where('id', $value);
-        }
+        is_array($value) ? $query->whereIn('id', $value) : $query->where('id', $value);
     }
 
     /**
@@ -147,9 +209,7 @@ class ApproveApply extends BaseModel
      */
     public function scopeEntid($query, $value)
     {
-        if ($value !== '') {
-            $query->where('entid', $value);
-        }
+        $query->where('entid', $value);
     }
 
     /**
@@ -159,9 +219,7 @@ class ApproveApply extends BaseModel
      */
     public function scopeNotid($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereNotIn('id', $value);
-        }
+        is_array($value) ? $query->whereNotIn('id', $value) : $query->where('id', '<>', $value);
     }
 
     /**
@@ -171,11 +229,7 @@ class ApproveApply extends BaseModel
      */
     public function scopeCardId($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereIn('card_id', $value);
-        } elseif ($value !== '') {
-            $query->where('card_id', $value);
-        }
+        is_array($value) ? $query->whereIn('card_id', $value) : $query->where('card_id', $value);
     }
 
     /**
@@ -185,11 +239,7 @@ class ApproveApply extends BaseModel
      */
     public function scopeUserId($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereIn('user_id', $value);
-        } else {
-            $query->where('user_id', $value);
-        }
+        is_array($value) ? $query->whereIn('user_id', $value) : $query->where('user_id', $value);
     }
 
     /**
@@ -199,11 +249,7 @@ class ApproveApply extends BaseModel
      */
     public function scopeNotCardId($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereNotIn('card_id', $value);
-        } elseif ($value !== '') {
-            $query->where('card_id', $value);
-        }
+        is_array($value) ? $query->whereNotIn('card_id', $value) : $query->whereNot('card_id', $value);
     }
 
     /**
@@ -213,11 +259,7 @@ class ApproveApply extends BaseModel
      */
     public function scopeStatus($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereIn('status', $value);
-        } elseif ($value !== '') {
-            $query->where('status', $value);
-        }
+        is_array($value) ? $query->whereIn('status', $value) : $query->where('status', $value);
     }
 
     /**
@@ -227,9 +269,7 @@ class ApproveApply extends BaseModel
      */
     public function scopeNodeId($query, $value)
     {
-        if ($value !== '') {
-            $query->where('node_id', $value);
-        }
+        $query->where('node_id', $value);
     }
 
     /**
@@ -239,9 +279,7 @@ class ApproveApply extends BaseModel
      */
     public function scopeNotStatus($query, $value)
     {
-        if ($value !== '') {
-            $query->where('status', '<>', $value);
-        }
+        $query->where('status', '<>', $value);
     }
 
     /**
@@ -251,11 +289,7 @@ class ApproveApply extends BaseModel
      */
     public function scopeApproveId($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereIn('approve_id', $value);
-        } elseif ($value !== '') {
-            $query->where('approve_id', $value);
-        }
+        is_array($value) ? $query->whereIn('approve_id', $value) : $query->where('approve_id', $value);
     }
 
     /**

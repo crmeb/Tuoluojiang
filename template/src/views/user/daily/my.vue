@@ -12,36 +12,40 @@
           title="我的汇报"
           @confirmData="confirmData"
         >
-          <template slot="rightBtn" class="box">
-            <el-dropdown size="small" type="primary" @command="handleDaily">
-              <el-button size="small" type="primary">{{ '填写汇报' }}</el-button>
-              <el-dropdown-menu slot="dropdown">
-                <el-dropdown-item v-for="(item, index) in dailyData" :key="item.id" :command="item.id">
-                  {{ item.name }}
-                </el-dropdown-item>
-              </el-dropdown-menu>
+          <template #rightBtn class="box">
+            <el-dropdown type="primary" @command="handleDaily">
+              <el-button type="primary">填写汇报</el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item v-for="(item, index) in dailyData" :key="item.id" :command="item.id">
+                    {{ item.name }}
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
             </el-dropdown>
-            <el-popover placement="bottom" trigger="click">
+            <el-popover placement="bottom" trigger="click" width="auto">
               <div class="popoverWidth">
                 <calendar :calendar="calendar" :tabType="tableFrom.type" @switchTime="switchTime"> </calendar>
               </div>
-              <span slot="reference" class="btn" type="text">
-                <span class="iconfont icongengduo2"></span>
-              </span>
+              <template #reference>
+                <span class="btn" type="text">
+                  <span class="iconfont icongengduo2"></span>
+                </span>
+              </template>
             </el-popover>
           </template>
         </oaFromBox>
         <div v-loading="loading" class="mt-10">
-          <el-table ref="elTable" :data="tableData" :height="tableHeight">
-            <el-table-column :label="$t('toptable.name')" prop="name" width="90" />
-            <el-table-column :label="$t('toptable.department')" min-width="100" prop="frame_name" />
-            <el-table-column :label="$t('toptable.worktoday')" min-width="250" prop="finish">
-              <template slot-scope="scope">
+          <el-table ref="elTable" :data="tableData" :height="TABLE_HEIGHT">
+            <el-table-column label="姓名" prop="name" width="90" />
+            <el-table-column label="部门" min-width="100" prop="frame_name" />
+            <el-table-column label="工作总结" min-width="250" prop="finish">
+              <template #default="scope">
                 <div v-for="(item, index) in scope.row.finish" :key="index" class="textover3">{{ item }}</div>
               </template>
             </el-table-column>
-            <el-table-column :label="$t('toptable.tomorrowplan')" min-width="250" prop="plan">
-              <template slot-scope="scope">
+            <el-table-column label="工作计划" min-width="250" prop="plan">
+              <template #default="scope">
                 <div v-if="scope.row.types != 3">
                   <div v-for="(item, index) in scope.row.plan" :key="index" class="textover3">{{ item }}</div>
                 </div>
@@ -49,40 +53,40 @@
               </template>
             </el-table-column>
 
-            <el-table-column :label="$t('user.work.dailytype')" width="120">
-              <template slot-scope="scope">
+            <el-table-column label="汇报类型" width="120">
+              <template #default="scope">
                 {{ getDailyTypes(scope.row.types) }}
               </template>
             </el-table-column>
 
-            <el-table-column :label="$t('user.work.creationtime')" prop="created_at" width="160" />
+            <el-table-column label="创建时间" prop="created_at" width="160" />
 
             <el-table-column
-              :label="$t('public.operation')"
+              label="操作"
               :show-overflow-tooltip="true"
               :width="tableFrom.type == 0 ? 160 : 60"
               fixed="right"
             >
-              <template slot-scope="scope">
+              <template #default="scope">
                 <el-button
                   v-hasPermi="['user:daily:my:check']"
-                  type="text"
+                  type="primary" link
                   @click="onCheck(scope.row.daily_id, 'check', scope.row)"
                 >
-                  {{ $t('public.check') }}
+                  查看
                 </el-button>
 
                 <el-button
                   v-if="tableFrom.type == 0 && new Date(scope.row.end_time).getTime() > new Date().getTime()"
-                  type="text"
+                  type="primary" link
                   @click="onEdit(scope.row.daily_id, 'edit', scope.row)"
                 >
-                  {{ $t('public.edit') }}
+                  编辑
                 </el-button>
 
                 <el-button
                   v-if="tableFrom.type == 0 && new Date(scope.row.end_time).getTime() > new Date().getTime()"
-                  type="text"
+                  type="primary" link
                   @click="onDelete(scope.row.daily_id)"
                 >
                   删除
@@ -119,20 +123,26 @@
   </div>
 </template>
 <script>
-import { getEnterpriseDaily, getEnterpriseUsersApi } from '@/api/enterprise'
-import { deleteDailyApi, submitStatisticsApi, noSubmitListApi, scheduleListApi } from '@/api/user'
+import dayjs from 'dayjs'
+import { modalSure } from '@/libs/public.ts'
+import pickerOptions from '@/libs/pickerOptions.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { getEnterpriseDaily, getEnterpriseUsersApi } from '@/api/enterprise.ts'
+import { deleteDailyApi, submitStatisticsApi, noSubmitListApi, scheduleListApi } from '@/api/user.ts'
 import addBox from './components/addBox'
 import calendar from './components/calendar'
 
+import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'IndexVue',
   components: {
     addBox,
     calendar,
-    oaFromBox: () => import('@/components/common/oaFromBox')
+    oaFromBox
   },
   data() {
     return {
+      TABLE_HEIGHT,
       loading: false,
       currentTime: '',
       submitType: '1',
@@ -145,21 +155,21 @@ export default {
       totalSubmit: 0,
 
       fromList: [
-        { text: this.$t('toptable.all'), val: '' },
-        { text: this.$t('toptable.thisweek'), val: 'week' },
-        { text: this.$t('toptable.thismonth'), val: 'month' },
-        { text: this.$t('toptable.lastmonth'), val: 'last month' }
+        { text: '全部', val: '' },
+        { text: '本周', val: 'week' },
+        { text: '本月', val: 'month' },
+        { text: '上月', val: 'last month' }
       ],
       dailyData: [
-        { name: this.$t('user.work.writedaily'), id: 0 },
-        { name: this.$t('user.work.writedailyweek'), id: 1 },
-        { name: this.$t('user.work.writedailymonth'), id: 2 },
+        { name: '填写日报', id: 0 },
+        { name: '填写周报', id: 1 },
+        { name: '填写月报', id: 2 },
         { name: '填写汇报', id: 3 }
       ],
       options: [
-        { name: this.$t('user.work.dailyday'), id: 0 },
-        { name: this.$t('user.work.weekday'), id: 1 },
-        { name: this.$t('user.work.monthday'), id: 2 },
+        { name: '日报', id: 0 },
+        { name: '周报', id: 1 },
+        { name: '月报', id: 2 },
         { name: '汇报', id: 3 }
       ],
 
@@ -167,14 +177,14 @@ export default {
       dailyName: '',
       dailyIndex: 1,
       totalPage: 0,
-      timeVal: [this.$moment().subtract(1, 'months').format('YYYY/MM/DD'), this.$moment().format('YYYY/MM/DD')],
+      timeVal: [dayjs().subtract(1, 'months').format('YYYY/MM/DD'), dayjs().format('YYYY/MM/DD')],
       year: '',
       tableFrom: {
         page: 1,
         limit: 15,
         type: 0,
         types: 0,
-        time: this.$moment().subtract(1, 'months').format('YYYY/MM/DD') + '-' + this.$moment().format('YYYY/MM/DD'),
+        time: dayjs().subtract(1, 'months').format('YYYY/MM/DD') + '-' + dayjs().format('YYYY/MM/DD'),
         user_id: '',
         scope_frame: 'self'
       },
@@ -184,7 +194,7 @@ export default {
       no_submit: '',
       calendar: [],
       disabled: false,
-      pickerOptions: this.$pickerOptionsTimeEle,
+      pickerOptions,
       tableData: [],
       departmentalData: [],
       editId: 0,
@@ -193,7 +203,7 @@ export default {
       nowDateEnd: null, // 今天时间23:59:59 时间戳
       needList: [],
       finishList: '',
-      time: this.$moment(new Date()).format('yyyy-MM-DD'),
+      time: dayjs(new Date()).format('YYYY-MM-DD'),
       windowHeight: 0,
       search: [
         {
@@ -201,9 +211,9 @@ export default {
           field_name_en: 'types',
           form_value: 'select',
           data_dict: [
-            { name: this.$t('user.work.dailyday'), id: 0 },
-            { name: this.$t('user.work.weekday'), id: 1 },
-            { name: this.$t('user.work.monthday'), id: 2 },
+            { name: '日报', id: 0 },
+            { name: '周报', id: 1 },
+            { name: '月报', id: 2 },
             { name: '汇报', id: 3 }
           ],
           value: 0
@@ -213,31 +223,18 @@ export default {
           field_name_end: '结束时间',
           field_name_en: 'time',
           form_value: 'date_picker',
-          data_dict: [this.$moment().subtract(1, 'months').format('YYYY/MM/DD'), this.$moment().format('YYYY/MM/DD')]
+          data_dict: [dayjs().subtract(1, 'months').format('YYYY/MM/DD'), dayjs().format('YYYY/MM/DD')]
         }
       ]
     }
   },
-  computed: {
-    lang: function () {
-      return this.$store.getters.lang
-    }
-  },
-  watch: {
-    lang() {
-      this.setOptions()
-    }
-  },
-  activated() {
-    this.$refs.elTable.doLayout()
-  },
   created() {
     this.windowHeight = window.innerHeight - 330
     this.getList()
-    this.nowDateStar = parseInt(this.$moment(new Date()).startOf('day').format('x'))
-    this.nowDateEnd = parseInt(this.$moment(new Date()).endOf('day').format('x'))
+    this.nowDateStar = parseInt(dayjs(new Date()).startOf('day').format('x'))
+    this.nowDateEnd = parseInt(dayjs(new Date()).endOf('day').format('x'))
     this.dailyName = this.dailyData[this.dailyIndex - 1].name
-    this.getUsersOption()
+    // this.getUsersOption()
   },
   mounted() {
     this.getDate()
@@ -254,11 +251,11 @@ export default {
           limit: 15,
           type: 0,
           types: 0,
-          time: this.$moment().subtract(1, 'months').format('YYYY/MM/DD') + '-' + this.$moment().format('YYYY/MM/DD'),
+          time: dayjs().subtract(1, 'months').format('YYYY/MM/DD') + '-' + dayjs().format('YYYY/MM/DD'),
           user_id: '',
           scope_frame: 'self'
         }
-        this.timeVal = [this.$moment().subtract(1, 'months').format('YYYY/MM/DD'), this.$moment().format('YYYY/MM/DD')]
+        this.timeVal = [dayjs().subtract(1, 'months').format('YYYY/MM/DD'), dayjs().format('YYYY/MM/DD')]
         this.search[1].data_dict = this.timeVal
       } else {
         this.tableFrom = { ...this.tableFrom, ...data }
@@ -267,8 +264,8 @@ export default {
     },
     // 获取待办列表
     getDailyTodoInfo() {
-      let start_time = this.$moment(this.time).format('YYYY-MM-DD') + ' 00:00:00'
-      let end_time = this.$moment(this.time).format('YYYY-MM-DD') + ' 23:59:59'
+      let start_time = dayjs(this.time).format('YYYY-MM-DD') + ' 00:00:00'
+      let end_time = dayjs(this.time).format('YYYY-MM-DD') + ' 23:59:59'
       const data = {
         start_time: start_time,
         end_time: end_time,
@@ -290,9 +287,9 @@ export default {
     },
     // 获取日期
     getDate() {
-      this.currentTime = this.$moment().subtract('day').format('YYYY-MM-DD') // 当天日期
-      this.thePreviousDay = this.$moment().subtract(1, 'day').format('YYYY-MM-DD') // 前一天日期
-      this.thePreviousDay = this.$moment(this.thePreviousDay).format('YYYY年MM月DD日') // 格式化日期
+      this.currentTime = dayjs().subtract('day').format('YYYY-MM-DD') // 当天日期
+      this.thePreviousDay = dayjs().subtract(1, 'day').format('YYYY-MM-DD') // 前一天日期
+      this.thePreviousDay = dayjs(this.thePreviousDay).format('YYYY年MM月DD日') // 格式化日期
     },
     // 获取未提交的日历
     async submitStatisticsApi() {
@@ -318,22 +315,14 @@ export default {
     // 切换日历月份触发的回调
     switchTime(data) {
       this.calendarTime =
-        this.$moment(data.startTime).format('YYYY/MM/DD') + '-' + this.$moment(data.endTime).format('YYYY/MM/DD')
+        dayjs(data.startTime).format('YYYY/MM/DD') + '-' + dayjs(data.endTime).format('YYYY/MM/DD')
       this.submitStatisticsApi()
     },
-    async getUsersOption() {
-      const result = await getEnterpriseUsersApi()
-      this.usersOption = result.data ? result.data : []
-    },
+    // async getUsersOption() {
+    //   const result = await getEnterpriseUsersApi()
+    //   this.usersOption = result.data ? result.data : []
+    // },
 
-    setOptions() {
-      this.fromList = [
-        { text: this.$t('toptable.all'), val: '' },
-        { text: this.$t('toptable.thisweek'), val: 'week' },
-        { text: this.$t('toptable.thismonth'), val: 'month' },
-        { text: this.$t('toptable.lastmonth'), val: 'lastmonth' }
-      ]
-    },
 
     async getList() {
       this.tableFrom.scope_frame = 'self'
@@ -368,7 +357,7 @@ export default {
 
     // 删除当日当周当月日报
     onDelete(id) {
-      this.$modalSure('确认删除当前汇报').then(() => {
+      modalSure('确认删除当前汇报').then(() => {
         deleteDailyApi(id).then((res) => {
           this.tableFrom.page = 1
           this.getList()
@@ -416,18 +405,18 @@ export default {
     // 清空
     reset() {
       this.leftTime =
-        this.$moment().subtract(1, 'day').format('YYYY/MM/DD') +
+        dayjs().subtract(1, 'day').format('YYYY/MM/DD') +
         '-' +
-        this.$moment().subtract(1, 'day').format('YYYY/MM/DD')
-      this.thePreviousDay = this.$moment().subtract(1, 'day').format('YYYY年MM月DD日')
+        dayjs().subtract(1, 'day').format('YYYY/MM/DD')
+      this.thePreviousDay = dayjs().subtract(1, 'day').format('YYYY年MM月DD日')
 
       this.tableFrom.types = 0
       this.tableFrom.time =
-        this.$moment().subtract(1, 'months').format('YYYY/MM/DD') + '-' + this.$moment().format('YYYY/MM/DD')
+        dayjs().subtract(1, 'months').format('YYYY/MM/DD') + '-' + dayjs().format('YYYY/MM/DD')
       this.tableFrom.user_id = ''
       this.tableFrom.frame_id = ''
       this.tableFrom.page = 1
-      this.timeVal = [this.$moment().subtract(1, 'months').format('YYYY/MM/DD'), this.$moment().format('YYYY/MM/DD')]
+      this.timeVal = [dayjs().subtract(1, 'months').format('YYYY/MM/DD'), dayjs().format('YYYY/MM/DD')]
       setTimeout(() => {
         this.$refs.week.removeStyle()
         this.$refs.week.value = new Date(new Date().getTime() - 24 * 60 * 60 * 1000)
@@ -470,7 +459,7 @@ export default {
 .iconrili3 {
   font-size: 14px;
 }
-/deep/ .el-table th {
+:deep(.el-table th) {
   background-color: #f7fbff;
 }
 .flex-btn {
@@ -484,7 +473,7 @@ export default {
   align-items: center;
 }
 
-.tabs /deep/ .el-tabs__item {
+.tabs :deep(.el-tabs__item) {
   font-size: 13px;
 }
 .tabs {
@@ -537,20 +526,20 @@ export default {
   line-height: 1.5;
 }
 
-/deep/ .el-dropdown-menu__item {
+:deep(.el-dropdown-menu__item) {
   text-align: left;
   i {
     color: #00c050;
   }
 }
-/deep/ .el-dropdown__caret-button {
+:deep(.el-dropdown__caret-button) {
   height: 32px;
 }
 
-/deep/ .el-tabs__header {
+:deep(.el-tabs__header) {
   margin-bottom: 0;
 }
-/deep/ .el-tabs__nav-wrap::after {
+:deep(.el-tabs__nav-wrap::after) {
   display: none;
 }
 

@@ -30,6 +30,17 @@ class DictData extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'type_id'    => 'integer',
+        'level'      => 'integer',
+        'sort'       => 'integer',
+        'status'     => 'integer',
+        'is_default' => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     public function type()
     {
         $this->hasOne(DictType::class, 'id', 'type_id');
@@ -42,29 +53,17 @@ class DictData extends BaseModel
      */
     public function scopeId($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereIn('id', $value);
-        } elseif ($value !== '') {
-            $query->where('id', $value);
-        }
+        is_array($value) ? $query->whereIn('id', $value) : $query->where('id', $value);
     }
 
     public function scopeTypeId($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereIn('type_id', $value);
-        } elseif ($value) {
-            $query->where('type_id', $value);
-        }
+        is_array($value) ? $query->whereIn('type_id', $value) : $query->where('type_id', $value);
     }
 
     public function scopeNotId($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereNotIn('id', $value);
-        } elseif ($value !== '') {
-            $query->whereNot('id', $value);
-        }
+        is_array($value) ? $query->whereNotIn('id', $value) : $query->where('id', '<>', $value);
     }
 
     /**
@@ -94,9 +93,7 @@ class DictData extends BaseModel
      */
     public function scopeLevel($query, $value): void
     {
-        if ($value !== '') {
-            $query->where('level', $value);
-        }
+        $query->where('level', $value);
     }
 
     /**
@@ -106,11 +103,7 @@ class DictData extends BaseModel
      */
     public function scopeDictValue($query, $value): void
     {
-        if (is_array($value)) {
-            $query->whereIn('value', is_nested_array($value) ? array_merge(...$value) : $value);
-        } else {
-            $query->where('value', $value);
-        }
+        is_array($value) ? $query->whereIn('value', is_nested_array($value) ? array_merge(...$value) : $value) : $query->where('value', $value);
     }
 
     /**
@@ -120,32 +113,22 @@ class DictData extends BaseModel
      */
     public function scopeNotValue($query, $value): void
     {
-        if (is_array($value)) {
-            $query->whereNotIn('value', $value);
-        } else {
-            $query->whereNot('value', $value);
-        }
+        is_array($value) ? $query->whereNotIn('value', $value) : $query->where('value', '<>', $value);
     }
 
     public function scopeTypeName($query, $value)
     {
-        $query->where('type_name', $value);
+        is_array($value) ? $query->whereIn('type_name', $value) : $query->where('type_name', $value);
     }
 
     public function scopeStatus($query, $value)
     {
-        if ($value !== '') {
-            $query->where('status', $value);
-        }
+        $query->where('status', $value);
     }
 
     public function scopePid($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereIn('pid', $value);
-        } else {
-            $query->where('pid', $value);
-        }
+        is_array($value) ? $query->whereIn('pid', $value) : $query->where('pid', $value);
     }
 
     public function scopeValues($query, $value)
@@ -172,10 +155,6 @@ class DictData extends BaseModel
      */
     public function scopeNameEq($query, $value): void
     {
-        if (is_array($value)) {
-            $query->whereIn('name', $value);
-        } elseif ($value !== '') {
-            $query->where('name', $value);
-        }
+        is_array($value) ? $query->whereIn('name', $value) : $query->where('name', $value);
     }
 }

@@ -1,55 +1,149 @@
 #app {
+  height: 100%;
+  background: linear-gradient(135deg, #eff8ff 0%, #ececfa 100%);
+
   .main-container {
-    min-height: calc(100vh - 66px);
-    // margin-top: 46px;
-    margin-top: 34px;
+    min-height: 100vh;
+    padding-top: 64px;
     transition: margin-left 0.28s;
     position: relative;
-    background: #f0f2f5;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
   }
+  // 一级 + 二级菜单的公共容器
+  // 两级菜单原先各自 fixed、各自画渐变，宽度基准不同导致拼接处必然有色阶断层，
+  // 统一到这里由容器画一次背景，子级只负责内容布局
+  // 菜单不再紧贴视口左下角：左侧留 10px、底部留 14px，四角统一 8px 圆角
+  .aside-wrapper {
+    position: fixed;
+    left: 10px;
+    top: 64px;
+    bottom: 14px;
+    z-index: 1;
+    display: flex;
+    overflow: hidden;
+    border-radius: 8px;
+    background: #fff;
+    background: linear-gradient(220deg, rgba(255, 255, 255, 0.3) 0%, #fff 30%);
+    color: #303133;
+  }
+
+  .openSidebar .aside-wrapper {
+    width: 280px;
+  }
+
+  .hideSidebar .aside-wrapper {
+    width: 152px;
+  }
+
+  .showSidebar .aside-wrapper {
+    width: 76px;
+  }
+
   .sidebar-container {
     transition: width 0.28s;
-    background-color: $menuBg;
+    flex: none; // 宽度由行内 style 控制（展开 204 / 收起 76），不参与 flex 压缩
     height: 100%;
-    position: fixed;
+    box-sizing: border-box;
     font-size: 0px;
-    top: 0;
-    bottom: 0;
-    left: 64px;
-    box-shadow: 2px 0px 4px 0px rgba(0,0,0,0.06);
-    z-index: 600;
+    padding-top: 10px;
     overflow: hidden;
     padding-bottom: 40px;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 80%;
+      height: 20%;
+      box-sizing: border-box;
+      border-right: 1px solid #fff;
+      border-top-right-radius: 8px;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, #fff 100%) top / 100% 1px no-repeat;
+      pointer-events: none;
+      z-index: 1;
+    }
     .el-menu {
-      .submenu-title-noDropdown {
+      .el-sub-menu__title {
+        font-family: PingFang SC, PingFang SC;
+        font-weight: 400;
+        font-size: 13px;
+        color: #303133;
+        height: 42px;
+        display: flex;
+        align-items: center;
+
+        padding: 0 10px !important;
+        margin-bottom: 1px;
         & > span {
-          margin-left: 10px !important;
+          color: #303133;
+          margin-left: 3px;
         }
-      }
-      .el-submenu__title {
-        & > span {
-          margin-left: 4px;
+        i + span {
+          color: #303133;
+          margin-left: 3px;
         }
       }
       .el-menu-item {
-        & > i {
-          width: 18px;
-        }
+        display: flex;
+        padding: 0 10px !important;
+        height: 42px;
+        line-height: 42px;
+        margin-bottom: 1px;
         & > span {
-          margin-left: 10px;
+          margin-left: 3px;
         }
       }
       .nest-menu {
-        .el-menu-item{
-          min-width: auto;
-          padding-right: 10px;
-          padding-left:38px !important;
+        .el-menu-item,
+        .el-sub-menu__title {
+          padding-left: 30px !important;
+          & > span {
+            margin-left: 3px;
+          }
         }
-        .el-submenu__title {
-          margin-left: 4px;
+      }
+
+      .nest-menu .nest-menu {
+        .el-menu-item,
+        .el-sub-menu__title {
+          padding-left: 50px !important;
+
+          & > span {
+            margin-left: 3px;
+          }
+        }
+      }
+      .nest-menu .nest-menu .nest-menu {
+        .el-menu-item,
+        .el-sub-menu__title {
+          padding-left: 60px !important;
+          & > span {
+            margin-left: 3px;
+          }
         }
       }
     }
+  }
+
+  .el-sub-menu.is-active > .el-sub-menu__title > span {
+    color: #1890ff !important;
+  }
+  .el-sub-menu.is-active > .el-sub-menu__title > i {
+    color: #1890ff !important;
+  }
+
+  .el-sub-menu.is-active > .el-sub-menu__title {
+    // background-color: #e6f0ff !important;
+    border-radius: 8px;
+  }
+
+  .el-menu-item.is-active {
+    background-color: rgba(24, 144, 255, 0.06) !important;
+    border-radius: 8px;
   }
 
   .hideSidebar {
@@ -57,35 +151,37 @@
       position: relative;
       margin-right: 1px;
 
-      .el-tooltip {
+      .el-tooltip,
+      .el-menu-tooltip__trigger {
         padding: 0 !important;
         text-align: center !important;
+        justify-content: center;
         .svg-icon {
           margin-left: 20px;
         }
       }
     }
-    .el-submenu {
+    .el-sub-menu {
       overflow: hidden;
       margin-right: 1px;
 
-      & > .el-submenu__title {
+      & > .el-sub-menu__title {
         text-align: center !important;
-        & > i {
-          width: 16px !important;
-        }
+        // & > i {
+        //   width: 16px !important;
+        // }
         .svg-icon {
           margin-left: 20px;
         }
-        .el-submenu__icon-arrow {
+        .el-sub-menu__icon-arrow {
           display: none;
-
         }
       }
     }
+
     .el-menu--collapse {
-      .el-submenu {
-        & > .el-submenu__title {
+      .el-sub-menu {
+        & > .el-sub-menu__title {
           & > span {
             height: 0;
             width: 0;
@@ -96,31 +192,30 @@
         }
       }
     }
+
+    .el-sub-menu__title {
+      justify-content: center;
+    }
+
+    .el-sub-menu,
+    .el-menu-item {
+      padding-right: 0px !important;
+      margin-right: 10px !important;
+    }
   }
 
-  .el-menu--collapse .el-menu .el-submenu {
+  .el-menu-item:hover {
+    background-color: #f3f5f9 !important;
+    border-radius: 8px;
+  }
+
+  .el-menu--collapse .el-menu .el-sub-menu {
     min-width: $sideBarWidth !important;
   }
 
-// mobile responsive
-  .mobile {
-   .main-container {
-     margin-left: 0px;
-   }
-
-   .sidebar-container {
-     transition: transform .28s;
-     width: $sideBarWidth !important;
-   }
-
-   &.hideSidebar {
-     .sidebar-container {
-       pointer-events: none;
-       transition-duration: 0.3s;
-       transform: translate3d(-$sideBarWidth, 0, 0);
-     }
-   }
-  }
+  // 移除原 .mobile 抽屉式规则：layout 的 classObj 从未输出 mobile 类，规则本身是死代码；
+  // 且一二级菜单合并容器后，单独位移 .sidebar-container 会在容器内留下空白，语义已不成立。
+  // 窄屏收起由 Sidebar/index.vue 的 isCollapse（< 992px 强制折叠）负责。
 
   .withoutAnimation {
     .main-container,
@@ -130,50 +225,91 @@
   }
 }
 
-// when menu collapsed
-.el-menu--vertical {
-  & > .el-menu {
-    .svg-icon {
-      margin-right: 16px;
-    }
+// Element Plus 会把 popper-class 同时加在外层弹层和内层菜单容器上，
+// 滚动与边框只给外层，内边距只给内层，避免重复占宽和双层滚动。
+.sidebar-menu-popper.el-popper {
+  width: 208px;
+  box-sizing: border-box;
+  background-color: #fff !important;
+  border: 0.5px solid #dcdfe6 !important;
+  border-radius: 6px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  max-height: calc(100vh - 80px);
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar-track-piece {
+    background: #d3dce6;
   }
-  .nest-menu .el-submenu > .el-submenu__title,
-  .el-menu-item {
-    padding: 0 !important;
-    font-size: 14px;
-    text-align: left;
-    padding-left: 20px !important;
-    height: 50px;
-    line-height: 50px;
-    color: #303133 !important;
-    &:hover {
-      background-color: transparent !important;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #99a9bf;
+    border-radius: 20px;
+  }
+}
+
+.sidebar-menu-popper.el-menu--popup-container {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  background-color: #fff;
+}
+
+.sidebar-menu-popper.el-popper {
+  .el-menu--popup {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    background-color: #fff !important;
+    border: none;
+    // 用 flex gap 控制菜单项纵向间距：隐藏(is_show=0)的菜单项不会占用间距
+    display: flex;
+    flex-direction: column;
+    box-shadow: none;
+    gap: 1px;
+    > * {
+      min-width: 0;
+    }
+    // element 的 clearfix 伪元素会变成 flex item，额外撑出 2px
+    &::before,
+    &::after {
+      display: none;
+    }
+
+    .el-sub-menu__title,
+    .el-menu-item {
+      min-width: 0;
+      padding: 0 10px !important;
+      font-size: 13px;
+      text-align: left;
+      height: 42px;
+      line-height: 42px;
+      border-radius: 8px;
+      color: #303133 !important;
+      background-color: #fff !important;
+      .overText {
+        min-width: 0;
+      }
+      &:hover {
+        background-color: #f3f5f9 !important;
+      }
+    }
+    // 选中态：覆盖 SidebarItem 中 router-link 命中的 #EDF6FF 底色
+    .el-menu-item.is-active,
+    .router-link-exact-active .el-menu-item,
+    .router-link-active .el-menu-item {
+      background-color: rgba(24, 144, 255, 0.06) !important;
       color: #1890ff !important;
-    }
-    &.is-active{
-      background-color: #f1f9ff!important;
-      color: #1890ff !important;
-      border-radius: 4px;
+      border-radius: 8px;
     }
   }
-
-  // the scroll bar appears when the subMenu is too long
-  > .el-menu--popup {
-    max-height: 100vh;
-    overflow-y: auto;
-    min-width: 134px;
-
-    &::-webkit-scrollbar-track-piece {
-      background: #d3dce6;
-    }
-
-    &::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background: #99a9bf;
-      border-radius: 20px;
-    }
-  }
+}
+.el-menu-item {
+  min-width: 50px !important;
 }

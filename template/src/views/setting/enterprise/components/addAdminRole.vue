@@ -2,41 +2,25 @@
   <div>
     <el-drawer
       :title="editType === 0 ? '新增角色' : '编辑角色'"
-      :visible.sync="drawer"
+      v-model="drawer"
       :direction="direction"
       :modal="true"
       :destroy-on-close="false"
-      :wrapperClosable="false"
+      :close-on-click-modal="false"
       :size="`85%`"
       :before-close="handleClose"
     >
-      <div v-if="drawer" class="container v-height-flag">
+      <div v-if="drawer" class="container v-height-flag" style="padding-bottom: 56px;">
         <div class="form-box">
           <el-form :model="ruleForm" label-width="auto">
-            <el-form-item label="角色名称：" prop="name">
-              <el-input v-model="ruleForm.role_name" placeholder="请输入管理员名称" size="small" />
+            <el-form-item label="角色名称：" prop="name" style="margin-left: 20px">
+              <el-input v-model="ruleForm.role_name" placeholder="请输入管理员名称" style="width: 460px" />
             </el-form-item>
-            <el-tabs v-model="tabIndex" class="mb20" type="border-card">
-              <el-tab-pane label="系统应用" :name="`1`"></el-tab-pane>
-              <el-tab-pane label="自定义应用" :name="`2`"></el-tab-pane>
+            <el-tabs v-model="tabIndex" type="border-card">
+              <el-tab-pane label="权限数据" :name="`1`"></el-tab-pane>
+              <el-tab-pane label="低代码应用" :name="`2`"></el-tab-pane>
             </el-tabs>
-            <template v-if="tabIndex == 1">
-              <el-form-item label="管理范围：" prop="name ">
-                <div class="flex">
-                  <el-select v-model="ruleForm.data_level" @change="dataLevelFn" placeholder="请选择">
-                    <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value">
-                    </el-option>
-                  </el-select>
-                  <select-department
-                    v-if="ruleForm.data_level == '3'"
-                    :value="activeMastart || []"
-                    :placeholder="`请选择`"
-                    @changeMastart="changeMastart($event, '', '')"
-                    style="width: 100%"
-                  ></select-department>
-                </div>
-              </el-form-item>
-            </template>
+            <template v-if="tabIndex == 1"> </template>
           </el-form>
         </div>
 
@@ -46,16 +30,16 @@
             :tree-data="treeData"
             :default-checked-keys="defaultCheckedKeys"
             :roles-list="rolesList"
+            :table-data="modulePermissionList"
           />
         </div>
 
-        <div v-show="tabIndex == 2" class="table-box">
-          <div class="mb14 flex">
+        <div v-show="tabIndex == 2" class="table-box ml20">
+          <div class="mb14 flex mt10">
             <!-- <span class="fz13">实体数据权限</span> -->
             <el-input
               style="width: 250px"
               placeholder="请输入实体名称"
-              size="small"
               prefix-icon="el-icon-search"
               class="mr10"
               v-model="searchKey"
@@ -65,7 +49,6 @@
             <el-select
               v-model="cate_id"
               placeholder="请选择关联应用(多选)"
-              size="small"
               style="width: 250px"
               filterable
               multiple
@@ -75,7 +58,7 @@
             </el-select>
             <div style="margin-left: auto; width: 100px">
               <settingsPopover @handClick="rowFn($event, 'reade', 2)">
-                <el-button type="primary" size="small">批量设置</el-button>
+                <el-button type="primary">批量设置</el-button>
               </settingsPopover>
             </div>
           </div>
@@ -91,14 +74,14 @@
             <el-table-column type="selection" width="55"></el-table-column>
             <el-table-column prop="table_name" label="实体名称" min-width="120"> </el-table-column>
             <el-table-column width="300">
-              <template slot="header" slot-scope="scope">
+              <template #header="scope">
                 <div class="flex">
                   查看权限 <settingsPopover @handClick="rowFn($event, 'reade', 1)" :icon="true"></settingsPopover>
                 </div>
               </template>
-              <template slot-scope="scope">
+              <template #default="scope">
                 <div class="flex">
-                  <el-select v-model="scope.row.reade" style="width: 100%" size="small" placeholder="请选择">
+                  <el-select v-model="scope.row.reade" style="width: 100%" placeholder="请选择">
                     <el-option v-for="item in crudList" :key="item.value" :label="item.label" :value="item.value">
                     </el-option>
                   </el-select>
@@ -114,7 +97,7 @@
               </template>
             </el-table-column>
             <el-table-column width="110">
-              <template slot="header" slot-scope="scope">
+              <template #header="scope">
                 <div class="flex">
                   新增权限
                   <settingsPopover
@@ -124,22 +107,22 @@
                   ></settingsPopover>
                 </div>
               </template>
-              <template slot-scope="scope">
-                <el-select v-model="scope.row.created" size="small" placeholder="请选择">
+              <template #default="scope">
+                <el-select v-model="scope.row.created" placeholder="请选择">
                   <el-option v-for="item in allowOptions" :key="item.value" :label="item.label" :value="item.value">
                   </el-option>
                 </el-select>
               </template>
             </el-table-column>
             <el-table-column prop="date" width="280">
-              <template slot="header" slot-scope="scope">
+              <template #header="scope">
                 <div class="flex">
                   修改权限 <settingsPopover @handClick="rowFn($event, 'updated', 1)" :icon="true"></settingsPopover>
                 </div>
               </template>
-              <template slot-scope="scope">
+              <template #default="scope">
                 <div class="flex">
-                  <el-select v-model="scope.row.updated" size="small" style="width: 100%" placeholder="请选择">
+                  <el-select v-model="scope.row.updated" style="width: 100%" placeholder="请选择">
                     <el-option v-for="item in crudList" :key="item.value" :label="item.label" :value="item.value">
                     </el-option>
                   </el-select>
@@ -155,14 +138,14 @@
               </template>
             </el-table-column>
             <el-table-column prop="date" min-width="280">
-              <template slot="header" slot-scope="scope">
+              <template #header="scope">
                 <div class="flex">
                   删除权限 <settingsPopover @handClick="rowFn($event, 'deleted', 1)" :icon="true"></settingsPopover>
                 </div>
               </template>
-              <template slot-scope="scope">
+              <template #default="scope">
                 <div class="flex">
-                  <el-select style="width: 100%" v-model="scope.row.deleted" size="small" placeholder="请选择">
+                  <el-select style="width: 100%" v-model="scope.row.deleted" placeholder="请选择">
                     <el-option v-for="item in crudList" :key="item.value" :label="item.label" :value="item.value">
                     </el-option>
                   </el-select>
@@ -178,14 +161,14 @@
               </template>
             </el-table-column>
             <el-table-column prop="date" min-width="280">
-              <template slot="header" slot-scope="scope">
+              <template #header="scope">
                 <div class="flex">
                   共享权限 <settingsPopover @handClick="rowFn($event, 'share', 1)" :icon="true"></settingsPopover>
                 </div>
               </template>
-              <template slot-scope="scope">
+              <template #default="scope">
                 <div class="flex">
-                  <el-select style="width: 100%" v-model="scope.row.share" size="small" placeholder="请选择">
+                  <el-select style="width: 100%" v-model="scope.row.share" placeholder="请选择">
                     <el-option v-for="item in crudList" :key="item.value" :label="item.label" :value="item.value">
                     </el-option>
                   </el-select>
@@ -201,14 +184,14 @@
               </template>
             </el-table-column>
             <el-table-column prop="date" min-width="280">
-              <template slot="header" slot-scope="scope">
+              <template #header="scope">
                 <div class="flex">
                   移交权限 <settingsPopover @handClick="rowFn($event, 'transfer', 1)" :icon="true"></settingsPopover>
                 </div>
               </template>
-              <template slot-scope="scope">
+              <template #default="scope">
                 <div class="flex">
-                  <el-select style="width: 100%" v-model="scope.row.transfer" size="small" placeholder="请选择">
+                  <el-select style="width: 100%" v-model="scope.row.transfer" placeholder="请选择">
                     <el-option v-for="item in crudList" :key="item.value" :label="item.label" :value="item.value">
                     </el-option>
                   </el-select>
@@ -224,7 +207,7 @@
               </template>
             </el-table-column>
             <el-table-column fixed="right" width="100">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <settingsPopover @handClick="rowFn($event, scope.row)"></settingsPopover>
               </template>
             </el-table-column>
@@ -232,23 +215,25 @@
         </div>
       </div>
       <div class="from-foot-btn fix btn-shadow">
-        <el-button size="small" @click="close">{{ $t('public.cancel') }}</el-button>
-        <el-button size="small" type="primary" :loading="loading" @click="onSubmit">{{ $t('public.save') }}</el-button>
+        <el-button @click="close">取消</el-button>
+        <el-button type="primary" :loading="loading" @click="onSubmit">保存</el-button>
       </div>
     </el-drawer>
   </div>
 </template>
 
 <script>
-import { systemRoleCreateApi, systemRoleStoreApi, systemRoleUpdateApi } from '@/api/config'
+import { defineAsyncComponent } from 'vue'
+import { systemRoleCreateApi, systemRoleStoreApi, systemRoleUpdateApi } from '@/api/config.ts'
 import settingsPopover from './settingsPopover'
-import { getcrudCateListApi } from '@/api/develop'
+import { getcrudCateListApi } from '@/api/develop.ts'
 export default {
+  emits: ['adminRole'],
   name: 'AddAdminRole',
   components: {
-    rolesTree: () => import('@/components/setting/rolesTree'),
-    settingsPopover: () => import('./settingsPopover'),
-    selectDepartment: () => import('@/components/form-common/select-department')
+    rolesTree: defineAsyncComponent(() => import('@/components/setting/rolesTree')),
+    settingsPopover: defineAsyncComponent(() => import('./settingsPopover')),
+    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department'))
   },
   props: {
     editType: {
@@ -265,46 +250,21 @@ export default {
       tabIndex: '1',
       input2: '',
       loading: false,
-      height: `calc(100vh - 280px)`,
+      height: `calc(100vh - 284px)`,
       application: [], // 应用数据
-      tableData: [],
+      modulePermissionList: [],
       entityOptions: [],
       departmentShow: false,
       drawer: false,
       direction: 'rtl',
       ruleForm: {
         role_name: '',
-        frame_id: [],
-        status: 1,
-        data_level: '1',
-        directly: 1
+
+        status: 1
       },
       searchKey: '',
       cate_id: '',
       itemKey: null,
-
-      options: [
-        {
-          value: '1',
-          label: '仅本人'
-        },
-        {
-          value: '5',
-          label: '直属下级'
-        },
-        {
-          value: '2',
-          label: '本部门'
-        },
-        {
-          value: '3',
-          label: '自定义部门'
-        },
-        {
-          value: '4',
-          label: '全部数据'
-        }
-      ],
 
       crudList: [
         {
@@ -393,11 +353,19 @@ export default {
 
   methods: {
     openBox(val) {
+      this.modulePermissionList = []
       this.drawer = true
       if (!val) {
         this.getTreeData()
       } else {
         this.tableData = val.crud
+        for (let key in val.module_permission) {
+          this.modulePermissionList.push({
+            key: key,
+            ...val.module_permission[key]
+          })
+        }
+
         this.tableData.forEach((value, index) => {
           value.crud_id = value.id
         })
@@ -473,6 +441,7 @@ export default {
       const obj = await this.$refs.rolesTree.getNodeValue()
       this.ruleForm.rules = obj.rules
       this.ruleForm.apis = obj.apis
+      this.ruleForm.module_permission = obj.module_permission
       this.ruleForm.crud = this.tableData
       const tempArr = []
       for (const i in this.activeMastart) {
@@ -542,7 +511,7 @@ export default {
     },
     dataLevelFn(e) {
       this.$forceUpdate()
-      this.$set(this.ruleForm, 'data_level', e)
+      this.ruleForm.data_level = e
       if (this.ruleForm.data_level == '4') {
         this.ruleForm.directly = 1
       }
@@ -566,17 +535,19 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/deep/ .el-drawer__header {
+:deep(.el-drawer__header) {
   padding-bottom: 20px;
   margin-bottom: 0;
+  color: #1e2128;
+  font-weight: 500;
 }
 
-/deep/ .label-txt {
+:deep(.label-txt) {
   /*width: 90px;*/
   margin-left: 20px;
   text-align: right;
 }
-/deep/ .el-tabs__item.is-active {
+:deep(.el-tabs__item.is-active) {
   border-right-color: transparent !important;
   border-left-color: transparent !important;
   &::after {
@@ -589,17 +560,17 @@ export default {
     top: 0;
   }
 }
-/deep/ .el-tabs__item {
+:deep(.el-tabs__item) {
   line-height: 40px !important;
 }
-/deep/ .el-tabs__header {
+:deep(.el-tabs__header) {
   background-color: #f7fbff;
   border-bottom: none;
 }
-/deep/ .el-tabs__nav-wrap::after {
+:deep(.el-tabs__nav-wrap::after) {
   height: 0;
 }
-/deep/ .el-tabs__active-bar {
+:deep(.el-tabs__active-bar) {
   top: 0;
 }
 .el-tabs--border-card {
@@ -611,26 +582,42 @@ export default {
   border: none;
   box-shadow: none;
 }
-.container {
-  height: 100%;
-  padding: 20px;
-  padding-top: 0;
-  border-top: 1px solid #d8d8d8;
+:deep(.el-drawer__body) {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
-/deep/.plan-footer-one {
+.container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+  // padding: 20px;
+  // padding-top: 0;
+}
+.form-box {
+  flex-shrink: 0;
+}
+:deep(.plan-footer-one) {
   cursor: pointer;
 
   padding: 0 5px !important;
 }
 .table-box {
-  padding-bottom: 50px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
 }
 .roles-box {
   // padding-left: 20px;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 .form-box .el-form .el-form-item:first-child {
-  margin: 10px 0;
+  margin: 20px 0;
 }
 </style>
 

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,13 +15,14 @@ declare(strict_types=1);
 
 namespace App\Http\Service\Attach;
 
+use App\Constants\AttachEnum;
 use App\Constants\CacheEnum;
 use App\Http\Dao\Attach\SystemAttachDao;
-use App\Http\Service\BaseService;
 use App\Http\Service\Other\UploadService;
-use crmeb\exceptions\AdminException;
-use crmeb\exceptions\ServicesException;
-use crmeb\exceptions\UploadException;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\exceptions\AdminException;
+use Tuoluojiang\Open\exceptions\ServicesException;
+use Tuoluojiang\Open\exceptions\UploadException;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Facades\Cache;
 use OSS\Core\OssException;
@@ -34,6 +35,7 @@ use Psr\Container\NotFoundExceptionInterface;
 /**
  * 附件管理service
  * Class AttachService.
+ * @mixin SystemAttachDao
  */
 class AttachService extends BaseService
 {
@@ -46,11 +48,14 @@ class AttachService extends BaseService
     // 回款/续费模块
     public const RELATION_TYPE_BILL = 'bill';
 
-    // 合同附件
+    // 订单附件
     public const RELATION_TYPE_CONTRACT = 'contract';
 
     // 客户附件
     public const RELATION_TYPE_CLIENT = 'client';
+
+    // 客户附件
+    public const RELATION_TYPE_CUSTOMER = 'customer';
 
     // 客户跟进附件
     public const RELATION_TYPE_FOLLOW = 'follow';
@@ -70,6 +75,33 @@ class AttachService extends BaseService
     // 财务模块
     public const RELATION_TYPE_FINANCE = 'finance';
 
+    // 线索模块
+    public const RELATION_TYPE_CLUE = 'clue';
+
+    // 商机模块
+    public const RELATION_TYPE_ODDS = 'odds';
+
+    // 产品模块
+    public const RELATION_TYPE_PRODUCT = 'product';
+
+    // 仓储入库凭证
+    public const RELATION_TYPE_WAREHOUSE_INBOUND = 'warehouse_inbound';
+
+    // 仓储出库凭证
+    public const RELATION_TYPE_WAREHOUSE_OUTBOUND = 'warehouse_outbound';
+
+    // 仓储盘点凭证
+    public const RELATION_TYPE_WAREHOUSE_CHECK = 'warehouse_check';
+
+    // 仓储调拨凭证
+    public const RELATION_TYPE_WAREHOUSE_TRANSFER = 'warehouse_transfer';
+
+    // 仓储正残品转换凭证
+    public const RELATION_TYPE_WAREHOUSE_CONVERT = 'warehouse_convert';
+
+    // 知识库文档附件
+    public const RELATION_TYPE_KNOWLEDGE = 'knowledge';
+
     // 模块类型
     public const RELATION_TYPE = [
         self::RELATION_TYPE_DEFAULT          => 0,
@@ -77,12 +109,22 @@ class AttachService extends BaseService
         self::RELATION_TYPE_BILL             => 2,
         self::RELATION_TYPE_CONTRACT         => 3,
         self::RELATION_TYPE_CLIENT           => 4,
+        self::RELATION_TYPE_CUSTOMER         => 4,
         self::RELATION_TYPE_FOLLOW           => 5,
         self::RELATION_TYPE_INVOICE          => 6,
         self::RELATION_TYPE_ATTENDANCE_CLOCK => 7,
         self::RELATION_TYPE_LIAiSON          => 8,
         self::RELATION_TYPE_PROGRAM          => 9,
         self::RELATION_TYPE_FINANCE          => 10,
+        self::RELATION_TYPE_CLUE             => 11,
+        self::RELATION_TYPE_ODDS             => 12,
+        self::RELATION_TYPE_PRODUCT          => 13,
+        self::RELATION_TYPE_WAREHOUSE_INBOUND  => 19,
+        self::RELATION_TYPE_WAREHOUSE_OUTBOUND => 20,
+        self::RELATION_TYPE_WAREHOUSE_CHECK    => 21,
+        self::RELATION_TYPE_WAREHOUSE_TRANSFER => 22,
+        self::RELATION_TYPE_WAREHOUSE_CONVERT  => 23,
+        self::RELATION_TYPE_KNOWLEDGE          => 25,
     ];
 
     /**
@@ -133,34 +175,35 @@ class AttachService extends BaseService
     }
 
     /**
-     * 删除图片.
+     * 删除文件.
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
-    public function delImg(array|string $ids, int $entId = 1)
+    public function delImg(mixed $ids, int $entId = 1)
     {
-        $ids = is_string($ids) ? explode(',', $ids) : $ids;
+        $ids = match (true) {
+            is_numeric($ids) => [$ids],
+            is_string($ids)  => explode(',', $ids),
+            default          => $ids
+        };
         if (empty($ids)) {
-            throw new AdminException('请选择要删除的图片');
+            throw new AdminException('请选择要删除的附件');
         }
         $entId = $entId ?: 1;
         foreach ($ids as $v) {
-            $attinfo = $this->dao->get(['id' => (int) $v, 'entid' => $entId])?->toArray();
-            if ($attinfo) {
-                try {
-                    $upload = UploadService::init($attinfo['up_type']);
-                    if ($attinfo['up_type'] == 1) {
-                        if (! str_starts_with($attinfo['att_dir'], '/')) {
-                            $attinfo['att_dir'] = '/' . $attinfo['att_dir'];
-                        }
-                    }
-                    if ($attinfo['att_dir']) {
-                        $upload->delete($attinfo['att_dir']);
-                    }
-                } catch (\Throwable $e) {
-                }
-                $this->dao->delete((int) $v);
+            $info = $this->dao->get(['id' => (int) $v, 'entid' => $entId]);
+            if (! $info) {
+                continue;
             }
+            try {
+                $upload = UploadService::init($info->up_type);
+                if ($info->up_type == 1 && ! str_starts_with($info->att_dir, '/')) {
+                    $info->att_dir = '/' . $info->att_dir;
+                }
+                $upload->delete($info->att_dir);
+            } catch (\Throwable) {
+            }
+            $info->delete();
         }
     }
 
@@ -209,7 +252,7 @@ class AttachService extends BaseService
      * @param string $uuid 上传用户ID
      * @throws BindingResolutionException
      */
-    public function save(int $pid, array $file = [], int $way = 2, int $entid = 1, string $uuid = ''): array
+    public function saveFile(int $pid, array $file = [], int $way = 2, int $entid = 1, string $uuid = ''): array
     {
         $fileType              = pathinfo($file['name'], PATHINFO_EXTENSION);
         $data['name']          = $file['name'];
@@ -241,7 +284,7 @@ class AttachService extends BaseService
      * 图片上传.
      * @return mixed
      */
-    public function upload(int $pid, string $file, int $upload_type = 1, int $type = 0, int $way = 1, int $entId = 1, string $uuid = '')
+    public function upload(int $pid, string $file, int $upload_type = 1, int $type = 0, int $way = 1, int $entid = 1, string $uuid = '')
     {
         if ($upload_type == 1) {
             $upload_type = sys_config('upload_type', 1) ?? 1;
@@ -249,10 +292,12 @@ class AttachService extends BaseService
         try {
             $path   = $this->make_path('attach', 2, true);
             $upload = UploadService::init($upload_type);
-            $res    = $upload->to($path)->validate()->move($file);
-            if ($res === false) {
-                throw new UploadException($upload->getError());
+            $res    = $upload->to($path)->validate()->move($file, false, $this->option);
+            if (is_bool($res)) {
+                $res === false && throw new UploadException($upload->getError());
+                return true;
             }
+
             $fileInfo = $upload->getUploadInfo();
             $fileType = pathinfo($fileInfo['name'], PATHINFO_EXTENSION);
             if ($fileInfo && $type == 0) {
@@ -267,14 +312,14 @@ class AttachService extends BaseService
                 $data['cid']           = $pid;
                 $data['uid']           = $uuid;
                 $data['way']           = $way;
-                $data['entid']         = $entId;
+                $data['entid']         = $entid;
                 $data['relation_type'] = $this->relationType;
                 $data['relation_id']   = $this->relationId;
                 $model                 = $this->dao->create($data);
                 $this->id              = $model->id;
             }
             $id = $model->id ?? 0;
-            return ['src' => $model->att_dir, 'url' => $model->att_dir, 'attach_id' => $id, 'id' => $id, 'size' => $data['att_size'], 'name' => $data['real_name']];
+            return ['src' => link_file($model->att_dir), 'url' => link_file($model->att_dir), 'attach_id' => $id, 'id' => $id, 'size' => $data['att_size'], 'name' => $data['real_name'], 'real_name' => $data['real_name']];
         } catch (\Throwable $e) {
             throw new UploadException($e->getMessage());
         }
@@ -371,21 +416,33 @@ class AttachService extends BaseService
     /**
      * 保存关联.
      */
-    public function saveRelation(array|string $ids, string $uid, int $relationId, string $relationType): bool|int
+    public function saveRelation(array|int|string $ids, string $uid, int $relationId, string $relationType): bool|int
     {
         $entId = 1;
-        $ids   = array_filter(array_map('intval', ! is_array($ids) ? explode(',', $ids) : $ids));
+        if (is_numeric($ids)) {
+            $ids = [$ids];
+        } elseif (is_string($ids)) {
+            $ids = array_map('intval', explode(',', $ids));
+        } else {
+            $ids = array_map('intval', $ids);
+        }
         return $this->transaction(function () use ($entId, $ids, $uid, $relationType, $relationId) {
-            $where = ['uid' => $uid, 'entid' => $entId, 'relation_type' => self::RELATION_TYPE[$relationType]];
-            $list  = $this->dao->column(array_merge($where, ['relation_id' => $relationId]), 'att_dir', 'id');
-            if ($list && $diff = array_diff(array_keys($list), $ids)) {
-                $this->delCover($diff, $entId, $uid);
+            $where       = ['uid' => $uid, 'entid' => $entId, 'relation_type' => AttachEnum::RELATION_TYPE[$relationType]];
+            $existingIds = collect($this->dao->column(array_merge($where, ['relation_id' => $relationId]), 'att_dir', 'id'))->keys();
+            // 需要删除的ID
+            $idsToDelete = $existingIds->diff($ids);
+            if ($idsToDelete->isNotEmpty()) {
+                $this->delCover($idsToDelete->all(), $entId, $uid);
             }
-
-            if (empty($ids)) {
-                return true;
+            // 需要更新的ID
+            $idsToUpdate = $existingIds->intersect($ids);
+            if ($idsToUpdate->isNotEmpty()) {
+                $this->dao->update(['id' => $idsToUpdate->all()], ['relation_id' => $relationId, 'relation_type' => AttachEnum::RELATION_TYPE[$relationType]]);
             }
-            return $this->dao->update(array_merge($where, ['id' => $ids]), ['relation_id' => $relationId]);
+            if ($existingIds->isEmpty()) {
+                $this->dao->update(['id' => $ids], ['relation_id' => $relationId, 'relation_type' => AttachEnum::RELATION_TYPE[$relationType]]);
+            }
+            return true;
         });
     }
 
@@ -466,7 +523,7 @@ class AttachService extends BaseService
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
-    public function getListByRelationType(string $relationType, array $ids = [], array $field = ['id', 'att_dir', 'att_size', 'real_name'], int $relationId = 0): array
+    public function getListByRelationType(string $relationType, array $ids = [], array $field = ['id', 'att_dir', 'att_size', 'real_name', 'real_name as name'], int $relationId = 0): array
     {
         $where['relation_type'] = self::RELATION_TYPE[$relationType] ?? -1;
         if ($relationId) {
@@ -563,6 +620,20 @@ class AttachService extends BaseService
             $info['file_url'] = link_file($info['file_url']);
         }
         return $info;
+    }
+
+    /**
+     * 删除关联文件.
+     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
+     */
+    public function delRelationFiles(int $relationId, int|string $relationType): bool
+    {
+        $fileIds = $this->dao->column(['relation_id' => $relationId, 'relation_type' => $relationType], 'id');
+        $fileIds && $this->delImg($fileIds);
+        return true;
     }
 
     /**

@@ -17,12 +17,12 @@ namespace App\Http\Dao\Crud;
 
 use App\Constants\Crud\CrudFormEnum;
 use App\Constants\Crud\CrudOperatorEnum;
-use App\Http\Dao\BaseDao;
 use App\Http\Model\Admin\Admin;
-use App\Http\Model\BaseModel;
 use App\Http\Model\Frame\Frame;
-use crmeb\traits\dao\BatchSearchTrait;
-use crmeb\traits\dao\TogetherSearchTrait;
+use App\Http\Dao\BaseDao;
+use App\Http\Model\BaseModel;
+use Tuoluojiang\Open\traits\dao\BatchSearchTrait;
+use Tuoluojiang\Open\traits\dao\TogetherSearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -40,7 +40,7 @@ class CrudModuleDao extends BaseDao
     use TogetherSearchTrait;
     use BatchSearchTrait;
 
-    protected string $tableName;
+    protected string $tableName = '';
 
     /**
      * 关联表数据.
@@ -57,6 +57,8 @@ class CrudModuleDao extends BaseDao
     protected $notDeleteTableName = ['frame', 'client_bill', 'client_invoice', 'customer_record', 'client_subscribe', 'bill_list', 'bill_category'];
 
     protected $notCreatedAtTableName = ['bill_category'];
+
+    protected $systemCustomer = ['customer', 'contract'];
 
     /**
      * 设置表名.
@@ -468,6 +470,9 @@ class CrudModuleDao extends BaseDao
                                 case CrudFormEnum::FORM_RICH_TEXT:
                                     $query = $query->where($fieldName, 'LIKE', '%' . $search['value'] . '%', $boolean);
                                     break;
+                                case CrudFormEnum::FORM_RADIO:
+                                    $query = is_array($search['value']) ? $query->whereIn($fieldName, $search['value'], $boolean) : $query->where($fieldName, null, $search['value'], $boolean);
+                                    break;
                                 case CrudFormEnum::FORM_INPUT:
                                 case CrudFormEnum::FORM_TEXTAREA:
                                     if (is_array($search['value'])) {
@@ -480,23 +485,42 @@ class CrudModuleDao extends BaseDao
                                 case CrudFormEnum::FORM_CASCADER_ADDRESS:
                                     $tags  = is_array($search['value']) ? $search['value'] : explode(',', $search['value']);
                                     $query = $query->where(function ($query) use ($tags, $fieldName) {
-                                        foreach ($tags as $i => $tag) {
-                                            if ($i) {
-                                                $query->orWhere($fieldName, 'like', '%/' . $tag . '/%');
-                                            } else {
-                                                $query->where($fieldName, 'like', '%/' . $tag . '/%');
+                                        if (in_array($this->tableName, $this->systemCustomer)) {
+                                            $tablePrefix = config('database.connections.mysql.prefix');
+                                            $tags        = array_merge(array_unique($tags));
+                                            foreach ($tags as $tag) {
+                                                $query->orWhereRaw('JSON_CONTAINS(' . $tablePrefix . $fieldName . ', ?,"$")', is_int($tag) ? ['"' . $tag . '"'] : ['"' . end($tag) . '"']);
+                                            }
+                                        } else {
+                                            foreach ($tags as $i => $tag) {
+                                                if ($i) {
+                                                    $query->orWhere($fieldName, 'like', '%/' . $tag . '/%');
+                                                } else {
+                                                    $query->where($fieldName, 'like', '%/' . $tag . '/%');
+                                                }
                                             }
                                         }
                                     }, null, null, $boolean);
                                     break;
                                 case CrudFormEnum::FORM_CASCADER_RADIO:
                                     $query = $query->where(function ($query) use ($search, $fieldName) {
+                                        $vv = [];
                                         foreach ($search['value'] as $i => $val) {
-                                            $val = implode('/', $val);
-                                            if ($i) {
-                                                $query->orWhere($fieldName, 'like', '%/' . $val . '/%');
+                                            if (in_array($this->tableName, $this->systemCustomer)) {
+                                                $endVal = is_array($val) ? end($val) : $val;
+                                                if (in_array($endVal, $vv)) {
+                                                    continue;
+                                                }
+                                                $vv[]        = $endVal;
+                                                $tablePrefix = config('database.connections.mysql.prefix');
+                                                $query->orWhereRaw('JSON_CONTAINS(' . $tablePrefix . $fieldName . ', ?,"$")', ['"' . $endVal . '"']);
                                             } else {
-                                                $query->where($fieldName, 'like', '%/' . $val . '/%');
+                                                $val = implode('/', $val);
+                                                if ($i) {
+                                                    $query->orWhere($fieldName, 'like', '%/' . $val . '/%');
+                                                } else {
+                                                    $query->where($fieldName, 'like', '%/' . $val . '/%');
+                                                }
                                             }
                                         }
                                     }, null, null, $boolean);
@@ -519,11 +543,23 @@ class CrudModuleDao extends BaseDao
                                     break;
                                 case CrudFormEnum::FORM_CASCADER:
                                     $model = $model->where(function ($query) use ($search, $fieldName) {
+                                        $vv = [];
                                         foreach ($search['value'] as $i => $v) {
-                                            if ($i) {
-                                                $query->orWhereNot($fieldName, 'like', '%/' . implode('/', $v) . '/%');
+                                            if (in_array($this->tableName, $this->systemCustomer)) {
+                                                $endVal = end($v);
+                                                if (in_array($endVal, $vv)) {
+                                                    continue;
+                                                }
+                                                $vv[]        = $endVal;
+                                                $tablePrefix = config('database.connections.mysql.prefix');
+                                                //                                                $query->orWhereRaw('JSON_CONTAINS(' . $tablePrefix . $fieldName . ', ?,"$")', ['"' . $endVal . '"']);
+                                                $query->orWhereJsonContains($tablePrefix . $fieldName, (string) $endVal);
                                             } else {
-                                                $query->whereNot($fieldName, 'like', '%/' . implode('/', $v) . '/%');
+                                                if ($i) {
+                                                    $query->orWhereNot($fieldName, 'like', '%/' . implode('/', $v) . '/%');
+                                                } else {
+                                                    $query->whereNot($fieldName, 'like', '%/' . implode('/', $v) . '/%');
+                                                }
                                             }
                                         }
                                     }, null, null, $boolean);
@@ -531,6 +567,9 @@ class CrudModuleDao extends BaseDao
                                 case CrudFormEnum::FORM_RICH_TEXT:
                                     $query = $query->whereNot($fieldName, 'LIKE', '%' . $search['value'] . '%', $boolean);
                                     break;
+                                case CrudFormEnum::FORM_RADIO:
+                                    $query = is_array($search['value']) ? $query->whereNotIn($fieldName, $search['value'], $boolean) : $query->whereNot($fieldName, null, $search['value'], $boolean);
+                                    // no break
                                 case CrudFormEnum::FORM_INPUT:
                                 case CrudFormEnum::FORM_TEXTAREA:
                                     if (is_array($search['value'])) {
@@ -540,12 +579,23 @@ class CrudModuleDao extends BaseDao
                                     break;
                                 case CrudFormEnum::FORM_CASCADER_RADIO:
                                     $query = $query->whereNot(function ($query) use ($search, $fieldName) {
+                                        $vv = [];
                                         foreach ($search['value'] as $i => $val) {
-                                            $val = implode('/', $val);
-                                            if ($i) {
-                                                $query->orWhere($fieldName, 'like', '%/' . $val . '/%');
+                                            if (in_array($this->tableName, $this->systemCustomer)) {
+                                                $endVal = end($v);
+                                                if (in_array($endVal, $vv)) {
+                                                    continue;
+                                                }
+                                                $vv[]        = $endVal;
+                                                $tablePrefix = config('database.connections.mysql.prefix');
+                                                $query->orWhereRaw('JSON_CONTAINS(' . $tablePrefix . $fieldName . ', ?,"$")', ['"' . $endVal . '"']);
                                             } else {
-                                                $query->where($fieldName, 'like', '%/' . $val . '/%');
+                                                $val = implode('/', $val);
+                                                if ($i) {
+                                                    $query->orWhere($fieldName, 'like', '%/' . $val . '/%');
+                                                } else {
+                                                    $query->where($fieldName, 'like', '%/' . $val . '/%');
+                                                }
                                             }
                                         }
                                     }, null, null, $boolean);
@@ -555,11 +605,22 @@ class CrudModuleDao extends BaseDao
                                 case CrudFormEnum::FORM_CASCADER_ADDRESS:
                                     $tags  = is_array($search['value']) ? $search['value'] : explode(',', $search['value']);
                                     $query = $query->whereNot(function ($query) use ($tags, $fieldName) {
+                                        $vv = [];
                                         foreach ($tags as $i => $tag) {
-                                            if ($i) {
-                                                $query->orWhere($fieldName, 'like', '%/' . $tag . '/%');
+                                            if (in_array($this->tableName, $this->systemCustomer)) {
+                                                $endVal = end($tag);
+                                                if (in_array($endVal, $vv)) {
+                                                    continue;
+                                                }
+                                                $vv[]        = $endVal;
+                                                $tablePrefix = config('database.connections.mysql.prefix');
+                                                $query->orWhereRaw('JSON_CONTAINS(' . $tablePrefix . $fieldName . ', ?,"$")', ['"' . $endVal . '"']);
                                             } else {
-                                                $query->where($fieldName, 'like', '%/' . $tag . '/%');
+                                                if ($i) {
+                                                    $query->orWhere($fieldName, 'like', '%/' . $tag . '/%');
+                                                } else {
+                                                    $query->where($fieldName, 'like', '%/' . $tag . '/%');
+                                                }
                                             }
                                         }
                                     }, null, null, $boolean);
@@ -687,7 +748,7 @@ class CrudModuleDao extends BaseDao
                         return $query->whereBetween($createTimeField, [$startTime, $endTime]);
                     }
                     if ($startTime && $endTime && $startTime == $endTime) {
-                        return $query->whereBetween($createTimeField, [$startTime, date('Y-m-d H:i:s', strtotime($endTime) + 86400)]);
+                        return $query->whereBetween($createTimeField, [$startTime, date('Y-m-d H:i:s', datetime_timestamp($endTime) + 86400)]);
                     }
                     if (! $startTime && $endTime) {
                         return $query->whereTime($createTimeField, '<', $endTime);

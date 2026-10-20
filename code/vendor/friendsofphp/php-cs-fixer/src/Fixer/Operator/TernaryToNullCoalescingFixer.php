@@ -26,13 +26,10 @@ use PhpCsFixer\Tokenizer\Tokens;
  */
 final class TernaryToNullCoalescingFixer extends AbstractFixer
 {
-    /**
-     * {@inheritdoc}
-     */
     public function getDefinition(): FixerDefinitionInterface
     {
         return new FixerDefinition(
-            'Use `null` coalescing operator `??` where possible. Requires PHP >= 7.0.',
+            'Use `null` coalescing operator `??` where possible.',
             [
                 new CodeSample(
                     "<?php\n\$sample = isset(\$a) ? \$a : \$b;\n"
@@ -51,17 +48,11 @@ final class TernaryToNullCoalescingFixer extends AbstractFixer
         return 0;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function isCandidate(Tokens $tokens): bool
     {
         return $tokens->isTokenKindFound(T_ISSET);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function applyFix(\SplFileInfo $file, Tokens $tokens): void
     {
         $issetIndices = array_keys($tokens->findGivenKind(T_ISSET));
@@ -98,11 +89,17 @@ final class TernaryToNullCoalescingFixer extends AbstractFixer
             return; // some weird stuff inside the isset
         }
 
+        $issetCode = $issetTokens->generateCode();
+
+        if ('$this' === $issetCode) {
+            return; // null coalescing operator does not with $this
+        }
+
         // search what is inside the middle argument of ternary operator
         $ternaryColonIndex = $tokens->getNextTokenOfKind($ternaryQuestionMarkIndex, [':']);
         $ternaryFirstOperandTokens = $this->getMeaningfulSequence($tokens, $ternaryQuestionMarkIndex, $ternaryColonIndex);
 
-        if ($issetTokens->generateCode() !== $ternaryFirstOperandTokens->generateCode()) {
+        if ($issetCode !== $ternaryFirstOperandTokens->generateCode()) {
             return; // regardless of non-meaningful tokens, the operands are different
         }
 

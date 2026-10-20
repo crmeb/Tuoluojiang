@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -39,31 +39,39 @@ class SystemCrudForm extends BaseModel
      */
     protected $primaryKey = 'id';
 
-    /**
-     * @email 136327134@qq.com
-     * @date 2024/2/24
-     * @param mixed $value
-     */
-    public function setOptionsAttribute($value)
-    {
-        $this->attributes['options'] = json_encode($value);
-    }
+    protected $casts = [
+        'id'         => 'integer',
+        'crud_id'    => 'integer',
+        'version'    => 'integer',
+        'is_index'   => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+        'deleted_at' => 'datetime:Y-m-d H:i:s',
+        'is_master'  => 'integer',
+    ];
 
     /**
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
+     */
+    public function setOptionsAttribute($value)
+    {
+        $this->attributes['options'] = $value ? json_encode($value) : '';
+    }
+
+    /**
      * @return mixed
+     * @email 136327134@qq.com
+     * @date 2024/2/24
      */
     public function getOptionsAttribute($value)
     {
-        return json_decode($value, true);
+        return $value ? json_decode($value, true) : [];
     }
 
     /**
      * @email 136327134@qq.com
      * @date 2024/3/19
-     * @param mixed $value
      */
     public function setGlobalOptionsAttribute($value)
     {
@@ -71,20 +79,18 @@ class SystemCrudForm extends BaseModel
     }
 
     /**
+     * @return mixed
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
-     * @return mixed
      */
     public function getGlobalOptionsAttribute($value)
     {
-        return json_decode($value, true);
+        return $value ? json_decode($value, true) : [];
     }
 
     /**
      * @email 136327134@qq.com
      * @date 2024/4/1
-     * @param mixed $value
      */
     public function setFieldsAttribute($value)
     {
@@ -92,13 +98,17 @@ class SystemCrudForm extends BaseModel
     }
 
     /**
+     * @return array|mixed
      * @email 136327134@qq.com
      * @date 2024/4/1
-     * @param mixed $value
-     * @return array|mixed
      */
     public function getFieldsAttribute($value)
     {
         return $value ? json_decode($value, true) : [];
+    }
+
+    public function crud()
+    {
+        return $this->belongsTo(SystemCrud::class, 'crud_id', 'id');
     }
 }

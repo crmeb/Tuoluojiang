@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,21 +17,25 @@ namespace App\Http\Controller\AdminApi;
 
 use App\Constants\CacheEnum;
 use App\Constants\CloudEnum;
+use App\Constants\System\ConfigEnum;
 use App\Constants\UserEnum;
 use App\Http\Contract\Company\CompanyInterface;
 use App\Http\Requests\user\UserLoginRequest;
 use App\Http\Service\Admin\AdminService;
 use App\Http\Service\Attach\AttachService;
-use App\Http\Service\Client\ClientInvoiceService;
 use App\Http\Service\Cloud\CloudFileService;
 use App\Http\Service\CommonService;
 use App\Http\Service\Crud\CrudModuleService;
 use App\Http\Service\Crud\SystemCrudQuestionnaireService;
 use App\Http\Service\Crud\SystemCrudService;
+use App\Http\Service\Customer\InvoiceService;
+use App\Http\Service\Customer\LeadService;
 use App\Http\Service\Notice\NoticeRecordService;
 use App\Http\Service\Other\UploadService;
 use App\Http\Service\System\SystemBackupService;
 use App\Http\Service\System\SystemCityService;
+use App\Http\Service\Company\CompanyService;
+use App\Http\Service\Work\WorkClientService;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Contracts\Foundation\Application;
@@ -44,7 +48,6 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Response;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Mews\Captcha\Captcha;
 use Psr\Container\ContainerExceptionInterface;
@@ -88,6 +91,16 @@ class CommonController extends AuthController
             'global_watermark_status' => $globalWatermarkStatus,
             'wps_type'                => $wpsType,
             'ai_status'               => $aiStatus,
+            'e_signature'             => (int) sys_config('e_signature'),
+            'customer_switch'         => sys_more([
+                ConfigEnum::LEAD_MODULE_SWITCH['key'],
+                ConfigEnum::OPPORTUNITY_MODULE_SWITCH['key'],
+                ConfigEnum::CONTRACT_MODULE_SWITCH['key'],
+                ConfigEnum::INVOICE_MODULE_SWITCH['key'],
+                ConfigEnum::ORDER_MODULE_SWITCH['key'],
+                ConfigEnum::LIAISON_MODULE_SWITCH['key'],
+                ConfigEnum::CUSTOMER_MODULE_SWITCH['key'],
+            ]),
         ]);
     }
 
@@ -96,9 +109,9 @@ class CommonController extends AuthController
      * @return mixed
      */
     #[Get('logout', '退出登录', ['auth.admin', 'ent.auth', 'ent.log'])]
-    public function logout()
+    public function logout(AdminService $service)
     {
-        auth('admin')->logout();
+        $service->logout();
         return $this->success('退出成功', tips: 0);
     }
 
@@ -120,7 +133,8 @@ class CommonController extends AuthController
         ], true);
         if ($type === 5) {
             if (! $key || ! $contentType) {
-                return app('json')->fail('缺少参数');
+                $key         = uniqid('jdoss');
+                $contentType = 'application/vnd.openxmlformats-o';
             }
             $res = $upload->getTempKeys($key, $path, $contentType);
         } else {
@@ -239,6 +253,18 @@ class CommonController extends AuthController
     }
 
     /**
+     * 未读消息数量.
+     * @throws BindingResolutionException
+     * @throws \ReflectionException
+     */
+    #[Get('message/unread_count', '获取未读消息数量', ['auth.admin', 'ent.auth', 'ent.log'])]
+    public function unreadMessageCount(NoticeRecordService $services): mixed
+    {
+        $message = $services->getMessageList($this->uuid, $this->entId, '', '', 0, false);
+        return $this->success(['messageNum' => $message['messageNum'] ?? 0]);
+    }
+
+    /**
      * 修改消息状态
      */
     #[Put('message/{id}/{isRead}', '修改消息状态', ['auth.admin', 'ent.auth', 'ent.log'])]
@@ -280,7 +306,21 @@ class CommonController extends AuthController
     #[Get('auth', '获取授权信息', ['auth.admin', 'ent.auth', 'ent.log'])]
     public function auth()
     {
-        return $this->success(__('miss'), tips: 0);
+        try {
+            parent::check_auth();
+            return parent::auth();
+        } catch (\Throwable $e) {
+            return $this->fail($e->getMessage());
+        }
+    }
+
+    /**
+     * @return mixed
+     */
+    public function sync()
+    {
+        parent::syncAuth();
+        return $this->success('操作成功，如未生效请手动重启Http服务');
     }
 
     /**
@@ -344,7 +384,9 @@ class CommonController extends AuthController
             // 地址
             'site_address' => $services->getCompanyAddress(),
             // 电话号码
-            'site_tel' => sys_config('site_tel'),
+            'site_tel'     => sys_config('site_tel'),
+            'corpid'       => sys_config('wechat_work_corpid'),
+            'forced_build' => (int) sys_config('wechat_work_forced_build', 0),
             // logo
             'site_logo'          => $services->getCompanyInfo(),
             'password_type'      => $typeStr,
@@ -356,10 +398,11 @@ class CommonController extends AuthController
 
     /**
      * 验证码短信发送
+     * @param AdminService $service
      * @return mixed
+     * @throws ValidationException
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
-     * @throws ValidationException
      */
     #[Post('verify', '验证码短信发送')]
     public function verify(UserLoginRequest $request, AdminService $adminService, CommonService $service)
@@ -380,7 +423,7 @@ class CommonController extends AuthController
                 return $this->fail('短信发送失败，未注册的手机号');
             }
         }
-        if ($service->smsVerifyCode($phone, $key, $types)) {
+        if ($service->smsVerifyCode((string) $phone, $key, $types)) {
             return $this->success('短信发送成功');
         }
         return $this->fail('短信发送失败');
@@ -403,12 +446,9 @@ class CommonController extends AuthController
      * @throws NotFoundExceptionInterface
      */
     #[Get('city', '查找城市数据')]
-    public function city()
+    public function city(SystemCityService $services)
     {
-        /** @var SystemCityService $systemCity */
-        $systemCity = app()->get(SystemCityService::class);
-
-        return $this->success($systemCity->cityTree());
+        return $this->success($services->cityTree());
     }
 
     /**
@@ -509,7 +549,7 @@ class CommonController extends AuthController
      * @throws \ReflectionException
      */
     #[Any('invoice/call_back', '发票回调')]
-    public function invoiceCallBack(ClientInvoiceService $service)
+    public function invoiceCallBack(InvoiceService $service)
     {
         $res = $service->invoiceCallBack();
         if (! $res) {
@@ -668,16 +708,7 @@ class CommonController extends AuthController
             return $this->fail('系统默认数据不允许创建');
         }
 
-        [$data, $validatorData, $rule, $message] = $service->checkData($crudInfo, $request);
-
-        if ($validatorData && $rule && $message) {
-            $validator = Validator::make($validatorData, $rule, $message);
-
-            if ($validator->fails()) {
-                // 验证失败的处理逻辑
-                return $this->fail($validator->errors()->first());
-            }
-        }
+        $data = $service->checkData($crudInfo, $request);
 
         $service->saveModule($crudInfo, $data, ['uid' => $admin['id'] ?? $questionnaire['user_id'], 'ip' => ! $admin ? $request->ip() : '']);
 
@@ -686,5 +717,29 @@ class CommonController extends AuthController
         }
 
         return $this->success('添加成功');
+    }
+
+    /**
+     * 获取当前IP的天气信息.
+     */
+    #[Get('weather', '获取当前天气', ['auth.admin', 'ent.auth', 'ent.log'])]
+    public function weather(CompanyService $companyService): mixed
+    {
+        return $this->success($companyService->getCurrentWeather());
+    }
+
+    #[Get('time/{page}', '同步客户时间')]
+    public function setTime($page)
+    {
+        $clientService   = app()->get(WorkClientService::class);
+        $customerService = app()->get(LeadService::class);
+        $data            = $customerService->dao->select([], ['id', 'userid', 'external_userid'], page: (int) $page, limit: 1000);
+        $count           = 0;
+        foreach ($data as $item) {
+            $info = $clientService->get(['userid' => $item['userid'], 'external_userid' => $item['external_userid']], ['id'], with: ['followOne' => fn ($query) => $query->select(['id', 'client_id', 'createtime'])]);
+            $info?->followOne?->createtime && $customerService->dao->update($item['id'], ['createtime' => date('Y-m-d H:i:s', $info->followOne->createtime)]);
+            ++$count;
+        }
+        return $this->success('处理中，已处理' . $count . '条数据');
     }
 }

@@ -2,7 +2,7 @@
   <div class="box">
     <oaFromBox
       v-if="search.length > 0"
-      :btnText="'导出'"
+      btnText="导出"
       :isAddBtn="true"
       :search="search"
       :title="`审批记录`"
@@ -17,10 +17,10 @@
 
 <script>
 import oaFromBox from '@/components/common/oaFromBox'
-import { approveConfigSearchApi } from '@/api/business'
-import 'animate.css'
+import { approveConfigSearchApi } from '@/api/business.ts'
 
 export default {
+  emits: ['getExportData', 'confirmData'],
   name: 'FormBox',
   components: {
     oaFromBox
@@ -37,6 +37,7 @@ export default {
           field_name: '审批类型',
           field_name_en: 'approve_id',
           form_value: 'select',
+          value: '',
           data_dict: []
         },
         {
@@ -51,7 +52,7 @@ export default {
           title: '审批状态',
           type: 'select',
           options: [
-            { name: this.$t('toptable.all'), value: '' },
+            { name: '全部', value: '' },
             { name: '待审核', value: 0 },
             { name: '已通过', value: 1 },
             { name: '已拒绝', value: 2 },
@@ -69,11 +70,6 @@ export default {
       departmentList: []
     }
   },
-  computed: {
-    lang: function () {
-      return this.$store.getters.lang
-    }
-  },
   mounted() {
     this.getEntListData()
   },
@@ -83,7 +79,7 @@ export default {
       const result = await approveConfigSearchApi(2)
       const data = result.data ? result.data : []
       this.identityOptions = data
-      this.identityOptions.unshift({ name: '全部', id: '' })
+      // this.identityOptions.unshift({ name: '全部', id: '' })
       this.search[1].data_dict = this.identityOptions
     },
 

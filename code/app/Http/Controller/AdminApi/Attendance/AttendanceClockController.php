@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,7 +18,9 @@ namespace App\Http\Controller\AdminApi\Attendance;
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Service\Attendance\AttendanceClockService;
 use App\Http\Service\Attendance\AttendanceStatisticsService;
+use App\Jobs\Work\WorkCheckInJob;
 use Illuminate\Contracts\Container\BindingResolutionException;
+use Illuminate\Support\Carbon;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Spatie\RouteAttributes\Attributes\Get;
@@ -57,6 +59,23 @@ class AttendanceClockController extends AuthController
             $where['time'] = 'today';
         }
         return $this->success($this->service->getList($where));
+    }
+
+    /**
+     * 获取列表.
+     */
+    #[Get('work_clock_record', '企微考勤打卡记录')]
+    public function work_record(): mixed
+    {
+        [$date] = $this->request->getMore([
+            ['date', []],
+        ], true);
+        [$start, $end] = $date;
+        if (! $date || Carbon::make($end)->diffInDays(Carbon::make($start)) > 30) {
+            return $this->fail('请选择正确的时间范围,且跨度不能超过30天');
+        }
+        WorkCheckInJob::dispatch(Carbon::make($start)->startOfDay(), Carbon::make($end)->endOfDay());
+        return $this->success('已加入消息队列，正在异步同步中请稍后查看');
     }
 
     /**

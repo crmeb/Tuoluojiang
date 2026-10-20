@@ -40,9 +40,21 @@ class Task extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'entid'      => 'integer',
+        'persist'    => 'integer',
+        'run_count'  => 'integer',
+        'exe_count'  => 'integer',
+        'end_time'   => 'datetime:Y-m-d H:i:s',
+        'rate'       => 'integer',
+        'delete'     => 'datetime:Y-m-d H:i:s',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * interval修改器.
-     * @param mixed $value
      */
     public function setIntervalAttribute($value)
     {
@@ -51,7 +63,6 @@ class Task extends BaseModel
 
     /**
      * interval提取.
-     * @param mixed $value
      * @return mixed
      */
     public function getIntervalAttribute($value)
@@ -61,7 +72,6 @@ class Task extends BaseModel
 
     /**
      * parameter修改器.
-     * @param mixed $value
      */
     public function setParameterAttribute($value)
     {
@@ -70,7 +80,6 @@ class Task extends BaseModel
 
     /**
      * parameter提取.
-     * @param mixed $value
      * @return mixed
      */
     public function getParameterAttribute($value)
@@ -89,8 +98,6 @@ class Task extends BaseModel
 
     /**
      * 搜索.
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeUniqued($query, $value)
     {

@@ -1,0 +1,13 @@
+diff --git a/qrcode.js b/qrcode.js
+index 9f7082ba02258767f37e75b1205f5df03d54be26..1d2d5ed0d5cff053d35317328ecc50f2f8ac13a1 100644
+--- a/qrcode.js
++++ b/qrcode.js
+@@ -291,7 +291,7 @@ var QRCode;
+ 
+ 		// Android 2.1 bug workaround
+ 		// http://code.google.com/p/android/issues/detail?id=5141
+-		if (this._android && this._android <= 2.1) {
++		if (typeof window !== "undefined" && window._android && window._android <= 2.1) {
+ 	    	var factor = 1 / window.devicePixelRatio;
+ 	        var drawImage = CanvasRenderingContext2D.prototype.drawImage;
+ 	    	CanvasRenderingContext2D.prototype.drawImage = function (image, sx, sy, sw, sh, dx, dy, dw, dh) {

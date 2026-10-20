@@ -20,19 +20,21 @@
               :expand-on-click-node="false"
               :props="defaultProps"
             >
-              <div slot-scope="{ node, data }" class="custom-tree-node">
-                <span class="flex-box">{{ node.label }}</span>
-              </div>
+              <template #default="{ node, data }">
+                <div class="custom-tree-node">
+                  <span class="flex-box">{{ node.label }}</span>
+                </div>
+              </template>
             </el-tree>
           </div>
         </el-col>
         <el-col :span="20" class="right">
           <div class="btn-box">
-            <el-button type="primary" :loading="loadding" size="small" @click="saveCurrent">保存</el-button>
+            <el-button type="primary" :loading="loadding" @click="saveCurrent">保存</el-button>
           </div>
-          <el-row class="mt20">
+          <div class="mt20">
             <ueditorFrom :border="true" :height="height" type="notepad" :content="content" ref="ueditorFrom" />
-          </el-row>
+          </div>
         </el-col>
       </el-row>
     </el-card>
@@ -40,7 +42,7 @@
 </template>
 
 <script>
-import { agreementListApi, agreementInfoApi, agreementUpdateApi } from '@/api/setting'
+import { agreementListApi, agreementInfoApi, agreementUpdateApi } from '@/api/setting.ts'
 import ueditorFrom from '@/components/form-common/oa-wangeditor'
 
 export default {
@@ -56,7 +58,7 @@ export default {
         label: 'title',
         value: 'id'
       },
-      height: 'calc(100vh - 200px)',
+      height: 'calc(100vh - 250px)',
       activeValue: '', // 记录当前那个框展开
       currentNodeKey: 0,
       content: '',
@@ -124,7 +126,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/deep/ .el-card__body {
+:deep(.el-card__body) {
   padding: 0;
 }
 .right {
@@ -133,9 +135,9 @@ export default {
   min-height: calc(100vh - 77px);
 }
 .tree-left {
-  min-height: calc(100vh - 77px);
+  min-height: calc(100vh - 95px);
   border-right: 1px solid #eee;
-  /deep/ .el-card__body {
+  :deep(.el-card__body) {
     padding: 0;
   }
   .tree-box-content {
@@ -149,7 +151,7 @@ export default {
       color: #303133;
     }
   }
-  /deep/ .el-scrollbar__wrap {
+  :deep(.el-scrollbar__wrap) {
     overflow-x: hidden;
   }
 }
@@ -164,7 +166,7 @@ export default {
     background: rgba(24, 144, 255, 0.06);
   }
 }
-/deep/ .el-card__header {
+:deep(.el-card__header) {
   border: none;
   padding-bottom: 0;
   .info {
@@ -172,24 +174,32 @@ export default {
     cursor: default;
   }
 }
-/deep/ .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content {
-  background: rgba(240, 250, 254, 0.6);
-  border-color: #1890ff;
+:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
+  background: #edf6ff !important;
 }
-/deep/ .blue-theme .el-tree-node__content {
-  height: 40px;
-  padding-right: 15px;
-  border-right: 2px solid transparent;
+:deep(.el-tree-node__content:hover) {
+  background: #f3f5f9 !important;
+}
+:deep(.blue-theme) {
+  padding-inline: 10px;
+  .el-tree-node__content {
+    height: 40px;
+    border-radius: 4px;
+    margin-top: 2px;
+  }
 }
 .custom-tree-node {
   position: relative;
   width: 100%;
+  display: inline-flex !important;
+  align-items: center;
   .flex-box {
     width: 90%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     display: inline-block;
+    font-size: 13px;
   }
   .right-icon {
     display: none;
@@ -198,13 +208,13 @@ export default {
     transform: rotate(-90deg);
   }
 }
-/deep/ .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node,
+:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node),
 .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .right-icon {
   display: inline-block;
   color: #1890ff;
 }
 
-/deep/ .el-form-item__content {
+:deep(.el-form-item__content) {
   position: relative;
 }
 .keyword {
@@ -224,5 +234,8 @@ export default {
 .btn-box {
   display: flex;
   justify-content: flex-end;
+}
+:deep(.el-tree) {
+  background-color: transparent;
 }
 </style>

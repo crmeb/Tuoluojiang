@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -53,7 +53,7 @@ class AttendanceStatisticsController extends AuthController
     public function dailyStatistics(): mixed
     {
         $where = $this->request->getMore([
-            ['scope', ''],
+            ['scope', 1],
             ['status', '', 'personnel_status'],
             ['frame_id', ''],
             ['group_id', ''],
@@ -63,7 +63,7 @@ class AttendanceStatisticsController extends AuthController
         if (! $where['time']) {
             $where['time'] = 'today';
         }
-        return $this->success($this->service->getDailyStatistics($this->uuid, $where));
+        return $this->success($this->service->getDailyStatistics(auth('admin')->id(), $where));
     }
 
     /**
@@ -77,7 +77,7 @@ class AttendanceStatisticsController extends AuthController
     public function monthlyStatistics(): mixed
     {
         $where = $this->request->getMore([
-            ['scope', ''],
+            ['scope', 1],
             ['status', '', 'personnel_status'],
             ['frame_id', ''],
             ['group_id', ''],
@@ -88,7 +88,7 @@ class AttendanceStatisticsController extends AuthController
             $where['time'] = 'month';
         }
 
-        return $this->success($this->service->getMonthlyStatistics($this->uuid, $where));
+        return $this->success($this->service->getMonthlyStatistics(auth('admin')->id(), $where));
     }
 
     /**
@@ -137,14 +137,11 @@ class AttendanceStatisticsController extends AuthController
     #[Get('attendance_statistics', '考勤出勤统计')]
     public function attendanceStatistics(): mixed
     {
-        $where = $this->request->getMore([
+        [$userId, $time] = $this->request->getMore([
             ['user_id', ''],
-            ['time', ''],
-        ]);
-        if (! $where['time']) {
-            $where['time'] = 'month';
-        }
-        return $this->success($this->service->getAttendanceStatistics($this->uuid, $where));
+            ['time', 'month'],
+        ], true);
+        return $this->success($this->service->getAttendanceStatistics(auth('admin')->id(), (int) ($userId ?: auth('admin')->id()), $time));
     }
 
     /**
@@ -157,12 +154,10 @@ class AttendanceStatisticsController extends AuthController
     {
         $where = $this->request->getMore([
             ['status', '', 'personnel_status'],
-            ['user_id', []],
-            ['time', ''],
+            ['user_id', '', 'uid'],
+            ['time', 'month'],
         ]);
-        if (! $where['time']) {
-            $where['time'] = 'month';
-        }
-        return $this->success($this->service->getDailyStatistics($this->uuid, $where, 1));
+        $where['uid'] = (int) ($where['uid'] ?: auth('admin')->id());
+        return $this->success($this->service->getUserStatistics(auth('admin')->id(), $where, 1));
     }
 }

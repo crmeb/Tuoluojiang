@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -31,11 +31,6 @@ class FrameScopeService extends BaseService
 
     /**
      * 保存管理范围.
-     * @param mixed $uid
-     * @param mixed $entid
-     * @param mixed $frames
-     * @param mixed $users
-     * @param mixed $rules
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
@@ -72,8 +67,6 @@ class FrameScopeService extends BaseService
 
     /**
      * 用户管理范围部门ID.
-     * @param mixed $uuid
-     * @param mixed $entId
      * @return array
      * @throws BindingResolutionException
      * @throws \ReflectionException

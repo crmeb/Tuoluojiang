@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -38,6 +38,10 @@ class ClientRuleController extends AuthController
         CategoryEnum::CUSTOMER_FOLLOW_CONFIG['key'],
         CategoryEnum::CUSTOMER_SEA_CONFIG['key'],
         CategoryEnum::CUSTOMER_APPROVE_CONFIG['key'],
+        CategoryEnum::CLUE_POOL_CONFIG['key'],
+        CategoryEnum::CUSTOMER_MODULE_CONFIG['key'],
+        CategoryEnum::CUSTOMER_OUTBOUND_CONFIG['key'],
+        //        CategoryEnum::ODDS_FOLLOW_CONFIG['key'],
     ];
 
     public function __construct(SystemConfigService $services)
@@ -92,7 +96,14 @@ class ClientRuleController extends AuthController
     #[Get('approve/{form?}', '获取客户审批规则')]
     public function getApproveConfig($form = 1): mixed
     {
-        $keys = ['contract_refund_switch', 'contract_renew_switch', 'contract_disburse_switch', 'invoicing_switch', 'void_invoice_switch'];
+        $keys = [
+            ConfigEnum::CONTRACT_REFUND_SWITCH['key'],
+            ConfigEnum::CONTRACT_RENEW_SWITCH['key'],
+            ConfigEnum::CONTRACT_DISBURSE_SWITCH['key'],
+            ConfigEnum::INVOICING_SWITCH['key'],
+            ConfigEnum::VOID_INVOICE_SWITCH['key'],
+            ConfigEnum::CONTRACT_SIGN_SWITCH['key'],
+        ];
         if ($form) {
             return $this->success($this->service->getApproveConfig($keys));
         }
@@ -106,7 +117,14 @@ class ClientRuleController extends AuthController
     #[Put('approve', '保存客户审批规则')]
     public function setApproveConfig(): mixed
     {
-        $data = $this->request->postMore(['contract_refund_switch', 'contract_renew_switch', 'contract_disburse_switch', 'invoicing_switch', 'void_invoice_switch']);
+        $data = $this->request->postMore([
+            ConfigEnum::CONTRACT_REFUND_SWITCH['key'],
+            ConfigEnum::CONTRACT_RENEW_SWITCH['key'],
+            ConfigEnum::CONTRACT_DISBURSE_SWITCH['key'],
+            ConfigEnum::INVOICING_SWITCH['key'],
+            ConfigEnum::VOID_INVOICE_SWITCH['key'],
+            ConfigEnum::CONTRACT_SIGN_SWITCH['key'],
+        ]);
         $this->service->updateAllConfig($data);
         return $this->success('保存成功');
     }

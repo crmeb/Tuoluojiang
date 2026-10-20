@@ -1,19 +1,24 @@
 <template>
   <div class="searchBox">
     <div class="flex-between mt20">
-      <div class="title-16">{{ info.crudInfo ? info.crudInfo.table_name : '设计' }}列表 </div>
+      <div class="title-16">{{ info.crudInfo ? info.crudInfo.table_name : '设计' }}列表</div>
       <div class="lh-center">
-        <el-button class="h32" icon="el-icon-plus" size="small" type="primary" @click="addData">新增</el-button>
+        <el-button class="h32" icon="el-icon-plus" type="primary" @click="addData">新增</el-button>
+
         <div>
           <el-dropdown>
-            <span class="iconfont icongengduo2 pointer"></span>
-            <el-dropdown-menu style="text-align: left">
-              <div v-for="(item, index) in dropdownList" :key="index" :class="index === 3 ? '' : 'border-bottom'">
-                <el-dropdown-item v-for="val in item.children" @click.native="dropdownSearch(val)">
-                  {{ val.label }}
-                </el-dropdown-item>
-              </div>
-            </el-dropdown-menu>
+            <div class="xiala-box ml10">
+              <span class="iconfont icongenjinjilu-gengduo"></span>
+            </div>
+            <template #dropdown>
+              <el-dropdown-menu style="text-align: left">
+                <div v-for="(item, index) in dropdownList" :key="index" :class="index === 3 ? '' : 'border-bottom'">
+                  <el-dropdown-item v-for="(val, key) in item.children" :key="key" @click="dropdownSearch(val)">
+                    {{ val.label }}
+                  </el-dropdown-item>
+                </div>
+              </el-dropdown-menu>
+            </template>
           </el-dropdown>
         </div>
       </div>
@@ -23,7 +28,7 @@
       <div class="left">
         <div>
           <!-- 视图管理 -->
-          <el-popover ref="popoverType" placement="bottom" popper-class="time-popover" trigger="click" width="140">
+          <el-popover ref="popoverType" placement="bottom" popper-class="time-popover" trigger="click" width="160">
             <div class="field-box mb0">
               <div
                 v-for="(item, index) in searchTypeOptions"
@@ -47,11 +52,12 @@
               </div>
             </div>
             <div class="view-text" @click="openViewBox"><span class="iconfont iconshituguanli"></span>视图管理</div>
-
-            <div slot="reference" class="view-box">
-              <span class="over-text1">{{ viewText }}</span>
-              <span class="el-icon-arrow-down"></span>
-            </div>
+            <template #reference>
+              <div class="view-box">
+                <span class="over-text1">{{ viewText }}</span>
+                <span class="el-icon-arrow-down"></span>
+              </div>
+            </template>
           </el-popover>
         </div>
         <div class="inTotal">共 {{ total }} 项</div>
@@ -62,8 +68,8 @@
           ref="formList"
           :is_develp="true"
           :list="info.seniorSearch"
-          :type="where.show_search_type"
           :scopeFrames="scopeFrames"
+          :type="where.show_search_type"
           @handleEmit="handleEmit"
           @resetSearch="resetSearch"
         ></formList>
@@ -78,13 +84,15 @@
             </div>
           </div>
 
-          <div v-show="additional_search.length > 0" slot="reference" class="shitu">
-            保存视图&nbsp;<span class="el-icon-arrow-down"></span>
-          </div>
+          <template #reference>
+            <div v-show="additional_search.length > 0" class="shitu">
+              保存视图&nbsp;<span class="el-icon-arrow-down"></span>
+            </div>
+          </template>
         </el-popover>
 
         <el-popover
-          v-model="$store.state.business.conditionDialog"
+          :visible="conditionDialogStore.visible"
           placement="bottom-start"
           trigger="manual"
           width="750"
@@ -93,10 +101,10 @@
           <div class="condition-box">
             <div class="flex-between">
               <div class="title">筛选条件</div>
-              <div class="el-icon-close pointer" @click="$store.state.business.conditionDialog = false"></div>
+              <div class="el-icon-close pointer" @click="conditionDialogStore.visible = false"></div>
             </div>
             <condition-dialog
-              v-if="info.viewSearch && $store.state.business.conditionDialog"
+              v-if="info.viewSearch && conditionDialogStore.visible"
               :additionalBoolean="where.view_search_boolean"
               :eventStr="`event`"
               :formArray="info.viewSearch"
@@ -104,13 +112,50 @@
               @saveCondition="saveCondition"
             ></condition-dialog>
           </div>
-          <div slot="reference" class="pointer mr10 text-16 el-dropdown-link" @click="onShow">
-            筛选&nbsp;<span class="iconfont icona-bianzu8"></span>
-            <span v-if="additional_search.length > 0" class="yuan">{{
-              additional_search ? additional_search.length : 0
-            }}</span>
-          </div>
+          <template #reference>
+            <div class="pointer mr4 text-16 el-dropdown-link" @click="onShow">
+              筛选&nbsp;<span class="iconfont icona-bianzu8"></span>
+              <span v-if="additional_search.length > 0" class="yuan">{{
+                additional_search ? additional_search.length : 0
+              }}</span>
+            </div>
+          </template>
         </el-popover>
+
+        <!-- 分组筛选 -->
+        <el-popover placement="bottom" width="202" trigger="hover">
+          <div>
+            <el-input v-model="groupName" placeholder="请输入分组名称" clearable />
+            <div class="viewSearch-box">
+              <div
+                class="item"
+                v-for="(val, key) in (info.showField || []).filter(
+                  (item) => !groupName || item.title.includes(groupName)
+                )"
+                :key="key"
+                @click="groupFn(val)"
+              >
+                {{ val.field_name }}
+              </div>
+            </div>
+            <div class="clear-item" @click="clearGroup">清空</div>
+          </div>
+          <template #reference>
+            <div class="pointer mr4 text-16 el-dropdown-link">
+              分组&nbsp;<span class="iconfont iconfenzu"></span>
+            </div>
+          </template>
+        </el-popover>
+        <!-- <el-dropdown>
+              <div class="pointer mr4 text-16 el-dropdown-link" >
+                分组&nbsp;<span class="iconfont iconfenzu"></span>
+              </div>
+              <el-dropdown-menu style="text-align: left; max-height: 400px; overflow-y: auto;">
+                <el-dropdown-item v-for="(val, key) in info.viewSearch" :key="key" @click="groupFn(val)">
+                  {{ val.title }}
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown> -->
 
         <!-- 时间排序 -->
         <el-popover ref="popover" placement="bottom" popper-class="time-popover" trigger="click" width="140">
@@ -129,9 +174,11 @@
           <div v-for="(item, indexJ) in sortList" :key="indexJ + 'c'" class="field-text" @click="sortFn(item)">
             <span v-if="sortIndex == item.value" class="el-icon-check"></span> {{ item.name }}
           </div>
-          <div slot="reference" class="text-16 paixuBox pointer">
-            <span class="iconfont iconpaixu4"></span>
-          </div>
+          <template #reference>
+            <div class="text-16 paixuBox pointer">
+              <span class="iconfont iconpaixu4"></span>
+            </div>
+          </template>
         </el-popover>
       </div>
 
@@ -144,8 +191,8 @@
         :showName="showName"
         :title="title"
         :type="types"
-        @getData="getData"
         @close="close"
+        @getData="getData"
       ></checkbox-dialog>
       <!-- 视图管理 -->
       <view-management
@@ -173,11 +220,14 @@
         :save-name="saveName"
         :template="true"
       />
+      <!-- 列表样式设置 -->
+      <tableStyle ref="tableStyle" />
     </div>
   </div>
 </template>
 <script>
-import formList from './formList'
+import { mapStores } from 'pinia'
+import { useConditionDialogStore } from '@/stores/conditionDialog.ts'
 import {
   crudModuleSaveApi,
   crudViewSaveApi,
@@ -186,7 +236,10 @@ import {
   crudSeniorSaveApi,
   crudModuleInfoApi,
   moduleFramerApi
-} from '@/api/develop'
+} from '@/api/develop.ts'
+import { roterPre } from '@/settings.ts'
+import formList from '@/components/common/formList'
+import tableStyle from './tableStyle'
 import oaDialog from '@/components/form-common/dialog-form'
 import Commnt from '@/components/develop/commonData'
 import exportExcel from '@/components/common/exportExcel'
@@ -195,6 +248,7 @@ import checkboxDialog from '@/components/develop/checkboxDialog'
 import conditionDialog from '@/components/develop/conditionDialog'
 
 export default {
+  emits: ['confirmData', 'addData', 'handleDelete', 'handleDropdown', 'getInfo', 'getList'],
   name: '',
   components: {
     formList,
@@ -202,7 +256,8 @@ export default {
     checkboxDialog,
     conditionDialog,
     viewManagement,
-    exportExcel
+    exportExcel,
+    tableStyle
   },
   props: {
     total: {
@@ -226,13 +281,17 @@ export default {
       default: ''
     }
   },
+  computed: {
+    ...mapStores(useConditionDialogStore)
+  },
   data() {
     return {
       name: '所有字段',
       showName: '已展示字段',
+      groupName: '',
       isShow: false,
       viewShow: false,
-      types:this.type,
+      types: this.type,
       searchTypeOptions: Commnt.searchTypeOptions,
       title: '',
       max: 0,
@@ -367,6 +426,10 @@ export default {
             {
               label: '详情tab设置',
               value: 6
+            },
+            {
+              label: '字典选项设置',
+              value: 12
             }
           ]
         }
@@ -377,7 +440,10 @@ export default {
         view_search: [],
         order_by: {},
         scope_frame: 'all',
-        view_search_boolean: ''
+        view_search_boolean: '',
+        group: '',
+        children_limit: 10,
+        children_page: 1
       },
       viewList: [],
       viewItem: {},
@@ -467,6 +533,15 @@ export default {
         this.scopeFrames = res.data
       })
     },
+    groupFn(val) {
+      this.where.group = val.field_name_en
+      this.confirmData()
+    },
+    // 清空分组
+    clearGroup() {
+      this.where.group = ''
+      this.confirmData()
+    },
 
     // 新建视图
     submit(data) {
@@ -519,7 +594,7 @@ export default {
       this.viewText = item.senior_title
       this.where.view_search_boolean = item.search_boolean
       this.additional_search = item.senior_search
-      this.$refs.popoverType.doClose()
+      this.$refs.popoverType.hide()
     },
 
     typeClick(item) {
@@ -529,7 +604,7 @@ export default {
       this.confirmData()
       this.additional_search = []
 
-      this.$refs.popoverType.doClose()
+      this.$refs.popoverType.hide()
     },
 
     onShow() {
@@ -550,13 +625,13 @@ export default {
         this.where.view_search_boolean = '1'
       }
 
-      this.$store.commit('uadatefieldOptions', data)
-      this.$store.commit('updateConditionDialog', true)
+      this.conditionDialogStore.setFieldOptions(data)
+      this.conditionDialogStore.visible = true
     },
 
     saveCondition() {
-      this.additional_search = this.$store.state.business.fieldOptions.list
-      this.where.view_search_boolean = this.$store.state.business.fieldOptions.additional_search_boolean
+      this.additional_search = this.conditionDialogStore.fieldOptions.list
+      this.where.view_search_boolean = this.conditionDialogStore.fieldOptions.additional_search_boolean
     },
 
     // 新增
@@ -565,9 +640,7 @@ export default {
     },
 
     dropdownSearch(val) {
-  
       if (val.value === 2) {
-    
         this.max = 2
         this.min = 0
         this.title = '搜索显示设置'
@@ -580,7 +653,6 @@ export default {
 
         this.$refs.checkboxDialog.openBox(this.info.crudInfo, this.info.seniorSearch)
       } else if (val.value === 3) {
-       
         this.max = 0
         this.min = 5
         this.title = '表头显示设置'
@@ -648,6 +720,7 @@ export default {
         this.name = '所有关联实体'
         this.showName = '已展示实体'
         this.min = 0
+        this.max = 0
         let selectList = []
         let ids = []
         this.title = '配置tab显示项'
@@ -684,6 +757,23 @@ export default {
       } else if (val.value == 10) {
         // 邀请填写
         this.$emit('handleDropdown', 'record')
+      } else if (val.value == 11) {
+        // 列表设置
+        this.$refs.tableStyle.openBox(this.info)
+      } else if (val.value == 12) {
+        // 选项设置
+
+        if (this.type === 'view') {
+          this.$router.push({
+            path: `${roterPre}/develop/dictionary/optionSetting`,
+            query: { id: this.info.crudInfo.id }
+          })
+        } else {
+          this.$router.push({
+            path: `${roterPre}/develop/dictionary/optionSetting`,
+            query: { keyName: this.keyName, id: this.info.crudInfo.id }
+          })
+        }
       }
     },
 
@@ -713,6 +803,12 @@ export default {
 
     handleEmit(data) {
       this.where = { ...this.where, ...data }
+      // 因为后端只识别空字符串，空数组的话就筛选不到
+      for (let key in this.where) {
+        if (Array.isArray(this.where[key]) && this.where[key].length === 0) {
+          this.where[key] = ''
+        }
+      }
       this.$emit('confirmData', this.where, this.keyName)
     },
 
@@ -744,8 +840,8 @@ export default {
       }
       this.$emit('confirmData', this.where)
     },
-    close(){
-      this.types =this.type
+    close() {
+      this.types = JSON.parse(JSON.stringify(this.type))
     },
 
     getData(data) {
@@ -755,31 +851,32 @@ export default {
       } else if (this.searchType == 3) {
         obj.show_field = data.ids
       }
-      if (this.type === 'view') {
+      if (this.types === 'view') {
         crudViewSaveApi(this.id, obj).then((res) => {
           this.$emit('getInfo')
           this.$emit('getList')
         })
-      } else if (this.type == 'field') {
+      } else if (this.types == 'field') {
         obj.options = {
           tab: data.selectList
         }
-        if (this.id) {
-          crudViewSaveApi(this.id, obj).then((res) => {
-            this.$emit('getInfo')
-          })
-        } else {
-          crudModuleSaveApi(this.keyName, obj).then((res) => {
-            this.$emit('getInfo')
-          })
+        if (data.selectList.length > 0) {
+          delete obj.show_field
         }
+
+        const task =
+          this.type === 'module' || !this.id ? crudModuleSaveApi(this.keyName, obj) : crudViewSaveApi(this.id, obj)
+
+        task.then((res) => {
+          this.$emit('getInfo')
+        })
       } else {
         crudModuleSaveApi(this.keyName, obj).then((res) => {
           this.$emit('getInfo')
           this.$emit('getList')
         })
       }
-      this.types =this.type
+      this.types = this.type
     },
 
     resetSearch() {
@@ -798,7 +895,7 @@ export default {
         type: '',
         additional_search_boolean: '1'
       }
-      this.$store.commit('uadatefieldOptions', data)
+      this.conditionDialogStore.setFieldOptions(data)
       if (this.info.seniorSearch.length == 0) {
         this.$emit('confirmData', this.where)
       }
@@ -818,6 +915,7 @@ export default {
   margin-left: 10px;
   color: #909399;
 }
+
 .border-bottom {
   margin-bottom: 10px;
   padding-bottom: 10px;
@@ -830,25 +928,31 @@ export default {
   color: #909399;
   font-size: 32px !important;
 }
+
 .ml14 {
   margin-left: 14px;
 }
+
 .inTotal {
   margin: 0 10px 0 10px;
 }
+
 .field-box {
   margin-top: 8px;
   border-bottom: 1px solid #f5f5f5;
   margin-bottom: 8px;
 }
+
 .flex-box {
   width: 100%;
   display: flex;
+
   .left {
     display: flex;
     align-items: baseline;
     min-width: 170px;
   }
+
   .right {
     display: flex;
 
@@ -872,15 +976,23 @@ export default {
       font-size: 12px;
       color: #909399;
     }
+
     .icona-bianzu8 {
       color: #999999;
       font-size: 13px;
     }
+
+    .iconfenzu {
+      color: #999999;
+      font-size: 13px;
+    }
+
     .iconpaixu4 {
       color: #999999;
       font-size: 13px;
-      margin-top: 4px;
+      margin-top: 2px;
     }
+
     .el-dropdown-link {
       height: 33px;
       padding: 0 10px;
@@ -888,28 +1000,26 @@ export default {
       border: 1px solid #fff;
     }
   }
+
   .el-dropdown-link:hover {
     background: #f3f3f3;
     // border: 1px solid #1890ff;
   }
+
   .paixuBox {
-    width: 25px;
+    width: 33px;
     height: 33px;
     line-height: 33px;
     border: 1px solid #fff;
   }
+
   .paixuBox:hover {
     background: #f3f3f3;
     // border: 1px solid #1890ff;
   }
+
   .center {
     flex: 1;
-  }
-}
-.grey-bga {
-  /deep/ .el-input__inner {
-    border: none;
-    background: #f0f2f5;
   }
 }
 
@@ -920,9 +1030,11 @@ export default {
   justify-content: center;
   align-items: center;
 }
+
 .paixuBox:hover {
   background: #f7f7f7;
 }
+
 .field-text {
   cursor: pointer;
   height: 32px;
@@ -936,9 +1048,11 @@ export default {
   padding-left: 29px;
   position: relative;
 }
+
 .field-text:hover {
   background-color: #f2f3f5;
 }
+
 .view-text {
   cursor: pointer;
   height: 32px;
@@ -953,21 +1067,26 @@ export default {
   position: relative;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+
   .tips {
     font-family: PingFang SC, PingFang SC;
     font-weight: 400;
     font-size: 12px;
     color: #909399;
   }
+
   .iconshituguanli {
     font-size: 12px;
     color: #909399;
     margin-right: 4px;
   }
 }
+
 .view-text:hover {
   background-color: #f2f3f5;
 }
+
 .mb0 {
   margin-bottom: 0;
 }
@@ -976,14 +1095,17 @@ export default {
   color: #1890ff;
   background: rgba(24, 144, 255, 0.07);
 }
+
 .field-color {
   color: #1890ff !important;
 }
+
 .el-icon-check {
   position: absolute;
   left: 10px;
   top: 11px;
 }
+
 .prompt-bag {
   background-color: #edf5ff;
   font-family: PingFang SC, PingFang SC;
@@ -992,15 +1114,33 @@ export default {
   color: #606266;
 }
 
+.xiala-box {
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  border: 1px solid #dcdfe6;
+  text-align: center;
+  line-height: 32px;
+  border-radius: 4px;
+  color: #606266;
+}
+
+.xiala-box:hover {
+  border: 1px solid #1890ff;
+  box-shadow: 0 0 4px rgba(24, 144, 255, 0.35);
+}
+
 .condition-box {
   padding: 8px;
   max-height: 500px;
   overflow-y: auto;
+
   .flex-between {
     display: flex;
     // border-bottom: 1px solid hsl(223, 13%, 89%);
     padding-bottom: 15px;
   }
+
   .title {
     font-size: 14px;
     font-family: PingFangSC-Semibold, PingFang SC;
@@ -1008,10 +1148,12 @@ export default {
     color: #333333;
   }
 }
+
 .condition-box::-webkit-scrollbar {
   height: 0;
   width: 0;
 }
+
 .over-text {
   display: inline-block;
   width: 90px;
@@ -1019,6 +1161,7 @@ export default {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .view-item {
   cursor: pointer;
   font-family: PingFang SC, PingFang SC;
@@ -1031,27 +1174,49 @@ export default {
 .time-popover {
   padding: 0;
 }
+
 .monitor-yt-popover {
   background: #edf5ff;
   border: 1px solid #97c3ff;
   padding: 11px 15px 0px 15px;
 }
-.view-box {
+
+.clear-item {
+  width: 100%;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
   cursor: pointer;
-  padding: 0 10px;
-  width: 100px;
-  height: 32px;
-  background: #f7f7f7;
-  border-radius: 4px;
   font-family: PingFang SC, PingFang SC;
   font-weight: 400;
   font-size: 13px;
-  color: #1e2128;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  color: #606266;
 }
-.el-icon-arrow-down {
-  /* margin-left: 6px; */
+
+.viewSearch-box {
+  margin-top: 4px;
+  max-height: 350px;
+  overflow-y: auto;
+  scrollbar-width: none; /* firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+
+  .item {
+    width: 100%;
+    height: 32px;
+    line-height: 32px;
+    font-family: PingFang SC, PingFang SC;
+    font-weight: 400;
+    font-size: 13px;
+    color: #303133;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .item:hover {
+    background-color: #f7fbff;
+    color: #1890ff;
+  }
 }
 </style>

@@ -1,18 +1,9 @@
 <template>
-  <div>
-    <el-card :body-style="{ padding: '14px' }" class="station-header">
-      <el-row>
-        <el-col :span="24">
-          <el-page-header content="排班页面">
-            <div slot="title" @click="backFn">
-              <i class="el-icon-arrow-left"></i>
-              返回
-            </div>
-          </el-page-header>
-        </el-col>
-      </el-row>
-    </el-card>
-    <el-card class="card-box mt14">
+  <BaseContainer class="schedul-check none-padding">
+    <!-- 顶部：返回 + 标题 -->
+    <FormPageHeader title="排班页面" @back="backFn" />
+
+    <div class="schedul-check__body">
       <!-- 搜索条件 -->
       <div class="head">
         <el-form :inline="true" class="from-s">
@@ -22,18 +13,18 @@
               class="mr14"
               clearable
               placeholder="请输入员工姓名"
-              size="small"
               style="width: 260px"
               @change="getList"
             >
-              <i slot="prefix" class="el-input__icon el-icon-search"></i>
+              <template #prefix>
+                <i class="el-input__icon el-icon-search"></i>
+              </template>
             </el-input>
           </el-form-item>
           <el-form-item class="select-bar">
             <el-date-picker
               v-model="where.date"
               placeholder="选择月"
-              size="small"
               style="width: 150px"
               type="month"
               @change="getList"
@@ -54,7 +45,7 @@
       <el-table v-loading="loading" :data="tableData" border style="width: 100%">
         <!-- 点击选中整行 -->
         <el-table-column fixed="left" label="姓名" prop="name" style="background-color: #fff" width="140">
-          <template slot-scope="scope">
+          <template #default="scope">
             <div class="nameFn">
               {{ scope.row.name }}
             </div>
@@ -66,14 +57,14 @@
           <template v-slot:header>
             <div :class="item.is_rest == 1 ? 'addDate' : ''">
               <div class="date">
-                <div class="day">{{ $moment(item.date).format('D') }}</div>
+                <div class="day">{{ dayjs(item.date).format('D') }}</div>
                 <div class="week">{{ getWeek(item.date) }}</div>
               </div>
             </div>
           </template>
 
           <!-- 点击选中单元格 -->
-          <template slot-scope="scope">
+          <template #default="scope">
             <div v-if="!scope.row.counts[index1]" class="btn"></div>
             <div
               v-if="scope.row.counts[index1]"
@@ -89,15 +80,20 @@
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
-  </div>
+    </div>
+  </BaseContainer>
 </template>
 
 <script>
-import { attendanceShiftListApi, rosterCycleListApi, getAttendanceArrangeApi } from '@/api/config'
-import { toGetWeek } from '@/utils/format'
+import dayjs from 'dayjs'
+import { attendanceShiftListApi, rosterCycleListApi, getAttendanceArrangeApi } from '@/api/config.ts'
+import { toGetWeek } from '@/utils/format.ts'
+import BaseContainer from '@/components/BaseContainer/index.vue'
+import FormPageHeader from '@/components/FormPageHeader/index.vue'
 export default {
+  emits: ['backFn'],
   name: 'CrmebOaEntAddSchedul',
+  components: { BaseContainer, FormPageHeader },
 
   props: {
     id: {
@@ -110,6 +106,9 @@ export default {
     }
   },
 
+  computed: {
+    dayjs: () => dayjs
+  },
   data() {
     return {
       where: {
@@ -135,7 +134,7 @@ export default {
   },
 
   mounted() {
-    this.where.date = this.$moment(this.newData.date).format('yyyy-MM')
+    this.where.date = dayjs(this.newData.date).format('YYYY-MM')
     this.getDataOptionalList().then(() => {
       this.getList()
     })
@@ -186,7 +185,7 @@ export default {
     async getList() {
       this.tableData = []
       this.colData = []
-      this.where.date = this.$moment(this.where.date).format('yyyy-MM')
+      this.where.date = dayjs(this.where.date).format('YYYY-MM')
       const result = await getAttendanceArrangeApi(this.id, this.where)
       this.tableData = result.data.members.map((per) => {
         return {
@@ -253,7 +252,7 @@ export default {
 
     restFn() {
       this.where.name = ''
-      this.where.date = this.$moment(this.newData.date).format('yyyy-MM')
+      this.where.date = dayjs(this.newData.date).format('YYYY-MM')
     },
 
     getWeek(date) {
@@ -288,7 +287,7 @@ export default {
   overflow: hidden;
   text-align: center;
 }
-/deep/ .el-table--medium td {
+:deep(.el-table td) {
   padding: 6px 0;
 }
 
@@ -369,20 +368,15 @@ export default {
 .from-s {
   display: inline-block;
 }
-/deep/ .el-icon-back {
-  display: none;
-}
-.card-box {
-  height: calc(100vh - 150px);
-  overflow-y: scroll;
+.schedul-check__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px;
   font-size: 13px;
   font-family: PingFangSC-Regular, PingFang SC;
   font-weight: 400;
   color: #303133;
-  .main {
-    width: 800px;
-    margin: 0 auto;
-  }
 }
 .addDate {
   .week {
@@ -399,10 +393,10 @@ export default {
   -webkit-background-clip: text;
 }
 
-/deep/.el-table__body tr.hover-row {
+:deep(.el-table__body tr.hover-row) {
   background-color: transparent !important;
 }
-/deep/ .el-tabs__nav-wrap::after {
+:deep(.el-tabs__nav-wrap::after) {
   height: 1px;
 }
 </style>

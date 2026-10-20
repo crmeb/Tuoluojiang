@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -42,9 +42,13 @@ class UserRole extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'      => 'integer',
+        'user_id' => 'integer',
+    ];
+
     /**
      * 权限修改器.
-     * @param mixed $value
      */
     public function setRulesAttribute($value)
     {
@@ -53,7 +57,6 @@ class UserRole extends BaseModel
 
     /**
      * 权限提取.
-     * @param mixed $value
      * @return mixed
      */
     public function getRulesAttribute($value)
@@ -63,7 +66,6 @@ class UserRole extends BaseModel
 
     /**
      * 权限修改器.
-     * @param mixed $value
      */
     public function setApisAttribute($value)
     {
@@ -72,7 +74,6 @@ class UserRole extends BaseModel
 
     /**
      * 权限提取.
-     * @param mixed $value
      * @return mixed
      */
     public function getApisAttribute($value)
@@ -83,7 +84,6 @@ class UserRole extends BaseModel
     /**
      * user_id作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeUserId($query, $value)

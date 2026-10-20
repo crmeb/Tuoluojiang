@@ -24,13 +24,13 @@
             :notEmployees="notEmployees"
           >
             <template #options="{ data }">
-              <el-button type="text" @click="hanldeOptions(data, 'edit')" v-hasPermi="['hr:archives:check']"
+              <el-button type="primary" link @click="hanldeOptions(data, 'edit')" v-hasPermi="['hr:archives:check']"
                 >查看</el-button
               >
 
-              <el-button type="text" @click="hanldeOptions(data, 'delete')">删除</el-button>
+              <el-button type="primary" link @click="hanldeOptions(data, 'delete')">删除</el-button>
 
-              <el-button type="text" @click="hanldeOptions(data, 'entry')">入职</el-button>
+              <el-button type="primary" link @click="hanldeOptions(data, 'entry')">入职</el-button>
             </template>
           </Table>
         </div>
@@ -40,11 +40,12 @@
 </template>
 
 <script>
-import { enterpriseCardApi } from '@/api/enterprise'
+import { enterpriseCardApi } from '@/api/enterprise.ts'
 import formBox from '../formBox.vue'
 import Table from '../table.vue'
 import myMixins from '../../mixins/method.js'
 export default {
+  emits: ['openDrawer', 'onDelete'],
   created() {
     this.getList()
   },

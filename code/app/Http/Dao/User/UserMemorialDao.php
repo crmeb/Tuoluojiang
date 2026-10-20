@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,11 +15,11 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\User;
 
+use App\Http\Model\User\UserMemorial;
 use App\Http\Dao\BaseDao;
 use App\Http\Model\BaseModel;
-use App\Http\Model\User\UserMemorial;
-use crmeb\traits\dao\BatchSearchTrait;
-use crmeb\traits\dao\ListSearchTrait;
+use Tuoluojiang\Open\traits\dao\BatchSearchTrait;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Concerns\BuildsQueries;
 use Illuminate\Support\Carbon;
@@ -99,7 +99,7 @@ class UserMemorialDao extends BaseDao
                 $value['month'] = match ($value['month']) {
                     $lastMonth    => '上个月',
                     $currentMonth => '本月',
-                    default       => date('Y年m月', strtotime($value['month']))
+                    default       => date('Y年m月', datetime_timestamp($value['month']))
                 };
             })->toArray();
     }

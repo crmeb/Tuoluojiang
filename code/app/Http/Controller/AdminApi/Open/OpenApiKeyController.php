@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -19,8 +19,8 @@ use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Requests\ApiRequest;
 use App\Http\Service\Open\OpenApiKeyService;
 use App\Http\Service\Open\OpenapiRuleService;
-use crmeb\interfaces\ResourceControllerInterface;
-use crmeb\traits\ResourceControllerTrait;
+use Tuoluojiang\Open\interfaces\ResourceControllerInterface;
+use Tuoluojiang\Open\traits\ResourceControllerTrait;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Spatie\RouteAttributes\Attributes\Get;
@@ -29,7 +29,7 @@ use Spatie\RouteAttributes\Attributes\Prefix;
 use Spatie\RouteAttributes\Attributes\Resource;
 
 /**
- * 对外接口密钥
+ * 对外接口密钥.
  */
 #[Prefix('ent/openapi')]
 #[Resource('key', false, except: ['create'], names: [
@@ -45,9 +45,6 @@ class OpenApiKeyController extends AuthController implements ResourceControllerI
 {
     use ResourceControllerTrait;
 
-    /**
-     * @param OpenApiKeyService $service
-     */
     public function __construct(OpenApiKeyService $service)
     {
         parent::__construct();
@@ -55,8 +52,48 @@ class OpenApiKeyController extends AuthController implements ResourceControllerI
     }
 
     /**
-     * @return string
+     * 获取权限规则.
+     * @return mixed
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
      */
+    #[Get('role', '获取权限规则')]
+    public function getRole(OpenapiRuleService $service)
+    {
+        return $this->success($service->getRoleTree());
+    }
+
+    /**
+     * 获取接口文档.
+     * @return mixed
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
+     */
+    #[Get('docs', '获取接口文档')]
+    public function getApiDoc(OpenapiRuleService $service)
+    {
+        return $this->success($service->getApiDoc());
+    }
+
+    /**
+     * 查看sk.
+     * @return mixed
+     */
+    #[Get('findsk/{id}', '查看sk')]
+    public function findSk($id)
+    {
+        if (! $id) {
+            return $this->fail('缺少参数');
+        }
+        $skInfo = $this->service->get($id);
+        if (! $skInfo) {
+            return $this->fail('没有查询到密钥信息');
+        }
+        return $this->success(['sk' => $skInfo->sk]);
+    }
+
     protected function getRequestClassName(): string
     {
         return ApiRequest::class;
@@ -65,7 +102,7 @@ class OpenApiKeyController extends AuthController implements ResourceControllerI
     protected function getSearchField(): array
     {
         return [
-            ['title', '', 'name_like']
+            ['title', '', 'name_like'],
         ];
     }
 
@@ -77,51 +114,5 @@ class OpenApiKeyController extends AuthController implements ResourceControllerI
             ['auth', []],
             ['uid', auth('admin')->id()],
         ];
-    }
-
-    /**
-     * 获取权限规则
-     * @param OpenapiRuleService $service
-     * @return mixed
-     * @throws \Psr\Container\ContainerExceptionInterface
-     * @throws \Psr\Container\NotFoundExceptionInterface
-     * @throws \ReflectionException
-     */
-    #[Get('role')]
-    public function getRole(OpenapiRuleService $service)
-    {
-        return $this->success($service->getRoleTree());
-    }
-
-    /**
-     * 获取接口文档
-     * @param OpenapiRuleService $service
-     * @return mixed
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     * @throws \ReflectionException
-     */
-    #[Get('docs')]
-    public function getApiDoc(OpenapiRuleService $service)
-    {
-        return $this->success($service->getApiDoc());
-    }
-
-    /**
-     * 查看sk
-     * @param $id
-     * @return mixed
-     */
-    #[Get('findsk/{id}')]
-    public function findSk($id)
-    {
-        if (!$id) {
-            return $this->fail('缺少参数');
-        }
-        $skInfo = $this->service->get($id);
-        if (!$skInfo) {
-            return $this->fail('没有查询到密钥信息');
-        }
-        return $this->success(['sk' => $skInfo->sk]);
     }
 }

@@ -14,8 +14,8 @@
 
         <!-- 表格数据 -->
         <div class="table-box mt10" v-loading="loading">
-          <el-table row-key="id" :height="tableHeight" :data="tableData" style="width: 100%">
-            <el-table-column prop="name" :label="$t('business.businessType')" min-width="150">
+          <el-table row-key="id" :height="TABLE_HEIGHT" :data="tableData" style="width: 100%">
+            <el-table-column prop="name" label="审批类型" min-width="150">
               <template #default="{ row }">
                 <div class="flex" @click="editFn(row)">
                   <div class="selIcon" :style="{ backgroundColor: row.color }">
@@ -48,11 +48,11 @@
             <el-table-column prop="sort" label="排序" />
             <el-table-column prop="updated_at" label="更新时间" min-width="150" />
             <el-table-column label="状态" width="120">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <el-switch
                   v-model="scope.row.status"
-                  :active-text="$t('hr.open')"
-                  :inactive-text="$t('hr.close')"
+                  active-text="开启"
+                  inactive-text="关闭"
                   :active-value="1"
                   :inactive-value="0"
                   :width="50"
@@ -62,9 +62,9 @@
             </el-table-column>
 
             <el-table-column prop="address" label="操作" fixed="right" width="110">
-              <template slot-scope="scope">
-                <el-button type="text" @click="editFn(scope.row)">编辑</el-button>
-                <el-button type="text" @click="deleteFn(scope.row)">删除</el-button>
+              <template #default="scope">
+                <el-button type="primary" link @click="editFn(scope.row)">编辑</el-button>
+                <el-button type="primary" link @click="deleteFn(scope.row)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -86,8 +86,10 @@
 </template>
 
 <script>
+import { modalSure } from '@/libs/public.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
 import oaFromBox from '@/components/common/oaFromBox'
-import { roterPre } from '@/settings'
+import { roterPre } from '@/settings.ts'
 import {
   getcrudCateListApi,
   databaseListApi,
@@ -95,7 +97,7 @@ import {
   dataApproveListApi,
   dataApproveStatusApi,
   dataApproveDeleteApi
-} from '@/api/develop'
+} from '@/api/develop.ts'
 
 export default {
   components: {
@@ -104,6 +106,7 @@ export default {
   name: 'FinanceList',
   data() {
     return {
+      TABLE_HEIGHT,
       search: [
         {
           field_name: '关键字',
@@ -114,13 +117,15 @@ export default {
           field_name: '关联实体',
           field_name_en: 'crud_id',
           form_value: 'cascaderSelect',
+          data_type: 1,
           data_dict: []
         },
         {
           field_name: '关联应用',
           field_name_en: 'cate_id',
           form_value: 'select',
-          data_dict: []
+          data_dict: [],
+          data_type: 1
         }
       ],
       loading: false,
@@ -225,7 +230,7 @@ export default {
 
     // 删除
     async deleteFn(row) {
-      this.$modalSure('您确定要删除此流程吗').then(() => {
+      modalSure('您确定要删除此流程吗').then(() => {
         dataApproveDeleteApi(row.id).then((res) => {
           let totalPage = Math.ceil((this.total - 1) / this.where.limit)
           let currentPage = this.where.page > totalPage ? totalPage : this.where.page

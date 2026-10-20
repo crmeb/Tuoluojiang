@@ -1,6 +1,5 @@
 <template>
   <div class="pivot-table-widget" @click.stop="setSelected" v-loading="loading">
-    <!-- {{ cutField.options.setDimensional.metrics[0].decimalPlaces }} -->
     <div
       class="statistic-box"
       :style="{ color: cutField.options && cutField.options.setChartStyle.useTextColor }"
@@ -25,7 +24,7 @@
   </div>
 </template>
 <script>
-import { queryChartData } from '@/api/chart'
+import { queryChartData } from '../chartQuery.ts'
 
 export default {
   name: 'statistic-widget',
@@ -58,23 +57,28 @@ export default {
   methods: {
     async initOption() {
       let { options, type } = this.cutField
-      if (options) {
-        let { metrics } = options.setDimensional
-        if (metrics.length < 1) {
-          this.isNoData = true
-          return
-        }
-        this.isNoData = false
-        this.numericUnits = metrics[0].numericUnits == '无' ? '' : metrics[0].numericUnits
-        await this.getChartData(options, type)
-        this.getPreviewNum(metrics[0])
-      } else {
+      if (!options) {
         this.isNoData = true
+        return false
       }
+      const { metrics = [] } = options.setDimensional || {}
+      if (!metrics||metrics.length === 0) {
+        this.isNoData = true
+        return false
+      }
+      this.isNoData = false
+      // 单位“无”时置空
+      this.numericUnits = metrics[0].numericUnits === '无' ? '' : metrics[0].numericUnits
+      await this.getChartData(options, type)
+      this.getPreviewNum(metrics[0])
     },
     async getChartData(options, type) {
       this.loading = true
-      let res = await queryChartData(options, type)
+          let chartData = JSON.stringify({
+    widgetList: this.designer.widgetList,
+    formConfig: this.designer.formConfig
+  })
+      let res = await queryChartData(options, type,chartData)
       if (res && res.status === 200) {
         this.metricsNum = res.data.value || 0
       }

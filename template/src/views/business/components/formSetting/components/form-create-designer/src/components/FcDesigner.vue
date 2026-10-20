@@ -36,6 +36,12 @@
   margin-left: 0 !important;
 }
 
+/* 线上 element-ui 的 select 为 inline-block，未设宽度时按输入框固有宽度显示为 200px；
+   Element Plus 默认占满容器，画布里按线上还原 */
+._fc-m .form-create .el-select {
+  --el-select-width: 200px;
+}
+
 ._fc-l,
 ._fc-m,
 ._fc-r {
@@ -172,7 +178,7 @@
 .drag-center .el-form {
   height: calc(100% - 45px);
 }
-.dialog .el-form-item--mini .el-form-item__content {
+.dialog .el-form-item .el-form-item__content {
   margin-left: 0px !important;
 }
 .el-tabs__nav-wrap::after {
@@ -236,7 +242,7 @@
 </style>
 
 <style lang="scss" scoped>
-/deep/ .el-dialog__header {
+:deep(.el-dialog__header) {
   padding: 24px 20px;
 }
 </style>
@@ -245,8 +251,8 @@
     <ElMain>
       <ElContainer style="height: 100%">
         <el-aside class="_fc-l" width="280px">
-          <template v-for="(item, index) in menuList">
-            <div class="_fc-l-group" :key="index">
+          <template v-for="(item, index) in menuList" :key="index">
+            <div class="_fc-l-group">
               <el-tabs v-model="activeName">
                 <el-tab-pane label="控件" name="first" class="mb20 mt20">
                   <draggable
@@ -254,15 +260,18 @@
                     :sort="false"
                     :list="item.list"
                     class="pl10"
+                    :item-key="$draggableKey"
                   >
-                    <div class="_fc-l-item mb20" v-for="(data, index) in item.list" :key="index">
-                      <div class="acea-row row-middle row">
-                        <span class="_fc-l-name">{{ data.label }}</span>
-                        <div class="_fc-l-icon mr5">
-                          <i class="fc-icon" :class="data.icon || 'icon-input'"></i>
+                    <template #item="{ element: data, index }">
+                      <div class="_fc-l-item mb20">
+                        <div class="acea-row row-middle row">
+                          <span class="_fc-l-name">{{ data.label }}</span>
+                          <div class="_fc-l-icon mr5">
+                            <i class="fc-icon" :class="data.icon || 'icon-input'"></i>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    </template>
                   </draggable>
                 </el-tab-pane>
                 <el-tab-pane label="控件组" class="mt10" name="second">
@@ -272,15 +281,18 @@
                     :sort="false"
                     :list="item.group"
                     class="pl10"
+                    :item-key="$draggableKey"
                   >
-                    <div class="_fc-l-item mb20" v-for="(data, index) in item.group" :key="index">
-                      <div class="acea-row row-middle row">
-                        <span class="_fc-l-name">{{ data.label }}</span>
-                        <div class="_fc-l-icon mr5">
-                          <i class="fc-icon" :class="data.icon || 'icon-input'"></i>
+                    <template #item="{ element: data, index }">
+                      <div class="_fc-l-item mb20">
+                        <div class="acea-row row-middle row">
+                          <span class="_fc-l-name">{{ data.label }}</span>
+                          <div class="_fc-l-icon mr5">
+                            <i class="fc-icon" :class="data.icon || 'icon-input'"></i>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    </template>
                   </draggable>
                   <div class="pl10 _fc-title">客户管理</div>
                   <draggable
@@ -288,15 +300,18 @@
                     :sort="false"
                     :list="item.contract"
                     class="pl10"
+                    :item-key="$draggableKey"
                   >
-                    <div class="_fc-l-item mb20" v-for="(data, index) in item.contract" :key="index">
-                      <div class="acea-row row-middle row">
-                        <span class="_fc-l-name">{{ data.label }}</span>
-                        <div class="_fc-l-icon mr5">
-                          <i class="fc-icon" :class="data.icon || 'icon-input'"></i>
+                    <template #item="{ element: data, index }">
+                      <div class="_fc-l-item mb20">
+                        <div class="acea-row row-middle row">
+                          <span class="_fc-l-name">{{ data.label }}</span>
+                          <div class="_fc-l-icon mr5">
+                            <i class="fc-icon" :class="data.icon || 'icon-input'"></i>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    </template>
                   </draggable>
                 </el-tab-pane>
               </el-tabs>
@@ -317,11 +332,13 @@
                   </div>
                 </div>
               </div>
-              <FormCreate :rule="dragForm.rule" :option="form.value" v-model="dragForm.api"></FormCreate>
+              
+              <FormCreate :rule="dragForm.rule" :option="form.value" v-model:api="dragForm.api"></FormCreate>
             </div>
           </ElMain>
         </ElContainer>
         <ElAside class="_fc-r" width="320px">
+          
           <ElContainer style="height: 100%">
             <ElMain
               class="aside-right"
@@ -330,7 +347,9 @@
               :key="activeRule ? activeRule._id : ''"
             >
               <div>
+                
                 <ElDivider v-if="showBaseRule">表单内容说明</ElDivider>
+              
                 <FormCreate
                   v-if="basicForm.rule"
                   :rule="basicForm.rule"
@@ -340,14 +359,14 @@
                 ></FormCreate>
                 <FormCreate
                   v-else
-                  v-model="baseForm.api"
+                  v-model:api="baseForm.api"
                   :rule="baseForm.rule"
                   :option="baseForm.options"
                   @change="baseChange"
                 ></FormCreate>
                 <ElDivider v-if="propsForm.rule.length > 0">表单内容配置</ElDivider>
                 <FormCreate
-                  v-model="propsForm.api"
+                  v-model:api="propsForm.api"
                   :rule="propsForm.rule"
                   :option="propsForm.options"
                   @change="propChange"
@@ -357,7 +376,7 @@
             </ElMain>
           </ElContainer>
         </ElAside>
-        <ElDialog :visible.sync="preview.state" width="800px" append-to-body class="dialog">
+        <ElDialog v-model="preview.state" width="800px" append-to-body class="dialog">
           <viewForm :rule="preview.rule" :option="preview.option" v-if="preview.state"></viewForm>
         </ElDialog>
       </ElContainer>
@@ -374,11 +393,12 @@ import is, { hasProperty } from '@form-create/utils/lib/type'
 import { lower } from '@form-create/utils/lib/tocase'
 import ruleList from '../config/rule'
 import draggable from 'vuedraggable'
+import { reactive, toRaw } from 'vue'
 import createMenu from '../config/menu'
 import { upper } from '../utils/index'
 import { designerForm } from '../config/viewForm'
 import formCreate from '../config/viewForm'
-import { approveHolidayTypeSelectApi } from '@/api/business.js'
+import { approveHolidayTypeSelectApi } from '@/api/business.ts'
 
 export default {
   name: 'FcDesigner',
@@ -440,7 +460,8 @@ export default {
         'contractRenewal',
         'contractExpenditure',
         'issueInvoice',
-        'voidedInvoice'
+        'voidedInvoice',
+        'contractSigning',
       ],
       gropList: [],
       // validateLonelyGroup: false,
@@ -449,7 +470,7 @@ export default {
         option: {
           form: {
             labelPosition: 'top',
-            size: 'mini'
+            size: 'small'
           },
           submitBtn: false
         },
@@ -458,7 +479,7 @@ export default {
             inline: false,
             hideRequiredAsterisk: false,
             labelPosition: 'top',
-            size: 'medium',
+            size: 'default',
             labelWidth: '125px'
           },
           submitBtn: false
@@ -470,7 +491,7 @@ export default {
         options: {
           form: {
             labelPosition: 'top',
-            size: 'mini'
+            size: 'small'
           },
           submitBtn: false,
           mounted: (fapi) => {
@@ -485,7 +506,7 @@ export default {
         options: {
           form: {
             labelPosition: 'top',
-            size: 'mini'
+            size: 'small'
           },
           submitBtn: false,
           mounted: (fapi) => {
@@ -501,7 +522,7 @@ export default {
         options: {
           form: {
             labelPosition: 'top',
-            size: 'mini'
+            size: 'small'
           },
           submitBtn: false,
           mounted: (fapi) => {
@@ -516,7 +537,7 @@ export default {
         options: {
           form: {
             labelPosition: 'top',
-            size: 'mini'
+            size: 'small'
           },
           submitBtn: false,
           mounted: (fapi) => {
@@ -547,7 +568,7 @@ export default {
       let flag = true
       this.menuList.forEach((v, i) => {
         if (v.name === config.name) {
-          this.$set(this.menuList, i, config)
+          this.menuList[i] = config
           flag = false
         }
       })
@@ -593,6 +614,7 @@ export default {
       })
     },
     addComponent(data) {
+
       if (Array.isArray(data)) {
         data.forEach((v) => {
           ruleList[v.name] = v
@@ -661,6 +683,8 @@ export default {
       this.setRule([])
     },
     makeDragRule(children) {
+      // 拖拽回调里就地 splice 这个数组；Vue 3 只追踪代理上的修改，必须传响应式代理
+      children = reactive(children)
       return [
         this.makeDrag(
           true,
@@ -687,12 +711,13 @@ export default {
       this.preview.option = this.getOption()
     },
     getRule() {
+        
       let data = this.parseRule(deepCopy(this.dragForm.api.rule[0].children))
       data.forEach((value) => {
         if (value.hasOwnProperty('children')) {
           value.children.forEach((item) => {
             if (item.title === '假期类型') {
-              this.$set(item, 'options', this.holidayRule)
+              item.options = this.holidayRule
             }
           })
         }
@@ -700,6 +725,7 @@ export default {
       return data
     },
     getJson() {
+       
       return formCreate.toJson(this.getRule())
     },
     getOption() {
@@ -807,9 +833,10 @@ export default {
     baseChange(field, value, _, fapi) {
       if (this.activeRule && fapi[this.activeRule._id] === this.activeRule) {
         if (field == 'info') {
+          // 提示文字实际写入控件的 placeholder，需用 $set 保证新增 key 的响应式
           this.activeRule.props.placeholder = value
         } else {
-          this.$set(this.activeRule, field, value)
+          this.activeRule[field] = value
         }
       }
     },
@@ -821,16 +848,16 @@ export default {
           if (!field) return
           field = lower(field)
           if (field.indexOf('effect') === 0 && field.indexOf('>') > -1) {
-            this.$delete(this.activeRule.effect, field.split('>')[1])
+            delete this.activeRule.effect[field.split('>')[1]]
           } else if (field.indexOf('props') === 0 && field.indexOf('>') > -1) {
-            this.$delete(this.activeRule.props, field.split('>')[1])
+            delete this.activeRule.props[field.split('>')[1]]
           } else if (field === 'child') {
-            this.$delete(this.activeRule.children, 0)
+            delete this.activeRule.children[0]
           } else if (field) {
-            this.$set(this.activeRule, field, undefined)
+            this.activeRule[field] = undefined
           }
         } else {
-          this.$delete(this.activeRule.props, field)
+          delete this.activeRule.props[field]
         }
       }
     },
@@ -838,7 +865,7 @@ export default {
       if (this.activeRule.children && this.activeRule.children.length > 1) {
         this.activeRule.children.forEach((item) => {
           if (item.type == 'timeFrom') {
-            this.$set(item.props, field, value)
+            item.props[field] = value
           }
         })
       } else {
@@ -848,16 +875,16 @@ export default {
             if (!field) return
             field = lower(field)
             if (field.indexOf('effect') === 0 && field.indexOf('>') > -1) {
-              this.$set(this.activeRule.effect, field.split('>')[1], value)
+              this.activeRule.effect[field.split('>')[1]] = value
             } else if (field.indexOf('props') === 0 && field.indexOf('>') > -1) {
-              this.$set(this.activeRule.props, field.split('>')[1], value)
+              this.activeRule.props[field.split('>')[1]] = value
             } else if (field === 'child') {
-              this.$set(this.activeRule.children, 0, value)
+              this.activeRule.children[0] = value
             } else {
-              this.$set(this.activeRule, field, value)
+              this.activeRule[field] = value
             }
           } else {
-            this.$set(this.activeRule.props, field, value)
+            this.activeRule.props[field] = value
           }
         }
       }
@@ -866,7 +893,7 @@ export default {
       if (this.activeRule.children && this.activeRule.children.length > 1) {
         this.activeRule.children.forEach((item) => {
           if (item.type == 'timeFrom') {
-            this.$set(item.props, field, value)
+            item.props[field] = value
           }
         })
       } else {
@@ -876,16 +903,16 @@ export default {
             if (!field) return
             field = lower(field)
             if (field.indexOf('effect') === 0 && field.indexOf('>') > -1) {
-              this.$set(this.activeRule.effect, field.split('>')[1], value)
+              this.activeRule.effect[field.split('>')[1]] = value
             } else if (field.indexOf('props') === 0 && field.indexOf('>') > -1) {
-              this.$set(this.activeRule.props, field.split('>')[1], value)
+              this.activeRule.props[field.split('>')[1]] = value
             } else if (field === 'child') {
-              this.$set(this.activeRule.children, 0, value)
+              this.activeRule.children[0] = value
             } else {
-              this.$set(this.activeRule, field, value)
+              this.activeRule[field] = value
             }
           } else {
-            this.$set(this.activeRule.props, field, value)
+            this.activeRule.props[field] = value
           }
         }
       }
@@ -903,17 +930,17 @@ export default {
           field = field.toLowerCase()
 
           if (field.indexOf('effect') === 0 && field.indexOf('>') > -1) {
-            this.$delete(this.activeRule.effect, field.split('>')[1])
+            delete this.activeRule.effect[field.split('>')[1]]
           } else if (field.indexOf('props') === 0 && field.indexOf('>') > -1) {
-            this.$delete(this.activeRule.props, field.split('>')[1])
+            delete this.activeRule.props[field.split('>')[1]]
           } else if (field === 'child') {
-            this.$delete(this.activeRule.children, 0)
+            delete this.activeRule.children[0]
           } else if (field) {
-            this.$set(this.activeRule, field, undefined)
+            this.activeRule[field] = undefined
           }
         } else {
           // 如果字段不是以 'formCreate' 开头，则直接从 activeRule 中移除
-          this.$delete(this.activeRule, field)
+          delete this.activeRule[field]
         }
       }
     },
@@ -972,7 +999,8 @@ export default {
         this.baseForm.options.formData = {
           field: rule.field,
           title: rule.title || '',
-          info: rule.info,
+          // 提示文字保存在 props.placeholder 上，回显时优先取它
+          info: rule.props && hasProperty(rule.props, 'placeholder') ? rule.props.placeholder : rule.info,
           _control: rule._control
         }
 
@@ -989,7 +1017,8 @@ export default {
         }
       } else {
         const rule = this.makeRule(ruleList[menu.name])
-        children.splice(newIndex, 0, rule)
+        // 超出控件组数量限制时 makeRule 不返回规则，不能插入 undefined
+        if (rule) children.splice(newIndex, 0, rule)
       }
       this.added = true
     },
@@ -1007,8 +1036,9 @@ export default {
       // 在所有拖拽项目里面找该config是否属于控件组下的数据
       const dataSources = this.menuList[0]
       if (this.menuList && dataSources && dataSources.group && dataSources.group.length !== 0) {
-        // 如果是控件组下的数据
-        if (dataSources.group.some((item) => item === config) || dataSources.contract.some((item) => item === config)) {
+        // 如果是控件组下的数据；menuList 是响应式数据，取出的是代理，需还原成原始对象再与 config 比较
+        const isGroup = (item) => toRaw(item) === config
+        if (dataSources.group.some(isGroup) || dataSources.contract.some(isGroup)) {
           // 判断是否有其他控件组数据
           if (this.gropList.length === 0) {
             this.gropList.push(config)
@@ -1030,7 +1060,8 @@ export default {
       rule.originChildren = rule.children
 
       if (config.drag) {
-        const children = []
+        // 同 makeDragRule：子容器的拖拽回调会就地修改该数组
+        const children = reactive([])
         rule.children.push(
           (drag = this.makeDrag(config.drag, rule.type, children, {
             end: (inject, evt) => this.dragEnd(inject.self.children, evt),

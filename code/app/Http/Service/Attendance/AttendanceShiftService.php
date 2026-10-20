@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -20,9 +20,11 @@ use App\Http\Contract\Attendance\AttendanceShiftInterface;
 use App\Http\Dao\Attendance\AttendanceShiftDao;
 use App\Http\Dao\Attendance\AttendanceShiftRuleDao;
 use App\Http\Service\BaseService;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Carbon;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 
 /**
  * 考勤班次记录
@@ -42,8 +44,10 @@ class AttendanceShiftService extends BaseService implements AttendanceShiftInter
 
     /**
      * 列表.
-     * @param string $sort
+     * @param string[] $sort
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
     public function getList(array $where, array $field = ['id', 'name', 'uid', 'color', 'created_at', 'updated_at'], $sort = ['sort', 'created_at'], array $with = ['card', 'times']): array
@@ -64,7 +68,7 @@ class AttendanceShiftService extends BaseService implements AttendanceShiftInter
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
-    public function getSelectList(array $where = [], array $field = ['id', 'name', 'color'], $sort = ['sort', 'created_at']): array
+    public function getSelectList(array $where = [], array $field = ['id', 'name', 'color'], array $sort = ['sort', 'created_at']): array
     {
         return $this->dao->getList($where, $field, 0, 0, $sort);
     }
@@ -72,11 +76,13 @@ class AttendanceShiftService extends BaseService implements AttendanceShiftInter
     /**
      * 保存班次
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
      */
-    public function saveShift(array $data): mixed
+    public function saveShift(array $data, int $uid): mixed
     {
         $this->checkShift(name: $data['name']);
-        $uid   = uuid_to_uid($this->uuId(false));
         $rules = $this->getRules($data);
         return $this->transaction(function () use ($data, $rules, $uid) {
             $res = $this->dao->create([
@@ -107,6 +113,8 @@ class AttendanceShiftService extends BaseService implements AttendanceShiftInter
     /**
      * 更新班次
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
     public function updateShift(int $id, array $data): mixed
@@ -141,6 +149,8 @@ class AttendanceShiftService extends BaseService implements AttendanceShiftInter
     /**
      * 删除.
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
     public function deleteShift(int $id): bool
@@ -166,7 +176,7 @@ class AttendanceShiftService extends BaseService implements AttendanceShiftInter
      */
     public function getInfo(int $id): array
     {
-        $info            = toArray($this->get($id, ['*'], ['rules']));
+        $info            = $this->dao->get($id, ['*'], ['rules'])?->toArray();
         $info['number1'] = $info['rules'][0] ?? [];
         $info['number2'] = $info['rules'][1] ?? [];
         unset($info['rules']);
@@ -200,7 +210,8 @@ class AttendanceShiftService extends BaseService implements AttendanceShiftInter
     /**
      * 单个班次规则.
      * @param mixed $tz
-     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function getRule(array $data, $tz, int $number = 1): array
     {
@@ -249,6 +260,8 @@ class AttendanceShiftService extends BaseService implements AttendanceShiftInter
     /**
      * 打卡班次
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
     public function getArrangeShiftById(int $id, string $date = ''): array
@@ -259,16 +272,19 @@ class AttendanceShiftService extends BaseService implements AttendanceShiftInter
                 return $shift;
             }
         }
-
         $field     = ['id', 'name', 'number', 'rest_time', 'rest_start', 'rest_start_after', 'rest_end', 'rest_end_after', 'overtime', 'work_time', 'color'];
         $ruleField = ['id', 'shift_id', 'number', 'first_day_after', 'second_day_after', 'work_hours', 'late', 'extreme_late',
             'late_lack_card', 'early_card', 'off_hours', 'early_leave', 'early_lack_card', 'delay_card', 'free_clock'];
-
-        $info = $this->dao->get($id, $field, ['rules' => fn ($q) => $q->select($ruleField)]);
+        $info          = $this->dao->get($id, $field, ['rules' => fn ($q) => $q->select($ruleField)])?->toArray();
+        $info['rules'] = collect($info['rules'] ?? [])->map(function ($item) use ($date) {
+            $item['work_date'] = $item['first_day_after'] ? Carbon::make($date)->addDay()->toDateString() : Carbon::make($date)->toDateString();
+            $item['off_date']  = $item['second_day_after'] ? Carbon::make($date)->addDay()->toDateString() : Carbon::make($date)->toDateString();
+            return $item;
+        })->all();
         if (! $info) {
             throw $this->exception('操作失败，记录不存在');
         }
-        return toArray($info);
+        return $info;
     }
 
     /**
@@ -336,9 +352,8 @@ class AttendanceShiftService extends BaseService implements AttendanceShiftInter
                     continue;
                 }
 
-                $rule = $shift['rules'][$i];
-                $seconds += $this->afterCheck(Carbon::parse(substr($statistics->{$shifts[$number] . '_shift_time'}, 0, -3), $tz), $rule, 0)
-                    ->diffInSeconds($this->afterCheck(Carbon::parse(substr($statistics->{$shifts[$number + 1] . '_shift_time'}, 0, -3), $tz), $rule, 1), false);
+                $seconds += Carbon::parse($statistics->{$shifts[$number] . '_shift_time'}, $tz)
+                    ->diffInSeconds(Carbon::parse($statistics->{$shifts[$number + 1] . '_shift_time'}, $tz), false);
             }
 
             $shift['number'] == 1 && $seconds > 0 && $seconds -= $this->getRestTimeSeconds($shift, $date, $tz);
@@ -375,6 +390,9 @@ class AttendanceShiftService extends BaseService implements AttendanceShiftInter
     /**
      * 核对班次
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
      */
     private function checkShift(int $id = 0, string $act = '', string $name = ''): void
     {

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -25,12 +25,32 @@ final class NoticeEnum extends Enum
     /**
      * 消息类型：系统消息.
      */
-    public const NOTICE_TYPE_SYSTEM = 0;
+    public const TYPE_SYSTEM = 0;
 
     /**
      * 消息类型：短信消息.
      */
-    public const NOTICE_TYPE_SMS = 1;
+    public const TYPE_SMS = 1;
+
+    /**
+     * 消息类型：企微HOOK消息.
+     */
+    public const TYPE_WORK_HOOK = 2;
+
+    /**
+     * 消息类型：钉钉HOOK消息.
+     */
+    public const TYPE_DING_HOOK = 3;
+
+    /**
+     * 消息类型：其他HOOK消息.
+     */
+    public const TYPE_OTHER_HOOK = 4;
+
+    /**
+     * 消息类型：企微应用消息.
+     */
+    public const TYPE_WEWORK = 5;
 
     /**
      * 邀请完善信息.
@@ -96,31 +116,31 @@ final class NoticeEnum extends Enum
     // 【业务类型】未通过审批醒
     public const BUSINESS_FAIL_TYPE = 'business_fail';
 
-    // 合同急需续费提醒
+    // 订单急需续费提醒
     public const CONTRACT_URGENT_RENEW_TYPE = 'contract_urgent_renew';
 
-    // 合同续费今日到期提醒
+    // 订单续费今日到期提醒
     public const CONTRACT_DAY_REMIND_TYPE = 'contract_day_remind';
 
-    // 合同续费过期提醒
+    // 订单续费过期提醒
     public const CONTRACT_OVERDUE_REMIND_TYPE = 'contract_overdue_remind';
 
-    // 合同回款提醒
+    // 合同订单回款提醒
     public const CONTRACT_RETURN_MONEY_TYPE = 'contract_return_money';
 
-    // 合同续费提醒
+    // 合同订单续费提醒
     public const CONTRACT_RENEW_TYPE = 'contract_renew';
 
-    // 合同支出提醒
+    // 合同订单支出提醒
     public const CONTRACT_EXPEND_TYPE = 'contract_expend';
 
-    // 合同异常
+    // 合同订单异常
     public const CONTRACT_ABNORMAL_TYPE = 'contract_abnormal';
 
-    // 合同即将到期提醒
+    // 合同订单即将到期提醒
     public const CONTRACT_SOON_OVERDUE_REMIND = 'contract_soon_overdue_remind';
 
-    // 合同今日到期提醒
+    // 合同订单今日到期提醒
     public const CONTRACT_OVERDUE_DAY_REMIND = 'contract_overdue_day_remind';
 
     // 开具发票申请

@@ -9,7 +9,7 @@
               <div class="rank-left v-height-flag">
                 <el-row class="rank-left-header">
                   <el-col :span="18">
-                    <div class="title">{{ $t('hr.ranktypes') }}</div>
+                    <div class="title">职级类别</div>
                   </el-col>
                   <el-col :span="6" class="text-right">
                     <el-tooltip effect="dark" content="添加类别" placement="top">
@@ -19,7 +19,7 @@
                 </el-row>
                 <div class="v-height-flag">
                   <div v-height>
-                    <el-scrollbar style="height: 100%">
+                    <el-scrollbar style="height: 100%" class="reset-scroll-bar">
                       <ul class="rank-left-top">
                         <li
                           v-for="(item, index) in rankData"
@@ -39,16 +39,17 @@
                               @hide="handleHide"
                             >
                               <div class="right-item-list">
-                                <div class="right-item" @click.stop="editRankType(item)">{{ $t('public.edit') }}</div>
+                                <div class="right-item" @click.stop="editRankType(item)">编辑</div>
                                 <div class="right-item" @click.stop="deleteRankType(item)">
-                                  {{ $t('public.delete') }}
+                                  删除
                                 </div>
                               </div>
-                              <i
-                                v-show="rankIndex === index"
-                                slot="reference"
-                                class="icon iconfont icongengduo pointer rank-icon"
-                              />
+                              <template #reference>
+                                <i
+                                  v-show="rankIndex === index"
+                                  class="icon iconfont icongengduo pointer rank-icon"
+                                />
+                              </template>
                             </el-popover>
                           </div>
                         </li>
@@ -65,7 +66,7 @@
                   :isViewSearch="false"
                   :total="total"
                   :title="`职级列表`"
-                  :btnText="'添加职级'"
+                  btnText="添加职级"
                   :isAddBtn="true"
                   @addDataFn="addRank"
                   @dropdownFn="batchHandleDelete"
@@ -76,33 +77,34 @@
                   <el-table
                     :data="tableData"
                     row-key="id"
-                    :height="tableHeight"
+                    :height="TABLE_HEIGHT"
                     default-expand-all
                     :tree-props="{ children: 'children' }"
                     @selection-change="handleSelectionChange"
                   >
                     <el-table-column type="selection" width="55"></el-table-column>
-                    <el-table-column prop="name" :label="$t('hr.rankname')" min-width="150" />
-                    <el-table-column prop="alias" :label="$t('hr.ranktype')" min-width="100" />
+                    <el-table-column prop="name" label="职级名称" min-width="150" />
+                    <el-table-column prop="alias" label="职级别名" min-width="100" />
                     <el-table-column prop="info" label="职级描述" min-width="200" show-overflow-tooltip>
-                      <template slot-scope="scope">
+                      <template #default="scope">
                         <div class="line1">{{ scope.row.info || '--' }}</div>
                       </template>
                     </el-table-column>
-                    <el-table-column prop="card.name" :label="$t('hr.founder')" min-width="120" />
-                    <el-table-column prop="address" :label="$t('public.operation')" width="140">
-                      <template slot-scope="scope">
+                    <el-table-column prop="card.name" label="创建人" min-width="120" />
+                    <el-table-column prop="sort" label="排序" min-width="120" />
+                    <el-table-column prop="address" label="操作" width="140">
+                      <template #default="scope">
                         <el-button
-                          type="text"
+                          type="primary" link
                           @click="editRank(scope.row)"
                           v-hasPermi="['hr:enterprise:job:rankManagement:edit']"
-                          >{{ $t('public.edit') }}</el-button
+                          >编辑</el-button
                         >
                         <el-button
-                          type="text"
+                          type="primary" link
                           @click="deleteRank(scope.row)"
                           v-hasPermi="['hr:enterprise:job:rankManagement:delete']"
-                          >{{ $t('public.delete') }}</el-button
+                          >删除</el-button
                         >
                       </template>
                     </el-table-column>
@@ -131,6 +133,9 @@
 </template>
 
 <script>
+import { modalSure } from '@/libs/public.ts'
+import modalForm from '@/libs/modal-form.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
 import dialogForm from './components/index'
 import oaFromBox from '@/components/common/oaFromBox'
 import {
@@ -142,7 +147,7 @@ import {
   rankDeleteApi,
   rankEditApi,
   rankListApi
-} from '@/api/setting'
+} from '@/api/setting.ts'
 
 export default {
   name: 'JobRank',
@@ -152,6 +157,7 @@ export default {
   },
   data() {
     return {
+      TABLE_HEIGHT,
       gridl: {
         xl: 3,
         lg: 4,
@@ -234,13 +240,13 @@ export default {
     },
     // 添加职级类别
     async addRankType() {
-      await this.$modalForm(rankCateCreateApi())
+      await modalForm(rankCateCreateApi())
       this.getRankList()
     },
     // 编辑职级类别
     async editRankType(item) {
       this.closePopover()
-      await this.$modalForm(rankCateEditApi(item.id))
+      await modalForm(rankCateEditApi(item.id))
       this.getRankList()
       this.rankIndex = 0
     },
@@ -250,7 +256,7 @@ export default {
     // 删除职级类别
     deleteRankType(item) {
       this.closePopover()
-      this.$modalSure('你确定要删除该职级类别吗').then(() => {
+      modalSure('你确定要删除该职级类别吗').then(() => {
         rankCateDeleteApi(item.id).then((res) => {
           this.rankIndex = 0
           this.getRankList()
@@ -258,7 +264,7 @@ export default {
       })
     },
     closePopover() {
-      this.$refs[`pop-${this.activeValue}`][0].doClose()
+      this.$refs[`pop-${this.activeValue}`][0].hide()
     },
     // 添加职级
     async addRank() {
@@ -289,7 +295,7 @@ export default {
       await this.$refs.dialogForm.openBox()
     },
     deleteRank(row) {
-      this.$modalSure('你确定要删除该职级吗').then(() => {
+      modalSure('你确定要删除该职级吗').then(() => {
         this.handleDelete(row.id)
       })
     },
@@ -297,11 +303,11 @@ export default {
       if (this.multipleSelection.length <= 0) {
         this.$message.error('至少选择一项要删除的内容')
       } else {
-        var ids = []
+        const ids = []
         this.multipleSelection.forEach((value) => {
           ids.push(value.id)
         })
-        this.$modalSure('确定要全部删除已选择的内容吗').then(() => {
+        modalSure('确定要全部删除已选择的内容吗').then(() => {
           this.handleDelete(ids.join(','))
         })
       }
@@ -324,7 +330,7 @@ export default {
   padding: 20px 0 0 0;
   border-right: 1px solid #eeeeee;
   // background-color: rgba(247, 251, 255, 1);
-  /deep/ .el-scrollbar__wrap {
+  :deep(.el-scrollbar__wrap) {
     overflow-x: hidden;
   }
   .clearfix {
@@ -347,12 +353,15 @@ export default {
       margin-top: 2px;
     }
   }
+  .rank-left-top :hover {
+    background-color: #f3f5f9;
+  }
   .rank-left-top {
     list-style: none;
     margin: 15px 0 0 0;
     padding: 0;
     li {
-      height: 40px;
+      // height: 40px;
       padding-left: 20px;
       padding-right: 15px;
       line-height: 40px;
@@ -361,12 +370,11 @@ export default {
       font-family: PingFangSC-Regular, PingFang SC;
       font-weight: 400;
       color: #303133;
-      border-right: 2px solid transparent;
+      border-radius: 4px;
       &.active {
         background: rgba(24, 144, 255, 0.08);
         color: #1890ff;
         font-weight: 600;
-        border-color: #1890ff;
       }
     }
   }

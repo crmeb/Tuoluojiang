@@ -114,7 +114,7 @@ class PayloadValidator extends Validator
      */
     public function setRefreshTTL($ttl)
     {
-        $this->refreshTTL = $ttl;
+        $this->refreshTTL = $ttl !== null ? (int) $ttl : null;
 
         return $this;
     }

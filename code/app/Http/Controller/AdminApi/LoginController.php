@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -19,6 +19,8 @@ use App\Http\Middleware\AuthAdmin;
 use App\Http\Requests\common\AccountLoginRequest;
 use App\Http\Requests\user\UserLoginRequest;
 use App\Http\Service\Admin\AdminService;
+use App\Constants\UserEnum;
+use Tuoluojiang\Open\services\wechat\config\WorkConfig;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Validation\ValidationException;
 use Psr\Container\ContainerExceptionInterface;
@@ -34,6 +36,8 @@ use Spatie\RouteAttributes\Attributes\Put;
 #[Prefix('ent/user')]
 class LoginController extends AuthController
 {
+    private const CLIENT_WEB = 'web';
+
     /**
      * 需登录路由.
      * @var array|string[]
@@ -47,6 +51,19 @@ class LoginController extends AuthController
         parent::__construct();
         $this->middleware([AuthAdmin::class])->only($this->guarded);
         $this->service = $service;
+    }
+
+    /**
+     * 获取企业微信配置.
+     * @return mixed
+     */
+    #[Get('corp/config', '获取企业微信配置')]
+    public function getCorpConfig(WorkConfig $config)
+    {
+        return $this->success([
+            'corpid'  => $config->getCorpId(),
+            'agentid' => $config->getAppConfig(WorkConfig::TYPE_USER_APP)['agent_id'] ?? '',
+        ]);
     }
 
     /**
@@ -97,7 +114,26 @@ class LoginController extends AuthController
             ['password', ''],
         ], true);
         $this->service->checkUserAuth($account);
-        return $this->success($this->service->login($account, $password));
+        return $this->success($this->service->login($account, $password, self::CLIENT_WEB, isSingle: UserEnum::SINGLE_LOGIN));
+    }
+
+    /**
+     * 企业微信扫码登录.
+     * @return mixed
+     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
+     */
+    #[Post('work_auth_login', '企业微信扫码登录')]
+    public function workAuthLogin()
+    {
+        $code = $this->request->post('code', '');
+        if (! $code) {
+            return $this->fail('缺少CODE');
+        }
+
+        return $this->success($this->service->workAuthLogin($code, client: self::CLIENT_WEB, isSingle: UserEnum::SINGLE_LOGIN));
     }
 
     /**
@@ -119,7 +155,21 @@ class LoginController extends AuthController
         if (! $this->service->exists(['phone' => $phone])) {
             $this->service->register($phone, md5(microtime() . $phone));
         }
-        return $this->success($this->service->phoneLogin($phone));
+        return $this->success($this->service->phoneLogin($phone, self::CLIENT_WEB, isSingle: UserEnum::SINGLE_LOGIN));
+    }
+
+    /**
+     * 刷新登录凭证.
+     */
+    #[Post('token/refresh', '刷新登录凭证')]
+    public function refreshToken(): mixed
+    {
+        $refreshToken = (string) $this->request->post('refresh_token', '');
+        if (! $refreshToken) {
+            return $this->fail('缺少刷新TOKEN');
+        }
+
+        return $this->success($this->service->refreshToken($refreshToken), tips: 0);
     }
 
     /**
@@ -174,17 +224,15 @@ class LoginController extends AuthController
      * @throws ValidationException
      */
     #[Put('common/savePassword', '修改密码', 'auth.admin')]
-    #[Put('savePassword', '修改密码', 'auth.admin')]
+    #[Put('savePassword', '修改密码')]
     public function savePassword(UserLoginRequest $request)
     {
         $request->scene('updatePassword')->check();
-
         [$phone, $password] = $request->postMore([
             ['phone', ''],
             ['password', ''],
         ], true);
-
-        $this->service->password(auth('admin')->id(), $phone, $password);
+        $this->service->password(auth('admin')->id(), (string) $phone, $password);
 
         return $this->success('common.update.succ');
     }

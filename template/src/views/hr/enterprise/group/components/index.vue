@@ -2,27 +2,30 @@
   <div>
     <el-dialog
       :title="formData.title"
-      :visible.sync="dialogFormVisible"
+      v-model="dialogFormVisible"
       :width="formData.width"
       :modal="true"
       :append-to-body="true"
       :before-close="handleClose"
     >
       <formCreate v-if="rules.length > 0" ref="fc" :option="option" :rule="rules" />
-      <div slot="footer" class="dialog-footer">
-        <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
-        <el-button size="small" type="primary" @click="handleConfirm('ruleForm')">
-          {{ type === 2 ? $t('setting.invitationaddlink') : $t('public.ok') }}
-        </el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleClose">取消</el-button>
+          <el-button type="primary" @click="handleConfirm('ruleForm')">
+            {{ type === 2 ? '生成邀请链接' : '确定' }}
+          </el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>
 
 <script>
 import formCreate from '@form-create/element-ui'
-import request from '@/api/request'
+import request from '@/api/request.ts'
 export default {
+  emits: ['isOk', 'changData'],
   name: 'DialogForm',
   components: { formCreate: formCreate.$form() },
   props: {
@@ -62,7 +65,7 @@ export default {
               closeBtn: false,
               okBtn: false,
               onLoad: (e) => {
-                e.fApi = this.$refs.fc.$f
+                e.fApi = this.$refs.fc.fapi
               }
             }
           }
@@ -90,7 +93,7 @@ export default {
     },
     // 提交
     handleConfirm() {
-      this.$refs.fc.$f.submit((formDatas, fApi) => {
+      this.$refs.fc.fapi.submit((formDatas, fApi) => {
         if (this.formData.hasOwnProperty('options')) {
           formDatas = Object.assign(formDatas, this.formData.options)
         }
@@ -106,20 +109,20 @@ export default {
         } else {
           this.$emit('changData', formDatas)
         }
-      })
+      }).catch(() => {}) // 校验不通过时 reject，错误已显示在表单上
     }
   }
 }
 </script>
 
 <style lang="scss" scoped>
-/deep/.tips {
+:deep(.tips) {
   font-size: 13px;
   color: #999;
   margin-bottom: 20px;
   margin-left: 75px;
 }
-/deep/ .el-input-group__append {
+:deep(.el-input-group__append) {
   top: 0;
 }
 .dialog-footer {
@@ -127,7 +130,7 @@ export default {
   border-top: 1px solid #e6ebf5;
   text-align: right;
 }
-/deep/.el-cascader {
+:deep(.el-cascader) {
   width: 100%;
 }
 </style>

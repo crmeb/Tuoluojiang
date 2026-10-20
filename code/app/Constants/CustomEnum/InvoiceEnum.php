@@ -43,12 +43,12 @@ final class InvoiceEnum extends Enum
     public const STATUS_REVOKE = 3;
 
     /**
-     * 发票状态：发票已作废.
+     * 发票状态：发票已冲红.
      */
     public const STATUS_CANCEL = -1;
 
     /**
-     * 发票状态：申请作废中.
+     * 发票状态：申请冲红中.
      */
     public const STATUS_APPLY_CANCEL = 4;
 

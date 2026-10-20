@@ -1,79 +1,67 @@
 <template>
   <div>
-    <el-dialog :title="title" :visible.sync="dialogFormVisible" width="45%" v-bind="$attrs">
+    <el-dialog :title="title" v-model="dialogFormVisible" width="560px" v-bind="$attrs">
       <!-- 工作经历 -->
-      <el-form :model="workForm" ref="workForm" :rules="workRules" label-width="90px" v-if="add === 'work'">
+      <el-form :model="workForm" ref="workForm" :rules="workRules" label-width="auto" v-if="add === 'work'">
         <div class="form-box">
           <div class="form-item" v-for="(item, index) in workList" :key="index">
             <el-form-item :prop="item.value">
-              <span slot="label">{{ item.label }}</span>
+              <template #label>
+                <span>{{ item.label }}</span>
+              </template>
               <!-- date -->
-              <el-date-picker
-                v-if="item.type === 'date'"
-                v-model="workForm[item.value]"
-                type="date"
-                :placeholder="item.placeholder"
-                value-format="yyyy-MM-dd"
-              >
+              <el-date-picker v-if="item.type === 'date'" v-model="workForm[item.value]" type="date"
+                style="width: 100%" :placeholder="item.placeholder" value-format="YYYY-MM-DD">
               </el-date-picker>
               <!-- input -->
-              <el-input
-                v-if="item.type === 'input'"
-                v-model="workForm[item.value]"
-                :size="item.size || 'small'"
-                clearable
-                :placeholder="item.placeholder"
-              />
-              <el-input v-if="item.type === 'textarea'" type="textarea" v-model="workForm[item.value]"></el-input>
+              <el-input v-if="item.type === 'input'" v-model="workForm[item.value]" style="width: 100%"
+                clearable :placeholder="item.placeholder" />
+              <el-input v-if="item.type === 'textarea'" type="textarea" :rows="4" resize="none"
+                v-model="workForm[item.value]"></el-input>
             </el-form-item>
           </div>
         </div>
-        <div slot="footer" class="dialog-footer">
-          <el-button type="primary" @click="submitFnn()">确 定</el-button>
-        </div>
+        <template #footer>
+          <div class="dialog-footer">
+            <el-button @click="cancelFn">取消</el-button>
+            <el-button type="primary" @click="submitFnn()">确 定</el-button>
+          </div>
+        </template>
       </el-form>
       <!-- 教育经历 -->
-      <el-form
-        :model="educationForm"
-        ref="educationForm"
-        :rules="educationRules"
-        label-width="90px"
-        v-if="add === 'education'"
-      >
+      <el-form :model="educationForm" ref="educationForm" :rules="educationRules" label-width="90px"
+        v-if="add === 'education'">
         <div class="form-box">
           <div class="form-item" v-for="(item, index) in educationList" :key="index">
             <el-form-item :prop="item.value">
-              <span slot="label">{{ item.label }}</span>
+              <template #label>
+                <span>{{ item.label }}</span>
+              </template>
               <!-- date -->
-              <el-date-picker
-                v-if="item.type === 'date'"
-                v-model="educationForm[item.value]"
-                type="date"
-                :placeholder="item.placeholder"
-                value-format="yyyy-MM-dd"
-              >
+              <el-date-picker v-if="item.type === 'date'" v-model="educationForm[item.value]" type="date"
+                style="width: 100%" :placeholder="item.placeholder" value-format="YYYY-MM-DD">
               </el-date-picker>
               <!-- input -->
-              <el-input
-                v-if="item.type === 'input'"
-                v-model="educationForm[item.value]"
-                :size="item.size || 'small'"
-                clearable
-                :placeholder="item.placeholder"
-              />
-              <el-input v-if="item.type === 'textarea'" type="textarea" v-model="educationForm[item.value]"></el-input>
+              <el-input v-if="item.type === 'input'" v-model="educationForm[item.value]"
+                style="width: 100%" clearable :placeholder="item.placeholder" />
+              <el-input v-if="item.type === 'textarea'" type="textarea" :rows="4" resize="none"
+                v-model="educationForm[item.value]"></el-input>
             </el-form-item>
           </div>
         </div>
       </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitFnn()">确 定</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="cancelFn">取消</el-button>
+          <el-button type="primary" @click="submitFnn()">确定</el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>
 <script>
 export default {
+  emits: ['addWorkFn'],
   name: 'addWork',
   components: {},
   props: {
@@ -171,7 +159,7 @@ export default {
           placeholder: '请输入职位'
         },
         {
-          type: 'input',
+          type: 'textarea',
           label: '工作描述：',
           value: 'describe',
           placeholder: '请输入工作描述'
@@ -256,7 +244,8 @@ export default {
   methods: {
     submitFn() {
       if (+this.workForm.end_time < +this.workForm.start_time) {
-        alert('结束日期需大于开始日期')
+        this.$message.warning('结束日期需大于开始日期')
+        return
       }
       if (this.add == 'work') {
         this.$refs.workForm.validate((valid) => {
@@ -285,16 +274,25 @@ export default {
     },
 
     debounce(func, wait = 1000) {
-      var timer //计时器
+      let timer //计时器
       return function () {
-        var args = arguments
-        var that = this
+        const args = arguments
+        const that = this
 
         clearTimeout(timer)
         timer = setTimeout(() => {
           func.apply(that, args)
         }, wait)
       }
+    },
+    cancelFn() {
+
+      if (this.add == 'work') {
+        this.$refs.workForm.resetFields()
+      } else {
+        this.$refs.educationForm.resetFields()
+      }
+      this.dialogFormVisible = false
     },
     // 重置
     resetForm() {

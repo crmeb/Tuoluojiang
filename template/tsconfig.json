@@ -1,0 +1,49 @@
+{
+  // 混编约定：存量 .js / .vue(js) 只做「允许被引用」，不做类型检查（checkJs: false）；
+  // 新写的 .ts / .tsx / <script lang="ts"> 才走完整 strict 校验。
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "preserve",
+    "jsxFactory": "h",
+
+    "strict": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+
+    // 只做类型检查，产物一律由 Vite/esbuild 生成
+    "noEmit": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+
+    // 存量 js 互操作
+    "allowJs": true,
+    "checkJs": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    // vite.config.ts 走 native configLoader 时要求相对导入带扩展名
+    "allowImportingTsExtensions": true,
+
+    // 不设 baseUrl：TS 6 起它已弃用，paths 会相对本文件所在目录解析，语义等价
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "types": ["vite/client", "node"]
+  },
+
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.js",
+    "src/**/*.tsx",
+    "src/**/*.d.ts",
+    "src/**/*.vue",
+    "build/**/*.ts",
+    "vite.config.ts",
+    "eslint.config.ts"
+  ],
+  "exclude": ["node_modules", "dist", "src/assets"]
+}

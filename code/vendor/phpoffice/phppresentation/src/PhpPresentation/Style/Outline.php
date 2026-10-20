@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of PHPPresentation - A pure PHP library for reading and writing
  * presentations documents.
@@ -10,15 +11,17 @@
  * file that was distributed with this source code. For the full list of
  * contributors, visit https://github.com/PHPOffice/PHPPresentation/contributors.
  *
- * @link        https://github.com/PHPOffice/PHPPresentation
- * @copyright   2009-2015 PHPPresentation contributors
+ * @see        https://github.com/PHPOffice/PHPPresentation
+ *
  * @license     http://www.gnu.org/licenses/lgpl.txt LGPL version 3
  */
+
+declare(strict_types=1);
 
 namespace PhpOffice\PhpPresentation\Style;
 
 /**
- * \PhpOffice\PhpPresentation\Style\Outline
+ * \PhpOffice\PhpPresentation\Style\Outline.
  */
 class Outline
 {
@@ -26,53 +29,44 @@ class Outline
      * @var Fill
      */
     protected $fill;
+
     /**
      * @var int
      */
-    protected $width;
+    protected $width = 1;
 
-    /**
-     * @return Outline
-     */
     public function __construct()
     {
         $this->fill = new Fill();
     }
 
-    /**
-     * @return Fill
-     */
-    public function getFill()
+    public function getFill(): Fill
     {
         return $this->fill;
     }
 
-    /**
-     * @param Fill $fill
-     * @return Outline
-     */
-    public function setFill(Fill $fill)
+    public function setFill(Fill $fill): self
     {
         $this->fill = $fill;
+
         return $this;
     }
 
     /**
-     * @return int
+     * Value in pixels.
      */
-    public function getWidth()
+    public function getWidth(): int
     {
         return $this->width;
     }
 
     /**
-     * Value in points
-     * @param int $width
-     * @return Outline
+     * Value in pixels.
      */
-    public function setWidth($width)
+    public function setWidth(int $pValue = 1): self
     {
-        $this->width = intval($width);
+        $this->width = $pValue;
+
         return $this;
     }
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,12 +18,12 @@ namespace App\Http\Service\Config;
 use App\Http\Dao\Config\ConfigDao;
 use App\Http\Model\BaseModel;
 use App\Http\Service\BaseService;
-use crmeb\interfaces\ConfigInterface;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\services\ConfigService;
-use crmeb\services\FormService;
-use crmeb\services\FormService as Form;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\interfaces\ConfigInterface;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\services\ConfigService;
+use Tuoluojiang\Open\services\FormService;
+use Tuoluojiang\Open\services\FormService as Form;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use FormBuilder\Exception\FormBuilderException;
 use FormBuilder\UI\Elm\Components\Checkbox;
 use FormBuilder\UI\Elm\Components\ColorPicker;
@@ -123,7 +123,7 @@ class CompanyConfigService extends BaseService implements ConfigInterface, Resou
      */
     public function resourceCreate(array $other = []): array
     {
-        return $this->elForm('创建配置', $this->createDefaultFormRule(), '/admin/system/config', 'post', ['width' => '800px']);
+        return $this->createElementForm('创建配置', $this->createDefaultFormRule(), '/admin/system/config', 'post', ['width' => '800px']);
     }
 
     /**
@@ -137,7 +137,7 @@ class CompanyConfigService extends BaseService implements ConfigInterface, Resou
         if (! $config) {
             throw $this->exception('修改配置');
         }
-        return $this->elForm('修改配置', $this->createDefaultFormRule($config->toArray()), '/admin/system/config/' . $id, 'put', ['width' => '800px']);
+        return $this->createElementForm('修改配置', $this->createDefaultFormRule($config->toArray()), '/admin/system/config/' . $id, 'put', ['width' => '800px']);
     }
 
     /**
@@ -171,7 +171,7 @@ class CompanyConfigService extends BaseService implements ConfigInterface, Resou
         foreach ($keys as $k) {
             unset($rules[$k]);
         }
-        return $this->elForm('修改配置', $rules, '/admin/system/config/all/' . $cateId, 'put');
+        return $this->createElementForm('修改配置', $rules, '/admin/system/config/all/' . $cateId, 'put');
     }
 
     /**
@@ -266,7 +266,6 @@ class CompanyConfigService extends BaseService implements ConfigInterface, Resou
      * @param string $category
      * @param string $url
      * @param string $method
-     * @param mixed $entid
      * @return array
      * @throws BindingResolutionException
      * @throws \ReflectionException
@@ -293,14 +292,11 @@ class CompanyConfigService extends BaseService implements ConfigInterface, Resou
                     break;
             }
         }
-        return $this->elForm($title, $form, $url, $method);
+        return $this->createElementForm($title, $form, $url, $method);
     }
 
     /**
      * 保存分类配置.
-     * @param mixed $entid
-     * @param mixed $category
-     * @param mixed $data
      * @return bool
      * @throws BindingResolutionException
      */
@@ -318,8 +314,6 @@ class CompanyConfigService extends BaseService implements ConfigInterface, Resou
     /**
      * 获取工作台配置.
      * @param string $cateName
-     * @param mixed $name
-     * @param mixed $entId
      * @return array|ConfigService|int|mixed|string
      */
     public function getBenchConfig($name, $entId, $cateName = 'work_bench')

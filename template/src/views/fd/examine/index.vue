@@ -4,7 +4,7 @@
     <el-card class="mb14 normal-page">
       <div class="from-s">
         <div class="flex-row flex-col">
-          <el-button class="mb20" size="small" @click="getExportData"> 导出 </el-button>
+          <el-button class="mb20" @click="getExportData"> 导出 </el-button>
           <formBox ref="formBox" :activeName="activeName" @confirmData="confirmData" />
         </div>
       </div>
@@ -23,7 +23,7 @@
         >
           <el-table-column prop="date" min-width="150" sortable label="付款时间" />
           <el-table-column prop="bill_types" label="记录类型" min-width="90">
-            <template slot-scope="scope">
+            <template #default="scope">
               <el-tag :type="scope.row.types == 2 ? 'warning' : 'success'">{{
                 scope.row.types == 2 ? '支出' : '收入'
               }}</el-tag>
@@ -32,24 +32,26 @@
 
           <el-table-column prop="num" min-width="90" label="付款金额(元)" />
           <el-table-column prop="pay_type" min-width="100" label="支付方式">
-            <template slot-scope="scope">
+            <template #default="scope">
               <span>{{ scope.row.pay_type !== '' ? scope.row.pay_type : '--' }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="treaty.contract_name" label="合同名称" min-width="120"> </el-table-column>
-          <el-table-column prop="treaty.contract_no" label="合同编号" min-width="100"> </el-table-column>
+          <el-table-column prop="treaty.contract_name" label="订单名称" min-width="120"> </el-table-column>
+          <el-table-column prop="treaty.contract_no" label="订单编号" min-width="100"> </el-table-column>
           <el-table-column prop="created_at" label="申请时间" min-width="140"> </el-table-column>
 
           <el-table-column prop="status" min-width="120" label="付款审核状态">
-            <template slot-scope="scope">
-              <el-tag v-if="scope.row.status === 0" type="warning" size="mini"> {{ $t('customer.audit') }}</el-tag>
-              <el-tag v-if="scope.row.status === 1" type="info" size="mini"> {{ $t('customer.passed') }}</el-tag>
+            <template #default="scope">
+              <el-tag size="small" v-if="scope.row.status === 0" type="warning"> 待审核</el-tag>
+              <el-tag size="small" v-if="scope.row.status === 1" type="info"> 已通过</el-tag>
               <el-popover v-if="scope.row.status === 2" trigger="hover" placement="top">
-                <p>{{ $t('customer.reason') }}:</p>
+                <p>原因:</p>
                 <p>{{ scope.row.fail_msg }}</p>
-                <div slot="reference">
-                  <el-tag type="danger" size="mini"> {{ $t('customer.fail') }}</el-tag>
-                </div>
+                <template #reference>
+                  <div>
+                    <el-tag size="small" type="danger"> 未通过</el-tag>
+                  </div>
+                </template>
               </el-popover>
             </template>
           </el-table-column>
@@ -58,47 +60,49 @@
             prop="address"
             fixed="right"
             v-if="activeName == '1'"
-            :label="$t('public.operation')"
+            label="操作"
             min-width="160"
           >
-            <template slot-scope="scope">
-              <el-button type="text" @click="handleCheck(scope.row)" v-hasPermi="['fd:examine:check']">查看</el-button>
+            <template #default="scope">
+              <el-button type="primary" link @click="handleCheck(scope.row)" v-hasPermi="['fd:examine:check']">查看</el-button>
 
-              <el-button type="text" @click="handleContract(scope.row, '')">通过</el-button>
-              <el-button type="text" @click="refuse(scope.row)">拒绝</el-button>
+              <el-button type="primary" link @click="handleContract(scope.row, '')">通过</el-button>
+              <el-button type="primary" link @click="refuse(scope.row)">拒绝</el-button>
             </template>
           </el-table-column>
           <el-table-column
             prop="address"
             fixed="right"
             v-if="activeName == '2'"
-            :label="$t('public.operation')"
+            label="操作"
             min-width="180"
           >
-            <template slot-scope="scope">
-              <el-button type="text" @click="handleCheck(scope.row)" v-hasPermi="['fd:examine:check']">查看</el-button>
+            <template #default="scope">
+              <el-button type="primary" link @click="handleCheck(scope.row)" v-hasPermi="['fd:examine:check']">查看</el-button>
               <el-button
-                type="text"
+                type="primary" link
                 v-if="scope.row.status !== 0"
                 @click="handleContract(scope.row, 'edit')"
                 v-hasPermi="['fd:examine:edit']"
                 >编辑</el-button
               >
               <el-dropdown v-if="scope.row.status !== 0 && scope.row.invoice_id == 0">
-                <span class="el-dropdown-link el-button--text el-button">
-                  {{ $t('hr.more') }}
-                </span>
-                <el-dropdown-menu>
-                  <el-dropdown-item @click.native="withdraw(scope.row)">撤回审核 </el-dropdown-item>
-                  <el-dropdown-item @click.native="handleDelete(scope.row)">删除 </el-dropdown-item>
-                </el-dropdown-menu>
+                <el-button type="primary" link class="el-dropdown-link">
+                  更多
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item @click="withdraw(scope.row)">撤回审核 </el-dropdown-item>
+                    <el-dropdown-item @click="handleDelete(scope.row)">删除 </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
               </el-dropdown>
               <template v-else>
-                <el-button type="text" v-if="scope.row.status !== 0" @click="handleDelete(scope.row)">删除</el-button>
+                <el-button type="primary" link v-if="scope.row.status !== 0" @click="handleDelete(scope.row)">删除</el-button>
               </template>
 
-              <el-button v-if="scope.row.status == 0" type="text" @click="handleContract(scope.row)">通过</el-button>
-              <el-button type="text" v-if="scope.row.status == 0" @click="refuse(scope.row)">拒绝</el-button>
+              <el-button v-if="scope.row.status == 0" type="primary" link @click="handleContract(scope.row)">通过</el-button>
+              <el-button type="primary" link v-if="scope.row.status == 0" @click="refuse(scope.row)">拒绝</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -123,7 +127,7 @@
       :title="title"
       top="25vh"
       :append-to-body="true"
-      :visible.sync="dialogVisible"
+      v-model="dialogVisible"
       width="540px"
     >
       <div class="line" />
@@ -132,8 +136,8 @@
           <el-input type="textarea" v-model="form.remarks"></el-input>
         </el-form-item>
         <div class="footer">
-          <el-button size="small" class="btn" @click="cancelFn">取消</el-button>
-          <el-button size="small" type="primary" @click="submitFn" class="btn">确定</el-button>
+          <el-button class="btn" @click="cancelFn">取消</el-button>
+          <el-button type="primary" @click="submitFn" class="btn">确定</el-button>
         </div>
       </el-form>
     </el-dialog>
@@ -147,7 +151,7 @@
       @isOk="isOk"
     ></operationDialog>
     <!-- 查看图片 -->
-    <el-image-viewer v-if="isImage" :on-close="closeImageViewer" :url-list="srcList" />
+    <el-image-viewer v-if="isImage" @close="closeImageViewer" :url-list="srcList" />
     <!-- 导出组件 -->
     <export-excel :template="false" :save-name="saveName" :export-data="exportData" ref="exportExcel" />
     <!-- 查看付款记录详情侧滑弹窗 -->
@@ -163,18 +167,21 @@
 </template>
 
 <script>
-import { clientBillListApi, clientBillStatusApi, getbillCate, billCateApi, billDelFinanceApi } from '@/api/enterprise'
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
+import { modalSure } from '@/libs/public.ts'
+import { clientBillListApi, getbillCate, billCateApi, billDelFinanceApi } from '@/api/enterprise.ts'
+import { clientBillStatusApi } from '@/api/client.ts'
 
 export default {
   name: 'Index',
   components: {
-    formBox: () => import('./components/formBox'),
-    examineDialog: () => import('@/views/fd/examine/components/examineDialog'),
-    operationDialog: () => import('@/views/fd/examine/components/operationDialog'),
-    ElImageViewer: () => import('element-ui/packages/image/src/image-viewer'),
-    exportExcel: () => import('@/components/common/exportExcel'),
-    applyForPayment: () => import('@/views/customer/list/components/applyForPayment'),
-    expendDialog: () => import('@/views/customer/list/components/expendDialog')
+    formBox: defineAsyncComponent(() => import('./components/formBox')),
+    examineDialog: defineAsyncComponent(() => import('@/views/fd/examine/components/examineDialog')),
+    operationDialog: defineAsyncComponent(() => import('@/views/fd/examine/components/operationDialog')),
+    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel')),
+    applyForPayment: defineAsyncComponent(() => import('@/views/customer/list/components/applyForPayment')),
+    expendDialog: defineAsyncComponent(() => import('@/views/customer/list/components/expendDialog'))
   },
   props: {
     activeName: {
@@ -279,7 +286,7 @@ export default {
         this.paymentType = ''
       }
       this.fromData = {
-        title: this.$t('customer.viewcustomer'),
+        title: '查看客户',
         width: '500px',
         data: item,
         isClient: false,
@@ -293,7 +300,7 @@ export default {
       let data = {
         status: -1
       }
-      await this.$modalSure('确认撤回审核状态吗')
+      await modalSure('确认撤回审核状态吗')
       await clientBillStatusApi(row.id, data)
       this.getTableData()
     },
@@ -305,7 +312,7 @@ export default {
     },
     // 导出
     getExportData() {
-      this.saveName = '导出付款审核_' + this.$moment(new Date()).format('MM_DD_HH_mm_ss') + '.xlsx'
+      this.saveName = '导出付款审核_' + dayjs(new Date()).format('MM_DD_HH_mm_ss') + '.xlsx'
       this.where.limit = 0
 
       let where = {
@@ -321,7 +328,7 @@ export default {
       clientBillListApi(where).then((res) => {
         let data = res.data.list
         let aoaData = [
-          ['付款时间', '付款金额', '支付方式', '备注', '业务类型', '客户名称', '合同名称', '合同编号', '业务员']
+          ['付款时间', '付款金额', '支付方式', '备注', '业务类型', '客户名称', '订单名称', '订单编号', '业务员']
         ]
         if (data.length > 0) {
           data.forEach((value) => {
@@ -424,13 +431,13 @@ export default {
       this.srcList = []
     },
     getStatus(id) {
-      var str = ''
+      let str = ''
       if (id === 0) {
-        str = this.$t('customer.audit')
+        str = '待审核'
       } else if (id === 1) {
-        str = this.$t('customer.passed')
+        str = '已通过'
       } else {
-        str = this.$t('customer.fail')
+        str = '未通过'
       }
       return str
     },
@@ -443,7 +450,7 @@ export default {
 
     // 删除
     async handleDelete(item) {
-      await this.$modalSure(this.$t('finance.message5'))
+      await modalSure('删除后，对应的订单付款及收支记账也会删除')
       await billDelFinanceApi(item.id)
       this.getTableData()
     },
@@ -451,7 +458,7 @@ export default {
     // 编辑
     async handleEdit(item) {
       this.config = {
-        title: this.$t('customer.fundaudit'),
+        title: '资金审核',
         width: '480px',
         type: 1,
         data: item
@@ -525,7 +532,7 @@ export default {
     }
   }
 }
-/deep/ .el-drawer__body {
+:deep(.el-drawer__body) {
   height: 100%;
   overflow-y: auto;
 }
@@ -539,20 +546,6 @@ export default {
   margin: 0 24px;
 }
 
-.dialog {
-  /deep/ .el-dialog {
-    border-radius: 6px;
-    height: 249px;
-  }
-  /deep/ .el-dialog__body {
-    padding: 0;
-  }
-  /deep/ .el-textarea__inner {
-    width: 400px;
-    height: 90px;
-    font-size: 13px;
-  }
-}
 </style>
 
 <style lang="scss">
@@ -597,6 +590,24 @@ export default {
     background: rgba(153, 153, 153, 0.05);
     border: 1px solid #999999;
     color: #999999;
+  }
+}
+</style>
+
+<style lang="scss">
+// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
+.el-dialog.dialog {
+  & {
+    border-radius: 6px;
+    height: 249px;
+  }
+  .el-dialog__body {
+    padding: 0;
+  }
+  .el-textarea__inner {
+    width: 400px;
+    height: 90px;
+    font-size: 13px;
   }
 }
 </style>

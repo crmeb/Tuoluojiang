@@ -14,13 +14,13 @@
     <el-button
       ref="fieldEditor"
       :type="field.options.type"
-      :size="field.options.size"
+      :size="toElSize(field.options.size)"
       :plain="field.options.plain"
       :round="field.options.round"
       :circle="field.options.circle"
       :icon="field.options.icon"
       :disabled="field.options.disabled"
-      @click.native="handleButtonWidgetClick"
+      @click="handleButtonWidgetClick"
     >
       {{ field.options.label }}</el-button
     >
@@ -29,14 +29,12 @@
 
 <script>
 import StaticContentWrapper from './static-content-wrapper'
-import emitter from '@/utils/emitter'
-import i18n, { translate } from '@/utils/i18n'
+import i18n, { translate } from '@/utils/i18n.ts'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
 
 export default {
   name: 'button-widget',
-  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
-  mixins: [emitter, fieldMixin, i18n],
+  mixins: [fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -83,7 +81,7 @@ export default {
     this.handleOnMounted()
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     this.unregisterFromRefList()
   },
 
@@ -94,4 +92,3 @@ export default {
 <style lang="scss" scoped>
 @import '../../../../styles/global.scss'; //* static-content-wrapper已引入，还需要重复引入吗？ *//
 </style>
-@/utils/i18ns

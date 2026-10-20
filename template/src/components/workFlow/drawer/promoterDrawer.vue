@@ -3,7 +3,7 @@
   <el-drawer
     :append-to-body="true"
     :title="title"
-    :visible.sync="$store.state.business.promoterDrawer"
+    v-model="flowDesignerStore.promoterDrawer"
     direction="rtl"
     class="set_promoter"
     size="550px"
@@ -11,21 +11,39 @@
   >
     <div class="demo-drawer__content">
       <div class="promoter_content drawer_content">
+        <el-radio-group v-model="radio" class="mt20">
+          <el-radio :label="2" :value="2">按部门添加</el-radio>
+          <el-radio :label="1" :value="1">按人员添加</el-radio>
+        </el-radio-group>
         <p class="title1">可提交申请的成员</p>
         <p class="title2">模板范围内的成员可提交，修改后，模板可见范围将被同步修改</p>
+
         <select-member
+          v-if="radio == 1"
           :value="flowPermission.userList || []"
           @getSelectList="getSelectList"
           style="width: 100%"
         ></select-member>
+
+        <!-- 部门 -->
+        <select-department
+          v-if="radio == 2"
+          :value="flowPermission.depList || []"
+          @changeMastart="changeMastart"
+          style="width: 100%"
+        ></select-department>
       </div>
     </div>
   </el-drawer>
 </template>
 <script>
+import { mapStores } from 'pinia'
+import { useFlowDesignerStore } from '@/stores/flowDesigner.ts'
+import { defineAsyncComponent } from 'vue'
 export default {
   components: {
-    selectMember: () => import('@/components/form-common/select-member')
+    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
+    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department'))
   },
   data() {
     return {
@@ -33,19 +51,27 @@ export default {
         depList: [],
         userList: []
       },
+      radio: 1,
       userList: [],
       depList: [],
       title: '申请人'
     }
   },
   computed: {
+    ...mapStores(useFlowDesignerStore),
     flowPermission1() {
-      return this.$store.state.business.flowPermission.value
+      return this.flowDesignerStore.flowPermission.value
     }
   },
   watch: {
     flowPermission1(val) {
       this.flowPermission = val
+      if (this.flowPermission.userList.length > 0) {
+        this.radio = 1
+      }
+      if (this.flowPermission.depList.length > 0) {
+        this.radio = 2
+      }
     }
   },
   methods: {
@@ -61,17 +87,21 @@ export default {
         })
       }
       this.flowPermission.depList = arr1
-      this.$store.commit('updateFlowPermission', {
+      this.flowDesignerStore.flowPermission = {
         value: this.flowPermission,
         flag: true,
-        id: this.$store.state.business.flowPermission.id
-      })
+        id: this.flowDesignerStore.flowPermission.id
+      }
       this.closeDrawer()
     },
     // 选择成员完成回调
     getSelectList(data) {
       this.flowPermission.depList = []
       this.flowPermission.userList = data
+    },
+    changeMastart(data) {
+      this.flowPermission.userList = []
+      this.flowPermission.depList = data
     },
 
     cardTag(type, index) {
@@ -82,7 +112,7 @@ export default {
       }
     },
     closeDrawer() {
-      this.$store.commit('updatePromoter', false)
+      this.flowDesignerStore.promoterDrawer = false
     }
   }
 }
@@ -107,7 +137,7 @@ export default {
     }
   }
 }
-/deep/ .plan-footer-one {
+:deep(.plan-footer-one) {
   height: auto;
   line-height: 32px;
 }

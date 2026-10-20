@@ -15,8 +15,9 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Config;
 
-use App\Http\Dao\BaseDao;
 use App\Http\Model\Config\City;
+use App\Http\Dao\BaseDao;
+use Tuoluojiang\Open\traits\dao\BatchSearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 
 /**
@@ -25,6 +26,8 @@ use Illuminate\Contracts\Container\BindingResolutionException;
  */
 class CityDao extends BaseDao
 {
+    use BatchSearchTrait;
+
     /**
      * 获取省市区.
      * @param array|string[] $field

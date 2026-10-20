@@ -15,12 +15,12 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Frame;
 
-use App\Http\Dao\BaseDao;
-use App\Http\Model\BaseModel;
 use App\Http\Model\Frame\Frame;
 use App\Http\Model\Frame\FrameAssist;
-use crmeb\traits\dao\PathUpdateTrait;
-use crmeb\traits\dao\TogetherSearchTrait;
+use App\Http\Dao\BaseDao;
+use App\Http\Model\BaseModel;
+use Tuoluojiang\Open\traits\dao\PathUpdateTrait;
+use Tuoluojiang\Open\traits\dao\TogetherSearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -35,7 +35,6 @@ class FrameDao extends BaseDao
      * 分级排序列表.
      * @param array|string[] $field
      * @param string $sort
-     * @param mixed $where
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */

@@ -15,14 +15,15 @@ declare(strict_types=1);
 
 namespace App\Http\Controller\AdminApi\Report;
 
+use App\Constants\ModuleEnum;
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Requests\enterprise\user\EnterpriseUserDailyReplyRequest;
 use App\Http\Requests\enterprise\user\EnterpriseUserDailyRequest;
 use App\Http\Service\Report\ReportReplyService;
 use App\Http\Service\Report\ReportService;
-use crmeb\interfaces\ResourceControllerInterface;
-use crmeb\traits\ResourceControllerTrait;
-use crmeb\traits\SearchTrait;
+use Tuoluojiang\Open\interfaces\ResourceControllerInterface;
+use Tuoluojiang\Open\traits\ResourceControllerTrait;
+use Tuoluojiang\Open\traits\SearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -59,7 +60,7 @@ class ReportController extends AuthController implements ResourceControllerInter
 
     public function index()
     {
-        $this->withScopeFrame('user_id');
+        $this->withScopeFrame('user_id', module: ModuleEnum::REPORT);
         $where = $this->request->getMore($this->getSearchField());
         return $this->success($this->service->getList($where));
     }
@@ -150,7 +151,7 @@ class ReportController extends AuthController implements ResourceControllerInter
 
         // 部门汇报
         if ($type < 1) {
-            $this->withScopeFrame();
+            $this->withScopeFrame(module: ModuleEnum::REPORT);
             [$userIds] = $this->request->getMore([
                 ['uid', []],
             ], true);
@@ -165,7 +166,7 @@ class ReportController extends AuthController implements ResourceControllerInter
     #[Get('statistics', '汇报统计')]
     public function statistics()
     {
-        $this->withScopeFrame();
+        $this->withScopeFrame(module: ModuleEnum::REPORT);
         [$types, $time, $userIds] = $this->request->getMore([
             ['types', ''],
             ['time', ''],
@@ -180,7 +181,7 @@ class ReportController extends AuthController implements ResourceControllerInter
     #[Get('submit_list', '汇报提交列表')]
     public function submitList(): mixed
     {
-        $this->withScopeFrame();
+        $this->withScopeFrame(module: ModuleEnum::REPORT);
         [$types, $time, $userIds] = $this->request->getMore([
             ['types', ''],
             ['time', ''],
@@ -195,7 +196,7 @@ class ReportController extends AuthController implements ResourceControllerInter
     #[Get('no_submit_list', '未提交汇报人员列表')]
     public function noSubmitUserList(): mixed
     {
-        $this->withScopeFrame();
+        $this->withScopeFrame(module: ModuleEnum::REPORT);
         [$types, $time, $userIds] = $this->request->getMore([
             ['types', ''],
             ['time', ''],
@@ -246,7 +247,7 @@ class ReportController extends AuthController implements ResourceControllerInter
     #[Get('export', '汇报统计导出')]
     public function export(): mixed
     {
-        $this->withScopeFrame('user_id');
+        $this->withScopeFrame('user_id', module: ModuleEnum::REPORT);
         $where = $this->request->getMore([
             ['types', ''],
             ['time', ''],

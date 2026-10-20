@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,12 +16,12 @@ declare(strict_types=1);
 namespace App\Http\Service\Finance;
 
 use App\Http\Dao\Finance\BillCategoryDao;
+use App\Http\Service\Customer\ContractCategoryService;
 use App\Http\Model\BaseModel;
 use App\Http\Service\BaseService;
-use App\Http\Service\Client\ClientContractCategoryService;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\services\FormService as Form;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\services\FormService as Form;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -53,7 +53,6 @@ class BillCategoryService extends BaseService implements ResourceServicesInterfa
     /**
      * 获取财务流水分类tree型数据.
      * @param mixed $type
-     * @param mixed $notId
      * @return array
      * @throws BindingResolutionException
      * @throws \ReflectionException
@@ -70,7 +69,7 @@ class BillCategoryService extends BaseService implements ResourceServicesInterfa
      */
     public function getParentPath(array $path = [], int $pid = 0): array
     {
-        if ($pid && ! $path) {
+        if ($pid && !$path) {
             $info = $this->dao->get(['id' => $pid], ['id', 'path']);
             if ($info) {
                 $path   = $info->getAttribute('path') ?? [];
@@ -86,10 +85,10 @@ class BillCategoryService extends BaseService implements ResourceServicesInterfa
     public function resourceEdit(int $id, array $other = []): array
     {
         $rankCateInfo = $this->dao->get($id);
-        if (! $rankCateInfo) {
+        if (!$rankCateInfo) {
             throw $this->exception('修改的财务流水类别不存在');
         }
-        return $this->elForm('修改财务流水类别', $this->getBillCateFormRule(collect($rankCateInfo->toArray())), '/ent/bill_cate/' . $id, 'PUT');
+        return $this->createElementForm('修改财务流水类别', $this->getBillCateFormRule(collect($rankCateInfo->toArray())), '/ent/bill_cate/' . $id, 'PUT');
     }
 
     /**
@@ -97,7 +96,7 @@ class BillCategoryService extends BaseService implements ResourceServicesInterfa
      */
     public function resourceCreate(array $other = []): array
     {
-        return $this->elForm('添加财务流水类别', $this->getBillCateFormRule(collect($other)), '/ent/bill_cate');
+        return $this->createElementForm('添加财务流水类别', $this->getBillCateFormRule(collect($other)), '/ent/bill_cate');
     }
 
     /**
@@ -107,11 +106,11 @@ class BillCategoryService extends BaseService implements ResourceServicesInterfa
      */
     public function resourceSave(array $data)
     {
-        $path = $data['path'] ?? [];
+        $path = array_values(array_filter(array_map('intval', $data['path'] ?? [])));
         if ($path) {
             $data['pid'] = $path[count($path) - 1];
         }
-        if (! $data['pid']) {
+        if (!$data['pid']) {
             $data['pid'] = 0;
         }
         if ($this->dao->count(['pid' => $data['pid'], 'name' => $data['name']])) {
@@ -122,12 +121,12 @@ class BillCategoryService extends BaseService implements ResourceServicesInterfa
             throw $this->exception(($data['pid'] ? '直属' : '一级') . '分类数量到达上限');
         }
 
-        $data['path']  = array_filter($data['path']);
-        $data['level'] = count($data['path']) + 1;
+        $data['path']  = $path;
+        $data['level'] = count($path) + 1;
         if ($data['level'] > 5) {
             throw $this->exception('账目分类最多为5级');
         }
-        $data['cate_no'] = $this->generateNo((int) $data['pid']);
+        $data['cate_no'] = $this->generateNo((int)$data['pid']);
         Cache::tags('bill_category')->flush();
         return $this->dao->create($data);
     }
@@ -140,11 +139,11 @@ class BillCategoryService extends BaseService implements ResourceServicesInterfa
      */
     public function resourceUpdate($id, array $data)
     {
-        $path = $data['path'] ?? [];
+        $path = array_values(array_filter(array_map('intval', $data['path'] ?? [])));
         if ($path) {
             $data['pid'] = $path[count($path) - 1];
         }
-        if (! $data['pid']) {
+        if (!$data['pid']) {
             $data['pid'] = 0;
         }
         if ($data['pid'] == $id) {
@@ -152,7 +151,7 @@ class BillCategoryService extends BaseService implements ResourceServicesInterfa
         }
 
         $info = $this->dao->get($id, ['id', 'cate_no', 'path', 'types'])?->toArray();
-        if (! $info) {
+        if (!$info) {
             throw $this->exception('分类信息获取异常');
         }
 
@@ -164,23 +163,23 @@ class BillCategoryService extends BaseService implements ResourceServicesInterfa
             throw $this->exception(($data['pid'] ? '直属' : '一级') . '分类数量到达上限');
         }
 
-        $data['path']  = array_filter(array_map('intval', $data['path']));
-        $data['level'] = count($data['path']) + 1;
+        $data['path']  = $path;
+        $data['level'] = count($path) + 1;
         if ($data['level'] > 5) {
             throw $this->exception('账目分类最多为5级');
         }
         sort($data['path']) && sort($info['path']);
         unset($data['types']);
 
-        if (! $info['cate_no'] || $data['path'] != $info['path']) {
-            $data['cate_no'] = $this->generateNo((int) $data['pid']);
+        if (!$info['cate_no'] || $data['path'] != $info['path']) {
+            $data['cate_no'] = $this->generateNo((int)$data['pid']);
         }
-        $res = $this->transaction(function () use ($id, $data) {
+        $res = $this->transaction(function () use ($id, $data, $info) {
             $this->dao->update($id, $data);
             $children = $this->dao->select(['path' => $id], ['id', 'pid', 'path'])?->toArray();
             foreach ($children as $child) {
-                $key       = array_search($id, $child['path']);
-                $childPath = array_merge($data['path'], array_slice($child['path'], $key));
+                $key = array_search($id,  $child['path']);
+                $childPath = array_merge($data['path'],array_slice($child['path'], $key));
                 $this->dao->update($child['id'], ['path' => $childPath]);
             }
             return true;
@@ -191,7 +190,6 @@ class BillCategoryService extends BaseService implements ResourceServicesInterfa
 
     /**
      * 删除财务流水类别.
-     * @param mixed $id
      * @return int|mixed
      * @throws BindingResolutionException
      * @throws \ReflectionException
@@ -202,7 +200,7 @@ class BillCategoryService extends BaseService implements ResourceServicesInterfa
             throw $this->exception('该财务分类已经被使用，不可删除！');
         }
 
-        if (app()->get(ClientContractCategoryService::class)->count(['bill_cate_id' => $id])) {
+        if (app()->get(ContractCategoryService::class)->count(['bill_cate_id' => $id])) {
             throw $this->exception('该财务分类已经被使用，不可删除！');
         }
         Cache::tags('bill_category')->flush();
@@ -224,6 +222,7 @@ class BillCategoryService extends BaseService implements ResourceServicesInterfa
 
     /**
      * 获取自己和下级信息.
+     * @return array|Collection|\App\Http\Model\BaseModel[]|\Illuminate\Database\Eloquent\Collection|\Illuminate\Support\HigherOrderWhenProxy[]
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
@@ -250,7 +249,7 @@ class BillCategoryService extends BaseService implements ResourceServicesInterfa
         $parentNo = '';
         if ($pid) {
             $info = $this->dao->get(['id' => $pid], ['id', 'name', 'path', 'cate_no']);
-            if (! $info) {
+            if (!$info) {
                 throw $this->exception('分类信息获取异常');
             }
             $parentNo = $info->cate_no;
@@ -258,12 +257,12 @@ class BillCategoryService extends BaseService implements ResourceServicesInterfa
 
         for ($i = 0; $i < 99; ++$i) {
             $no = $parentNo . sprintf('%02d', $i + 1);
-            if (! $this->dao->count(['pid' => $pid, 'cate_no' => $no])) {
+            if (!$this->dao->count(['pid' => $pid, 'cate_no' => $no])) {
                 break;
             }
             $no = '';
         }
-        if (! $no) {
+        if (!$no) {
             throw $this->exception('分类ID生成失败');
         }
         return $no;
@@ -276,7 +275,7 @@ class BillCategoryService extends BaseService implements ResourceServicesInterfa
     public function getInfo(array $where, array $field = ['*'], array $with = [])
     {
         $info = $this->dao->get($where, $field, $with);
-        if (! $info) {
+        if (!$info) {
             throw $this->exception('分类数据不存在');
         }
         return $info->toArray();
@@ -284,11 +283,11 @@ class BillCategoryService extends BaseService implements ResourceServicesInterfa
 
     public function getSearchCate($cateIds, $types)
     {
-        if (! $cateIds) {
+        if (!$cateIds) {
             return $this->dao->select(['pid' => 0, 'types' => $types])?->toArray() ?: [];
         }
         $cats = $this->dao->select(['pid' => $cateIds, 'types' => $types])?->toArray() ?: [];
-        if (! $cats) {
+        if (!$cats) {
             $cats = $this->dao->select(['id' => $cateIds, 'types' => $types])?->toArray() ?: [];
         }
         return $cats;
@@ -312,18 +311,18 @@ class BillCategoryService extends BaseService implements ResourceServicesInterfa
      */
     protected function getBillCateFormRule(Collection $collection)
     {
-        $path = $this->getParentPath((array) $collection->get('path', []), (int) $collection->get('pid', 0));
+        $path = $this->getParentPath((array)$collection->get('path', []), (int)$collection->get('pid', 0)) ?: [0];
         return [
-            Form::radio('types', '分类类型', (int) ($collection->get('types') ?? 0))->disabled(true)->options([['value' => 1, 'label' => '收入'], ['value' => 0, 'label' => '支出']])->control([
+            Form::radio('types', '分类类型', (int)($collection->get('types') ?? 0))->disabled(true)->options([['value' => 1, 'label' => '收入'], ['value' => 0, 'label' => '支出']])->control([
                 [
                     'value' => 0,
                     'rule'  => [
-                        Form::cascader('path', '前置分类', $path)->options($this->getBillCateTree(0, (int) $collection->get('id', 0)))->props(['props' => ['checkStrictly' => true]])->clearable(true),
+                        Form::cascader('path', '前置分类')->options(array_merge([['value' => 0, 'label' => '顶级分类']], $this->getBillCateTree(0, (int)$collection->get('id', 0))))->appendRule('value', $path)->props(['props' => ['checkStrictly' => true]])->clearable(true),
                     ],
                 ], [
                     'value' => 1,
                     'rule'  => [
-                        Form::cascader('path', '前置分类', $path)->options($this->getBillCateTree(1, (int) $collection->get('id', 0)))->props(['props' => ['checkStrictly' => true]])->clearable(true),
+                        Form::cascader('path', '前置分类')->options(array_merge([['value' => 0, 'label' => '顶级分类']], $this->getBillCateTree(1, (int)$collection->get('id', 0))))->appendRule('value', $path)->props(['props' => ['checkStrictly' => true]])->clearable(true),
                     ],
                 ],
             ]),

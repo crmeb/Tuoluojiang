@@ -4,9 +4,9 @@
 
 <script>
 import myEcharts from '@/components/scEcharts/chart-widget.vue'
-import { queryChartData } from '@/api/chart'
+import { queryChartData } from '../chartQuery.ts'
 import { getPreviewNum } from '@/utils/util'
-import { EventBus } from '@/libs/bus'
+import { EventBus } from '@/libs/bus.ts'
 
 export default {
   name: 'pieChart-widget',
@@ -70,18 +70,18 @@ export default {
   mounted() {
     this.cutField = this.field
     this.initOption()
-    EventBus.$on('pieChangeValue', (e, type) => {
+    EventBus.$on('pieChangeValue', this.handlePieChangeValue)
+  },
+  unmounted() {
+    EventBus.$off('pieChangeValue', this.handlePieChangeValue)
+  },
+  methods: {
+    handlePieChangeValue(e, type) {
       if (type) {
         this.drillDown = true
       }
       this.cutField.options.setDimensional.dimension[0].value = e
-      // this.initOption()
-    })
-  },
-  destroyed() {
-    EventBus.$off('pieChangeValue')
-  },
-  methods: {
+    },
     initOption(isClick) {
       let { options, type } = this.cutField
       if (options) {
@@ -132,7 +132,11 @@ export default {
     },
     async getChartData(options, type, isClick) {
       this.loading = true
-      let res = await queryChartData(options, type)
+     let chartData = JSON.stringify({
+  widgetList: this.designer.widgetList,
+  formConfig: this.designer.formConfig
+})
+      let res = await queryChartData(options, type,chartData)
       if ((this.drillDown && res.data.length > 0) || !this.drillDown) {
         let { setChartConf } = this.cutField.options
         // 图例是否显示

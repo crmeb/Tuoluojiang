@@ -12,22 +12,19 @@
     :sub-form-row-id="subFormRowId"
   >
     <el-date-picker
-      v-show="!getReadMode() || field.isShow"
+      v-if="!getReadMode() || field.isShow"
       ref="fieldEditor"
       type="datetime"
       v-model="fieldModel"
       class="full-width-input"
       :disabled="disabledList.includes(field.options.name) ? true : field.options.disabled"
       :readonly="field.options.readonly"
-      :size="field.options.size"
+      :size="toElSize(field.options.size)"
       :clearable="field.options.clearable"
       :editable="field.options.editable"
-      :format="field.options.format || 'yyyy-MM-dd HH:mm:ss'"
-      :value-format="field.options.valueFormat || 'yyyy-MM-dd hh:mm:ss'"
+      :format="toDayjsFormat(field.options.format || 'YYYY-MM-DD HH:mm:ss')"
+      :value-format="toDayjsFormat(field.options.valueFormat || 'YYYY-MM-DD hh:mm:ss')"
       :placeholder="field.options.placeholder"
-      @focus="handleFocusCustomEvent"
-      @blur="handleBlurCustomEvent"
-      @change="handleChangeEvent"
     >
     </el-date-picker>
     <template v-if="getReadMode() && !field.isShow">
@@ -37,15 +34,15 @@
 </template>
 
 <script>
+import { toDayjsFormat } from '@/utils/date-format.ts'
+import dayjs from 'dayjs'
 import FormItemWrapper from './form-item-wrapper'
-import emitter from '@/utils/emitter'
-import i18n, { translate } from '@/utils/i18n'
+import i18n, { translate } from '@/utils/i18n.ts'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
 
 export default {
   name: 'date-time-picker-widget',
-  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
-  mixins: [emitter, fieldMixin, i18n],
+  mixins: [fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -104,21 +101,27 @@ export default {
 
   mounted() {
     this.handleOnMounted()
+
+    if (this.field.options.defaultType == '1') {
+      this.fieldModel = dayjs().format('YYYY-MM-DD HH:mm:ss')
+      this.handleChangeEvent(this.fieldModel)
+    }
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     this.unregisterFromRefList()
   },
 
-  methods: {}
+  methods: {
+    toDayjsFormat
+  }
 }
 </script>
 
 <style lang="scss" scoped>
 @import '../../../../styles/global.scss'; //* form-item-wrapper已引入，还需要重复引入吗？ *//
 
-.full-width-input {
+:deep(.full-width-input) {
   width: 100% !important;
 }
 </style>
-@/utils/i18ns

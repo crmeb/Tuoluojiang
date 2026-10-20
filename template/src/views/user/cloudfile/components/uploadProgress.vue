@@ -77,8 +77,10 @@
   </div>
 </template>
 <script>
-import { formatBytes } from '@/libs/public'
+import { defineAsyncComponent } from 'vue'
+import { formatBytes } from '@/utils/file.ts'
 export default {
+  emits: ['updateFileStatus', 'close'],
   name: 'OA-uploadProgress',
 
   props: {
@@ -190,7 +192,7 @@ export default {
     }
   },
 
-  components: { oaProgress: () => import('@/components/form-common/oa-progress') }
+  components: { oaProgress: defineAsyncComponent(() => import('@/components/form-common/oa-progress')) }
 }
 </script>
 <style scoped lang="scss">
@@ -200,12 +202,12 @@ export default {
   width: 407px;
   position: fixed;
   right: 37px;
-  bottom: 54px;
+  bottom: 80px;
   background: #fff;
   border: 1px solid #dcdfe6;
   border-radius: 6px;
   font-family: PingFang SC, PingFang SC;
-  /deep/ .el-collapse {
+  :deep(.el-collapse) {
     border: none;
 
     border-radius: 6px;

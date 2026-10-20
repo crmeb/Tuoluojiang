@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -20,6 +20,11 @@ namespace App\Constants\CustomEnum;
  */
 final class LiaisonEnum extends CustomEnum
 {
+    /**
+     * 新增联系人.
+     */
+    public const OPERATE_CREATE = 6;
+
     /**
      * 联系人.
      */
@@ -46,7 +51,11 @@ final class LiaisonEnum extends CustomEnum
     public const CUSTOMER_COMPANY_LIAISON = 147;
 
     public const LIAISON_VIEWER_LIST_DEFAULT_FIELD = [
-        'liaison_name', 'liaison_job', 'liaison_tel', 'e06d7159', 'e06d7152', 'e06d7153',
+        'liaison_name', 'liaison_job', 'liaison_tel', 'eid', 'work_customer',
+    ];
+
+    public const LIAISON_VIEWER_SEARCH_DEFAULT_FIELD = [
+        'liaison_name', 'liaison_job', 'liaison_tel',
     ];
 
     public const LIAISON_TYPE = [
@@ -58,6 +67,27 @@ final class LiaisonEnum extends CustomEnum
     ];
 
     public const LIAISON_NOT_ALLOW_DELETE_FIELD = [
-        'liaison_name', 'liaison_tel',
+        'liaison_name', 'liaison_tel', 'eid',
+    ];
+
+
+    public const LIAISON_LIST_FIELD = [
+        [
+            'field' => 'creator',
+            'name'  => '创建人',
+        ]
+    ];
+    public const LIAISON_SEARCH_FIELD = [
+        [
+            'field'      => 'customer_name',
+            'name'       => '客户名称',
+            'type'       => 'text',
+            'input_type' => 'input',
+        ],
+        [
+            'field'      => 'creator',
+            'name'       => '创建人',
+            'input_type' => 'personnel',
+        ]
     ];
 }

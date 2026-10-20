@@ -15,10 +15,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controller\AdminApi\Program;
 
+use App\Constants\ModuleEnum;
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Requests\enterprise\program\ProgramRequest;
 use App\Http\Service\Program\ProgramService;
-use crmeb\traits\SearchTrait;
+use Tuoluojiang\Open\traits\SearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -58,7 +59,7 @@ class ProgramController extends AuthController
      */
     public function index(): mixed
     {
-        $this->withScopeFrame();
+        $this->withScopeFrame(module: ModuleEnum::PROGRAM);
         $where = $this->request->getMore([
             ['name', '', 'name_like'],
             ['types', ''],
@@ -84,11 +85,11 @@ class ProgramController extends AuthController
     #[Get('select', '项目下拉列表')]
     public function select(): mixed
     {
-        $this->withScopeFrame();
+        $this->withScopeFrame(module: ModuleEnum::PROGRAM);
         $where = $this->request->getMore([
             ['types', ''],
             ['uid', []],
-            ['admin_uid', uuid_to_uid($this->uuid)],
+            ['admin_uid', auth('admin')->id()],
         ]);
 
         return $this->success($this->service->getSelect($where));

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,18 +18,18 @@ namespace App\Http\Service\Cloud;
 use App\Constants\CacheEnum;
 use App\Constants\CloudEnum;
 use App\Http\Dao\Cloud\CloudFileDao;
-use App\Http\Model\BaseModel;
 use App\Http\Service\Admin\AdminService;
-use App\Http\Service\BaseService;
 use App\Http\Service\Other\UploadService;
 use App\Task\message\CloudFileCreateRemind;
-use crmeb\exceptions\ServicesException;
-use crmeb\exceptions\UploadException;
-use crmeb\services\HttpService;
-use crmeb\services\phpoffice\PptService;
-use crmeb\services\phpoffice\SheetService;
-use crmeb\services\phpoffice\WordService;
-use crmeb\services\wps\WebOffice;
+use App\Http\Model\BaseModel;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\exceptions\ServicesException;
+use Tuoluojiang\Open\exceptions\UploadException;
+use Tuoluojiang\Open\services\HttpService;
+use Tuoluojiang\Open\services\phpoffice\PptService;
+use Tuoluojiang\Open\services\phpoffice\SheetService;
+use Tuoluojiang\Open\services\phpoffice\WordService;
+use Tuoluojiang\Open\services\wps\WebOffice;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
@@ -51,6 +51,7 @@ use Webpatser\Uuid\Uuid;
 
 /**
  * 云盘文件服务.
+ * @mixin CloudFileDao
  */
 class CloudFileService extends BaseService
 {
@@ -87,9 +88,7 @@ class CloudFileService extends BaseService
         if ($dao->value($fileId, 'user_id') == $uid) {
             return true;
         }
-        if ($auth) {
-            app()->get(CloudAuthService::class)->checkPermission($auth, $uid, $spaceId, $data);
-        } else {
+        if ($auth && ! app(CloudAuthService::class)->checkFilePermission($data['id'] ?? $spaceId, $uid, $auth)) {
             throw $this->exception('没有权限操作');
         }
     }
@@ -117,8 +116,9 @@ class CloudFileService extends BaseService
         [$page, $limit] = $this->getPageValue();
         $list           = $this->dao->setDefaultSort($sort)->select($where, ['id', 'user_id', 'type', 'name', 'path', 'file_name', 'file_ext', 'file_sn', 'file_size', 'file_type', 'upload_type', 'updated_at'], ['share', 'user'], $page, $limit)?->toArray();
         foreach ($list as &$item) {
-            $path         = array_map('intval', explode('/', trim($item['path'], '/')));
-            $item['path'] = implode('/', $this->dao->column(['id' => $path], 'name'));
+            $path             = array_map('intval', explode('/', trim($item['path'], '/')));
+            $item['is_admin'] = intval($this->dao->value($path[0] ?? 0, 'user_id') == $uid);
+            $item['path']     = implode('/', $this->dao->column(['id' => $path], 'name'));
         }
         $count = $this->dao->count($where);
         return $this->listData($list, $count);
@@ -332,7 +332,7 @@ class CloudFileService extends BaseService
 
     /**
      * 上传文件.
-     * @return BaseModel|Model
+     * @return mixed
      * @throws BindingResolutionException
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
@@ -341,7 +341,7 @@ class CloudFileService extends BaseService
      * @throws \PhpOffice\PhpWord\Exception\Exception
      * @throws \ReflectionException
      */
-    public function uploadFile(int $spaceId, int $uid, mixed $file)
+    public function uploadFile(int $spaceId, int $uid, mixed $file, array $option = [])
     {
         $this->checkAuth($spaceId, $uid, auth: CloudEnum::CREATE_AUTH, data: ['id' => $spaceId]);
         $key = 'upload.key.' . app('request')->ip();
@@ -350,21 +350,22 @@ class CloudFileService extends BaseService
         } else {
             Cache::tags([CacheEnum::TAG_OTHER])->add($key, 1, now()->endOfDay()->timestamp - now()->timestamp);
         }
-        $fileInfo = $this->formatConversion();
-        if (! $fileInfo) {
-            $time   = now()->toArray();
-            $dir    = 'cloud/' . $time['year'] . '/' . $time['month'] . '/' . $time['day'];
-            $upload = UploadService::init();
-            $res    = $upload->to($dir)->validate()->move($file);
-            if ($res === false) {
-                throw new UploadException($upload->getError());
-            }
-            $fileInfo                = $upload->getUploadInfo();
-            $fileInfo['file_ext']    = pathinfo($fileInfo['dir'], PATHINFO_EXTENSION);
-            $fileInfo['name']        = pathinfo($fileInfo['real_name'], PATHINFO_FILENAME);
-            $fileInfo['upload_type'] = (int) sys_config('upload_type', 1);
+
+        // $fileInfo = $this->formatConversion();
+        $time   = now()->toArray();
+        $dir    = 'cloud/' . $time['year'] . '/' . $time['month'] . '/' . $time['day'];
+        $upload = UploadService::init();
+        $res    = $upload->to($dir)->validate()->move($file, false, $option);
+        if (is_bool($res)) {
+            $res === false && throw new UploadException($upload->getError());
+            return true;
         }
-        return $this->saveFileInfo([
+        $fileInfo                = $upload->getUploadInfo();
+        $fileInfo['file_ext']    = pathinfo($fileInfo['dir'], PATHINFO_EXTENSION);
+        $fileInfo['name']        = pathinfo($fileInfo['real_name'], PATHINFO_FILENAME);
+        $fileInfo['upload_type'] = (int) sys_config('upload_type', 1);
+
+        $res = $this->saveFileInfo([
             'pid'         => $spaceId,
             'file_type'   => $fileInfo['type'],
             'file_ext'    => $fileInfo['file_ext'],
@@ -398,7 +399,7 @@ class CloudFileService extends BaseService
         $this->checkAuth($spaceId, $uid, auth: CloudEnum::CREATE_AUTH, data: ['id' => $spaceId]);
         $key = 'upload.key.' . app('request')->ip();
         if (Cache::tags([CacheEnum::TAG_OTHER])->has($key)) {
-            Cache::tags([CacheEnum::TAG_OTHER])->increment($key, 1);
+            Cache::tags([CacheEnum::TAG_OTHER])->increment($key);
         } else {
             Cache::tags([CacheEnum::TAG_OTHER])->add($key, 1, now()->endOfDay()->timestamp - now()->timestamp);
         }
@@ -581,7 +582,7 @@ class CloudFileService extends BaseService
         }
         $uploadType = (int) sys_config('upload_type', 1);
         if ($file['upload_type'] <= 1) {
-            $f = file_get_contents(public_path($file['file_url']));
+            $f = file_get_contents(str_contains($file['file_url'], 'http') ? $file['file_url'] : public_path($file['file_url']));
         } else {
             $f = file_get_contents($file['file_url']);
         }
@@ -956,7 +957,7 @@ class CloudFileService extends BaseService
             // 写入xlsx文件
             $writer = new Xlsx($spreadsheet);
             $writer->save($savePath);
-        } elseif (in_array($type, WebOffice::WPS_OFFICE_WORD_TYPE) && $type != 'doc' && $type != 'docx') {
+        } elseif (in_array($type, WebOffice::WPS_OFFICE_WORD_TYPE) && $type != 'doc' && $type != 'docx' && $type != 'txt' && $type != 'md') {
             $savePath .= '.docx';
             $name .= '.docx';
             $newWord = IOFactory::load($fileHandle->getRealPath());

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,13 +15,12 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Report;
 
+use App\Http\Model\User\UserDaily;
 use App\Http\Dao\BaseDao;
 use App\Http\Model\BaseModel;
-use App\Http\Model\User\UserDaily;
-use crmeb\interfaces\ResourceDaoInterface;
-use crmeb\traits\dao\ListSearchTrait;
+use Tuoluojiang\Open\interfaces\ResourceDaoInterface;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -121,14 +120,29 @@ class UserDailyDao extends BaseDao implements ResourceDaoInterface
 
     /**
      * 获取用户汇报统计
-     * @param mixed $where
-     * @return BaseModel[]|Collection
+     * @return BaseModel[]|\Illuminate\Database\Eloquent\Collection
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
     public function getOnceList($where)
     {
         return $this->search($where)->groupBy('date')->select(['*', DB::raw('DATE(created_at) as date')])->get();
+    }
+
+    /**
+     * 按天统计已提交用户数.
+     * @throws BindingResolutionException
+     * @throws \ReflectionException
+     */
+    public function getDailySubmitUserCount(array $where): array
+    {
+        return $this->search($where)
+            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m-%d') as period, COUNT(DISTINCT user_id) as submit_count")
+            ->groupBy('period')
+            ->get()
+            ->pluck('submit_count', 'period')
+            ->map(fn ($count) => (int) $count)
+            ->toArray();
     }
 
     /**

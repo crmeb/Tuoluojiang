@@ -29,6 +29,16 @@ class FormCate extends BaseModel
 
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'sort'       => 'integer',
+        'types'      => 'integer',
+        'status'     => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+        'deleted_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     public function data()
     {
         return $this->hasMany(FormData::class, 'cate_id', 'id')->orderByDesc('sort');

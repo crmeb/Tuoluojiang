@@ -11,18 +11,16 @@
       :gutter="Number(widget.options.gutter)"
       class="grid-container"
       :class="[selected ? 'selected' : '', customClass]"
-      @click.native.stop="selectWidget(widget)"
+      @click.stop="selectWidget(widget)"
     >
-      <template v-for="(colWidget, colIdx) in widget.cols">
+      <template :key="colWidget.id" v-for="(colWidget, colIdx) in widget.cols">
         <grid-col-widget
           :widget="colWidget"
           :designer="designer"
-          :key="colWidget.id"
           :parent-list="widget.cols"
           :index-of-parent-list="colIdx"
           :parent-widget="widget"
           :col-height="widget.options.colHeight"
-
         ></grid-col-widget>
       </template>
     </el-row>
@@ -30,7 +28,7 @@
 </template>
 
 <script>
-import i18n from '@/utils/i18n'
+import i18n from '@/utils/i18n.ts'
 import GridColWidget from '@/components/form-designer/form-widget/container-widget/grid-col-widget'
 import containerMixin from '@/components/form-designer/form-widget/container-widget/containerMixin'
 import ContainerWrapper from '@/components/form-designer/form-widget/container-widget/container-wrapper'
@@ -38,7 +36,6 @@ import refMixinDesign from '@/components/form-designer/refMixinDesign'
 
 export default {
   name: 'grid-widget',
-  componentName: 'ContainerWidget',
   mixins: [i18n, containerMixin, refMixinDesign],
   inject: ['refList'],
   components: {
@@ -50,8 +47,7 @@ export default {
     parentWidget: Object,
     parentList: Array,
     indexOfParentList: Number,
-    designer: Object,
-
+    designer: Object
   },
   computed: {
     selected() {
@@ -91,4 +87,4 @@ export default {
 .grid-cell.selected {
   outline: 2px solid #409eff !important;
 }
-</style>@/utils/i18ns
+</style>

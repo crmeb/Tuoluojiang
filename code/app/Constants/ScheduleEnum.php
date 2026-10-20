@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace App\Constants;
 
-use crmeb\utils\MessageType;
+use Tuoluojiang\Open\utils\MessageType;
 
 /**
  * 日程.
@@ -78,7 +78,7 @@ final class ScheduleEnum
     public const TYPE_CLIENT_RENEW = 3;
 
     /**
-     * 合同回款.
+     * 订单回款.
      */
     public const TYPE_CLIENT_RETURN = 4;
 
@@ -91,6 +91,16 @@ final class ScheduleEnum
      * 绩效考核.
      */
     public const TYPE_ASSESS = 6;
+
+    /**
+     * 线索跟进.
+     */
+    public const TYPE_CLUE_TRACK = 7;
+
+    /**
+     * 商机跟进.
+     */
+    public const TYPE_ODDS_TRACK = 8;
 
     /**
      * 客户跟进关联通知.

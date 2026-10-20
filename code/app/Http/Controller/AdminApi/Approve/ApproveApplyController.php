@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -20,8 +20,8 @@ use App\Http\Requests\enterprise\bill\BillCategoryRequest;
 use App\Http\Service\Approve\ApproveApplyService;
 use App\Http\Service\Approve\ApproveFormService;
 use App\Http\Service\Approve\ApproveProcessService;
-use crmeb\interfaces\ResourceControllerInterface;
-use crmeb\traits\ResourceControllerTrait;
+use Tuoluojiang\Open\interfaces\ResourceControllerInterface;
+use Tuoluojiang\Open\traits\ResourceControllerTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -78,10 +78,11 @@ class ApproveApplyController extends AuthController implements ResourceControlle
      * @throws \ReflectionException
      * @throws BindingResolutionException
      */
-    #[Get('verify/{id}/{status}', '处理审批申请')]
+    #[Post('verify/{id}/{status}', '处理审批申请')]
     public function verify($id, $status)
     {
-        $this->service->verify((int) $id, auth('admin')->id(), (int) $status);
+        $content = (string) $this->request->input('content', '');
+        $this->service->verify((int) $id, auth('admin')->id(), (int) $status, $content);
         return $this->success(__('common.operation.succ'));
     }
 
@@ -120,8 +121,8 @@ class ApproveApplyController extends AuthController implements ResourceControlle
         if (! $uniqueds) {
             return $this->fail(__('common.empty.attrs'));
         }
-        foreach ($uniqueds as $uniqued) {
-            $fields[] = [trim($uniqued, '\"'), ''];
+        foreach ($uniqueds as $unique) {
+            $fields[] = [trim($unique['value'], '\"'), ''];
         }
         $data = $this->request->postMore($fields);
         return $this->success($services->verifyForm($data, $id, auth('admin')->id()));
@@ -139,19 +140,19 @@ class ApproveApplyController extends AuthController implements ResourceControlle
         if (! $id) {
             return $this->fail(__('common.empty.attr', ['attr' => 'id']));
         }
-        $uniqueds                                = $formService->getUniques((int) $id);
-        [$form, $process, $approveId, $apply_id] = $this->request->postMore([
+        [$form, $process, $approveId, $apply_id, $linkId] = $this->request->postMore([
             ['formInfo', []],
             ['processInfo', []],
             ['approve_id', $id],
             ['apply_id', 0],
+            ['link_id', 0],
         ], true);
-        foreach ($uniqueds as $v) {
-            if (! isset($form[$v])) {
-                return $this->fail(__('common.empty.attr', ['attr' => '审批表单']));
+        foreach ($formService->getUniques((int) $id) as $v) {
+            if (! isset($form[$v['value']])) {
+                return $this->fail(__('common.empty.attr', ['attr' => $v['label']]));
             }
         }
-        $this->service->saveForm($form, $process, (int) $approveId, (int) $apply_id, auth('admin')->id());
+        $this->service->saveForm($form, $process, (int) $approveId, (int) $apply_id, auth('admin')->id(), linkId: (int) $linkId);
         return $this->success(__('common.insert.succ'));
     }
 

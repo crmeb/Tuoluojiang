@@ -21,70 +21,70 @@
             <div class="assess-right v-height-flag">
               <div class="mb20">{{ tabName }}</div>
               <div>
-                <div v-height v-if="tabId !== 3">
+                <div v-if="tabId !== 3" v-height>
                   <el-scrollbar style="height: 100%">
                     <draggable
                       v-model="dataArray"
+                      animation="1000"
                       chosen-class="chosen"
                       force-fallback="true"
                       group="people"
-                      animation="1000"
-                      @start="onStart"
                       @end="onEnd"
+                      @start="onStart"
+                      tag="transition-group"
+                      item-key="id"
                     >
-                      <transition-group>
-                        <div v-for="(item, index) in dataArray" :key="index" class="item-list">
+                      <template #item="{ element: item, index }">
+                        <div class="item-list">
                           <i class="icon iconfont icontuodong item-drag"></i>
                           <el-input
                             v-model="item.value.title"
-                            clearables
-                            :minlength="2"
                             :maxlength="16"
+                            :minlength="2"
+                            placeholder="请输入类型"
+                            clearable
                             show-word-limit
-                            :placeholder="$t('customer.placeholder06')"
                           />
                           <i class="el-icon-remove item-remove" @click="handleDelete(index, item.id)"></i>
                         </div>
-                      </transition-group>
+                      </template>
                     </draggable>
-                    <el-button class="add-type mt14" type="text" @click="handleAddType"
-                      >{{ $t('customer.addmodel') }} <i class="el-icon-plus"></i
+                    <el-button class="add-type mt14" type="primary" link @click="handleAddType"
+                      >添加类型 <i class="el-icon-plus"></i
                     ></el-button>
                   </el-scrollbar>
                 </div>
 
                 <!--发票 -->
-                <div class="v-height-flag" v-if="tabName == '发票类目'">
-                  <el-button type="primary" class="mb14" size="small" @click="addFinance">{{
-                    $t('customer.addtype')
-                  }}</el-button>
+                <div v-if="tabName == '发票类目'" class="v-height-flag">
+                  <el-button class="mb14" type="primary" @click="addFinance">添加分类</el-button>
                   <div class="v-height-flag table-box">
                     <div v-height>
                       <el-table
                         :data="tableData"
-                        style="width: 100%"
-                        row-key="id"
-                        default-expand-all
                         :tree-props="{ children: 'children' }"
+                        default-expand-all
+                        row-key="id"
+                        style="width: 100%"
                       >
-                        <el-table-column prop="name" :label="$t('customer.typename')" min-width="220">
+                        <el-table-column label="分类名称" min-width="220" prop="name">
                         </el-table-column>
-                        <el-table-column prop="sort" :label="$t('toptable.sort')" min-width="100" />
-                        <el-table-column prop="address" :label="$t('public.operation')" width="200">
-                          <template slot-scope="scope">
-                            <el-button type="text" @click="handleEdit(scope.row)">{{ $t('public.edit') }}</el-button>
+                        <el-table-column label="排序" min-width="100" prop="sort" />
+                        <el-table-column label="操作" prop="address" width="200">
+                          <template #default="scope">
+                            <el-button type="primary" link @click="handleEdit(scope.row)">编辑</el-button>
 
-                            <el-button type="text" @click="deleteFn(scope.row)">{{ $t('public.delete') }}</el-button>
+                            <el-button type="primary" link @click="deleteFn(scope.row)">删除</el-button>
                           </template>
                         </el-table-column>
                       </el-table>
                     </div>
                     <el-pagination
-                      :page-size="where.limit"
                       :current-page="where.page"
+                      :page-size="where.limit"
                       :page-sizes="[10, 15, 20]"
-                      layout="total, prev, pager, next, jumper"
                       :total="total"
+                      layout="total, prev, pager, next, jumper"
                       @size-change="handleSizeChange"
                       @current-change="pageChange"
                     />
@@ -96,12 +96,11 @@
         </el-row>
         <div class="cr-bottom-button">
           <el-button
-            type="primary"
-            size="small"
             v-hasPermi="['setup:work:add']"
             :loading="loading"
+            type="primary"
             @click="handleConfirm"
-            >{{ $t('public.ok') }}</el-button
+            >确定</el-button
           >
         </div>
       </div>
@@ -111,9 +110,11 @@
 </template>
 
 <script>
+import { modalSure } from '@/libs/public.ts'
 import draggable from 'vuedraggable'
 import dialogForm from './type/components/addDialog'
-import { clientConfigListApi, clientConfigSaveApi, invoiceCategoryList, deleteInvoiceCategory } from '@/api/enterprise'
+import { clientConfigListApi, invoiceCategoryList, deleteInvoiceCategory } from '@/api/enterprise.ts'
+import { clientConfigSaveApi } from '@/api/client.ts'
 export default {
   name: 'SetupWork',
   components: {
@@ -145,33 +146,22 @@ export default {
       },
       total: 0,
       department: [
-        { id: 1, name: this.$t('customer.customersource') },
-        { id: 2, name: this.$t('customer.renewaltype') }
+        { id: 1, name: '客户来源' },
+        { id: 2, name: '续费类型' }
       ],
       tabIndex: 0,
       tabId: 1,
-      tabName: this.$t('customer.customersource'),
+      tabName: '客户来源',
       drag: false,
       dataArray: [],
       deleteArray: [],
       loading: false
     }
   },
-  watch: {
-    lang() {
-      this.setOptions()
-    }
-  },
   created() {
     this.getClientList()
   },
   methods: {
-    setOptions() {
-      this.department = [
-        { id: 1, name: this.$t('customer.customersource') },
-        { id: 2, name: this.$t('customer.renewaltype') }
-      ]
-    },
 
     // 发票类目列表
     invoiceCategoryList() {
@@ -192,7 +182,7 @@ export default {
     // 编辑分类
     async handleEdit(item) {
       this.repeatData = {
-        title: this.$t('customer.edittype'),
+        title: '编辑分类',
         width: '480px',
         label: 3,
         type: 2,
@@ -203,7 +193,7 @@ export default {
 
     // 删除发票分类
     async deleteFn(item) {
-      await this.$modalSure(this.$t('customer.message01'))
+      await modalSure('你确定要删除该分类吗')
       await deleteInvoiceCategory(item.id)
 
       this.getTableData()
@@ -219,7 +209,7 @@ export default {
     // 添加分类
     async addFinance() {
       this.repeatData = {
-        title: this.$t('customer.addtype'),
+        title: '添加分类',
         width: '480px',
         label: 3,
         type: 1,
@@ -239,9 +229,9 @@ export default {
       this.tabIndex = index
       this.tabId = id
       if (this.tabId == 1) {
-        this.tabName = this.$t('customer.customersource')
+        this.tabName = '客户来源'
       } else if (this.tabId == 2) {
-        this.tabName = this.$t('customer.renewaltype')
+        this.tabName = '续费类型'
       } else {
         this.tabName = '发票类目'
         this.invoiceCategoryList()
@@ -255,15 +245,15 @@ export default {
       this.drag = false
     },
     handleConfirm() {
-      var data = []
+      const data = []
       if (this.dataArray.length <= 0) {
-        this.$message.warning(this.$t('customer.message05'))
+        this.$message.warning('名称不能为空')
       } else {
         const status = this.dataArray.some((el, index) => {
           return el.value.title === ''
         })
         if (status) {
-          this.$message.warning(this.$t('customer.message05'))
+          this.$message.warning('名称不能为空')
         } else {
           const len = this.dataArray.length
           this.dataArray.map((value, index) => {
@@ -282,7 +272,7 @@ export default {
         })
 
         if (status) {
-          this.$message.warning(this.$t('customer.message05'))
+          this.$message.warning('名称不能为空')
         } else {
           this.dataArray.push({ sort: '', id: 0, value: { title: '' } })
         }
@@ -381,15 +371,15 @@ export default {
 .assess-right {
   position: relative;
   height: 100%;
-  /deep/ .el-scrollbar__wrap {
+  :deep(.el-scrollbar__wrap) {
     overflow-x: hidden;
   }
   .tab-share {
     margin: -10px 0px 0 -14px;
-    /deep/ .el-tabs__nav {
+    :deep(.el-tabs__nav) {
       padding: 0 20px;
     }
-    /deep/ .el-tabs__nav-wrap::after {
+    :deep(.el-tabs__nav-wrap::after) {
       height: 0;
     }
   }
@@ -426,7 +416,7 @@ export default {
     height: auto;
   }
 }
-/deep/ .el-card__body {
+:deep(.el-card__body) {
   padding-left: 0;
 }
 </style>

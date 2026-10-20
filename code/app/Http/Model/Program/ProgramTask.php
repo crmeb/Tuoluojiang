@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -43,6 +43,26 @@ class ProgramTask extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'          => 'integer',
+        'value'       => 'integer',
+        'pid'         => 'integer',
+        'top_id'      => 'integer',
+        'level'       => 'integer',
+        'program_id'  => 'integer',
+        'version_id'  => 'integer',
+        'creator_uid' => 'integer',
+        'uid'         => 'integer',
+        'status'      => 'integer',
+        'priority'    => 'integer',
+        'plan_start'  => 'date:Y-m-d',
+        'plan_end'    => 'date:Y-m-d',
+        'sort'        => 'integer',
+        'created_at'  => 'datetime:Y-m-d H:i:s',
+        'updated_at'  => 'datetime:Y-m-d H:i:s',
+        'deleted_at'  => 'datetime:Y-m-d H:i:s',
+    ];
 
     /**
      * 隐藏字段.
@@ -129,8 +149,6 @@ class ProgramTask extends BaseModel
 
     /**
      * id 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeId($query, $value): void
     {
@@ -143,8 +161,6 @@ class ProgramTask extends BaseModel
 
     /**
      * uid 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeUid($query, $value): void
     {
@@ -157,8 +173,6 @@ class ProgramTask extends BaseModel
 
     /**
      * program_id 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeProgramId($query, $value): void
     {
@@ -171,8 +185,6 @@ class ProgramTask extends BaseModel
 
     /**
      * admins 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeAdmins($query, $value): void
     {
@@ -185,17 +197,11 @@ class ProgramTask extends BaseModel
 
     /**
      * status 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeStatus($query, $value): void
     {
         if (is_array($value)) {
-            $query->where(function ($query) use ($value) {
-                foreach ($value as $item) {
-                    $query->orWhere('status', $item);
-                }
-            });
+            $query->whereIn('status', $value);
         } elseif ($value !== '') {
             $query->where('status', $value);
         }
@@ -203,17 +209,11 @@ class ProgramTask extends BaseModel
 
     /**
      * priority 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopePriority($query, $value): void
     {
         if (is_array($value)) {
-            $query->where(function ($query) use ($value) {
-                foreach ($value as $item) {
-                    $query->orWhere('priority', $item);
-                }
-            });
+            $query->whereIn('priority', $value);
         } elseif ($value !== '') {
             $query->where('priority', $value);
         }
@@ -221,8 +221,6 @@ class ProgramTask extends BaseModel
 
     /**
      * name作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeNameLike($query, $value): void
     {
@@ -233,8 +231,6 @@ class ProgramTask extends BaseModel
 
     /**
      * created_at作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeCreatedAt($query, $value)
     {
@@ -243,8 +239,6 @@ class ProgramTask extends BaseModel
 
     /**
      * plan_start作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopePlanStart($query, $value)
     {
@@ -253,8 +247,6 @@ class ProgramTask extends BaseModel
 
     /**
      * plan_end作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopePlanEnd($query, $value)
     {
@@ -263,8 +255,6 @@ class ProgramTask extends BaseModel
 
     /**
      * pid 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopePid($query, $value): void
     {
@@ -277,7 +267,6 @@ class ProgramTask extends BaseModel
 
     /**
      * 格式化path字段.
-     * @param mixed $value
      */
     public function setPathAttribute($value): void
     {
@@ -286,7 +275,6 @@ class ProgramTask extends BaseModel
 
     /**
      * 格式化path字段.
-     * @param mixed $value
      * @return string[]
      */
     public function getPathAttribute($value): array
@@ -296,7 +284,6 @@ class ProgramTask extends BaseModel
 
     /**
      * describe获取器.
-     * @param mixed $value
      */
     public function getDescribeAttribute($value): string
     {
@@ -305,8 +292,6 @@ class ProgramTask extends BaseModel
 
     /**
      * path 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopePath($query, $value): void
     {
@@ -323,8 +308,6 @@ class ProgramTask extends BaseModel
 
     /**
      * uid not 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeUidNot($query, $value): void
     {
@@ -335,8 +318,6 @@ class ProgramTask extends BaseModel
 
     /**
      * status not 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeStatusNot($query, $value): void
     {
@@ -347,8 +328,6 @@ class ProgramTask extends BaseModel
 
     /**
      * version_id not 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeVersionIdNot($query, $value): void
     {
@@ -359,8 +338,6 @@ class ProgramTask extends BaseModel
 
     /**
      * pid not 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopePidNot($query, $value): void
     {
@@ -371,8 +348,6 @@ class ProgramTask extends BaseModel
 
     /**
      * program_id not 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeProgramIdNot($query, $value): void
     {
@@ -383,8 +358,6 @@ class ProgramTask extends BaseModel
 
     /**
      * plan_start not or null 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopePlanStartNotOrNull($query, $value): void
     {
@@ -397,8 +370,6 @@ class ProgramTask extends BaseModel
 
     /**
      * plan_end not or null 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopePlanEndNotOrNull($query, $value): void
     {
@@ -411,8 +382,6 @@ class ProgramTask extends BaseModel
 
     /**
      * top_id 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeTopId($query, $value): void
     {
@@ -425,17 +394,11 @@ class ProgramTask extends BaseModel
 
     /**
      * version_id 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeVersionId($query, $value): void
     {
         if (is_array($value)) {
-            $query->where(function ($query) use ($value) {
-                foreach ($value as $item) {
-                    $query->orWhere('version_id', $item);
-                }
-            });
+            $query->whereIn('version_id', $value);
         } elseif ($value !== '') {
             $query->where('version_id', $value);
         }
@@ -443,8 +406,6 @@ class ProgramTask extends BaseModel
 
     /**
      * auth_id 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeAuthUid($query, $value): void
     {
@@ -457,8 +418,6 @@ class ProgramTask extends BaseModel
 
     /**
      * uid 和 creator_uid 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeUidOrCreatorUid($query, $value): void
     {

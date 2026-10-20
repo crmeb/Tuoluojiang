@@ -20,7 +20,7 @@
       class="full-width-input"
       :controls="false"
       :disabled="field.options.disabled"
-      :size="field.options.size"
+      :size="toElSize(field.options.size)"
       :controls-position="field.options.controlsPosition"
       :placeholder="field.options.placeholder"
       :min="Number(field.options.min)"
@@ -40,14 +40,12 @@
 
 <script>
 import FormItemWrapper from './form-item-wrapper'
-import emitter from '@/utils/emitter'
-import i18n, { translate } from '@/utils/i18n'
+import i18n, { translate } from '@/utils/i18n.ts'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
 
 export default {
   name: 'input-float-widget',
-  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
-  mixins: [emitter, fieldMixin, i18n],
+  mixins: [fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -107,7 +105,7 @@ export default {
     this.handleOnMounted()
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     this.unregisterFromRefList()
   },
 
@@ -122,4 +120,3 @@ export default {
   width: 100% !important;
 }
 </style>
-@/utils/i18ns

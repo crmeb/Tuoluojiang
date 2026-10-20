@@ -10,7 +10,7 @@
 </template>
 
 <script>
-import { roterPre } from '@/settings'
+import { roterPre } from '@/settings.ts'
 
 export default {
   name: 'InfoForm',

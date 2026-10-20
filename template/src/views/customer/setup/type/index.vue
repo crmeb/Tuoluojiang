@@ -1,7 +1,7 @@
 ﻿<template>
   <div class="divBox">
     <el-card class="normal-page">
-      <el-button type="primary" class="mb14" size="small" @click="addFinance">{{ $t('customer.addtype') }}</el-button>
+      <el-button type="primary" class="mb14" @click="addFinance">添加分类</el-button>
       <div class="splitLine mt10"></div>
       <div class="inTotal">共 {{ total }} 条</div>
       <el-table
@@ -11,12 +11,12 @@
         default-expand-all
         :tree-props="{ children: 'children' }"
       >
-        <el-table-column prop="value.title" :label="$t('customer.typename')" min-width="220"> </el-table-column>
-        <el-table-column prop="sort" :label="$t('toptable.sort')" min-width="100" />
-        <el-table-column prop="address" :label="$t('public.operation')" width="200">
-          <template slot-scope="scope">
-            <el-button type="text" @click="handleEdit(scope.row)">{{ $t('public.edit') }}</el-button>
-            <el-button type="text" @click="handleDelete(scope.row)">{{ $t('public.delete') }}</el-button>
+        <el-table-column prop="value.title" label="分类名称" min-width="220"> </el-table-column>
+        <el-table-column prop="sort" label="排序" min-width="100" />
+        <el-table-column prop="address" label="操作" width="200">
+          <template #default="scope">
+            <el-button type="primary" link @click="handleEdit(scope.row)">编辑</el-button>
+            <el-button type="primary" link @click="handleDelete(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -36,8 +36,10 @@
 </template>
 
 <script>
+import { modalSure } from '@/libs/public.ts'
 import dialogForm from './components/addDialog'
-import { clientConfigListApi, clientConfigSaveApi } from '@/api/enterprise'
+import { clientConfigListApi } from '@/api/enterprise.ts'
+import { clientConfigSaveApi } from '@/api/client.ts'
 export default {
   name: 'FinanceList',
   components: {
@@ -70,7 +72,7 @@ export default {
     // 获取表格数据
     getTableData(val) {
       this.where.page = val ? val : this.where.page
-      var data = {
+      const data = {
         page: this.where.page,
         limit: this.where.limit,
         key: this.key
@@ -83,7 +85,7 @@ export default {
     // 添加分类
     async addFinance() {
       this.repeatData = {
-        title: this.$t('customer.addtype'),
+        title: '添加分类',
         width: '480px',
         label: 1,
         type: 1,
@@ -94,7 +96,7 @@ export default {
     // 编辑分类
     async handleEdit(item) {
       this.repeatData = {
-        title: this.$t('customer.edittype'),
+        title: '编辑分类',
         width: '480px',
         label: 1,
         type: 2,
@@ -104,8 +106,8 @@ export default {
     },
     // 删除
     handleDelete(item) {
-      this.$modalSure(this.$t('customer.message01')).then(() => {
-        var deleteArr = []
+      modalSure('你确定要删除该分类吗').then(() => {
+        const deleteArr = []
         deleteArr.push(item.id)
         this.clientConfigSave({ key: this.key, delete: deleteArr })
       })

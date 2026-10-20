@@ -1,10 +1,10 @@
 <template>
   <div class="tree-box">
     <div class="el-card__header clearfix">
-      <el-input size="small" v-model="filterText" clearable placeholder="搜索部门" prefix-icon="el-icon-search" />
+      <el-input v-model="filterText" clearable placeholder="搜索部门" prefix-icon="el-icon-search" />
     </div>
     <div v-height>
-      <el-scrollbar style="height: 100%">
+      <el-scrollbar style="height: 100%" class="reset-scroll-bar">
         <el-tree
           ref="tree"
           :data="treeData"
@@ -14,15 +14,18 @@
           :default-expanded-keys="defaultFrame"
           :expand-on-click-node="false"
           node-key="value"
+          style="margin-top: 10px"
           @node-click="handleClick"
         >
-          <div slot-scope="{ node, data }" class="custom-tree-node">
-            <span class="flex-box">
-              <i class="icon iconfont tree-icon iconwenjianjia" />
-              {{ node.label }}
-              <span v-if="data.user_count && isShowUserCount">({{ data.user_count }})</span>
-            </span>
-          </div>
+          <template #default="{ node, data }">
+            <div class="custom-tree-node over-text">
+              <span class="flex-box">
+                <i class="icon iconfont tree-icon iconwenjianjia" />
+                {{ node.label }}
+                <span v-if="data.user_count && isShowUserCount">({{ data.user_count }})</span>
+              </span>
+            </div>
+          </template>
         </el-tree>
       </el-scrollbar>
     </div>
@@ -31,6 +34,7 @@
 
 <script>
 export default {
+  emits: ['frameId'],
   name: 'MenuTree',
   props: {
     treeData: {
@@ -100,39 +104,40 @@ export default {
 .el-card__header {
   padding: 15px 20px;
 }
-.el-card__header /deep/.el-input--small .el-input__inner {
+.el-card__header :deep(.el-input .el-input__inner) {
   cursor: pointer;
 }
+.el-card__header :deep(.el-input__clear) {
+  margin-top: -5px !important;
+}
 
-/deep/ .el-scrollbar__wrap {
+:deep(.el-scrollbar__wrap) {
   overflow-x: hidden;
 }
 
-/deep/ .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content {
+:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
   background: rgba(24, 144, 255, 0.08);
-  border-color: #1890ff;
   .flex-box {
     color: #1890ff !important;
     font-weight: 600;
   }
 }
-/deep/.el-tree-node__content {
+:deep(.el-tree-node__content) {
   height: 40px;
-  padding-right: 15px;
-  border-right: 2px solid transparent;
+  border-radius: 4px;
 }
-/deep/ .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node,
+:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node),
 .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .right-icon {
   display: inline-block;
   color: #1890ff;
   font-weight: 600;
 }
 
-/deep/ .el-tree {
+:deep(.el-tree) {
   // padding: 14px 0;
 }
 
-/deep/.el-tree-node > .el-tree-node__children {
+:deep(.el-tree-node > .el-tree-node__children) {
   overflow: inherit;
 }
 .custom-tree-node {
@@ -146,7 +151,10 @@ export default {
 }
 .tree-box {
   border-right: 1px solid #eeeeee;
-  background: #fff;
+
   margin: -20px 0 -20px -20px;
+}
+:deep(.el-tree) {
+  background-color: transparent;
 }
 </style>

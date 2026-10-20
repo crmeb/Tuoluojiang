@@ -1,8 +1,8 @@
-<!-- 合同-添加备注弹窗组件 -->
+<!-- 订单-添加备注弹窗组件 -->
 <template>
   <el-dialog
     :title="config.title"
-    :visible.sync="dialogVisible"
+    v-model="dialogVisible"
     :width="config.width"
     :append-to-body="true"
     :before-close="handleClose"
@@ -15,21 +15,24 @@
           show-word-limit
           :rows="4"
           v-model="rules.remarks"
-          :placeholder="$t('customer.placeholder18')"
+          placeholder="请填写备注信息"
         />
       </el-form-item>
     </el-form>
-    <div slot="footer" class="dialog-footer">
-      <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
-      <el-button size="small" :loading="loading" type="primary" @click="handleConfirm">{{ $t('public.ok') }}</el-button>
-    </div>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="handleClose">取消</el-button>
+        <el-button :loading="loading" type="primary" @click="handleConfirm">确定</el-button>
+      </div>
+    </template>
   </el-dialog>
 </template>
 
 <script>
-import { clientInvoiceMarkApi, clientMarkApi, clientRemindMarkApi } from '@/api/enterprise'
+import { clientInvoiceMarkApi, clientMarkApi, clientRemindMarkApi } from '@/api/client.ts'
 
 export default {
+  emits: ['isMark'],
   name: 'MarkDialog',
   props: {
     config: {
@@ -45,7 +48,7 @@ export default {
         remarks: ''
       },
       rule: {
-        remarks: [{ required: true, message: this.$t('customer.placeholder18'), trigger: 'blur' }]
+        remarks: [{ required: true, message: '请填写备注信息', trigger: 'blur' }]
       },
       dialogVisible: false,
       loading: false
@@ -81,7 +84,7 @@ export default {
         }
       })
     },
-    // 合同列表--付款记录--填写备注
+    // 订单列表--付款记录--填写备注
     clientMark(id, data) {
       this.loading = true
       clientMarkApi(id, data)
@@ -125,20 +128,19 @@ export default {
 </script>
 
 <style scoped lang="scss">
-
-/deep/ .el-date-editor {
+:deep(.el-date-editor) {
   width: 100%;
 }
-/deep/ .el-textarea__inner {
+:deep(.el-textarea__inner) {
   resize: none;
 }
-/deep/ .el-input-number--medium {
+:deep(.el-input-number) {
   width: 100%;
 }
-/deep/ .el-select--medium {
+:deep(.el-select) {
   width: 100%;
 }
-/deep/ .el-form-item:last-of-type {
+:deep(.el-form-item:last-of-type) {
   margin-bottom: 0;
 }
 .dialog-footer {

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -22,21 +22,23 @@ use App\Constants\Crud\CrudTriggerEnum;
 use App\Http\Dao\Crud\CrudModuleDao;
 use App\Http\Model\Crud\SystemCrud;
 use App\Http\Service\Admin\AdminService;
-use App\Http\Service\BaseService;
-use App\Http\Service\Client\ClientLabelService;
+use App\Http\Service\Customer\LabelService;
 use App\Http\Service\Config\DictDataService;
 use App\Http\Service\Config\DictTypeService;
 use App\Http\Service\Frame\FrameAssistService;
 use App\Http\Service\Frame\FrameService;
 use App\Http\Service\System\RolesService;
-use App\Jobs\CrudLogJob;
+use App\Jobs\Crud\CrudLogJob;
+use App\Jobs\Crud\SystemCrudImportDataJob;
 use App\Task\message\StatusChangeTask;
-use crmeb\utils\MessageType;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\utils\MessageType;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
@@ -67,15 +69,15 @@ class CrudModuleService extends BaseService
      */
     public function model(string $tableName = '', int $crudId = 0)
     {
-        if (! $tableName && ! $crudId) {
+        if (!$tableName && !$crudId) {
             throw $this->exception('缺少参数');
         }
         $service = app()->get(SystemCrudService::class);
-        if ($tableName && ! $service->tableNameEnByCrudIdCache($tableName)) {
+        if ($tableName && !$service->tableNameEnByCrudIdCache($tableName)) {
             throw $this->exception('没有查询到表名');
         }
         $tableName = $crudId ? $service->getCrudTableNameEnCache($crudId) : $tableName;
-        if (! $tableName) {
+        if (!$tableName) {
             throw $this->exception('没有查询到表名');
         }
         return (new CrudModuleDao())->setTableName($tableName);
@@ -109,18 +111,20 @@ class CrudModuleService extends BaseService
             'form_value',
             'association_crud_id',
             'data_dict_id',
+            'customize_items',
+            'data_type',
         ];
 
-        $fieldService = app()->make(SystemCrudFieldService::class);
-        $showField    = [];
+        $fieldService = app()->get(SystemCrudFieldService::class);
+        $showField = [];
 
         if ($isFieldAll === false) {
             // 查找用户自己保存的默认展示字段
             if ($uid) {
-                $field = app()->make(SystemCrudTableUserService::class)->value(['crud_id' => $crudId, 'user_id' => $uid], 'show_field');
+                $field = app()->get(SystemCrudTableUserService::class)->value(['crud_id' => $crudId, 'user_id' => $uid], 'show_field');
                 if ($field) {
                     $showFieldList = $fieldService->getFieldSelect($crudId, $field, $select);
-                    $showField     = [];
+                    $showField = [];
                     foreach ($field as $item) {
                         foreach ($showFieldList as $value) {
                             if ($item === $value['field_name_en']) {
@@ -133,11 +137,11 @@ class CrudModuleService extends BaseService
             }
 
             // 如果用户没有保存，查找实体默认展示字段
-            if (! $showField) {
-                $field = app()->make(SystemCrudTableService::class)->value(['crud_id' => $crudId, 'is_index' => 1], 'show_field');
+            if (!$showField) {
+                $field = app()->get(SystemCrudTableService::class)->value(['crud_id' => $crudId, 'is_index' => 1], 'show_field');
                 if ($field) {
                     $showFieldList = $fieldService->getFieldSelect($crudId, $field, $select);
-                    $showField     = [];
+                    $showField = [];
                     foreach ($field as $item) {
                         foreach ($showFieldList as $value) {
                             if ($item === $value['field_name_en']) {
@@ -151,7 +155,7 @@ class CrudModuleService extends BaseService
         }
 
         // 如果实体没有保存，查找实体的全部字段展示出来
-        if (! $showField) {
+        if (!$showField) {
             $showField = $fieldService->getFieldTableShowRowSelect($crudId, $select, $isFieldAll);
         }
 
@@ -170,15 +174,15 @@ class CrudModuleService extends BaseService
         foreach ($showField as $key => $item) {
             // 需要查询关联数据信息
             if ($item['association_crud_id']) {
-                $crudInfo = app()->make(SystemCrudService::class)->get($item['association_crud_id'], ['id', 'table_name_en']);
+                $crudInfo = app()->get(SystemCrudService::class)->get($item['association_crud_id'], ['id', 'table_name_en']);
                 if ($crudInfo) {
-                    $item['association_crud']                       = $crudInfo->toArray();
-                    $item['association_crud']['field_main_name_en'] = app()->make(SystemCrudFieldService::class)
+                    $item['association_crud'] = $crudInfo->toArray();
+                    $item['association_crud']['field_main_name_en'] = app()->get(SystemCrudFieldService::class)
                         ->value(['crud_id' => $crudInfo->id, 'is_main' => 1], 'field_name_en');
                 }
             }
 
-            if (! isset($item['association_crud'])) {
+            if (!isset($item['association_crud'])) {
                 $item['association_crud'] = null;
             }
 
@@ -200,7 +204,7 @@ class CrudModuleService extends BaseService
      */
     public function getShowSearchFieldCache(int $crudId, int $uid = 0, bool $dataDict = true)
     {
-        return Cache::tags(SystemCrudService::TAG_NAME)->remember(__FUNCTION__ . $crudId . '_' . $uid . '_' . ((int) $dataDict), null, function () use ($crudId, $uid, $dataDict) {
+        return Cache::tags(SystemCrudService::TAG_NAME)->remember(__FUNCTION__ . $crudId . '_' . $uid . '_' . ((int)$dataDict), null, function () use ($crudId, $uid, $dataDict) {
             return $this->getShowSearchField($crudId, $uid, $dataDict);
         });
     }
@@ -220,41 +224,44 @@ class CrudModuleService extends BaseService
             'field_name',
             'form_value',
             'data_dict_id',
+            'association_show_type',
+            'data_type',
+            'customize_items',
         ];
 
-        $fieldService = app()->make(SystemCrudFieldService::class);
+        $fieldService = app()->get(SystemCrudFieldService::class);
 
         $seniorSearch = [];
         // 查找用户自己保存的搜索字段信息
         if ($uid) {
-            $field = app()->make(SystemCrudTableUserService::class)->value(['crud_id' => $crudId, 'user_id' => $uid], 'senior_search');
+            $field = app()->get(SystemCrudTableUserService::class)->value(['crud_id' => $crudId, 'user_id' => $uid], 'senior_search');
             if ($field) {
                 $seniorSearch = $fieldService->getFieldSelect($crudId, $field, $select);
             }
             unset($field);
         }
 
-        if (! $seniorSearch) {
-            $field = app()->make(SystemCrudTableService::class)->value(['crud_id' => $crudId, 'is_index' => 1], 'senior_search');
+        if (!$seniorSearch) {
+            $field = app()->get(SystemCrudTableService::class)->value(['crud_id' => $crudId, 'is_index' => 1], 'senior_search');
             if ($field) {
                 $seniorSearch = $fieldService->getFieldSelect($crudId, $field, $select);
             }
             unset($field);
         }
 
-        if (! $seniorSearch) {
+        if (!$seniorSearch) {
             return [];
         }
 
         if ($dataDict) {
             foreach ($seniorSearch as $key => $search) {
                 // 需要查询数据字段
-                if ($dataDict) {
-                    if ($search['data_dict_id']) {
-                        $search['data_dict'] = app()->make(DictDataService::class)->getTreeData(['type_id' => $search['data_dict_id']]);
-                    } else {
-                        $search['data_dict'] = [];
-                    }
+                if ($search['data_type'] == 1) {
+                    $search['data_dict'] = $search['customize_items'];
+                } elseif ($search['data_dict_id']) {
+                    $search['data_dict'] = app()->get(DictDataService::class)->getTreeData(['type_id' => $search['data_dict_id']]);
+                } else {
+                    $search['data_dict'] = [];
                 }
                 $seniorSearch[$key] = $search;
             }
@@ -284,7 +291,7 @@ class CrudModuleService extends BaseService
             CrudFormEnum::FORM_SWITCH,
         ];
 
-        $fieldService = app()->make(SystemCrudFieldService::class);
+        $fieldService = app()->get(SystemCrudFieldService::class);
 
         $list = $fieldService->getOrderByFieldListCache($crudId, $orderByformValue);
         return $fieldService->mergeSortField($list);
@@ -315,10 +322,39 @@ class CrudModuleService extends BaseService
      * @email 136327134@qq.com
      * @date 2024/3/12
      */
-    public function getModuleList(Request $request, SystemCrud $crud, array $defaultWhere, array $orderBy = [], array $viewSearch = [], string $keywordDefault = '', int $viewSearchBoolean = 0, int $crudId = 0, int $crudValue = 0, bool $uni = false, bool $isFieldAll = false)
+    public function getModuleList(Request $request, SystemCrud $crud, array $defaultWhere, array $orderBy = [], array $viewSearch = [], string $keywordDefault = '', int $viewSearchBoolean = 0, int $crudId = 0, int $crudValue = 0, bool $uni = false, bool $isFieldAll = false, array $options = [])
     {
-        $page  = (int) $request->post('page', 1);
-        $limit = (int) $request->post('limit', 10);
+        $page = (int)$request->post('page', 1);
+        $limit = (int)$request->post('limit', 10);
+
+        $crudService = app()->get(SystemCrudService::class);
+        $crudFieldService = app()->get(SystemCrudFieldService::class);
+
+        //分组相关的字段和实体验证
+        $groupField = $groupTableNameEn = $groupCrudId = $childrenPage = $childrenLimit = $childrenId = null;
+
+        if (!empty($options['group']) && !empty($options['children_limit'])) {
+            $childrenPage = $options['children_page'];
+            $childrenLimit = $options['children_limit'];
+            $childrenId = $options['children_id'];
+            if (str_contains($options['group'], '.')) {
+                [$groupTableNameEn, $groupFielddNameEn] = explode('.', $options['group']);
+
+                $groupCrudId = $crudService->tableNameEnByCrudIdCache($groupTableNameEn);
+                if (!$groupCrudId) {
+                    throw $this->exception('分组的实体信息不存在');
+                }
+
+                $groupField = $crudFieldService->getCrudTableFieldAllCache($groupCrudId, $groupFielddNameEn);
+            } else {
+                $groupTableNameEn = $crud->table_name_en;
+                $groupField = $crudFieldService->getCrudTableFieldAllCache($crud->id, $options['group']);
+            }
+
+            if (!$groupField) {
+                throw $this->exception('分组的字段信息不存在');
+            }
+        }
 
         if (in_array($crud->table_name_en, SystemCrudService::SYSTEM_TABLE_TABLE)) {
             unset($defaultWhere['user_id'], $defaultWhere['show_search_type']);
@@ -345,7 +381,7 @@ class CrudModuleService extends BaseService
         }
 
         // 默认的字段搜索
-        $mainKey = app()->make(SystemCrudFieldService::class)->getCrudMainFieldNameEnCache($crud->id);
+        $mainKey = $crudFieldService->getCrudMainFieldNameEnCache($crud->id);
         if ($keywordDefault !== '' && $mainKey) {
             $where[] = [
                 'field_name' => $mainKey,
@@ -364,7 +400,7 @@ class CrudModuleService extends BaseService
 
         // 详情中的关联列表展示
         if ($crudValue && $crudId) {
-            $associationKey = app()->make(SystemCrudFieldService::class)->getAssociationCrudFieldNameEnCache($crud->id, $crudId);
+            $associationKey = app()->get(SystemCrudFieldService::class)->getAssociationCrudFieldNameEnCache($crud->id, $crudId);
             if ($associationKey) {
                 $where[] = [
                     'field_name' => $associationKey,
@@ -374,28 +410,31 @@ class CrudModuleService extends BaseService
             }
         }
 
+        // 实体字段表的展示字段
+        $fieldSelect = [
+            'id',
+            'field_name_en',
+            'field_name',
+            'form_value',
+            'association_crud_id',
+            'data_dict_id',
+            'data_type',
+            'customize_items',
+        ];
+
         // 获取搜索列表展示字段
         $showField = $this->getShowTableFieldCache($crud->id, $isSystem ? 0 : $defaultWhere['uid'] ?? 0, true, $isFieldAll);
         if ($uni) {
-            $select = [
-                'id',
-                'field_name_en',
-                'field_name',
-                'form_value',
-                'association_crud_id',
-                'data_dict_id',
-            ];
 
-            $fields           = array_column($showField, 'field_name_en');
-            $crudFieldService = app()->make(SystemCrudFieldService::class);
-            if (! in_array('created_at', $fields)) {
-                $fieldInfo = $crudFieldService->getCrudTableFieldAllCache($crud->id, 'created_at', $select);
+            $fields = array_column($showField, 'field_name_en');
+            if (!in_array('created_at', $fields)) {
+                $fieldInfo = $crudFieldService->getCrudTableFieldAllCache($crud->id, 'created_at', $fieldSelect);
                 if ($fieldInfo) {
                     array_push($showField, $fieldInfo);
                 }
             }
-            if (! in_array('owner_user_id', $fields)) {
-                $fieldInfo = $crudFieldService->getCrudTableFieldAllCache($crud->id, 'owner_user_id', $select);
+            if (!in_array('owner_user_id', $fields)) {
+                $fieldInfo = $crudFieldService->getCrudTableFieldAllCache($crud->id, 'owner_user_id', $fieldSelect);
                 if ($fieldInfo) {
                     array_push($showField, $fieldInfo);
                 }
@@ -409,9 +448,9 @@ class CrudModuleService extends BaseService
         // 默认ID倒叙
         $orderBy = $orderBy ?: 'id';
 
-        $join = app()->make(SystemCrudService::class)->getJoinCrudData($crud->id);
+        $join = app()->get(SystemCrudService::class)->getJoinCrudData($crud->id, 1);
 
-        $defaultWhere['share_ids'] = app()->make(SystemCrudDataShareService::class)->getUserShareDataIds($crud->id, $defaultWhere['uid'] ?? 0);
+        $defaultWhere['share_ids'] = app()->get(SystemCrudDataShareService::class)->getUserShareDataIds($crud->id, $defaultWhere['uid'] ?? 0);
 
         if (isset($defaultWhere['show_search_type'])) {
             switch ($defaultWhere['show_search_type']) {
@@ -424,8 +463,8 @@ class CrudModuleService extends BaseService
                 case 4:// 我共享的
                     unset($defaultWhere['user_id']);
                     if ($defaultWhere['uid']) {
-                        $shareIds                  = app()->make(SystemCrudShareService::class)->column(['operate_user_id' => $defaultWhere['uid'], 'crud_id' => $crud->id], 'id');
-                        $defaultWhere['share_ids'] = app()->make(SystemCrudDataShareService::class)->shareIdByDataIds($crud->id, $shareIds);
+                        $shareIds = app()->get(SystemCrudShareService::class)->column(['operate_user_id' => $defaultWhere['uid'], 'crud_id' => $crud->id], 'id');
+                        $defaultWhere['share_ids'] = app()->get(SystemCrudDataShareService::class)->shareIdByDataIds($crud->id, $shareIds);
                     }
                     if (empty($defaultWhere['share_ids'])) {
                         $defaultWhere['share_ids'] = [0];
@@ -439,21 +478,86 @@ class CrudModuleService extends BaseService
         }
         $model = $this->model(crudId: $crud->id)->setJoin($join)->searchWhere($defaultWhere, $where, $viewSearch, $orderBy, $viewSearchBoolean === 0 ? 'or' : 'and');
 
+        if ($groupTableNameEn && $groupField) {
+            $model = $model->groupBy($groupTableNameEn . '.' . $groupField['field_name_en']);
+        }
+
         $count = $model->count();
 
         if ($join) {
             foreach ($select as &$field) {
-                $field = $crud->table_name_en . '.' . $field;
+                if (!str_contains($field, $crud->table_name_en)) {
+                    $field = $crud->table_name_en . '.' . $field;
+                } else {
+                    $field = $field . ' as ' . str_replace('.', '_', $field);
+                }
             }
         }
 
-        if (! $select) {
+        if (!$select) {
             $select = [$crud->table_name_en . '.*'];
         }
 
-        $list = $model->when(count($with), fn ($q) => $q->with($with))->select($select)->forPage($page, $limit)->get()->toArray();
+        if ($groupTableNameEn && $groupField) {
+            $groupSelectField = $groupTableNameEn . '.' . $groupField['field_name_en'];
 
-        $list = $this->otherWithList($otherWith, $list, $showField, $uni, $defaultWhere['share_ids']);
+            // 分组字段
+            if ($childrenId) {
+
+                $groupValue = $this->model(crudId: $crud->id)
+                    ->setJoin($join)
+                    ->searchWhere(defaultWhere: $defaultWhere, where: $where, viewSearch: $viewSearch, orderBy: $orderBy, boolean: $viewSearchBoolean === 0 ? 'or' : 'and')
+                    ->where($crud->table_name_en . '.id', $childrenId)
+                    ->value($groupSelectField);
+
+                $itemList = $this->model(crudId: $crud->id)
+                    ->setJoin($join)
+                    ->searchWhere(defaultWhere: $defaultWhere, where: $where, viewSearch: $viewSearch, orderBy: $orderBy, boolean: $viewSearchBoolean === 0 ? 'or' : 'and')
+                    ->when(count($with), fn($q) => $q->with($with))
+                    ->where($groupTableNameEn . '.' . $groupField['field_name_en'], $groupValue)
+                    ->select($select)
+                    ->forPage($childrenPage, $childrenLimit)
+                    ->get()
+                    ->toArray();
+
+                return $this->otherWithList(otherWith: $otherWith, list: $itemList, formField: $showField, uni: $uni, shareIds: $defaultWhere['share_ids'], crudTableNameEn: $crud->table_name_en);
+            }
+
+            $groupIds = $model->when(count($with), fn($q) => $q->with($with))->select([$groupSelectField . ' as group_id'])->forPage($page, $limit)->get()->toArray();
+
+            // 检测展示的字段中有没有当前分组的字段
+            $fields = array_column($showField, 'field_name_en');
+            if (in_array($groupSelectField, $fields)) {
+                $fieldInfo = $crudFieldService->getCrudTableFieldAllCache($groupCrudId, $groupField['field_name_en'], $fieldSelect);
+                if ($fieldInfo) {
+                    array_push($showField, $fieldInfo);
+                }
+            }
+
+            $groupedData = [];
+
+            foreach ($groupIds as $groupId) {
+
+                $modelItem = $this->model(crudId: $crud->id)->setJoin($join)->searchWhere(defaultWhere: $defaultWhere, where: $where, viewSearch: $viewSearch, orderBy: $orderBy, boolean: $viewSearchBoolean === 0 ? 'or' : 'and')->where($groupTableNameEn . '.' . $groupField['field_name_en'], $groupId['group_id']);
+                $itemCount = $modelItem->count();
+
+                $itemList = $modelItem->when(count($with), fn($q) => $q->with($with))->select($select)->forPage(1, $childrenLimit)->get()->toArray();
+                $itemList = $this->otherWithList(otherWith: $otherWith, list: $itemList, formField: $showField, uni: $uni, shareIds: $defaultWhere['share_ids'], crudTableNameEn: $crud->table_name_en);
+
+                $item = $itemList[0] ?? [];
+                $item['children'] = $itemList;
+                $item['count'] = $itemCount;
+
+                $groupedData[] = $item;
+                unset($modelItem);
+            }
+            $list = $groupedData;
+        } else {
+            $list = $model->when(count($with), fn($q) => $q->with($with))->select($select)->forPage($page, $limit)->get()->toArray();
+
+            $list = $this->otherWithList(otherWith: $otherWith, list: $list, formField: $showField, uni: $uni, shareIds: $defaultWhere['share_ids'], crudTableNameEn: $crud->table_name_en);
+        }
+
 
         return $this->listData($list, $count);
     }
@@ -472,21 +576,21 @@ class CrudModuleService extends BaseService
             $select[] = $withTableName ? ($tableNameEn == $item['table_name_en'] ? '' : $item['table_name_en'] . '.') . $item['field_name_en'] : $item['field_name_en'];
             switch ($item['field_name_en']) {
                 case 'frame_id':
-                    $with['ownerFrame'] = fn ($q) => $q->select(['id', 'name']);
+                    $with['ownerFrame'] = fn($q) => $q->select(['id', 'name']);
                     break;
                 case 'owner_user_id':
-                    $with['ownerUser'] = fn ($q) => $q->select(['id', 'uid', 'name', 'avatar'])->with([
-                        'info' => fn ($q) => $q->select(['uid', 'type']),
+                    $with['ownerUser'] = fn($q) => $q->select(['id', 'uid', 'name', 'avatar'])->with([
+                        'info' => fn($q) => $q->select(['uid', 'type']),
                     ])->withTrashed();
                     break;
                 case 'update_user_id':
-                    $with['updateUser'] = fn ($q) => $q->select(['id', 'name', 'avatar'])->with([
-                        'info' => fn ($q) => $q->select(['uid', 'type']),
+                    $with['updateUser'] = fn($q) => $q->select(['id', 'name', 'avatar'])->with([
+                        'info' => fn($q) => $q->select(['uid', 'type']),
                     ])->withTrashed();
                     break;
                 case 'user_id':
-                    $with['createUser'] = fn ($q) => $q->select(['id', 'name', 'avatar'])->with([
-                        'info' => fn ($q) => $q->select(['uid', 'type']),
+                    $with['createUser'] = fn($q) => $q->select(['id', 'name', 'avatar'])->with([
+                        'info' => fn($q) => $q->select(['uid', 'type']),
                     ])->withTrashed();
                     break;
             }
@@ -513,30 +617,35 @@ class CrudModuleService extends BaseService
      * @param mixed $value
      * @return array|mixed
      */
-    public function getValueAttribute(string $formValue, $value)
+    public function getValueAttribute(string $formValue, $value, string $crudTableNameEn = '')
     {
         switch ($formValue) {
             case CrudFormEnum::FORM_TAG:
             case CrudFormEnum::FORM_CHECKBOX:
             case CrudFormEnum::FORM_CASCADER_ADDRESS:
             case CrudFormEnum::FORM_CASCADER_RADIO:
-                $value = $value ? array_merge(
-                    array_map(
-                        fn ($vv) => preg_match('/^\d+$/', $vv) && ! in_array($formValue, [CrudFormEnum::FORM_CASCADER_RADIO, CrudFormEnum::FORM_CHECKBOX]) ? intval($vv) : $vv,
-                        array_filter(
-                            explode('/', $value)
+                // 兼容系统表的字段展示
+                if (in_array($formValue, [CrudFormEnum::FORM_CASCADER_RADIO, CrudFormEnum::FORM_CASCADER_ADDRESS]) && $crudTableNameEn && in_array($crudTableNameEn, SystemCrudService::SYSTEM_TABLE_TABLE)) {
+                    $value = $value ? json_decode($value, true) : [];
+                } else {
+                    $value = $value ? array_merge(
+                        array_map(
+                            fn($vv) => preg_match('/^\d+$/', $vv) && !in_array($formValue, [CrudFormEnum::FORM_CASCADER_RADIO, CrudFormEnum::FORM_CHECKBOX]) ? intval($vv) : $vv,
+                            array_filter(
+                                explode('/', $value)
+                            )
                         )
-                    )
-                ) : [];
+                    ) : [];
+                }
                 break;
             case CrudFormEnum::FORM_IMAGE:
             case CrudFormEnum::FORM_FILE:
                 $value = $value ? json_decode($value, true) : null;
                 break;
             case CrudFormEnum::FORM_CASCADER:
-                if (! is_null($value)) {
+                if (!is_null($value)) {
                     if (preg_match('/\/(\d+\/)+$/', $value)) {
-                        $value     = explode(',', $value);
+                        $value = explode(',', $value);
                         $dataValue = [];
                         foreach ($value as $item) {
                             $dataValue[] = array_merge(array_filter(explode('/', $item)));
@@ -583,7 +692,7 @@ class CrudModuleService extends BaseService
                 break;
             case CrudFormEnum::FORM_CASCADER:
                 $impodeVal = [];
-                foreach ((array) $value as $item) {
+                foreach ((array)$value as $item) {
                     if ($item) {
                         $impodeVal[] = '/' . implode('/', is_array($item) ? $item : []) . '/';
                     }
@@ -591,7 +700,7 @@ class CrudModuleService extends BaseService
                 $value = implode(',', $impodeVal);
                 break;
             case CrudFormEnum::FORM_INPUT_SELECT:
-                $value = isset($value[0]) ? (array_values($value)[0] ?? $value) : ($value['id'] ?? $value);
+                $value = isset($value[0]) && is_array($value) ? (array_values($value)[0] ?? $value) : ($value['id'] ?? $value);
                 break;
             case CrudFormEnum::FORM_RICH_TEXT:
                 $value = htmlspecialchars($value);
@@ -640,17 +749,19 @@ class CrudModuleService extends BaseService
      */
     public function getCreateForm(SystemCrud $crud, int $crudId = 0, int $crudValue = 0, int $id = 0, bool $uni = false)
     {
-        $crudFormService = app()->make(SystemCrudFormService::class);
-        $formInfo        = $crudFormService->get(['crud_id' => $crud->id, 'is_index' => 1])?->toArray();
-        if (! $formInfo) {
+        $crudFormService = app()->get(SystemCrudFormService::class);
+        $formInfo = $crudFormService->get(where: ['crud_id' => $crud->id, 'is_index' => 1], with: ['crud.children'])?->toArray();
+        if (!$formInfo) {
             throw $this->exception('没有查询到表单信息');
         }
-
-        $fieldName    = null;
-        $defaultValue = (object) [];
+        $formInfo['table_name_en'] = $formInfo['crud']['table_name_en'];
+        $formInfo['children_table_name_en'] = $formInfo['crud']['children'][0]['table_name_en'] ?? '';
+        $formInfo['children_crud_id'] = $formInfo['crud']['children'][0]['id'] ?? 0;
+        $fieldName = null;
+        $defaultValue = (object)[];
         if ($crudId && $crudValue) {
-            $service       = app()->make(SystemCrudFieldService::class);
-            $fieldName     = $service->getAssociationCrudFieldNameEnCache($crud->id, $crudId);
+            $service = app()->get(SystemCrudFieldService::class);
+            $fieldName = $service->getAssociationCrudFieldNameEnCache($crud->id, $crudId);
             $mainFieldName = $service->getCrudMainFieldNameEnCache($crudId);
             if ($mainFieldName) {
                 $name = $this->model(crudId: $crudId)->viewSearch(viewSearch: [
@@ -665,37 +776,38 @@ class CrudModuleService extends BaseService
         }
 
         $fieldList = $this->getFormField($crud->id);
-        $column    = [];
+        $column = [];
 
+        $dictDataService = app()->get(DictDataService::class);
+        $dictData = [];
         if ($fieldList && $formInfo['options']) {
-            $dictData        = [];
-            $dictDataService = app()->make(DictDataService::class);
-
             foreach ($fieldList as $item) {
                 $key = $item['crud']['id'] != $crud->id ? $item['crud']['table_name_en'] . '.' . $item['field_name_en'] : $item['field_name_en'];
                 if ($fieldName == $key) {
                     $item['disabled'] = true;
-                    if (! $id) {
+                    if (!$id) {
                         $item['defaultValue'] = $defaultValue;
                     }
                 }
 
-                if ($item['data_dict_id']) {
-                    if (! isset($dictData[$item['data_dict_id']])) {
-                        $typeName                        = app()->make(DictTypeService::class)->value($item['data_dict_id'], 'ident');
+                if ($item['data_type'] == 1) {
+                    $item['data_dict'] = $item['customize_items'];
+                } elseif ($item['data_dict_id']) {
+                    if (!isset($dictData[$item['data_dict_id']])) {
+                        $typeName = app()->get(DictTypeService::class)->value($item['data_dict_id'], 'ident');
                         $dictData[$item['data_dict_id']] = $dictDataService->getTreeData(['type_id' => $item['data_dict_id'], 'type_name' => $typeName]);
                     }
                     $item['data_dict'] = $dictData[$item['data_dict_id']];
                 }
 
-                if (! $item['create_modify'] && ! $id) {
+                if (!$item['create_modify'] && !$id) {
                     $item['disabled'] = true;
                 }
-                if (! $item['update_modify'] && $id) {
+                if (!$item['update_modify'] && $id) {
                     $item['disabled'] = true;
                 }
                 $item['data_id'] = $id;
-                $column[$key]    = $item;
+                $column[$key] = $item;
             }
 
             $formInfo['options'] = $crudFormService->getFormOptions($formInfo['options'], $column);
@@ -703,15 +815,37 @@ class CrudModuleService extends BaseService
 
         if ($uni) {
             $columnnew = [];
-            $fields    = app()->make(SystemCrudFormService::class)->getFormFields($formInfo['options']);
+            $fields = app()->get(SystemCrudFormService::class)->getFormFields($formInfo['options']);
             foreach ($fields as $key) {
                 foreach ($column as $item) {
                     if ($key === $item['field_name_en']) {
                         $item['field_name_en'] = $item['crud']['id'] != $crud->id ? $item['crud']['table_name_en'] . '.' . $item['field_name_en'] : $item['field_name_en'];
                         $item['field_name_en'] = str_replace('.', '@', $item['field_name_en']);
-                        $columnnew[]           = $item;
+                        $columnnew[] = $item;
                     }
                 }
+            }
+            if ($crud->is_form_table && $formInfo['children_crud_id'] && $crud->table_field && $formInfo['children_table_name_en']) {
+                $childrenFields = app()->make(SystemCrudFieldService::class)->fieldByListCache($formInfo['children_crud_id'], $crud->table_field, 0);
+                foreach ($childrenFields as $index => $item) {
+                    if ($item['data_type'] == 1) {
+                        $item['data_dict'] = $item['customize_items'];
+                    } elseif ($item['data_dict_id']) {
+                        if (!isset($dictData[$item['data_dict_id']])) {
+                            $typeName = app()->get(DictTypeService::class)->value($item['data_dict_id'], 'ident');
+                            $dictData[$item['data_dict_id']] = $dictDataService->getTreeData(['type_id' => $item['data_dict_id'], 'type_name' => $typeName]);
+                        }
+                        $item['data_dict'] = $dictData[$item['data_dict_id']];
+                    }
+                    $childrenFields[$index] = $item;
+                }
+                $columnnew[] = [
+                    'id'            => 0,
+                    'crud_id'       => 0,
+                    'field_name_en' => $crud->table_name_en . '_' . $formInfo['children_table_name_en'],
+                    'column'        => $childrenFields,
+                    'form_value'    => CrudFormEnum::FORM_TABLE,
+                ];
             }
             $column = $columnnew;
         }
@@ -734,18 +868,18 @@ class CrudModuleService extends BaseService
      */
     public function getCrudInfo(SystemCrud $crud, int $uid, int $systemCrudId = 0, bool $uni = false, bool $isFieldAll = false)
     {
-        $showField    = $this->getShowTableField($crud->id, $systemCrudId ? 0 : $uid, false, $isFieldAll);
+        $showField = $this->getShowTableField($crud->id, $systemCrudId ? 0 : $uid, false, $isFieldAll);
         $seniorSearch = $this->getShowSearchField($crud->id, $systemCrudId ? 0 : $uid);
         $orderByField = $this->getOrderByField($crud->id);
-        $viewSearch   = app()->make(SystemCrudService::class)->getEventCrud($crud->id)['field'];
-        $crudInfo     = $crud->toArray();
+        $viewSearch = app()->get(SystemCrudService::class)->getEventCrud($crud->id)['field'];
+        $crudInfo = $crud->toArray();
 
-        $mainFieldName               = '';
-        $crudInfo['systemField']     = $crudInfo['customField'] = [];
+        $mainFieldName = '';
+        $crudInfo['systemField'] = $crudInfo['customField'] = [];
         $crudInfo['systemListField'] = $crudInfo['customListField'] = [];
         if ($crudInfo['field']) {
-            $systemField     = [];
-            $customField     = [];
+            $systemField = [];
+            $customField = [];
             $systemListField = [];
             $customListField = [];
             foreach ($crudInfo['field'] as $item) {
@@ -753,32 +887,32 @@ class CrudModuleService extends BaseService
                     $mainFieldName = $item['field_name_en'];
                 }
                 if ($item['is_default']) {
-                    if (! in_array($item['field_name_en'], ['user_id', 'deleted_at'])) {
-                        if (! in_array($item['form_value'], [CrudFormEnum::FORM_RICH_TEXT])) {
+                    if (!in_array($item['field_name_en'], ['user_id', 'deleted_at'])) {
+                        if (!in_array($item['form_value'], [CrudFormEnum::FORM_RICH_TEXT])) {
                             $systemListField[] = $item;
                         }
-                        if (! in_array($item['form_value'], [CrudFormEnum::FORM_IMAGE, CrudFormEnum::FORM_FILE, CrudFormEnum::FORM_INPUT, CrudFormEnum::FORM_TEXTAREA, CrudFormEnum::FORM_RICH_TEXT])) {
+                        if (!in_array($item['form_value'], [CrudFormEnum::FORM_IMAGE, CrudFormEnum::FORM_FILE, CrudFormEnum::FORM_INPUT, CrudFormEnum::FORM_TEXTAREA, CrudFormEnum::FORM_RICH_TEXT])) {
                             $systemField[] = $item;
                         }
                     }
                 } else {
-                    if (! in_array($item['form_value'], [CrudFormEnum::FORM_RICH_TEXT])) {
+                    if (!in_array($item['form_value'], [CrudFormEnum::FORM_RICH_TEXT])) {
                         $customListField[] = $item;
                     }
-                    if (! in_array($item['form_value'], [CrudFormEnum::FORM_IMAGE, CrudFormEnum::FORM_FILE, CrudFormEnum::FORM_INPUT, CrudFormEnum::FORM_TEXTAREA, CrudFormEnum::FORM_RICH_TEXT])) {
+                    if (!in_array($item['form_value'], [CrudFormEnum::FORM_IMAGE, CrudFormEnum::FORM_FILE, CrudFormEnum::FORM_INPUT, CrudFormEnum::FORM_TEXTAREA, CrudFormEnum::FORM_RICH_TEXT])) {
                         $customField[] = $item;
                     }
                 }
             }
-            $crudInfo['systemField']     = $systemField;
-            $crudInfo['customField']     = $customField;
+            $crudInfo['systemField'] = $systemField;
+            $crudInfo['customField'] = $customField;
             $crudInfo['systemListField'] = $systemListField;
             $crudInfo['customListField'] = $customListField;
         }
 
         if ($uni) {
             $newShowField = [];
-            $mainItem     = [];
+            $mainItem = [];
             foreach ($showField as $item) {
                 if ($item['field_name_en'] === $mainFieldName) {
                     $mainItem = $item;
@@ -794,7 +928,7 @@ class CrudModuleService extends BaseService
 
         $newShowField = [];
         foreach ($showField as $item) {
-            if (! in_array($item['form_value'], [CrudFormEnum::FORM_RICH_TEXT])) {
+            if (!in_array($item['form_value'], [CrudFormEnum::FORM_RICH_TEXT])) {
                 $newShowField[] = $item;
             }
         }
@@ -805,37 +939,37 @@ class CrudModuleService extends BaseService
 
         if ($systemCrudId) {
             // 用户系统保存的配置信息用来回显
-            $userOptions = app()->make(SystemCrudTableService::class)->get([
+            $userOptions = app()->get(SystemCrudTableService::class)->get([
                 'crud_id'  => $crudInfo['id'],
                 'is_index' => 1,
             ])?->toArray();
         } else {
             // 用户自己保存的配置信息用来回显
-            $userOptions = app()->make(SystemCrudTableUserService::class)->get([
+            $userOptions = app()->get(SystemCrudTableUserService::class)->get([
                 'crud_id' => $crudInfo['id'],
                 'user_id' => $uid,
             ])?->toArray();
 
-            if (! $userOptions) {
-                $userOptions = app()->make(SystemCrudTableService::class)->get([
+            if (!$userOptions) {
+                $userOptions = app()->get(SystemCrudTableService::class)->get([
                     'crud_id'  => $crudInfo['id'],
                     'is_index' => 1,
                 ])?->toArray();
             }
         }
 
-        $fieldService = app()->make(SystemCrudFieldService::class);
-        $crudService  = app()->make(SystemCrudService::class);
+        $fieldService = app()->get(SystemCrudFieldService::class);
+        $crudService = app()->get(SystemCrudService::class);
 
-        if (! $userOptions) {
-            $userOptions = (object) [];
+        if (!$userOptions) {
+            $userOptions = (object)[];
         } else {
             $associationIds = $fieldService->crudByAssociationIds($crud->id);
 
-            if (! empty($userOptions['options']['tab'])) {
-                $ids    = array_column($userOptions['options']['tab'], 'id');
+            if (!empty($userOptions['options']['tab'])) {
+                $ids = array_column($userOptions['options']['tab'], 'id');
                 $column = $crudService->getCrudTableAll($ids);
-                $tab    = [];
+                $tab = [];
                 foreach ($userOptions['options']['tab'] as $option) {
                     if (isset($column[$option['id']]) && in_array($option['id'], $associationIds)) {
                         $tab[] = $option;
@@ -843,8 +977,8 @@ class CrudModuleService extends BaseService
                 }
                 $userOptions['options']['tab'] = $tab;
             }
-            if (! empty($userOptions['options']['create'])) {
-                $ids    = array_column($userOptions['options']['create'], 'id');
+            if (!empty($userOptions['options']['create'])) {
+                $ids = array_column($userOptions['options']['create'], 'id');
                 $column = $crudService->getCrudTableAll($ids);
                 $create = [];
                 foreach ($userOptions['options']['create'] as $option) {
@@ -856,26 +990,29 @@ class CrudModuleService extends BaseService
             }
         }
 
-        $fieldIds        = array_column($viewSearch, 'id');
-        $association     = app()->make(SystemCrudFieldService::class)->fieldIdByAssociationInfo($fieldIds);
+        $fieldIds = array_column($viewSearch, 'id');
+        $association = app()->get(SystemCrudFieldService::class)->fieldIdByAssociationInfo($fieldIds);
         $associationData = [];
         foreach ($association as $item) {
             $associationData[$item['id']] = $item['association'];
         }
         $newViewSearch = [];
         foreach ($viewSearch as $search) {
-            $isUser          = ! empty($associationData[$search['id']]) && $associationData[$search['id']]['table_name_en'] === SystemCrudService::SYSTEM_TABLE_TABLE_USER;
-            $isFrame         = ! empty($associationData[$search['id']]) && $associationData[$search['id']]['table_name_en'] === SystemCrudService::SYSTEM_TABLE_TABLE_FRAME;
+            $isUser = !empty($associationData[$search['id']]) && $associationData[$search['id']]['table_name_en'] === SystemCrudService::SYSTEM_TABLE_TABLE_USER;
+            $isFrame = !empty($associationData[$search['id']]) && $associationData[$search['id']]['table_name_en'] === SystemCrudService::SYSTEM_TABLE_TABLE_FRAME;
             $newViewSearch[] = [
-                'type'         => $search['form_value'],
-                'field'        => $search['field_name_en'],
-                'id'           => $search['id'],
-                'is_user'      => $isUser,
-                'is_frame'     => $isFrame,
-                'options'      => $search['data_dict'],
-                'title'        => $search['label'],
-                'crud_id'      => $search['crud_id'],
-                'is_city_show' => $search['is_city_show'],
+                'type'                  => $search['form_value'],
+                'field'                 => $search['field_name_en'],
+                'id'                    => $search['id'],
+                'is_user'               => $isUser,
+                'is_frame'              => $isFrame,
+                'options'               => $search['data_dict'],
+                'title'                 => $search['label'],
+                'crud_id'               => $search['crud_id'],
+                'is_city_show'          => $search['is_city_show'],
+                'association_show_type' => $search['association_show_type'] ?? 1,
+                'customize_items'       => $search['customize_items'] ?? [],
+                'data_type'             => $search['data_type'] ?? 0,
             ];
         }
 
@@ -897,12 +1034,12 @@ class CrudModuleService extends BaseService
      */
     public function getAssociationField(int $fieldId)
     {
-        $fieldService = app()->make(SystemCrudFieldService::class);
-        $fieldInfo    = $fieldService->get($fieldId);
-        if (! $fieldInfo) {
+        $fieldService = app()->get(SystemCrudFieldService::class);
+        $fieldInfo = $fieldService->get($fieldId);
+        if (!$fieldInfo) {
             throw $this->exception('没有查询到实体字段信息信息');
         }
-        if (! $fieldInfo->association_crud_id) {
+        if (!$fieldInfo->association_crud_id) {
             throw $this->exception('没有查询到一对一关联实体信息');
         }
 
@@ -910,7 +1047,10 @@ class CrudModuleService extends BaseService
         $indexFieldName = $fieldService->value(['crud_id' => $fieldInfo->association_crud_id, 'is_main' => 1], 'field_name_en');
 
         $associationFieldNames = $fieldInfo->association_field_names;
-        if (! in_array('id', $associationFieldNames)) {
+        if (!is_array($associationFieldNames)) {
+            $associationFieldNames = [];
+        }
+        if (!in_array('id', $associationFieldNames)) {
             array_unshift($associationFieldNames, $indexFieldName, 'id');
         } else {
             array_unshift($associationFieldNames, $indexFieldName);
@@ -920,7 +1060,7 @@ class CrudModuleService extends BaseService
         $associationField = $fieldService->getFieldSelect($fieldInfo->association_crud_id, $associationFieldNames);
 
         $indexfieldInfo = [];
-        $fields         = [];
+        $fields = [];
         foreach ($associationField as $item) {
             if ($indexFieldName != $item['field_name_en']) {
                 $fields[] = $item;
@@ -948,20 +1088,20 @@ class CrudModuleService extends BaseService
      */
     public function getAssociationList(int $fieldId, string $keyword = '')
     {
-        $fieldService = app()->make(SystemCrudFieldService::class);
-        $fieldInfo    = $fieldService->get($fieldId, ['*'], ['crud' => fn ($q) => $q->select(['id', 'table_name_en'])]);
-        if (! $fieldInfo) {
+        $fieldService = app()->get(SystemCrudFieldService::class);
+        $fieldInfo = $fieldService->get($fieldId, ['*'], ['crud' => fn($q) => $q->select(['id', 'table_name_en'])]);
+        if (!$fieldInfo) {
             throw $this->exception('没有查询到实体字段信息信息');
         }
-        if (! $fieldInfo->association_crud_id) {
+        if (!$fieldInfo->association_crud_id) {
             throw $this->exception('没有查询到一对一关联实体信息');
         }
-        if (! $tableName = app()->make(SystemCrudService::class)->getCrudTableNameCache((int) $fieldInfo->association_crud_id)) {
+        if (!$tableName = app()->get(SystemCrudService::class)->getCrudTableNameCache((int)$fieldInfo->association_crud_id)) {
             throw $this->exception('没有查询到一对一关联实体信息');
         }
         // 获取主字段展示
         $indexFieldName = $fieldService->value(['crud_id' => $fieldInfo->association_crud_id, 'is_main' => 1], 'field_name_en');
-        if (! $indexFieldName) {
+        if (!$indexFieldName) {
             throw $this->exception('请先前往开发中设置[' . $tableName . ']实体的主字段展示');
         }
 
@@ -972,9 +1112,11 @@ class CrudModuleService extends BaseService
             'form_value',
             'association_crud_id',
             'data_dict_id',
+            'data_type',
+            'customize_items',
         ];
 
-        $fieldSelect = $fieldService->getFieldSelect($fieldInfo->association_crud_id, $fieldInfo->association_field_names, $selectField);
+        $fieldSelect = $fieldService->getFieldSelect($fieldInfo->association_crud_id, is_array($fieldInfo->association_field_names) ? $fieldInfo->association_field_names : [], $selectField);
         // 获取字段相关关联实体
         $fieldSelect = $this->getFieldAssociation($fieldSelect);
 
@@ -995,11 +1137,11 @@ class CrudModuleService extends BaseService
         $model = $this->model(crudId: $fieldInfo->association_crud_id)->searchWhere(where: $where, orderBy: 'id');
 
         $count = $model->count();
-        $list  = $model->forPage($page, $limit)
-            ->when(count($with), fn ($q) => $q->with($with))
+        $list = $model->when($page && $limit, fn($q) => $q->forPage($page, $limit))
+            ->when(count($with), fn($q) => $q->with($with))
             ->select($select)->get()->toArray();
 
-        $list = $this->otherWithList($otherWith, $list, $fieldSelect);
+        $list = $this->otherWithList($otherWith, $list, $fieldSelect, indexField: $indexFieldName);
 
         return compact('list', 'count');
     }
@@ -1009,17 +1151,24 @@ class CrudModuleService extends BaseService
      * @email 136327134@qq.com
      * @date 2024/3/13
      * @param mixed $crudId
+     * @param mixed $addendumInfo
+     * @param null|mixed $crud
      * @return mixed
      * @throws BindingResolutionException
      */
-    public function getFormField($crudId, string $fieldNameEn = '')
+    public function getFormField(int $crudId, string $fieldNameEn = '', $addendumInfo = [], $crud = null)
     {
-        $formFields = app()->make(SystemCrudService::class)->getCrudInfoCache(crudId: $crudId)['form_fields'];
-        if (! $formFields) {
+        if ($crud) {
+            $crudId = $crud->id;
+        }
+        $crudInfo = app()->get(SystemCrudService::class)->getCrudInfoCache(crudId: $crudId);
+        $formFields = $crudInfo['form_fields'];
+        $tableFields = $crudInfo['table_field'];
+        if (!$formFields && (!$tableFields && $crudInfo['is_form_table'])) {
             return [];
         }
 
-        if ($fieldNameEn && ! in_array($fieldNameEn, $formFields)) {
+        if ($fieldNameEn && !in_array($fieldNameEn, $formFields) && !$crudInfo['is_form_table']) {
             return [];
         }
 
@@ -1030,8 +1179,8 @@ class CrudModuleService extends BaseService
             }
             if (strstr($field, '.') !== false) {
                 [$tableName, $fieldName] = explode('.', $field);
-                $cid                     = app()->make(SystemCrudService::class)->tableNameEnByCrudIdCache($tableName);
-                $scheduleId[$cid][]      = $fieldName;
+                $cid = app()->get(SystemCrudService::class)->tableNameEnByCrudIdCache($tableName);
+                $scheduleId[$cid][] = $fieldName;
             } else {
                 $scheduleId[$crudId][] = $field;
             }
@@ -1039,13 +1188,57 @@ class CrudModuleService extends BaseService
 
         $list = [];
         foreach ($scheduleId as $k => $fields) {
-            $res = app()->make(SystemCrudFieldService::class)->fieldByListCache((int) $k, $fields);
+            $res = app()->get(SystemCrudFieldService::class)->fieldByListCache((int)$k, $fields);
             if ($res) {
                 $list = array_merge($list, $res);
             }
         }
 
+        if ($crudInfo['is_form_table'] && $tableFields && $addendumInfo) {
+            $addendumName = $crud->table_name_en . '_' . $addendumInfo['table_name_en'];
+            foreach ($tableFields as $field) {
+                $res = app()->get(SystemCrudFieldService::class)->fieldByListCache((int)$addendumInfo['id'], [$field]);
+                if ($res) {
+                    $merge = [];
+                    foreach ($res as $item) {
+                        if ($fieldNameEn && $addendumName != $fieldNameEn && $fieldNameEn != $item['field_name_en']) {
+                            continue;
+                        }
+                        $merge[] = $item;
+                    }
+                    $list = array_merge($list, $merge);
+                }
+            }
+        }
+
         return $list;
+    }
+
+    /**
+     * 获取表单字段信息.
+     * @return array|mixed
+     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    public function getTableFieldFormField(int $crudId)
+    {
+        $formFields = app()->get(SystemCrudService::class)->getCrudInfoCache(crudId: $crudId)['table_field'];
+        if (!$formFields) {
+            return [];
+        }
+        $subordinateCrud = app()->get(SystemCrudService::class)->getSubordinateCrudInfoCache(parentId: $crudId);
+        if (!$subordinateCrud) {
+            return [];
+        }
+        $formFields = array_merge(array_unique(array_merge($formFields, ['id'])));
+        $fields = app()->get(SystemCrudFieldService::class)->fieldByListCache((int)$subordinateCrud['id'], $formFields, 0, true);
+
+        return [
+            'fields'           => $fields,
+            'crud_table_name'  => $subordinateCrud['table_name_en'],
+            'subordinate_crud' => $subordinateCrud,
+        ];
     }
 
     /**
@@ -1061,8 +1254,8 @@ class CrudModuleService extends BaseService
         foreach ($fields as $field) {
             if (strstr($field, '.') !== false) {
                 [$tableName, $fieldName] = explode('.', $field);
-                $cid                     = app()->make(SystemCrudService::class)->value(['table_name_en' => $tableName], 'id');
-                $scheduleId[$cid][]      = $fieldName;
+                $cid = app()->get(SystemCrudService::class)->value(['table_name_en' => $tableName], 'id');
+                $scheduleId[$cid][] = $fieldName;
             } else {
                 $scheduleId[$crudId][] = $field;
             }
@@ -1070,7 +1263,7 @@ class CrudModuleService extends BaseService
 
         $list = [];
         foreach ($scheduleId as $k => $fields) {
-            $res = app()->make(SystemCrudFieldService::class)->fieldByList((int) $k, $fields, 0);
+            $res = app()->get(SystemCrudFieldService::class)->fieldByList((int)$k, $fields, 0);
             if ($res) {
                 $list = array_merge($list, $res);
             }
@@ -1089,7 +1282,7 @@ class CrudModuleService extends BaseService
     public function setViewSearch(array $viewSearch, int $crudId, string $keyName = 'field_name')
     {
         $fields = array_column($viewSearch, $keyName);
-        if (! $fields) {
+        if (!$fields) {
             return [];
         }
 
@@ -1124,38 +1317,46 @@ class CrudModuleService extends BaseService
      */
     public function saveModule(SystemCrud $crud, array $data, array $systemData = [], int $crudId = 0, int $crudValue = 0)
     {
-        $masterData   = [];
+        $masterData = [];
         $scheduleData = [];
-        $scheduleIds  = [];
+        $subordinateData = [];
+        $subordinateInfo = [];
 
         $model = $this->model(crudId: $crud->id);
 
-        foreach ($data as $key => $item) {
-            $value = $this->setValueAttribute($item['item']['form_value'], $item['value']);
-
-            if ($item['item']['crud_id'] === $crud->id) {
-                $masterData[$item['item']['field_name_en']] = $value;
-
-                if ($item['item']['is_uniqid'] && $model->count([$item['item']['field_name_en'] => $value])) {
-                    throw $this->exception('字段' . $item['item']['field_name'] . '的值不能重复');
+        foreach ($data as $item) {
+            if ($item['subordinate']) {
+                foreach ($item['value'] as $index => $subordinate) {
+                    foreach ($subordinate as $k => $v) {
+                        $item['value'][$index][$k] = $v = $this->setValueAttribute($item['subordinate'][$k]['form_value'], $v);
+                        if ($item['subordinate'][$k]['is_uniqid'] && $model->count([$k => $v])) {
+                            throw $this->exception('明细字段' . $k . '的值不能重复');
+                        }
+                    }
                 }
+                $value = $item['value'];
+                $subordinateData[$item['item']['table_name_en']] = $value;
+                $subordinateInfo = $item['item'];
             } else {
-                $scheduleIds[$item['item']['crud']['table_name_en']][] = [
-                    'crud_id'           => $item['item']['crud']['id'],
-                    'value'             => $value,
-                    'form_field_uniqid' => $key,
-                    'field_name_en'     => $item['item']['field_name_en'],
-                ];
+                $value = $this->setValueAttribute($item['item']['form_value'], $item['value']);
 
-                $scheduleData[$item['item']['crud']['table_name_en']][$item['item']['field_name_en']] = $value;
+                if ($item['item']['crud_id'] === $crud->id) {
+                    $masterData[$item['item']['field_name_en']] = $value;
+
+                    if ($item['item']['is_uniqid'] && $model->count([$item['item']['field_name_en'] => $value])) {
+                        throw $this->exception('字段' . $item['item']['field_name'] . '的值不能重复');
+                    }
+                } else {
+                    $scheduleData[$item['item']['crud']['table_name_en']][$item['item']['field_name_en']] = $value;
+                }
             }
         }
 
-        if (! empty($systemData['ip'])) {
+        if (!empty($systemData['ip'])) {
             $masterData[$crud->table_name_en . '_ip'] = $systemData['ip'];
         }
 
-        $masterData['user_id']    = $systemData['uid'];
+        $masterData['user_id'] = $systemData['uid'];
         $masterData['created_at'] = date('Y-m-d H:i:s');
         unset($masterData['update_user_id']);
         if (empty($masterData['owner_user_id'])) {
@@ -1163,7 +1364,7 @@ class CrudModuleService extends BaseService
         }
 
         if (empty($masterData['frame_id'])) {
-            $masterData['frame_id'] = app()->make(FrameAssistService::class)->value(['user_id' => $systemData['uid'], 'is_mastart' => 1], 'frame_id');
+            $masterData['frame_id'] = app()->get(FrameAssistService::class)->value(['user_id' => $systemData['uid'], 'is_mastart' => 1], 'frame_id');
         }
         if (is_null($masterData['frame_id'])) {
             $masterData['frame_id'] = 0;
@@ -1174,33 +1375,56 @@ class CrudModuleService extends BaseService
 
         // 有关联的主体在详情中进行添加
         if ($crudId && $crudValue) {
-            $fieldName = app()->make(SystemCrudFieldService::class)->getAssociationCrudFieldNameEnCache($crud->id, $crudId);
-            if (! $fieldName) {
+            $fieldName = app()->get(SystemCrudFieldService::class)->getAssociationCrudFieldNameEnCache($crud->id, $crudId);
+            if (!$fieldName) {
                 throw $this->exception('关联字段没有查询到字段名');
             }
             $masterData[$fieldName] = $crudValue;
         }
 
-        [$masterId, $scheduleData] = $this->transaction(function () use ($model, $systemData, $crud, $masterData, $scheduleData) {
+        [$masterId, $scheduleData, $subordinateData] = $this->transaction(function () use ($model, $systemData, $crud, $masterData, $scheduleData, $subordinateData, $subordinateInfo) {
             $masterId = $model->getIncId($masterData);
 
-            foreach ($scheduleData as $tableName => &$item) {
-                $item[$crud->table_name_en . '_id'] = $masterId;
+            if (!$subordinateInfo) {
+                foreach ($scheduleData as $tableName => &$item) {
+                    $item[$crud->table_name_en . '_id'] = $masterId;
 
-                if (empty($item['user_id'])) {
-                    $item['user_id'] = $systemData['uid'];
-                }
-                if (empty($item['owner_user_id'])) {
-                    $item['owner_user_id'] = $systemData['uid'];
-                }
-                if (empty($item['created_at'])) {
-                    $item['created_at'] = date('Y-m-d H:i:s');
-                }
+                    if (empty($item['user_id'])) {
+                        $item['user_id'] = $systemData['uid'];
+                    }
+                    if (empty($item['owner_user_id'])) {
+                        $item['owner_user_id'] = $systemData['uid'];
+                    }
+                    if (empty($item['created_at'])) {
+                        $item['created_at'] = date('Y-m-d H:i:s');
+                    }
 
-                DB::table($tableName)->insert($item);
+                    DB::table($tableName)->insert($item);
+                }
+            } else {
+                unset($item);
+                foreach ($subordinateData as $tableName => &$item) {
+                    foreach ($item as $index => $subordinate) {
+                        $subordinate[$crud->table_name_en . '_id'] = $masterId;
+
+                        if (empty($item['user_id'])) {
+                            $subordinate['user_id'] = $systemData['uid'];
+                        }
+                        if (empty($subordinate['owner_user_id'])) {
+                            $subordinate['owner_user_id'] = $systemData['uid'];
+                        }
+                        if (empty($subordinate['created_at'])) {
+                            $subordinate['created_at'] = date('Y-m-d H:i:s');
+                        }
+
+                        $item[$index] = $subordinate;
+                    }
+
+                    DB::table($tableName)->insert($item);
+                }
             }
 
-            return [$masterId, $scheduleData];
+            return [$masterId, $scheduleData, $subordinateData];
         });
         // 处理事件
         $this->handleEvent($crud, CrudTriggerEnum::TRIGGER_CREATED, $masterId, $masterData, $scheduleData);
@@ -1226,43 +1450,83 @@ class CrudModuleService extends BaseService
      */
     public function updateModule(SystemCrud $crud, int $id, array $data, array $systemData = [])
     {
-        $masterData        = [];
-        $scheduleData      = [];
-        $scheduleField     = [];
+        $masterData = [];
+        $scheduleData = [];
+        $scheduleField = [];
+        $subordinateData = [];
+        $subordinateDataids = [];
         $scheduleTableName = null;
-        $scheduleCrudId    = null;
+        $scheduleCrudId = null;
 
         $model = $this->model(crudId: $crud->id);
 
         foreach ($data as $item) {
-            $value = $this->setValueAttribute($item['item']['form_value'], $item['value']);
+            if ($item['subordinate']) {
+                foreach ($item['value'] as $index => $subordinate) {
+                    foreach ($subordinate as $k => $v) {
+                        if ($k !== 'id') {
+                            $item['value'][$index][$k] = $v = $this->setValueAttribute($item['subordinate'][$k]['form_value'], $v);
 
-            if ($item['item']['crud_id'] === $crud->id) {
-                $masterData[$item['item']['field_name_en']] = $value;
-
-                if ($item['item']['is_uniqid'] && $model->viewSearch([
-                    [
-                        'field_name' => 'id',
-                        'operator'   => CrudOperatorEnum::OPERATOR_NOT_EQ,
-                        'value'      => $id,
-                    ],
-                    [
-                        'field_name' => $item['item']['field_name_en'],
-                        'operator'   => CrudOperatorEnum::OPERATOR_EQ,
-                        'value'      => $value,
-                    ],
-                ])->count()) {
-                    throw $this->exception('字段' . $item['item']['field_name'] . '的值不能重复');
+                            if ($item['subordinate'][$k]['is_uniqid'] && $model->viewSearch(
+                                    [
+                                        [
+                                            'field_name' => 'id',
+                                            'operator'   => CrudOperatorEnum::OPERATOR_NOT_EQ,
+                                            'value'      => $id,
+                                        ],
+                                        [
+                                            'field_name' => $k,
+                                            'operator'   => CrudOperatorEnum::OPERATOR_EQ,
+                                            'value'      => $v,
+                                        ],
+                                    ]
+                                )->count()) {
+                                throw $this->exception('明细字段' . $k . '的值不能重复');
+                            }
+                        } else {
+                            $subordinateDataids[] = $v;
+                        }
+                    }
                 }
-            } else {
+                $value = $item['value'];
                 // 附表名
-                $scheduleTableName = $item['item']['crud']['table_name_en'];
+                $scheduleTableName = $item['item']['table_name_en'];
                 // 附表crud_id
-                $scheduleCrudId = $item['item']['crud']['id'];
+                $scheduleCrudId = $item['item']['id'];
                 // 附表字段
-                $scheduleField[] = $item['item']['field_name_en'];
+                $scheduleField = array_keys($item['subordinate']);
                 // 附表数据
-                $scheduleData[$item['item']['field_name_en']] = $value;
+                $subordinateData = $value;
+            } else {
+                $value = $this->setValueAttribute($item['item']['form_value'], $item['value']);
+
+                if ($item['item']['crud_id'] === $crud->id) {
+                    $masterData[$item['item']['field_name_en']] = $value;
+
+                    if ($item['item']['is_uniqid'] && $model->viewSearch([
+                            [
+                                'field_name' => 'id',
+                                'operator'   => CrudOperatorEnum::OPERATOR_NOT_EQ,
+                                'value'      => $id,
+                            ],
+                            [
+                                'field_name' => $item['item']['field_name_en'],
+                                'operator'   => CrudOperatorEnum::OPERATOR_EQ,
+                                'value'      => $value,
+                            ],
+                        ])->count()) {
+                        throw $this->exception('字段' . $item['item']['field_name'] . '的值不能重复');
+                    }
+                } else {
+                    // 附表名
+                    $scheduleTableName = $item['item']['crud']['table_name_en'];
+                    // 附表crud_id
+                    $scheduleCrudId = $item['item']['crud']['id'];
+                    // 附表字段
+                    $scheduleField[] = $item['item']['field_name_en'];
+                    // 附表数据
+                    $scheduleData[$item['item']['field_name_en']] = $value;
+                }
             }
         }
 
@@ -1272,20 +1536,40 @@ class CrudModuleService extends BaseService
         // 主表的查询
         if ($masterData) {
             $dataInfo = $model->get($id, array_keys($masterData));
-            if (! $dataInfo) {
+            if (!$dataInfo) {
                 throw $this->exception('没有查询到数据无法进行修改');
             }
         }
         // 附表的查询
+        $scheduleList = [];
+        $scheduleInfo = [];
+        $list = [];
         if ($scheduleTableName) {
-            $scheduleInfo = $this->model(tableName: $scheduleTableName)->get([$crud->table_name_en . '_id' => $id], $scheduleField);
+            if ($subordinateDataids) {
+                $scheduleList = $this->model(tableName: $scheduleTableName)->searchWhere([
+                    [
+                        'field_name' => 'id',
+                        'operator'   => CrudOperatorEnum::OPERATOR_IN,
+                        'value'      => $subordinateDataids,
+                    ],
+                ])->select($scheduleField)->get()->toArray();
+                $list = $this->model(tableName: $scheduleTableName)->searchWhere([
+                    [
+                        'field_name' => $crud->table_name_en . '_id',
+                        'operator'   => CrudOperatorEnum::OPERATOR_EQ,
+                        'value'      => $id,
+                    ],
+                ])->select(['id'])->get()->toArray();
+            } else {
+                $scheduleInfo = $this->model(tableName: $scheduleTableName)->get([$crud->table_name_en . '_id' => $id], $scheduleField);
+            }
         }
         // 数据验证事件处理
         $this->handleEvent(crud: $crud, action: CrudTriggerEnum::TRIGGER_UPDATED, id: $id, data: $data, scheduleData: $scheduleData, isDataCheck: true);
 
         unset($masterData['user_id'], $masterData['created_at'], $masterData['updated_at']);
 
-        [$masterRes, $scheduleData] = $this->transaction(function () use ($model, $crud, $systemData, $id, $masterData, $scheduleTableName, $scheduleData) {
+        [$masterRes, $scheduleData] = $this->transaction(function () use ($model, $crud, $systemData, $id, $masterData, $scheduleTableName, $scheduleData, $subordinateData, $list) {
             if ($masterData) {
                 $masterRes = $model->update($id, $masterData);
             } else {
@@ -1293,26 +1577,58 @@ class CrudModuleService extends BaseService
             }
 
             if ($scheduleTableName) {
-                $db     = DB::table($scheduleTableName);
-                $exists = $db->where($crud->table_name_en . '_id', $id)->exists();
-
-                // 不存在但字段更新或者附表的数据不存在的时候进行增加
-                if (! isset($systemData['single_field_name']) || ! $exists) {
-                    $scheduleData['update_user_id'] = $systemData['uid'];
-                    $scheduleData['created_at']     = date('Y-m-d H:i:s');
-                }
-
-                if ($exists) {
-                    $scheduleRes = $db->where($crud->table_name_en . '_id', $id)->update($scheduleData);
-                } else {
-                    $scheduleData[$crud->table_name_en . '_id'] = $id;
-                    $db->insert($scheduleData);
+                if ($subordinateData) {
+                    $insertData = [];
+                    $ids = [];
+                    foreach ($subordinateData as $item) {
+                        $exists = false;
+                        if (!empty($item['id'])) {
+                            $exists = DB::table($scheduleTableName)->where('id', $item['id'])->exists();
+                            $ids[] = $item['id'];
+                        }
+                        if ($exists) {
+                            $update = $item;
+                            unset($update['id']);
+                            DB::table($scheduleTableName)->where('id', $item['id'])->update($update);
+                        } else {
+                            $item[$crud->table_name_en . '_id'] = $id;
+                            $item['update_user_id'] = $systemData['uid'];
+                            $item['created_at'] = date('Y-m-d H:i:s');
+                            $insertData[] = $item;
+                        }
+                    }
+                    if ($ids) {
+                        $baerIds = array_column($list, 'id');
+                        $deleteIds = array_diff($baerIds, $ids);
+                        if ($deleteIds) {
+                            DB::table($scheduleTableName)->whereIn('id', $deleteIds)->delete();
+                        }
+                    }
+                    if ($insertData) {
+                        DB::table($scheduleTableName)->insert($insertData);
+                    }
                     $scheduleRes = true;
+                } else {
+                    $exists = DB::table($scheduleTableName)->where($crud->table_name_en . '_id', $id)->exists();
+
+                    // 不存在但字段更新或者附表的数据不存在的时候进行增加
+                    if (!isset($systemData['single_field_name']) || !$exists) {
+                        $scheduleData['update_user_id'] = $systemData['uid'];
+                        $scheduleData['created_at'] = date('Y-m-d H:i:s');
+                    }
+
+                    if ($exists) {
+                        $scheduleRes = DB::table($scheduleTableName)->where($crud->table_name_en . '_id', $id)->update($scheduleData);
+                    } else {
+                        $scheduleData[$crud->table_name_en . '_id'] = $id;
+                        DB::table($scheduleTableName)->insert($scheduleData);
+                        $scheduleRes = true;
+                    }
                 }
             } else {
                 $scheduleRes = true;
             }
-            if ((! $masterRes || ! $scheduleRes) && isset($systemData['single_field_name'])) {
+            if ((!$masterRes || !$scheduleRes) && isset($systemData['single_field_name'])) {
                 throw $this->exception('修改失败或修改的数据没有变化');
             }
 
@@ -1320,18 +1636,18 @@ class CrudModuleService extends BaseService
         });
 
         // 其他事件处理
-        $this->handleEvent($crud, CrudTriggerEnum::TRIGGER_UPDATED, $id, $masterData, $scheduleData, $dataInfo?->toArray() ?: [], $scheduleInfo?->toArray() ?: []);
+        $this->handleEvent($crud, CrudTriggerEnum::TRIGGER_UPDATED, $id, $masterData, $scheduleData, $dataInfo?->toArray() ?: [], $scheduleInfo ? $scheduleInfo?->toArray() ?: [] : $scheduleList);
 
         // 记录日志
         if (isset($systemData['single_field_name'])) {
             $beforeValue = $dataInfo[$systemData['single_field_name']] ?? '';
-            $afterValue  = $masterData[$systemData['single_field_name']] ?? '';
+            $afterValue = $masterData[$systemData['single_field_name']] ?? '';
             if (json_encode($beforeValue) !== json_encode($afterValue)) {
                 $crudId = $crud->id;
                 if ($scheduleData && $scheduleCrudId) {
                     $beforeValue = $scheduleInfo[$systemData['single_field_name']] ?? '';
-                    $afterValue  = $scheduleData[$systemData['single_field_name']] ?? '';
-                    $crudId      = $scheduleCrudId;
+                    $afterValue = $scheduleData[$systemData['single_field_name']] ?? '';
+                    $crudId = $scheduleCrudId;
                 }
                 CrudLogJob::dispatch([
                     'uid'                  => $systemData['uid'],
@@ -1356,15 +1672,15 @@ class CrudModuleService extends BaseService
      */
     public function getFindUniModule(SystemCrud $crud, int $id, int $uid = 0)
     {
-        $crudService  = app()->make(SystemCrudService::class);
-        $fieldService = app()->make(SystemCrudFieldService::class);
-        $formField    = $this->getFormField($crud->id);
+        $crudService = app()->get(SystemCrudService::class);
+        $fieldService = app()->get(SystemCrudFieldService::class);
+        $formField = $this->getFormField($crud->id);
 
-        $select      = [];
+        $select = [];
         $fieldColumn = [];
         foreach ($formField as $item) {
             if ($item['crud']['id'] == $crud->id) {
-                $select[]                            = $item['field_name_en'];
+                $select[] = $item['field_name_en'];
                 $fieldColumn[$item['field_name_en']] = [
                     'form_value'  => $item['form_value'],
                     'field_name'  => $item['field_name'],
@@ -1376,17 +1692,17 @@ class CrudModuleService extends BaseService
         array_push($select, 'id');
 
         $moduleInfo = $this->model(crudId: $crud->id)->get($id, $select)?->toArray();
-        if (! $moduleInfo) {
+        if (!$moduleInfo) {
             throw $this->exception('没有查询到' . $crud->table_name . '信息');
         }
 
         /** @var AdminService $adminService */
-        $adminService = app()->make(AdminService::class)->getModel(false);
-        $frameService = app()->make(FrameService::class);
+        $adminService = app()->get(AdminService::class)->getModel(false);
+        $frameService = app()->get(FrameService::class);
 
         foreach ($moduleInfo as $key => $value) {
             $formValue = $fieldColumn[$key] ?? null;
-            if (! $formValue) {
+            if (!$formValue) {
                 continue;
             }
 
@@ -1407,7 +1723,7 @@ class CrudModuleService extends BaseService
 
             if ($formValue['association']) {
                 $fieldName = $fieldService->value(['crud_id' => $formValue['association']['id'], 'is_main' => 1], 'field_name_en');
-                if (! $fieldName) {
+                if (!$fieldName) {
                     continue;
                 }
                 $name = $this->dao->setTableName($formValue['association']['table_name_en'])->value($value, $fieldName);
@@ -1419,57 +1735,105 @@ class CrudModuleService extends BaseService
 
         unset($formValue, $key, $value);
 
+        $detailsList = [];
         // 获取附表信息
-        $scheduleId = $crudService->value(['crud_id' => $crud->id], 'id');
-        if ($scheduleId) {
-            $select       = ['crud_id', 'is_form', 'data_dict_id', 'options', 'id', 'field_name_en', 'field_name', 'form_value'];
-            $scheduleCrud = $crudService->get($scheduleId, ['id', 'table_name_en'], [
-                'field' => fn ($q) => $q->where('is_form', 1)->select($select),
+        $scheduleInfo = $this->getTableFieldFormField($crud->id);
+        if ($scheduleInfo) {
+            $select = ['crud_id', 'is_form', 'data_dict_id', 'options', 'id', 'field_name_en', 'field_name', 'form_value'];
+            $scheduleCrud = $crudService->get($scheduleInfo['subordinate_crud']['id'], ['id', 'table_name_en'], [
+                'field' => fn($q) => $q->where('is_form', 1)->select($select),
             ])?->toArray();
 
-            if (! empty($scheduleCrud['field'])) {
+            if (!empty($scheduleCrud['field'])) {
                 $field = array_column($scheduleCrud['field'], 'field_name_en');
 
-                $scheduleFieldColumn = [];
                 foreach ($scheduleCrud['field'] as $item) {
-                    $fieldColumn[$scheduleCrud->table_name_en . '@' . $item['field_name_en']] = [
+                    $fieldColumn[$item['field_name_en']] = [
                         'form_value'  => $item['form_value'],
                         'field_name'  => $item['field_name'],
-                        'association' => null,
-                    ];
-                    $scheduleFieldColumn[$item['field_name_en']] = [
-                        'form_value'  => $item['form_value'],
-                        'field_name'  => $item['field_name'],
-                        'association' => null,
+                        'association' => $item['association'] ?? null,
                     ];
                 }
 
-                $scheduleData = $this->model(crudId: $scheduleCrud['id'])->get([$crud->table_name_en . '_id' => $id], $field)?->toArray();
+                if ($crud->table_field) {
+                    $field = array_unique(array_merge($field, ['id']));
+                    $scheduleList = $scheduleNewList = $this->model(crudId: $scheduleCrud['id'])->select([$crud->table_name_en . '_id' => $id], $field)?->toArray();
+                    foreach ($scheduleList as $index => $scheduleData) {
+                        $scheduleDataNew = [];
+                        foreach ($scheduleData as $key => $datum) {
+                            $formValue = $fieldColumn[$key] ?? null;
+                            if ($key !== 'id') {
+                                if (!$formValue) {
+                                    continue;
+                                }
+                                $datum = $this->getValueAttribute($formValue['form_value'], $datum);
+                            }
 
-                if ($scheduleData) {
-                    foreach ($scheduleData as $key => $datum) {
-                        $formValue = $fieldColumn[$key] ?? null;
-                        if (! $formValue) {
-                            continue;
+                            switch ($key) {
+                                case 'user_id':
+                                case 'update_user_id':
+                                case 'owner_user_id':
+                                    if ($datum) {
+                                        $scheduleDataNew[$key] = app()->get(AdminService::class)->get($datum, ['id', 'name'])?->toArray();
+                                    }
+                                    break;
+                                case 'frame_id':
+                                    if ($datum) {
+                                        $scheduleDataNew[$key] = $frameService->get($datum, ['id', 'name'])?->toArray();
+                                    }
+                                    break;
+                                default:
+                                    $scheduleDataNew[$key] = $datum;
+                                    break;
+                            }
                         }
-                        $datum = $this->getValueAttribute($formValue['form_value'], $datum);
+                        $scheduleList[$index] = $scheduleDataNew;
+                    }
+                    $name = $crud->table_name_en . '_' . $scheduleInfo['crud_table_name'];
+                    $moduleInfo[$name] = $scheduleList;
+                    $moduleScheduValue = $this->otherWithList([], $scheduleNewList, $scheduleInfo['fields']);
+                    foreach ($moduleScheduValue as $key => $value) {
+                        $details = [];
+                        foreach ($value as $fieldKey => $item) {
+                            $formValue = $fieldColumn[$fieldKey] ?? null;
+                            if ($formValue) {
+                                $details[$fieldKey] = [
+                                    'title'      => $formValue['field_name'],
+                                    'form_value' => $formValue['form_value'],
+                                    'value'      => $item,
+                                ];
+                            }
+                        }
+                        $detailsList[$key] = $details;
+                    }
+                } else {
+                    $scheduleData = $this->model(crudId: $scheduleCrud['id'])->get([$crud->table_name_en . '_id' => $id], $field)?->toArray();
 
-                        switch ($key) {
-                            case 'user_id':
-                            case 'update_user_id':
-                            case 'owner_user_id':
-                                if ($datum) {
-                                    $moduleInfo[$scheduleCrud['table_name_en'] . '@' . $key] = app()->make(AdminService::class)->get($datum, ['id', 'name'])?->toArray();
-                                }
-                                break;
-                            case 'frame_id':
-                                if ($datum) {
-                                    $moduleInfo[$scheduleCrud['table_name_en'] . '@' . $key] = $frameService->get($datum, ['id', 'name'])?->toArray();
-                                }
-                                break;
-                            default:
-                                $moduleInfo[$scheduleCrud['table_name_en'] . '@' . $key] = $datum;
-                                break;
+                    if ($scheduleData) {
+                        foreach ($scheduleData as $key => $datum) {
+                            $formValue = $fieldColumn[$key]['form_value'] ?? null;
+                            if (!$formValue) {
+                                continue;
+                            }
+                            $datum = $this->getValueAttribute($formValue, $datum);
+
+                            switch ($key) {
+                                case 'user_id':
+                                case 'update_user_id':
+                                case 'owner_user_id':
+                                    if ($datum) {
+                                        $moduleInfo[$scheduleCrud['table_name_en'] . '@' . $key] = app()->get(AdminService::class)->get($datum, ['id', 'name'])?->toArray();
+                                    }
+                                    break;
+                                case 'frame_id':
+                                    if ($datum) {
+                                        $moduleInfo[$scheduleCrud['table_name_en'] . '@' . $key] = $frameService->get($datum, ['id', 'name'])?->toArray();
+                                    }
+                                    break;
+                                default:
+                                    $moduleInfo[$scheduleCrud['table_name_en'] . '@' . $key] = $datum;
+                                    break;
+                            }
                         }
                     }
                 }
@@ -1495,10 +1859,18 @@ class CrudModuleService extends BaseService
 
         foreach ($moduleInfo as $key => $value) {
             $formValue = $fieldColumn[$key] ?? null;
-            if (! $formValue) {
+            if (!$formValue) {
                 continue;
             }
             $moduleInfo[$key] = $this->getValueAttribute($formValue['form_value'], $value);
+        }
+
+        if ($detailsList) {
+            $values[] = [
+                'field_name' => '明细数据',
+                'form_value' => CrudFormEnum::FORM_TABLE,
+                'value'      => $detailsList,
+            ];
         }
 
         return [
@@ -1520,15 +1892,15 @@ class CrudModuleService extends BaseService
      */
     public function getFindModule(SystemCrud $crud, int $id)
     {
-        $crudService  = app()->make(SystemCrudService::class);
-        $fieldService = app()->make(SystemCrudFieldService::class);
-        $formField    = $this->getFormField($crud->id);
+        $crudService = app()->get(SystemCrudService::class);
+        $fieldService = app()->get(SystemCrudFieldService::class);
+        $formField = $this->getFormField($crud->id);
 
-        $select      = [];
+        $select = [];
         $fieldColumn = [];
         foreach ($formField as $item) {
             if ($item['crud']['id'] == $crud->id) {
-                $select[]                            = $item['field_name_en'];
+                $select[] = $item['field_name_en'];
                 $fieldColumn[$item['field_name_en']] = [
                     'form_value'  => $item['form_value'],
                     'association' => $item['association'] ?? null,
@@ -1539,17 +1911,17 @@ class CrudModuleService extends BaseService
         array_push($select, 'id');
 
         $moduleInfo = $this->model(crudId: $crud->id)->get($id, $select)?->toArray();
-        if (! $moduleInfo) {
+        if (!$moduleInfo) {
             throw $this->exception('没有查询到' . $crud->table_name . '信息');
         }
 
         /** @var AdminService $adminService */
-        $adminService = app()->make(AdminService::class)->getModel(false);
-        $frameService = app()->make(FrameService::class);
+        $adminService = app()->get(AdminService::class)->getModel(false);
+        $frameService = app()->get(FrameService::class);
 
         foreach ($moduleInfo as $key => $value) {
             $formValue = $fieldColumn[$key] ?? null;
-            if (! $formValue) {
+            if (!$formValue) {
                 continue;
             }
             $moduleInfo[$key] = $this->getValueAttribute($formValue['form_value'], $value);
@@ -1579,7 +1951,7 @@ class CrudModuleService extends BaseService
 
             if ($formValue['association']) {
                 $fieldName = $fieldService->value(['crud_id' => $formValue['association']['id'], 'is_main' => 1], 'field_name_en');
-                if (! $fieldName) {
+                if (!$fieldName) {
                     continue;
                 }
                 $name = $this->dao->setTableName($formValue['association']['table_name_en'])->value($value, $fieldName);
@@ -1591,14 +1963,14 @@ class CrudModuleService extends BaseService
         unset($formValue, $key, $value);
 
         // 获取附表信息
-        $scheduleId = $crudService->value(['crud_id' => $crud->id], 'id');
-        if ($scheduleId) {
-            $select       = ['crud_id', 'is_form', 'data_dict_id', 'options', 'id', 'field_name_en', 'field_name', 'form_value'];
-            $scheduleCrud = $crudService->get($scheduleId, ['id', 'table_name_en'], [
-                'field' => fn ($q) => $q->where('is_form', 1)->select($select),
+        $scheduleInfo = $this->getTableFieldFormField($crud->id);
+        if ($scheduleInfo) {
+            $select = ['crud_id', 'is_form', 'data_dict_id', 'options', 'id', 'field_name_en', 'field_name', 'form_value'];
+            $scheduleCrud = $crudService->get($scheduleInfo['subordinate_crud']['id'], ['id', 'table_name_en'], [
+                'field' => fn($q) => $q->where('is_form', 1)->select($select),
             ])?->toArray();
 
-            if (! empty($scheduleCrud['field'])) {
+            if (!empty($scheduleCrud['field'])) {
                 $field = array_column($scheduleCrud['field'], 'field_name_en');
 
                 $fieldColumn = [];
@@ -1606,32 +1978,70 @@ class CrudModuleService extends BaseService
                     $fieldColumn[$item['field_name_en']] = $item['form_value'];
                 }
 
-                $scheduleData = $this->model(crudId: $scheduleCrud['id'])->get([$crud->table_name_en . '_id' => $id], $field)?->toArray();
+                if ($crud->table_field) {
+                    $field = array_unique(array_merge($field, ['id']));
+                    $scheduleList = $this->model(crudId: $scheduleCrud['id'])->select([$crud->table_name_en . '_id' => $id], $field)?->toArray();
+                    foreach ($scheduleList as $index => $scheduleData) {
+                        $scheduleDataNew = [];
+                        foreach ($scheduleData as $key => $datum) {
+                            $formValue = $fieldColumn[$key] ?? null;
+                            if ($key !== 'id') {
+                                if (!$formValue) {
+                                    continue;
+                                }
+                                $datum = $this->getValueAttribute($formValue, $datum);
+                            }
 
-                if ($scheduleData) {
-                    foreach ($scheduleData as $key => $datum) {
-                        $formValue = $fieldColumn[$key] ?? null;
-                        if (! $formValue) {
-                            continue;
+                            switch ($key) {
+                                case 'user_id':
+                                case 'update_user_id':
+                                case 'owner_user_id':
+                                    if ($datum) {
+                                        $scheduleDataNew[$scheduleInfo['crud_table_name'] . '@' . $key] = app()->get(AdminService::class)->get($datum, ['id', 'name'])?->toArray();
+                                    }
+                                    break;
+                                case 'frame_id':
+                                    if ($datum) {
+                                        $scheduleDataNew[$scheduleInfo['crud_table_name'] . '@' . $key] = $frameService->get($datum, ['id', 'name'])?->toArray();
+                                    }
+                                    break;
+                                default:
+                                    $scheduleDataNew[$scheduleInfo['crud_table_name'] . '@' . $key] = $datum;
+                                    break;
+                            }
                         }
-                        $datum = $this->getValueAttribute($formValue, $datum);
+                        $scheduleList[$index] = $scheduleDataNew;
+                    }
+                    $name = $crud->table_name_en . '_' . $scheduleInfo['crud_table_name'];
+                    $moduleInfo[$name] = $scheduleList;
+                } else {
+                    $scheduleData = $this->model(crudId: $scheduleCrud['id'])->get([$crud->table_name_en . '_id' => $id], $field)?->toArray();
 
-                        switch ($key) {
-                            case 'user_id':
-                            case 'update_user_id':
-                            case 'owner_user_id':
-                                if ($datum) {
-                                    $moduleInfo[$scheduleCrud['table_name_en'] . '@' . $key] = app()->make(AdminService::class)->get($datum, ['id', 'name'])?->toArray();
-                                }
-                                break;
-                            case 'frame_id':
-                                if ($datum) {
-                                    $moduleInfo[$scheduleCrud['table_name_en'] . '@' . $key] = $frameService->get($datum, ['id', 'name'])?->toArray();
-                                }
-                                break;
-                            default:
-                                $moduleInfo[$scheduleCrud['table_name_en'] . '@' . $key] = $datum;
-                                break;
+                    if ($scheduleData) {
+                        foreach ($scheduleData as $key => $datum) {
+                            $formValue = $fieldColumn[$key] ?? null;
+                            if (!$formValue) {
+                                continue;
+                            }
+                            $datum = $this->getValueAttribute($formValue, $datum);
+
+                            switch ($key) {
+                                case 'user_id':
+                                case 'update_user_id':
+                                case 'owner_user_id':
+                                    if ($datum) {
+                                        $moduleInfo[$scheduleCrud['table_name_en'] . '@' . $key] = app()->get(AdminService::class)->get($datum, ['id', 'name'])?->toArray();
+                                    }
+                                    break;
+                                case 'frame_id':
+                                    if ($datum) {
+                                        $moduleInfo[$scheduleCrud['table_name_en'] . '@' . $key] = $frameService->get($datum, ['id', 'name'])?->toArray();
+                                    }
+                                    break;
+                                default:
+                                    $moduleInfo[$scheduleCrud['table_name_en'] . '@' . $key] = $datum;
+                                    break;
+                            }
                         }
                     }
                 }
@@ -1643,7 +2053,7 @@ class CrudModuleService extends BaseService
         $associationTable = $crudService->getCrudList($associationIds);
 
         // 获取审批
-        // $approve = app()->make(SystemCrudApproveService::class)->getCrudApproveList($crud->id);
+        // $approve = app()->get(SystemCrudApproveService::class)->getCrudApproveList($crud->id);
 
         return [
             'module_info'       => $moduleInfo,
@@ -1666,11 +2076,11 @@ class CrudModuleService extends BaseService
         $model = $this->model(crudId: $crud->id);
 
         $moduleInfo = $model->get($id);
-        if (! $moduleInfo) {
+        if (!$moduleInfo) {
             throw $this->exception('没有查询到' . $crud->table_name . '信息');
         }
 
-        if (isset($moduleInfo->owner_user_id) && ! in_array($moduleInfo->owner_user_id, $systemUserIds)) {
+        if (isset($moduleInfo->owner_user_id) && !in_array($moduleInfo->owner_user_id, $systemUserIds)) {
             throw $this->exception('暂无权限在' . $crud->table_name . '表中删除数据');
         }
 
@@ -1679,12 +2089,18 @@ class CrudModuleService extends BaseService
         // 处理事件
         $this->handleEvent($crud, CrudTriggerEnum::TRIGGER_DELETED, id: $id);
 
-        $shareService = app()->make(SystemCrudDataShareService::class);
+        $shareService = app()->get(SystemCrudDataShareService::class);
 
-        $this->transaction(function () use ($moduleInfo, $shareService, $crud, $id) {
+        $subordinateInfo = app()->get(SystemCrudService::class)->getSubordinateCrudInfoCache($crud->id);
+
+        $this->transaction(function () use ($moduleInfo, $shareService, $crud, $id, $subordinateInfo) {
             $moduleInfo->delete();
 
             $shareService->delete(['crud_id' => $crud->id, 'data_id' => $id]);
+
+            if ($subordinateInfo) {
+                $this->model(crudId: $subordinateInfo['id'])->getModel()->where($crud->table_name_en . '_id', $id)->update(['deleted_at' => date('Y-m-d H:i:s')]);
+            }
         });
 
         Task::deliver(new StatusChangeTask([MessageType::SYSTEM_CRUD_TYPE], -1, $this->entId(false), $id));
@@ -1710,7 +2126,7 @@ class CrudModuleService extends BaseService
                 'value'      => $ids,
             ],
         ])->select('id')->get()->toArray();
-        if (! $moduleList) {
+        if (!$moduleList) {
             throw $this->exception('没有查询到' . $crud->table_name . '信息');
         }
 
@@ -1728,6 +2144,41 @@ class CrudModuleService extends BaseService
             // 处理事件
             $this->handleEvent($crud, CrudTriggerEnum::TRIGGER_DELETED, $item['id']);
         }
+
+        $subordinateInfo = app()->get(SystemCrudService::class)->getSubordinateCrudInfoCache($crud->id);
+
+        if ($subordinateInfo) {
+            $this->model(crudId: $subordinateInfo['id'])->getModel()->whereIn($crud->table_name_en . '_id', $ids)->update(['deleted_at' => date('Y-m-d H:i:s')]);
+        }
+    }
+
+    /**
+     * @return array
+     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
+     */
+    public function runImportData(SystemCrud $crud, array $datas, int $uid)
+    {
+        if (count($datas) > 500) {
+            $res = [];
+            collect($datas)->chunk(500)->each(function ($item, $key) use ($crud, $uid, &$res) {
+                if ($key === 0) {
+                    // 看是否有报错
+                    $res = $this->importData($crud, $item->toArray(), $uid);
+                } else {
+                    SystemCrudImportDataJob::dispatch($crud, $item->toArray(), $uid);
+                }
+            });
+            return [
+                'sumCount'      => count($datas),
+                'errorCount'    => $res['errorCount'] ?? 0,
+                'successCount'  => count($datas),
+                'errorMessages' => $res['errorMessages'] ?? '',
+            ];
+        }
+        return $this->importData($crud, $datas, $uid);
     }
 
     /**
@@ -1740,28 +2191,29 @@ class CrudModuleService extends BaseService
      */
     public function importData(SystemCrud $crud, array $datas, int $uid)
     {
-        $crudInfo  = $crud->toArray();
+        $datas = array_merge($datas);
+        $crudInfo = $crud->toArray();
         $fieldsAll = $crudInfo['field'];
-        $keys      = array_keys($datas[0]);
+        $keys = array_keys($datas[0]);
 
         $secondaryKeys = $masterField = [];
         foreach ($keys as $key) {
             if (str_contains($key, '.')) {
                 $secondaryKeys[] = substr($key, strpos($key, '.') + 1, -1);
-            } else {
+            } elseif ($key) {
                 $masterField[] = $key;
             }
         }
 
         if ($secondaryKeys) {
-            $secondaryId = app()->make(SystemCrudService::class)->value(['crud_id' => $crud->id], 'id');
-            if (! $secondaryId) {
+            $secondaryId = app()->get(SystemCrudService::class)->value(['crud_id' => $crud->id], 'id');
+            if (!$secondaryId) {
                 throw $this->exception('没有查询到副表的信息');
             }
             $select = ['crud_id', 'field_name_en', 'is_main', 'field_name',
-                'form_value', 'field_type', 'is_default', 'is_uniqid', 'data_dict_id', 'association_crud_id'];
-            $secondaryFieldList = app()->make(SystemCrudFieldService::class)->getFieldSelect($secondaryId, $secondaryKeys, $select);
-            $secondaryFields    = array_column($secondaryFieldList, 'field_name_en');
+                       'form_value', 'field_type', 'is_default', 'is_uniqid', 'data_dict_id', 'association_crud_id'];
+            $secondaryFieldList = app()->get(SystemCrudFieldService::class)->getFieldSelect($secondaryId, $secondaryKeys, $select);
+            $secondaryFields = array_column($secondaryFieldList, 'field_name_en');
             if (array_diff($secondaryFields, $secondaryKeys)) {
                 throw $this->exception('导入的字段不存在无法导入');
             }
@@ -1771,7 +2223,7 @@ class CrudModuleService extends BaseService
 
         $fields = array_column($crudInfo['field'], 'field_name_en');
         foreach ($masterField as $item) {
-            if (! in_array($item, $fields)) {
+            if (!in_array($item, $fields)) {
                 throw $this->exception('导入的字段不存在，无法导入！');
             }
         }
@@ -1779,8 +2231,9 @@ class CrudModuleService extends BaseService
         $model = $this->model(tableName: $crud->table_name_en);
 
         $fieldNameEns = array_column($fieldsAll, 'field_name_en');
-        $errorCount   = $successCount = 0;
+        $errorCount = $successCount = 0;
 
+        $errorMessages = [];
         // 修改的数据权限
         $systemUserId = app()->get(RolesService::class)->getDataUids($uid, $crud->table_name_en, 3);
         foreach ($datas as $data) {
@@ -1790,6 +2243,10 @@ class CrudModuleService extends BaseService
             }
             $uniqidField = null;
             foreach ($data as $key => $value) {
+                if (!$key) {
+                    unset($data[$key]);
+                    continue;
+                }
                 if ($value === '--') {
                     $value = '';
                 }
@@ -1798,7 +2255,7 @@ class CrudModuleService extends BaseService
                     break;
                 }
                 $fieldInfo = $fieldsAll[$index] ?? null;
-                if (! $fieldInfo) {
+                if (!$fieldInfo) {
                     break;
                 }
                 if ($fieldInfo['is_uniqid']) {
@@ -1808,11 +2265,11 @@ class CrudModuleService extends BaseService
                 switch ($fieldInfo['form_value']) {
                     case CrudFormEnum::FORM_TAG:
                         if ($fieldInfo['data_dict_id']) {
-                            $data[$key] = app()->make(DictDataService::class)
+                            $data[$key] = app()->get(DictDataService::class)
                                 ->getValuesByIds($value, $fieldInfo['data_dict_id']);
                         } else {
-                            $value      = array_filter(explode('/', $value));
-                            $data[$key] = app()->make(ClientLabelService::class)->getIdsByName($value);
+                            $value = array_filter(explode('/', $value));
+                            $data[$key] = app()->get(LabelService::class)->getIdsByName($value);
                         }
                         break;
                     case CrudFormEnum::FORM_CHECKBOX:
@@ -1822,65 +2279,69 @@ class CrudModuleService extends BaseService
                         if ($fieldInfo['form_value'] === CrudFormEnum::FORM_CHECKBOX) {
                             $value = str_replace('、', '/', $value);
                         }
-                        $data[$key] = app()->make(DictDataService::class)
+                        $data[$key] = app()->get(DictDataService::class)
                             ->getValuesByIds($value, $fieldInfo['data_dict_id']);
                         break;
                     case CrudFormEnum::FORM_RADIO:
-                        $data[$key] = app()->make(DictDataService::class)
-                            ->getValuesByIds($value, $fieldInfo['data_dict_id'])[0] ?? 0;
+                        $data[$key] = app()->get(DictDataService::class)
+                                          ->getValuesByIds($value, $fieldInfo['data_dict_id'])[0] ?? 0;
                         break;
                     case CrudFormEnum::FORM_CASCADER:
-                        $data[$key] = [app()->make(DictDataService::class)
-                            ->getValuesByIds($value, $fieldInfo['data_dict_id'])];
+                        $data[$key] = [app()->get(DictDataService::class)
+                                           ->getValuesByIds($value, $fieldInfo['data_dict_id'])];
                         break;
                     case CrudFormEnum::FORM_DATE_PICKER:
                     case CrudFormEnum::FORM_DATE_TIME_PICKER:
                         $data[$key] = str_replace('/', '-', $value);
                         break;
                 }
-                if ($fieldInfo['form_value'] === CrudFormEnum::FORM_INPUT_SELECT) {
-                    $value = (int) $value;
-                    if ($value === 0) {
-                        unset($data[$key]);
-                    }
-                } elseif (in_array($fieldInfo['form_value'], [CrudFormEnum::FORM_FILE, CrudFormEnum::FORM_IMAGE, CrudFormEnum::FORM_RICH_TEXT])) {
+                if (in_array($fieldInfo['form_value'], [CrudFormEnum::FORM_FILE, CrudFormEnum::FORM_IMAGE, CrudFormEnum::FORM_RICH_TEXT])) {
                     // 图片和附件禁止导入
                     unset($data[$key]);
                 } else {
                     $data[$key] = $this->setValueAttribute($fieldInfo['form_value'], $data[$key]);
                 }
                 // 关联查询
-                if (! empty($fieldInfo['association_crud_id'])) {
-                    $tableNameEnValue = app()->make(SystemCrudService::class)->value(['id' => $fieldInfo['association_crud_id']], 'table_name_en');
-                    switch ($tableNameEnValue) {
-                        case SystemCrudService::SYSTEM_TABLE_TABLE_USER:
-                            $userId = app()->make(AdminService::class)->getModel()->where('name', $value)->value('id');
-                            if ($userId) {
-                                $data[$key] = $userId;
-                            } else {
-                                unset($data[$key]);
-                            }
-                            break;
-                        case SystemCrudService::SYSTEM_TABLE_TABLE_FRAME:
-                            $frameId = app()->make(FrameService::class)->value(['name' => $value], 'id');
-                            if ($frameId) {
-                                $data[$key] = $frameId;
-                            } else {
-                                unset($data[$key]);
-                            }
-                            break;
-                        default:
-                            $indexFieldName = app()->make(SystemCrudFieldService::class)->value(['crud_id' => $fieldInfo['association_crud_id'], 'is_main' => 1], 'field_name_en');
-                            if (! $indexFieldName) {
+                if (!empty($fieldInfo['association_crud_id']) && $fieldInfo['form_value'] === CrudFormEnum::FORM_INPUT_SELECT) {
+                    if ($value) {
+                        $tableNameEnValue = app()->get(SystemCrudService::class)->value(['id' => $fieldInfo['association_crud_id']], 'table_name_en');
+                        switch ($tableNameEnValue) {
+                            case SystemCrudService::SYSTEM_TABLE_TABLE_USER:
+                                $userId = app()->get(AdminService::class)->getModel()->where('name', $value)->value('id');
+                                if ($userId) {
+                                    $data[$key] = $userId;
+                                } else {
+                                    unset($data[$key]);
+                                }
                                 break;
-                            }
-                            $associationId = $this->model(tableName: $tableNameEnValue)->value([$indexFieldName => $value], 'id');
-                            if ($associationId) {
-                                $data[$key] = $associationId;
-                            } else {
-                                unset($data[$key]);
-                            }
-                            break;
+                            case SystemCrudService::SYSTEM_TABLE_TABLE_FRAME:
+                                $frameId = app()->get(FrameService::class)->value(['name' => $value], 'id');
+                                if ($frameId) {
+                                    $data[$key] = $frameId;
+                                } else {
+                                    unset($data[$key]);
+                                }
+                                break;
+                            default:
+                                $value = (int)$value;
+                                if ($value === 0) {
+                                    unset($data[$key]);
+                                    break;
+                                }
+                                $indexFieldName = app()->get(SystemCrudFieldService::class)->value(['crud_id' => $fieldInfo['association_crud_id'], 'is_main' => 1], 'field_name_en');
+                                if (!$indexFieldName) {
+                                    break;
+                                }
+                                $associationId = $this->model(tableName: $tableNameEnValue)->value([$indexFieldName => $value], 'id');
+                                if ($associationId) {
+                                    $data[$key] = $associationId;
+                                } else {
+                                    unset($data[$key]);
+                                }
+                                break;
+                        }
+                    } else {
+                        unset($data[$key]);
                     }
                 }
             }
@@ -1894,7 +2355,7 @@ class CrudModuleService extends BaseService
                         $model->update($dataInfo->id, $data);
                     }
                 } else {
-                    if (! empty($data['id']) && $dataInfo = $model->get($data['id'], ['owner_user_id', 'id'])) {
+                    if (!empty($data['id']) && $dataInfo = $model->get($data['id'], ['owner_user_id', 'id'])) {
                         if (isset($data['id'])) {
                             unset($data['id']);
                         }
@@ -1905,26 +2366,29 @@ class CrudModuleService extends BaseService
                         if (isset($data['id'])) {
                             unset($data['id']);
                         }
-                        if (! isset($data['user_id']) && in_array('user_id', $fieldNameEns)) {
+                        if (!isset($data['user_id']) && in_array('user_id', $fieldNameEns)) {
                             $data['user_id'] = $uid;
                         }
-                        if (! isset($data['owner_user_id']) && in_array('owner_user_id', $fieldNameEns)) {
+                        if (!isset($data['owner_user_id']) && in_array('owner_user_id', $fieldNameEns)) {
                             $data['owner_user_id'] = $uid;
                         }
-
+                        $data['created_at'] = date('Y-m-d H:i:s');
+                        $data['updated_at'] = date('Y-m-d H:i:s');
                         $model->create($data);
                     }
                 }
                 ++$successCount;
             } catch (\Throwable $e) {
+                $errorMessages[] = $e->getMessage();
                 ++$errorCount;
             }
         }
 
         return [
-            'sumCount'     => count($datas),
-            'errorCount'   => $errorCount,
-            'successCount' => $successCount,
+            'sumCount'      => count($datas),
+            'errorCount'    => $errorCount,
+            'successCount'  => $successCount,
+            'errorMessages' => $errorMessages,
         ];
     }
 
@@ -1936,10 +2400,10 @@ class CrudModuleService extends BaseService
      */
     public function transferData(SystemCrud $crud, array $ids, int $userId, array $systemUserId, int $adminUserId)
     {
-        $model    = $this->model(tableName: $crud->table_name_en);
+        $model = $this->model(tableName: $crud->table_name_en);
         $dataList = $model->getModel()->whereIn('id', $ids)->whereIn('owner_user_id', $systemUserId)->select(['id', 'owner_user_id'])->get()->toArray();
-        $ids      = array_column($dataList, 'id');
-        if (! $ids) {
+        $ids = array_column($dataList, 'id');
+        if (!$ids) {
             throw $this->exception('选择的数据没有可以进行转移的权限');
         }
 
@@ -1972,15 +2436,15 @@ class CrudModuleService extends BaseService
      */
     public function shareData(SystemCrud $crud, array $ids, array $userIds, int $roleType, array $systemUserId, int $operateUserId)
     {
-        $model    = $this->model(tableName: $crud->table_name_en);
+        $model = $this->model(tableName: $crud->table_name_en);
         $dataList = $model->getModel()->whereIn('id', $ids)->whereIn('owner_user_id', $systemUserId)->select(['id'])->get()->toArray();
-        $ids      = array_column($dataList, 'id');
-        if (! $ids) {
+        $ids = array_column($dataList, 'id');
+        if (!$ids) {
             throw $this->exception('选择的数据没有可以进行分享的权限');
         }
 
-        $shareService     = app()->make(SystemCrudShareService::class);
-        $dataShareService = app()->make(SystemCrudDataShareService::class);
+        $shareService = app()->get(SystemCrudShareService::class);
+        $dataShareService = app()->get(SystemCrudDataShareService::class);
 
         foreach ($userIds as $userId) {
             $res = $shareService->create([
@@ -1989,14 +2453,14 @@ class CrudModuleService extends BaseService
                 'role_type'       => $roleType,
                 'operate_user_id' => $operateUserId,
             ]);
-            if (! $res) {
+            if (!$res) {
                 throw $this->exception('分享失败');
             }
             foreach ($ids as $id) {
                 $info = $dataShareService->get(['crud_id' => $crud->id, 'data_id' => $id, 'user_id' => $userId]);
                 if ($info) {
                     $beforeMsg = [];
-                    $afterMsg  = [];
+                    $afterMsg = [];
                     if ($info['is_show']) {
                         $beforeMsg[] = '可查看';
                     }
@@ -2007,7 +2471,7 @@ class CrudModuleService extends BaseService
                         $beforeMsg[] = '可删除';
                     }
 
-                    $info->share_id  = $res->id;
+                    $info->share_id = $res->id;
                     $info->is_update = $roleType === 1 ? 1 : $info->is_update;
                     $info->is_delete = $roleType === 2 ? 1 : $info->is_delete;
                     $info->save();
@@ -2072,8 +2536,8 @@ class CrudModuleService extends BaseService
 
     public function shareUpdate(SystemCrud $crud, int $id, int $roleType, int $operateUserId)
     {
-        $shareService     = app()->make(SystemCrudShareService::class);
-        $dataShareService = app()->make(SystemCrudDataShareService::class);
+        $shareService = app()->get(SystemCrudShareService::class);
+        $dataShareService = app()->get(SystemCrudDataShareService::class);
         $shareService->update($id, [
             'role_type'       => $roleType,
             'operate_user_id' => $operateUserId,
@@ -2090,7 +2554,7 @@ class CrudModuleService extends BaseService
                 $dataShareService->update($info['id'], $update);
 
                 $beforeMsg = [];
-                $afterMsg  = [];
+                $afterMsg = [];
                 if ($info['is_show']) {
                     $beforeMsg[] = '可查看';
                 }
@@ -2132,8 +2596,8 @@ class CrudModuleService extends BaseService
      */
     public function shareDelete(SystemCrud $crud, int $id, int $userId, int $dataId)
     {
-        $shareService     = app()->make(SystemCrudShareService::class);
-        $dataShareService = app()->make(SystemCrudDataShareService::class);
+        $shareService = app()->get(SystemCrudShareService::class);
+        $dataShareService = app()->get(SystemCrudDataShareService::class);
 
         $data = $dataShareService->get(['share_id' => $id, 'data_id' => $dataId], ['id', 'user_id', 'data_id']);
         if ($data) {
@@ -2149,7 +2613,7 @@ class CrudModuleService extends BaseService
                 'log_type'             => CrudLogTypeEnum::SHARE_DELETE_TYPE,
             ]);
 
-            if (! $dataShareService->count(['share_id' => $id])) {
+            if (!$dataShareService->count(['share_id' => $id])) {
                 $shareService->delete($id);
             }
         }
@@ -2161,8 +2625,8 @@ class CrudModuleService extends BaseService
      */
     public function cancelShare(SystemCrud $crud, int $dataId, int $userId)
     {
-        $shareService     = app()->make(SystemCrudShareService::class);
-        $dataShareService = app()->make(SystemCrudDataShareService::class);
+        $shareService = app()->get(SystemCrudShareService::class);
+        $dataShareService = app()->get(SystemCrudDataShareService::class);
 
         $data = $dataShareService->select(['data_id' => $dataId], ['id', 'user_id', 'data_id', 'share_id'])->toArray();
 
@@ -2179,7 +2643,7 @@ class CrudModuleService extends BaseService
                 'log_type'             => CrudLogTypeEnum::SHARE_DELETE_TYPE,
             ]);
 
-            if (! $dataShareService->count(['share_id' => $item['share_id']])) {
+            if (!$dataShareService->count(['share_id' => $item['share_id']])) {
                 $shareService->delete($item['share_id']);
             }
         }
@@ -2193,7 +2657,7 @@ class CrudModuleService extends BaseService
      */
     public function getValidationRule(array $item, string $fieldName)
     {
-        $message  = [];
+        $message = [];
         $ruleData = [];
         //        if (!empty($item['options']['maxlength'])) {
         //            $ruleData[] = 'max:' . $item['options']['maxlength'];
@@ -2201,12 +2665,12 @@ class CrudModuleService extends BaseService
         //        if (!empty($item['options']['minlength'])) {
         //            $ruleData[] = 'min:' . $item['options']['minlength'];
         //        }
-        if (! $item['is_default_value_not_null']) {
+        if (!$item['is_default_value_not_null']) {
             $ruleData[] = 'required';
         }
         if (in_array($item['form_value'], [CrudFormEnum::FORM_FILE, CrudFormEnum::FORM_IMAGE])) {
             $ruleData[] = 'array';
-            if (! empty($item['options']['max'])) {
+            if (!empty($item['options']['max'])) {
                 //                $ruleData[] = 'max:' . $item['options']['max'];
             }
         }
@@ -2219,10 +2683,10 @@ class CrudModuleService extends BaseService
                     $msg = $item['field_name'] . '不能为空';
                 } elseif (str_contains($datum, 'max')) {
                     [$var, $num] = explode(':', $datum);
-                    $msg         = $item['field_name'] . '最大长度：' . $num;
+                    $msg = $item['field_name'] . '最大长度：' . $num;
                 } elseif (str_contains($datum, 'min')) {
                     [$var, $num] = explode(':', $datum);
-                    $msg         = $item['field_name'] . '最小长度：' . $num;
+                    $msg = $item['field_name'] . '最小长度：' . $num;
                 } elseif ($datum === 'array') {
                     $msg = $item['field_name'] . '必须为数组';
                 }
@@ -2240,9 +2704,13 @@ class CrudModuleService extends BaseService
      * @return array
      * @throws BindingResolutionException
      */
-    public function checkData(SystemCrud $crudInfo, Request $request)
+    public function checkData(SystemCrud $crudInfo, Request $request, string $fieldNameEn = '', mixed $fieldValue = null)
     {
-        $crudList = $this->getFormField($crudInfo->id);
+        $crudList = $this->getFormField($crudInfo->id, $fieldNameEn);
+
+        if ($fieldNameEn && count($crudList) > 1) {
+            throw $this->exception('字段存在重复，请联系管理员');
+        }
 
         $data = $validatorData = $rule = $message = [];
 
@@ -2251,13 +2719,13 @@ class CrudModuleService extends BaseService
                 ? $item['field_name_en']
                 : $item['crud']['table_name_en'] . '.' . $item['field_name_en'];
 
-            $default     = '';
+            $default = '';
             $association = false;
             if ($item['association_crud_id']) {
-                $default     = [];
+                $default = [];
                 $association = true;
-            } elseif (in_array($item['field_name_en'], ['user_id', 'update_user_id', 'frame_id', 'owner_user_id'])) {
-                $default     = [];
+            } elseif (in_array($item['field_name_en'], [SystemCrud::USER_ID_KEY, SystemCrud::UPDATE_USER_ID_KEY, SystemCrud::FRAME_ID_KEY, SystemCrud::OWNER_USER_ID_KEY])) {
+                $default = [];
                 $association = true;
             }
 
@@ -2271,20 +2739,79 @@ class CrudModuleService extends BaseService
             [$itemMsg, $ruleData] = $this->getValidationRule($item, $fieldName);
 
             if ($ruleData) {
-                $validatorFieldName                 = str_replace('.', '_', $fieldName);
+                $validatorFieldName = str_replace('.', '_', $fieldName);
                 $validatorData[$validatorFieldName] = $value;
-                $rule[$validatorFieldName]          = implode('|', $ruleData);
-                $message                            = array_merge($message, $itemMsg);
+                $rule[$validatorFieldName] = implode('|', $ruleData);
+                $message = array_merge($message, $itemMsg);
             }
 
             $data[$fieldName] = [
-                'value' => $value,
-                'post'  => $postValue,
-                'item'  => $item,
+                'value'       => $value,
+                'post'        => $postValue,
+                'item'        => $item,
+                'subordinate' => [],
             ];
         }
 
-        return [$data, $validatorData, $rule, $message];
+        $subordinate = $this->getTableFieldFormField($crudInfo->id);
+
+        if (!$crudList && !$subordinate) {
+            throw $this->exception('字段不存在');
+        }
+
+        if ($subordinate && !$fieldValue) {
+            $postName = $crudInfo->table_name_en . '_' . $subordinate['crud_table_name'];
+            $postData = $request->post($postName, []);
+            if (!is_array($postData)) {
+                throw $this->exception('表单明细提交数据类型错误');
+            }
+            if (!$postData) {
+                throw $this->exception('表单明细数据不能为空');
+            }
+            $column = [];
+            foreach ($subordinate['fields'] as $item) {
+                $column[$item['field_name_en']] = $item;
+            }
+            $subordinateData = [];
+            foreach ($postData as $item) {
+                $newitem = [];
+                foreach ($item as $fieldName => $value) {
+                    if (str_contains($fieldName, '@')) {
+                        $fieldName = str_replace($subordinate['crud_table_name'] . '@', '', $fieldName);
+                    }
+                    $fieldInfo = $column[$fieldName] ?? null;
+                    if (!$fieldInfo) {
+                        throw $this->exception($fieldName . '字段不存在');
+                    }
+                    if (!$fieldInfo['is_default_value_not_null'] && !$value) {
+                        throw $this->exception($fieldInfo['field_name'] . '不能为空');
+                    }
+                    if (in_array($fieldName, [SystemCrud::USER_ID_KEY, SystemCrud::UPDATE_USER_ID_KEY, SystemCrud::FRAME_ID_KEY, SystemCrud::OWNER_USER_ID_KEY])) {
+                        $newitem[$fieldName] = is_array($value) ? $value['id'] ?? 0 : $value;
+                    } else {
+                        $newitem[$fieldName] = $value;
+                    }
+                }
+                $subordinateData[] = $newitem;
+            }
+            $data[$postName] = [
+                'value'       => $subordinateData,
+                'subordinate' => $column,
+                'post'        => $subordinateData,
+                'item'        => $subordinate['subordinate_crud'],
+            ];
+        }
+
+        if ($validatorData && $rule && $message) {
+            $validator = Validator::make($validatorData, $rule, $message);
+
+            if ($validator->fails()) {
+                // 验证失败的处理逻辑
+                throw $this->exception($validator->errors()->first());
+            }
+        }
+
+        return $data;
     }
 
     /**
@@ -2300,14 +2827,14 @@ class CrudModuleService extends BaseService
      */
     public function handleEvent(SystemCrud $crud, string $action, int $id = 0, array $data = [], array $scheduleData = [], array $originalData = [], array $originalScheduleData = [], bool $isDataCheck = false)
     {
-        $eventService = app()->make(SystemCrudEventService::class);
+        $eventService = app()->get(SystemCrudEventService::class);
 
         $eventIds = $eventService->getEventActionIds($crud->id, $isDataCheck);
 
         if ($eventIds) {
             $eventId = array_shift($eventIds);
-            $event   = $eventService->get($eventId);
-            if (! $event) {
+            $event = $eventService->get($eventId);
+            if (!$event) {
                 return false;
             }
 
@@ -2321,11 +2848,11 @@ class CrudModuleService extends BaseService
      */
     public function getListQueryShowTableField(SystemCrud $crud, array $field = []): array
     {
-        if (! $field) {
+        if (!$field) {
             return [];
         }
 
-        $fieldNameList = app()->make(SystemCrudFieldService::class)->fieldNameByFieldCrud($field, $crud->table_name_en);
+        $fieldNameList = app()->get(SystemCrudFieldService::class)->fieldNameByFieldCrud($field, $crud->table_name_en);
 
         $fieldList = [];
         foreach ($fieldNameList as $item) {
@@ -2334,6 +2861,8 @@ class CrudModuleService extends BaseService
                     'crud_id'             => $item['crud_info']['id'],
                     'is_main'             => $field['is_main'],
                     'field_name'          => $field['field_name'],
+                    'data_type'           => $field['data_type'],
+                    'customize_items'     => $field['customize_items'],
                     'form_value'          => $field['form_value'],
                     'is_default'          => $field['is_default'],
                     'data_dict_id'        => $field['data_dict_id'],
@@ -2342,9 +2871,9 @@ class CrudModuleService extends BaseService
                     'association_crud'    => $field['association'] ? [
                         'id'                 => $field['association']['id'],
                         'table_name_en'      => $field['association']['table_name_en'],
-                        'field_main_name_en' => app()->make(SystemCrudFieldService::class)->value(['crud_id' => $field['association']['id'], 'is_main' => 1], 'field_name_en'),
+                        'field_main_name_en' => app()->get(SystemCrudFieldService::class)->value(['crud_id' => $field['association']['id'], 'is_main' => 1], 'field_name_en'),
                     ] : null,
-                    'table_name_en' => $item['crud_info']['table_name_en'],
+                    'table_name_en'       => $item['crud_info']['table_name_en'],
                 ];
             }
         }
@@ -2375,7 +2904,7 @@ class CrudModuleService extends BaseService
         $where = [];
         // 获取搜索列表展示字段
         $showField = $this->getListQueryShowTableField($crud, $showField);
-        if (! $showField) {
+        if (!$showField) {
             return [];
         }
 
@@ -2388,7 +2917,7 @@ class CrudModuleService extends BaseService
         // 默认ID倒叙
         $orderBy = $orderBy ?: 'id';
 
-        $join = app()->make(SystemCrudService::class)->getJoinCrudData($crud->id, 1);
+        $join = app()->get(SystemCrudService::class)->getJoinCrudData($crud->id, 1);
         // 附加条件
         if ($viewSearch) {
             $viewSearch = $this->setViewSearch($viewSearch, $crud->id, 'form_field');
@@ -2409,11 +2938,11 @@ class CrudModuleService extends BaseService
             return $crud->table_name_en . '.' . $item . ' as ' . $crud->table_name_en . '_' . $item;
         }, array_merge($select, $joinField));
 
-        if (! $select) {
+        if (!$select) {
             $select = [$crud->table_name_en . '.*'];
         }
 
-        $list = $model->when(count($with), fn ($q) => $q->with($with))->select($select)->forPage($page, $limit)->get()->toArray();
+        $list = $model->when(count($with), fn($q) => $q->with($with))->select($select)->forPage($page, $limit)->get()->toArray();
 
         $list = $this->otherWithAliasList($otherWith, $list, $showField);
         return $this->listData($list, $count);
@@ -2430,15 +2959,15 @@ class CrudModuleService extends BaseService
     {
         foreach ($otherWith as $newWith) {
             $idName = $newWith['field_name_as'] ?? $newWith['field_name_en'];
-            if (! $idName) {
+            if (!$idName) {
                 continue;
             }
 
-            if (! $newWith['association_field_main_name_en']) {
+            if (!$newWith['association_field_main_name_en']) {
                 continue;
             }
 
-            $ids      = array_column($list, $idName);
+            $ids = array_column($list, $idName);
             $mainName = $newWith['association_field_main_name_en'];
 
             $withList = DB::table($newWith['association_table_name_en'])->whereIn('id', $ids)
@@ -2447,22 +2976,24 @@ class CrudModuleService extends BaseService
             $withData = [];
 
             foreach ($withList as $item) {
-                $item                  = (array) $item;
+                $item = (array)$item;
                 $withData[$item['id']] = $item[$mainName];
             }
 
             foreach ($list as $index => $value) {
                 $value[$idName] = $withData[$value[$idName]] ?? '';
-                $list[$index]   = $value;
+                $list[$index] = $value;
             }
         }
 
         $column = [];
         foreach ($formField as $item) {
             $column[$item['table_name_en'] . '_' . $item['field_name_en']] = [
-                'form_value'    => $item['form_value'],
-                'data_dict_id'  => $item['data_dict_id'],
-                'table_name_en' => $item['table_name_en'] ?? '',
+                'form_value'      => $item['form_value'],
+                'data_dict_id'    => $item['data_dict_id'],
+                'table_name_en'   => $item['table_name_en'] ?? '',
+                'data_type'       => $item['data_type'],
+                'customize_items' => $item['customize_items'],
             ];
         }
 
@@ -2471,12 +3002,19 @@ class CrudModuleService extends BaseService
             foreach ($value as $k => $v) {
                 if (isset($column[$k])) {
                     $value[$k] = $this->getValueAttribute($column[$k]['form_value'], $value[$k]);
-                    if ($column[$k]['data_dict_id']) {
+                    if ($column[$k]['data_type'] == 1 && $column[$k]['form_value'] === CrudFormEnum::FORM_RADIO) {
+                        foreach ($column[$k]['customize_items'] as $item) {
+                            if (($item['value'] ?? null) == $value[$k]) {
+                                $value[$k] = $item['name'] ?? ($item['label'] ?? $value[$k]);
+                                break;
+                            }
+                        }
+                    } elseif ($column[$k]['data_dict_id']) {
                         switch ($column[$k]['form_value']) {
                             case CrudFormEnum::FORM_CHECKBOX:
                             case CrudFormEnum::FORM_TAG:
                             case CrudFormEnum::FORM_CASCADER_RADIO:
-                                $dataDict = app()->make(DictDataService::class)
+                                $dataDict = app()->get(DictDataService::class)
                                     ->idByValues($column[$k]['data_dict_id']);
 
                                 $data = [];
@@ -2502,7 +3040,7 @@ class CrudModuleService extends BaseService
                                 $value[$k] = implode('/', $data);
                                 break;
                             case CrudFormEnum::FORM_RADIO:
-                                $dataDict = app()->make(DictDataService::class)
+                                $dataDict = app()->get(DictDataService::class)
                                     ->idByValues($column[$k]['data_dict_id']);
 
                                 $newValue = null;
@@ -2515,7 +3053,7 @@ class CrudModuleService extends BaseService
                                 break;
                             case CrudFormEnum::FORM_CASCADER:
                                 if ($value[$k]) {
-                                    $dataDict = app()->make(DictDataService::class)
+                                    $dataDict = app()->get(DictDataService::class)
                                         ->idByValues($column[$k]['data_dict_id']);
 
                                     $data = [];
@@ -2534,7 +3072,7 @@ class CrudModuleService extends BaseService
                                 break;
                         }
                     } elseif ($column[$k]['form_value'] == CrudFormEnum::FORM_CASCADER_ADDRESS && is_array($value[$k])) {
-                        $dataDict = app()->make(DictDataService::class)
+                        $dataDict = app()->get(DictDataService::class)
                             ->idsByValues($value[$k]);
 
                         $data = [];
@@ -2547,8 +3085,8 @@ class CrudModuleService extends BaseService
                         }
 
                         $value[$k] = $data;
-                    } elseif ($column[$k]['form_value'] == CrudFormEnum::FORM_TAG && ! $column[$k]['data_dict_id']) {
-                        $value[$k] = app()->make(ClientLabelService::class)->idByValue($value[$k]);
+                    } elseif ($column[$k]['form_value'] == CrudFormEnum::FORM_TAG && !$column[$k]['data_dict_id']) {
+                        $value[$k] = app()->get(LabelService::class)->idByValue($value[$k]);
                     } else {
                         switch ($k) {
                             case 'user_id':
@@ -2588,19 +3126,97 @@ class CrudModuleService extends BaseService
     }
 
     /**
+     * 获取自定义的数据解析为对应的value.
+     * @param mixed $value
+     * @return array
+     */
+    public function getCustomizeChildrenItem(array $customizeChildrenItems, $value, string $formValue)
+    {
+        $itemValue = [];
+        foreach ($customizeChildrenItems as $item) {
+            if (in_array($item['value'], $value)) {
+                $itemValue[] = $item['name'];
+            }
+            if (!empty($item['children'])) {
+                $itemValue = array_merge($itemValue, $this->getCustomizeChildrenItem($item['children'], $value, $formValue));
+            }
+        }
+
+        return $itemValue;
+    }
+
+    /**
+     * 获取自定义的数据解析为对应的value.
+     * @param mixed $value
+     * @return array
+     */
+    public function getCustomizeItem(array $customizeItems, $value, string $formValue)
+    {
+        $itemValue = [];
+        if ($formValue === CrudFormEnum::FORM_CASCADER) {
+            foreach ($value as $v) {
+                $vv = [];
+                foreach ($customizeItems as $item) {
+                    if (in_array($item['value'], (array)$v)) {
+                        $vv[] = $item['name'];
+                    }
+                    if (!empty($item['children'])) {
+                        $vv = array_merge($vv, $this->getCustomizeChildrenItem($item['children'], $v, $formValue));
+                    }
+                }
+                $itemValue[] = implode('/', $vv);
+            }
+            return $itemValue;
+        }
+        foreach ($customizeItems as $item) {
+            switch ($formValue) {
+                case CrudFormEnum::FORM_CHECKBOX:
+                    if (is_array($value) && in_array($item['value'], $value)) {
+                        $itemValue[] = ['name' => $item['name'], 'color' => $item['color'] ?? ''];
+                    }
+                    break;
+                case CrudFormEnum::FORM_CASCADER_RADIO:
+                    if (is_array($value) && in_array($item['value'], $value)) {
+                        $itemValue[] = $item['name'];
+                    }
+                    break;
+                case CrudFormEnum::FORM_RADIO:
+                    if ($item['value'] == $value) {
+                        $itemValue = ['name' => $item['name'], 'color' => $item['color'] ?? ''];
+                    }
+                    break;
+            }
+        }
+
+        return $itemValue;
+    }
+
+    /**
      * 处理字段数据类型.
      * @return array
      * @throws BindingResolutionException
      */
-    public function getDataAttrValue(array $value, array $column)
+    public function getDataAttrValue(array $value, array $column, string $indexField = '', string $crudTableNameEn = '')
     {
-        $dataDictService = app()->make(DictDataService::class);
-
+        $dataDictService = app()->get(DictDataService::class);
         foreach ($value as $k => $v) {
             if (isset($column[$k])) {
-                $value[$k] = $this->getValueAttribute($column[$k]['form_value'], $value[$k]);
-
-                if ($column[$k]['data_dict_id']) {
+                $value[$k] = $this->getValueAttribute($column[$k]['form_value'], $value[$k], $crudTableNameEn);
+                if ($k === $indexField && ($value[$k] == null || $value[$k] == '')) {
+                    $value[$k] = '--';
+                    continue;
+                }
+                if ($value[$k] == null) {
+                    continue;
+                }
+                if ($column[$k]['data_type'] == 1 && in_array($column[$k]['form_value'], [
+                        CrudFormEnum::FORM_CASCADER,
+                        CrudFormEnum::FORM_CHECKBOX,
+                        CrudFormEnum::FORM_CASCADER_RADIO,
+                        CrudFormEnum::FORM_RADIO,
+                    ])) {
+                    $value[$k] = $this->getCustomizeItem($column[$k]['customize_items'], $value[$k], $column[$k]['form_value']);
+                } elseif ($column[$k]['data_dict_id']) {
                     switch ($column[$k]['form_value']) {
                         case CrudFormEnum::FORM_TAG:
                         case CrudFormEnum::FORM_CASCADER_RADIO:
@@ -2630,7 +3246,7 @@ class CrudModuleService extends BaseService
                             $newValue = null;
                             foreach ($dataDict as $item) {
                                 if ($item['value'] == $value[$k]) {
-                                    $newValue['name']  = $item['name'];
+                                    $newValue['name'] = $item['name'];
                                     $newValue['color'] = $item['color'];
                                 }
                             }
@@ -2638,7 +3254,7 @@ class CrudModuleService extends BaseService
                             break;
                         case CrudFormEnum::FORM_CHECKBOX:
                             $dataDict = $dataDictService->idByCacheValues($column[$k]['data_dict_id']);
-                            $data     = [];
+                            $data = [];
                             if ($column[$k]['form_value'] === CrudFormEnum::FORM_TAG) {
                                 foreach ($value[$k] as $itemId) {
                                     foreach ($dataDict as $item) {
@@ -2667,7 +3283,7 @@ class CrudModuleService extends BaseService
                                 foreach ($value[$k] as $v) {
                                     $vv = [];
                                     foreach ($dataDict as $item) {
-                                        if (in_array($item['value'], (array) $v)) {
+                                        if (in_array($item['value'], (array)$v)) {
                                             $vv[] = $item['name'];
                                         }
                                     }
@@ -2691,8 +3307,8 @@ class CrudModuleService extends BaseService
                     }
 
                     $value[$k] = $data;
-                } elseif ($column[$k]['form_value'] == CrudFormEnum::FORM_TAG && ! $column[$k]['data_dict_id']) {
-                    $value[$k] = app()->make(ClientLabelService::class)->idByCacheValue($value[$k]);
+                } elseif ($column[$k]['form_value'] == CrudFormEnum::FORM_TAG && !$column[$k]['data_dict_id']) {
+                    $value[$k] = app()->get(LabelService::class)->idByCacheValue($value[$k]);
                 } else {
                     switch ($k) {
                         case 'user_id':
@@ -2752,14 +3368,14 @@ class CrudModuleService extends BaseService
      * @email 136327134@qq.com
      * @date 2024/3/12
      */
-    protected function otherWithList(array $otherWith, array $list, array $formField = [], bool $uni = false, array $shareIds = [])
+    protected function otherWithList(array $otherWith, array $list, array $formField = [], bool $uni = false, array $shareIds = [], string $indexField = '', string $crudTableNameEn = '')
     {
         // 处理一对一关联字段展示
         foreach ($otherWith as $newWith) {
-            $idName   = $newWith['field_name_en'];
-            $ids      = array_column($list, $idName);
+            $idName = $newWith['field_name_en'];
+            $ids = array_column($list, $idName);
             $mainName = $newWith['association_field_main_name_en'];
-            if (! $mainName) {
+            if (!$mainName) {
                 continue;
             }
 
@@ -2772,7 +3388,7 @@ class CrudModuleService extends BaseService
 
             $withData = [];
             foreach ($withList as $item) {
-                $item = (array) $item;
+                $item = (array)$item;
                 if ($uni) {
                     $withData[$item['id']] = $newWith['association_table_name_en'] === SystemCrudService::SYSTEM_TABLE_TABLE_USER ? $item : $item[$mainName];
                 } else {
@@ -2782,24 +3398,26 @@ class CrudModuleService extends BaseService
 
             foreach ($list as $index => $value) {
                 $value[$idName] = $withData[$value[$idName]] ?? '';
-                $list[$index]   = $value;
+                $list[$index] = $value;
             }
         }
 
         $column = [];
         foreach ($formField as $item) {
             $column[$item['field_name_en']] = [
-                'form_value'   => $item['form_value'],
-                'data_dict_id' => $item['data_dict_id'],
+                'form_value'      => $item['form_value'],
+                'data_dict_id'    => $item['data_dict_id'],
+                'data_type'       => $item['data_type'],
+                'customize_items' => $item['customize_items'],
             ];
         }
 
         foreach ($list as $index => $value) {
             // 处理字段数据类型
-            $value = $this->getDataAttrValue($value, $column);
+            $value = $this->getDataAttrValue($value, $column, $indexField, $crudTableNameEn);
 
             if ($uni && isset($value['created_at'])) {
-                $value['created_at'] = date('Y/m/d', strtotime($value['created_at']));
+                $value['created_at'] = date('Y/m/d', datetime_timestamp($value['created_at']));
             }
 
             if (isset($value['id'])) {

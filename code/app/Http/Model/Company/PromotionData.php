@@ -37,6 +37,16 @@ class PromotionData extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'           => 'integer',
+        'promotion_id' => 'integer',
+        'total'        => 'decimal:2',
+        'sort'         => 'integer',
+        'created_at'   => 'datetime:Y-m-d H:i:s',
+        'updated_at'   => 'datetime:Y-m-d H:i:s',
+        'deleted_at'   => 'datetime:Y-m-d H:i:s',
+    ];
+
     public function setPositionAttribute($value)
     {
         $this->attributes['position'] = is_array($value) ? json_encode($value) : '';
@@ -67,5 +77,15 @@ class PromotionData extends BaseModel
         if ($value !== '') {
             $query->where('status', $value);
         }
+    }
+
+    public function setRankAttribute($value)
+    {
+        $this->attributes['rank'] = is_array($value) ? json_encode($value) : '';
+    }
+
+    public function getRankAttribute($value)
+    {
+        return $value ? array_map('intval', json_decode($value, true)) : [];
     }
 }

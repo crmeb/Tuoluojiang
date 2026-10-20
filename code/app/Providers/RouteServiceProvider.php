@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -45,8 +45,11 @@ class RouteServiceProvider extends ServiceProvider
 
         Route::get('q/{unique}', [CommonController::class, 'questionnaire']); // 问卷调查中转页面
         Route::get('api/version', [CommonController::class, 'getVersion']); // 获取版本信息
-        Route::get('install/index/{step}', [Install::class, 'index']); // 安装程序
-        Route::post('install/index/{step}', [Install::class, 'index']); // 安装程序
+        // 安装程序路由
+        Route::group([], base_path('routes/install.php'));
+        // MCP 路由
+        Route::group([], base_path('routes/mcp.php'));
+        // 注册Web路由
         $this->routes(function () {
             Route::middleware('web')->namespace($this->namespace)->group(base_path('routes/web.php'));
         });
@@ -66,11 +69,16 @@ class RouteServiceProvider extends ServiceProvider
             if ($appName === 'api') {
                 return app('json')->make(400, 'common.route.miss');
             }
-            if (! sys_config('site_open', 1)) {
+            if (! sys_config('ent_site_open', 1)) {
                 return Response::make('网站已关闭');
             }
             if ($appName === 'chat') {
                 return View::file(public_path('chat') . DIRECTORY_SEPARATOR . 'index.html');
+            }
+            $userAgent = request()->header('User-Agent', 'admin');
+            if (str_contains($userAgent, 'Mobi') || (str_contains($userAgent, 'wxwork') && $appName === 'work')) {
+                // 手机端访问
+                return View::file(public_path('work') . DIRECTORY_SEPARATOR . 'index.html');
             }
             // 非手机端访问
             return View::file(public_path('admin') . DIRECTORY_SEPARATOR . 'index.html');

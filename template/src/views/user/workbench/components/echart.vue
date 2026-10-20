@@ -1,13 +1,11 @@
 <template>
   <div class="assess">
-    <el-scrollbar style="height: 100%; width: 100%;">
+    <el-scrollbar style="height: 100%; width: 100%">
       <ul class="assess-ul">
         <li v-for="(item, index) in tableData" :key="index">
           <el-row class="assess-item-top">
             <el-col :span="22" class="top-left">
-              <div class="name over-text1">
-                {{ item.name }}
-              </div>
+              <div class="name over-text1">{{ item.name }}</div>
               <div class="ratio" :title="assessInfo.types == 1 ? '总分' + item.ratio : '权重' + item.ratio + '%'">
                 ({{ item.ratio }}{{ assessInfo.types == 1 ? '分' : '%' }})
               </div>
@@ -25,10 +23,10 @@
               class="assess-list-item"
               v-for="(items, index) in item.target"
               :key="'assess' + index"
-              @click.native="targetItem(item, items)"
+              @click="targetItem(item, items)"
             >
               <el-col :span="22" class="top-left">
-                <div class="name over-text1">{{ items.name }}</div>
+                <div class="name over-text1 hover-text">{{ items.name }}</div>
                 <div class="ratio" :title="assessInfo.types == 1 ? '总分' + items.ratio : '权重' + items.ratio + '%'">
                   ({{ items.ratio }}{{ assessInfo.types == 1 ? '分' : '%' }})
                 </div>
@@ -52,7 +50,8 @@
   </div>
 </template>
 <script>
-import { userAssessInfo } from '@/api/user'
+import { defineAsyncComponent } from 'vue'
+import { userAssessInfo } from '@/api/user.ts'
 export default {
   name: 'AssessInfo',
   props: {
@@ -62,7 +61,7 @@ export default {
     }
   },
   components: {
-    assessTarget: () => import('./assessTarget')
+    assessTarget: defineAsyncComponent(() => import('./assessTarget'))
   },
   data() {
     return {
@@ -119,9 +118,14 @@ export default {
 <style lang="scss" scoped>
 .assess {
   width: 100%;
-  height: 406px;
+  height: 306px;
   overflow: hidden;
   padding-bottom: 14px;
+  // 内容不存在横向溢出，关掉 wrap 的原生横向滚动条：
+  // 否则它会落在 padding-bottom 区域内躲开 overflow:hidden 的裁剪，露出一条拖不动的横条
+  :deep(.el-scrollbar__wrap) {
+    overflow-x: hidden;
+  }
   .assess-ul {
     padding: 6px 20px 0 20px;
     margin: 0;
@@ -137,7 +141,10 @@ export default {
           display: flex;
           align-items: center;
           padding-left: 14px;
-          font-size: 14px;
+          font-family: PingFang SC, PingFang SC;
+
+          font-size: 7rpx;
+          color: #303133;
           &:after {
             content: '';
             width: 4px;
@@ -151,11 +158,12 @@ export default {
           .name {
             color: #303133;
             max-width: 80%;
-            font-weight: 600;
+            font-weight: 500;
           }
+
           .ratio {
             color: #909399;
-            font-size: 13px;
+            font-weight: 400;
             padding-left: 6px;
           }
         }
@@ -167,7 +175,7 @@ export default {
       .assess-item-body {
         margin: 15px 0;
         padding: 20px 15px;
-        background: #f2f5fc;
+        background: #fafafa;
         border-radius: 4px;
         .assess-list-item {
           margin-bottom: 20px;
@@ -192,5 +200,8 @@ export default {
       }
     }
   }
+}
+.hover-text:hover {
+  color: #1890ff !important;
 }
 </style>

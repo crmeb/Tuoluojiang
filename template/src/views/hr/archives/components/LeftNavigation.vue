@@ -2,54 +2,57 @@
   <div class="assess-left v-height-flag">
     <!-- 个人头像 -->
     <div class="head-portrait">
-      <div v-if="user !== '个人简历'" class="avatar">
-        <img v-if="imageUrl" :src="imageUrl" class="img" @click="beforeUpload" />
-        <img v-else alt="" class="img" src="@/assets/images/portrait.png" @click="beforeUpload" />
-      </div>
-      <div v-if="user == '个人简历'" class="avatar">
-        <el-upload :headers="myHeaders" :http-request="uploadServerLog" :show-file-list="false" action="##"
-          class="upload-demo">
+      <div class="avatar">
+        <el-upload
+          :headers="myHeaders"
+          :http-request="uploadServerLog"
+          :show-file-list="false"
+          accept="image/*"
+          action="##"
+          class="upload-demo"
+        >
           <img v-if="imageUrl" :src="imageUrl" class="img" />
           <img v-else alt="" class="img" src="@/assets/images/portrait.png" />
         </el-upload>
       </div>
 
       <div class="updata-text">
-        <span class="certificates">{{ userInfo&&userInfo.name ? userInfo.name : '证件照' }}</span>
-        <span class="certificates-text"> {{ userInfo&&userInfo.position ? userInfo.position : '建议：734*1034 大小不超过2M' }}</span>
+        <span class="certificates">{{ userInfo && userInfo.name ? userInfo.name : '证件照' }}</span>
+        <span class="certificates-text">
+          {{ userInfo && userInfo.position ? userInfo.position : '建议：734*1034 大小不超过2M' }}</span
+        >
         <!-- 使用计算属性或对象映射来减少 v-if 的使用，提高代码可读性 -->
         <span v-if="userInfo">
           <span :class="['unread', getStatusClass(userInfo.type)]">{{ userInfo.type }}</span>
         </span>
-
       </div>
     </div>
     <div class="line" />
     <div class="catalogue">简历目录</div>
     <div>
       <ul class="assess-left-ul">
-        <li v-for="(item, index) in departmentData" :key="index"
-          :class="['li-style', index === tabIndex && 'li-active']" @click="clickDepart(index, item.id)">
-          <a :navTo="`#${index}`" rel="external nofollow">{{ item.name }} <i
-              :class="[user === '个人简历' ? item.icon : '']"></i></a>
+        <li
+          v-for="(item, index) in departmentData"
+          :key="index"
+          :class="['li-style', index === tabIndex && 'li-active']"
+          @click="clickDepart(index, item.id)"
+        >
+          <a :navTo="`#${index}`" rel="external nofollow"
+            >{{ item.name }} <i :class="[user === '个人简历' ? item.icon : '']"></i
+          ></a>
         </li>
       </ul>
     </div>
-
-    <!-- 选择头像图片弹窗 -->
-    <el-dialog :append-to-body="true" :before-close="handleClose" :visible.sync="dialogVisible" title="选择图片"
-      width="850px">
-      <upload-picture ref="uploadPicture" :check-button="true" @getImage="getImage"></upload-picture>
-    </el-dialog>
   </div>
 </template>
 
 <script>
-import { putCardApi } from '@/api/enterprise'
-import { getToken } from '@/utils/auth'
-import { uploader } from '@/utils/uploadCloud'
+import { putCardApi } from '@/api/enterprise.ts'
+import { getToken } from '@/utils/auth.ts'
+import { uploader } from '@/utils/uploadCloud.ts'
 
 export default {
+  emits: ['pageJump', 'getImageUrl'],
   name: 'LeftNavigation',
   props: {
     componentStatus: {
@@ -78,7 +81,6 @@ export default {
     return {
       tabIndex: 0,
       imgSrc: '',
-      dialogVisible: false,
       myHeaders: {
         authorization: 'Bearer ' + getToken()
       },
@@ -113,25 +115,12 @@ export default {
       this.$emit('pageJump', id, index)
     },
 
-    // 关闭图片选择弹窗
-    handleClose() {
-      this.dialogVisible = false
-      this.$refs.uploadPicture.getFileList('')
-      this.$refs.uploadPicture.selectItem = []
-      this.$refs.uploadPicture.checkPicList = []
-    },
-
-    // 打开图片上传弹窗
-    beforeUpload() {
-      this.dialogVisible = true
-    },
-
     // 获取状态对应的样式类
     getStatusClass(type) {
       const statusMap = {
-        '在职': 'bg1',
-        '未入职': 'bg2',
-        '离职': 'bg3'
+        在职: 'bg1',
+        未入职: 'bg2',
+        离职: 'bg3'
       }
       return statusMap[type] || ''
     },
@@ -145,30 +134,28 @@ export default {
         relation_id: '',
         eid: ''
       }
-      
+
       uploader(file, 1, options)
-        .then(res => {
+        .then((res) => {
           if (res.data.name) {
-            this.$emit('getImageUrl', res.data.url)
+            this.saveImage(res.data.url)
           }
         })
-        .catch(err => console.error('上传失败:', err))
+        .catch((err) => console.error('上传失败:', err))
     },
 
-    // 获取选择的图片
-    async getImage(data) {
-      this.$emit('getImageUrl', data.att_dir)
-      const photo = data.att_dir
-      
+    // 保存头像
+    async saveImage(photo) {
+      this.$emit('getImageUrl', photo)
+
       if (this.componentStatus.type === 'edit') {
         const updateData = {
           edit_type: 'photo',
           photo: photo
         }
-        await putCardApi(this.userInfo.id, updateData)
+        // silent：上传组件已提示一次，避免重复提示
+        await putCardApi(this.userInfo.id, updateData, { silent: true })
       }
-      
-      this.handleClose()
     }
   },
 
@@ -177,25 +164,21 @@ export default {
     departmentData() {
       const EXCLUDED_TYPES = [8, 9]
       const EXCLUDED_NAMES = ['基本信息', '系统信息']
-      
+
       switch (this.componentStatus.type) {
         case 'edit':
-          return this.tabtypes === 0 
-            ? this.newDepartment.filter(item => !EXCLUDED_TYPES.includes(item.type))
-            : this.department.filter(item => !EXCLUDED_TYPES.includes(item.id))
+          return this.tabtypes === 0
+            ? this.newDepartment.filter((item) => !EXCLUDED_TYPES.includes(item.type))
+            : this.department.filter((item) => !EXCLUDED_TYPES.includes(item.id))
         case 'add':
           if (this.tabtypes === 0) return this.newDepartment
-          return this.user === '个人简历' 
-            ? this.department.filter(item => !EXCLUDED_NAMES.includes(item.name))
+          return this.user === '个人简历'
+            ? this.department.filter((item) => !EXCLUDED_NAMES.includes(item.name))
             : this.department
         default:
           return this.department
       }
     }
-  },
-
-  components: {
-    uploadPicture: () => import('@/components/uploadPicture/index')
   }
 }
 </script>
@@ -220,7 +203,6 @@ a {
   color: #303133;
   margin: 20px 0 20px 15px;
 }
-
 
 .unread {
   position: relative;
@@ -281,6 +263,7 @@ a {
         height: 140px;
         padding: 4px;
         border: 1px solid #c0c4cc;
+        cursor: pointer;
       }
 
       .avatar-uploader-icon {
@@ -321,7 +304,7 @@ a {
     }
   }
 
-  /deep/ .el-card__header {
+  :deep(.el-card__header) {
     border-bottom: none;
     display: flex;
     align-items: center;
@@ -334,7 +317,7 @@ a {
     }
   }
 
-  /deep/ .el-scrollbar__wrap {
+  :deep(.el-scrollbar__wrap) {
     overflow-x: hidden;
   }
 
@@ -346,17 +329,17 @@ a {
     overflow-x: hidden;
     list-style: none;
     margin: 0;
-    padding: 0 0 80px;
+    padding: 0 10px 80px;
     position: relative;
 
     .li-style {
-      width: 100%;
       font-size: 13px;
       padding: 15px 0;
       text-align: center;
       color: #000000;
       cursor: pointer;
       box-sizing: content-box;
+      border-radius: 4px;
 
       .assess-left-more {
         color: #333333;
@@ -368,7 +351,6 @@ a {
 
     .li-active {
       background-color: rgba(24, 144, 255, 0.08);
-      border-right: 6px solid #1890ff;
 
       a {
         color: #1890ff !important;
@@ -400,17 +382,17 @@ a {
   background: #f0f2f5;
 }
 
-/deep/ .avatar-uploader .el-upload:hover {
+:deep(.avatar-uploader .el-upload:hover) {
   border-color: #409eff;
 }
 
-/deep/ .avatar-uploader-icon {
+:deep(.avatar-uploader-icon) {
   font-size: 28px;
   color: #8c939d;
   text-align: center;
 }
 
-/deep/ .el-upload--picture-card {
+:deep(.el-upload--picture-card) {
   width: 90px;
   height: 100px;
   border: 1px dashed #d9d9d9;

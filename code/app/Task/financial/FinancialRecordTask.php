@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace App\Task\financial;
 
-use App\Http\Service\Client\ClientBillService;
+use App\Http\Service\Customer\PaymentService;
 use App\Http\Service\Finance\BillService;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Support\Facades\Log;
@@ -33,7 +33,7 @@ class FinancialRecordTask extends Task
     private mixed $billService;
 
     /**
-     * @var ClientBillService|mixed
+     * @var PaymentService|mixed
      */
     private mixed $service;
 
@@ -45,7 +45,7 @@ class FinancialRecordTask extends Task
      */
     public function __construct(protected $clientBillId)
     {
-        $this->service     = app()->get(ClientBillService::class);
+        $this->service     = app()->get(PaymentService::class);
         $this->billService = app()->get(BillService::class);
     }
 
@@ -55,21 +55,21 @@ class FinancialRecordTask extends Task
     public function handle()
     {
         try {
-            $info = $this->service->get($this->clientBillId)?->toArray();
+            $info = $this->service->get($this->clientBillId);
             if (! $info) {
                 return true;
             }
             $this->billService->create([
-                'entid'     => $info['entid'],
-                'uid'       => uid_to_uuid((int) $info['uid']),
-                'user_id'   => (int) $info['uid'],
-                'cate_id'   => $info['bill_cate_id'],
-                'num'       => $info['num'],
-                'edit_time' => $info['date'],
-                'types'     => $info['bill_types'],
-                'type_id'   => $info['type_id'],
-                'pay_type'  => $info['pay_type'],
-                'link_id'   => $info['id'],
+                'entid'     => $info->entid,
+                'uid'       => uid_to_uuid((int) $info->uid),
+                'user_id'   => (int) $info->uid,
+                'cate_id'   => $info->bill_cate_id,
+                'num'       => $info->num,
+                'edit_time' => $info->date,
+                'types'     => $info->bill_types,
+                'type_id'   => $info->type_id,
+                'pay_type'  => $info->pay_type,
+                'link_id'   => $info->id,
                 'link_cate' => 'client',
             ]);
         } catch (\Throwable $e) {

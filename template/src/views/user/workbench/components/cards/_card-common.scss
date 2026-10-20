@@ -1,0 +1,58 @@
+// 工作台卡片通用样式
+// 各卡片 scoped 样式通过 @import 引入本 partial，保证标题/卡片圆角等视觉保持一致。
+// 注意：本 partial 会被多个卡片各自 import 进 scoped 样式，因此不要放置带副作用的选择器。
+
+// 卡片标题（.dynamics）
+.dynamics {
+  font-family: PingFang SC, PingFang SC;
+  font-weight: 500;
+  font-size: 16px;
+  color: #303133;
+  display: flex;
+  align-items: center;
+}
+
+// 卡片标题行容器
+.calendar_title {
+  padding: 20px;
+  .icon {
+    color: #1890ff;
+    margin-right: 5px;
+    .iconfont {
+      font-size: 20px;
+    }
+  }
+  .calendar_title-left {
+    span {
+      cursor: pointer;
+      justify-content: flex-end;
+      font-family: PingFang SC, PingFang SC;
+      font-weight: 400;
+      font-size: 13px;
+      color: #606266;
+      i {
+        margin-right: 2px;
+      }
+    }
+    .line {
+      color: #eeeeee;
+      margin: 0 10px;
+    }
+    .active {
+      color: #1890ff !important;
+    }
+  }
+}
+
+// 「更多」入口
+.notice-more {
+  color: #999;
+  cursor: pointer;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+// 页面卡片统一圆角
+:deep(.el-card) {
+  border-radius: 6px !important;
+}

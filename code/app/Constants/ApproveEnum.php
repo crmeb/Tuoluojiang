@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -90,17 +90,17 @@ final class ApproveEnum extends Enum
     public const PERSONNEL_TRIP = 5;
 
     /**
-     * 客户-合同回款.
+     * 客户-订单回款.
      */
     public const CUSTOMER_CONTRACT_PAYMENT = 6;
 
     /**
-     * 客户-合同续费.
+     * 客户-订单续费.
      */
     public const CUSTOMER_CONTRACT_RENEWAL = 7;
 
     /**
-     * 客户-合同支出.
+     * 客户-订单支出.
      */
     public const CUSTOMER_CONTRACT_EXPENSES = 8;
 
@@ -110,9 +110,14 @@ final class ApproveEnum extends Enum
     public const CUSTOMER_INVOICE_ISSUANCE = 9;
 
     /**
-     * 客户-发票作废.
+     * 客户-发票冲红.
      */
     public const CUSTOMER_INVOICE_CANCELLATION = 10;
+
+    /**
+     * 客户-合同签约.
+     */
+    public const CUSTOMER_CONTRACT_SIGN = 12;
 
     /**
      * 撤销申请.
@@ -129,10 +134,11 @@ final class ApproveEnum extends Enum
         self::CUSTOMER_INVOICE_ISSUANCE,
         self::CUSTOMER_INVOICE_CANCELLATION,
         self::APPROVE_REVOKE,
+        self::CUSTOMER_CONTRACT_SIGN,
     ];
 
     /**
-     * 合同付款表单.
+     * 订单付款表单.
      */
     public const CUSTOMER_FORM_PAYMENT = [
         'contractList'     => 'cid',
@@ -145,7 +151,7 @@ final class ApproveEnum extends Enum
     ];
 
     /**
-     * 合同续费表单.
+     * 订单续费表单.
      */
     public const CUSTOMER_FORM_RENEWAL = [
         'contractList'     => 'cid',
@@ -160,7 +166,7 @@ final class ApproveEnum extends Enum
     ];
 
     /**
-     * 合同支出表单.
+     * 订单支出表单.
      */
     public const CUSTOMER_FORM_EXPENDITURE = [
         'contractList'          => 'cid',
@@ -194,7 +200,7 @@ final class ApproveEnum extends Enum
     ];
 
     /**
-     * 发票作废表单.
+     * 发票冲红表单.
      */
     public const CUSTOMER_FORM_VOIDEDINVOICE = [
         'invoiceList' => 'invoice_id',

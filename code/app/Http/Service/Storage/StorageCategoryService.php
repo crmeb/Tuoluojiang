@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,9 +18,9 @@ namespace App\Http\Service\Storage;
 use App\Http\Dao\Storage\StorageCategoryDao;
 use App\Http\Model\BaseModel;
 use App\Http\Service\BaseService;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\services\FormService as Form;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\services\FormService as Form;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -59,7 +59,7 @@ class StorageCategoryService extends BaseService implements ResourceServicesInte
      */
     public function getList(array $where, array $field = ['*'], $sort = 'sort', array $with = []): array
     {
-        return Cache::tags(['storage_cate'])->remember(md5(json_encode($where)), (int) sys_config('system_cache_ttl', 3600), function () use ($where, $sort) {
+        return Cache::tags(['storage_cate'])->remember(md5(json_encode($where)), (int)sys_config('system_cache_ttl', 3600), function () use ($where, $sort) {
             return get_tree_children($this->dao->getList($where, ['*', 'id as value', 'cate_name as label'], sort: $sort));
         });
     }
@@ -71,7 +71,7 @@ class StorageCategoryService extends BaseService implements ResourceServicesInte
      */
     public function resourceCreate(array $other = []): array
     {
-        return $this->elForm('新增物资分类', $this->getFormRule(collect($other)), '/ent/storage/cate');
+        return $this->createElementForm('新增物资分类', $this->getFormRule(collect($other)), '/ent/storage/cate');
     }
 
     /**
@@ -81,17 +81,18 @@ class StorageCategoryService extends BaseService implements ResourceServicesInte
      */
     public function resourceSave(array $data)
     {
-        $path = $data['path'] ?? [];
+        $path = array_values(array_filter($data['path'] ?? []));
         if ($path) {
             $data['pid'] = $path[count($path) - 1];
         }
-        if (! $data['pid']) {
+        if (!$data['pid']) {
             $data['pid'] = 0;
         }
         if ($this->dao->exists(['pid' => $data['pid'], 'cate_name' => $data['cate_name'], 'type' => $data['type'], 'entid' => 1])) {
             throw $this->exception('分类已存在，请勿重复添加');
         }
-        $data['level'] = count($data['path']) + 1;
+        $data['path']  = $path;
+        $data['level'] = count($path) + 1;
         Cache::tags(['storage_cate'])->flush();
         return $this->dao->create($data);
     }
@@ -104,10 +105,10 @@ class StorageCategoryService extends BaseService implements ResourceServicesInte
     public function resourceEdit(int $id, array $other = []): array
     {
         $info = $this->dao->get($id);
-        if (! $info) {
+        if (!$info) {
             throw $this->exception('修改的物资分类不存在');
         }
-        return $this->elForm('修改物资分类', $this->getFormRule(collect($info->toArray())), '/ent/storage/cate/' . $id, 'PUT');
+        return $this->createElementForm('修改物资分类', $this->getFormRule(collect($info->toArray())), '/ent/storage/cate/' . $id, 'PUT');
     }
 
     /**
@@ -118,14 +119,15 @@ class StorageCategoryService extends BaseService implements ResourceServicesInte
      */
     public function resourceUpdate($id, array $data)
     {
-        $path = $data['path'] ?? [];
+        $path = array_values(array_filter($data['path'] ?? []));
         if ($path) {
             $data['pid'] = $path[count($path) - 1];
         }
-        if (! $data['pid']) {
+        if (!$data['pid']) {
             $data['pid'] = 0;
         }
-        $data['level'] = count($data['path']) + 1;
+        $data['path']  = $path;
+        $data['level'] = count($path) + 1;
         $this->dao->update($id, $data);
         Cache::tags(['storage_cate'])->flush();
         return true;
@@ -133,7 +135,6 @@ class StorageCategoryService extends BaseService implements ResourceServicesInte
 
     /**
      * 删除.
-     * @param mixed $id
      * @return int|mixed
      * @throws BindingResolutionException
      * @throws ContainerExceptionInterface
@@ -172,7 +173,7 @@ class StorageCategoryService extends BaseService implements ResourceServicesInte
      */
     public function getSubCates($cateId, $ids = [])
     {
-        if (! is_array($cateId)) {
+        if (!is_array($cateId)) {
             $cateId = [$cateId];
         }
         $cate_id = $this->dao->column(['pid' => $cateId], 'id') ?? [];
@@ -191,11 +192,15 @@ class StorageCategoryService extends BaseService implements ResourceServicesInte
      */
     protected function getFormRule(Collection $collection)
     {
+        $id         = (int) $collection->get('id', 0);
+        $excludeIds = $id ? array_merge([$id], $this->getSubCates($id)) : [];
+        $path       = (array) $collection->get('path', [0]) ?: [0];
+
         return [
             Form::input('type', '物资类型', $collection->get('type', 0))->hiddenStatus(true),
             Form::cascader('path', '父级类别')
-                ->options(array_merge([['value' => 0, 'label' => '顶级分类']], $this->getCateTree(['entid' => 1, 'not_id' => ($collection->get('path') ?: []) + [$collection->get('id') ?: ''], 'type' => $collection->get('type') ?? 0])))
-                ->value($collection->get('path') ?: [0])->props(['props' => ['checkStrictly' => true]]),
+                ->options(array_merge([['value' => 0, 'label' => '顶级分类']], $this->getCateTree(['entid' => 1, 'not_id' => $excludeIds, 'type' => $collection->get('type') ?? 0])))
+                ->appendRule('value', $path)->props(['props' => ['checkStrictly' => true]]),
             Form::input('cate_name', '类别名称', $collection->get('cate_name'))->required()->maxlength(15)->showWordLimit(true),
             Form::number('sort', '排序', $collection->get('sort', 0))->min(0)->max(999999)->precision(0),
         ];

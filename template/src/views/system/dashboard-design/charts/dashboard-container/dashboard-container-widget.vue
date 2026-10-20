@@ -1,31 +1,17 @@
 <template>
   <span>
+    <EmptyPlaceholder style="height: 240px" v-if="widget.widgetList.length <= 0" />
     <smart-widget-grid
       :layout="gridLayout"
-      v-if="widget.widgetList.length <= 0"
+      v-else
       :row-height="48"
       :margin="[15, 15]"
       :is-static="false"
       :auto-size="true"
     >
-      <template #[defaultSlotName]>
-        <smart-widget title="操作提示" refresh fullscreen>
-          <div class="layout-center">
-            <h3>选择左侧图表组件，鼠标点击即可加入画布</h3>
-          </div>
-        </smart-widget>
-      </template>
-    </smart-widget-grid>
-    <smart-widget-grid
-      :layout="gridLayout"
-      v-if="widget.widgetList.length > 0"
-      :row-height="48"
-      :margin="[15, 15]"
-      :is-static="false"
-      :auto-size="true"
-    >
-      <template v-for="(item, index) in widget.widgetList" #[item.id]>
+      <template v-for="(item, index) in widget.widgetList" :key="index" #[item.id]>
         <smart-widget
+          :padding="getGridPadding(item)"
           :simple="!item.options.showHeader"
           :title="item.options.label"
           :refresh="item.options.showRefresh"
@@ -34,6 +20,18 @@
           @on-refresh="onRefresh(item)"
           @on-fullscreen="onFullscreen(item)"
         >
+          <template #title>
+            <div class="title-box">
+              <span>{{ item.options.label }}</span>
+              <el-popover placement="top-start" width="200" trigger="hover">
+                <div>{{ item.options.tips || '设置文字提示内容' }}</div>
+
+                <template #reference>
+                  <span v-show="item.options.isShowTips" class="el-icon-warning-outline"></span>
+                </template>
+              </el-popover>
+            </div>
+          </template>
           <div class="container-com">
             <template v-if="'container' === item.category">
               <component
@@ -62,7 +60,8 @@
             <span
               v-if="designer.selectedWidget && designer.selectedWidget.id == item.id"
               class="del-span"
-              @click="removeSelectedChart(index, item.id)"
+              :class="{ 'in-tab': isTabContainer(item) }"
+              @click.stop="removeSelectedChart(index, item)"
             >
               <el-icon class="el-icon-delete" size="20"></el-icon>
             </span>
@@ -75,8 +74,13 @@
 
 <script>
 import { traverseWidgetsOfContainer } from '../../utils'
+import EmptyPlaceholder from '../components/EmptyPlaceholder.vue'
+
 export default {
   name: 'dashboard-container-widget',
+  components: {
+    EmptyPlaceholder
+  },
   props: {
     widget: Object,
     parentWidget: Object,
@@ -89,6 +93,7 @@ export default {
       defaultSlotName: '0'
     }
   },
+
   computed: {
     gridLayout() {
       if (this.widget.widgetList.length <= 0) {
@@ -98,19 +103,32 @@ export default {
       }
     }
   },
+
   methods: {
+    isTabContainer(widget) {
+      return widget.type === 'tab'
+    },
+    getGridPadding(widget) {
+      if (this.isTabContainer(widget)) {
+        return [12, 0]
+      }
+      return [12, 20]
+    },
     onRefresh(item) {
-      this.$set(item.options, 'isRefresh', !item.options.isRefresh)
+      item.options.isRefresh = !item.options.isRefresh
     },
     onFullscreen(item) {
       setTimeout(() => {
-        this.$set(item.options, 'isRefresh', !item.options.isRefresh)
+        item.options.isRefresh = !item.options.isRefresh
       }, 200)
     },
     removeSelectedChart(chartIndex, chartId) {
       let delInx
+      if (chartId && chartId.type === 'tab') {
+        this.designer.tabIsShow = ''
+      }
       this.widget.options.layout.forEach((el, inx) => {
-        if (el.i == chartId) {
+        if (el.i == chartId.id) {
           delInx = inx
         }
       })
@@ -140,8 +158,11 @@ export default {
           chartList.splice(chartIndex, 1)
           this.designer.setSelected(nextSelected)
 
-          this.designer.formWidget.deleteWidgetRef(widgetRefName)
-          this.designer.formWidget.deletedChildrenRef(childrenRefNames)
+          if (this.designer.formWidget) {
+            this.designer.formWidget.deleteWidgetRef(widgetRefName)
+            this.designer.formWidget.deletedChildrenRef(childrenRefNames)
+          }
+
           this.designer.emitHistoryChange()
         })
       }
@@ -157,13 +178,28 @@ export default {
   position: relative;
   .del-span {
     position: absolute;
+    width: 20px;
+    height: 20px;
     right: -11px;
     bottom: -2px;
     color: #909399;
     cursor: pointer;
+
+    &.in-tab {
+      right: 7px;
+    }
+
     &:hover {
       color: #606266;
     }
+  }
+}
+.title-box {
+  padding: 0 20px;
+  .el-icon-warning-outline {
+    cursor: pointer;
+    margin-left: 5px;
+    color: #606266;
   }
 }
 </style>

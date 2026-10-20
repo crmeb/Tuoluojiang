@@ -15,9 +15,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use crmeb\exceptions\ApiRequestException;
-use crmeb\interfaces\ApiRequestInterface;
-use crmeb\traits\RequestHelpTrait;
+use Tuoluojiang\Open\exceptions\ApiRequestException;
+use Tuoluojiang\Open\interfaces\ApiRequestInterface;
+use Tuoluojiang\Open\traits\RequestHelpTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -258,8 +258,8 @@ abstract class ApiValidate implements ApiRequestInterface
         $sceneAction = Str::studly($scene);
         if (method_exists($this, 'scene' . $sceneAction)) {
             call_user_func([$this, 'scene' . $sceneAction]);
-        } elseif (isset($this->scene[$scene])) {
-            // 如果设置了验证适用场景
+        } elseif (isset($this->scene[$scene]) && ! empty($this->scene[$scene])) {
+            // 如果设置了验证适用场景且场景值不为空
             $this->only = $this->scene[$scene];
         }
     }
@@ -270,15 +270,24 @@ abstract class ApiValidate implements ApiRequestInterface
      */
     protected function failedValidation(\Illuminate\Validation\Validator $validator)
     {
+        $message = $validator->errors()->first();
+        $code = $this->code;
+
+        // 解析消息中的 [CODE:xxxx] 格式，提取错误码
+        if (preg_match('/\[CODE:(\d+)\]/', $message, $matches)) {
+            $code = (int) $matches[1];
+            $message = preg_replace('/\[CODE:\d+\]/', '', $message);
+        }
+
         if ($this->failException) {
             throw new ApiRequestException(
-                $validator->errors()->first(),
-                $this->code,
+                $message,
+                $code,
                 null,
                 $this->statusCode
             );
         }
-        $this->error = $validator->errors()->first();
+        $this->error = $message;
 
         return false;
     }

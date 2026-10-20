@@ -10,59 +10,54 @@
       <app-link v-if="onlyOneChild" :to="resolvePath(onlyOneChild.menu_path, 0)">
         <el-menu-item
           :index="resolvePath(onlyOneChild.menu_path, 0)"
-          :router="true"
           :class="{ 'submenu-title-noDropdown': !isNest }"
-      
           v-show="item.is_show"
-         
         >
-   
-          <i class="iconfont" v-if="onlyOneChild.icon" :class="onlyOneChild.icon"></i>
-          <span slot="title" class="overText" >{{ item.menu_name }}</span>
+
+          <i v-if="onlyOneChild.icon" :class="getIconCss(onlyOneChild.icon)"></i>
+          <template #title>
+            <span class="overText" >{{ item.menu_name }}</span>
+          </template>
         </el-menu-item>
       </app-link>
     </template>
 
-    <el-submenu v-else ref="subMenu" :index="resolvePath(item.menu_path, 1)" popper-append-to-body>
-      <template slot="title">
-     
-        <i v-if="item.icon" class="iconfont" :class="item.icon"></i>
+    <el-sub-menu
+      v-else-if="item.is_show && hasVisibleChild(item)"
+      ref="subMenu"
+      :index="resolvePath(item.menu_path, 1)"
+      teleported
+      popper-class="sidebar-menu-popper"
+      :popper-offset="isNest ? 6 : 22"
+    >
+      <template #title>
+        <i v-if="item.icon" :class="getIconCss(item.icon,item)"></i>
         <span >{{ item.menu_name }}</span>
       </template>
 
       <sidebar-item
-        v-for="(child, index) in item.children"
-        :key="'sidebars' + index"
+        v-for="child in item.children"
+        :key="'sidebars' + child.id"
         :is-nest="true"
         :item="child"
-        :base-path="includeRouteOrNot(child.menu_path)"
+        :base-path="child.menu_path"
         v-show="child.is_show"
         class="nest-menu"
       />
-    </el-submenu>
+    </el-sub-menu>
   </div>
 </template>
 
 <script>
-import path from 'path'
-import { isExternal } from '@/utils/validate'
-import FixiOSBug from './FixiOSBug'
+import { defineAsyncComponent } from 'vue'
+import { resolve } from '@/utils/path.ts'
+import { isExternal } from '@/utils/validate.ts'
+import FixiOSBug from './FixiOSBug.ts'
 
 export default {
   name: 'SidebarItem',
-  components: { Item: () => import('./Item'), AppLink: () => import('./Link') },
+  components: { AppLink: defineAsyncComponent(() => import('./Link')) },
   mixins: [FixiOSBug],
-  computed: {
-    includeRouteOrNot() {
-      return function (menuPath) {
-        const { path } = this.$route
-        if (path.startsWith(menuPath)) {
-          return path
-        }
-        return menuPath
-      }
-    }
-  },
   props: {
     // route object
     item: {
@@ -85,6 +80,14 @@ export default {
     return {}
   },
   methods: {
+    // 递归判断子菜单下是否存在可见(is_show)的菜单项，避免子项全部隐藏时仍渲染空的父级菜单
+    hasVisibleChild(item) {
+      const children = item.children || []
+      if (children.length === 0) {
+        return !!item.is_show
+      }
+      return children.some((child) => this.hasVisibleChild(child))
+    },
     hasOneShowingChild(children = [], parent) {
       let len = 0
       const showingChildren = children.filter((item) => {
@@ -115,6 +118,14 @@ export default {
         }
       }
     },
+    
+    getIconCss(cssName,item) {
+      if (/^el-icon-/.test(cssName)) {
+        return [cssName]
+      } else {
+        return ['iconfont', cssName]
+      }
+    },
 
     resolvePath(routePath, index) {
       if (isExternal(routePath)) {
@@ -124,7 +135,7 @@ export default {
         return this.basePath
       }
       if (index == 1) {
-        return path.resolve(this.basePath, routePath)
+        return resolve(this.basePath, routePath)
       } else {
         return this.basePath
       }
@@ -133,18 +144,42 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-/deep/ .el-submenu__icon-arrow {
+:deep(.el-sub-menu__icon-arrow) {
   position: absolute;
-  right: 32px;
+  right: 15px;
   top: 55%;
+  color: #909399;
 }
 .iconfont {
   font-size: 20px;
+  color: #606266;
 }
+:deep(.el-menu) {
+background-color: transparent;
+.el-sub-menu__title {
+  background-attachment: scroll;
+}
+}
+
+:deep(.el-menu-item) {
+  padding: 0 10px !important;
+}
+:deep(.el-sub-menu__title:hover)  {
+background: #F3F5F9 !important;
+border-radius: 8px 8px 8px 8px;
+
+}
+  :deep(.router-link-exact-active.router-link-active li) {
+    background-color: #EDF6FF !important;
+    color: #1890ff !important;
+    border-radius: 8px;
+   
+  }
 .overText {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-
 }
+
+// 菜单缩进样式已移至全局 styles/sidebar.scss
 </style>

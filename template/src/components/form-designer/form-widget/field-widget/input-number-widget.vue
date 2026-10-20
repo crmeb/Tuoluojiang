@@ -13,12 +13,12 @@
     :sub-form-row-id="subFormRowId"
   >
     <el-input-number
-      v-show="!getReadMode() || field.isShow"
+      v-if="isInputVisable"
       ref="fieldEditor"
       v-model="fieldModel"
       class="full-width-input"
       :disabled="field.options.disabled"
-      :size="field.options.size"
+      :size="toElSize(field.options.size)"
       :controls-position="field.options.controlsPosition"
       :placeholder="field.options.placeholder"
       :min="Number(field.options.min)"
@@ -30,7 +30,7 @@
       @change="handleChangeEvent"
     >
     </el-input-number>
-    <template v-if="getReadMode() && !field.isShow">
+    <template v-else>
       <div class="readonly-mode-field" @click="isShowFn">{{ contentForReadMode || 0 }}</div>
     </template>
   </form-item-wrapper>
@@ -38,14 +38,12 @@
 
 <script>
 import FormItemWrapper from './form-item-wrapper'
-import emitter from '@/utils/emitter'
-import i18n, { translate } from '@/utils/i18n'
+import i18n, { translate } from '@/utils/i18n.ts'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
 
 export default {
   name: 'input-number-widget',
-  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
-  mixins: [emitter, fieldMixin, i18n],
+  mixins: [fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -82,7 +80,17 @@ export default {
       rules: []
     }
   },
+  watch: {
+    isInputVisable(val) {
+      val && this.$nextTick(() => {
+        this.isInputVisable && this.$refs.fieldEditor.focus();
+      });
+    }
+  },
   computed: {
+    isInputVisable() {
+      return !this.getReadMode() || this.field.isShow;
+    },
     contentForReadMode() {
       return this.fieldModel ? this.fieldModel : 0
     }
@@ -109,7 +117,7 @@ export default {
     this.handleOnMounted()
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     this.unregisterFromRefList()
   },
 
@@ -124,4 +132,3 @@ export default {
   width: 100% !important;
 }
 </style>
-@/utils/i18ns

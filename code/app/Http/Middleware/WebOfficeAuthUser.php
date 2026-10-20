@@ -15,9 +15,9 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use crmeb\exceptions\WebOfficeException;
-use crmeb\interfaces\ApiMiddlewareInterface;
-use crmeb\traits\MiddlewareTrait;
+use Tuoluojiang\Open\exceptions\WebOfficeException;
+use Tuoluojiang\Open\interfaces\ApiMiddlewareInterface;
+use Tuoluojiang\Open\traits\MiddlewareTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;

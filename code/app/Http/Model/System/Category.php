@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -35,9 +35,19 @@ class Category extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'pid'        => 'integer',
+        'sort'       => 'integer',
+        'is_show'    => 'integer',
+        'level'      => 'integer',
+        'entid'      => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * path修改器.
-     * @param mixed $value
      */
     public function setPathAttribute($value)
     {
@@ -46,7 +56,6 @@ class Category extends BaseModel
 
     /**
      * path获取器.
-     * @param mixed $value
      * @return false|string[]
      */
     public function getPathAttribute($value)
@@ -57,7 +66,6 @@ class Category extends BaseModel
     /**
      * 分类类型作用域
      * @param Builder $query
-     * @param mixed $value
      * @return Builder
      */
     public function scopeType($query, $value)
@@ -68,7 +76,6 @@ class Category extends BaseModel
     /**
      * 企业ID作用域
      * @param Builder $query
-     * @param mixed $value
      * @return Builder
      */
     public function scopeEntid($query, $value)
@@ -79,7 +86,6 @@ class Category extends BaseModel
     /**
      * 关键词作用域
      * @param Builder $query
-     * @param mixed $value
      * @return Builder
      */
     public function scopeKeyword($query, $value)
@@ -90,7 +96,6 @@ class Category extends BaseModel
     /**
      * 关键词作用域
      * @param Builder $query
-     * @param mixed $value
      * @return Builder
      */
     public function scopeIsShow($query, $value)
@@ -101,7 +106,6 @@ class Category extends BaseModel
     /**
      * 分类名称作用域
      * @param Builder $query
-     * @param mixed $value
      * @return Builder
      */
     public function scopeCateName($query, $value)
@@ -112,7 +116,6 @@ class Category extends BaseModel
     /**
      * 分类名称作用域
      * @param Builder $query
-     * @param mixed $value
      * @return Builder
      */
     public function scopeEqCateName($query, $value)
@@ -123,7 +126,6 @@ class Category extends BaseModel
     /**
      * 屏蔽ID作用域
      * @param Builder $query
-     * @param mixed $value
      * @return Builder
      */
     public function scopeNotId($query, $value)
@@ -134,7 +136,6 @@ class Category extends BaseModel
     /**
      * 屏蔽ID作用域
      * @param Builder $query
-     * @param mixed $value
      * @return Builder
      */
     public function scopePid($query, $value)
@@ -145,7 +146,6 @@ class Category extends BaseModel
     /**
      * 屏蔽ID作用域
      * @param Builder $query
-     * @param mixed $value
      * @return Builder
      */
     public function scopeLtLevel($query, $value)

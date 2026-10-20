@@ -1,5 +1,5 @@
 <template>
-  <el-dialog class="nodeImageDialog" title="图片" :visible.sync="dialogVisible" width="400px" top="15vh">
+  <el-dialog class="nodeImageDialog" title="图片" v-model="dialogVisible" width="400px" top="15vh">
     <div class="node-image-wrapper" v-if="img">
       <img class="node-image" :src="img" ref="nodeImage" />
       <div class="node-image-mask">
@@ -11,16 +11,19 @@
       <i class="el-icon-plus" />
     </el-upload>
 
-    <span slot="footer" class="dialog-footer">
-      <el-button @click="cancel">取 消</el-button>
-      <el-button type="primary" @click="confirm">确 定</el-button>
-    </span>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="cancel">取 消</el-button>
+        <el-button type="primary" @click="confirm">确 定</el-button>
+      </span>
+    </template>
   </el-dialog>
 </template>
 
 <script>
-import { NODE_ACTIVE, SHOW_NODE_IMAGE } from '../event-constant';
-import compressImg from '@/utils/compressImg';
+import { EventBus } from '@/libs/bus.ts'
+import { NODE_ACTIVE, SHOW_NODE_IMAGE } from '../event-constant.ts';
+import compressImg from '@/utils/compressImg.ts';
 
 export default {
   name: 'NodeImage',
@@ -32,12 +35,12 @@ export default {
     }
   },
   created() {
-    this.$bus.$on(NODE_ACTIVE, this.handleNodeActive)
-    this.$bus.$on(SHOW_NODE_IMAGE, this.handleShowNodeImage)
+    EventBus.$on(NODE_ACTIVE, this.handleNodeActive)
+    EventBus.$on(SHOW_NODE_IMAGE, this.handleShowNodeImage)
   },
-  beforeDestroy() {
-    this.$bus.$off(NODE_ACTIVE, this.handleNodeActive)
-    this.$bus.$off(SHOW_NODE_IMAGE, this.handleShowNodeImage)
+  beforeUnmount() {
+    EventBus.$off(NODE_ACTIVE, this.handleNodeActive)
+    EventBus.$off(SHOW_NODE_IMAGE, this.handleShowNodeImage)
   },
   methods: {
 
@@ -96,7 +99,7 @@ export default {
         })
         this.cancel()
       } catch (error) {
-        console.log(error)
+        this.$message.error(error.message)
       }
     }
   }

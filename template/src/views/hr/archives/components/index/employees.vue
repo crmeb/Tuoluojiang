@@ -27,42 +27,44 @@
             @pageFn="pageFn"
           >
             <template #options="{ data }">
-              <el-button v-hasPermi="['hr:archives:check']" type="text" @click="hanldeOptions(data, 'edit')"
+              <el-button v-hasPermi="['hr:archives:check']" type="primary" link @click="hanldeOptions(data, 'edit')"
                 >查看
               </el-button>
 
-              <el-button v-if="data.status !== 0 && data.type !== 1" type="text" @click="hanldeOptions(data, 'worker')"
+              <el-button v-if="data.status !== 0 && data.type !== 1" type="primary" link @click="hanldeOptions(data, 'worker')"
                 >转正</el-button
               >
 
               <el-button
                 v-if="data.type !== 2 || data.status !== 0"
-                type="text"
-                @click.native="hanldeOptions(data, 'quit')"
+                type="primary" link
+                @click="hanldeOptions(data, 'quit')"
               >
                 离职
               </el-button>
 
-              <el-button v-if="data.status == 0" type="text" @click.native="hanldeOptions(data, 'inviteToJoin')">
+              <el-button v-if="data.status == 0" type="primary" link @click="hanldeOptions(data, 'inviteToJoin')">
                 邀请完善信息
               </el-button>
 
               <el-dropdown v-if="data.type !== 1 && data.status !== 1">
-                <span class="el-dropdown-link el-button--text el-button">
-                  {{ $t('hr.more') }}
-                </span>
-                <el-dropdown-menu>
-                  <el-dropdown-item v-if="data.type !== 1" @click.native="hanldeOptions(data, 'worker')">
-                    转正
-                  </el-dropdown-item>
-                  <el-dropdown-item v-if="data.type !== 1" @click.native="hanldeOptions(data, 'quit')">
-                    离职
-                  </el-dropdown-item>
-
-                  <el-dropdown-item v-if="data.status !== 1" @click.native="hanldeOptions(data, 'delete')"
-                    >删除</el-dropdown-item
-                  >
-                </el-dropdown-menu>
+                <el-button type="primary" link class="el-dropdown-link">
+                  更多
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item v-if="data.type !== 1" @click="hanldeOptions(data, 'worker')">
+                      转正
+                    </el-dropdown-item>
+                    <el-dropdown-item v-if="data.type !== 1" @click="hanldeOptions(data, 'quit')">
+                      离职
+                    </el-dropdown-item>
+  
+                    <el-dropdown-item v-if="data.status !== 1" @click="hanldeOptions(data, 'delete')"
+                      >删除</el-dropdown-item
+                    >
+                  </el-dropdown-menu>
+                </template>
               </el-dropdown>
             </template>
           </Table>
@@ -73,10 +75,12 @@
 </template>
 
 <script>
-import { enterpriseCardApi } from '@/api/enterprise'
+import { defineAsyncComponent } from 'vue'
+import { enterpriseCardApi } from '@/api/enterprise.ts'
 
 import myMixins from '../../mixins/method.js'
 export default {
+  emits: ['openDrawer', 'invitation', 'onQuit', 'onWorker', 'onDelete'],
   mixins: [myMixins],
   data() {
     return {
@@ -144,6 +148,10 @@ export default {
           this.tableData = res.data.list
           if (this.tableData && this.tableData.length > 0) {
             this.tableData.map((value) => {
+              // 接口返回的员工类型为字符串，统一转为数字，避免模板中严格比较失效
+              if (value.type !== undefined && value.type !== null && value.type !== '') {
+                value.type = Number(value.type)
+              }
               if (value.frames.length > 1) {
                 value.frames.sort((a, b) => {
                   return b.is_mastart - a.is_mastart
@@ -211,8 +219,8 @@ export default {
   },
 
   components: {
-    formBox: () => import('../formBox.vue'),
-    Table: () => import('../table.vue')
+    formBox: defineAsyncComponent(() => import('../formBox.vue')),
+    Table: defineAsyncComponent(() => import('../table.vue'))
   }
 }
 </script>

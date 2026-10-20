@@ -15,9 +15,9 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Company;
 
-use App\Http\Dao\BaseDao;
 use App\Http\Model\Company\UserAssessScore;
-use crmeb\traits\dao\ListSearchTrait;
+use App\Http\Dao\BaseDao;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
 
 /**
  * 绩效考核分数变动

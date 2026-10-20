@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -35,6 +35,13 @@ class NewsVisit extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'notice_id'  => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * 一对一关联通知.
      * @param mixed $query
@@ -43,9 +50,7 @@ class NewsVisit extends BaseModel
      */
     public function scopeNoticeId($query, $value)
     {
-        if ($value !== '') {
-            $query->where('notice_id', $value);
-        }
+        $query->where('notice_id', $value);
     }
 
     /**
@@ -56,8 +61,6 @@ class NewsVisit extends BaseModel
      */
     public function scopeUuid($query, $value)
     {
-        if ($value !== '') {
-            $query->where('uuid', $value);
-        }
+        $query->where('uuid', $value);
     }
 }

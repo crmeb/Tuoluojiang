@@ -17,7 +17,7 @@
 
           <el-table ref="table" :data="list" class="table" row-key="id" style="width: 100%">
             <el-table-column label="职级" min-width="200" prop="rank">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <el-select
                   v-show="scope.row.show"
                   v-model="scope.row.rank"
@@ -50,7 +50,7 @@
             </el-table-column>
             <el-table-column label="固定工资">
               <el-table-column label="基本工资" min-width="100" prop="benefit.basicSalary">
-                <template slot-scope="scope">
+                <template #default="scope">
                   <el-input
                     v-show="scope.row.show"
                     v-model="scope.row.benefit.basicSalary"
@@ -62,7 +62,7 @@
                 </template>
               </el-table-column>
               <el-table-column label="绩效工资" min-width="100" prop="benefit.performance">
-                <template slot-scope="scope">
+                <template #default="scope">
                   <el-input
                     v-show="scope.row.show"
                     v-model="scope.row.benefit.performance"
@@ -75,19 +75,21 @@
                 </template>
               </el-table-column>
               <el-table-column label="合计" min-width="100" prop="total">
-                <template slot-scope="scope">
+                <template #default="scope">
                   <span>{{ getTotal(scope.row.benefit) }}</span>
                 </template>
               </el-table-column>
             </el-table-column>
             <el-table-column label="效益工资">
               <el-table-column min-width="100" prop="benefit.commission">
-                <template slot="header" slot-scope="scope">
+                <template #header="scope">
                   <el-popover content="可输入百分比（%）" placement="top" trigger="hover" width="170">
-                    <div slot="reference">提成工资 <span class="el-icon-info"></span></div>
+                    <template #reference>
+                      <div>提成工资 <span class="el-icon-info"></span></div>
+                    </template>
                   </el-popover>
                 </template>
-                <template slot-scope="scope">
+                <template #default="scope">
                   <el-input
                     v-show="scope.row.show"
                     v-model="scope.row.benefit.commission"
@@ -97,12 +99,14 @@
                 </template>
               </el-table-column>
               <el-table-column min-width="100" prop="benefit.teamAward">
-                <template slot="header" slot-scope="scope">
+                <template #header="scope">
                   <el-popover content="可输入百分比（%）" placement="top" trigger="hover" width="170">
-                    <div slot="reference">团队奖 <span class="el-icon-info"></span></div>
+                    <template #reference>
+                      <div>团队奖 <span class="el-icon-info"></span></div>
+                    </template>
                   </el-popover>
                 </template>
-                <template slot-scope="scope">
+                <template #default="scope">
                   <el-input
                     v-show="scope.row.show"
                     v-model="scope.row.benefit.teamAward"
@@ -112,12 +116,14 @@
                 </template>
               </el-table-column>
               <el-table-column min-width="100" prop="benefit.dividends">
-                <template slot="header" slot-scope="scope">
+                <template #header="scope">
                   <el-popover content="可输入百分比（%）" placement="top" trigger="hover" width="170">
-                    <div slot="reference">分红 <span class="el-icon-info"></span></div>
+                    <template #reference>
+                      <div>分红 <span class="el-icon-info"></span></div>
+                    </template>
                   </el-popover>
                 </template>
-                <template slot-scope="scope">
+                <template #default="scope">
                   <el-input
                     v-show="scope.row.show"
                     v-model="scope.row.benefit.dividends"
@@ -129,27 +135,27 @@
             </el-table-column>
 
             <el-table-column fixed="right" label="操作" width="180">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <el-button
                   v-if="scope.row.show == false"
                   v-hasPermi="['hr:training:promotion:edit']"
-                  type="text"
+                  type="primary" link
                   @click="editFn(scope.row)"
                   >编辑</el-button
                 >
                 <el-button
                   v-if="scope.row.show == true"
                   v-hasPermi="['hr:training:promotion:edit']"
-                  type="text"
+                  type="primary" link
                   @click="addRow(scope.row)"
                   >保存</el-button
                 >
 
-                <el-button v-hasPermi="['hr:training:promotion:details']" type="text" @click="handleCheck(scope.row)"
+                <el-button v-hasPermi="['hr:training:promotion:details']" type="primary" link @click="handleCheck(scope.row)"
                   >晋升标准</el-button
                 >
 
-                <el-button v-hasPermi="['hr:training:promotion:delete']" type="text" @click="onDelete(scope)"
+                <el-button v-hasPermi="['hr:training:promotion:delete']" type="primary" link @click="onDelete(scope)"
                   >删除</el-button
                 >
               </template>
@@ -161,7 +167,7 @@
     </el-card>
 
     <!-- 晋升标准侧滑 -->
-    <el-drawer :before-close="handleClose" :visible.sync="editDrawer" direction="rtl" size="61%" title="晋升标准">
+    <el-drawer :before-close="handleClose" v-model="editDrawer" direction="rtl" size="61%" title="晋升标准">
       <div class="check-box">
         <div class="user-name mb20">
           <span>职级：</span>
@@ -182,14 +188,15 @@
         />
       </div>
       <div class="button from-foot-btn fix btn-shadow">
-        <el-button :loading="loading" size="small" type="primary" @click="handleConfirm">保存</el-button>
+        <el-button :loading="loading" type="primary" @click="handleConfirm">保存</el-button>
       </div>
     </el-drawer>
   </div>
 </template>
 <script>
+import { defineAsyncComponent } from 'vue'
 import Sortable from 'sortablejs'
-import { getIdsArray, getArrayDifference } from '@/libs/public'
+import { getIdsArray, getArrayDifference, modalSure } from '@/libs/public.ts'
 
 import {
   jobSelectApi,
@@ -199,14 +206,14 @@ import {
   putPromotionDataApi,
   sortPromotionDataApi,
   standardDataApi
-} from '@/api/config.js'
-import { rankListApi } from '@/api/setting'
+} from '@/api/config.ts'
+import { rankListApi } from '@/api/setting.ts'
 
 export default {
   name: '',
   components: {
-    left: () => import('./components/left'),
-    ueditorFrom: () => import('@/components/form-common/oa-wangeditor')
+    left: defineAsyncComponent(() => import('./components/left')),
+    ueditorFrom: defineAsyncComponent(() => import('@/components/form-common/oa-wangeditor'))
   },
 
   data() {
@@ -296,7 +303,7 @@ export default {
       if (!row.row.id) {
         this.list.splice(row.$index, 1)
       } else {
-        this.$modalSure('您确定要删除该行数据吗').then(() => {
+        modalSure('您确定要删除该行数据吗').then(() => {
           deletePromotionDataApi(row.row.id).then((res) => {
             this.getList(this.promotion_id)
           })
@@ -408,7 +415,7 @@ export default {
 
     // 表格拖拽函数
     rowDrop() {
-      const tbody = this.$refs.table.$el.querySelectorAll('.el-table__body-wrapper > table > tbody')[0]
+      const tbody = this.$refs.table.$el.querySelectorAll('.el-table__body-wrapper tbody')[0]
 
       Sortable.create(tbody, {
         animation: 300,
@@ -435,11 +442,11 @@ export default {
 }
 .assess-right {
   padding-left: 14px;
-  /deep/ .el-table thead.is-group th {
+  :deep(.el-table thead.is-group th) {
     background-color: rgba(247, 251, 255, 1);
-    border-color: #ebeef5;
+    border-color: #f5f5f5;
   }
-  /deep/ .el-table td {
+  :deep(.el-table td) {
     border: none;
   }
   .el-table {
@@ -485,7 +492,7 @@ export default {
   border-radius: 4px;
 }
 .check-box {
-  /deep/ .el-scrollbar__wrap {
+  :deep(.el-scrollbar__wrap) {
     overflow-x: hidden;
   }
   color: #666666;
@@ -493,12 +500,12 @@ export default {
   padding-bottom: 0;
 
   .content {
-    /deep/ p {
+    :deep(p) {
       text-indent: 2em;
       font-size: 14px;
       line-height: 1.5;
     }
-    /deep/ td {
+    :deep(td) {
       border: 1px solid;
     }
   }

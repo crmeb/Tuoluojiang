@@ -1,54 +1,59 @@
 <!-- 查看发票详情弹窗 -->
 <template>
   <div>
-    <el-dialog
-      :title="config.title"
-      :visible.sync="dialogVisible"
-      width="540px"
-      :close-on-click-modal="false"
-      :append-to-body="true"
-      :before-close="handleClose"
-    >
+    <el-dialog :title="config.title" v-model="dialogVisible" width="540px" :close-on-click-modal="false"
+      :append-to-body="true" :before-close="handleClose">
       <el-form ref="form" :model="rules" :rules="rule" :label-width="labelWidth + 'px'" class="mt15">
         <el-form-item prop="remark" v-if="rules.status == 2">
-          <span slot="label">拒绝理由：</span>
+          <template #label>
+            <span>拒绝理由：</span>
+          </template>
           <el-input v-model="rules.remark" type="textarea"></el-input>
         </el-form-item>
 
         <div v-if="rules.status == 1">
           <el-form-item prop="invoice_type">
-            <span slot="label">发送方式：</span>
+            <template #label>
+              <span>发送方式：</span>
+            </template>
             <el-select v-model="rules.invoice_type" placeholder="请选择发送方式">
               <el-option label="邮箱" value="mail"></el-option>
               <el-option label="快递" value="express"></el-option>
             </el-select>
           </el-form-item>
           <el-form-item prop="collect_name" v-if="rules.invoice_type !== 'mail'">
-            <span slot="label">联系人：</span>
+            <template #label>
+              <span>联系人：</span>
+            </template>
             <el-input v-model="rules.collect_name" placeholder="请输入联系人"></el-input>
           </el-form-item>
           <el-form-item prop="collect_tel" v-if="rules.invoice_type !== 'mail'">
-            <span slot="label">联系电话：</span>
+            <template #label>
+              <span>联系电话：</span>
+            </template>
             <el-input v-model="rules.collect_tel" placeholder="请输入联系电话"></el-input>
           </el-form-item>
           <el-form-item :prop="propType">
-            <span slot="label">{{ rules.invoice_type == 'mail' ? '邮箱地址' : '邮寄地址' }}：</span>
-            <el-input
-              v-if="rules.invoice_type == 'mail'"
-              v-model="rules.invoice_mail"
-              placeholder="请输入邮箱地址"
-            ></el-input>
+            <template #label>
+              <span>{{ rules.invoice_type == 'mail' ? '邮箱地址' : '邮寄地址' }}：</span>
+            </template>
+            <el-input v-if="rules.invoice_type == 'mail'" v-model="rules.invoice_mail" placeholder="请输入邮箱地址"></el-input>
             <el-input v-else v-model="rules.invoice_address" placeholder="请输入邮寄地址"></el-input>
           </el-form-item>
           <el-form-item>
-            <span slot="label">备注：</span>
+            <template #label>
+              <span>备注：</span>
+            </template>
             <el-input v-model="rules.remark" type="textarea"></el-input>
           </el-form-item>
           <el-form-item>
-            <span slot="label">开票凭证：</span>
+            <template #label>
+              <span>开票凭证：</span>
+            </template>
             <div class="avatar">
-              <el-upload
-                class="upload-demo mr10 mb15"
+              <oa-upload :maxLength="1" :only-image="false" :model-value="imageUrl" @getVal="getVal"></oa-upload>
+              <!-- <el-upload
+                class="upload-demo mr10 mb12"
                 action="##"
                 :show-file-list="false"
                 :headers="myHeaders"
@@ -56,28 +61,33 @@
               >
                 <img class="img" :src="imageUrl" v-if="imageUrl" />
                 <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-              </el-upload>
+              </el-upload> -->
 
-              <span class="clew"> 支持jpg、jpeg、png <br />建议734*1034 <br />大小不超过2M </span>
+              <!-- <span class="clew"> 支持jpg、jpeg、png <br />建议734*1034 <br />大小不超过2M </span> -->
             </div>
           </el-form-item>
         </div>
       </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
-        <el-button size="small" type="primary" :loading="loading" @click="handleConfirm">{{
-          $t('public.ok')
-        }}</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleClose">取消</el-button>
+          <el-button type="primary" :loading="loading" @click="handleConfirm">确定</el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>
 <script>
-import { clientInvoiceStatusApi } from '@/api/enterprise'
-import { getToken } from '@/utils/auth'
-import { uploader } from '@/utils/uploadCloud'
+import { defineAsyncComponent } from 'vue'
+import { clientInvoiceStatusApi } from '@/api/client.ts'
+import { getToken } from '@/utils/auth.ts'
+import { uploader } from '@/utils/uploadCloud.ts'
 export default {
+  emits: ['isOk'],
   name: '',
+  components: {
+    oaUpload: defineAsyncComponent(() => import('@/components/form-common/oa-upload')),
+  },
 
   props: {
     config: {
@@ -91,7 +101,7 @@ export default {
     return {
       dialogVisible: false,
       labelWidth: 100,
-      imageUrl: '',
+      imageUrl: [],
       uploadData: {},
       uploadSize: 5,
       myHeaders: {
@@ -143,8 +153,8 @@ export default {
       }
     }
   },
-  created() {},
-  mounted() {},
+  created() { },
+  mounted() { },
   methods: {
     openBox() {
       this.dialogVisible = true
@@ -168,6 +178,11 @@ export default {
         }
       })
     },
+    getVal(val) {
+      this.imageUrl = val
+      this.rules.file = val[0].id
+      this.rules.attach_ids = [val[0].id]
+    },
     // 上传文件方法
     uploadServerLog(params) {
       const file = params.file
@@ -186,7 +201,7 @@ export default {
             this.rules.attach_ids = [res.data.attach_id]
           }
         })
-        .catch((err) => {})
+        .catch((err) => { })
     },
 
     handleClose() {
@@ -202,7 +217,7 @@ export default {
         invoice_mail: '',
         file: ''
       }
-      this.imageUrl = ''
+      this.imageUrl = []
     }
   }
 }
@@ -214,13 +229,16 @@ export default {
   border-bottom: 1px solid #e6ebf5;
   margin-bottom: 20px;
 }
-/deep/ .el-date-editor {
+
+:deep(.el-date-editor) {
   width: 100%;
 }
-/deep/ .el-textarea__inner {
+
+:deep(.el-textarea__inner) {
   resize: none;
 }
-/deep/ .el-input-number {
+
+:deep(.el-input-number) {
   width: 100%;
 }
 
@@ -228,9 +246,11 @@ export default {
   width: 75px;
   height: 95px;
 }
+
 .avatar {
   display: flex;
 }
+
 .clew {
   display: inline-block;
   margin-top: 10px;
@@ -250,12 +270,15 @@ export default {
   text-align: center;
   cursor: pointer;
 }
-/deep/ .el-select {
+
+:deep(.el-select) {
   width: 100%;
 }
-/deep/ .el-form-item:last-of-type {
+
+:deep(.el-form-item:last-of-type) {
   margin-bottom: 0;
 }
+
 .dialog-footer {
   padding-top: 20px;
 }

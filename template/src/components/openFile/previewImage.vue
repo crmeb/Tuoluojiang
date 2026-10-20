@@ -1,44 +1,47 @@
 <!-- @FileDescription: 预览图片组件 -->
 <template>
   <div>
-    <el-image-viewer v-if="isImage" :on-close="closeImageViewer" :url-list="srcList" />
+    <el-image-viewer
+      v-if="visible"
+      :key="viewerKey"
+      :url-list="urlList"
+      :initial-index="initialIndex"
+      @close="close"
+    />
   </div>
 </template>
 
 <script>
-import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
+import { ElImageViewer } from 'element-plus'
+
 export default {
   name: 'ImageViewer',
-  props: {
-    srcList: {
-      type: Array,
-      default: () => {
-        return []
-      }
-    }
-  },
+  components: { ElImageViewer },
   data() {
     return {
-      isImage: false
+      visible: false,
+      // 列表由调用方每次传入并整体替换，不再累积 unshift
+      urlList: [],
+      initialIndex: 0,
+      viewerKey: 0
     }
   },
-  components: {
-    ElImageViewer
-  },
   methods: {
-    openImageViewer(url) {
-      this.isImage = true
-      if (this.srcList.length > 0) {
-        this.srcList.map((value, index) => {
-          if (value === url) {
-            this.srcList.splice(index, 1)
-          }
-        })
-        this.srcList.unshift(url)
-      }
+    /**
+     * 打开图片预览
+     * @param {Array|String} list 同组图片地址列表，传字符串时按单图处理
+     * @param {Number} index 初始展示的下标
+     */
+    open(list, index = 0) {
+      const urls = (Array.isArray(list) ? list : [list]).filter(Boolean)
+      if (!urls.length) return
+      this.urlList = urls
+      this.initialIndex = Math.min(Math.max(index, 0), urls.length - 1)
+      this.viewerKey += 1
+      this.visible = true
     },
-    closeImageViewer() {
-      this.isImage = false
+    close() {
+      this.visible = false
     }
   }
 }

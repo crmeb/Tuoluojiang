@@ -1,24 +1,24 @@
 <template>
   <el-form-item prop="name" :rules="nameRequiredRule" v-if="!optionModel.name">
-    <span slot="label"
-      >{{ i18nt('designer.setting.uniqueName') }}
-      <el-tooltip effect="light" :content="i18nt('designer.setting.editNameHelp')">
-        <i class="el-icon-info"></i
-      ></el-tooltip>
-    </span>
-    <template>
-      <el-input
-        type="text"
-        v-model="optionModel.name"
-        :readonly="widgetNameReadonly"
-        @change="updateWidgetNameAndRef"
-      ></el-input>
+    <template #label>
+      <span
+        >{{ i18nt('designer.setting.uniqueName') }}
+        <el-tooltip effect="light" :content="i18nt('designer.setting.editNameHelp')">
+          <i class="el-icon-info"></i
+        ></el-tooltip>
+      </span>
     </template>
+    <el-input
+      type="text"
+      v-model="optionModel.name"
+      :readonly="widgetNameReadonly"
+      @change="updateWidgetNameAndRef"
+    ></el-input>
   </el-form-item>
 </template>
 
 <script>
-import i18n from '@/utils/i18n'
+import i18n from '@/utils/i18n.ts'
 import { isEmptyStr } from '@/utils/util'
 
 export default {
@@ -84,4 +84,3 @@ export default {
 </script>
 
 <style lang="scss" scoped></style>
-@/utils/i18ns

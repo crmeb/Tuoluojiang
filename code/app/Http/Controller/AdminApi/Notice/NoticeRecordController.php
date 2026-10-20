@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -63,6 +63,22 @@ class NoticeRecordController extends AuthController
     }
 
     /**
+     * 获取消息详情并标记已读.
+     * @param int $id 消息ID
+     * @return mixed
+     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
+     */
+    #[Get('detail/{id}', '获取消息详情并标记已读')]
+    public function detail(int $id)
+    {
+        $userId = auth('admin')->id();
+        return $this->success($this->service->getInfoAndMarkRead($id, $userId));
+    }
+
+    /**
      * @return mixed
      * @throws BindingResolutionException
      * @throws ContainerExceptionInterface
@@ -87,6 +103,10 @@ class NoticeRecordController extends AuthController
      * @param mixed $id
      * @param mixed $isRead
      * @return mixed
+     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
      */
     public function update($id, $isRead)
     {
@@ -107,6 +127,10 @@ class NoticeRecordController extends AuthController
     /**
      * 修改处理状态
      * @return mixed
+     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
      */
     #[Put('update/{id}/{isHandle}', '企业消息处理状态')]
     public function updateHandle($id, $isHandle)
@@ -132,24 +156,12 @@ class NoticeRecordController extends AuthController
     #[Put('batch/{isRead}', '企业消息批量已读')]
     public function batchUpdate($isRead)
     {
-        $ids    = $this->request->post('ids', []);
-        $cateId = $this->request->post('cate_id', 0);
-        if ($cateId) {
-            if ($this->service->update(['cate_id' => $cateId], ['is_read' => $isRead])) {
-                return $this->success('修改成功', tips: 0);
-            }
-        } else {
-            if ($ids) {
-                if ($this->service->update(['ids' => $ids], ['is_read' => $isRead])) {
-                    return $this->success('修改成功', tips: 0);
-                }
-            } else {
-                if ($this->service->update(['to_uid' => auth('admin')->id()], ['is_read' => 1])) {
-                    return $this->success('修改成功', tips: 0);
-                }
-            }
-        }
-        return $this->fail('修改失败', tips: 0);
+        $where = $this->request->postMore([
+            ['ids', []],
+            ['cate_id', 0],
+        ]);
+        $this->service->updateRead($where, $isRead, auth('admin')->id());
+        return $this->success('修改成功', tips: 0);
     }
 
     /**
@@ -197,7 +209,7 @@ class NoticeRecordController extends AuthController
     public function toSubscribe(NoticeSubscribeService $services, $id)
     {
         $status = $this->request->post('status', 0);
-        $services->saveSubscribe($this->uuid, $this->entId, (int) $id, (int) $status);
+        $services->saveSubscribe((int) $id, (int) $status, auth('admin')->id());
         return $this->success('操作成功');
     }
 }

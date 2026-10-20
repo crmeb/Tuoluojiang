@@ -22,13 +22,13 @@
       ></i>
       <i
         v-if="widget.type === 'table'"
-        class="iconfont icon-insertrow"
+        class="designer-icon icon-insertrow"
         :title="i18nt('designer.hint.insertRow')"
         @click.stop="appendTableRow(widget)"
       ></i>
       <i
         v-if="widget.type === 'table'"
-        class="iconfont icon-insertcolumn"
+        class="designer-icon icon-insertcolumn"
         :title="i18nt('designer.hint.insertColumn')"
         @click.stop="appendTableCol(widget)"
       ></i>
@@ -44,13 +44,13 @@
     <div class="drag-handler" v-if="designer.selectedId === widget.id && !widget.internal">
       <i class="el-icon-rank" :title="i18nt('designer.hint.dragHandler')"></i>
       <i>{{ i18n2t(`designer.widgetLabel.${widget.type}`, `extension.widgetLabel.${widget.type}`) }}</i>
-      <i v-if="widget.options.hidden === true" class="iconfont icon-hide"></i>
+      <i v-if="widget.options.hidden === true" class="designer-icon icon-hide"></i>
     </div>
   </div>
 </template>
 
 <script>
-import i18n from '@/utils/i18n'
+import i18n from '@/utils/i18n.ts'
 import containerMixin from '@/components/form-designer/form-widget/container-widget/containerMixin'
 
 export default {
@@ -114,4 +114,3 @@ export default {
   }
 }
 </style>
-@/utils/i18ns

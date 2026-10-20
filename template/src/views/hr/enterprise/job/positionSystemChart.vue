@@ -10,19 +10,23 @@
                 职级体系图
                 <el-popover placement="right" trigger="hover" popper-class="monitor-yt-popover">
                   <div class="prompt-bag">点击职级或职等对应的格子，可进行添加或移除等操作</div>
-                  <i class="el-icon-question" slot="reference"></i>
+                  <template #reference>
+                    <i class="el-icon-question"></i>
+                  </template>
                 </el-popover>
               </div>
             </div>
             <div class="flex lh-center">
-              <el-button type="primary" class="mr10 h32" size="small" icon="el-icon-plus" @click="addLevel(1)"
+              <el-button type="primary" class="mr10 h32" icon="el-icon-plus" @click="addLevel(1)"
                 >添加职等</el-button
               >
               <el-dropdown>
                 <span class="iconfont icongengduo2 pointer"></span>
-                <el-dropdown-menu style="text-align: left">
-                  <el-dropdown-item @click.native="addLevel(2)"> 批量修改职等区间 </el-dropdown-item>
-                </el-dropdown-menu>
+                <template #dropdown>
+                  <el-dropdown-menu style="text-align: left">
+                    <el-dropdown-item @click="addLevel(2)"> 批量修改职等区间 </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
               </el-dropdown>
             </div>
           </div>
@@ -33,23 +37,26 @@
                 <el-table :data="tableData" border row-key="id">
                   <el-table-column prop="salary" label="薪资范围" width="120" fixed="left" />
                   <el-table-column prop="rankMax" label="职等" width="80" fixed="left">
-                    <template slot-scope="scope">
+                    <template #default="scope">
                       <el-popover :ref="`pop-${scope.row.$index}`" placement="bottom-end" trigger="click" :offset="10">
                         <div class="right-item-list">
                           <div class="right-item" @click.stop="editLevel(1, scope.row)">编辑职等</div>
                           <div class="right-item" @click.stop="deleteLevel(scope.row)">删除职等</div>
                         </div>
-                        <div slot="reference" class="default-color rank-title">
-                          <span>{{ scope.row.min_level }}</span>
-                          <span>-</span>
-                          <span>{{ scope.row.max_level }}</span>
-                        </div>
+                        <template #reference>
+                          <div class="default-color rank-title">
+                            <span>{{ scope.row.min_level }}</span>
+                            <span>-</span>
+                            <span>{{ scope.row.max_level }}</span>
+                          </div>
+                        </template>
                       </el-popover>
                     </template>
                   </el-table-column>
-                  <div v-for="info in tableHeader" :key="info.id">
+                  <!-- Element Plus 只收集直接子级的列，动态列需用 template 循环，不能包 div -->
+                  <template v-for="info in tableHeader" :key="info.id">
                     <el-table-column label="职级" width="110px">
-                      <template slot-scope="scope">
+                      <template #default="scope">
                         <div @click.stop="addRankColumn($event, scope.row, info.id)">
                           <div
                             v-for="item in scope.row.info"
@@ -65,7 +72,7 @@
                       </template>
                     </el-table-column>
                     <el-table-column :label="info.name">
-                      <template slot-scope="scope">
+                      <template #default="scope">
                         <div v-for="item in scope.row.info" v-show="info.id === item.id" :key="item.id">
                           <span v-if="item.info && item.info.job.length > 0">
                             <span v-for="(col, index) in item.info.job" :key="index">
@@ -76,7 +83,7 @@
                         </div>
                       </template>
                     </el-table-column>
-                  </div>
+                  </template>
                 </el-table>
               </div>
               <div v-else>
@@ -97,13 +104,15 @@
 </template>
 
 <script>
-import { rankLevelDeleteApi, rankLevelListApi, rankLevelRankApi } from '@/api/setting'
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { rankLevelDeleteApi, rankLevelListApi, rankLevelRankApi } from '@/api/setting.ts'
 export default {
   name: 'JobLevel',
   components: {
-    rankDialog: () => import('./components/rankDialog'),
-    rightClick: () => import('./components/rightClick'),
-    defaultPage: () => import('@/components/common/defaultPage')
+    rankDialog: defineAsyncComponent(() => import('./components/rankDialog')),
+    rightClick: defineAsyncComponent(() => import('./components/rightClick')),
+    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage'))
   },
   data() {
     return {
@@ -130,7 +139,7 @@ export default {
     },
     // 添加
     addLevel(type) {
-      var title = ''
+      let title = ''
       if (type === 1) {
         title = '添加职等区间'
       } else if (type === 2) {
@@ -146,7 +155,7 @@ export default {
     },
     // 编辑
     editLevel(type, row) {
-      var title = ''
+      let title = ''
       if (type === 1) {
         title = '编辑职等区间'
       }
@@ -161,8 +170,8 @@ export default {
     },
     addRankColumn(event, row, columnId) {
       this.event = event
-      var valueData = ''
-      var rankItem = {}
+      let valueData = ''
+      let rankItem = {}
       if (row.info.length > 0) {
         row.info.map((value) => {
           if (value.id === columnId) {
@@ -182,7 +191,7 @@ export default {
     },
     // 删除职级类别
     deleteLevel(item) {
-      this.$modalSure('你确定要删除该职等吗').then(() => {
+      modalSure('你确定要删除该职等吗').then(() => {
         rankLevelDeleteApi(item.id)
           .then((res) => {
             this.getTableData()
@@ -192,8 +201,8 @@ export default {
     },
     handleRightClick(data) {
       if (data.type === 1) {
-        var valueData = ''
-        var rankItem = {}
+        let valueData = ''
+        let rankItem = {}
         if (data.row.info.length > 0) {
           data.row.info.map((value) => {
             if (value.id === data.id) {
@@ -235,7 +244,7 @@ export default {
   color: #606266;
 }
 .rank-right {
-  /deep/ .el-table .cell {
+  :deep(.el-table .cell) {
     text-align: center;
     font-size: 13px;
     cursor: pointer;
@@ -260,11 +269,11 @@ export default {
   }
 }
 
-/deep/ .el-table td,
-/deep/ .el-table th {
+:deep(.el-table td),
+:deep(.el-table th) {
   padding: 0;
 }
-/deep/ .el-table .cell > div {
+:deep(.el-table .cell > div) {
   min-height: 42px;
   width: 100%;
   display: flex;

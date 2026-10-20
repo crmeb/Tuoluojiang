@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -35,12 +35,12 @@ final class StorageEnum extends Enum
     /**
      * 上传方式：阿里云.
      */
-    public const UPLOAD_TX = 3;
+    public const UPLOAD_ALI = 3;
 
     /**
      * 上传方式：腾讯云.
      */
-    public const UPLOAD_ALI = 4;
+    public const UPLOAD_TX = 4;
 
     /**
      * 上传方式：京东云.

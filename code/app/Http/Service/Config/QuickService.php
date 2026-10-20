@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,13 +17,14 @@ namespace App\Http\Service\Config;
 
 use App\Http\Dao\Config\QuickDao;
 use App\Http\Service\BaseService;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\services\FormService as Form;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\services\FormService as Form;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use FormBuilder\Exception\FormBuilderException;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Collection;
 use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 
 class QuickService extends BaseService implements ResourceServicesInterface
 {
@@ -39,6 +40,7 @@ class QuickService extends BaseService implements ResourceServicesInterface
      * @param mixed $sort
      * @throws BindingResolutionException
      * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
     public function getList(array $where, array $field = ['*'], $sort = 'sort', array $with = []): array
@@ -55,7 +57,7 @@ class QuickService extends BaseService implements ResourceServicesInterface
      */
     public function resourceCreate(array $other = []): array
     {
-        return $this->elForm('添加数据', $this->createFormRule(collect($other)), '/ent/config/quick');
+        return $this->createElementForm('添加数据', $this->createFormRule(collect($other)), '/ent/config/quick');
     }
 
     /**
@@ -81,7 +83,7 @@ class QuickService extends BaseService implements ResourceServicesInterface
         if (! $info) {
             throw $this->exception('修改的快捷入口数据不存在');
         }
-        return $this->elForm('修改数据', $this->createFormRule(collect($info->toArray())), '/ent/config/quick/' . $id, 'PUT');
+        return $this->createElementForm('修改数据', $this->createFormRule(collect($info->toArray())), '/ent/config/quick/' . $id, 'PUT');
     }
 
     /**

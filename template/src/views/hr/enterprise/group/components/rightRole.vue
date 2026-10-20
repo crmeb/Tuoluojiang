@@ -6,9 +6,9 @@
       :direction="direction"
       :modal="true"
       :title="config.title"
-      :visible.sync="drawer"
+      v-model="drawer"
       :with-header="false"
-      :wrapper-closable="true"
+      :close-on-click-modal="false"
       size="700px"
     >
       <div class="role-box">
@@ -17,13 +17,12 @@
           <i class="el-icon-close" @click="handleClose" />
         </div>
         <div v-show="activeName == 0" class="card-box">
-          <el-form ref="form" :model="formData" :rules="rules" label-width="80px" size="small">
-            <el-form-item :label="$t('setting.edit.departmentname') + '：'" prop="name">
+          <el-form ref="form" :model="formData" :rules="rules" label-width="100px">
+            <el-form-item :label="'部门名称' + '：'" prop="name">
               <el-input
                 v-model="formData.name"
-                :placeholder="$t('setting.edit.inputcontent')"
+                placeholder="请输入部门名称"
                 class="input-item"
-                size="small"
               />
             </el-form-item>
             <el-form-item label="父级部门：">
@@ -32,7 +31,6 @@
                 :disabled="config.disabled"
                 :options="parentTreeList"
                 :props="{ checkStrictly: true }"
-                size="small"
                 style="width: 100%"
                 @change="handleChange"
               />
@@ -46,10 +44,9 @@
             <el-form-item label="部门主管：">
               <el-select
                 v-model="frameValue"
-                :placeholder="$t('setting.edit.selectmembers')"
+                placeholder="选择部门成员"
                 disabled
                 multiple
-                size="small"
                 @change="handleChangeframe"
               >
                 <el-option v-for="item in frameOptions" :key="item.id" :label="item.name" :value="item.id" />
@@ -61,11 +58,10 @@
                 :min="0"
                 :pprecision="0"
                 controls-position="right"
-                size="small"
                 @change="handleChange"
               ></el-input-number>
             </el-form-item>
-            <el-form-item :label="$t('setting.edit.departmentintroduction') + '：'">
+            <el-form-item :label="'部门介绍' + '：'">
               <el-input
                 v-model="formData.introduce"
                 :autosize="{ minRows: 6 }"
@@ -81,16 +77,17 @@
         </div>
       </div>
       <div class="from-foot-btn fix btn-shadow">
-        <el-button size="small" @click="close">{{ $t('public.cancel') }}</el-button>
-        <el-button size="small" type="primary" @click="onSubmit">{{ $t('public.save') }}</el-button>
+        <el-button @click="close">取消</el-button>
+        <el-button type="primary" @click="onSubmit">保存</el-button>
       </div>
     </el-drawer>
   </div>
 </template>
 
 <script>
-import { configFrameCreateApi, configFrameUpdataApi, configFrameEditApi, frameUpdataApi } from '@/api/setting'
-import { systemRoleListApi } from '@/api/config'
+import { EventBus } from '@/libs/bus.ts'
+import { configFrameCreateApi, configFrameUpdataApi, configFrameEditApi, frameUpdataApi } from '@/api/setting.ts'
+import { systemRoleListApi } from '@/api/config.ts'
 export default {
   name: 'RoleBox',
   components: {},
@@ -224,7 +221,7 @@ export default {
           if (res.status == 200) {
             this.drawer = false
             this.departmentObj.userList = []
-            this.$bus.$emit('getList')
+            EventBus.$emit('getList')
           }
         })
       } else {
@@ -236,7 +233,7 @@ export default {
             }
             this.departmentObj.userList = []
             this.drawer = false
-            this.$bus.$emit('getList')
+            EventBus.$emit('getList')
           }
         })
       }
@@ -272,20 +269,17 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/deep/ .el-select,
-/deep/ .el-input-number {
+:deep(.el-select),
+:deep(.el-input-number) {
   width: 100%;
 }
-/deep/ .el-input-number {
+:deep(.el-input-number) {
   input {
     text-align: left;
   }
 }
-/deep/.el-form-item__label {
+:deep(.el-form-item__label) {
   width: 88px !important;
-}
-/deep/.el-form-item__content {
-  margin-left: 88px !important;
 }
 .table-box {
   height: 52px;
@@ -299,7 +293,8 @@ export default {
     cursor: pointer;
 
     &.on {
-      color: #1890ff;
+      color: #303133;
+      font-weight: bold;
     }
   }
 

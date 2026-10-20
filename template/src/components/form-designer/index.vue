@@ -8,7 +8,7 @@
       <el-container class="center-layout-container">
         <el-header class="toolbar-header">
           <toolbar-panel :designer="designer" :global-dsv="globalDsv" ref="toolbarRef">
-            <template v-for="(idx, slotName) in $slots" #[slotName]>
+            <template v-for="(idx, slotName) in $slots" :key="slotName" #[slotName]>
               <slot :name="slotName"></slot>
             </template>
           </toolbar-panel>
@@ -52,14 +52,13 @@ import {
   getAllFieldWidgets,
   getQueryParam,
   traverseAllWidgets
-} from '@/utils/util'
-import i18n, { changeLocale } from '@/utils/i18n'
+} from '@/utils/formDesignerUtils'
+import i18n, { changeLocale } from '@/utils/i18n.ts'
 import axios from 'axios'
-// import SvgIcon from '@/components/svg-icon'
 
 export default {
   name: 'VFormDesigner',
-  componentName: 'VFormDesigner',
+  emits: ['form-json-imported', 'form-css-updated', 'field-selected'],
   mixins: [i18n],
   components: {
     WidgetPanel,
@@ -145,7 +144,7 @@ export default {
   },
   methods: {
     onEnd(e) {
-      console.log('onEnd', e)
+      // 拖拽结束处理
     },
     showLink(configName) {
       if (this.designerConfig[configName] === undefined) {
@@ -341,7 +340,7 @@ export default {
 .el-container.main {
   background: #fff !important;
 
-  ::v-deep aside {
+  :deep(aside) {
     /* 防止aside样式被外部样式覆盖！！ */
     margin: 0;
     padding: 0;
@@ -439,11 +438,10 @@ div.external-link a {
 }
 
 .container-scroll-bar {
-  ::v-deep .el-scrollbar__wrap,
-  ::v-deep .el-scrollbar__view {
+  :deep(.el-scrollbar__wrap),
+  :deep(.el-scrollbar__view) {
     overflow-x: hidden;
     overflow-y: auto;
   }
 }
 </style>
-@/utils/i18ns

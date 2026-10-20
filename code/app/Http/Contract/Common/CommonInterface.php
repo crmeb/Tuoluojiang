@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -30,6 +30,9 @@ interface CommonInterface
 
     /**
      * 短信验证码
+     * @param mixed $phone
+     * @param mixed $key
+     * @param mixed $types
      */
     public function smsVerifyCode($phone, $key, $types): bool;
 
@@ -55,10 +58,4 @@ interface CommonInterface
      * 城市数据树形结构.
      */
     public function getCityTree(): array;
-
-    /**
-     * 下载文件.
-     * @return mixed
-     */
-    public function downloadFileUrl(int $version, string $type, int|string $fileId, string $uuid): string;
 }

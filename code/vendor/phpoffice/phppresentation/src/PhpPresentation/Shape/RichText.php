@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of PHPPresentation - A pure PHP library for reading and writing
  * presentations documents.
@@ -10,74 +11,82 @@
  * file that was distributed with this source code. For the full list of
  * contributors, visit https://github.com/PHPOffice/PHPPresentation/contributors.
  *
- * @link        https://github.com/PHPOffice/PHPPresentation
- * @copyright   2009-2015 PHPPresentation contributors
+ * @see        https://github.com/PHPOffice/PHPPresentation
+ *
  * @license     http://www.gnu.org/licenses/lgpl.txt LGPL version 3
  */
+
+declare(strict_types=1);
 
 namespace PhpOffice\PhpPresentation\Shape;
 
 use PhpOffice\PhpPresentation\AbstractShape;
 use PhpOffice\PhpPresentation\ComparableInterface;
+use PhpOffice\PhpPresentation\Exception\NotAllowedValueException;
+use PhpOffice\PhpPresentation\Exception\OutOfBoundsException;
 use PhpOffice\PhpPresentation\Shape\RichText\Paragraph;
 use PhpOffice\PhpPresentation\Shape\RichText\TextElementInterface;
 
 /**
- * \PhpOffice\PhpPresentation\Shape\RichText
+ * \PhpOffice\PhpPresentation\Shape\RichText.
  */
 class RichText extends AbstractShape implements ComparableInterface
 {
     /** Wrapping */
-    const WRAP_NONE = 'none';
-    const WRAP_SQUARE = 'square';
+    public const WRAP_NONE = 'none';
+    public const WRAP_SQUARE = 'square';
 
     /** Autofit */
-    const AUTOFIT_DEFAULT = 'spAutoFit';
-    const AUTOFIT_SHAPE = 'spAutoFit';
-    const AUTOFIT_NOAUTOFIT = 'noAutofit';
-    const AUTOFIT_NORMAL = 'normAutofit';
+    public const AUTOFIT_DEFAULT = 'spAutoFit';
+    public const AUTOFIT_SHAPE = 'spAutoFit';
+    public const AUTOFIT_NOAUTOFIT = 'noAutofit';
+    public const AUTOFIT_NORMAL = 'normAutofit';
 
     /** Overflow */
-    const OVERFLOW_CLIP = 'clip';
-    const OVERFLOW_OVERFLOW = 'overflow';
+    public const OVERFLOW_CLIP = 'clip';
+    public const OVERFLOW_OVERFLOW = 'overflow';
+
+    /** Vertical alignment center */
+    public const VALIGN_CENTER = 1;
+    public const VALIGN_NOTCENTER = 0;
 
     /**
-     * Rich text paragraphs
+     * Rich text paragraphs.
      *
-     * @var \PhpOffice\PhpPresentation\Shape\RichText\Paragraph[]
+     * @var array<Paragraph>
      */
-    private $richTextParagraphs;
+    private $richTextParagraphs = [];
 
     /**
-     * Active paragraph
+     * Active paragraph.
      *
      * @var int
      */
     private $activeParagraph = 0;
 
     /**
-     * Text wrapping
+     * Text wrapping.
      *
      * @var string
      */
     private $wrap = self::WRAP_SQUARE;
 
     /**
-     * Autofit
+     * Autofit.
      *
      * @var string
      */
     private $autoFit = self::AUTOFIT_DEFAULT;
 
     /**
-     * Horizontal overflow
+     * Horizontal overflow.
      *
      * @var string
      */
     private $horizontalOverflow = self::OVERFLOW_OVERFLOW;
 
     /**
-     * Vertical overflow
+     * Vertical overflow.
      *
      * @var string
      */
@@ -86,122 +95,141 @@ class RichText extends AbstractShape implements ComparableInterface
     /**
      * Text upright?
      *
-     * @var boolean
+     * @var bool
      */
     private $upright = false;
 
     /**
      * Vertical text?
      *
-     * @var boolean
+     * @var bool
      */
     private $vertical = false;
 
     /**
-     * Number of columns (1 - 16)
+     * Number of columns (1 - 16).
      *
      * @var int
      */
     private $columns = 1;
 
     /**
-     * Bottom inset (in pixels)
+     * The spacing between columns.
+     *
+     * @var int
+     */
+    private $columnSpacing = 0;
+
+    /**
+     * Bottom inset (in pixels).
      *
      * @var float
      */
     private $bottomInset = 4.8;
 
     /**
-     * Left inset (in pixels)
+     * Left inset (in pixels).
      *
      * @var float
      */
     private $leftInset = 9.6;
 
     /**
-     * Right inset (in pixels)
+     * Right inset (in pixels).
      *
      * @var float
      */
     private $rightInset = 9.6;
 
     /**
-     * Top inset (in pixels)
+     * Top inset (in pixels).
      *
      * @var float
      */
     private $topInset = 4.8;
 
     /**
-     * Horizontal Auto Shrink
-     * @var boolean
+     * Horizontal Auto Shrink.
+     *
+     * @var null|bool
      */
     private $autoShrinkHorizontal;
 
     /**
-     * Vertical Auto Shrink
-     * @var boolean
+     * Vertical Auto Shrink.
+     *
+     * @var null|bool
      */
     private $autoShrinkVertical;
-    
+
     /**
-     * The percentage of the original font size to which the text is scaled
-     * @var float
+     * The percentage of the original font size to which the text is scaled.
+     *
+     * @var null|float
      */
     private $fontScale;
-    
+
     /**
-     * The percentage of the reduction of the line spacing
-     * @var float
+     * The percentage of the reduction of the line spacing.
+     *
+     * @var null|float
      */
     private $lnSpcReduction;
 
     /**
-     * Create a new \PhpOffice\PhpPresentation\Shape\RichText instance
+     * Define vertical text center position into shape (center,not center).
+     *
+     * @var int
+     */
+    private $verticalAlignCenter = self::VALIGN_NOTCENTER;
+
+    /**
+     * Create a new \PhpOffice\PhpPresentation\Shape\RichText instance.
      */
     public function __construct()
     {
         // Initialise variables
-        $this->richTextParagraphs = array(
-            new Paragraph()
-        );
-        $this->activeParagraph    = 0;
+        $this->richTextParagraphs = [
+            new Paragraph(),
+        ];
 
         // Initialize parent
         parent::__construct();
     }
 
     /**
-     * Get active paragraph index
-     *
-     * @return int
+     * Magic Method : clone.
      */
-    public function getActiveParagraphIndex()
+    public function __clone()
+    {
+        // Call perent clonage for heritage
+        parent::__clone();
+        // Clone each paragraph
+        foreach ($this->richTextParagraphs as &$paragraph) {
+            $paragraph = clone $paragraph;
+        }
+    }
+
+    /**
+     * Get active paragraph index.
+     */
+    public function getActiveParagraphIndex(): int
     {
         return $this->activeParagraph;
     }
 
-    /**
-     * Get active paragraph
-     *
-     * @return \PhpOffice\PhpPresentation\Shape\RichText\Paragraph
-     */
-    public function getActiveParagraph()
+    public function getActiveParagraph(): Paragraph
     {
         return $this->richTextParagraphs[$this->activeParagraph];
     }
 
     /**
-     * Set active paragraph
-     *
-     * @param  int $index
-     * @throws \Exception
-     * @return \PhpOffice\PhpPresentation\Shape\RichText\Paragraph
+     * Set active paragraph.
      */
-    public function setActiveParagraph($index = 0)
+    public function setActiveParagraph(int $index = 0): Paragraph
     {
         if ($index >= count($this->richTextParagraphs)) {
-            throw new \Exception("Invalid paragraph count.");
+            throw new OutOfBoundsException(0, count($this->richTextParagraphs), $index);
         }
 
         $this->activeParagraph = $index;
@@ -210,37 +238,31 @@ class RichText extends AbstractShape implements ComparableInterface
     }
 
     /**
-     * Get paragraph
-     *
-     * @param  int $index
-     * @throws \Exception
-     * @return \PhpOffice\PhpPresentation\Shape\RichText\Paragraph
+     * Get paragraph.
      */
-    public function getParagraph($index = 0)
+    public function getParagraph(int $index = 0): Paragraph
     {
         if ($index >= count($this->richTextParagraphs)) {
-            throw new \Exception("Invalid paragraph count.");
+            throw new OutOfBoundsException(0, count($this->richTextParagraphs), $index);
         }
 
         return $this->richTextParagraphs[$index];
     }
 
     /**
-     * Create paragraph
-     *
-     * @return \PhpOffice\PhpPresentation\Shape\RichText\Paragraph
+     * Create paragraph.
      */
-    public function createParagraph()
+    public function createParagraph(): Paragraph
     {
         $numParagraphs = count($this->richTextParagraphs);
         if ($numParagraphs > 0) {
-            $alignment   = clone $this->getActiveParagraph()->getAlignment();
-            $font        = clone $this->getActiveParagraph()->getFont();
+            $alignment = clone $this->getActiveParagraph()->getAlignment();
+            $font = clone $this->getActiveParagraph()->getFont();
             $bulletStyle = clone $this->getActiveParagraph()->getBulletStyle();
         }
 
         $this->richTextParagraphs[] = new Paragraph();
-        $this->activeParagraph      = count($this->richTextParagraphs) - 1;
+        $this->activeParagraph = count($this->richTextParagraphs) - 1;
 
         if (isset($alignment)) {
             $this->getActiveParagraph()->setAlignment($alignment);
@@ -251,17 +273,16 @@ class RichText extends AbstractShape implements ComparableInterface
         if (isset($bulletStyle)) {
             $this->getActiveParagraph()->setBulletStyle($bulletStyle);
         }
+
         return $this->getActiveParagraph();
     }
 
     /**
-     * Add text
+     * Add text.
      *
-     * @param  \PhpOffice\PhpPresentation\Shape\RichText\TextElementInterface $pText Rich text element
-     * @throws \Exception
-     * @return \PhpOffice\PhpPresentation\Shape\RichText
+     * @param null|TextElementInterface $pText Rich text element
      */
-    public function addText(TextElementInterface $pText = null)
+    public function addText(?TextElementInterface $pText = null): self
     {
         $this->richTextParagraphs[$this->activeParagraph]->addText($pText);
 
@@ -269,51 +290,42 @@ class RichText extends AbstractShape implements ComparableInterface
     }
 
     /**
-     * Create text (can not be formatted !)
+     * Create text (can not be formatted !).
      *
-     * @param  string                                   $pText Text
-     * @return \PhpOffice\PhpPresentation\Shape\RichText\TextElement
-     * @throws \Exception
+     * @param string $pText Text
      */
-    public function createText($pText = '')
+    public function createText(string $pText = ''): RichText\TextElement
     {
         return $this->richTextParagraphs[$this->activeParagraph]->createText($pText);
     }
 
     /**
-     * Create break
-     *
-     * @return \PhpOffice\PhpPresentation\Shape\RichText\BreakElement
-     * @throws \Exception
+     * Create break.
      */
-    public function createBreak()
+    public function createBreak(): RichText\BreakElement
     {
         return $this->richTextParagraphs[$this->activeParagraph]->createBreak();
     }
 
     /**
-     * Create text run (can be formatted)
+     * Create text run (can be formatted).
      *
-     * @param  string                           $pText Text
-     * @return \PhpOffice\PhpPresentation\Shape\RichText\Run
-     * @throws \Exception
+     * @param string $pText Text
      */
-    public function createTextRun($pText = '')
+    public function createTextRun(string $pText = ''): RichText\Run
     {
         return $this->richTextParagraphs[$this->activeParagraph]->createTextRun($pText);
     }
 
     /**
-     * Get plain text
-     *
-     * @return string
+     * Get plain text.
      */
-    public function getPlainText()
+    public function getPlainText(): string
     {
         // Return value
         $returnValue = '';
 
-        // Loop trough all \PhpOffice\PhpPresentation\Shape\RichText\Paragraph
+        // Loop trough all Paragraph
         foreach ($this->richTextParagraphs as $p) {
             $returnValue .= $p->getPlainText();
         }
@@ -323,7 +335,7 @@ class RichText extends AbstractShape implements ComparableInterface
     }
 
     /**
-     * Convert to string
+     * Convert to string.
      *
      * @return string
      */
@@ -333,50 +345,38 @@ class RichText extends AbstractShape implements ComparableInterface
     }
 
     /**
-     * Get paragraphs
-     *
-     * @return \PhpOffice\PhpPresentation\Shape\RichText\Paragraph[]
+     * @return array<Paragraph>
      */
-    public function getParagraphs()
+    public function getParagraphs(): array
     {
         return $this->richTextParagraphs;
     }
 
     /**
-     * Set paragraphs
+     * Set paragraphs.
      *
-     * @param  \PhpOffice\PhpPresentation\Shape\RichText\Paragraph[] $paragraphs Array of paragraphs
-     * @throws \Exception
-     * @return \PhpOffice\PhpPresentation\Shape\RichText
+     * @param array<Paragraph> $paragraphs Array of paragraphs
      */
-    public function setParagraphs($paragraphs = null)
+    public function setParagraphs(array $paragraphs = []): self
     {
-        if (!is_array($paragraphs)) {
-            throw new \Exception("Invalid \PhpOffice\PhpPresentation\Shape\RichText\Paragraph[] array passed.");
-        }
-
         $this->richTextParagraphs = $paragraphs;
-        $this->activeParagraph    = count($this->richTextParagraphs) - 1;
+        $this->activeParagraph = count($this->richTextParagraphs) - 1;
+
         return $this;
     }
 
     /**
-     * Get text wrapping
-     *
-     * @return string
+     * Get text wrapping.
      */
-    public function getWrap()
+    public function getWrap(): string
     {
         return $this->wrap;
     }
 
     /**
-     * Set text wrapping
-     *
-     * @param $value string
-     * @return \PhpOffice\PhpPresentation\Shape\RichText
+     * Set text wrapping.
      */
-    public function setWrap($value = self::WRAP_SQUARE)
+    public function setWrap(string $value = self::WRAP_SQUARE): self
     {
         $this->wrap = $value;
 
@@ -384,52 +384,41 @@ class RichText extends AbstractShape implements ComparableInterface
     }
 
     /**
-     * Get autofit
-     *
-     * @return string
+     * Get autofit.
      */
-    public function getAutoFit()
+    public function getAutoFit(): string
     {
         return $this->autoFit;
     }
 
     /**
-     * Get pourcentage of fontScale
-     *
-     * @return float
+     * Get pourcentage of fontScale.
      */
-    public function getFontScale()
+    public function getFontScale(): ?float
     {
         return $this->fontScale;
     }
 
     /**
-     * Get pourcentage of the line space reduction
-     *
-     * @return float
+     * Get pourcentage of the line space reduction.
      */
-    public function getLineSpaceReduction()
+    public function getLineSpaceReduction(): ?float
     {
         return $this->lnSpcReduction;
     }
 
     /**
-     * Set autofit
-     *
-     * @param $value string
-     * @param $fontScale float
-     * @param $lnSpcReduction float
-     * @return \PhpOffice\PhpPresentation\Shape\RichText
+     * Set autofit.
      */
-    public function setAutoFit($value = self::AUTOFIT_DEFAULT, $fontScale = null, $lnSpcReduction = null)
+    public function setAutoFit(string $value = self::AUTOFIT_DEFAULT, ?float $fontScale = null, ?float $lnSpcReduction = null): self
     {
         $this->autoFit = $value;
-        
-        if (!is_null($fontScale)) {
+
+        if (null !== $fontScale) {
             $this->fontScale = $fontScale;
         }
-        
-        if (!is_null($lnSpcReduction)) {
+
+        if (null !== $lnSpcReduction) {
             $this->lnSpcReduction = $lnSpcReduction;
         }
 
@@ -437,22 +426,17 @@ class RichText extends AbstractShape implements ComparableInterface
     }
 
     /**
-     * Get horizontal overflow
-     *
-     * @return string
+     * Get horizontal overflow.
      */
-    public function getHorizontalOverflow()
+    public function getHorizontalOverflow(): string
     {
         return $this->horizontalOverflow;
     }
 
     /**
-     * Set horizontal overflow
-     *
-     * @param $value string
-     * @return \PhpOffice\PhpPresentation\Shape\RichText
+     * Set horizontal overflow.
      */
-    public function setHorizontalOverflow($value = self::OVERFLOW_OVERFLOW)
+    public function setHorizontalOverflow(string $value = self::OVERFLOW_OVERFLOW): self
     {
         $this->horizontalOverflow = $value;
 
@@ -460,22 +444,17 @@ class RichText extends AbstractShape implements ComparableInterface
     }
 
     /**
-     * Get vertical overflow
-     *
-     * @return string
+     * Get vertical overflow.
      */
-    public function getVerticalOverflow()
+    public function getVerticalOverflow(): string
     {
         return $this->verticalOverflow;
     }
 
     /**
-     * Set vertical overflow
-     *
-     * @param $value string
-     * @return \PhpOffice\PhpPresentation\Shape\RichText
+     * Set vertical overflow.
      */
-    public function setVerticalOverflow($value = self::OVERFLOW_OVERFLOW)
+    public function setVerticalOverflow(string $value = self::OVERFLOW_OVERFLOW): self
     {
         $this->verticalOverflow = $value;
 
@@ -483,22 +462,17 @@ class RichText extends AbstractShape implements ComparableInterface
     }
 
     /**
-     * Get upright
-     *
-     * @return boolean
+     * Get upright.
      */
-    public function isUpright()
+    public function isUpright(): bool
     {
         return $this->upright;
     }
 
     /**
-     * Set vertical
-     *
-     * @param $value boolean
-     * @return \PhpOffice\PhpPresentation\Shape\RichText
+     * Set vertical.
      */
-    public function setUpright($value = false)
+    public function setUpright(bool $value = false): self
     {
         $this->upright = $value;
 
@@ -506,22 +480,17 @@ class RichText extends AbstractShape implements ComparableInterface
     }
 
     /**
-     * Get vertical
-     *
-     * @return boolean
+     * Get vertical.
      */
-    public function isVertical()
+    public function isVertical(): bool
     {
         return $this->vertical;
     }
 
     /**
-     * Set vertical
-     *
-     * @param $value boolean
-     * @return \PhpOffice\PhpPresentation\Shape\RichText
+     * Set vertical.
      */
-    public function setVertical($value = false)
+    public function setVertical(bool $value = false): self
     {
         $this->vertical = $value;
 
@@ -529,26 +498,49 @@ class RichText extends AbstractShape implements ComparableInterface
     }
 
     /**
-     * Get columns
+     * Define the vertical alignment if centered or not.
      *
-     * @return int
+     * @param int $value 1=center 0=not
+     *
+     * @see self::VALIGN_CENTER, self::VALIGN_NOTCENTER
      */
-    public function getColumns()
+    public function setVerticalAlignCenter(int $value): self
+    {
+        if (!in_array(
+            $value,
+            [self::VALIGN_CENTER, self::VALIGN_NOTCENTER]
+        )) {
+            throw new NotAllowedValueException((string) $value, [(string) self::VALIGN_CENTER, (string) self::VALIGN_NOTCENTER]);
+        }
+
+        $this->verticalAlignCenter = $value;
+
+        return $this;
+    }
+
+    /**
+     * Get the vertical alignment center.
+     */
+    public function getVerticalAlignCenter(): int
+    {
+        return $this->verticalAlignCenter;
+    }
+
+    /**
+     * Get columns.
+     */
+    public function getColumns(): int
     {
         return $this->columns;
     }
 
     /**
-     * Set columns
-     *
-     * @param $value int
-     * @throws \Exception
-     * @return \PhpOffice\PhpPresentation\Shape\RichText
+     * Set columns.
      */
-    public function setColumns($value = 1)
+    public function setColumns(int $value = 1): self
     {
         if ($value > 16 || $value < 1) {
-            throw new \Exception('Number of columns should be 1-16');
+            throw new OutOfBoundsException(1, 16, $value);
         }
 
         $this->columns = $value;
@@ -557,22 +549,17 @@ class RichText extends AbstractShape implements ComparableInterface
     }
 
     /**
-     * Get bottom inset
-     *
-     * @return float
+     * Get bottom inset.
      */
-    public function getInsetBottom()
+    public function getInsetBottom(): float
     {
         return $this->bottomInset;
     }
 
     /**
-     * Set bottom inset
-     *
-     * @param $value float
-     * @return \PhpOffice\PhpPresentation\Shape\RichText
+     * Set bottom inset.
      */
-    public function setInsetBottom($value = 4.8)
+    public function setInsetBottom(float $value = 4.8): self
     {
         $this->bottomInset = $value;
 
@@ -580,22 +567,17 @@ class RichText extends AbstractShape implements ComparableInterface
     }
 
     /**
-     * Get left inset
-     *
-     * @return float
+     * Get left inset.
      */
-    public function getInsetLeft()
+    public function getInsetLeft(): float
     {
         return $this->leftInset;
     }
 
     /**
-     * Set left inset
-     *
-     * @param $value float
-     * @return \PhpOffice\PhpPresentation\Shape\RichText
+     * Set left inset.
      */
-    public function setInsetLeft($value = 9.6)
+    public function setInsetLeft(float $value = 9.6): self
     {
         $this->leftInset = $value;
 
@@ -603,22 +585,17 @@ class RichText extends AbstractShape implements ComparableInterface
     }
 
     /**
-     * Get right inset
-     *
-     * @return float
+     * Get right inset.
      */
-    public function getInsetRight()
+    public function getInsetRight(): float
     {
         return $this->rightInset;
     }
 
     /**
-     * Set left inset
-     *
-     * @param $value float
-     * @return \PhpOffice\PhpPresentation\Shape\RichText
+     * Set left inset.
      */
-    public function setInsetRight($value = 9.6)
+    public function setInsetRight(float $value = 9.6): self
     {
         $this->rightInset = $value;
 
@@ -626,82 +603,102 @@ class RichText extends AbstractShape implements ComparableInterface
     }
 
     /**
-     * Get top inset
-     *
-     * @return float
+     * Get top inset.
      */
-    public function getInsetTop()
+    public function getInsetTop(): float
     {
         return $this->topInset;
     }
 
     /**
-     * Set top inset
-     *
-     * @param $value float
-     * @return \PhpOffice\PhpPresentation\Shape\RichText
+     * Set top inset.
      */
-    public function setInsetTop($value = 4.8)
+    public function setInsetTop(float $value = 4.8): self
     {
         $this->topInset = $value;
 
         return $this;
     }
 
-    /**
-     * Set horizontal auto shrink
-     * @param bool $value
-     */
-    public function setAutoShrinkHorizontal($value = null)
+    public function setAutoShrinkHorizontal(?bool $value = null): self
     {
-        if (is_bool($value)) {
-            $this->autoShrinkHorizontal = $value;
-        }
+        $this->autoShrinkHorizontal = $value;
+
         return $this;
     }
-    
-    /**
-     * Get horizontal auto shrink
-     * @return bool
-     */
-    public function hasAutoShrinkHorizontal()
+
+    public function hasAutoShrinkHorizontal(): ?bool
     {
         return $this->autoShrinkHorizontal;
     }
-    
+
     /**
-     * Set vertical auto shrink
-     * @param bool $value
+     * Set vertical auto shrink.
      */
-    public function setAutoShrinkVertical($value = null)
+    public function setAutoShrinkVertical(?bool $value = null): self
     {
-        if (is_bool($value)) {
-            $this->autoShrinkVertical = $value;
-        }
+        $this->autoShrinkVertical = $value;
+
         return $this;
     }
-    
+
     /**
-     * Set vertical auto shrink
-     * @return bool
+     * Set vertical auto shrink.
      */
-    public function hasAutoShrinkVertical()
+    public function hasAutoShrinkVertical(): ?bool
     {
         return $this->autoShrinkVertical;
     }
-    
+
     /**
-     * Get hash code
+     * Get spacing between columns.
+     */
+    public function getColumnSpacing(): int
+    {
+        return $this->columnSpacing;
+    }
+
+    /**
+     * Set spacing between columns.
+     */
+    public function setColumnSpacing(int $value = 0): self
+    {
+        if ($value >= 0) {
+            $this->columnSpacing = $value;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get hash code.
      *
      * @return string Hash code
      */
-    public function getHashCode()
+    public function getHashCode(): string
     {
         $hashElements = '';
         foreach ($this->richTextParagraphs as $element) {
             $hashElements .= $element->getHashCode();
         }
 
-        return md5($hashElements . $this->wrap . $this->autoFit . $this->horizontalOverflow . $this->verticalOverflow . ($this->upright ? '1' : '0') . ($this->vertical ? '1' : '0') . $this->columns . $this->bottomInset . $this->leftInset . $this->rightInset . $this->topInset . parent::getHashCode() . __CLASS__);
+        return md5(
+            $hashElements
+            . $this->wrap
+            . $this->autoFit
+            . $this->horizontalOverflow
+            . $this->verticalOverflow
+            . ($this->upright ? '1' : '0')
+            . ($this->vertical ? '1' : '0')
+            . $this->columns
+            . $this->columnSpacing
+            . $this->bottomInset
+            . $this->leftInset
+            . $this->rightInset
+            . $this->topInset
+            . $this->verticalAlignCenter
+            . parent::getHashCode()
+            . __CLASS__
+        );
     }
 }

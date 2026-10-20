@@ -1,7 +1,15 @@
 // cover some element-ui styles
 
-// 全局弹框头部样式
-.el-dialog__header {
+// 全局弹框：沿用 element-ui 的分区留白（弹框本身无内边距，头部 / 主体 / 底部各自留白），
+// 标题下分隔线通栏，距顶部 15vh（Element Plus 默认值，由 --el-dialog-margin-top 控制）
+.el-dialog {
+  --el-dialog-padding-primary: 0;
+  --el-dialog-border-radius: 2px;
+  --el-dialog-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.el-dialog__header,
+.el-dialog__header.show-close {
   padding: 16px 20px;
   border-bottom: 1px solid #eeeeee;
 
@@ -11,21 +19,124 @@
   }
 }
 
-// 全局弹框body样式
+.el-dialog__headerbtn {
+  top: 20px;
+  right: 20px;
+  width: 16px;
+  height: 16px;
+}
+
 .el-dialog__body {
   padding: 20px 20px 10px;
 }
 
+.el-dialog__footer {
+  padding: 10px 20px 20px;
+}
+
+// 确认框（MessageBox）按 element-ui 重置：去掉 Element Plus 的 12px 外框内边距，
+// 头部、内容、按钮区各自留白，关闭按钮距上/右 15px，图标与文字间距 12px
+.el-message-box {
+  --el-messagebox-padding-primary: 0;
+  padding-bottom: 20px;
+  border: 1px solid var(--el-border-color-lighter);
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  overflow: auto !important;
+}
+.el-message-box__header,
+.el-message-box__header.show-close {
+  padding: 15px 20px;
+  border-bottom: 1px solid #e7e7e7;
+  font-family: PingFang SC, PingFang SC;
+  font-weight: 500;
+  font-size: 14px;
+  color: #1e2128;
+}
+.el-message-box__title {
+  font-size: 14px;
+  line-height: 1;
+}
+.el-message-box__headerbtn {
+  top: 15px;
+  right: 15px;
+  width: 16px;
+  height: 18px;
+}
+.el-message-box__content {
+  padding: 20px;
+}
+.el-message-box__btns {
+  padding: 5px 15px 0;
+  .el-button + .el-button {
+    margin-left: 10px;
+  }
+}
+
+// 按钮按 element-ui 去掉聚焦外框：Element Plus 的 :focus-visible 外框在弹窗关闭把焦点还给
+// 触发按钮（如表格操作列）时会出现，线上没有
+.el-button:focus-visible {
+  outline: none;
+}
+// 按钮间距与文字按钮按 element-ui：相邻按钮间距 10px（Element Plus 为 12px）；
+// link 按钮对应原 type="text"，左右无内边距（Element Plus 为 2px），否则表格操作列会被挤换行
+.el-button + .el-button {
+  margin-left: 10px;
+}
+.el-button.is-link {
+  padding-left: 0;
+  padding-right: 0;
+}
+// 旧版 medium 文字按钮上下内边距 10px（高 35px），表格操作列的行高由它撑开
+.el-table .cell .el-button.is-link {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
 // 全局侧滑弹窗关闭叉号样式
 .el-drawer__close-btn {
   font-size: 14px;
   color: #909399;
 }
 
-// 全局按钮字体大小
-.el-button--small {
+.el-radio__label{
   font-size: 13px;
 }
+
+// 复选框 / 单选框按 element-ui：表单项外高度由内容撑开（Element Plus 固定 32px），
+// 表单项内保持 32px（原来由表单项行高撑开，与 Element Plus 默认一致）；
+// 复选框组继承外层行高（Element Plus 设为 0，换行时各行挤在一起），标签与框间距 10px
+.el-checkbox {
+  --el-checkbox-height: auto;
+}
+.el-form-item .el-checkbox {
+  --el-checkbox-height: 32px;
+}
+.el-checkbox__label {
+  padding-left: 10px;
+  line-height: 19px;
+}
+.el-checkbox-group {
+  line-height: inherit;
+}
+.el-radio {
+  height: auto;
+  line-height: 1;
+}
+.el-form-item .el-radio {
+  height: 32px;
+}
+.el-radio__label {
+  padding-left: 10px;
+}
+.el-radio-group {
+  line-height: 1;
+  vertical-align: middle;
+}
+
+// element-ui 的抽屉主体没有内边距，Element Plus 默认 20px
+.el-drawer {
+  --el-drawer-padding-primary: 0;
+}
+
 //全局抽屉头部样式
 .el-drawer__header {
   border-bottom: 1px solid #EEEEEE;
@@ -35,6 +146,10 @@
   height: 56px;
   font-weight: 500;
   color: #333333;
+}
+// Element Plus 的标题固定 16px，element-ui 的标题沿用头部字号
+.el-drawer__title {
+  font-size: inherit;
 }
 // tabs样式
 .el-tabs__header {
@@ -53,6 +168,14 @@
 .el-form-item__label,
 .el-form-item__content {
   font-size: 13px !important;
+}
+
+// Element UI 的 el-form-item__content 是块级（行内表单为 inline-block），Element Plus 改为 flex + wrap，
+// 直接放在其中的 div / p（说明文字、包装容器）会按内容收缩并排到控件右侧。这里恢复为逐行堆叠：
+// 普通表单占满整行，行内表单的百分比按内容宽度解析，效果同旧版 inline-block 内的块级元素。
+// :where 使特异性为 0，组件内显式声明的宽度仍然优先。绝对定位 / inline-block 的元素需在组件内写 width: auto 豁免
+:where(.el-form .el-form-item__content > :is(div, p):not([class^='el-'], [class*=' el-'])) {
+  width: 100%;
 }
 
 // 面包屑样式
@@ -84,13 +207,6 @@
   }
 }
 
-.fixed-width {
-  .el-button--mini {
-    padding: 7px 10px;
-    width: 60px;
-  }
-}
-
 .status-col {
   .cell {
     padding: 0 10px;
@@ -100,14 +216,6 @@
       margin-right: 0px;
     }
   }
-}
-
-// to fixed https://github.com/ElemeFE/element/issues/2461
-.el-dialog {
-  transform: none;
-  left: 0;
-  position: relative;
-  margin: 0 auto;
 }
 
 // refine element ui upload
@@ -122,6 +230,10 @@
   }
 }
 
+.el-table-column--selection .cell{
+  padding-left: 9px;
+}
+
 
 // dropdown
 .el-dropdown-menu {
@@ -130,18 +242,6 @@
   }
 }
 
-// fix date-picker ui bug in filter-item
-.el-range-editor.el-input__inner {
-  display: inline-flex !important;
-}
-
-// to fix el-date-picker css style
-.el-range-separator {
-  box-sizing: content-box;
-}
-.el-pagination__editor.el-input .el-input__inner {
-  text-align: center;
-}
 
 
 .non-resize-el-table {
@@ -149,10 +249,38 @@
     border-left-color: #6FBAFF;
   }
 
+  // 保留 border 以支持拖动列宽，但不显示边框
   .el-table--border {
-    border: none;
-    .el-table__cell {
-      border-right: none;
-    }
+    --el-table-border-color: transparent;
+    --el-table-border: none;
   }
+}
+
+.el-scrollbar.reset-scroll-bar {
+  .el-scrollbar__view {
+    padding-inline: 10px;
+  }
+}
+
+// 卡片内容区按 element-ui 不裁剪（Element Plus 为 overflow: auto）：
+// 内容比卡片略高时（如 el-tabs 导航 margin-bottom: -1px）会冒出多余滚动条
+.el-card__body {
+  overflow: visible;
+}
+// 全局限制 tooltip 气泡宽度，超长文案（如表格 show-overflow-tooltip 的备注）自动换行。
+// Element Plus 中 popover、下拉、选择器等弹层也都基于 el-tooltip（带 .el-tooltip 类），
+// 这里排除 popover 与 is-pure 弹层（select / dropdown / picker 等），只作用于文字提示；
+// :where 保持与原 .el-tooltip__popper 相同的优先级，popper-class 仍可覆盖
+.el-tooltip:where(.el-popper:not(.is-pure, .el-popover)) {
+  max-width: 360px;
+  padding: 10px; // element-ui 的 tooltip 内边距（Element Plus 为 5px 11px）
+  word-break: break-all;
+  line-height: 20px;
+}
+// 局部 loading 遮罩
+// element-ui 默认给遮罩 z-index: 2000，但本项目弹层（dialog/drawer/popper）
+// 都在 1000+ 段位，AI 悬浮球是 999，遮罩 2000 会把悬浮球盖住。
+// 这里把非全屏遮罩降回容器层级，全屏 loading 不受影响。
+.el-loading-mask:not(.is-fullscreen) {
+  z-index: 998;
 }

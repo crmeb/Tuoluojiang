@@ -101,7 +101,7 @@ return [
     |
     */
 
-    'ttl' => env('JWT_TTL', 14400),
+    'ttl' => env('JWT_TTL', 10080),
 
     /*
     |--------------------------------------------------------------------------
@@ -109,9 +109,9 @@ return [
     |--------------------------------------------------------------------------
     |
     | Specify the length of time (in minutes) that the token can be refreshed
-    | within. I.E. The user can refresh their token within a 2 week window of
+    | within. I.E. The user can refresh their token within a 30 day window of
     | the original token being created until they must re-authenticate.
-    | Defaults to 2 weeks.
+    | Defaults to 30 days.
     |
     | You can also set this to null, to yield an infinite refresh time.
     | Some may want this instead of never expiring tokens for e.g. a mobile app.
@@ -120,7 +120,32 @@ return [
     |
     */
 
-    'refresh_ttl' => env('JWT_REFRESH_TTL', 20160),
+    'refresh_ttl' => env('JWT_REFRESH_TTL', 10080),
+
+    /*
+    |--------------------------------------------------------------------------
+    | JWT refresh threshold
+    |--------------------------------------------------------------------------
+    |
+    | Only rotate a valid token when its remaining lifetime is lower than this
+    | threshold. Keep this comfortably below JWT_TTL to avoid refreshing on
+    | every request when the access token lifetime is short.
+    |
+    */
+
+    'refresh_threshold' => env('JWT_REFRESH_THRESHOLD', 86400),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Refresh token idle window (days)
+    |--------------------------------------------------------------------------
+    |
+    | Sliding expiration for database-backed refresh_token records issued by
+    | UserTokenService. Each successful refresh extends this window.
+    |
+    */
+
+    'refresh_idle_days' => (int) env('JWT_REFRESH_IDLE_DAYS', 7),
 
     /*
     |--------------------------------------------------------------------------
@@ -205,7 +230,7 @@ return [
     |
     */
 
-    'leeway' => env('JWT_LEEWAY', 0),
+    'leeway' => env('JWT_LEEWAY', 60),
 
     /*
     |--------------------------------------------------------------------------
@@ -232,7 +257,7 @@ return [
     |
     */
 
-    'blacklist_grace_period' => env('JWT_BLACKLIST_GRACE_PERIOD', 0),
+    'blacklist_grace_period' => env('JWT_BLACKLIST_GRACE_PERIOD', 60),
 
     /*
     |--------------------------------------------------------------------------

@@ -7,7 +7,7 @@
 </template>
 
 <script>
-  import i18n from "@/utils/i18n"
+  import i18n from "@/utils/i18n.ts"
   import propertyMixin from "@/components/form-designer/setting-panel/property-editor/propertyMixin"
 
   export default {
@@ -24,4 +24,3 @@
 <style scoped>
 
 </style>
-@/utils/i18ns

@@ -3,28 +3,29 @@
   <div class="station">
     <el-drawer
       :title="formData.title"
-      :visible.sync="drawer"
+      v-model="drawer"
       :direction="direction"
       :modal="true"
       :append-to-body="true"
-      :wrapper-closable="true"
       :before-close="handleClose"
       :size="formData.width"
     >
-      <div class="invoice-title" slot="title">
-        <el-row class="invoice-header">
-          <div class="invoice-left">
-            <img :src="list.card ? list.card.avatar : ''" alt="" class="img" />
+      <template #header>
+        <div class="invoice-title">
+          <div class="invoice-header">
+            <div class="invoice-left">
+              <img :src="list.card ? list.card.avatar : ''" alt="" class="img" />
+            </div>
+            <div class="invoice-right">
+              <span class="title">{{ list.card ? list.card.name : '--' }}的订单付款申请</span>
+              <span class="text color1" v-if="list.status === 0"> 待审核 </span>
+              <span class="text color2" v-if="list.status === 1"> 已通过 </span>
+              <span class="text color3" v-if="list.status === 2"> 未通过 </span>
+              <span class="text color2" v-if="list.status === -1"> 已撤销 </span>
+            </div>
           </div>
-          <div class="invoice-right">
-            <span class="title">{{ list.card ? list.card.name : '--' }}的合同付款申请</span>
-            <span class="text color1" v-if="list.status === 0"> 待审核 </span>
-            <span class="text color2" v-if="list.status === 1"> 已通过 </span>
-            <span class="text color3" v-if="list.status === 2"> 未通过 </span>
-            <span class="text color2" v-if="list.status === -1"> 已撤销 </span>
-          </div>
-        </el-row>
-      </div>
+        </div>
+      </template>
 
       <div class="content">
         <el-form label-width="100px">
@@ -75,14 +76,14 @@
               </el-form-item>
             </div>
             <div class="form-item">
-              <el-form-item label="合同名称：">
+              <el-form-item label="订单名称：">
                 <span>{{ list.treaty ? list.treaty.contract_name : '--' }}</span>
               </el-form-item>
             </div>
             <div class="form-item" v-if="list.types !== 2">
               <el-form-item label="业务类型：">
-                <span v-if="list.types === 0">合同回款</span>
-                <span v-if="list.types === 1">合同续费 - {{ list.renew.title }}</span>
+                <span v-if="list.types === 0">订单回款</span>
+                <span v-if="list.types === 1">订单续费 - {{ list.renew.title }}</span>
               </el-form-item>
             </div>
             <div class="form-item" v-if="list.types === 1 && list.types !== 2">
@@ -107,8 +108,8 @@
         </el-form>
       </div>
       <div class="button from-foot-btn fix btn-shadow" v-if="list.status === 0 && formData.type !== 1">
-        <el-button size="small" type="primary" @click="handleContract">通过</el-button>
-        <el-button size="small" type="danger" @click="refuse">拒绝</el-button>
+        <el-button type="primary" @click="handleContract">通过</el-button>
+        <el-button type="danger" @click="refuse">拒绝</el-button>
       </div>
     </el-drawer>
     <expend-dialog ref="expendDialog" :config="operationDialog" @isOk="isOk"></expend-dialog>
@@ -120,15 +121,15 @@
     ></operationDialog>
 
     <!-- 拒绝 -->
-    <el-dialog :title="title" top="25vh" :append-to-body="true" :visible.sync="dialogVisible" width="540px">
+    <el-dialog :title="title" top="25vh" :append-to-body="true" v-model="dialogVisible" width="540px">
       <div class="line" />
       <el-form :model="form" ref="from" :rules="rules" class="from">
         <el-form-item :label="reason + '：'" label-width="90px" prop="remarks">
           <el-input type="textarea" v-model="form.remarks"></el-input>
         </el-form-item>
         <div class="footer">
-          <el-button size="small" class="btn" @click="cancelFn">取消</el-button>
-          <el-button size="small" type="primary" @click="submitFn" class="btn">确定</el-button>
+          <el-button class="btn" @click="cancelFn">取消</el-button>
+          <el-button type="primary" @click="submitFn" class="btn">确定</el-button>
         </div>
       </el-form>
     </el-dialog>
@@ -136,14 +137,17 @@
   </div>
 </template>
 <script>
-import { getbillCate, billCateApi, clientBillStatusApi } from '@/api/enterprise'
-import { getInvoiceText } from '@/libs/customer'
+import { defineAsyncComponent } from 'vue'
+import { getbillCate, billCateApi } from '@/api/enterprise.ts'
+import { clientBillStatusApi } from '@/api/client.ts'
+import { getInvoiceText } from '@/libs/customer.ts'
 export default {
+  emits: ['isOk'],
   name: 'applyForPayment',
   components: {
-    operationDialog: () => import('@/views/fd/examine/components/operationDialog'),
-    expendDialog: () => import('@/views/customer/list/components/expendDialog'),
-    imageViewer: () => import('@/components/common/imageViewer')
+    operationDialog: defineAsyncComponent(() => import('@/views/fd/examine/components/operationDialog')),
+    expendDialog: defineAsyncComponent(() => import('@/views/customer/list/components/expendDialog')),
+    imageViewer: defineAsyncComponent(() => import('@/components/common/imageViewer'))
   },
   props: {
     paymentType: {
@@ -348,13 +352,13 @@ export default {
         height: 50px;
         display: block;
       }
-      /deep/ .el-form-item {
+      :deep(.el-form-item) {
         margin-bottom: 20px;
       }
-      /deep/ .el-form-item--medium .el-form-item__content {
+      :deep(.el-form-item .el-form-item__content) {
         line-height: 12px;
       }
-      /deep/ .el-form-item__label {
+      :deep(.el-form-item__label) {
         font-size: 12px !important;
         font-weight: normal;
         color: #909399;

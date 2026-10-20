@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -35,6 +35,14 @@ class City extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'        => 'integer',
+        'city_id'   => 'integer',
+        'level'     => 'integer',
+        'parent_id' => 'integer',
+        'is_show'   => 'integer',
+    ];
+
     /**
      * 获取子集分类查询条件.
      * @return HasMany
@@ -46,8 +54,6 @@ class City extends BaseModel
 
     /**
      * name 作用域
-     * @param mixed $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeNameLike($query, $value)

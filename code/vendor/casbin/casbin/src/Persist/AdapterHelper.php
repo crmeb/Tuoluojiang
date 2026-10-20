@@ -31,9 +31,10 @@ trait AdapterHelper
             return;
         }
 
-        $tokens = array_map(function($item){
-            return trim(is_null($item) ? "" : $item);
-        }, str_getcsv($line));
+        $tokens = array_map(
+            fn($item) => $item ? trim($item) : '',
+            str_getcsv($line, ",", '"', ""),
+        );
 
         $this->loadPolicyArray($tokens, $model);
     }
@@ -59,7 +60,7 @@ trait AdapterHelper
             return;
         }
 
-        $rule = \array_slice($rule, 1);
+        $rule = array_slice($rule, 1);
         $assertion->policy[] = $rule;
         $assertion->policyMap[implode(Policy::DEFAULT_SEP, $rule)] = count($assertion->policy) - 1;
 

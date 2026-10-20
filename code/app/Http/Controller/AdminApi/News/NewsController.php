@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,8 +18,8 @@ namespace App\Http\Controller\AdminApi\News;
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Requests\enterprise\notice\NoticeRequest;
 use App\Http\Service\News\NewsService;
-use crmeb\interfaces\ResourceControllerInterface;
-use crmeb\traits\ResourceControllerTrait;
+use Tuoluojiang\Open\interfaces\ResourceControllerInterface;
+use Tuoluojiang\Open\traits\ResourceControllerTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -33,7 +33,7 @@ use Spatie\RouteAttributes\Attributes\Resource;
  * 通知公告.
  */
 #[Prefix('ent/notice')]
-#[Resource('list', false, names: [
+#[Resource('list', false, except: ['create'], names: [
     'index'   => '获取通知公告列表',
     'store'   => '保存通知公告接口',
     'show'    => '显示隐藏通知公告接口',
@@ -77,7 +77,7 @@ class NewsController extends AuthController implements ResourceControllerInterfa
     public function defaultList(): mixed
     {
         $where = $this->request->getMore($this->getSearchField());
-        return $this->success($this->service->getNoticeList($where));
+        return $this->success($this->service->getList($where));
     }
 
     /**
@@ -98,7 +98,7 @@ class NewsController extends AuthController implements ResourceControllerInterfa
 
     /**
      * 搜索字段.
-     * @return array|\string[][]
+     * @return array|string[][]
      */
     protected function getSearchField(): array
     {
@@ -107,6 +107,7 @@ class NewsController extends AuthController implements ResourceControllerInterfa
             ['title', '', 'title_like'],
             ['status', ''],
             ['is_new', ''],
+            ['is_read', ''],
             ['time', ''],
             ['entid', 1],
         ];

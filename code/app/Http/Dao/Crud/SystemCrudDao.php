@@ -17,7 +17,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -27,9 +27,9 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Crud;
 
+use App\Http\Model\Crud\SystemCrud;
 use App\Http\Dao\BaseDao;
 use App\Http\Model\BaseModel;
-use App\Http\Model\Crud\SystemCrud;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\HigherOrderWhenProxy;
 use Illuminate\Support\Traits\Conditionable;
@@ -38,6 +38,17 @@ use Psr\Container\NotFoundExceptionInterface;
 
 class SystemCrudDao extends BaseDao
 {
+    /**
+     * 获取已经删除的实体表名.
+     * @return mixed
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    public function getDelTables()
+    {
+        return $this->getModel()->withTrashed()->where('deleted_at', null)->select(['id', 'table_name_en'])->get()->toArray();
+    }
+
     /**
      * 获取分类id.
      * @return mixed[]
@@ -117,6 +128,32 @@ class SystemCrudDao extends BaseDao
     public function withTrashedTable(string $name)
     {
         return $this->getModel()->withTrashed()->where('table_name_en', $name)->exists();
+    }
+
+    /**
+     * 获取子级信息.
+     * @return mixed
+     */
+    public function getSubordinateCrudInfo(int $parentId)
+    {
+        return $this->getModel()->where('crud_id', $parentId)->first()?->toArray();
+    }
+
+    /**
+     * 获取分类下的实体数量.
+     * @return mixed
+     */
+    public function getCateCrudNum(array|int $cateId)
+    {
+        return $this->getModel()->when(
+            ! is_array($cateId),
+            fn ($q) => $q->where('cate_ids', 'like', '%/' . $cateId . '/%'),
+            function ($q) use ($cateId) {
+                foreach ($cateId as $id) {
+                    $q->orWhere('cate_ids', 'like', '%/' . $id . '/%');
+                }
+            }
+        )->count();
     }
 
     /**

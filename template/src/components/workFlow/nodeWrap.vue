@@ -30,19 +30,19 @@
           </div>
           <div class="content" @click="setPerson">
             <div class="text" v-if="nodeConfig.type == 0">
-              {{ $func.conditionDepartment(flowPermission) ? $func.conditionDepartment(flowPermission) : '所有人' }}
+              {{ func.conditionDepartment(flowPermission) ? func.conditionDepartment(flowPermission) : '所有人' }}
             </div>
             <div class="text" v-if="nodeConfig.type == 1">
-              <span class="placeholder" v-if="!$func.setApproverStr(nodeConfig)">
+              <span class="placeholder" v-if="!func.setApproverStr(nodeConfig)">
                 请选择{{ placeholderList[nodeConfig.type] }}
               </span>
-              {{ $func.setApproverStr(nodeConfig) }}
+              {{ func.setApproverStr(nodeConfig) }}
             </div>
             <div class="text" v-if="nodeConfig.type == 2">
-              <span class="placeholder" v-if="!$func.copyerStr(nodeConfig)">
+              <span class="placeholder" v-if="!func.copyerStr(nodeConfig)">
                 请选择{{ placeholderList[nodeConfig.type] }}
               </span>
-              {{ $func.copyerStr(nodeConfig) }}
+              {{ func.copyerStr(nodeConfig) }}
             </div>
             <i class="anticon anticon-right arrow"></i>
           </div>
@@ -51,7 +51,7 @@
           </div>
         </div>
       </div>
-      <addNode :childNodeP.sync="nodeConfig.childNode"></addNode>
+      <addNode v-model:childNodeP="nodeConfig.childNode"></addNode>
     </div>
     <div class="branch-wrap" v-if="nodeConfig.type == 4">
       <div class="branch-box-wrap">
@@ -92,22 +92,23 @@
                     &gt;
                   </div>
                   <div class="content" @click="setPerson(item.priorityLevel)">
-                    {{ $func.conditionStr(nodeConfig, index, typeStr) }}
+                    {{ func.conditionStr(nodeConfig, index, typeStr) }}
                   </div>
                   <div class="error_tip" v-if="isTried && item.error">
                     <i class="anticon anticon-exclamation-circle" style="color: rgb(242, 86, 67)"></i>
                   </div>
-                  <input type="hidden" :value="$func.conditionFieldsStr(nodeConfig, index)" />
+                  <input type="hidden" :value="func.conditionFieldsStr(nodeConfig, index)" />
                 </div>
-                <addNode :childNodeP.sync="item.childNode"></addNode>
+                <addNode v-model:childNodeP="item.childNode"></addNode>
               </div>
             </div>
             <nodeWrap
               v-if="item.childNode && item.childNode"
-              :nodeConfig.sync="item.childNode"
+              v-model:nodeConfig="item.childNode"
               :tableId="tableId"
               :typeStr="typeStr"
-              :isTried.sync="isTried"
+              :isTried="isTried"
+              @update:isTried="$emit('update:isTried', $event)"
             ></nodeWrap>
             <div class="top-left-cover-line" v-if="index == 0"></div>
             <div class="bottom-left-cover-line" v-if="index == 0"></div>
@@ -115,22 +116,27 @@
             <div class="bottom-right-cover-line" v-if="index == nodeConfig.conditionNodes.length - 1"></div>
           </div>
         </div>
-        <addNode :childNodeP.sync="nodeConfig.childNode"></addNode>
+        <addNode v-model:childNodeP="nodeConfig.childNode"></addNode>
       </div>
     </div>
 
     <nodeWrap
       v-if="nodeConfig.childNode && nodeConfig.childNode"
-      :nodeConfig.sync="nodeConfig.childNode"
+      v-model:nodeConfig="nodeConfig.childNode"
       :tableId="tableId"
       :typeStr="typeStr"
-      :isTried.sync="isTried"
+      :isTried="isTried"
+      @update:isTried="$emit('update:isTried', $event)"
     ></nodeWrap>
   </div>
 </template>
 <script>
-import func from '@/utils/preload'
+import { mapStores } from 'pinia'
+import { useFlowDesignerStore } from '@/stores/flowDesigner.ts'
+import { useConditionDialogStore } from '@/stores/conditionDialog.ts'
+import func from '@/utils/preload.ts'
 export default {
+  emits: ['update:isTried', 'update:flowPermission', 'update:nodeConfig'],
   props: {
     typeStr: {
       // 判断是低代码还是审批流程
@@ -161,60 +167,61 @@ export default {
       isInput: false
     }
   },
-  beforeCreate() {
-    this.$vue.prototype.$func = func
-    this.$vue.directive('focus', {
+  directives: {
+    focus: {
       // 当被绑定的元素插入到 DOM 中时……
-      inserted: function (el) {
+      mounted(el) {
         el.focus()
       }
-    })
+    }
   },
   mounted() {
     if (this.nodeConfig.type == 1) {
-      this.nodeConfig.error = !this.$func.setApproverStr(this.nodeConfig)
+      this.nodeConfig.error = !func.setApproverStr(this.nodeConfig)
     } else if (this.nodeConfig.type == 2) {
-      this.nodeConfig.error = !this.$func.copyerStr(this.nodeConfig)
+      this.nodeConfig.error = !func.copyerStr(this.nodeConfig)
     } else if (this.nodeConfig.type == 4) {
       for (var i = 0; i < this.nodeConfig.conditionNodes.length; i++) {
         this.nodeConfig.conditionNodes[i].error =
-          this.$func.conditionStr(this.nodeConfig, i) == '请设置条件' && i != this.nodeConfig.conditionNodes.length - 1
+          func.conditionStr(this.nodeConfig, i) == '请设置条件' && i != this.nodeConfig.conditionNodes.length - 1
       }
     }
     this.getConditionType()
   },
   computed: {
+    ...mapStores(useFlowDesignerStore, useConditionDialogStore),
+    func: () => func,
     flowPermission1() {
-      return this.$store.state.business.flowPermission
+      return this.flowDesignerStore.flowPermission
     },
     approverConfig1() {
-      return this.$store.state.business.approverConfig
+      return this.flowDesignerStore.approverConfig
     },
     copyerConfig1() {
-      return this.$store.state.business.copyerConfig
+      return this.flowDesignerStore.copyerConfig
     },
     conditionsConfig1() {
-      return this.$store.state.business.conditionsConfig
+      return this.flowDesignerStore.conditionsConfig
     }
   },
   watch: {
     flowPermission1(data) {
-      if (data.flag && data.id === this._uid) {
+      if (data.flag && data.id === this.$.uid) {
         this.$emit('update:flowPermission', data.value)
       }
     },
     approverConfig1(data) {
-      if (data.flag && data.id === this._uid) {
+      if (data.flag && data.id === this.$.uid) {
         this.$emit('update:nodeConfig', data.value)
       }
     },
     copyerConfig1(data) {
-      if (data.flag && data.id === this._uid) {
+      if (data.flag && data.id === this.$.uid) {
         this.$emit('update:nodeConfig', data.value)
       }
     },
     conditionsConfig1(data) {
-      if (data.flag && data.id === this._uid) {
+      if (data.flag && data.id === this.$.uid) {
         this.$emit('update:nodeConfig', data.value)
         this.getConditionType()
       }
@@ -223,14 +230,14 @@ export default {
   methods: {
     clickEvent(index) {
       if (index || index === 0) {
-        this.$set(this.isInputList, index, true)
+        this.isInputList[index] = true
       } else {
         this.isInput = true
       }
     },
     blurEvent(index) {
       if (index || index === 0) {
-        this.$set(this.isInputList, index, false)
+        this.isInputList[index] = false
         this.nodeConfig.conditionNodes[index].nodeName = this.nodeConfig.conditionNodes[index].nodeName
           ? this.nodeConfig.conditionNodes[index].nodeName
           : '条件'
@@ -249,7 +256,7 @@ export default {
       this.nodeConfig.conditionNodes.splice(len - 1, 0, {
         nodeName: '条件' + len,
         type: 3,
-        onlyValue: this.$func.onlyValue(),
+        onlyValue: func.onlyValue(),
         priorityLevel: len.toString(),
         conditionList: [],
         isDefault: false,
@@ -261,7 +268,7 @@ export default {
       // this.nodeConfig.conditionNodes.push()
       for (let i = 0; i < this.nodeConfig.conditionNodes.length; i++) {
         this.nodeConfig.conditionNodes[i].error =
-          this.$func.conditionStr(this.nodeConfig, i) == '请设置条件' && i != this.nodeConfig.conditionNodes.length - 1
+          func.conditionStr(this.nodeConfig, i) == '请设置条件' && i != this.nodeConfig.conditionNodes.length - 1
       }
       this.$emit('update:nodeConfig', this.nodeConfig)
     },
@@ -273,7 +280,7 @@ export default {
       })
       for (var i = 0; i < this.nodeConfig.conditionNodes.length; i++) {
         this.nodeConfig.conditionNodes[i].error =
-          this.$func.conditionStr(this.nodeConfig, i) == '请设置条件' && i != this.nodeConfig.conditionNodes.length - 1
+          func.conditionStr(this.nodeConfig, i) == '请设置条件' && i != this.nodeConfig.conditionNodes.length - 1
       }
       this.$emit('update:nodeConfig', this.nodeConfig)
       if (this.nodeConfig.conditionNodes.length == 1) {
@@ -298,43 +305,43 @@ export default {
     setPerson(priorityLevel) {
       var { type } = this.nodeConfig
       if (type == 0) {
-        this.$store.commit('updatePromoter', true)
-        this.$store.commit('updateFlowPermission', {
+        this.flowDesignerStore.promoterDrawer = true
+        this.flowDesignerStore.flowPermission = {
           value: this.flowPermission,
           flag: false,
-          id: this._uid
-        })
+          id: this.$.uid
+        }
       } else if (type == 1) {
-        this.$store.commit('updateApprover', true)
-        this.$store.commit('updateApproverConfig', {
+        this.flowDesignerStore.approverDrawer = true
+        this.flowDesignerStore.approverConfig = {
           value: {
             ...JSON.parse(JSON.stringify(this.nodeConfig)),
             ...{ settype: this.nodeConfig.settype ? this.nodeConfig.settype : 1 }
           },
           flag: false,
-          id: this._uid
-        })
+          id: this.$.uid
+        }
       } else if (type == 2) {
-        this.$store.commit('updateCopyer', true)
-        this.$store.commit('updateCopyerConfig', {
+        this.flowDesignerStore.copyerDrawer = true
+        this.flowDesignerStore.copyerConfig = {
           value: JSON.parse(JSON.stringify(this.nodeConfig)),
           flag: false,
-          id: this._uid
-        })
+          id: this.$.uid
+        }
       } else {
         // 打开条件设置
         if (this.typeStr == 'lowCode') {
-          this.$store.commit('updateConditionDialog', true)
+          this.conditionDialogStore.visible = true
         } else {
-          this.$store.commit('updateCondition', true)
+          this.flowDesignerStore.conditionDrawer = true
         }
 
-        this.$store.commit('updateConditionsConfig', {
+        this.flowDesignerStore.conditionsConfig = {
           value: JSON.parse(JSON.stringify(this.nodeConfig)),
           priorityLevel,
           flag: false,
-          id: this._uid
-        })
+          id: this.$.uid
+        }
       }
     },
     arrTransfer(index, type = 1) {
@@ -349,7 +356,7 @@ export default {
       })
       for (var i = 0; i < this.nodeConfig.conditionNodes.length; i++) {
         this.nodeConfig.conditionNodes[i].error =
-          this.$func.conditionStr(this.nodeConfig, i) == '请设置条件' && i != this.nodeConfig.conditionNodes.length - 1
+          func.conditionStr(this.nodeConfig, i) == '请设置条件' && i != this.nodeConfig.conditionNodes.length - 1
       }
       this.$emit('update:nodeConfig', this.nodeConfig)
     },
@@ -370,7 +377,7 @@ export default {
             }
           }
         }
-        this.$store.commit('upDateConditionsField', arr)
+        this.flowDesignerStore.conditionsFields = arr
       })
     }
   }

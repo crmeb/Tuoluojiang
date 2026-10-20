@@ -15,19 +15,22 @@ declare(strict_types=1);
 
 namespace App\Http\Service\Crud;
 
+use App\Constants\CacheEnum;
 use App\Constants\Crud\CrudAggregateEnum;
 use App\Constants\Crud\CrudEventEnum;
 use App\Constants\Crud\CrudFormEnum;
 use App\Constants\Crud\CrudOperatorEnum;
 use App\Constants\Crud\CrudTriggerEnum;
 use App\Constants\Crud\CrudUpdateEnum;
+use App\Http\Contract\System\MenusInterface;
 use App\Http\Dao\Crud\SystemCrudDao;
 use App\Http\Service\Approve\ApproveApplyService;
-use App\Http\Service\BaseService;
 use App\Http\Service\Config\DictDataService;
 use App\Http\Service\Config\DictTypeService;
 use App\Http\Service\Open\OpenapiRuleService;
-use crmeb\exceptions\ApiException;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\exceptions\ApiException;
+use Doctrine\DBAL\Exception;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
@@ -229,8 +232,8 @@ class SystemCrudService extends BaseService
                 [
                     'label'   => '单选项',
                     'value'   => CrudFormEnum::FORM_RADIO,
-                    'type'    => 'int',
-                    'limit'   => 11,
+                    'type'    => 'varchar',
+                    'limit'   => 255,
                     'default' => 0,
                 ],
                 [
@@ -480,7 +483,7 @@ class SystemCrudService extends BaseService
     public const SYSTEM_TABLE_TABLE = [
         'admin', 'frame', 'gongzitiaojiegou', 'gongzitiaojilu', 'customer', 'contract', 'customer_liaison',
         'client_bill', 'client_follow', 'client_remind', 'client_subscribe', 'customer_record', 'client_invoice',
-        'system_attach', 'bill_list', 'bill_category',
+        'system_attach', 'bill_list', 'bill_category', 'customer_clue', 'customer_odds',
     ];
 
     public const SYSTEM_ALLOW_OPERATE_TABLE = [
@@ -507,9 +510,9 @@ class SystemCrudService extends BaseService
      */
     public function getTableName(string $tableName, bool $fullName = true)
     {
-        $tableName   = addslashes($tableName);
+        $tableName = addslashes($tableName);
         $tablePrefix = config('database.connections.mysql.prefix');
-        $pattern     = '/^' . $tablePrefix . '/i';
+        $pattern = '/^' . $tablePrefix . '/i';
         return ($fullName ? $tablePrefix : '') . preg_replace($pattern, '', $tableName);
     }
 
@@ -521,12 +524,12 @@ class SystemCrudService extends BaseService
     public function createTable(string $tableName, bool $index = false, string $sideTable = '', string $comment = '')
     {
         Schema::create($tableName, function (Blueprint $table) use ($sideTable, $index, $comment) {
-            $table->engine    = 'InnoDB';
-            $table->charset   = 'utf8mb4';
+            $table->engine = 'InnoDB';
+            $table->charset = 'utf8mb4';
             $table->collation = 'utf8mb4_unicode_ci';
             $table->bigIncrements('id');
             if ($index) {
-                $table->integer($sideTable . '_id')->unique()->default(0)->comment($comment . '关联id');
+                $table->integer($sideTable . '_id')->default(0)->comment($comment . '关联id');
             }
             $table->integer('user_id')->index()->default(0)->comment('创建用户id');
             $table->integer('update_user_id')->index()->default(0)->comment('修改用户id');
@@ -534,6 +537,62 @@ class SystemCrudService extends BaseService
             $table->integer('frame_id')->index()->default(0)->comment('部门ID');
             $table->timestamps();
             $table->softDeletes();
+        });
+    }
+
+    /**
+     * 删除索引.
+     * @param string $tableName 副表表名
+     * @param string $sideName 主表名称
+     * @param string $unique 索引类型
+     * @return array
+     */
+    public function schemaDeleteIndex(string $tableName, string $sideName, string $unique = 'unique')
+    {
+        $tablePrefix = config('database.connections.mysql.prefix');
+        $indexName = $tablePrefix . $tableName . '_' . $sideName . '_id_' . $unique;
+        $this->dropIndex($tableName, $indexName, $unique);
+    }
+
+    public function schemaAddIndex(string $tableName, string $sideName, string $unique = 'unique')
+    {
+        $indexName = $tableName . '_' . $sideName . '_id_' . $unique;
+        $this->createIndex($tableName, $indexName, $unique);
+    }
+
+    /**
+     * 删除索引.
+     */
+    public function dropIndex(string $tableName, string $indexName, $unique)
+    {
+        if (Schema::hasTable($tableName)) {
+            $newTableName = config('database.connections.mysql.prefix') . $tableName;
+            // 先检查索引是否存在
+            $indexes = DB::select("SHOW INDEX FROM `{$newTableName}` WHERE Key_name = ?", [$indexName]);
+
+            if (!empty($indexes)) {
+                Schema::table($tableName, function (Blueprint $table) use ($indexName, $unique) {
+                    if ($unique === 'unique') {
+                        $table->dropUnique($indexName);
+                    } else {
+                        $table->dropIndex($indexName);
+                    }
+                });
+            }
+        }
+    }
+
+    /**
+     * 添加索引.
+     */
+    public function createIndex(string $tableName, string $indexName, string $index = 'index')
+    {
+        Schema::table($tableName, function (Blueprint $table) use ($indexName, $index) {
+            if ($index == 'index') {
+                $table->index($indexName);
+            } elseif ($index == 'unique') {
+                $table->unique($indexName);
+            }
         });
     }
 
@@ -557,22 +616,10 @@ class SystemCrudService extends BaseService
     public function getAssociationCrud(int $id)
     {
         [$page, $limit] = $this->getPageValue();
-        $tableNameEn    = $this->dao->value($id, 'table_name_en');
+        $tableNameEn = $this->dao->value($id, 'table_name_en');
         return $this->dao->getAssociationList($tableNameEn, $page, $limit);
     }
 
-    /**
-     * 获取一对一关联选择表的数据表字段.
-     * @return null|array|Model
-     * @email 136327134@qq.com
-     * @date 2024/2/26
-     * @throws NotFoundExceptionInterface
-     * @throws ContainerExceptionInterface
-     */
-    public function getAssociationCrudField(int $id)
-    {
-        return app()->get(SystemCrudFieldService::class)->select(['crud_id' => $id, 'is_default' => 0], ['field_name', 'id', 'field_name_en'])->toArray();
-    }
 
     /**
      * 表单设置中获取字段和实体信息组合成的表单配置.
@@ -585,20 +632,20 @@ class SystemCrudService extends BaseService
     public function getMainFieldForm(int $id)
     {
         $notField = ['deleted_at', 'id'];
-        $master   = ['id', 'table_name', 'table_name_en', 'crud_id'];
-        $select   = [
+        $master = ['id', 'table_name', 'table_name_en', 'crud_id'];
+        $select = [
             'crud_id', 'is_default_value_not_null', 'create_modify', 'update_modify',
             'is_form', 'data_dict_id', 'options', 'id', 'field_name_en', 'field_name',
-            'form_value', 'form_field_uniqid',
+            'form_value', 'form_field_uniqid', 'data_type', 'customize_items', 'data_type',
         ];
         $crudInfo = $this->dao->get($id, $master, [
-            'children' => fn ($q) => $q->with([
-                'field' => fn ($query) => $query->whereNotIn('field_name_en', $notField)->select($select),
+            'children' => fn($q) => $q->with([
+                'field' => fn($query) => $query->whereNotIn('field_name_en', $notField)->select($select),
             ])->select($master),
-            'field' => fn ($query) => $query->whereNotIn('field_name_en', $notField)->select($select),
+            'field'    => fn($query) => $query->whereNotIn('field_name_en', $notField)->select($select),
         ]);
 
-        if (! $crudInfo) {
+        if (!$crudInfo) {
             throw $this->exception('没有查询到字段信息');
         }
 
@@ -607,7 +654,7 @@ class SystemCrudService extends BaseService
         unset($crudInfo['children']);
 
         $list = [$crudInfo];
-        foreach ((array) $children as $item) {
+        foreach ((array)$children as $item) {
             foreach ($item['field'] as $index => $value) {
                 if (($crudInfo['table_name_en'] . '_id') === $value['field_name_en']) {
                     unset($item['field'][$index]);
@@ -619,24 +666,24 @@ class SystemCrudService extends BaseService
             array_push($list, $item);
         }
 
-        $dictData        = [];
+        $dictData = [];
         $dictDataService = app()->get(DictDataService::class);
         $dictTypeService = app()->get(DictTypeService::class);
-        $formService     = app()->get(SystemCrudFormService::class);
+        $formService = app()->get(SystemCrudFormService::class);
         foreach ($list as $index => $item) {
             foreach ($item['field'] as $k => $v) {
                 $v['form_field_uniqid'] = ($item['id'] !== $id ? $item['table_name_en'] . '.' : '') . $v['field_name_en'];
 
                 if ($v['data_dict_id']) {
-                    if (! isset($dictData[$v['data_dict_id']])) {
-                        $typeName                     = $dictTypeService->value($v['data_dict_id'], 'ident');
+                    if (!isset($dictData[$v['data_dict_id']])) {
+                        $typeName = $dictTypeService->value($v['data_dict_id'], 'ident');
                         $dictData[$v['data_dict_id']] = $dictDataService->getTreeData(['type_id' => $v['data_dict_id'], 'type_name' => $typeName]);
                     }
                     $v['data_dict'] = $dictData[$v['data_dict_id']];
                 } else {
                     $v['data_dict'] = [];
                 }
-
+                $v['crud_id'] = $item['crud_id'];
                 $item['field'][$k] = $formService->setFormConfig($v);
             }
             $list[$index] = $item;
@@ -656,22 +703,22 @@ class SystemCrudService extends BaseService
     public function getEventCrud(int $crudId, int $eventId = 0)
     {
         $notField = ['deleted_at'];
-        $master   = ['id', 'table_name', 'table_name_en', 'crud_id'];
-        $select   = ['options', 'is_default', 'crud_id', 'data_dict_id', 'id', 'field_name_en', 'field_name', 'form_value', 'form_field_uniqid', 'is_uniqid'];
+        $master = ['id', 'table_name', 'table_name_en', 'crud_id'];
+        $select = ['options', 'is_default', 'crud_id', 'data_dict_id', 'id', 'field_name_en', 'field_name', 'form_value', 'form_field_uniqid', 'is_uniqid', 'customize_items', 'data_type', 'association_show_type'];
 
         $with = [
-            'field' => fn ($query) => $query->orderByDesc('id')->whereNotIn('field_name_en', $notField)->select($select),
+            'field' => fn($query) => $query->orderByDesc('id')->whereNotIn('field_name_en', $notField)->select($select),
         ];
 
         $crudInfo = $this->dao->get($crudId, $master, $with)?->toArray();
 
-        if (! $crudInfo) {
+        if (!$crudInfo) {
             throw $this->exception('没有查询到字段信息');
         }
 
         $list = [$crudInfo];
 
-        $event = $eventId ? app()->make(SystemCrudEventService::class)->value($eventId, 'event') : '';
+        $event = $eventId ? app()->get(SystemCrudEventService::class)->value($eventId, 'event') : '';
 
         // 如果是 字段更新 需要查询当前表中一对一关联的表；还需要其他实体中一对一关联了当前表的数据，当前表
         // 如果是 自动创建 展示其他实体关联当前实体的表
@@ -682,18 +729,18 @@ class SystemCrudService extends BaseService
 
         $association = [];
         if ($event !== CrudEventEnum::EVENT_AUTO_CREATE) {
-            $associationList = app()->make(SystemCrudFieldService::class)->getAssociationCrudId($crudId, 1);
+            $associationList = app()->get(SystemCrudFieldService::class)->getAssociationCrudId($crudId, 1);
             foreach ($associationList as $item) {
                 $association[$item['association_crud_id']] = $item['field_name'];
             }
 
-            $associationIds  = array_merge(array_unique(array_column($associationList, 'association_crud_id')));
+            $associationIds = array_merge(array_unique(array_column($associationList, 'association_crud_id')));
             $associationList = $this->dao->getCrudList($associationIds, $master, $with);
 
             if ($associationList) {
                 foreach ($associationList as $index => $item) {
-                    $msg                     = $item['id'] === $crudInfo['crud_id'] ? '主从关联ID' : $association[$item['id']];
-                    $item['table_name']      = $item['table_name'] . '(' . $msg . ')';
+                    $msg = $item['id'] === $crudInfo['crud_id'] ? '主从关联ID' : $association[$item['id']];
+                    $item['table_name'] = $item['table_name'] . '(' . $msg . ')';
                     $associationList[$index] = $item;
                 }
                 $list = array_merge($list, $associationList);
@@ -704,20 +751,20 @@ class SystemCrudService extends BaseService
             // 从表查找主表
             $scheduleCrudInfo = $this->dao->get($crudInfo['crud_id'], $master, $with);
             if ($scheduleCrudInfo) {
-                $scheduleCrudInfo               = $scheduleCrudInfo->toArray();
+                $scheduleCrudInfo = $scheduleCrudInfo->toArray();
                 $scheduleCrudInfo['table_name'] = $scheduleCrudInfo['table_name'] . '(主从关联ID)';
                 array_push($list, $scheduleCrudInfo);
             }
         }
 
-        $dictDataService = app()->make(DictDataService::class);
+        $dictDataService = app()->get(DictDataService::class);
 
-        $field    = [];
+        $field = [];
         $dictData = [];
         foreach ($list as $index => $item) {
             $newsField = [];
             foreach ($item['field'] as $i => $k) {
-                $dataDict                       = [];
+                $dataDict = [];
                 $item['field'][$i]['data_dict'] = [];
 
                 $name = ($item['id'] !== $crudId ? $item['table_name_en'] . '.' : '') . $k['field_name_en'];
@@ -728,25 +775,30 @@ class SystemCrudService extends BaseService
                 //                    unset($item['field'][$i]);
                 //                }
 
-                if ($k['data_dict_id']) {
-                    if (! isset($dictData[$k['data_dict_id']])) {
-                        $typeName                     = app()->make(DictTypeService::class)->value($k['data_dict_id'], 'ident');
+                if ($k['data_type'] == 1) {
+                    $item['field'][$i]['data_dict'] = $dataDict = $k['customize_items'];
+                } elseif ($k['data_dict_id']) {
+                    if (!isset($dictData[$k['data_dict_id']])) {
+                        $typeName = app()->get(DictTypeService::class)->value($k['data_dict_id'], 'ident');
                         $dictData[$k['data_dict_id']] = $dictDataService->getTreeData(['type_id' => $k['data_dict_id'], 'type_name' => $typeName]);
                     }
                     $item['field'][$i]['data_dict'] = $dataDict = $dictData[$k['data_dict_id']];
                 }
 
                 $field[] = [
-                    'id'            => $k['id'],
-                    'label'         => ($item['id'] !== $crudId ? $item['table_name'] . '.' : '') . $k['field_name'],
-                    'value'         => $name,
-                    'form_value'    => $k['form_value'],
-                    'field_name_en' => ($item['id'] !== $crudId ? $item['table_name_en'] . '.' : '') . $k['field_name_en'],
-                    'data_dict'     => $dataDict,
-                    'field_value'   => $name,
-                    'crud_id'       => $item['id'],
-                    'is_uniqid'     => $k['is_uniqid'],
-                    'is_city_show'  => $item['options']['is_city_show'] ?? '',
+                    'id'                    => $k['id'],
+                    'label'                 => ($item['id'] !== $crudId ? $item['table_name'] . '.' : '') . $k['field_name'],
+                    'value'                 => $name,
+                    'form_value'            => $k['form_value'],
+                    'field_name_en'         => ($item['id'] !== $crudId ? $item['table_name_en'] . '.' : '') . $k['field_name_en'],
+                    'data_dict'             => $dataDict,
+                    'field_value'           => $name,
+                    'crud_id'               => $item['id'],
+                    'is_uniqid'             => $k['is_uniqid'],
+                    'association_show_type' => $k['association_show_type'],
+                    'customize_items'       => $k['customize_items'],
+                    'data_type'             => $k['data_type'],
+                    'is_city_show'          => $item['options']['is_city_show'] ?? '',
                 ];
 
                 if (in_array($k['form_value'], [
@@ -764,7 +816,7 @@ class SystemCrudService extends BaseService
             // 字段聚合情况下只有整数类型才可以被放入目标实体选择
             if (in_array($event, [CrudEventEnum::EVENT_FIELD_AGGREGATE])) {
                 $item['field'] = $newsField;
-                $list[$index]  = $item;
+                $list[$index] = $item;
             } else {
                 $list[$index] = $item;
             }
@@ -781,19 +833,19 @@ class SystemCrudService extends BaseService
                 $crudIds[] = $lowerId;
             }
             // 需要去除掉附表的管理记录，因为在关联展示中，附表不能进行列表设计和表单设计而tab中存在编辑
-            $associationCrudList = app()->make(SystemCrudFieldService::class)->crudIdByAssociationCrudList($crudIds, $master, $with);
+            $associationCrudList = app()->get(SystemCrudFieldService::class)->crudIdByAssociationCrudList($crudIds, $master, $with);
 
             foreach ($associationCrudList as $item) {
                 if ($item['crud']) {
                     $item['crud']['table_name'] = $item['crud']['table_name'] . '(' . $item['field_name'] . ')(N)';
-                    $crudField                  = [];
+                    $crudField = [];
                     foreach ($item['crud']['field'] as $i => $v) {
-                        $name                   = $item['crud']['table_name_en'] . '.' . $v['field_name_en'];
+                        $name = $item['crud']['table_name_en'] . '.' . $v['field_name_en'];
                         $v['form_field_uniqid'] = $name;
 
                         if ($v['data_dict_id']) {
-                            if (! isset($dictData[$v['data_dict_id']])) {
-                                $typeName                     = app()->make(DictTypeService::class)->value($v['data_dict_id'], 'ident');
+                            if (!isset($dictData[$v['data_dict_id']])) {
+                                $typeName = app()->get(DictTypeService::class)->value($v['data_dict_id'], 'ident');
                                 $dictData[$v['data_dict_id']] = $dictDataService->getTreeData(['type_id' => $v['data_dict_id'], 'type_name' => $typeName]);
                             }
                             $v['data_dict'] = $dictData[$v['data_dict_id']];
@@ -825,12 +877,12 @@ class SystemCrudService extends BaseService
         if ($eventId && in_array($event, [CrudEventEnum::EVENT_GROUP_AGGREGATE])) {
             $list = $this->dao->select(['crud_id' => 0], $master, $with);
             foreach ($list as $index => $item) {
-                $rule    = [];
+                $rule = [];
                 $newitem = [];
                 foreach ($item['field'] as $k) {
-                    $k['field_name_en']     = ($item['id'] !== $crudId ? $item['table_name_en'] . '.' : '') . $k['field_name_en'];
+                    $k['field_name_en'] = ($item['id'] !== $crudId ? $item['table_name_en'] . '.' : '') . $k['field_name_en'];
                     $k['form_field_uniqid'] = $k['field_name_en'];
-                    $newitem[]              = $k;
+                    $newitem[] = $k;
                     if (in_array($k['form_value'], [
                         CrudFormEnum::FORM_INPUT_FLOAT,
                         CrudFormEnum::FORM_INPUT_PERCENTAGE,
@@ -842,7 +894,7 @@ class SystemCrudService extends BaseService
                 }
 
                 $list[$index]['rule_field'] = $rule;
-                $list[$index]['field']      = $newitem;
+                $list[$index]['field'] = $newitem;
             }
         }
 
@@ -851,7 +903,7 @@ class SystemCrudService extends BaseService
             CrudEventEnum::EVENT_AUTH_APPROVE,
             CrudEventEnum::EVENT_AUTO_REVOKE_APPROVE,
         ])) {
-            $approve = app()->make(SystemCrudApproveService::class)->getEventApproveList($crudId);
+            $approve = app()->get(SystemCrudApproveService::class)->getEventApproveList($crudId);
         }
 
         $stringFields = $timeFeilds = $userFeilds = [];
@@ -878,8 +930,8 @@ class SystemCrudService extends BaseService
                     $timeFeilds[] = $item;
                 }
                 if (in_array($item['form_value'], [
-                    CrudFormEnum::FORM_INPUT_SELECT,
-                ]) && $crudUserId == app()->make(SystemCrudFieldService::class)->value(['crud_id' => $item['crud_id'], 'field_name_en' => $item['field_name_en']], 'association_crud_id')) {
+                        CrudFormEnum::FORM_INPUT_SELECT,
+                    ]) && $crudUserId == app()->get(SystemCrudFieldService::class)->value(['crud_id' => $item['crud_id'], 'field_name_en' => $item['field_name_en']], 'association_crud_id')) {
                     $userFeilds[] = $item;
                 }
             }
@@ -902,7 +954,7 @@ class SystemCrudService extends BaseService
                     'value' => CrudUpdateEnum::UPDATE_TYPE_FIELD,
                 ],
             ],
-            'update_type' => $event === CrudEventEnum::EVENT_FIELD_AGGREGATE ? self::AGGREGATE_TYPE : self::UPDATE_TYPE,
+            'update_type'        => $event === CrudEventEnum::EVENT_FIELD_AGGREGATE ? self::AGGREGATE_TYPE : self::UPDATE_TYPE,
         ];
     }
 
@@ -916,10 +968,10 @@ class SystemCrudService extends BaseService
     public function getCrudTableAll(array $crudIds, bool $showTable = false)
     {
         $crudList = $this->dao->getSearchModel()->whereIn('id', $crudIds)->select(['table_name', 'table_name_en', 'id'])->get()->toArray();
-        $column   = [];
+        $column = [];
 
         foreach ($crudList as $item) {
-            $item = (array) $item;
+            $item = (array)$item;
             if ($showTable) {
                 $column[$item['id']] = [
                     'table_name'    => $item['table_name'],
@@ -946,25 +998,26 @@ class SystemCrudService extends BaseService
         $model = $this->dao->getSearchModel($where);
 
         $count = $model->count();
-        $list  = $model->orderByDesc('id')->when(
+        $list = $model->orderByDesc('id')->when(
             value: $page && $limit,
-            callback: fn ($q) => $q->forPage($page, $limit),
-            default: fn ($q) => $q->select(['id', 'table_name', 'table_name_en'])
+            callback: fn($q) => $q->forPage($page, $limit),
+            default: fn($q) => $q->select(['id', 'table_name', 'table_name_en'])
         )->with([
-            'children' => fn ($q) => $q->with([
-                'user' => fn ($q) => $q->select(['name', 'id']),
+            'children' => fn($q) => $q->with([
+                'user' => fn($q) => $q->select(['name', 'id']),
             ])->orderByDesc('id'),
-            'user' => fn ($q) => $q->select(['name', 'id']),
+            'user'     => fn($q) => $q->select(['name', 'id', 'avatar']),
+            'menuNamePathData',
         ])->get()->toArray();
 
         $cateIds = [];
         foreach ($list as $item) {
-            if (! empty($item['cate_ids'])) {
+            if (!empty($item['cate_ids'])) {
                 $cateIds = array_merge($cateIds, $item['cate_ids']);
             }
         }
         if ($cateIds) {
-            $columnList = app()->make(SystemCrudCateService::class)->idsByNameColumn($cateIds);
+            $columnList = app()->get(SystemCrudCateService::class)->idsByNameColumn($cateIds);
             foreach ($list as &$item) {
                 $cate = [];
                 foreach ($item['cate_ids'] as $cId) {
@@ -988,14 +1041,14 @@ class SystemCrudService extends BaseService
         $key = 'search_databases_list_' . md5(json_encode($where));
         return Cache::tags([self::TAG_NAME])->remember($key, 60, function () use ($where) {
             $tables = DB::select('SHOW TABLES');
-            $list   = [];
+            $list = [];
             foreach ($tables as $i => $item) {
-                $table = array_values((array) $item)[0] ?? null;
-                if (! $table) {
+                $table = array_values((array)$item)[0] ?? null;
+                if (!$table) {
                     continue;
                 }
-                $sql     = (array) DB::select("SHOW CREATE TABLE `{$table}`");
-                $exce    = $sql[0]->{'Create Table'};
+                $sql = (array)DB::select("SHOW CREATE TABLE `{$table}`");
+                $exce = $sql[0]->{'Create Table'};
                 $comment = '';
                 if (preg_match("/COMMENT='(.*?)'/s", $exce, $matches)) {
                     $comment = $matches[1];
@@ -1028,8 +1081,8 @@ class SystemCrudService extends BaseService
      */
     public function getCrudTree(array $where = [])
     {
-        $crud        = $this->dao->setDefaultSort('id')->select($where, ['id', 'table_name', 'table_name_en', 'cate_ids'])->toArray();
-        $cateIds     = [];
+        $crud = $this->dao->setDefaultSort('id')->select($where, ['id', 'table_name', 'table_name_en', 'cate_ids'])->toArray();
+        $cateIds = [];
         $notCateCrud = [];
         foreach ($crud as $item) {
             if ($item['cate_ids']) {
@@ -1044,7 +1097,7 @@ class SystemCrudService extends BaseService
         }
         $tree = [];
         if ($cateIds) {
-            $cateList = app()->make(SystemCrudCateService::class)->idsByNameColumn($cateIds);
+            $cateList = app()->get(SystemCrudCateService::class)->idsByNameColumn($cateIds);
             foreach ($cateList as $cid => $val) {
                 $children = [];
                 foreach ($crud as $item) {
@@ -1083,11 +1136,11 @@ class SystemCrudService extends BaseService
      * @email 136327134@qq.com
      * @date 2024/2/24
      */
-    public function saveCrudTable(array $data, $adminId)
+    public function saveCrudTable(array $data, $adminId, bool $batchCrudBool = true)
     {
-        $tableName     = $data['table_name'];
-        $tableNameEn   = $data['table_name_en'];
-        $isSystemTable = ! in_array($tableNameEn, self::SYSTEM_TABLE_TABLE);
+        $tableName = $data['table_name'];
+        $tableNameEn = $data['table_name_en'];
+        $isSystemTable = !in_array($tableNameEn, self::SYSTEM_TABLE_TABLE);
         if ($isSystemTable) {
             $tableNameEn = 'crud_' . $tableNameEn;
         }
@@ -1101,10 +1154,10 @@ class SystemCrudService extends BaseService
         }
 
         $indexTableNameEn = null;
-        $indexTableName   = null;
+        $indexTableName = null;
         if ($crudId) {
             $indexTableName = $this->dao->value($crudId, 'table_name');
-            if (! $indexTableNameEn = $this->dao->value($crudId, 'table_name_en')) {
+            if (!$indexTableNameEn = $this->dao->value($crudId, 'table_name_en')) {
                 throw $this->exception('主表不存在');
             }
             if ($this->dao->count(['crud_id' => $crudId])) {
@@ -1120,14 +1173,14 @@ class SystemCrudService extends BaseService
             $cateIds = '/' . implode('/', $data['cate_ids']) . '/';
         }
 
-        $saveField               = [];
-        [$default, $defaultTime] = $this->getDefaultList($indexTableNameEn ?: '', (int) $crudId, $indexTableName ?: '');
+        $saveField = [];
+        [$default, $defaultTime] = $this->getDefaultList($indexTableNameEn ?: '', (int)$crudId, $indexTableName ?: '');
 
-        $table   = true;
+        $table = true;
         $message = null;
         try {
             if ($isSystemTable) {
-                $this->createTable($tableNameEn, (bool) $crudId, $crudId ? $this->dao->value($crudId, 'table_name_en') : '', $tableName);
+                $this->createTable($tableNameEn, (bool)$crudId, $crudId ? $this->dao->value($crudId, 'table_name_en') : '', $tableName);
             }
         } catch (\Throwable $e) {
             try {
@@ -1141,7 +1194,37 @@ class SystemCrudService extends BaseService
             $table = false;
         }
 
-        $this->transaction(function () use ($default, $message, $table, $defaultTime, $cateIds, $saveField, $tableNameEn, $tableName, $data, $crudId, $adminId) {
+        $menuData = [];
+        if ($batchCrudBool && $data['path']) {
+            $menuData = [
+                'menu_name'   => $tableName,
+                'icon'        => $data['icon'],
+                'uni_img'     => $data['uni_img'],
+                'crud_id'     => 0,
+                'menu_type'   => 1,
+                'menu_path'   => '/crud/module',
+                'sort'        => 0,
+                'crud_app_id' => 0,
+                'type'        => 'M',
+                'unique_auth' => uniqid('module'),
+            ];
+            $menuData['uniqued'] = md5($menuData['unique_auth']);
+            if (!is_array($data['path'])) {
+                $data['path'] = [];
+            }
+            $path = $menuData['paths'] = array_filter($data['path']);
+            $menuData['paths'] = implode('/', $path);
+            if ($path) {
+                $menuData['pid'] = end($path);
+                $menuData['level'] = count($path);
+                if ($menuData['pid']) {
+                    $menuData['parent_uniqued'] = app()->get(MenusInterface::class)->getModel()->where('id', $menuData['pid'])->value('unique_auth');
+                }
+            }
+        }
+
+
+        $id = $this->transaction(function () use ($default, $message, $table, $defaultTime, $cateIds, $saveField, $tableNameEn, $tableName, $data, $crudId, $adminId, $menuData) {
             $id = $this->dao->create([
                 'table_name'      => $tableName,
                 'table_name_en'   => $tableNameEn,
@@ -1155,10 +1238,10 @@ class SystemCrudService extends BaseService
                 'show_log'        => $data['show_log'],
             ])->id;
 
-            if (! in_array($tableNameEn, self::SYSTEM_TABLE_TABLE)) {
+            if (!in_array($tableNameEn, self::SYSTEM_TABLE_TABLE)) {
                 foreach (array_merge($default, $defaultTime) as $item) {
-                    if (! $item['association_crud_id'] && $item['association_crud_table_name_en']) {
-                        $item['association_crud_id'] = (int) $this->dao->value(['table_name_en' => $item['association_crud_table_name_en']], 'id');
+                    if (!$item['association_crud_id'] && $item['association_crud_table_name_en']) {
+                        $item['association_crud_id'] = (int)$this->dao->value(['table_name_en' => $item['association_crud_table_name_en']], 'id');
                     }
                     $saveField[] = [
                         'crud_id'                   => $id,
@@ -1184,17 +1267,35 @@ class SystemCrudService extends BaseService
                     app()->get(SystemCrudFieldService::class)->insert($saveField);
                 }
 
-                if (! $crudId) {
-                    app()->make(OpenapiRuleService::class)->saveCrudRule($tableName, $id, $tableNameEn);
+                if (!$crudId) {
+                    app()->get(OpenapiRuleService::class)->saveCrudRule($tableName, $id, $tableNameEn);
                 }
             }
 
-            if (! $table) {
+            if (!$table) {
                 throw $this->exception($message);
             }
+
+            if ($menuData) {
+                /** @var Model $menusModel */
+                $menusModel = app()->get(MenusInterface::class)->getModel();
+                if ($menusModel->where('crud_id', $id)->value('id')) {
+                    unset($menuData['uniqued'], $menuData['unique_auth']);
+                    $menusModel->update(['crud_id' => $id], $menuData);
+                } else {
+                    $menuData['crud_id'] = $id;
+                    $menusModel->create($menuData);
+                }
+            }
+
+            return $id;
         });
 
         event('system.crud');
+        //自动创建角色对应的实体权限
+        event('system.crud_role', [$adminId, $id, $tableName]);
+
+        return $id;
     }
 
     /**
@@ -1207,33 +1308,70 @@ class SystemCrudService extends BaseService
     public function updateCrudTable(int $id, array $data)
     {
         $tableInfo = $this->dao->get($id);
-        if (! $tableInfo) {
+        if (!$tableInfo) {
             throw $this->exception('没有查询到实体');
         }
         if ($this->dao->existsTable($id, $data['table_name'])) {
             throw $this->exception('实体名称已经存在');
         }
-        $tableInfo->table_name      = $data['table_name'];
-        $tableInfo->is_update_form  = (int) $data['is_update_form'];
-        $tableInfo->is_update_table = (int) $data['is_update_table'];
-        $tableInfo->show_comment    = (int) $data['show_comment'];
-        $tableInfo->show_log        = (int) $data['show_log'];
-        $tableInfo->info            = $data['info'];
-        $tableInfo->comment_title   = $data['comment_title'];
+        $tableInfo->table_name = $data['table_name'];
+        $tableInfo->is_update_form = (int)$data['is_update_form'];
+        $tableInfo->is_update_table = (int)$data['is_update_table'];
+        $tableInfo->show_comment = (int)$data['show_comment'];
+        $tableInfo->show_log = (int)$data['show_log'];
+        $tableInfo->info = $data['info'];
+        $tableInfo->comment_title = $data['comment_title'];
         if ($data['cate_ids']) {
             $tableInfo->cate_ids = '/' . implode('/', $data['cate_ids']) . '/';
         }
         $tableInfo->save();
 
-        if (! in_array($tableInfo->table_name_en, self::SYSTEM_TABLE_TABLE)) {
+        if (!in_array($tableInfo->table_name_en, self::SYSTEM_TABLE_TABLE)) {
             $tableName = $this->getTableName($tableInfo->table_name_en);
-            $comment   = $data['table_name'];
+            $comment = $data['table_name'];
             DB::select("ALTER TABLE `{$tableName}` COMMENT '{$comment}
 
 '");
         }
 
-        event('system . crud');
+        $menuData = [
+            'menu_name'   => $tableInfo->table_name,
+            'icon'        => $data['icon'],
+            'uni_img'     => $data['uni_img'],
+            'menu_type'   => 1,
+            'menu_path'   => '/crud/module',
+            'sort'        => 0,
+            'crud_app_id' => 0,
+            'type'        => 'M',
+            'unique_auth' => uniqid('module'),
+        ];
+        $menuData['uniqued'] = md5($menuData['unique_auth']);
+        if (!is_array($data['path'])) {
+            $data['path'] = [];
+        }
+        $path = $menuData['paths'] = array_filter($data['path']);
+        if ($path) {
+            $menuData['pid'] = end($path);
+            $menuData['level'] = count($path);
+            if ($menuData['pid']) {
+                $menuData['parent_uniqued'] = app()->get(MenusInterface::class)->getModel()->where('id', $menuData['pid'])->value('unique_auth');
+            }
+        }
+        if ($menuData['paths']) {
+            $menuData['paths'] = implode('/', $menuData['paths']);
+        }
+
+        /** @var Model $menusModel */
+        $menusModel = app()->get(MenusInterface::class)->getModel();
+        if ($menusModel->where('crud_id', $id)->value('id')) {
+            unset($menuData['uniqued'], $menuData['unique_auth']);
+            $menusModel->update(['crud_id' => $id], $menuData);
+        } else {
+            $menuData['crud_id'] = $id;
+            $menusModel->create($menuData);
+        }
+
+        event('system.crud');
     }
 
     /**
@@ -1248,7 +1386,7 @@ class SystemCrudService extends BaseService
     public function copyCrud(int $id, array $data)
     {
         $crudInfo = $this->dao->get($id);
-        if (! $crudInfo) {
+        if (!$crudInfo) {
             throw $this->exception('没有查询到表数据');
         }
 
@@ -1257,24 +1395,24 @@ class SystemCrudService extends BaseService
         unset($crudInfoCopy['id']);
 
         $fieldService = app()->get(SystemCrudFieldService::class);
-        $formService  = app()->get(SystemCrudFormService::class);
+        $formService = app()->get(SystemCrudFormService::class);
         $tableService = app()->get(SystemCrudTableService::class);
 
         if ($this->dao->count(['table_name_en' => $data['table_name_en']])) {
             throw $this->exception('实体表名已经存在请更换其他名称');
         }
 
-        $crudInfoCopy['table_name']    = $data['table_name'];
+        $crudInfoCopy['table_name'] = $data['table_name'];
         $crudInfoCopy['table_name_en'] = $data['table_name_en'];
-        $crudInfoCopy['info']          = $data['info'];
-        $crudInfoCopy['form_fields']   = json_encode($crudInfoCopy['form_fields']);
-        $crudInfoCopy['created_at']    = date('Y - m - d H:i:s');
-        $crudInfoCopy['updated_at']    = date('Y - m - d H:i:s');
+        $crudInfoCopy['info'] = $data['info'];
+        $crudInfoCopy['form_fields'] = json_encode($crudInfoCopy['form_fields']);
+        $crudInfoCopy['created_at'] = date('Y - m - d H:i:s');
+        $crudInfoCopy['updated_at'] = date('Y - m - d H:i:s');
         if ($data['cate_ids']) {
             $crudInfoCopy['cate_ids'] = ' / ' . implode(' / ', $data['cate_ids']) . ' / ';
         }
         $fieldList = $fieldService->select(['crud_id' => $id])->toArray();
-        $formInfo  = $formService->get(['crud_id' => $id, 'is_index' => 1]);
+        $formInfo = $formService->get(['crud_id' => $id, 'is_index' => 1]);
         $tableInfo = $tableService->get(['crud_id' => $id]);
 
         $tableInfoCopy = null;
@@ -1307,20 +1445,20 @@ class SystemCrudService extends BaseService
         ) {
             $copyId = $this->dao->create($crudInfoCopy)->id;
 
-            $fieldSave   = [];
+            $fieldSave = [];
             $createField = [];
 
             foreach ($fieldList as $item) {
-                $item = (array) $item;
+                $item = (array)$item;
                 unset($item['id']);
-                $item['crud_id']                 = $copyId;
-                $item['form_field_uniqid']       = uniqid($crudInfoCopy['table_name_en']);
-                $item['created_at']              = date('Y - m - d H:i:s');
-                $item['updated_at']              = date('Y - m - d H:i:s');
+                $item['crud_id'] = $copyId;
+                $item['form_field_uniqid'] = uniqid($crudInfoCopy['table_name_en']);
+                $item['created_at'] = date('Y - m - d H:i:s');
+                $item['updated_at'] = date('Y - m - d H:i:s');
                 $item['association_field_names'] = json_encode($item['association_field_names']);
-                $item['options']                 = json_encode($item['options']);
-                $fieldSave[]                     = $item;
-                if ($item['field_name_en'] !== $sideTable && ! in_array($item['field_name_en'], ['id', 'user_id', 'update_user_id', 'frame_id', 'created_at', 'updated_at', 'deleted_at'])) {
+                $item['options'] = json_encode($item['options']);
+                $fieldSave[] = $item;
+                if ($item['field_name_en'] !== $sideTable && !in_array($item['field_name_en'], ['id', 'user_id', 'update_user_id', 'frame_id', 'created_at', 'updated_at', 'deleted_at'])) {
                     $createField[] = $item;
                 }
             }
@@ -1337,7 +1475,7 @@ class SystemCrudService extends BaseService
 
             $this->createTable(
                 tableName: $crudInfoCopy['table_name_en'],
-                index: (bool) $crudInfoCopy['crud_id'],
+                index: (bool)$crudInfoCopy['crud_id'],
                 sideTable: $sideTable,
                 comment: $crudInfoCopy['table_name']
             );
@@ -1346,13 +1484,13 @@ class SystemCrudService extends BaseService
                 foreach ($createField as $item) {
                     $formInfo = $this->getFormInfo($item['form_value']);
 
-                    $this->addAlter(
+                    app()->make(SystemCrudFieldService::class)->addAlter(
                         tableName: $crudInfoCopy['table_name_en'],
                         field: $item['field_name_en'],
                         prevFiled: $item['prev_field'],
                         type: $formInfo['type'],
                         limit: $formInfo['limit'] ?: '',
-                        default: (string) $formInfo['default'],
+                        default: (string)$formInfo['default'],
                         comment: $item['field_name'],
                         options: [
                             'default_type' => $item['is_default_value_not_null'] ? '2' : '1',
@@ -1372,7 +1510,7 @@ class SystemCrudService extends BaseService
     {
         $formInfo = null;
         foreach (self::FORM_TYPE as $item) {
-            if (! empty($item['value'])) {
+            if (!empty($item['value'])) {
                 if ($item['value'] === $value) {
                     $formInfo = $item;
                     break;
@@ -1402,7 +1540,7 @@ class SystemCrudService extends BaseService
     {
         $associationCrudId = app()->get(SystemCrudFieldService::class)->value(['association_crud_id' => $id], 'crud_id');
         if ($associationCrudId) {
-            throw $this->exception('请先解除"' . $this->getCrudTableNameCache((int) $associationCrudId) . '"实体中的一对一关联字段');
+            throw $this->exception('请先解除"' . $this->getCrudTableNameCache((int)$associationCrudId) . '"实体中的一对一关联字段');
         }
 
         $this->transaction(function () use ($id) {
@@ -1411,377 +1549,14 @@ class SystemCrudService extends BaseService
             app()->get(SystemCrudFormService::class)->delete(['crud_id' => $id]); // 删除表字段
             app()->get(SystemCrudTableService::class)->delete(['crud_id' => $id]); // 删除表
             app()->get(SystemCrudApproveService::class)->delete(['crud_id' => $id]); // 删除审批
-            app()->get(SystemCrudEventService::class)->delete(['crud_id' => $id]); // 删除审批
+            app()->get(SystemCrudEventService::class)->delete(['crud_id' => $id]); // 删除触发器
+            app()->get(SystemCrudEventLogService::class)->delete(['crud_id' => $id]); // 删除触发器日志
             app()->get(ApproveApplyService::class)->delete(['crud_id' => $id]); // 删除审批
             app()->get(SystemCrudQuestionnaireService::class)->delete(['crud_id' => $id]); // 删除问卷
             app()->get(SystemCrudShareService::class)->delete(['crud_id' => $id]); // 删除共享
             app()->get(SystemCrudDataShareService::class)->delete(['crud_id' => $id]); // 删除数据共享
             app()->get(SystemCrudLogService::class)->delete(['crud_id' => $id]); // 删除日志
             app()->get(SystemCrudCommentService::class)->delete(['crud_id' => $id]); // 删除评论
-        });
-
-        event('system . crud');
-    }
-
-    /**
-     * 添加字段.
-     * @param string $value 选择的表单类型
-     * @param string $fieldName 字段名中文
-     * @param string $fieldNameEn 字段名英文
-     * @param bool $isDefaultValueNotNull 是否允许空值
-     * @param bool $isTableShowRow 是否在列表中默认显示
-     * @param string $comment 说明可为空
-     * @param int $dataDictId 数据字典ID
-     * @param array $fieldNames 关联字段
-     * @throws BindingResolutionException
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     * @throws \ReflectionException
-     * @email 136327134@qq.com
-     * @date 2024/2/24
-     */
-    public function addField(int $crudId, string $value, string $fieldName, string $fieldNameEn, bool $isDefaultValueNotNull = false, bool $isTableShowRow = true, string $comment = '', int $dataDictId = 0, int $associationCrudId = 0, array $fieldNames = [], array $options = [], int $createModify = 1, int $updateModify = 1, bool $isUniqid = false)
-    {
-        $crudInfo = $this->dao->get($crudId, ['id', 'table_name_en'], ['field' => fn ($q) => $q->orderBy('id')->select(['id', 'crud_id', 'field_name_en', 'prev_field'])]);
-        if (! $crudInfo) {
-            throw $this->exception('没有查询到数据');
-        }
-
-        $fieldService = app()->make(SystemCrudFieldService::class);
-        if ($fieldService->count(['crud_id' => $crudId, 'field_name_en' => $fieldNameEn])) {
-            throw $this->exception('字段已存在');
-        }
-        if ($fieldService->count(['crud_id' => $crudId, 'field_name' => $fieldName])) {
-            throw $this->exception('字段名已存在');
-        }
-        if ($crudInfo->crud_id && $isUniqid) {
-            throw $this->exception('附表不允许添加唯一字段');
-        }
-        if ($isUniqid && app()->make(CrudModuleService::class)->model(tableName: $crudInfo->table_name_en)->count()) {
-            throw $this->exception('当前表已存在数据，无法设置唯一字段');
-        }
-
-        $field     = $crudInfo['field']?->toArray();
-        $fields    = $fieldService->mergeSortField($field ?: []);
-        $newFields = [];
-        foreach ($fields as $item) {
-            if (! in_array($item['field_name_en'], ['created_at', 'updated_at', 'deleted_at'])) {
-                $newFields[] = $item;
-            }
-        }
-        $count     = count($newFields);
-        $prevFiled = $newFields[$count - 1]['field_name_en'] ?? 'frame_id';
-
-        $formInfo = null;
-
-        foreach (self::FORM_TYPE as $item) {
-            if (! empty($item['value'])) {
-                if ($item['value'] === $value) {
-                    $formInfo = $item;
-                    break;
-                }
-            } else {
-                foreach ($item['options'] as $option) {
-                    if ($option['value'] === $value) {
-                        $formInfo = $option;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if ($formInfo === null) {
-            throw $this->exception('选择的表单类型不存在');
-        }
-
-        if ($formInfo['value'] === CrudFormEnum::FORM_INPUT_SELECT) {
-            if (empty($fieldNames)) {
-                throw $this->exception('一对一关联必须选择展示字段');
-            }
-            if (! $associationCrudId) {
-                throw $this->exception('请选择关联数据表');
-            }
-        }
-
-        $isMain = 0;
-        if ($value === CrudFormEnum::FORM_INPUT) {
-            $isMain = $fieldService->count(['crud_id' => $crudId, 'is_main' => 1, 'form_value' => CrudFormEnum::FORM_INPUT]) ? 0 : 1;
-        }
-
-        $isDefault = 0;
-        if (in_array($crudInfo->table_name_en, self::SYSTEM_TABLE_TABLE)) {
-            $columns   = Schema::getColumnListing($crudInfo->table_name_en);
-            $isDefault = in_array($fieldNameEn, $columns) ? 1 : 0;
-        }
-        $data = [
-            'crud_id'                   => $crudId,
-            'field_name'                => $fieldName,
-            'field_name_en'             => $fieldNameEn,
-            'form_value'                => $value,
-            'field_type'                => $formInfo['type'],
-            'is_default_value_not_null' => $isDefaultValueNotNull ? 1 : 0,
-            'is_table_show_row'         => $isTableShowRow ? 1 : 0,
-            'comment'                   => $comment,
-            'prev_field'                => $prevFiled,
-            'data_dict_id'              => $dataDictId,
-            'association_crud_id'       => $associationCrudId,
-            'association_field_names'   => $fieldNames,
-            'options'                   => $options,
-            'create_modify'             => $createModify,
-            'update_modify'             => $updateModify,
-            'form_field_uniqid'         => uniqid($crudInfo->table_name_en),
-            'is_main'                   => $isMain,
-            'is_default'                => $isDefault,
-            'is_uniqid'                 => $isUniqid ? 1 : 0,
-        ];
-
-        $service = app()->get(SystemCrudFieldService::class);
-
-        $message  = null;
-        $addAlter = true;
-        try {
-            $defaulType = $isDefaultValueNotNull ? '2' : '1';
-            $limit      = $formInfo['limit'] ?: '0';
-            if ($value === CrudFormEnum::FORM_DATE_PICKER) {
-                $defaulType = '2';
-                $limit      = null;
-            } elseif ($value === CrudFormEnum::FORM_DATE_TIME_PICKER) {
-                $defaulType = '3';
-                $limit      = null;
-            }
-            if (! in_array($crudInfo->table_name_en, self::SYSTEM_TABLE_TABLE)) {
-                $this->addAlter(
-                    tableName: $crudInfo->table_name_en,
-                    field: $fieldNameEn,
-                    prevFiled: $prevFiled,
-                    type: $formInfo['type'],
-                    limit: $limit,
-                    default: (string) $formInfo['default'],
-                    comment: $fieldName,
-                    options: [
-                        'default_type' => $defaulType,
-                    ]
-                );
-
-                if ($isUniqid) {
-                    $this->addIndex(
-                        tableName: $crudInfo->table_name_en,
-                        field: $fieldNameEn
-                    );
-                }
-            }
-        } catch (\Throwable $e) {
-            $addAlter = false;
-            $message  = $e->getMessage();
-        }
-
-        $this->transaction(function () use (
-            $service,
-            $data,
-            $crudId,
-            $fieldNameEn,
-            $addAlter,
-            $message
-        ) {
-            $service->create($data);
-            $service->update([
-                'crud_id'       => $crudId,
-                'field_name_en' => 'created_at',
-            ], [
-                'prev_field' => $fieldNameEn,
-            ]);
-
-            if (! $addAlter) {
-                throw $this->exception($message);
-            }
-        });
-
-        event('system . crud');
-    }
-
-    /**
-     * 修改字段.
-     * @throws BindingResolutionException
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     * @email 136327134@qq.com
-     * @date 2024/2/26
-     */
-    public function updateField(int $id, string $fieldName, bool $isDefaultValueNotNull = false, bool $isTableShowRow = true, int $dataDictId = 0, array $fieldNames = [], array $options = [], int $createModify = 1, int $updateModify = 1, bool $isUniqid = false)
-    {
-        $fieldInfo = app()->get(SystemCrudFieldService::class)->get($id);
-        if (! $fieldInfo) {
-            throw $this->exception('修改的字段不存在');
-        }
-        if ($fieldInfo->field_name != $fieldName && app()->get(SystemCrudFieldService::class)->existsFieldName($fieldInfo->crud_id, $id, $fieldName)) {
-            throw $this->exception('字段名已存在');
-        }
-        if (! $fieldInfo->is_uniqid && $isUniqid) {
-            throw $this->exception('当前字段不能设置为唯一字段');
-        }
-        $fieldInfo->field_name                = $fieldName;
-        $fieldInfo->is_default_value_not_null = $isDefaultValueNotNull ? 1 : 0;
-        $fieldInfo->is_table_show_row         = $isTableShowRow ? 1 : 0;
-        $fieldInfo->data_dict_id              = $dataDictId;
-        $fieldInfo->association_field_names   = $fieldNames;
-        $fieldInfo->options                   = $options;
-        $fieldInfo->create_modify             = $createModify;
-        $fieldInfo->update_modify             = $updateModify;
-
-        $formInfo = null;
-        foreach (self::FORM_TYPE as $item) {
-            if (! empty($item['value'])) {
-                if ($item['value'] === $fieldInfo->form_value) {
-                    $formInfo = $item;
-                    break;
-                }
-            } else {
-                foreach ($item['options'] as $option) {
-                    if ($option['value'] === $fieldInfo->form_value) {
-                        $formInfo = $option;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if ($formInfo === null) {
-            throw $this->exception('选择的表单类型不存在,建议删除此字段');
-        }
-
-        $tableName = $this->dao->value($fieldInfo->crud_id, 'table_name_en');
-        if (! $tableName) {
-            throw $this->exception('没有查询到表名');
-        }
-
-        $message     = null;
-        $updateAlter = true;
-        try {
-            $defaulType = $isDefaultValueNotNull ? '2' : '1';
-            $limit      = $formInfo['limit'] ?: '0';
-            if ($fieldInfo->form_value === CrudFormEnum::FORM_DATE_PICKER) {
-                $defaulType = '2';
-                $limit      = null;
-            } elseif ($fieldInfo->form_value === CrudFormEnum::FORM_DATE_TIME_PICKER) {
-                $defaulType = '3';
-                $limit      = null;
-            }
-
-            if (! in_array($tableName, self::SYSTEM_TABLE_TABLE)) {
-                $this->updateAlter($tableName, $fieldInfo->field_name_en, $fieldInfo->field_name_en, $fieldInfo->prev_field, $formInfo['type'], $limit, (string) $formInfo['default'], $fieldName, [
-                    'default_type' => $defaulType,
-                ]);
-                if ($fieldInfo->is_uniqid && ! $isUniqid) {
-                    $this->deleteIndex($tableName, $fieldInfo->field_name_en);
-                    $fieldInfo->is_uniqid = 0;
-                }
-            }
-        } catch (\Throwable $e) {
-            $message     = $e->getMessage();
-            $updateAlter = false;
-        }
-
-        $this->transaction(function () use (
-            $fieldInfo,
-            $message,
-            $updateAlter
-        ) {
-            $fieldInfo->save();
-
-            if (! $updateAlter) {
-                throw $this->exception($message);
-            }
-        });
-
-        event('system . crud');
-    }
-
-    /**
-     * 删除字段.
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface|\ReflectionException
-     * @email 136327134@qq.com
-     * @date 2024/2/26
-     */
-    public function deleteField(int $id)
-    {
-        $fieldService = app()->get(SystemCrudFieldService::class);
-        $fieldInfo    = $fieldService->get($id);
-        if (! $fieldInfo) {
-            throw $this->exception('没有查到字段信息');
-        }
-
-        $crudInfo = $this->dao->get($fieldInfo->crud_id, ['id', 'table_name_en', 'form_fields'], ['field' => fn ($q) => $q->orderBy('id')->select(['id', 'crud_id', 'field_name_en', 'prev_field'])]);
-        if (! $crudInfo) {
-            throw $this->exception('没有查到实体数据');
-        }
-
-        $formFields = [];
-        if (in_array($fieldInfo->field_name_en, $crudInfo->form_fields)) {
-            $formFields = $crudInfo->form_fields;
-            $key        = array_search($fieldInfo->field_name_en, $formFields);
-            if ($key !== false) {
-                unset($formFields[$key]);
-            }
-            $formFields = array_values($formFields);
-        }
-
-        $tableName = $crudInfo->table_name_en;
-        if (! $tableName) {
-            throw $this->exception('没有查到实体名称');
-        }
-
-        if ($fieldInfo->is_form) {
-            throw $this->exception('请先在表单中移除对应表单');
-        }
-
-        if ($fieldInfo->association_crud_id
-            && app()->make(SystemCrudEventService::class)
-                ->count([
-                    'crud_id'        => $fieldInfo->crud_id,
-                    'target_crud_id' => $fieldInfo->association_crud_id,
-                ])
-        ) {
-            throw $this->exception('当前字段已经有触发器，请先解除触发器中的目标实体关联');
-        }
-
-        $field = $crudInfo['field']?->toArray();
-        $field = $field ?: [];
-
-        // 默认放在
-        $prevFiled = 'frame_id';
-
-        foreach ($field as $index => $item) {
-            if ($item['field_name_en'] === $fieldInfo->field_name_en && isset($field[$index - 1])) {
-                $prevFiled = $field[$index - 1]['field_name_en'];
-                break;
-            }
-        }
-
-        $prevFieldId = $fieldService->value(['crud_id' => $fieldInfo->crud_id, 'prev_field' => $fieldInfo->field_name_en], 'id');
-
-        $message     = null;
-        $deleteAlter = true;
-        try {
-            if (! in_array($tableName, self::SYSTEM_TABLE_TABLE)) {
-                $this->deleteAlter($tableName, $fieldInfo->field_name_en);
-            }
-        } catch (\Throwable $e) {
-            $message     = $e->getMessage();
-            $deleteAlter = false;
-        }
-
-        $this->transaction(function () use ($fieldInfo, $message, $deleteAlter, $fieldService, $prevFiled, $prevFieldId, $formFields) {
-            $fieldInfo->delete();
-            $fieldService->update($prevFieldId, ['prev_field' => $prevFiled]);
-
-            if ($formFields) {
-                $this->dao->update($fieldInfo->crud_id, ['form_fields' => $formFields]);
-            }
-
-            if (! $deleteAlter) {
-                throw $this->exception($message);
-            }
         });
 
         event('system.crud');
@@ -1979,11 +1754,11 @@ class SystemCrudService extends BaseService
      */
     public function getJoinCrudData(int $crudId, int $isDefault = 0)
     {
-        $association = app()->make(SystemCrudFieldService::class)->getAssociationCrudIdCache($crudId, $isDefault);
-        $joinData    = [];
+        $association = app()->get(SystemCrudFieldService::class)->getAssociationCrudIdCache($crudId, $isDefault);
+        $joinData = [];
 
         foreach ($association as $item) {
-            if (! $item['association']) {
+            if (!$item['association']) {
                 continue;
             }
             $joinData[] = [
@@ -2004,48 +1779,26 @@ class SystemCrudService extends BaseService
     }
 
     /**
-     * 添加索引.
-     * @return array
-     */
-    public function addIndex(string $tableName, string $field, string $type = 'UNIQUE')
-    {
-        $tableName = $this->getTableName($tableName);
-        $field     = addslashes($field);
-        return DB::select("ALTER TABLE `{$tableName}` ADD {$type} `{$field}` (`{$field}`);");
-    }
-
-    /**
-     * 删除索引.
-     * @return array
-     */
-    public function deleteIndex(string $tableName, string $field)
-    {
-        $tableName = $this->getTableName($tableName);
-        $field     = addslashes($field);
-        return DB::select("ALTER TABLE `{$tableName}` DROP INDEX `{$field}`;");
-    }
-
-    /**
      * 验证crud信息.
      * @return array|Model
      * @throws BindingResolutionException
      */
     public function checkCrud(string $name = '', int $crudId = 0, array $select = [])
     {
-        if (! $select) {
+        if (!$select) {
             $select = ['crud_id', 'field_name_en', 'is_main', 'field_name',
-                'form_value', 'field_type', 'is_default', 'is_uniqid',
-                'data_dict_id', 'association_crud_id', 'is_default'];
+                       'form_value', 'field_type', 'is_default', 'is_uniqid',
+                       'data_dict_id', 'association_crud_id', 'is_default', 'customize_items', 'data_type', 'association_show_type'];
         }
 
-        $crudInfo = app()->make(SystemCrudService::class)->get(
+        $crudInfo = app()->get(SystemCrudService::class)->get(
             where: $name ? ['table_name_en' => $name] : $crudId,
             with: [
-                'field' => fn ($q) => $q
+                'field' => fn($q) => $q
                     ->select($select),
             ]
         );
-        if (! $crudInfo) {
+        if (!$crudInfo) {
             throw new ApiException('没有查询到实体信息');
         }
 
@@ -2060,11 +1813,22 @@ class SystemCrudService extends BaseService
     public function getCrudInfoCache(string $name = '', int $crudId = 0)
     {
         $select = ['crud_id', 'field_name_en', 'is_main', 'field_name',
-            'form_value', 'field_type', 'is_default', 'is_uniqid',
-            'data_dict_id', 'association_crud_id', 'is_default'];
+                   'form_value', 'field_type', 'is_default', 'is_uniqid',
+                   'data_dict_id', 'association_crud_id', 'is_default', 'customize_items', 'data_type', 'association_show_type'];
 
         return Cache::tags(self::TAG_NAME)->remember('crud_info_' . $name . '_' . $crudId . '_' . md5(json_encode($select)), null, function () use ($select, $name, $crudId) {
             return $this->checkCrud($name, $crudId, $select);
+        });
+    }
+
+    /**
+     * 获取下级crud信息缓存.
+     * @return mixed
+     */
+    public function getSubordinateCrudInfoCache(int $parentId)
+    {
+        return Cache::tags(self::TAG_NAME)->remember('subordinate_crud_info_' . $parentId, null, function () use ($parentId) {
+            return $this->dao->getSubordinateCrudInfo($parentId);
         });
     }
 
@@ -2078,9 +1842,11 @@ class SystemCrudService extends BaseService
      */
     public function getCrudTableNameCache(int $crudId = 0)
     {
-        return array_find(Cache::tags(self::TAG_NAME)->remember('crud_table_name_cache', null, function () {
+        $list = Cache::tags(self::TAG_NAME)->remember('crud_table_name_cache', null, function () {
             return $this->dao->column([], 'table_name', 'id');
-        }), $crudId);
+        });
+
+        return $crudId ? ($list[$crudId] ?? null) : $list;
     }
 
     /**
@@ -2093,9 +1859,11 @@ class SystemCrudService extends BaseService
      */
     public function getCrudTableNameEnCache(int $crudId = 0)
     {
-        return array_find(Cache::tags(self::TAG_NAME)->remember('crud_table_name_en_cache', null, function () {
+        $list = Cache::tags(self::TAG_NAME)->remember('crud_table_name_en_cache', null, function () {
             return $this->dao->column([], 'table_name_en', 'id');
-        }), $crudId);
+        });
+
+        return $crudId ? ($list[$crudId] ?? null) : $list;
     }
 
     /**
@@ -2111,7 +1879,7 @@ class SystemCrudService extends BaseService
         $crudId = null;
         $list   = $this->getCrudTableNameEnCache();
 
-        foreach ($list as $id => $tableName) {
+        foreach ((array) $list as $id => $tableName) {
             if ($tableName === $tableNameEn) {
                 $crudId = $id;
                 break;
@@ -2122,6 +1890,80 @@ class SystemCrudService extends BaseService
     }
 
     /**
+     * @return mixed
+     * @throws BindingResolutionException
+     */
+    public function getDictDataList(int $id)
+    {
+        $dictIds = app()->make(SystemCrudFieldService::class)->getDataDictIds($id);
+        $dictType = [];
+        if ($dictIds) {
+            $dictType = app()->make(DictTypeService::class)->getModel()->whereIn('id', $dictIds)->get()->toArray();
+        }
+        return $dictType;
+    }
+
+    /**
+     * 批量保存字典数据.
+     * @throws BindingResolutionException
+     */
+    public function batchDictData(int $dictId, array $data)
+    {
+        $typeName = app()->make(DictTypeService::class)->getModel()->where('id', $dictId)->value('ident');
+
+        $this->saveChildren($data, $dictId, 0, $typeName);
+
+        Cache::tags([CacheEnum::TAG_DICT, CacheEnum::TAG_CUSTOMER])->flush();
+    }
+
+    /**
+     * 保存子级字典数据.
+     * @param array $data
+     * @param $dictId
+     * @param int $parentId
+     * @param $typeName
+     * @return void
+     * @throws BindingResolutionException
+     */
+    public function saveChildren(array $data, $dictId, int $parentId, $typeName)
+    {
+        $dictDataService = app()->make(DictDataService::class);
+
+        foreach ($data as $item) {
+            if (isset($item['id']) && $item['id']) {
+                $dictDataService->update($item['id'], [
+                    'type_id' => $dictId,
+                    'name'    => $item['name'],
+                    'value'   => $item['value'],
+                    'sort'    => $item['sort'] ?? 0,
+                    'color'   => $item['color'] ?? '',
+                    'status'  => $item['status'] ?? '',
+                    'mark'    => $item['mark'] ?? '',
+                ]);
+                $id = $item['id'];
+            } else {
+                $res = $dictDataService->create([
+                    'type_id'   => $dictId,
+                    'pid'       => $parentId,
+                    'name'      => $item['name'],
+                    'type_name' => $typeName,
+                    'value'     => $item['value'],
+                    'sort'      => $item['sort'] ?? 0,
+                    'color'     => $item['color'] ?? '',
+                    'status'    => $item['status'] ?? '',
+                    'mark'      => $item['mark'] ?? '',
+                ]);
+                $id = $res->id;
+            }
+
+            if (!empty($item['children'])) {
+                $this->saveChildren($item['children'], $dictId, $id, $typeName);
+            }
+        }
+
+    }
+
+    /**
      * 清除缓存.
      * @return bool
      */
@@ -2129,156 +1971,5 @@ class SystemCrudService extends BaseService
     {
         Cache::tags('event')->clear();
         Cache::tags(self::TAG_NAME)->clear();
-    }
-
-    /**
-     * 新增字段.
-     * @param string $limit
-     * @return mixed
-     * @email 136327134@qq.com
-     * @date 2024/2/24
-     */
-    protected function addAlter(string $tableName, string $field, string $prevFiled, string $type, $limit = '', string $default = '', string $comment = '', array $options = [])
-    {
-        $tableName = $this->getTableName($tableName);
-        $comment   = addslashes($comment);
-        $field     = addslashes($field);
-        $prevFiled = addslashes($prevFiled);
-        $type      = addslashes($type);
-        $default   = addslashes($default);
-        if ($prevFiled) {
-            $after = "AFTER `{$prevFiled}`";
-        } else {
-            $after = '';
-        }
-        if (isset($options['default_type'])) {
-            switch ($options['default_type']) {
-                case ' - 1':
-                    $default = 'NULL';
-                    break;
-                case '1':// 自定义
-                    $default = "NOT NULL DEFAULT '{
-    {$default}}'";
-                    break;
-                case '2':// 为null
-                    $default = 'NULL default NULL';
-                    break;
-                case '3':// 时间
-                    $default = 'NULL default CURRENT_TIMESTAMP';
-                    break;
-            }
-        }
-        if (in_array(strtolower($type), ['text', 'longtext', 'tinytext'])) {
-            $sql = "ALTER TABLE `{$tableName}` ADD `{$field}` {$type} NULL COMMENT '{
-    {$comment}}' {$after};";
-        } else {
-            $defaultSql = $default;
-            // 处理时间字段默认值
-            if (in_array(strtolower($type), ['datetime', 'timestamp', 'time', 'date', 'year'])) {
-                switch ($field) {
-                    case 'deleted_at':
-                        $defaultSql = 'NULL default NULL';
-                        break;
-                    case 'created_at':
-                    case 'updated_at':
-                        $defaultSql = 'NOT NULL default CURRENT_TIMESTAMP';
-                        break;
-                }
-            }
-
-            // 兼容枚举字段
-            if (strtolower($type) == 'enum') {
-                $enum = [];
-                foreach ($options['options'] as $option) {
-                    $enum[] = "'{
-    {$option}}'";
-                }
-                $enumStr = implode(',', $enum);
-
-                $limitSql = $enumStr ? '(' . $enumStr . ')' : '';
-            } else {
-                $limitSql = $limit ? '(' . $limit . ')' : '';
-            }
-
-            $sql = "ALTER TABLE `{$tableName}` ADD `{$field}` {$type}{$limitSql} {$defaultSql} COMMENT '{
-    {$comment}}' {$after};";
-        }
-        return DB::select($sql);
-    }
-
-    /**
-     * 修改字段.
-     * @param string $limit
-     * @return mixed
-     * @email 136327134@qq.com
-     * @date 2024/2/24
-     */
-    protected function updateAlter(string $tableName, string $field, string $changeFiled, string $prevFiled, string $type, $limit = '', string $default = '', string $comment = '', array $options = [])
-    {
-        $tableName   = $this->getTableName($tableName);
-        $comment     = addslashes($comment);
-        $field       = addslashes($field);
-        $changeFiled = addslashes($changeFiled);
-        $prevFiled   = addslashes($prevFiled);
-        $type        = addslashes($type);
-        $default     = addslashes($default);
-        if ($prevFiled) {
-            $after = "AFTER `{$prevFiled}`";
-        } else {
-            $after = '';
-        }
-        if (isset($options['default_type'])) {
-            switch ($options['default_type']) {
-                case ' - 1':
-                    $default = 'NULL';
-                    break;
-                case '1':// 自定义
-                    $default = "NOT NULL DEFAULT '{
-    {$default}}'";
-                    break;
-                case '2':// 为null
-                    $default = 'NULL default NULL';
-                    break;
-                case '3':// 时间
-                    $default = 'NULL default CURRENT_TIMESTAMP';
-                    break;
-            }
-        }
-        if (in_array(strtolower($type), ['text', 'longtext', 'tinytext'])) {
-            $sql = "ALTER TABLE `{$tableName}` CHANGE `{$field}` `{$changeFiled}` {$type} CHARACTER SET utf8mb4 COLLATE " . self::TABLR_COLLATION . " NULL COMMENT '{
-    {$comment}}' {$after};";
-        } elseif (strtolower($type) == 'enum') {
-            $enum = [];
-            foreach ($options['options'] as $option) {
-                $enum[] = "'{
-    {$option}}'";
-            }
-            $enumStr = implode(',', $enum);
-            $sql     = "ALTER TABLE `{$tableName}` CHANGE `{$field}` `{$changeFiled}` {$type}({$enumStr}) {$default} COMMENT '{
-    {$comment}}' {$after};";
-        } else {
-            if (is_null($limit)) {
-                $type = "{$type}";
-            } else {
-                $type = "{$type}({$limit})";
-            }
-            $sql = "ALTER TABLE `{$tableName}` CHANGE `{$field}` `{$changeFiled}` {$type} {$default} COMMENT '{
-    {$comment}}' {$after};";
-        }
-        return DB::select($sql);
-    }
-
-    /**
-     * 删除字段.
-     * @return array
-     * @email 136327134@qq.com
-     * @date 2024/3/12
-     */
-    protected function deleteAlter(string $tableName, string $field)
-    {
-        $tableName = $this->getTableName($tableName);
-        $field     = addslashes($field);
-        $sql       = "ALTER TABLE `{$tableName}` DROP `{$field}`";
-        return DB::select($sql);
     }
 }

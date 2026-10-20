@@ -2,34 +2,38 @@
 <template>
   <div class="station">
     <el-drawer
+      class="invoice-apply-drawer"
       :append-to-body="true"
       :before-close="handleClose"
       :direction="direction"
       :modal="true"
       :size="formData.width"
       :title="formData.title ? formData.title : title"
-      :visible.sync="drawer"
-      :wrapper-closable="true"
-      :wrapperClosable="false"
+      v-model="drawer"
+      :close-on-click-modal="false"
     >
       <div class="invoice">
         <el-form ref="form" :model="rules" :rules="rule" label-width="110px">
           <div class="from-item-title mb15">
-            <span>{{ $t('setting.info.essentialinformation') }}</span>
+            <span>基本信息</span>
           </div>
 
           <!-- 基本信息 -->
           <div class="form-box">
             <div class="form-item">
               <el-form-item>
-                <span slot="label"><span class="color-tab">* </span>客户名称:</span>
+                <template #label>
+                  <span><span class="color-tab">* </span>客户名称:</span>
+                </template>
 
                 <span class="font-color">{{ rules.source }}</span>
               </el-form-item>
             </div>
             <div class="form-item">
               <el-form-item>
-                <span slot="label"><span class="color-tab">* </span>{{ $t('customer.contractname') }}:</span>
+                <template #label>
+                  <span><span class="color-tab">* </span>订单名称:</span>
+                </template>
 
                 <span class="font-color">{{ rules.name }}</span>
               </el-form-item>
@@ -37,12 +41,13 @@
 
             <div class="form-item">
               <el-form-item prop="category_id">
-                <span slot="label">发票类目:</span>
+                <template #label>
+                  <span>发票类目:</span>
+                </template>
                 <el-select
                   v-model="rules.category_id"
-                  :placeholder="$t('customer.placeholder45')"
+                  placeholder="请选择发票类型"
                   clearable
-                  size="small"
                 >
                   <el-option v-for="item in categoryList" :key="item.id" :label="item.name" :value="item.id" />
                 </el-select>
@@ -50,12 +55,13 @@
             </div>
             <div class="form-item">
               <el-form-item prop="bill_date">
-                <span slot="label">{{ $t('customer.invoicingdate') }}:</span>
+                <template #label>
+                  <span>期望开票日期:</span>
+                </template>
                 <el-date-picker
                   v-model="rules.bill_date"
-                  :placeholder="$t('customer.placeholder65')"
+                  placeholder="请选择期望开票时间"
                   clearable
-                  size="small"
                   type="date"
                 >
                 </el-date-picker>
@@ -65,61 +71,67 @@
           <div class="line" />
           <!-- 邮寄信息 -->
           <div class="from-item-title mb15">
-            <span>{{ $t('customer.mailinginformation') }}</span>
+            <span>邮寄信息</span>
           </div>
           <div class="form-box">
             <div class="form-item" style="width: 100%">
               <el-form-item>
-                <span slot="label">开票要求:</span>
+                <template #label>
+                  <span>开票要求:</span>
+                </template>
                 <el-radio-group v-model="rules.collect_type" @change="collectTypeFn">
-                  <el-radio :label="'mail'">电子</el-radio>
-                  <el-radio :label="'express'">纸质</el-radio>
+                  <el-radio label="mail" value="mail">电子</el-radio>
+                  <el-radio label="express" value="express">纸质</el-radio>
                 </el-radio-group>
               </el-form-item>
             </div>
 
             <div v-if="rules.collect_type == 'express'" class="form-item">
               <el-form-item prop="collect_name">
-                <span slot="label">联系人:</span>
+                <template #label>
+                  <span>联系人:</span>
+                </template>
                 <el-input
                   v-model.trim="rules.collect_name"
-                  :placeholder="$t('customer.placeholder52')"
+                  placeholder="请输入联系人"
                   clearable
-                  size="small"
                 />
               </el-form-item>
             </div>
             <div v-if="rules.collect_type == 'express'" class="form-item">
               <el-form-item prop="collect_tel">
-                <span slot="label">{{ $t('customer.contactnumber') }}:</span>
+                <template #label>
+                  <span>联系电话:</span>
+                </template>
                 <el-input
                   v-model.trim="rules.collect_tel"
-                  :placeholder="$t('customer.placeholder53')"
+                  placeholder="请输入联系电话"
                   clearable
-                  size="small"
                 />
               </el-form-item>
             </div>
 
             <div v-if="rules.collect_type == 'mail'" class="form-item">
               <el-form-item prop="collect_email">
-                <span slot="label">邮箱地址:</span>
+                <template #label>
+                  <span>邮箱地址:</span>
+                </template>
                 <el-input
                   v-model="rules.collect_email"
-                  :placeholder="$t('customer.placeholder55')"
+                  placeholder="请输入邮箱地址"
                   clearable
-                  size="small"
                 />
               </el-form-item>
             </div>
             <div v-else class="form-item">
               <el-form-item prop="mail_address">
-                <span slot="label">邮寄地址:</span>
+                <template #label>
+                  <span>邮寄地址:</span>
+                </template>
                 <el-input
                   v-model.trim="rules.mail_address"
-                  :placeholder="$t('customer.placeholder56')"
+                  placeholder="请输入邮寄详细地址"
                   clearable
-                  size="small"
                 />
               </el-form-item>
             </div>
@@ -128,87 +140,95 @@
 
           <!-- 发票信息 -->
           <div class="from-item-title mb15">
-            <span>{{ $t('customer.invoiceinformation') }}</span>
+            <span>发票信息</span>
           </div>
           <div class="form-box">
             <div class="form-item">
               <el-form-item>
-                <span slot="label"><span class="color-tab">* </span>{{ $t('customer.headerinformation') }}:</span>
-                <el-select v-model="rules.types" :placeholder="$t('customer.placeholder45')" clearable size="small">
+                <template #label>
+                  <span><span class="color-tab">* </span>发票类型:</span>
+                </template>
+                <el-select v-model="rules.types" placeholder="请选择发票类型" clearable>
                   <el-option v-for="item in invoiceOptions" :key="item.value" :label="item.label" :value="item.value" />
                 </el-select>
               </el-form-item>
             </div>
             <div class="form-item">
               <el-form-item prop="amount">
-                <span slot="label">{{ $t('customer.invoicingpay') }}:</span>
+                <template #label>
+                  <span>开票金额(元):</span>
+                </template>
                 <el-input-number
                   v-model="rules.amount"
                   :controls="false"
                   :min="0"
-                  :placeholder="$t('customer.placeholder44')"
+                  placeholder="请输入开票金额"
                   :precision="2"
                   clearable
-                  size="small"
                 ></el-input-number>
               </el-form-item>
             </div>
 
             <div class="form-item">
               <el-form-item prop="title">
-                <span slot="label">{{ $t('customer.invoiceheader') }}:</span>
+                <template #label>
+                  <span>发票抬头:</span>
+                </template>
                 <el-input
                   v-model.trim="rules.title"
-                  :placeholder="$t('customer.placeholder46')"
+                  placeholder="请输入抬头信息"
                   clearable
-                  size="small"
                 />
               </el-form-item>
             </div>
             <div v-if="rules.types > 1" class="form-item">
               <el-form-item prop="ident">
-                <span slot="label">{{ $t('customer.paytaxes') }}:</span>
+                <template #label>
+                  <span>纳税人识别号:</span>
+                </template>
                 <el-input
                   v-model.trim="rules.ident"
-                  :placeholder="$t('customer.placeholder47')"
+                  placeholder="请输入纳税人识别号"
                   clearable
-                  size="small"
                 />
               </el-form-item>
             </div>
             <div v-if="rules.types > 2" class="form-item">
               <el-form-item>
                 <!-- prop="bank" -->
-                <span slot="label">{{ $t('customer.bankdeposit') }}:</span>
+                <template #label>
+                  <span>开户行:</span>
+                </template>
                 <el-input
                   v-model.trim="rules.bank"
-                  :placeholder="$t('customer.placeholder48')"
+                  placeholder="请输入开户行"
                   clearable
-                  size="small"
                 />
               </el-form-item>
             </div>
             <div v-if="rules.types > 2" class="form-item">
               <el-form-item>
                 <!-- prop="account" -->
-                <span slot="label">{{ $t('customer.accountnumber') }}:</span>
+                <template #label>
+                  <span>开户账号:</span>
+                </template>
                 <el-input
                   v-model.trim="rules.account"
-                  :placeholder="$t('customer.placeholder49')"
+                  placeholder="请输入开户账号"
                   clearable
-                  size="small"
                 />
               </el-form-item>
             </div>
             <div v-if="rules.types > 2" class="form-item">
               <el-form-item>
                 <!-- prop="address" -->
-                <span slot="label">{{ $t('customer.billingaddress') }}:</span>
+                <template #label>
+                  <span>开票地址:</span>
+                </template>
                 <el-input
                   v-model="rules.address"
-                  :placeholder="$t('customer.placeholder50')"
+                  placeholder="请输入开票地址"
                   clearable
-                  size="small"
                   @input="onInput()"
                 />
               </el-form-item>
@@ -216,8 +236,10 @@
             <div v-if="rules.types > 2" class="form-item">
               <el-form-item>
                 <!-- prop="tel" -->
-                <span slot="label">{{ $t('customer.tel') }}:</span>
-                <el-input v-model.trim="rules.tel" :placeholder="$t('customer.placeholder51')" clearable size="small" />
+                <template #label>
+                  <span>电话:</span>
+                </template>
+                <el-input v-model.trim="rules.tel" placeholder="请输入电话号码" clearable />
               </el-form-item>
             </div>
           </div>
@@ -226,10 +248,12 @@
           <div class="form-box">
             <div class="form-item" style="width: 100%">
               <el-form-item>
-                <span slot="label">{{ $t('public.remarks') }}:</span>
+                <template #label>
+                  <span>备注:</span>
+                </template>
                 <el-input
                   v-model="rules.mark"
-                  :placeholder="$t('customer.placeholder18')"
+                  placeholder="请填写备注信息"
                   :rows="4"
                   maxlength="255"
                   show-word-limit
@@ -240,10 +264,8 @@
           </div>
         </el-form>
         <div class="button from-foot-btn fix btn-shadow">
-          <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
-          <el-button :loading="loading" size="small" type="primary" @click="handleConfirm('ruleForm')">{{
-            $t('public.ok')
-          }}</el-button>
+          <el-button @click="handleClose">取消</el-button>
+          <el-button :loading="loading" type="primary" @click="handleConfirm('ruleForm')">确定</el-button>
         </div>
       </div>
     </el-drawer>
@@ -251,10 +273,13 @@
 </template>
 
 <script>
-import { clientInvoiceEditApi, clientInvoiceSaveApi, clientInvoiceDetailApi } from '@/api/enterprise'
-import helper from '@/libs/helper'
+import dayjs from 'dayjs'
+import { clientInvoiceEditApi, clientInvoiceSaveApi, clientInvoiceDetailApi } from '@/api/client.ts'
+import helper from '@/libs/helper.ts'
+import { getStorageJson } from '@/utils/storage.ts'
 
 export default {
+  emits: ['isOk'],
   name: 'InvoiceApply',
   props: {
     contractInvoice: {
@@ -276,14 +301,14 @@ export default {
     const checkEmail = (rule, value, callback) => {
       const mailReg = helper.mailboxReg
       if (!value) {
-        return callback(new Error(this.$t('customer.placeholder68')))
+        return callback(new Error('邮箱不能为空'))
       } else {
         return callback()
       }
     }
     const checkIdent = (rule, value, callback) => {
       if (!value && this.rules.types > 1) {
-        return callback(new Error(this.$t('customer.placeholder47')))
+        return callback(new Error('请输入纳税人识别号'))
       } else if (!helper.identReg.test(value)) {
         callback(new Error('税号输入不合法'))
       } else {
@@ -320,20 +345,20 @@ export default {
         category_id: ''
       },
       methodOptions: [
-        { value: 'express', label: this.$t('customer.express') },
-        { value: 'mail', label: this.$t('customer.mail') }
+        { value: 'express', label: '快递' },
+        { value: 'mail', label: '邮件' }
       ],
       loading: false,
       invoiceOptions: [
-        { value: 1, label: this.$t('customer.personalinvoice') },
-        { value: 2, label: this.$t('customer.enterpriseinvoice') },
-        { value: 3, label: this.$t('customer.specialinvoice') }
+        { value: 1, label: '个人普通发票' },
+        { value: 2, label: '企业普通发票' },
+        { value: 3, label: '企业专用发票' }
       ],
       rule: {
-        name: [{ required: true, message: this.$t('customer.placeholder42'), trigger: 'blur' }],
-        amount: [{ required: true, message: this.$t('customer.placeholder44'), trigger: 'blur' }],
-        bill_date: [{ required: true, message: this.$t('customer.placeholder65'), trigger: 'blur' }],
-        title: [{ required: true, message: this.$t('customer.placeholder46'), trigger: 'blur' }],
+        name: [{ required: true, message: '请输入发票名称', trigger: 'blur' }],
+        amount: [{ required: true, message: '请输入开票金额', trigger: 'blur' }],
+        bill_date: [{ required: true, message: '请选择期望开票时间', trigger: 'blur' }],
+        title: [{ required: true, message: '请输入抬头信息', trigger: 'blur' }],
         ident: [{ required: true, validator: checkIdent, trigger: 'blur' }],
         category_id: [{ required: true, message: '请选择发票类目', trigger: 'change' }],
         collect_name: [{ required: true, message: '电话号码不能为空', trigger: 'blur' }],
@@ -341,15 +366,10 @@ export default {
         collect_email: [{ required: true, validator: checkEmail, trigger: 'blur' }],
         mail_address: [{ required: true, message: '请填写邮寄地址', trigger: 'blur' }],
         address: [{ required: true, message: '请填写开票地址', trigger: 'blur' }],
-        bank: [{ required: true, message: this.$t('customer.placeholder48'), trigger: 'blur' }],
-        account: [{ required: true, message: this.$t('customer.placeholder49'), trigger: 'blur' }],
+        bank: [{ required: true, message: '请输入开户行', trigger: 'blur' }],
+        account: [{ required: true, message: '请输入开户账号', trigger: 'blur' }],
         tel: [{ required: true, message: '电话号码不能为空', trigger: 'blur' }]
       }
-    }
-  },
-  computed: {
-    lang: function () {
-      return this.$store.getters.lang
     }
   },
   watch: {
@@ -382,29 +402,19 @@ export default {
           } else {
             this.rules.address = ''
           }
+          // 发票抬头默认取客户名称，可修改
+          if (!this.rules.title && this.rules.source !== '--') {
+            this.rules.title = this.rules.source
+          }
 
-          this.rules.bill_date = this.$moment(new Date()).format('YYYY-MM-DD')
+          this.rules.bill_date = dayjs(new Date()).format('YYYY-MM-DD')
           this.rules.price = nVal.data.price
         }
       },
       deep: true
     },
-    lang() {
-      this.setOptions()
-    }
   },
   methods: {
-    setOptions() {
-      this.methodOptions = [
-        { value: 'express', label: this.$t('customer.express') },
-        { value: 'mail', label: this.$t('customer.mail') }
-      ]
-      this.invoiceOptions = [
-        { value: 1, label: this.$t('customer.personalinvoice') },
-        { value: 2, label: this.$t('customer.enterpriseinvoice') },
-        { value: 3, label: this.$t('customer.specialinvoice') }
-      ]
-    },
     change(e) {
       this.$forceUpdate()
     },
@@ -448,7 +458,7 @@ export default {
       this.$refs.form.validate((valid) => {
         if (valid) {
           var data = this.rules
-          data.bill_date = this.$moment(this.rules.bill_date).format('yyyy-MM-DD')
+          data.bill_date = dayjs(this.rules.bill_date).format('YYYY-MM-DD')
           data.cid = this.cid
           data.eid = this.eid
 
@@ -457,8 +467,8 @@ export default {
             category_id: this.rules.category_id
           }
 
-          let categoryList = JSON.parse(localStorage.getItem('categoryList'))
-          if (categoryList) {
+          let categoryList = getStorageJson('categoryList', [])
+          if (categoryList.length) {
             var flag = categoryList.find((cur) => cur.eid == this.formData.data.eid)
 
             if (flag) {
@@ -513,13 +523,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.station /deep/.el-drawer__body {
-  padding: 20px 20px 50px 20px;
-}
-/deep/ .el-form--inline .el-form-item {
+:deep(.el-form--inline .el-form-item) {
   display: flex;
 }
-/deep/ .el-input-number {
+:deep(.el-input-number) {
   width: 100%;
   .el-input__inner {
     text-align: left;
@@ -535,7 +542,7 @@ export default {
   margin-bottom: 30px;
   margin-top: 10px;
 }
-/deep/ .el-date-editor {
+:deep(.el-date-editor) {
   width: 100%;
 }
 .invoice {
@@ -559,13 +566,13 @@ export default {
   justify-content: space-between;
   .form-item {
     width: 49%;
-    /deep/ .el-form-item__content {
+    :deep(.el-form-item__content) {
       width: calc(100% - 110px);
     }
-    /deep/ .el-select {
+    :deep(.el-select) {
       width: 100%;
     }
-    /deep/ .el-textarea__inner {
+    :deep(.el-textarea__inner) {
       resize: none;
     }
   }
@@ -575,7 +582,11 @@ export default {
   border-top: 1px solid #e6ebf5;
   text-align: right;
 }
-/deep/.el-drawer {
+</style>
+
+<style lang="scss">
+// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
+.el-drawer.invoice-apply-drawer {
   width: 50% !important;
 }
 </style>

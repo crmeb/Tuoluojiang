@@ -16,11 +16,11 @@ declare(strict_types=1);
 namespace App\Http\Controller\AdminApi\Open;
 
 use App\Constants\CustomEnum\CustomEnum;
-use App\Constants\CustomEnum\CustomerEnum;
+use App\Constants\System\ViewSearchEnum;
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Middleware\AuthOpenApi;
 use App\Http\Service\Admin\AdminService;
-use App\Http\Service\Client\CustomerService;
+use App\Http\Service\Customer\CustomerService;
 use App\Http\Service\Config\FormService;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\Container\ContainerExceptionInterface;
@@ -58,7 +58,7 @@ class OpenCustomerController extends AuthController
         if ($uid && ! $adminService->exists(['id' => $uid, 'status' => 1])) {
             return $this->fail('业务员不存在');
         }
-        $res = $this->service->saveCustomer($data, $uid, CustomerEnum::CUSTOMER_OPEN, 1);
+        $res = $this->service->saveCustomer($data, $uid, ViewSearchEnum::VIEW_CUSTOMER, 1);
         return $this->success('common.insert.succ', ['id' => $res->id]);
     }
 
@@ -93,8 +93,8 @@ class OpenCustomerController extends AuthController
         if (! $id) {
             return $this->fail(__('common.empty.attr', ['attr' => '客户ID']));
         }
-
-        $this->service->deleteCustomer((int) $id);
+        $uid = (int) $this->request->post('uid', 0);
+        $this->service->deleteCustomer((int) $id, $uid);
         return $this->success('common.delete.succ');
     }
 }

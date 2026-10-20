@@ -746,3 +746,27 @@ loading
 	text-align: center;
 }
 
+@media screen and (max-width: 840px), screen and (max-height: 700px) {
+	body{
+		min-height: 100vh;
+		height: auto;
+		padding: 24px 12px 56px;
+		box-sizing: border-box;
+	}
+	.wrap{
+		width: min(800px, 100%);
+		min-height: 640px;
+		height: auto;
+	}
+	.footer{
+		position: static;
+		margin-top: 16px;
+	}
+}
+
+.el-form-item__error{
+	max-width: 260px;
+	line-height: 16px;
+	white-space: normal;
+	word-break: break-word;
+}

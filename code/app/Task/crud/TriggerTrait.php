@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -34,7 +34,7 @@ trait TriggerTrait
      */
     public function handle()
     {
-        $eventLogService = app()->make(SystemCrudEventLogService::class);
+        $eventLogService = app()->get(SystemCrudEventLogService::class);
 
         try {
             if (in_array($this->action, $this->event['action'])) {
@@ -86,7 +86,7 @@ trait TriggerTrait
      */
     protected function nextTask()
     {
-        $eventService = app()->make(SystemCrudEventService::class);
+        $eventService = app()->get(SystemCrudEventService::class);
         // 执行下一个任务
         if ($this->eventIds) {
             $eventId = array_shift($this->eventIds);

@@ -3,10 +3,10 @@
   <div class="station">
     <el-drawer
       :title="formData.title"
-      :visible.sync="drawer"
+      v-model="drawer"
       :direction="direction"
       :modal="true"
-      :wrapper-closable="false"
+      :close-on-click-modal="false"
       :before-close="handleClose"
       :append-to-body="true"
       :size="formData.width"
@@ -14,9 +14,9 @@
       <div class="invoice">
         <el-form ref="form" label-width="80px">
           <el-form-item label="选择方式：">
-            <el-radio-group size="small" v-model="type">
-              <el-radio label="0">按人员</el-radio>
-              <el-radio label="1">按部门</el-radio>
+            <el-radio-group v-model="type">
+              <el-radio label="0" value="0">按人员</el-radio>
+              <el-radio label="1" value="1">按部门</el-radio>
             </el-radio-group>
           </el-form-item>
           <el-form-item label="领用对象：" class="el-input--small">
@@ -40,13 +40,12 @@
         <div class="table-box">
           <el-table :data="tableData" style="width: 100%" row-key="id" default-expand-all>
             <el-table-column prop="id" label="序号" min-width="45">
-              <template slot-scope="scope">{{ scope.$index + 1 }}</template>
+              <template #default="scope">{{ scope.$index + 1 }}</template>
             </el-table-column>
             <el-table-column prop="name" label="物资名称" min-width="150">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <el-select
                   v-model="scope.row.name"
-                  size="small"
                   filterable
                   placeholder="请选择物资"
                   @change="handleName($event, scope.$index)"
@@ -69,26 +68,25 @@
             <el-table-column prop="specs" label="计量单位" min-width="80" />
             <el-table-column prop="stock" v-if="formData.type === 0" label="库存数量" min-width="80" />
             <el-table-column prop="number" v-if="formData.type === 0" label="领用数量" min-width="150">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <el-input-number
                   v-model="scope.row.sNumber"
                   controls-position="right"
                   :precision="0"
-                  size="small"
                   :min="1"
                   :max="scope.row.stock"
                 ></el-input-number>
               </template>
             </el-table-column>
             <el-table-column label="" min-width="40">
-              <template slot-scope="scope">
+              <template #default="scope">
                 <i class="el-icon-remove color-tab pointer" @click="handleRemove(scope.$index)"></i>
               </template>
             </el-table-column>
           </el-table>
         </div>
         <div class="mt14">
-          <el-button type="text" icon="el-icon-plus" @click="addRow()">添加行</el-button>
+          <el-button type="primary" link icon="el-icon-plus" @click="addRow()">添加行</el-button>
         </div>
         <el-form ref="form" label-width="80px">
           <el-form-item label="备 注：" class="el-input--small">
@@ -99,14 +97,14 @@
               show-word-limit
               :rows="2"
               resize="none"
-              :placeholder="$t('customer.placeholder18')"
+              placeholder="请填写备注信息"
             />
           </el-form-item>
         </el-form>
         <div class="button from-foot-btn fix btn-shadow">
-          <el-button @click="handleClose" size="small">{{ $t('public.cancel') }}</el-button>
-          <el-button :loading="loading" size="small" type="primary" @click="handleConfirm()">
-            {{ $t('public.ok') }}
+          <el-button @click="handleClose">取消</el-button>
+          <el-button :loading="loading" type="primary" @click="handleConfirm()">
+            确定
           </el-button>
         </div>
       </div>
@@ -115,13 +113,15 @@
 </template>
 
 <script>
-import { storageRecordSaveApi } from '@/api/administration'
+import { defineAsyncComponent } from 'vue'
+import { storageRecordSaveApi } from '@/api/administration.ts'
 
 export default {
+  emits: ['isOk'],
   name: 'Receive',
   components: {
-    selectMember: () => import('@/components/form-common/select-member'),
-    selectDepartment: () => import('@/components/form-common/select-department')
+    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
+    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department'))
   },
   props: {
     formData: {
@@ -190,9 +190,9 @@ export default {
       } else if (this.type == 1 && this.frames.length <= 0) {
         return this.$message.error('请选择部门')
       } else {
-        var user_type = null
-        var user_id = null
-        var storage = []
+        let user_type = null
+        let user_id = null
+        const storage = []
         if (this.type == 0) {
           // 人员
           user_type = 0
@@ -226,7 +226,7 @@ export default {
       if (this.tableData.length <= 0) {
         return true
       } else {
-        var i = 0
+        let i = 0
         this.tableData.map((value) => {
           if (!value.sNumber) {
             i++
@@ -238,7 +238,7 @@ export default {
     handleName(e, index) {
       const data = JSON.parse(JSON.stringify(this.formData.selectData[e]))
       data.sNumber = 0
-      this.$set(this.tableData, [index], data)
+      this.tableData[[index]] = data
       this.getSelectChange()
     },
     getSelectChange() {
@@ -269,9 +269,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.station /deep/.el-drawer__body {
-  padding: 20px 20px 50px 20px;
-}
 
 .invoice {
   margin: 20px;
@@ -284,8 +281,8 @@ export default {
 .table-box {
   // height: calc(100% - 130px);
 }
-/deep/ .el-select,
-/deep/ .el-input-number {
+:deep(.el-select),
+:deep(.el-input-number) {
   width: 100%;
 }
 .flex-box {
@@ -301,7 +298,7 @@ export default {
   border-top: 1px solid #e6ebf5;
   text-align: right;
 }
-/deep/ .el-radio-group {
+:deep(.el-radio-group) {
   // margin-top: 10px;
 }
 </style>

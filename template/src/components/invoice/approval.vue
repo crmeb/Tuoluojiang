@@ -7,7 +7,7 @@
           <div class="shu mr10"></div>
           <div class="title">提交审批</div>
         </div>
-        <el-form label-width="130px" class="">
+        <el-form label-width="auto" >
           <el-form-item v-for="(item, index) in form.rule" :key="index">
             <div class="label">
               <span class="rule-label">{{ item.label || '--' }}：</span>
@@ -26,15 +26,15 @@
 </template>
 
 <script>
-import func from '@/utils/preload'
-import { approveApplyEditApi } from '@/api/business'
+import { defineAsyncComponent } from 'vue'
+import { approveApplyEditApi } from '@/api/business.ts'
 import uploadList from '@/components/form-common/oa-uploadList'
 export default {
   name: 'DetailExamine',
   components: {
-    detailProcecss: () => import('@/views/user/examine/components/detailProcecss'),
+    detailProcecss: defineAsyncComponent(() => import('@/views/user/examine/components/detailProcecss')),
     uploadList,
-    city: () => import('@/components/hr/city')
+    city: defineAsyncComponent(() => import('@/components/hr/city'))
   },
   props: {
     linkId: {
@@ -61,9 +61,6 @@ export default {
       isRequest: true,
       examineData: {}
     }
-  },
-  beforeCreate() {
-    this.$vue.prototype.$func = func
   },
   mounted() {
     const data = { types: 1 }
@@ -127,26 +124,26 @@ export default {
     padding-right: 30px;
     padding-bottom: 10px;
   }
-  /deep/.select-item {
+  :deep(.select-item) {
     margin-top: 0 !important;
   }
-  /deep/ .el-divider--horizontal {
+  :deep(.el-divider--horizontal) {
     margin-top: 0;
     margin-bottom: 30px;
   }
-  /deep/.el-form-item__label {
+  :deep(.el-form-item__label) {
     font-size: 13px;
     color: #999999;
     font-weight: normal;
   }
-  /deep/.el-form-item {
+  :deep(.el-form-item) {
     margin-bottom: 0;
   }
-  /deep/.el-form-item__content {
+  :deep(.el-form-item__content) {
     font-size: 13px;
     color: #000000;
   }
-  /deep/ .el-scrollbar__wrap {
+  :deep(.el-scrollbar__wrap) {
     overflow-x: hidden;
   }
   .shu {
@@ -173,7 +170,7 @@ export default {
     padding: 0 12px 0 0;
   }
 }
-/deep/.el-form-item__content {
+:deep(.el-form-item__content) {
   margin-left: 0 !important;
 }
 </style>

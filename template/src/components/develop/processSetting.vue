@@ -14,9 +14,9 @@
           :style="'transform: scale(' + nowVal / 100 + '); transform-origin: 50% 0px 0px;'"
         >
           <nodeWrap
-            :node-config.sync="nodeConfig"
-            :flow-permission.sync="flowPermission"
-            :is-tried.sync="isTried"
+            v-model:node-config="nodeConfig"
+            v-model:flow-permission="flowPermission"
+            v-model:is-tried="isTried"
             :table-id="tableId"
             :type-str="lowCode"
           ></nodeWrap>
@@ -27,7 +27,7 @@
         </div>
       </section>
     </div>
-    <errorDialog :visible.sync="tipVisible" :list="tipList" />
+    <errorDialog v-model:visible="tipVisible" :list="tipList" />
     <promoter-drawer />
     <approver-drawer :type-str="lowCode" :director-max-level="directorMaxLevel" />
     <copyer-drawer :type-str="lowCode" :director-max-level="directorMaxLevel" />
@@ -35,27 +35,30 @@
     <el-drawer
       :append-to-body="true"
       title="条件设置"
-      :visible.sync="$store.state.business.conditionDialog"
-      :wrapperClosable="false"
+      v-model="conditionDialogStore.visible"
+      :close-on-click-modal="false"
       direction="rtl"
       class="condition_copyer"
       size="650px"
     >
-      <condition-dialog :id="curd_id" v-if="$store.state.business.conditionDialog" />
+      <condition-dialog :id="curd_id" v-if="conditionDialogStore.visible" />
     </el-drawer>
   </div>
 </template>
 
 <script>
-import func from '@/utils/preload'
+import { mapStores } from 'pinia'
+import { useConditionDialogStore } from '@/stores/conditionDialog.ts'
+import { defineAsyncComponent } from 'vue'
+import func from '@/utils/preload.ts'
 export default {
   name: 'ProcessData',
   components: {
-    promoterDrawer: () => import('@/components/workFlow/drawer/promoterDrawer'),
-    approverDrawer: () => import('@/components/workFlow/drawer/approverDrawer'),
-    copyerDrawer: () => import('@/components/workFlow/drawer/copyerDrawer'),
-    conditionDialog: () => import('@/components/develop/conditionDialog'),
-    errorDialog: () => import('@/components/workFlow/dialog/errorDialog')
+    promoterDrawer: defineAsyncComponent(() => import('@/components/workFlow/drawer/promoterDrawer')),
+    approverDrawer: defineAsyncComponent(() => import('@/components/workFlow/drawer/approverDrawer')),
+    copyerDrawer: defineAsyncComponent(() => import('@/components/workFlow/drawer/copyerDrawer')),
+    conditionDialog: defineAsyncComponent(() => import('@/components/develop/conditionDialog')),
+    errorDialog: defineAsyncComponent(() => import('@/components/workFlow/dialog/errorDialog'))
   },
   props: {
     tabName: {
@@ -73,6 +76,9 @@ export default {
       }
     }
   },
+  computed: {
+    ...mapStores(useConditionDialogStore)
+  },
   data() {
     return {
       tipList: [],
@@ -84,7 +90,7 @@ export default {
       nodeConfig: {
         nodeName: '申请人',
         type: 0,
-        onlyValue: this.$func.onlyValue(),
+        onlyValue: func.onlyValue(),
         priorityLevel: '',
         settype: '',
         selectMode: '',
@@ -103,7 +109,7 @@ export default {
           nodeName: '审核人',
           error: false,
           type: '1',
-          onlyValue: this.$func.onlyValue(),
+          onlyValue: func.onlyValue(),
           settype: '2',
           selectMode: '0',
           selectRange: '0',
@@ -115,7 +121,7 @@ export default {
           childNode: {
             nodeName: '抄送人',
             type: 2,
-            onlyValue: this.$func.onlyValue(),
+            onlyValue: func.onlyValue(),
             ccSelfSelectFlag: '1',
             childNode: null,
             departmentHead: [],
@@ -134,9 +140,6 @@ export default {
       isTried: false,
       tableId: '999'
     }
-  },
-  beforeCreate() {
-    this.$vue.prototype.$func = func
   },
 
   watch: {
@@ -212,9 +215,8 @@ export default {
   }
 }
 </script>
-
+<style src="@/styles/workflow.css"></style>
 <style lang="scss" scoped>
-@import '../../styles/workflow.css';
 .processData {
   height: 100%;
   .fd-nav-content {
@@ -239,11 +241,11 @@ export default {
   }
   .condition_content {
     padding: 20px 20px 0;
-    /deep/ .el-input-number--medium,
-    /deep/ .el-select--medium {
+    :deep(.el-input-number),
+    :deep(.el-select) {
       width: 100%;
     }
-    /deep/ .el-input__inner {
+    :deep(.el-input__inner) {
       text-align: left;
     }
   }

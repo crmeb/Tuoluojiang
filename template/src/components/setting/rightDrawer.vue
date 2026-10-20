@@ -3,7 +3,7 @@
   <div>
     <el-drawer
       :title="config.title"
-      :visible.sync="drawer"
+      v-model="drawer"
       :direction="direction"
       size="700px"
       :destroy-on-close="true"
@@ -14,8 +14,8 @@
       </div>
 
       <div class="from-foot-btn fix btn-shadow">
-        <el-button size="small" @click="drawer = false">取消</el-button>
-        <el-button size="small" type="primary" @click="onSubmit">保存</el-button>
+        <el-button @click="drawer = false">取消</el-button>
+        <el-button type="primary" @click="onSubmit">保存</el-button>
       </div>
     </el-drawer>
   </div>
@@ -23,8 +23,9 @@
 
 <script>
 import formCreate from '@form-create/element-ui'
-import request from '@/api/request'
+import request from '@/api/request.ts'
 export default {
+  emits: ['changge'],
   name: 'RightDrawer',
   components: { formCreate: formCreate.$form() },
   props: {
@@ -57,7 +58,7 @@ export default {
                 if (res.status === 200) {
                   file.url = res.data.src
                 } else {
-                  this.$Message.error(res.msg)
+                  this.$message.error(res.msg)
                 }
               }
             }
@@ -67,7 +68,7 @@ export default {
               closeBtn: false,
               okBtn: false,
               onLoad: (e) => {
-                e.fApi = this.$refs.fc.$f
+                e.fApi = this.$refs.fc.fapi
               }
             }
           }
@@ -100,13 +101,12 @@ export default {
         })
     },
     onSubmit() {
-      this.$refs.fc.$f.submit((formData) => {
+      this.$refs.fc.fapi.submit((formData) => {
         request[this.FromData.method.toLowerCase()](this.FromData.action.slice(7), formData).then(() => {
-          this.$store.dispatch('user/getMenus')
           this.$emit('changge')
           this.drawer = false
         })
-      })
+      }).catch(() => {}) // 校验不通过时 reject，错误已显示在表单上
     }
   }
 }
@@ -115,5 +115,15 @@ export default {
 <style scoped lang="scss">
 .p14 {
   padding-right: 14px;
+}
+
+:deep(._fc-frame ._fc-upload-btn svg) {
+  display: none;
+}
+
+:deep(._fc-frame ._fc-upload-btn .el-icon::before) {
+  content: '\e77b';
+  font-family: element-icons;
+  font-size: 13px;
 }
 </style>

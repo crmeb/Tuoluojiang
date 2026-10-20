@@ -52,14 +52,15 @@ class AdminInfoService extends BaseService
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function getEntUserIdsCache(int $entid, int $page, int $limit): array
+    public function getEntUserIdsCache(int $entId, int $page, int $limit): array
     {
-        return Cache::tags([CacheEnum::TAG_FRAME])->remember(
-            md5('enterprise_user_list_' . $entid . '_' . $page . '_' . $limit),
+        $res = Cache::tags([CacheEnum::TAG_FRAME])->remember(
+            md5('enterprise_user_list_' . $entId . '_' . $page . '_' . $limit),
             (int) sys_config('system_cache_ttl', 3600),
-            fn () => $this->dao->selectModel([
+            fn () => json_encode($this->dao->selectModel([
                 'type' => [1, 2, 3],
-            ], ['id', 'uid'])->forPage($page, $limit)->get()->toArray()
+            ], ['id', 'uid'])->forPage($page, $limit)->get()->toArray(), JSON_UNESCAPED_UNICODE)
         );
+        return $res ? json_decode($res, true) : [];
     }
 }

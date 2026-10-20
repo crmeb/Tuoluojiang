@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,12 +17,12 @@ namespace App\Http\Model\User;
 
 use App\Http\Model\Admin\Admin;
 use App\Http\Model\Attach\SystemAttach;
-use App\Http\Model\BaseModel;
 use App\Http\Model\Company\DailyReportMember;
 use App\Http\Model\Company\UserDailyReply;
 use App\Http\Model\Frame\Frame;
 use App\Http\Model\Frame\FrameAssist;
-use crmeb\traits\model\TimeDataTrait;
+use App\Http\Model\BaseModel;
+use Tuoluojiang\Open\traits\model\TimeDataTrait;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -49,6 +49,16 @@ class UserDaily extends BaseModel
      * @var string
      */
     protected $primaryKey = 'daily_id';
+
+    protected $casts = [
+        'daily_id'   => 'integer',
+        'entid'      => 'integer',
+        'user_id'    => 'integer',
+        'status'     => 'integer',
+        'types'      => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
 
     /**
      * 评论回复一对多关联.
@@ -119,8 +129,6 @@ class UserDaily extends BaseModel
     /**
      * uid作用域
      *
-     * @param mixed $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeUid($query, $value)
@@ -134,8 +142,6 @@ class UserDaily extends BaseModel
     /**
      * types作用域
      *
-     * @param mixed $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeTypes($query, $value)
@@ -146,8 +152,6 @@ class UserDaily extends BaseModel
     /**
      * entid作用域
      *
-     * @param mixed $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeEntid($query, $value)
@@ -160,8 +164,6 @@ class UserDaily extends BaseModel
     /**
      * status作用域
      *
-     * @param mixed $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeStatus($query, $value)
@@ -174,8 +176,6 @@ class UserDaily extends BaseModel
     /**
      * user_id作用域
      *
-     * @param mixed $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeUserIds($query, $value)
@@ -197,8 +197,6 @@ class UserDaily extends BaseModel
     /**
      * user_id作用域
      *
-     * @param mixed $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeDay($query, $value)
@@ -210,8 +208,6 @@ class UserDaily extends BaseModel
 
     /**
      * finish|plan 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeFinishLike($query, $value)
     {
@@ -237,8 +233,6 @@ class UserDaily extends BaseModel
 
     /**
      * daily_id作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeDailyId($query, $value): void
     {
@@ -251,16 +245,14 @@ class UserDaily extends BaseModel
 
     /**
      * plan修改器.
-     * @param mixed $value
      */
     public function setPlanAttribute($value): void
     {
-        $this->attributes['plan'] = json_encode($value, JSON_UNESCAPED_UNICODE);
+        $this->attributes['plan'] = json_encode($value,JSON_UNESCAPED_UNICODE);
     }
 
     /**
      * plan提取.
-     * @param mixed $value
      */
     public function getPlanAttribute($value): mixed
     {
@@ -269,16 +261,14 @@ class UserDaily extends BaseModel
 
     /**
      * finish修改器.
-     * @param mixed $value
      */
     public function setFinishAttribute($value): void
     {
-        $this->attributes['finish'] = json_encode($value, JSON_UNESCAPED_UNICODE);
+        $this->attributes['finish'] = json_encode($value,JSON_UNESCAPED_UNICODE);
     }
 
     /**
      * finish提取.
-     * @param mixed $value
      */
     public function getFinishAttribute($value): mixed
     {

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,11 +16,11 @@ declare(strict_types=1);
 namespace App\Http\Service\User;
 
 use App\Http\Dao\User\UserWorkHistoryDao;
-use App\Http\Service\BaseService;
 use Carbon\Carbon;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\services\FormService;
-use crmeb\traits\service\ResourceServiceTrait;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\services\FormService;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -75,7 +75,7 @@ class UserWorkHistoryService extends BaseService implements ResourceServicesInte
      */
     public function resourceCreate(array $other = []): array
     {
-        return $this->elForm('添加工作经历', $this->createWorkRule(collect()), '/ent/user/work');
+        return $this->createElementForm('添加工作经历', $this->createWorkRule(collect()), '/ent/user/work');
     }
 
     /**
@@ -105,7 +105,7 @@ class UserWorkHistoryService extends BaseService implements ResourceServicesInte
             throw $this->exception('修改的工作经历不存在');
         }
 
-        return $this->elForm('修改工作经历', $this->createWorkRule(collect($info->toArray())), '/ent/user/work/' . $id, 'put');
+        return $this->createElementForm('修改工作经历', $this->createWorkRule(collect($info->toArray())), '/ent/user/work/' . $id, 'put');
     }
 
     public function resourceUpdate($id, array $data)

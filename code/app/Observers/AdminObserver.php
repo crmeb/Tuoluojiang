@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -45,6 +45,9 @@ class AdminObserver
         if (! $model->uid) {
             $model->uid = str_replace('-', '', (string) Uuid::generate(4));
         }
+        if (! $model->mcp_key) {
+            $model->mcp_key = Admin::generateMcpKey();
+        }
         if ($model->id) {
             $create['id'] = $model->id;
         }
@@ -65,6 +68,7 @@ class AdminObserver
         if (! Company::exists()) {
             $admin                   = Admin::where('is_admin', 1)->first();
             $data['uid']             = $admin->uid;
+            $data['logo']            = 'https://crmebent.oss-cn-hangzhou.aliyuncs.com/attach/3/2022/10/4404a202210311831017540.png';
             $data['enterprise_name'] = '陀螺匠';
             $data['verify']          = 1;
             $data['status']          = 1;

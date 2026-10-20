@@ -4,7 +4,7 @@
 
 <script>
 import myEcharts from '@/components/scEcharts/chart-widget.vue'
-import { queryChartData } from '@/api/chart'
+import { queryChartData } from '../chartQuery.ts'
 
 export default {
   name: 'lineChart-widget',
@@ -52,6 +52,7 @@ export default {
       deep: true,
       handler(newVal) {
         this.cutField = newVal
+      
         this.initOption()
       }
     }
@@ -77,7 +78,11 @@ export default {
     },
     async getChartData(options, type) {
       this.loading = true
-      await queryChartData(options, type)
+          let chartData = JSON.stringify({
+    widgetList: this.designer.widgetList,
+    formConfig: this.designer.formConfig
+  })
+      await queryChartData(options, type,chartData)
         .then((res) => {
           if (!res) {
             // 返回false 无数据
@@ -124,9 +129,7 @@ export default {
           }
           this.loading = false
         })
-        .catch((err) => {
-          console.log(err, 'err')
-        })
+        .catch(() => undefined)
     }
   }
 }

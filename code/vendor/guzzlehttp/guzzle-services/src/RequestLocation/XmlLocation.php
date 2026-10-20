@@ -3,6 +3,7 @@
 namespace GuzzleHttp\Command\Guzzle\RequestLocation;
 
 use GuzzleHttp\Command\CommandInterface;
+use GuzzleHttp\Command\Guzzle\NonFiniteFloats;
 use GuzzleHttp\Command\Guzzle\Operation;
 use GuzzleHttp\Command\Guzzle\Parameter;
 use GuzzleHttp\Psr7;
@@ -152,7 +153,7 @@ class XmlLocation extends AbstractLocation
         $name = $param->getWireName();
         $prefix = null;
         $namespace = $param->getData('xmlNamespace');
-        if (false !== strpos($name, ':')) {
+        if ($name !== null && false !== strpos($name, ':')) {
             list($prefix, $name) = explode(':', $name, 2);
         }
 
@@ -175,6 +176,7 @@ class XmlLocation extends AbstractLocation
 
             return;
         }
+        $value = NonFiniteFloats::normalize($value, 'an xml location value');
         if ($param->getData('xmlAttribute')) {
             $this->writeAttribute($writer, $prefix, $name, $namespace, $value);
         } else {
@@ -203,11 +205,11 @@ class XmlLocation extends AbstractLocation
     /**
      * Write an element with namespace if used
      *
-     * @param \XMLWriter $writer    XML writer resource
-     * @param string     $prefix    Namespace prefix if any
-     * @param string     $name      Element name
-     * @param string     $namespace The uri of the namespace
-     * @param string     $value     The element content
+     * @param \XMLWriter  $writer    XML writer resource
+     * @param string      $prefix    Namespace prefix if any
+     * @param string      $name      Element name
+     * @param string      $namespace The uri of the namespace
+     * @param string|null $value     The element content
      */
     protected function writeElement(\XMLWriter $writer, $prefix, $name, $namespace, $value)
     {
@@ -216,12 +218,27 @@ class XmlLocation extends AbstractLocation
         } else {
             $writer->startElement($name);
         }
-        if (strpbrk($value, '<>&')) {
-            $writer->writeCData($value);
+        if ($value !== null && strpbrk($value, '<>&')) {
+            $this->writeSafeCData($writer, $value);
         } else {
             $writer->writeRaw($value);
         }
         $writer->endElement();
+    }
+
+    protected function writeSafeCData(\XMLWriter $writer, $value)
+    {
+        $parts = explode(']]>', $value);
+        $last = array_pop($parts);
+
+        foreach ($parts as $part) {
+            $writer->writeCData($part.']]');
+            $writer->writeCData('>');
+        }
+
+        if ($last !== '') {
+            $writer->writeCData($last);
+        }
     }
 
     /**

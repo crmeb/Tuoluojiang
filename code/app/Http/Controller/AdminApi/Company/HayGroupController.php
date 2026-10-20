@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -54,7 +54,7 @@ class HayGroupController extends AuthController
     {
         $where = $this->request->getMore([
             ['name', ''],
-            ['uid', uuid_to_uid($this->uuid)],
+            ['uid', auth('admin')->id()],
         ]);
         return $this->success($this->service->getList($where));
     }
@@ -71,6 +71,7 @@ class HayGroupController extends AuthController
 
     /**
      * 修改.
+     * @param mixed $id
      * @throws BindingResolutionException
      */
     public function update($id, HayGroupRequest $request): mixed
@@ -81,6 +82,7 @@ class HayGroupController extends AuthController
 
     /**
      * 删除.
+     * @param mixed $id
      */
     public function destroy($id): mixed
     {

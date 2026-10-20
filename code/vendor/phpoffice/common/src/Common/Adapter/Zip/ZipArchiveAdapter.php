@@ -2,12 +2,10 @@
 
 namespace PhpOffice\Common\Adapter\Zip;
 
-use ZipArchive;
-
 class ZipArchiveAdapter implements ZipInterface
 {
     /**
-     * @var ZipArchive
+     * @var \ZipArchive
      */
     protected $oZipArchive;
 
@@ -19,12 +17,12 @@ class ZipArchiveAdapter implements ZipInterface
     public function open($filename)
     {
         $this->filename = $filename;
-        $this->oZipArchive = new ZipArchive();
+        $this->oZipArchive = new \ZipArchive();
 
-        if ($this->oZipArchive->open($this->filename, ZipArchive::OVERWRITE) === true) {
+        if ($this->oZipArchive->open($this->filename, \ZipArchive::OVERWRITE) === true) {
             return $this;
         }
-        if ($this->oZipArchive->open($this->filename, ZipArchive::CREATE) === true) {
+        if ($this->oZipArchive->open($this->filename, \ZipArchive::CREATE) === true) {
             return $this;
         }
         throw new \Exception("Could not open $this->filename for writing.");
@@ -35,13 +33,17 @@ class ZipArchiveAdapter implements ZipInterface
         if ($this->oZipArchive->close() === false) {
             throw new \Exception("Could not close zip file $this->filename.");
         }
+
         return $this;
     }
 
-    public function addFromString($localname, $contents)
+    public function addFromString(string $localname, string $contents, bool $withCompression = true)
     {
         if ($this->oZipArchive->addFromString($localname, $contents) === false) {
-            throw new \Exception("Error zipping files : " . $localname);
+            throw new \Exception('Error zipping files : ' . $localname);
+        }
+        if (!$withCompression) {
+            $this->oZipArchive->setCompressionName($localname, \ZipArchive::CM_STORE);
         }
 
         return $this;

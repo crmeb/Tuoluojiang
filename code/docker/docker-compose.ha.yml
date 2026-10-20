@@ -1,0 +1,158 @@
+# HA 模板：默认实例名带 _ha 后缀，宿主机端口可与单机栈错开（见 .docker.env）
+name: ${INSTANCE_NAME:-tuoluojiang}_ha
+
+services:
+  nginx:
+    image: m.daocloud.io/docker.io/library/nginx:1.25-alpine
+    container_name: ${INSTANCE_NAME:-tuoluojiang}_nginx_ha
+    restart: unless-stopped
+    ports:
+      - "${HOST_APP_PORT:-20300}:80"
+    volumes:
+      - ./nginx/ha.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      php-1:
+        condition: service_healthy
+      php-2:
+        condition: service_healthy
+    networks:
+      - app_network
+
+  php-1:
+    image: ${PHP_IMAGE_NAME:-tuoluojiang-php}:${PHP_IMAGE_TARGET:-ocr}
+    platform: ${PHP_PLATFORM:-linux/amd64}
+    build:
+      context: ..
+      dockerfile: docker/php/Dockerfile
+      target: ${PHP_IMAGE_TARGET:-ocr}
+    container_name: ${INSTANCE_NAME:-tuoluojiang}_php_ha_1
+    restart: unless-stopped
+    environment: &php_env
+      - TZ=Asia/Shanghai
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=tuoluojiang
+      - DB_USERNAME=root
+      - DB_PASSWORD=123456
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+      - REDIS_DB=0
+      - REDIS_CACHE_DB=1
+      - REDIS_KNOWLEDGE_DB=0
+      - KNOWLEDGE_VECTOR_DRIVER=auto
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - CACHE_DRIVER=redis
+      - QUEUE_CONNECTION=redis
+      - LARAVELS_LISTEN_PORT=20200
+      - LARAVELS_WEBSOCKET_ENABLE=1
+    volumes: &php_volumes
+      - ..:/var/www:delegated
+      - ./php/config/php.ini:/usr/local/etc/php/conf.d/custom.ini:ro
+      - ./php/entrypoint.sh:/usr/local/bin/entrypoint.sh
+    working_dir: /var/www
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "php -r 'exit(@fsockopen(\"127.0.0.1\",20200) ? 0 : 1);'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    networks:
+      - app_network
+
+  php-2:
+    image: ${PHP_IMAGE_NAME:-tuoluojiang-php}:${PHP_IMAGE_TARGET:-ocr}
+    platform: ${PHP_PLATFORM:-linux/amd64}
+    build:
+      context: ..
+      dockerfile: docker/php/Dockerfile
+      target: ${PHP_IMAGE_TARGET:-ocr}
+    container_name: ${INSTANCE_NAME:-tuoluojiang}_php_ha_2
+    restart: unless-stopped
+    environment: *php_env
+    volumes: *php_volumes
+    working_dir: /var/www
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "php -r 'exit(@fsockopen(\"127.0.0.1\",20200) ? 0 : 1);'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    networks:
+      - app_network
+
+  # MySQL（默认仅绑 127.0.0.1，避免公网直连；远程用 SSH 隧道）
+  mysql:
+    image: m.daocloud.io/docker.io/library/mysql:8.0
+    container_name: ${INSTANCE_NAME:-tuoluojiang}_mysql_ha
+    restart: unless-stopped
+    ports:
+      - "${HOST_PUBLISH_BIND:-127.0.0.1}:${HOST_MYSQL_PORT:-3376}:3306"
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-123456}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-tuoluojiang}
+      - MYSQL_ROOT_HOST=${MYSQL_ROOT_HOST:-%}
+    volumes:
+      - ./mysql/config/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+      - mysql_data:/var/lib/mysql
+      - ${MYSQL_LOG_PATH:-./mysql/logs}:/var/log/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --explicit_defaults_for_timestamp=true
+      - --lower_case_table_names=1
+      - --max_allowed_packet=128M
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    networks:
+      - app_network
+
+  # Redis（默认仅绑 127.0.0.1；远程用 SSH 隧道）
+  redis:
+    image: m.daocloud.io/docker.io/redis/redis-stack-server:7.4.0-v3
+    container_name: ${INSTANCE_NAME:-tuoluojiang}_redis_ha
+    restart: unless-stopped
+    ports:
+      - "${HOST_PUBLISH_BIND:-127.0.0.1}:${HOST_REDIS_PORT:-6389}:6379"
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - REDIS_ARGS=--dir /data --appendonly yes --appendfsync everysec --bind 0.0.0.0 --port 6379 --databases 16
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    name: ${INSTANCE_NAME:-tuoluojiang}_ha_mysql_data
+    driver: local
+  redis_data:
+    name: ${INSTANCE_NAME:-tuoluojiang}_ha_redis_data
+    driver: local

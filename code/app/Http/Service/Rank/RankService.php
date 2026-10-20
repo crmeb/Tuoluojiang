@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -18,9 +18,9 @@ namespace App\Http\Service\Rank;
 use App\Http\Dao\Position\PositionDao;
 use App\Http\Model\BaseModel;
 use App\Http\Service\BaseService;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\services\FormService as Form;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\services\FormService as Form;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -78,7 +78,7 @@ class RankService extends BaseService implements ResourceServicesInterface
      */
     public function resourceCreate(array $other = []): array
     {
-        return $this->elForm('添加职级', $this->getRankRuleForm(collect($other)), '/ent/enterprise/rank');
+        return $this->createElementForm('添加职级', $this->getRankRuleForm(collect($other)), '/ent/enterprise/rank');
     }
 
     /**
@@ -92,7 +92,7 @@ class RankService extends BaseService implements ResourceServicesInterface
         if (! $rankInfo) {
             throw $this->exception('修改的职级不存在');
         }
-        return $this->elForm('编辑职级', $this->getRankRuleForm(collect($rankInfo->toArray())), '/ent/enterprise/rank/' . $id, 'put');
+        return $this->createElementForm('编辑职级', $this->getRankRuleForm(collect($rankInfo->toArray())), '/ent/enterprise/rank/' . $id, 'put');
     }
 
     /**
@@ -142,7 +142,6 @@ class RankService extends BaseService implements ResourceServicesInterface
 
     /**
      * 删除.
-     * @param mixed $id
      * @return int|mixed
      * @throws BindingResolutionException
      * @throws \ReflectionException

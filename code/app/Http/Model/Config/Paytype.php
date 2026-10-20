@@ -34,6 +34,13 @@ class Paytype extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'status'     => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     public function scopeNameLike($query, $value)
     {
         return $value !== '' ? $query->where('name', 'LIKE', "%{$value}%") : null;

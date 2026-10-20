@@ -1,0 +1,21 @@
+// 供 JS 侧读取 SCSS 变量的入口。
+//
+// `:export` 是 css-loader 的 ICSS 语法，只有在 CSS Modules 模式下才会被编译成 JS 导出。
+// webpack 时代 vue-cli 对所有 scss 都开了这层处理，Vite 则只对 `*.module.scss` 启用，
+// 因此这里单独建一个 module 文件转发 variables.scss，样式变量本身仍只维护一份。
+//
+// `:export` 必须写在本文件（而不是 variables.scss）里：variables.scss 还被 btn.scss /
+// index.scss / layout/index.vue 当普通样式 @import，写在那边会让这段 ICSS 被复制进
+// 三份普通 CSS 产物，既不生效又是死字节。
+@import './variables.scss';
+
+:export {
+  menuText: $menuText;
+  menuActiveText: $menuActiveText;
+  subMenuActiveText: $subMenuActiveText;
+  menuBg: $menuBg;
+  menuHover: $menuHover;
+  subMenuBg: $subMenuBg;
+  subMenuHover: $subMenuHover;
+  sideBarWidth: $sideBarWidth;
+}

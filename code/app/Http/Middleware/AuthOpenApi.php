@@ -16,9 +16,9 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Http\Service\Open\OpenApiKeyService;
-use crmeb\exceptions\AdminException;
-use crmeb\interfaces\ApiMiddlewareInterface;
-use crmeb\traits\MiddlewareTrait;
+use Tuoluojiang\Open\exceptions\AdminException;
+use Tuoluojiang\Open\interfaces\ApiMiddlewareInterface;
+use Tuoluojiang\Open\traits\MiddlewareTrait;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Exceptions\TokenExpiredException;
 

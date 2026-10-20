@@ -23,7 +23,7 @@
           <el-table
             class="mt10"
             :data="tableData"
-            :height="tableHeight"
+            :height="TABLE_HEIGHT"
             style="width: 100%"
             row-key="id"
             default-expand-all
@@ -36,24 +36,26 @@
             <el-table-column prop="specs" label="计量单位" min-width="80" />
             <el-table-column prop="stock" label="库存数量" min-width="80" />
             <el-table-column prop="used" label="领用数量" min-width="80" />
-            <el-table-column prop="describe" :label="$t('public.operation')" fixed="right" width="200">
-              <template slot-scope="scope">
-                <el-button type="text" @click="handleRecord(scope.row)">记录</el-button>
+            <el-table-column prop="describe" label="操作" fixed="right" width="200">
+              <template #default="scope">
+                <el-button type="primary" link @click="handleRecord(scope.row)">记录</el-button>
 
-                <el-button type="text" @click="handleStock(scope.row)">补货</el-button>
+                <el-button type="primary" link @click="handleStock(scope.row)">补货</el-button>
 
                 <el-dropdown class="ml10">
-                  <span class="el-dropdown-link el-button--text el-button">
-                    {{ $t('hr.more') }}
+                  <el-button type="primary" link class="el-dropdown-link">
+                    更多
                     <i class="el-icon-arrow-down el-icon--right" />
-                  </span>
-                  <el-dropdown-menu style="text-align: center">
-                    <el-dropdown-item @click.native="handleCollection(scope.row)"> 领用 </el-dropdown-item>
-                    <el-dropdown-item @click.native="handleEdit(scope.row)">
-                      {{ $t('public.edit') }}
-                    </el-dropdown-item>
-                    <el-dropdown-item @click.native="handleDelete(scope.row.id)">删除</el-dropdown-item>
-                  </el-dropdown-menu>
+                  </el-button>
+                  <template #dropdown>
+                    <el-dropdown-menu style="text-align: center">
+                      <el-dropdown-item @click="handleCollection(scope.row)"> 领用 </el-dropdown-item>
+                      <el-dropdown-item @click="handleEdit(scope.row)">
+                        编辑
+                      </el-dropdown-item>
+                      <el-dropdown-item @click="handleDelete(scope.row.id)">删除</el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
                 </el-dropdown>
               </template>
             </el-table-column>
@@ -90,13 +92,17 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
 import tree from './tree'
 import addMaterial from './addMaterial'
 import receive from './receive'
 import record from './record'
 import materialDialog from './materialDialog'
 import oaFromBox from '@/components/common/oaFromBox'
-import { storageCateApi, storageDeleteApi, storageListApi, storageListCateApi } from '@/api/administration'
+import { storageCateApi, storageDeleteApi, storageListApi, storageListCateApi } from '@/api/administration.ts'
+import { DIALOG_SIZE } from '@/constants/popupSize.ts'
 export default {
   name: 'Consume',
   components: {
@@ -106,10 +112,11 @@ export default {
     record,
     materialDialog,
     oaFromBox,
-    oaDialog: () => import('@/components/form-common/dialog-form')
+    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form'))
   },
   data() {
     return {
+      TABLE_HEIGHT,
       gridl: {
         xl: 3,
         lg: 4,
@@ -231,7 +238,7 @@ export default {
     handleCollection(item) {
       this.stockData = {
         title: '物资领用（消耗物资）',
-        width: '620px',
+        width: DIALOG_SIZE.LG,
         label: '备 注',
         placeholder: '请输入备注',
         data: item,
@@ -295,7 +302,7 @@ export default {
     },
 
     async handleDelete(id) {
-      await this.$modalSure('你确定要删除这条内容吗')
+      await modalSure('你确定要删除这条内容吗')
       await storageDeleteApi(id)
       this.getTableData()
     },
@@ -370,7 +377,7 @@ export default {
 
 <style lang="scss" scoped>
 .table-box {
-  /deep/ .el-table th {
+  :deep(.el-table th) {
     background-color: rgba(247, 251, 255, 1);
   }
 }

@@ -1,57 +1,70 @@
 <template>
-  <el-scrollbar class="side-scroll-bar" :style="{ height: scrollerHeight }">
+  <el-scrollbar :style="{ height: scrollerHeight }" class="side-scroll-bar">
     <div class="panel-container">
       <el-tabs v-model="firstTab" class="no-bottom-margin indent-left-margin">
         <el-tab-pane name="componentLib">
-          <span slot="label">{{ i18nt('designer.componentLib') }}</span>
+          <template #label>
+            <span>{{ i18nt('designer.componentLib') }}</span>
+          </template>
 
           <el-collapse v-model="activeNames" class="widget-collapse">
-            <el-collapse-item name="1" :title="i18nt('designer.containerTitle')">
+            <el-collapse-item :title="i18nt('designer.containerTitle')" name="1">
               <draggable
-                tag="ul"
-                :list="containers"
-                chosenClass="chosen"
-                :group="{ name: 'dragGroup', pull: 'clone', put: false }"
                 :clone="handleContainerWidgetClone"
-                ghost-class="ghost"
-                :sort="false"
+                :group="{ name: 'dragGroup', pull: 'clone', put: false }"
+                :list="containers"
                 :move="checkContainerMove"
-                @end="onContainerDragEnd"
+                :sort="false"
                 animation="100"
+                chosenClass="chosen"
+                ghost-class="ghost"
+                tag="ul"
+                @end="onContainerDragEnd"
+                :item-key="$draggableKey"
               >
-                <li
-                  v-for="(ctn, index) in containers"
-                  :key="index"
-                  class="container-widget-item"
-                  :title="ctn.name"
-                  @dblclick="addContainerByDbClick(ctn)"
-                >
-                  <span class="line1">{{ ctn.name }}</span>
-                  <!-- <span>T</span> -->
-                </li>
+                <template #item="{ element: ctn, index }">
+                  <li
+                    v-if="!isShowContainerList.includes(ctn.type)"
+                    :key="index"
+                    :title="ctn.name"
+                    class="container-widget-item"
+                    @dblclick="addContainerByDbClick(ctn)"
+                  >
+                    <span class="line1">{{ ctn.name }} </span>
+                    <!-- <span>T</span> -->
+                  </li>
+                </template>
               </draggable>
             </el-collapse-item>
-            <el-collapse-item v-for="(item, index) in crudList" :name="(index + 2).toString()" :title="item.table_name">
+            <el-collapse-item
+              v-for="(item, index) in crudList"
+              :key="index"
+              :name="(index + 2).toString()"
+              :title="item.table_name"
+            >
               <draggable
-                tag="ul"
-                :list="item.field"
-                :group="{ name: 'dragGroup', pull: 'clone', put: false }"
-                :move="checkFieldMove"
                 :clone="handleFieldWidgetClone"
-                ghost-class="ghost"
+                :group="{ name: 'dragGroup', pull: 'clone', put: false }"
+                :list="item.field"
+                :move="checkFieldMove"
                 :sort="false"
                 animation="100"
+                ghost-class="ghost"
+                tag="ul"
+                :item-key="$draggableKey"
               >
-                <li
-                  v-for="(fld, index) in item.field"
-                  :key="index"
-                  class="field-widget-item line1"
-                  :title="fld.name"
-                  @dblclick="addFieldByDbClick(fld)"
-                  v-show="!designer.selectNames.includes(fld.options.name)"
-                >
-                  <span class="line1">{{ fld.name }}</span>
-                </li>
+                <!-- !designer.selectNames.includes(fld.options.name) -->
+
+                <template #item="{ element: fld, index }">
+                  <li
+                    v-show="!designer.selectNames.includes(fld.options.name)"
+                    :title="fld.name"
+                    class="field-widget-item line1"
+                    @dblclick="addFieldByDbClick(fld)"
+                  >
+                    <span class="line1">{{ fld.name }} </span>
+                  </li>
+                </template>
               </draggable>
             </el-collapse-item>
           </el-collapse>
@@ -64,16 +77,10 @@
 <script>
 import Draggable from 'vuedraggable'
 import { containers, basicFields, advancedFields, customFields } from './widgetsConfig'
-import { addWindowResizeHandler } from '@/utils/util'
-import i18n from '@/utils/i18n'
+import { addWindowResizeHandler } from '@/utils/formDesignerUtils'
+import i18n from '@/utils/i18n.ts'
 import axios from 'axios'
-// import SvgIcon from '@/components/svg-icon'
-import { formCrudList } from '@/api/form'
-import index from '@/components/uploadPicture/index.vue'
-import { mapGetters } from 'vuex'
-import { set } from 'nprogress'
-import { init } from 'echarts/lib/echarts'
-import { isArray } from 'xe-utils'
+import { formCrudList } from '@/api/form.ts'
 
 export default {
   name: 'FieldPanel',
@@ -88,13 +95,13 @@ export default {
   inject: ['getBannedWidgets', 'getDesignerConfig'],
   data() {
     return {
+      // 当前实体及其关联实体的字段分组，渲染为可拖拽的字段列表
+      crudList: [],
       designerConfig: this.getDesignerConfig(),
-
       firstTab: 'componentLib',
-
       scrollerHeight: 0,
-
       activeNames: ['1', '2', '3', '4'],
+      isShowContainerList: [],
       containers,
       basicFields,
       advancedFields,
@@ -106,32 +113,24 @@ export default {
   watch: {
     'designer.widgetList': {
       handler(val) {
-        // this.crudList.forEach((item) => {
-        //   item.field.forEach((fld) => {
-        //     val.forEach((v) => {
-        //       console.log('v', v)
-        //       let names = this.crudStatusFilter(v, fld, [])
-        //       if (names && names.length) this.nameArr = Array.from(new Set([...this.nameArr, ...names]))
-        //       console.log('nameArr', this.nameArr)
-        //       if (this.nameArr.includes(fld.options.name)) {
-        //         fld.hide = true
-        //       } else {
-        //         fld.hide = false
-        //       }
-        //     })
-        //   })
-        // })
+        const hasDetailsWidget = val.some((item) => item.type === 'details')
+        if (hasDetailsWidget) {
+          this.isShowContainerList = ['details']
+        } else {
+          this.isShowContainerList = []
+        }
       },
       deep: true
     },
     crudList: {
-      handler(val) {},
+      handler(val) {
+        if (val.length == 1) {
+          this.isShowContainerList = ['details']
+        }
+      },
       deep: true,
       immediate: true
     }
-  },
-  computed: {
-    ...mapGetters(['crudList'])
   },
   created() {
     let id = this.$route.query.id
@@ -148,6 +147,19 @@ export default {
     })
   },
   methods: {
+    isShowField(name) {
+      let result = ''
+      if (name.includes('@')) {
+        result = name.replace(/.*@/, '')
+      }
+
+      const arr = this.designer.selectNames.map((item) => (item.includes('.') ? item.split('.')[1] : item))
+      if (arr.includes(result)) {
+        return false
+      } else {
+        return true
+      }
+    },
     getCrudList(id) {
       formCrudList(id).then((res) => {
         for (let i = 0; i < res.data.length; i++) {
@@ -156,8 +168,9 @@ export default {
             res.data[i].field[j].pidx = i
           }
         }
+
         setTimeout(() => {
-          this.$store.dispatch('app/setFormList', res.data)
+          this.crudList = res.data || []
         }, 300)
       })
     },
@@ -168,7 +181,6 @@ export default {
     loadWidgets() {
       this.containers = this.containers
         .map((con) => {
-          console.log('con', con)
           return {
             ...con,
             displayName: con.name
@@ -184,7 +196,6 @@ export default {
     },
 
     handleFieldWidgetClone(origin) {
-      console.log('handleFieldWidgetClone', origin)
       return this.designer.copyNewFieldWidget(origin)
     },
 
@@ -248,7 +259,7 @@ export default {
 }
 
 .side-scroll-bar {
-  ::v-deep .el-scrollbar__wrap {
+  :deep(.el-scrollbar__wrap) {
     overflow-x: hidden;
   }
 }
@@ -262,29 +273,29 @@ div.panel-container {
   padding-bottom: 10px;
 }
 
-.no-bottom-margin ::v-deep .el-tabs__header {
+.no-bottom-margin :deep(.el-tabs__header) {
   margin-bottom: 0;
 }
 
 .indent-left-margin {
-  ::v-deep .el-tabs__nav {
-    margin-left: 20px;
+  :deep(.el-tabs__nav) {
+    margin-left: 8px;
   }
 }
 
-.el-collapse-item ::v-deep ul > li {
+.el-collapse-item :deep(ul > li) {
   list-style: none;
 }
 
 .widget-collapse {
   border-top-width: 0;
 
-  ::v-deep .el-collapse-item__header {
+  :deep(.el-collapse-item__header) {
     margin-left: 8px;
     font-weight: bold;
   }
 
-  ::v-deep .el-collapse-item__content {
+  :deep(.el-collapse-item__content) {
     padding-bottom: 6px;
 
     ul {
@@ -381,4 +392,3 @@ div.panel-container {
   color: #fff;
 }
 </style>
-@/utils/i18ns

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -53,10 +53,21 @@ interface ScheduleInterface
 
     /**
      * 日程保存.
+     *
+     * @return bool|int 更新成功返回 true；新建成功返回日程 ID
      */
-    public function saveSchedule(int $userId, int $entId, array $data, int $id = 0): bool;
+    public function saveSchedule(int $userId, int $entId, array $data, int $id = 0): bool|int;
 
-    public function updateSchedule(int $userId, int $entId, int $id, array $data): bool;
+    /**
+     * 快捷创建日程（精简字段，补齐默认值后落库）.
+     *
+     * @param array<string, mixed> $data 快捷创建入参
+     *
+     * @return int 新建日程 ID
+     */
+    public function quickSaveSchedule(int $userId, int $entId, array $data): int;
+
+    public function updateSchedule(int $entId, int $id, array $data, int $userId): bool;
 
     public function updateStatus(int $id, int $uid, int $entId, int $status, array $timeZone = []): bool;
 
@@ -75,6 +86,26 @@ interface ScheduleInterface
     public function deleteFromLinkId(int $uid, int $linkId, int $type): bool;
 
     public function dailyCompleteRecord(string $uuid, int $type): array;
+
+    /**
+     * 按日/周/月汇总日程完成与待办.
+     *
+     * @param string      $period day|week|month
+     * @param string|null $date   锚点日期 Y-m-d
+     * @param string      $focus  all|pending|completed|stats
+     * @param int         $page   页码（从 1 起）
+     * @param int         $limit  每页条数
+     *
+     * @return array<string, mixed>
+     */
+    public function workSummary(
+        int $userId,
+        string $period,
+        ?string $date = null,
+        string $focus = 'all',
+        int $page = 1,
+        int $limit = 10
+    ): array;
 
     public function delScheduleByLinkId(int $linkId, array|int $cid): void;
 

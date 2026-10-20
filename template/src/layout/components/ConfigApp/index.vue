@@ -1,14 +1,15 @@
 <!-- 配置app二维码组件 -->
 <template>
   <div class="config-app">
-    <!-- <el-popover placement="bottom" popper-class="user-poppqaer" trigger="click">
+    <el-popover placement="bottom" popper-class="user-poppqaer" trigger="click" @show="entSite">
       <div class="popover-user">
         <div class="drop-head">
           <div class="drop-right align-center">
-            <div ref="qrcode" class="qrcode">
+            <div class="qrcode" ref="qrcode"></div>
+            <!-- <div class="qrcode-logo">
               <img :src="imgSrc" />
-            </div>
-            <span>扫描配置通用APP</span>
+            </div> -->
+            <span class="text">扫描配置通用APP</span>
           </div>
         </div>
         <div class="drop-config">
@@ -16,19 +17,22 @@
           <span>{{ qrValue }}</span>
         </div>
       </div>
-      <div slot="reference" class="config-info">
-        <el-tooltip content="配置App" effect="dark" placement="bottom">
-          <i class="iconfont iconpeizhi pointer configapp"></i>
-        </el-tooltip>
-      </div>
-    </el-popover> -->
+      <template #reference>
+        <div class="config-info">
+          <el-tooltip content="配置App" effect="dark" placement="bottom">
+            <i class="iconfont iconshoujisaoma pointer configapp"></i>
+          </el-tooltip>
+        </div>
+      </template>
+    </el-popover>
   </div>
 
 </template>
 
 <script>
 
-import { entSiteApi } from '@/api/public'
+import { entSiteApi } from '@/api/public.ts'
+import { getStorageJson } from '@/utils/storage.ts'
 import QRCode from 'qrcodejs2'
 
 export default {
@@ -40,28 +44,38 @@ export default {
     return {
       url: '',
       qrValue: '',
-      imgSrc: JSON.parse(localStorage.getItem('enterprise')).logo
+      imgSrc: getStorageJson('enterprise', {}).logo,
+      loaded: false,
+      loading: false
     }
-  },
-  mounted() {
-    this.entSite()
   },
 
   methods: {
     // 获取网站配置接口
     entSite() {
+      if (this.loaded || this.loading) {
+        return
+      }
+      this.loading = true
       entSiteApi().then((res) => {
+        this.loaded = true
         this.qrValue = res.data.address
         setTimeout(() => {
+          if (!this.$refs.qrcode) {
+            return
+          }
+          this.$refs.qrcode.innerHTML = ''
           new QRCode(this.$refs.qrcode, {
           text: this.qrValue,
-          width: 128,
-          height: 128,
+          width: 170,
+          height: 170,
           colorDark: '#000000',
           colorLight: '#ffffff',
           correctLevel: QRCode.CorrectLevel.H
         })
         },300)
+      }).finally(() => {
+        this.loading = false
       })
     },
   }
@@ -71,36 +85,63 @@ export default {
 <style lang="scss" scoped>
 .popover-user {
   z-index: 200;
-  width: 200px;
+margin: 8px;
+}
+.configapp {
+  margin-right: 18px;
 }
 .drop-head {
-  padding: 18px 14px 14px 18px;
-  border-bottom: 1px solid #f5f5f5;
+  padding: 0;
   font-size: 13px;
   color: #999;
   .drop-right {
     display: flex;
     flex-direction: column;
+    .text {
+        font-family: PingFang SC, PingFang SC;
+font-weight: 400;
+font-size: 13px;
+color: #909399;
+margin:10px 0
+    }
+  
   }
   .align-center {
     align-items: center;
     .qrcode {
       margin-bottom: 6px;
+      width: 170px;
+      height: 170px;
       position: relative;
-      width: 128px;
-      height: 128px;
+    }
+    .qrcode-logo {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      // transform: translate(-50%, -50%);
+      width: 40px;
+      height: 40px;
+      border-radius: 2px;
+      overflow: hidden;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       img {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        width: 40px;
-        height: 40px;
-        border-radius: 2px;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
       }
     }
   }
 
+}
+
+.drop-config {
+  font-family: PingFang SC, PingFang SC;
+font-weight: 400;
+font-size: 13px;
+color: #606266;
 }
 
 </style>

@@ -86,14 +86,14 @@ final class DocBlock
     /**
      * @var null|array<string, mixed>
      *
-     * @psalm-var null|(array{
+     * @psalm-var null|(array<
+     *   string,
+     *   array<int|string, string>|array{constraint: string}|array{version: string, operator: string}|string
+     * >&array{
      *   __OFFSET: array<string, int>&array{__FILE: string},
      *   setting?: array<string, string>,
      *   extension_versions?: array<string, array{version: string, operator: string}>
-     * }&array<
-     *   string,
-     *   string|array{version: string, operator: string}|array{constraint: string}|array<int|string, string>
-     * >)
+     * })
      */
     private $parsedRequirements;
 
@@ -169,6 +169,8 @@ final class DocBlock
     }
 
     /**
+     * @throws Warning if the requirements version constraint is not well-formed
+     *
      * @psalm-return array{
      *   __OFFSET: array<string, int>&array{__FILE: string},
      *   setting?: array<string, string>,
@@ -177,8 +179,6 @@ final class DocBlock
      *   string,
      *   string|array{version: string, operator: string}|array{constraint: string}|array<int|string, string>
      * >
-     *
-     * @throws Warning if the requirements version constraint is not well-formed
      */
     public function requirements(): array
     {

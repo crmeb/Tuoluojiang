@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -50,6 +50,7 @@ class RosterCycleController extends AuthController
 
     /**
      * 获取列表.
+     * @param mixed $groupId
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
@@ -70,12 +71,13 @@ class RosterCycleController extends AuthController
     public function store(RosterCycleRequest $request): mixed
     {
         $data = $request->postMore($this->getRequestFields());
-        $res  = $this->service->saveCycle($data);
+        $res  = $this->service->saveCycle($data, auth('admin')->id());
         return $this->success('common.insert.succ', ['id' => $res->id]);
     }
 
     /**
      * 修改.
+     * @param mixed $id
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
@@ -86,12 +88,13 @@ class RosterCycleController extends AuthController
         }
 
         $data = $request->postMore($this->getRequestFields());
-        $this->service->updateCycle((int) $id, $data);
+        $this->service->updateCycle((int) $id, $data, auth('admin')->id());
         return $this->success('保存成功');
     }
 
     /**
      * 删除.
+     * @param mixed $id
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */

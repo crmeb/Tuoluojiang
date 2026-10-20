@@ -18,10 +18,10 @@ namespace App\Http\Service\Company;
 use App\Constants\CommonEnum;
 use App\Http\Dao\User\UserEnterpriseApplyDao;
 use App\Http\Service\Admin\AdminService;
-use App\Http\Service\BaseService;
 use App\Task\message\EnterprisePersonnelJoinRemind;
 use App\Task\message\EnterprisePersonnelRefuseRemind;
 use App\Task\message\StatusChangeTask;
+use App\Http\Service\BaseService;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Contracts\Container\BindingResolutionException;
 
@@ -62,7 +62,7 @@ class CompanyApplyService extends BaseService
         } else {
             $restore = false;
         }
-        $res = $this->transaction(function () use ($info) {
+        $res = $this->transaction(function () use ($info, $restore) {
             if (! $info->save()) {
                 throw $this->exception('保存处理信息失败');
             }

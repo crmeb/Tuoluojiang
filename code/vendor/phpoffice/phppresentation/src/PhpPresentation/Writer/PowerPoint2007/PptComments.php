@@ -1,5 +1,23 @@
 <?php
 
+/**
+ * This file is part of PHPPresentation - A pure PHP library for reading and writing
+ * presentations documents.
+ *
+ * PHPPresentation is free software distributed under the terms of the GNU Lesser
+ * General Public License version 3 as published by the Free Software Foundation.
+ *
+ * For the full copyright and license information, please read the LICENSE
+ * file that was distributed with this source code. For the full list of
+ * contributors, visit https://github.com/PHPOffice/PHPPresentation/contributors.
+ *
+ * @see        https://github.com/PHPOffice/PHPPresentation
+ *
+ * @license     http://www.gnu.org/licenses/lgpl.txt LGPL version 3
+ */
+
+declare(strict_types=1);
+
 namespace PhpOffice\PhpPresentation\Writer\PowerPoint2007;
 
 use PhpOffice\Common\Adapter\Zip\ZipInterface;
@@ -10,31 +28,25 @@ use PhpOffice\PhpPresentation\Slide;
 
 class PptComments extends AbstractDecoratorWriter
 {
-    /**
-     * @return ZipInterface
-     */
-    public function render()
+    public function render(): ZipInterface
     {
         foreach ($this->getPresentation()->getAllSlides() as $numSlide => $oSlide) {
             $contentXml = $this->writeSlideComments($oSlide);
             if (empty($contentXml)) {
                 continue;
             }
-            $this->getZip()->addFromString('ppt/comments/comment'.($numSlide + 1).'.xml', $contentXml);
+            $this->getZip()->addFromString('ppt/comments/comment' . ($numSlide + 1) . '.xml', $contentXml);
         }
+
         return $this->getZip();
     }
 
-    /**
-     * @param Slide $oSlide
-     * @return string
-     */
-    protected function writeSlideComments(Slide $oSlide)
+    protected function writeSlideComments(Slide $oSlide): string
     {
         /**
          * @var Comment[]
          */
-        $arrayComment = array();
+        $arrayComment = [];
         foreach ($oSlide->getShapeCollection() as $oShape) {
             if ($oShape instanceof Comment) {
                 $arrayComment[] = $oShape;

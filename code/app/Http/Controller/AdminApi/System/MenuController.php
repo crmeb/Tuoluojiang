@@ -21,7 +21,6 @@ use App\Http\Middleware\AuthAdmin;
 use App\Http\Middleware\AuthEnterprise;
 use App\Http\Middleware\CheckRuleCompany;
 use App\Http\Requests\system\SystemMenusRequest;
-use App\Http\Service\Crud\SystemCrudService;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Spatie\RouteAttributes\Attributes\Middleware;
 use Spatie\RouteAttributes\Attributes\Post;
@@ -118,9 +117,9 @@ class MenuController extends AuthController
             $request->scene('api')->check(['menu_name' => $data['menu_name'], 'api' => $data['api'], 'methods' => $data['methods']]);
         }
 
-        $path = $data['path'];
+        $path = $data['paths'] = array_filter($data['path']);
         if ($path) {
-            $data['pid']   = $path[count($path) - 1];
+            $data['pid']   = end($path);
             $data['level'] = count($path);
         }
         return $this->success('添加成功', $this->service->saveMenu($data, $this->entId));
@@ -215,27 +214,10 @@ class MenuController extends AuthController
                 'methods'   => $data['methods'],
             ]);
         }
-        if (! $data['unique_auth']) {
-            $data['unique_auth'] = uniqid('menus');
-        }
-        $path = array_filter($data['path'], fn ($val) => (bool) $val);
+        $path = $data['paths'] = array_filter($data['path']);
         if ($path) {
-            $data['pid']   = $path[count($path) - 1];
+            $data['pid']   = end($path);
             $data['level'] = count($path);
-        }
-        //        获取菜单的crud_id
-        if ($data['menu_path'] && $data['menu_type'] == 1) {
-            $tableName = str_replace(['/crud/module/', '/list'], '', $data['menu_path'][1]);
-            if ($tableName) {
-                $crudId           = app()->make(SystemCrudService::class)->value(['table_name_en' => $tableName], 'id');
-                $data['crud_id']  = $crudId ?: 0;
-                $data['uni_path'] = '/pages/module/list?tablename=' . $tableName;
-            }
-        }
-        if ($data['menu_path'] && $data['menu_type'] == 2) {
-            $crudId           = str_replace(['/crud/module/', '/dashboard'], '', $data['menu_path'][1]);
-            $data['crud_id']  = $crudId ?: 0;
-            $data['uni_path'] = '/pages/module/dashboard?id=' . $data['crud_id'];
         }
         $this->service->saveMenu($data, $this->entId, (int) $id);
         return $this->success('common.update.succ');

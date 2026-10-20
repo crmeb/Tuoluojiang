@@ -2,7 +2,7 @@
   <div>
     <oaFromBox
       v-if="search.length > 0"
-      :btnText="'导出'"
+      btnText="导出"
       :dropdownList="dropdownList"
       :isAddBtn="false"
       :search="search"
@@ -19,20 +19,49 @@
     <export-excel ref="exportExcel" :export-data="exportData" :save-name="saveName" :template="false" />
     <!-- 导入组件 -->
     <import-excel v-show="false" ref="importExcel" @importExcelData="importExcelData"></import-excel>
+    <!-- 企微同步 -->
+    <el-dialog title="企微同步" v-model="dialogFormVisible" width="500px">
+      <el-form>
+        <el-form-item label-width="90px">
+          <template #label>
+            <span><span class="color-pdf">*</span> 打卡时间：</span>
+          </template>
+          <el-date-picker
+            v-model="clockInTime"
+            type="daterange"
+            range-separator="至"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            format="YYYY/MM/DD"
+            value-format="YYYY/MM/DD"
+            v-bind="$pickerProps(pickerOptions)"
+            @change="handleDateChange"
+          >
+          </el-date-picker>
+          <div class="tips">日期跨度不能超过30天!</div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="dialogFormVisible = false">取 消</el-button>
+          <el-button type="primary" @click="qiweiAsync">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 <script>
+import dayjs from 'dayjs'
 import oaFromBox from '@/components/common/oaFromBox'
-import SettingMer from '@/libs/settingMer'
-import helper from '@/libs/helper'
-import { getToken } from '@/utils/auth'
-import 'animate.css'
+import SettingMer from '@/libs/settingMer.ts'
+import helper from '@/libs/helper.ts'
+import { getToken } from '@/utils/auth.ts'
 import importExcel from '@/components/common/importExcel'
 import ExportExcel from '@/components/common/exportExcel'
-
-import { attendanceGroupSelectApi } from '@/api/config'
-import { attendanceImport, attendanceImportFile } from '@/api/enterprise'
+import { attendanceGroupSelectApi } from '@/api/config.ts'
+import { attendanceImport, attendanceImportFile, attendanceWorkClockRecord } from '@/api/enterprise.ts'
 export default {
+  emits: ['confirmData'],
   name: 'CrmebOaEntFormBox',
   components: { importExcel, oaFromBox, ExportExcel },
   props: ['type', 'total'],
@@ -40,6 +69,7 @@ export default {
     return {
       title: '',
       uploadData: {},
+      dialogFormVisible: false,
       where: {},
       fileList: [],
       myHeaders: {
@@ -67,6 +97,18 @@ export default {
           value: 5
         }
       ],
+      clockInTime: [],
+      startDate: null,
+      pickerOptions: {
+        disabledDate: (time) => {
+          if (this.startDate) {
+            const start = dayjs(this.startDate)
+            const end = start.clone().add(30, 'days')
+            return time.getTime() < start.valueOf() || time.getTime() > end.valueOf()
+          }
+        }
+      },
+
       list: [],
       exportData: {
         data: [],
@@ -101,7 +143,7 @@ export default {
       search: [],
       timeValue: [],
       viewSearch: [],
-      pickerOptions: this.$pickerOptionsTimeEle,
+      // pickerOptions: this.$pickerOptionsTimeEle,
       saveName: '',
       importType: 1
     }
@@ -114,10 +156,10 @@ export default {
 
   mounted() {
     if (this.type !== 'month') {
-      this.timeValue = [this.$moment(new Date()).format('YYYY/MM/DD'), this.$moment(new Date()).format('YYYY/MM/DD')]
+      this.timeValue = [dayjs(new Date()).format('YYYY/MM/DD'), dayjs(new Date()).format('YYYY/MM/DD')]
       this.where.time = this.timeValue[0] + '-' + this.timeValue[1]
     } else {
-      this.timeValue = this.$moment(new Date()).format('YYYY-MM')
+      this.timeValue = dayjs(new Date()).format('YYYY-MM')
       this.where.time = this.timeValue
     }
 
@@ -126,6 +168,54 @@ export default {
   },
 
   methods: {
+    // disabledDate(date) {
+    //   if (date > dayjs().endOf('day')) return true
+    //   if (this.startDate) {
+    //     const startDay = dayjs(this.startDate)
+    //     const maxEndDay = startDay.add(30, 'day')
+    //     const minEndDay = startDay.subtract(0, 'day')
+    //     return date < minEndDay.startOf('day') || date > maxEndDay.endOf('day')
+    //   }
+
+    //   return false
+    // },
+    handleDateChange(val) {
+      if (!val || val.length < 2) return
+
+      const [start, end] = val
+      const startDay = dayjs(start)
+      const endDay = dayjs(end)
+      const diffDays = endDay.diff(startDay, 'days')
+
+      if (diffDays > 30) {
+        this.$message.error('日期跨度不能超过30天，请重新选择！')
+        this.clockInTime = [start, startDay.clone().add(30, 'days').format('YYYY/MM/DD')]
+      } else if (diffDays < 0) {
+        this.$message.error('结束日期不能早于开始日期！')
+        this.clockInTime = []
+      }
+    },
+    // 企微同步
+    qiweiAsync() {
+      if (this.clockInTime.length == 0) {
+        return this.$message.error('请选择时间！')
+      }
+      const [start, end] = this.clockInTime
+      const startDay = dayjs(start)
+      const endDay = dayjs(end)
+      const diffDays = endDay.diff(startDay, 'days')
+      if (diffDays > 30) {
+        this.$message.error('日期跨度不能超过30天，请重新选择！')
+        return false
+      } else if (diffDays < 0) {
+        this.$message.error('结束日期不能早于开始日期！')
+        return false
+      }
+      attendanceWorkClockRecord({ date: this.clockInTime }).then((res) => {
+        this.$emit('confirmData', this.where)
+        this.dialogFormVisible = false
+      })
+    },
     dropdownFn(data) {
       if (data.value === 1) {
         this.importType = 1
@@ -140,6 +230,10 @@ export default {
       } else if (data.value === 5) {
         this.importType = 5
         this.$refs.importExcel.btnClick()
+      } else if (data.value === 6) {
+        // 企微同步
+        this.dialogFormVisible = true
+        this.clockInTime = []
       }
     },
     getSearch(type) {
@@ -204,6 +298,10 @@ export default {
           form_value: 'select',
           data_dict: this.list
         }
+        this.dropdownList.push({
+          label: '企微同步',
+          value: 6
+        })
         searchList.splice(1, 1)
         this.search = searchList
         this.search.push(obj)
@@ -265,10 +363,10 @@ export default {
       this.where = {}
 
       if (this.type !== 'month') {
-        this.timeValue = [this.$moment(new Date()).format('YYYY/MM/DD'), this.$moment(new Date()).format('YYYY/MM/DD')]
+        this.timeValue = [dayjs(new Date()).format('YYYY/MM/DD'), dayjs(new Date()).format('YYYY/MM/DD')]
         this.where.time = this.timeValue[0] + '-' + this.timeValue[1]
       } else {
-        this.timeValue = this.$moment(new Date()).format('YYYY-MM')
+        this.timeValue = dayjs(new Date()).format('YYYY-MM')
         this.where.time = this.timeValue
       }
       this.search[0].data_dict = this.timeValue
@@ -309,7 +407,7 @@ export default {
     },
     // 导出模版
     async exportTemplate() {
-      this.saveName = '打卡记录模板(' + this.$moment(new Date()).format('MMDDHHmmss') + ').xlsx'
+      this.saveName = '打卡记录模板(' + dayjs(new Date()).format('MMDDHHmmss') + ').xlsx'
       this.exportData.data = [
         ['时间', '姓名', '第一次上班', '第一次下班', '第二次上班', '第二次下班'],
         ['2024/06/20 星期三', '张三', '2024/06/12 06:30', '2024/06/12 18:30', '2024/06/12 06:30', '2024/06/12 18:30']
@@ -326,5 +424,9 @@ export default {
 .upload {
   display: inline-block;
   margin-left: 10px;
+}
+.tips {
+  color: #909399;
+  font-size: 12px;
 }
 </style>

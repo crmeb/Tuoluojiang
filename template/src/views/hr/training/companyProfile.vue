@@ -1,26 +1,28 @@
 <template>
   <div class="divBox">
-    <ueditorFrom
-      :border="true"
-      :height="height"
-      :training="true"
-      ref="ueditorFrom"
-      :main-width="`1000px`"
-      :editor-border="false"
-      :placeholder="`请输入公司介绍`"
-      :content="content"
-    />
+    <div class="box-height">
+      <ueditorFrom
+        :border="true"
+        :height="height"
+        :training="true"
+        ref="ueditorFrom"
+        :editor-border="false"
+        :placeholder="`请输入公司介绍`"
+        :content="content"
+      />
 
-    <div class="cr-bottom-button btn-shadow">
-      <el-button size="small" :loading="loading" type="primary" @click="handleConfirm()">保存</el-button>
+      <div class="cr-bottom-button btn-shadow">
+        <el-button :loading="loading" type="primary" @click="handleConfirm()">保存</el-button>
+      </div>
     </div>
   </div>
 </template>
 <script>
-import { employeeTrainApi, getEmployeeTrainApi } from '@/api/config.js'
+import { defineAsyncComponent } from 'vue'
+import { employeeTrainApi, getEmployeeTrainApi } from '@/api/config.ts'
 export default {
   name: '',
-  components: { ueditorFrom: () => import('@/components/form-common/oa-wangeditor') },
+  components: { ueditorFrom: defineAsyncComponent(() => import('@/components/form-common/oa-wangeditor')) },
   data() {
     return {
       height: 'calc(100vh - 200px)',
@@ -60,20 +62,33 @@ export default {
 }
 </script>
 <style scoped lang="scss">
-// .main {
-//   max-width: 800px;
-//   margin: 0 auto;
-//   margin-top: 20px;
-// }
+.divBox {
+  padding: 0;
+  position: relative;
+  margin-left: 14px;
+  border-radius: 8px;
+  overflow: hidden;
+}
 .cr-bottom-button {
-  position: fixed;
-  left: -20px;
+  position: absolute;
+  left: 0px;
   right: 0;
   bottom: 0;
-  width: calc(100% + 220px);
+  width: calc(100% + 0px);
+  border-radius: 0 0 8px 8px;
 }
-.divBox {
-  margin: 0 !important;
-  padding: 0;
+:deep(.w-e-toolbar) {
+  border-radius: 8px 8px 0 0;
+  border-bottom-color: #eee;
+  background-color: transparent;
+}
+:deep(.wangeditor-box) {
+  border-left: none;
+}
+:deep(.main) {
+  background-color: transparent;
+}
+:deep(.w-e-text-container) {
+  background-color: transparent;
 }
 </style>

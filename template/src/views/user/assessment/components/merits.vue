@@ -11,46 +11,57 @@
     <div class="table-box mt14">
       <el-table
         :data="tableData"
-        :height="tableHeight"
+        :height="TABLE_HEIGHT"
         :tree-props="{ children: 'children' }"
         default-expand-all
         row-key="id"
         style="width: 100%"
       >
-        <el-table-column :label="$t('toptable.name')" min-width="100" prop="test.name" />
-        <el-table-column :label="$t('toptable.department')" min-width="160" prop="frame.name" />
-        <el-table-column :label="$t('user.work.assessmentname')" min-width="100" prop="name" />
-        <el-table-column :label="$t('toptable.assessmentcycle')" align="center" min-width="100" prop="period">
-          <template slot-scope="scope">
+        <template #empty>
+          <empty-state type="performance" text="暂无数据" :min-height="220" />
+        </template>
+
+        <el-table-column label="姓名" min-width="100" prop="test">
+          <template #default="{ row }">
+            <div style="display: flex; align-items: center; gap: 6px" class="pointer">
+              <el-avatar :size="24" :src="row.test.avatar"></el-avatar>
+              <span>{{ row.test.name || '--' }}</span>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="部门" min-width="160" prop="frame.name" />
+        <el-table-column label="考核名称" min-width="100" prop="name" />
+        <el-table-column label="考核周期" align="center" min-width="100" prop="period">
+          <template #default="scope">
             <span>{{ getPeriodText(scope.row.period) }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="$t('user.work.qssessmentscore')" align="center" min-width="100" prop="score" />
-        <el-table-column :label="$t('access.assessmentgrade')" align="center" min-width="100" prop="level" />
-        <el-table-column :label="$t('hr.assessmentstatus')" min-width="100" prop="status">
-          <template slot-scope="scope">
+        <el-table-column label="考核得分" align="center" min-width="100" prop="score" />
+        <el-table-column label="考核等级" align="center" min-width="100" prop="level" />
+        <el-table-column label="考核状态" min-width="100" prop="status">
+          <template #default="scope">
             <el-tag :type="getStatusTag(scope.row.status).type">
               {{ getStatusTag(scope.row.status).text }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column :label="$t('access.starttime')" align="center" min-width="100" prop="start_time">
-          <template slot-scope="scope">
-            {{ $moment(scope.row.start_time).format('yyyy-MM-DD') }}
+        <el-table-column label="考核开始时间" align="center" min-width="100" prop="start_time">
+          <template #default="scope">
+            {{ dayjs(scope.row.start_time).format('YYYY-MM-DD') }}
           </template>
         </el-table-column>
-        <el-table-column :label="$t('access.endtime')" align="center" min-width="100" prop="end_time">
-          <template slot-scope="scope">
-            {{ $moment(scope.row.end_time).format('yyyy-MM-DD') }}
+        <el-table-column label="考核结束时间" align="center" min-width="100" prop="end_time">
+          <template #default="scope">
+            {{ dayjs(scope.row.end_time).format('YYYY-MM-DD') }}
           </template>
         </el-table-column>
-        <el-table-column :label="$t('public.operation')" fixed="right" prop="address" width="160">
-          <template slot-scope="scope">
-            <el-button v-if="scope.row.status >= 0" type="text" @click="handleCheck(scope.row, 'check')">
+        <el-table-column label="操作" fixed="right" prop="address" width="160">
+          <template #default="scope">
+            <el-button v-if="scope.row.status >= 0" type="primary" link @click="handleCheck(scope.row, 'check')">
               查看
             </el-button>
-            <el-button v-if="scope.row.status === 3" type="text" @click="handleCheck(scope.row, '')"> 审核 </el-button>
-            <el-button v-if="scope.row.status == 4" type="text" @click="handleCheck(scope.row, scope.$index)">
+            <el-button v-if="scope.row.status === 3" type="primary" link @click="handleCheck(scope.row, '')"> 审核 </el-button>
+            <el-button v-if="scope.row.status == 4" type="primary" link @click="handleCheck(scope.row, scope.$index)">
               修改评分
             </el-button>
           </template>
@@ -72,18 +83,27 @@
 </template>
 
 <script>
-import { userAssessSubord } from '@/api/user'
-import Common from '@/components/user/accessCommon'
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { userAssessSubord } from '@/api/user.ts'
+import Common from '@/components/user/accessCommon.ts'
 
+import oaFromBox from '@/components/common/oaFromBox'
 export default {
+  emits: ['meritsHandleCheck'],
   name: 'Merits',
   props: ['handle'],
   components: {
-    defaultPage: () => import('@/components/common/defaultPage'),
-    oaFromBox: () => import('@/components/common/oaFromBox')
+    emptyState: defineAsyncComponent(() => import('@/components/common/emptyState')),
+    oaFromBox
+  },
+  computed: {
+    dayjs: () => dayjs
   },
   data() {
     return {
+      TABLE_HEIGHT,
       tableData: [],
       where: {
         page: 1,
@@ -96,7 +116,8 @@ export default {
           field_name: '被考核人',
           field_name_en: 'test_uid',
           form_value: 'test_uid',
-          data_dict: []
+          data_dict: [],
+          value: []
         },
         {
           field_name: '考核周期',

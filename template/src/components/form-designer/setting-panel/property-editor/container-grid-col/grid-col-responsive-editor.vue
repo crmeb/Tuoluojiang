@@ -5,7 +5,7 @@
 </template>
 
 <script>
-  import i18n from "@/utils/i18n"
+  import i18n from "@/utils/i18n.ts"
 
   export default {
     name: "grid-col-responsive-editor",
@@ -21,4 +21,3 @@
 <style lang="scss" scoped>
 
 </style>
-@/utils/i18ns

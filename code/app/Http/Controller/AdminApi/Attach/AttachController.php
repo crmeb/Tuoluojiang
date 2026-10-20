@@ -78,7 +78,7 @@ class AttachController extends AuthController
             ['eid', ''],
         ], true);
         $res = $this->service->setRelationType($relationType)->setRelationId((int) $relationId, (int) $eid)
-            ->save((int) $pid, $file, (int) $way, $this->entId, $this->uuid);
+            ->saveFile((int) $pid, $file, (int) $way, $this->entId, $this->uuid);
         return $this->success($res);
     }
 
@@ -118,10 +118,11 @@ class AttachController extends AuthController
             ['chunk_index', 0], // 分片索引
             ['chunk_total', 0], // 总分片数
         ], true);
+        // 路由参数默认是 string，AttachService::upload 要求 int，必须强转.
         $res = $this->service->setRelationType($relationType)
             ->setRelationId((int) $relationId, (int) $eid)
             ->setOption(['chunk_index' => (int) $chunkIndex, 'chunk_total' => (int) $chunkTotal, 'md5' => $md5])
-            ->upload((int) $pid, $file, $attach_type, $type, (int) $way, $this->entId, $this->uuid);
+            ->upload((int) $pid, (string) $file, (int) $attach_type, (int) $type, (int) $way, $this->entId, $this->uuid);
         return $this->success($res === true ? 'ok' : '上传成功', $res === true ? [] : $res);
     }
 
@@ -135,7 +136,7 @@ class AttachController extends AuthController
     public function moveImageCate()
     {
         $data = $this->request->postMore([
-            ['cid', 0],
+            ['pid', 0],
             ['images', ''],
         ]);
         $this->service->move($data);

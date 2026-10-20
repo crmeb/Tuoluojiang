@@ -1,51 +1,65 @@
+import { toElSize } from '@/utils/el-size'
 import { deepClone } from '@/utils/util'
 import FormValidators from '@/utils/validators'
 import {putUpdateFieldApi} from '@/api/develop'
+import { FORM_RENDER_HUB, hubSubscriberMixin } from '@/utils/eventHub'
+import { setActiveField, listenActiveFieldOutsideClick } from '@/components/form-render/activeField'
 
 export default {
-  inject: ['refList', 'formConfig', 'getGlobalDsv', 'globalOptionData', 'globalModel', 'getOptionData', 'getReadMode'],
-
-  props:['developData'],
+  emits: ['field-value-changed', 'valueChange'],
+  mixins: [hubSubscriberMixin],
+  inject: {
+    refList: 'refList',
+    formConfig: 'formConfig',
+    getGlobalDsv: 'getGlobalDsv',
+    globalOptionData: 'globalOptionData',
+    globalModel: 'globalModel',
+    getOptionData: 'getOptionData',
+    getReadMode: 'getReadMode',
+    // 最近的 VFormRender 提供；设计态字段不在渲染器内，为 null 时收发事件均静默忽略
+    formRenderHub: { from: FORM_RENDER_HUB, default: null }
+  },
+  props:['developData','tableData'],
+   
   data () {
     return {
        isShow:false,
        disabledUser:['user_id','update_user_id','created_at','updated_at']
      }
   },
- 
+
 
   watch: {
     'field.isShow': {
       handler(newValue, oldValue) {
-
         if (!newValue&&oldValue) {
-  
           this.putUpdateField()
         }
       },
       deep: true
     },
+   
 
    
   },
   mounted() {
-    this.$nextTick(() => {
-      document.addEventListener('click', (e) => {
-        this.handlePopoverHide()
-      })
-    })
+    // 点击空白处收起编辑态并保存
+    this._unlistenOutsideClick = listenActiveFieldOutsideClick(() => this.field, () => this.$el)
+
+
+    // 明细表组件数据回显
+    if(this.tableData&&this.tableData[this.field.options.name]){
+      this.fieldModel = this.tableData[this.field.options.name]
+
+    }
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.unregisterFromRefList()
-    document.removeEventListener('click', (e) => {
-      this.handlePopoverHide()
-    })
+    this._unlistenOutsideClick?.()
   },
   computed: {
-  
      subFormName() {
-    
-      return !!this.parentWidget.options ? this.parentWidget.options.name : ''
+     return this.parentWidget?.options?.name || '';
     },
 
     subFormItemFlag() {
@@ -55,18 +69,21 @@ export default {
     formModel: {
       cache: false,
       get() {
+   
+     
         return this.globalModel.formModel
       }
     }
   },
  
   methods: {
+    toElSize,
     isShowFn() {
      
       if(this.disabledUser.includes(this.field.options.name)){
         return false
       }
-      this.$store.commit('user/SET_FIELD', this.field)
+      setActiveField(this.field)
     },
     //--------------------- 组件内部方法 begin ------------------//
     getPropName() {
@@ -76,24 +93,21 @@ export default {
         return this.field.options.name
       }
     },
-    // 点击空白处关闭所有编辑状态
-    handlePopoverHide(){
-      let obj = {
-        id:0
-      }
-
-      this.$store.commit('user/SET_FIELD', obj)
-    },
 
 
     initFieldModel() {
+     
+  
       if (!this.field.formItemFlag) {
         return
       }
     
       if (!!this.subFormItemFlag && !this.designState) {
         //SubForm子表单组件需要特殊处理！！
+      
+            
         let subFormData = this.formModel[this.subFormName]
+   
         if (
           (subFormData === undefined ||
             subFormData[this.subFormRowIndex] === undefined ||
@@ -119,10 +133,13 @@ export default {
         this.initFileList() //处理图片上传、文件上传字段
         return
       }
+
    
       if (this.formModel[this.field.options.name] === undefined && this.field.options.defaultValue !== undefined) {
+     
         this.fieldModel = this.field.options.defaultValue
       } else if (this.formModel[this.field.options.name] === undefined) {
+          
         //如果formModel为空对象，则初始化字段值为null!!
         this.formModel[this.field.options.name] = null
       } else {
@@ -148,27 +165,28 @@ export default {
     },
 
     initEventHandler() {
-      this.$on('setFormData', (newFormData) => {
+      this.subscribeHub(this.formRenderHub, 'field:setFormData', (newFormData) => {
         if (!this.subFormItemFlag) {
           this.setValue(newFormData[this.field.options.name])
         }
       })
 
-      this.$on('field-value-changed', (values) => {
-        if (!!this.subFormItemFlag) {
-          let subFormData = this.formModel[this.subFormName]
-          this.handleOnChangeForSubForm(values[0], values[1], subFormData, this.subFormRowId)
-        } else {
-          this.handleOnChange(values[0], values[1])
-        }
-      })
-
       /* 监听重新加载选项事件 */
-      this.$on('reloadOptionItems', (widgetNames) => {
+      this.subscribeHub(this.formRenderHub, 'field:reloadOptionItems', (widgetNames) => {
         if (widgetNames.length === 0 || widgetNames.indexOf(this.field.options.name) > -1) {
           this.initOptionItems(true)
         }
       })
+    },
+
+    /* 执行字段自身配置的 onChange 脚本（Vue 2 时由自身 $on('field-value-changed') 触发） */
+    runFieldChangeHandler(newValue, oldValue) {
+      if (!!this.subFormItemFlag) {
+        let subFormData = this.formModel[this.subFormName]
+        this.handleOnChangeForSubForm(newValue, oldValue, subFormData, this.subFormRowId)
+      } else {
+        this.handleOnChange(newValue, oldValue)
+      }
     },
 
     handleOnCreated() {
@@ -249,7 +267,6 @@ export default {
       if (!this.field.formItemFlag) {
         return
       }
-
       this.rules.splice(0, this.rules.length) //清空已有
     },
 
@@ -362,16 +379,22 @@ export default {
     //--------------------- 事件处理 begin ------------------//
 
     emitFieldDataChange(newValue, oldValue) {
-      this.$emit('field-value-changed', [newValue, oldValue])
 
-      /* 必须用dispatch向指定父组件派发消息！！ */
-      this.dispatch('VFormRender', 'fieldChange', [
+     if(this.parentWidget&&this.parentWidget.type=='details'){
+   this.$emit('valueChange',newValue)
+  return false
+      }
+      this.$emit('field-value-changed', [newValue, oldValue])
+      this.runFieldChangeHandler(newValue, oldValue)
+
+      /* 通知所在的表单渲染器 */
+      this.formRenderHub?.emit('fieldChange',
         this.field.options.name,
         newValue,
         oldValue,
         this.subFormName,
         this.subFormRowIndex
-      ])
+      )
     },
 
     syncUpdateFormModel(value) {
@@ -390,19 +413,16 @@ export default {
 
     // 保存单字段修改值
     putUpdateField() {
- 
+  
       if(this.developData.show==='0'){
-        document.removeEventListener('click', (e) => {
-          this.handlePopoverHide()
-        }) 
         return false
       }
-
-      if(!this.field.data_id||!this.developData.data_id){
-        return false
-      }
+      
     
-      if(this.fieldModel!=this.oldFieldValue&&this.fieldModel&&JSON.stringify(this.fieldModel)!==JSON.stringify(this.oldFieldValue)){
+      if(this.fieldModel !== this.oldFieldValue && 
+    (this.fieldModel !== null && typeof this.fieldModel !== 'undefined') &&
+    JSON.stringify(this.fieldModel) !== JSON.stringify(this.oldFieldValue)){
+     
         let obj = {
           field_name: this.field.options.name,
           value: this.fieldModel
@@ -419,6 +439,13 @@ export default {
     },
 
     handleChangeEvent(value,val) {
+      if(this.parentWidget&&this.parentWidget.type=='details'){
+   this.$emit('valueChange',value)
+return false
+      }
+      
+      
+    
       /* input的清除输入小按钮会同时触发handleChangeEvent、handleInputCustomEvent！！ */
       this.syncUpdateFormModel(value)
       this.emitFieldDataChange(value, this.oldFieldValue)
@@ -428,7 +455,8 @@ export default {
       /* oldFieldValue需要在initFieldModel()方法中赋初值!! */
 
       /* 主动触发表单的单个字段校验，用于清除字段可能存在的校验错误提示 */
-      this.dispatch('VFormRender', 'fieldValidation', [this.getPropName()])
+   
+      this.formRenderHub?.emit('fieldValidation', this.getPropName())
     },
 
     handleFocusCustomEvent(event) {
@@ -452,7 +480,7 @@ export default {
       this.syncUpdateFormModel(value)
 
       /* 主动触发表单的单个字段校验，用于清除字段可能存在的校验错误提示 */
-      this.dispatch('VFormRender', 'fieldValidation', [this.getPropName()])
+      this.formRenderHub?.emit('fieldValidation', this.getPropName())
 
       if (!!this.field.options.onInput) {
         let customFn = new Function('value', this.field.options.onInput)
@@ -470,8 +498,7 @@ export default {
         let customFn = new Function(this.field.options.onAppendButtonClick)
         customFn.call(this)
       } else {
-        /* 必须调用mixins中的dispatch方法逐级向父组件发送消息！！ */
-        this.dispatch('VFormRender', 'appendButtonClick', [this])
+        this.formRenderHub?.emit('appendButtonClick', this)
       }
     },
 
@@ -501,7 +528,7 @@ export default {
         let changeFn = new Function(this.field.options.onClick)
         changeFn.call(this)
       } else {
-        this.dispatch('VFormRender', 'buttonClick', [this])
+        this.formRenderHub?.emit('buttonClick', this)
       }
     },
 
@@ -684,11 +711,11 @@ export default {
     },
 
     setUploadHeader(name, value) {
-      this.$set(this.uploadHeaders, name, value)
+      this.uploadHeaders[name] = value
     },
 
     setUploadData(name, value) {
-      this.$set(this.uploadData, name, value)
+      this.uploadData[name] = value
     },
 
     setToolbar(customToolbar) {

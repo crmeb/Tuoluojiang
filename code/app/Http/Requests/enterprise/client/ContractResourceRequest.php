@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -21,7 +21,7 @@ class ContractResourceRequest extends ApiValidate
 {
     /**
      * 验证场景.
-     * @var \string[][]
+     * @var string[][]
      */
     protected $scene = [
         'store'  => ['cid', 'content'],
@@ -35,9 +35,9 @@ class ContractResourceRequest extends ApiValidate
     public function message()
     {
         return [
-            'cid.required'     => '请填写合同ID',
-            'cid.numeric'      => '合同ID必须为数字',
-            'cid.gt'           => '请填写合同ID',
+            'cid.required'     => '请填写订单ID',
+            'cid.numeric'      => '订单ID必须为数字',
+            'cid.gt'           => '请填写订单ID',
             'content.required' => '请填写资料描述',
         ];
     }

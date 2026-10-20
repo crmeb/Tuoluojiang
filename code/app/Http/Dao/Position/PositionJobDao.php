@@ -15,11 +15,11 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Position;
 
-use App\Http\Dao\BaseDao;
 use App\Http\Model\Position\Job;
-use crmeb\interfaces\ResourceDaoInterface;
-use crmeb\traits\dao\ListSearchTrait;
-use crmeb\traits\dao\PathUpdateTrait;
+use App\Http\Dao\BaseDao;
+use Tuoluojiang\Open\interfaces\ResourceDaoInterface;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
+use Tuoluojiang\Open\traits\dao\PathUpdateTrait;
 
 /**
  * 企业岗位

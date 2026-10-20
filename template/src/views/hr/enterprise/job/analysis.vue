@@ -12,11 +12,11 @@
                 clearable
                 placeholder="搜索部门"
                 prefix-icon="el-icon-search"
-                size="small"
               />
             </div>
             <el-tree
               ref="tree"
+              style="margin: 10px 10px 0"
               :data="treeData"
               :default-expanded-keys="defaultFrame"
               :expand-on-click-node="false"
@@ -26,12 +26,14 @@
               node-key="value"
               @node-click="handleNodeClick"
             >
-              <div slot-scope="{ node, data }" class="custom-tree-node">
-                <div class="flex-box">
-                  <i class="tree-icon iconfont iconwenjianjia" />
-                  <div class="over-text">{{ node.label }}</div>
+              <template #default="{ node, data }">
+                <div class="custom-tree-node">
+                  <div class="flex-box">
+                    <i class="tree-icon iconfont iconwenjianjia" />
+                    <div class="over-text">{{ node.label }}</div>
+                  </div>
                 </div>
-              </div>
+              </template>
             </el-tree>
           </div>
         </el-col>
@@ -48,12 +50,12 @@
           ></oaFromBox>
 
           <div v-loading="loading" class="mt10">
-            <el-table :data="tableData" :height="tableHeight" class="table" style="width: 100%">
+            <el-table :data="tableData" :height="TABLE_HEIGHT" class="table" style="width: 100%">
               <el-table-column type="index" width="50"> </el-table-column>
               <el-table-column label="人员姓名" prop="name"> </el-table-column>
               <el-table-column label="职位" prop="job.name"> </el-table-column>
               <el-table-column label="部门" prop="frame.name">
-                <template slot-scope="scope">
+                <template #default="scope">
                   <div v-for="(item, index) in scope.row.frames" :key="index" class="frame-name over-text">
                     <span class="icon-h">
                       {{ item.name
@@ -64,18 +66,16 @@
               </el-table-column>
               <el-table-column label="更新时间" prop="updated_at"> </el-table-column>
               <el-table-column fixed="right" label="操作" width="130">
-                <template slot-scope="scope">
+                <template #default="scope">
                   <el-button
                     v-hasPermi="['hr:enterprise:analysis:check']"
-                    size="small"
-                    type="text"
+                    type="primary" link
                     @click="onCheck(scope.row)"
                     >查看</el-button
                   >
                   <el-button
                     v-hasPermi="['hr:enterprise:analysis:edit']"
-                    size="small"
-                    type="text"
+                    type="primary" link
                     @click="onEdit(scope.row)"
                     >编辑</el-button
                   >
@@ -99,10 +99,10 @@
     </el-card>
 
     <!-- 查看 -->
-    <el-drawer :before-close="handleClose" :visible.sync="checkDrawer" direction="rtl" size="60%" title="工作分析表">
-      <div v-if="detailData" class="check-box" >
+    <el-drawer :before-close="handleClose" v-model="checkDrawer" direction="rtl" size="60%" title="工作分析表">
+      <div v-if="detailData" class="check-box">
         <div class="content mt14">
-          <ueditorFrom :content="detailData" readOnly height="88vh" type="notepad" border />
+          <ueditorFrom :content="detailData" :readOnly="true" height="88vh" type="notepad" border />
         </div>
       </div>
       <div v-else>
@@ -113,8 +113,8 @@
     <!-- 编辑 -->
     <el-drawer
       :before-close="handleClose"
-      :visible.sync="editDrawer"
-      :wrapperClosable="false"
+      v-model="editDrawer"
+      :close-on-click-modal="false"
       direction="rtl"
       size="61%"
       title="编辑工作分析表"
@@ -125,34 +125,46 @@
           <span class="text">{{ userName }}</span>
         </div>
 
-        <component :is="loadEdit" ref="ueditorFrom" type="notepad" :border="true" :content="content" :height="height" />
+        <div v-loading="editorLoading">
+          <ueditorFrom
+            ref="ueditorFrom"
+            type="notepad"
+            :readOnly="false"
+            :border="true"
+            :content="content"
+            :height="height"
+          />
+        </div>
       </div>
       <div class="button from-foot-btn fix btn-shadow">
-        <el-button size="small" @click="editDrawer = false">{{ $t('public.cancel') }}</el-button>
-        <el-button :loading="saveLoading" size="small" type="primary" @click="handleConfirm">保存</el-button>
+        <el-button @click="editDrawer = false">取消</el-button>
+        <el-button :loading="saveLoading" type="primary" @click="handleConfirm">保存</el-button>
       </div>
     </el-drawer>
   </div>
 </template>
 
 <script>
-import { configFrameApi } from '@/api/setting'
-import { jobSelectApi } from '@/api/config.js'
-import { jobAnalysis, jobDetails, putAnalysis } from '@/api/user'
+import { defineAsyncComponent } from 'vue'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { configFrameApi } from '@/api/setting.ts'
+import { jobSelectApi } from '@/api/config.ts'
+import { jobAnalysis, jobDetails, putAnalysis } from '@/api/user.ts'
 import ueditorFrom from '@/components/form-common/oa-wangeditor'
 import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'CrmebOaEntAnalysis',
   components: {
-    defaultPage: () => import('@/components/common/defaultPage'),
+    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage')),
     oaFromBox,
     ueditorFrom
   },
 
   data() {
     return {
+      TABLE_HEIGHT,
       treeData: [],
-      height: 'calc(100vh - 180px)',
+      height: window.innerHeight - 240 + 'px',
       defaultFrame: [],
       totalSubmit: 0,
       checkDrawer: false,
@@ -162,6 +174,8 @@ export default {
       filterText: '',
       userName: '',
       content: '',
+      uid: '',
+      editorLoading: false,
 
       defaultProps: {
         children: 'children',
@@ -188,7 +202,6 @@ export default {
         frame_id: ''
       },
       search: [],
-      loadEdit: '',
       loading: false,
       tableData: [],
       options: []
@@ -219,7 +232,7 @@ export default {
     async getList() {
       const result = await configFrameApi()
       this.treeData = result.data
-      this.$set(this.where, 'frame_id', this.treeData[0].value)
+      this.where.frame_id = this.treeData[0].value
       this.defaultFrame = [this.treeData[0].value]
       await this.getAnalysis()
     },
@@ -249,7 +262,7 @@ export default {
           limit: 15,
           frame_id: ''
         }
-        this.$set(this.where, 'frame_id', this.treeData[0].value)
+        this.where.frame_id = this.treeData[0].value
         this.getAnalysis()
       } else {
         this.where = { ...this.where, ...data }
@@ -278,32 +291,40 @@ export default {
     // 查看下级工作分析
     onCheck(data) {
       this.getCheck(data.id)
-      this.checkDrawer = true
+      setTimeout(() => {
+        this.checkDrawer = true
+      }, 200)
     },
 
     // 列表工作分析内容
     getCheck(uid) {
       return jobDetails(uid)
         .then((res) => {
-          this.detailData = res.data.data
-          this.loadEdit = ueditorFrom
+          this.detailData = res.data.data || ''
         })
         .catch((err) => {
           this.detailData = ''
-          this.loadEdit = ueditorFrom
         })
     },
 
     // 编辑下级工作分析
-    onEdit(data) {
+    async onEdit(data) {
       this.userName = data.name
       this.uid = data.id
+      this.editorLoading = true
 
-      this.getCheck(data.id)
-        .then(() => {
-          this.content = this.detailData || ''
-        });
-      this.editDrawer = true
+      try {
+        await this.getCheck(data.id)
+        this.content = this.detailData || ''
+        this.$nextTick(() => {
+          this.editorLoading = false
+          this.editDrawer = true
+        })
+      } catch (error) {
+        this.content = ''
+        this.editorLoading = false
+        this.editDrawer = true
+      }
     },
 
     // 保存编辑内容
@@ -354,12 +375,15 @@ export default {
   white-space: nowrap;
 }
 .tree-box {
-  background: #fff;
 }
 .tree-icon {
   margin-right: 5px;
   font-size: 15px;
   color: #ffca28;
+}
+
+:deep(.el-tree) {
+  background-color: transparent;
 }
 .flex-box {
   display: flex;
@@ -400,7 +424,7 @@ export default {
 .table {
   margin-top: 5px;
 }
-/deep/ .el-card__body {
+:deep(.el-card__body) {
   padding: 0;
 }
 .icon-h {
@@ -409,23 +433,21 @@ export default {
     color: #1890ff;
   }
 }
-/deep/ .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content {
+:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
   background: rgba(240, 250, 254, 0.6);
-  border-color: #1890ff;
   .flex-box {
     color: #1890ff;
     font-weight: 600;
   }
 }
 
-/deep/.el-tree-node__content {
+:deep(.el-tree-node__content) {
   height: 40px;
-  padding-right: 15px;
-  border-right: 2px solid transparent;
+  border-radius: 4px;
 }
 
 .check-box {
-  /deep/ .el-scrollbar__wrap {
+  :deep(.el-scrollbar__wrap) {
     overflow-x: hidden;
   }
   color: #666666;
@@ -433,45 +455,46 @@ export default {
   padding-top: 0px;
 
   .content {
-    /deep/ p {
+    :deep(p) {
       text-indent: 2em;
       font-size: 14px;
       line-height: 1.5;
     }
-    /deep/ td {
+    :deep(td) {
       border: 1px solid;
     }
-    /deep/ table {
+    :deep(table) {
       border: 1px solid #ccc;
     }
 
-    /deep/ table th {
+    :deep(table th) {
       border: 1px solid #ccc;
     }
-    /deep/ table td {
+    :deep(table td) {
       padding: 10px 5px;
       border: 1px solid #ccc;
     }
 
-    /deep/ p img {
+    :deep(p img) {
       max-width: 800px;
     }
   }
 }
 
-/deep/ .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node,
+:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node),
 .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .right-icon {
   display: inline-block;
   color: #1890ff;
   font-weight: 600;
 }
-/deep/.el-tree-node > .el-tree-node__children {
+:deep(.el-tree-node > .el-tree-node__children) {
   overflow: inherit;
 }
 
 .custom-tree-node {
   position: relative;
   width: 100%;
+  overflow: hidden;
   .right-icon {
     display: none;
     position: absolute;

@@ -15,12 +15,17 @@ declare(strict_types=1);
 
 namespace App\Http\Controller\AdminApi\Config;
 
-use App\Http\Controller\AdminApi\AuthController;
+use App\Constants\CacheEnum;
 use App\Http\Requests\system\DIctDataRequest;
 use App\Http\Service\Config\DictDataService;
-use crmeb\interfaces\ResourceControllerInterface;
-use crmeb\traits\ResourceControllerTrait;
+use App\Http\Service\Config\DictTypeService;
+use App\Http\Service\Crud\SystemCrudFieldService;
+use App\Http\Service\Crud\SystemCrudService;
+use App\Http\Controller\BaseController;
+use Tuoluojiang\Open\interfaces\ResourceControllerInterface;
+use Tuoluojiang\Open\traits\ResourceControllerTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
+use Illuminate\Support\Facades\Cache;
 use Spatie\RouteAttributes\Attributes\Middleware;
 use Spatie\RouteAttributes\Attributes\Post;
 use Spatie\RouteAttributes\Attributes\Prefix;
@@ -40,7 +45,7 @@ use Spatie\RouteAttributes\Attributes\Resource;
     'destroy' => '删除字典数据接口',
 ], parameters: ['' => 'id'])]
 #[Middleware(['auth.admin', 'ent.auth', 'ent.log'])]
-class DictDataController extends AuthController implements ResourceControllerInterface
+class DictDataController extends BaseController implements ResourceControllerInterface
 {
     use ResourceControllerTrait;
 
@@ -60,6 +65,77 @@ class DictDataController extends AuthController implements ResourceControllerInt
     {
         $where = $this->request->postMore($this->getSearchField());
         return $this->success($this->service->getTreeData($where));
+    }
+
+    /**
+     * 字典数据保存.
+     * @return mixed
+     * @throws BindingResolutionException
+     */
+    #[Post('crud_save', '保存字典数据接口')]
+    public function crudSave(SystemCrudService $crudService, SystemCrudFieldService $service, DictTypeService $typeService)
+    {
+        $crudId  = $this->request->post('crud_id');
+        $fieldId = $this->request->post('field_id');
+        $id      = $this->request->post('data_id');
+
+        $data = $this->request->postMore($this->getRequestFields());
+        if (! $data['name']) {
+            return $this->fail('请填写数据值');
+        }
+        $fieldInfo = $service->get($fieldId, ['field_name', 'field_name_en']);
+        if (! $fieldInfo) {
+            return $this->fail('字段不存在');
+        }
+        $crudInfo = $crudService->get($crudId, ['table_name', 'table_name_en']);
+        if (! $crudInfo) {
+            return $this->fail('数据表不存在');
+        }
+
+        $typeInfo = $typeService->getModel()->where(['crud_id' => $crudId, 'field_id' => $fieldId])->first();
+        if (! $typeInfo) {
+            $typeInfo = $typeService->create([
+                'crud_id'  => $crudId,
+                'field_id' => $fieldId,
+                'name'     => $crudInfo->table_name . '-' . $fieldInfo->field_name,
+                'ident'    => $crudInfo->table_name_en . '_' . $fieldInfo->field_name_en,
+                'level'    => 4,
+                'status'   => 1,
+            ]);
+        }
+
+        $data['type_id'] = $typeInfo->id;
+
+        if ($id) {
+            $this->service->update($id, $data);
+        } else {
+            $data['type_name'] = $crudInfo->table_name_en . '_' . $fieldInfo->field_name_en;
+            $res               = $this->service->create($data);
+        }
+
+        Cache::tags([CacheEnum::TAG_DICT])->flush();
+
+        return $this->success($id ? '修改成功' : '保存成功', isset($res) ? ['id' => $res->id] : []);
+    }
+
+    /**
+     * 保存字典数据排序接口.
+     * @return mixed
+     */
+    #[Post('crud_sort_put', '保存字典数据排序接口')]
+    public function crudSortPut()
+    {
+        $datas = $this->request->post('data', []);
+
+        $sort = count($datas) * 10;
+        foreach ($datas as $data) {
+            $this->service->update($data['id'], ['sort' => $sort]);
+            $sort -= 10;
+        }
+
+        Cache::tags([CacheEnum::TAG_DICT])->flush();
+
+        return $this->success('排序成功');
     }
 
     protected function getRequestClassName(): string

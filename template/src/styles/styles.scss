@@ -2,18 +2,36 @@
 
 @charset "UTF-8";
 
+// 图片自适应容器样式，防止图片撑开容器
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+// 图片保持比例填充容器
+.img-contain {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+// 图片覆盖容器并裁剪
+.img-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .el-card {
   font-size: 14px;
-  border-radius: 2px;
+  border-radius: 6px;
+  border: none;
 }
 
 .svg-icon {
   width: 0.8em;
   height: 0.8em;
-}
-
-.el-table--mini {
-  font-size: 13px !important;
 }
 
 .selWidth {
@@ -101,8 +119,27 @@
 
 .divBox {
   margin: 14px;
-  padding-top: 14px;
+  margin-top: 1px;
   box-sizing: border-box;
+  background: linear-gradient(154deg, rgba(255, 255, 255, 0.23) -1%, #ffffff 20%);
+  // 仅最外层 el-card 透明（不含嵌套在 card 内部的 card）
+  border-radius: 8px;
+  border: 1px solid #fff;
+  .el-card {
+    background-color: transparent;
+    border-radius: 0 0 8px 8px;
+  }
+
+  .el-table {
+    background-color: transparent !important;
+    tr {
+      background-color: transparent !important;
+    }
+  }
+
+  .el-table__body-wrapper {
+    background-color: transparent !important;
+  }
 
   .el-pagination {
     display: flex;
@@ -111,31 +148,84 @@
   }
 }
 
+.box-height {
+  height: calc(100vh - 81px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none; /* firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
 .flex-between {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
-
-
+.background-card {
+  background: linear-gradient(178deg, rgba(255, 255, 255, 0.23) 0%, rgba(255, 255, 255, 0.83) 50%, #ffffff 100%);
+  border: 1px solid #fff;
+}
 
 // tab页表格设置最小高度 -解决空数据留白问题
 .employees-card {
-  min-height: calc(100vh - 77px);
+  min-height: calc(100vh - 82px);
 }
 
 // tab页表格设置最小高度 -解决空数据留白问题
 .employees-card-bottom {
-  min-height: calc(100vh - 77px);
+  min-height: calc(100vh - 82px);
   //height: calc(100vh - 52px );
   overflow: auto;
 }
 
 // 普通页面表格设置最小高度 -解决空数据留白问题
 .normal-page {
-  min-height: calc(100vh - 77px);
+  min-height: calc(100vh - 82px);
   //height: calc(100vh - 52px );
   overflow: auto;
+}
+
+.el-card-flex {
+  display: flex;
+  flex-direction: column;
+  & > .el-card__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+// 表格 flex 布局：表格自适应占据搜索框与分页器之间的剩余空间。
+// 用法：外层 el-card 需要加 .el-card-flex；表格容器加 .flex-layout-table，
+// 内部按 .table-box > .table-wrapper > .table-content 嵌套，分页器外层加 .page-fixed。
+.flex-layout-table {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+
+  .table-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .table-wrapper {
+    flex: 1;
+    position: relative;
+
+    .table-content {
+      position: absolute;
+      inset: 0;
+    }
+  }
+
+  .page-fixed {
+    position: initial !important;
+
+    .el-pagination {
+      margin-top: 14px;
+    }
+  }
 }
 
 // 两行搜索：设置最小高度 -解决空数据留白问题
@@ -148,41 +238,15 @@
   min-height: calc(100vh - 92px - 60px);
 }
 
-.seachTiele {
-  font-size: 13px;
-}
-
 .el-divider--horizontal {
   margin: 22px 0;
-  background-color:  $--color-line05;
+  background-color: $--color-line05;
 }
 
 .suibian-modal {
   .el-dialog__footer {
     display: none !important;
   }
-}
-
-.el-message-box__wrapper {
-  overflow: auto;
-}
-
-.el-message-box {
-  overflow: auto !important;
-  padding-bottom: 20px;
-}
-
-.el-message-box__header {
-  font-family: PingFang SC, PingFang SC;
-  font-weight: 500;
-  font-size: 14px;
-  color: #1E2128;
-  padding: 15px 20px;
-  border-bottom: 1px solid #E7E7E7;
-}
-
-.el-form-item__label {
-  padding: 0 6px 0 0;
 }
 
 .modal-form {
@@ -255,14 +319,6 @@
   }
 }
 
-.el-message-box__content {
-  padding: 20px;
-}
-
-.el-message-box__title {
-  font-size: 14px;
-}
-
 /**
  * 标题带下划线
  */
@@ -287,28 +343,24 @@ $gridMarginDefault: 5 !default;
 
 @for $k from 0 through $gridMarginColumns {
   .mt#{$gridMarginDefault + $k * 5} {
-    margin-top: ($gridMarginGutter*($k+1));
+    margin-top: ($gridMarginGutter * ($k + 1));
   }
 
   .mr#{$gridMarginDefault + $k * 5} {
-    margin-right: ($gridMarginGutter*($k+1));
+    margin-right: ($gridMarginGutter * ($k + 1));
   }
 
   .mb#{$gridMarginDefault + $k * 5} {
-    margin-bottom: ($gridMarginGutter*($k+1));
+    margin-bottom: ($gridMarginGutter * ($k + 1));
   }
 
   .ml#{$gridMarginDefault + $k * 5} {
-    margin-left: ($gridMarginGutter*($k+1));
+    margin-left: ($gridMarginGutter * ($k + 1));
   }
 }
 
 .mb12 {
   margin-bottom: 12px;
-}
-
-.mt10 {
-  margin-top: 10px;
 }
 
 .mt14 {
@@ -369,7 +421,7 @@ $gridMarginDefault: 5 !default;
 }
 
 .mtrl14 {
-  margin: -14px -14px 0 -14px
+  margin: -14px -14px 0 -14px;
 }
 
 .font-weight800 {
@@ -430,7 +482,7 @@ a {
 /*关闭时文字位置设置*/
 .el-switch__label--left {
   z-index: 1;
-  left: 19px;
+  left: 21px;
   font-size: 12px !important;
 }
 
@@ -448,7 +500,7 @@ a {
 }
 
 .el-switch__core {
-  min-width: 60px;
+  min-width: 60px !important;
 }
 
 .el-switch__label * {
@@ -486,8 +538,6 @@ table .el-image {
   background: rgba(0, 0, 0, 0.6) !important;
   z-index: 0 !important;
 }
-
-
 
 .blue-theme .el-checkbox__input.is-disabled.is-checked .el-checkbox__inner {
   background-color: #1890ff;
@@ -556,37 +606,30 @@ table .el-image {
   color: #ffffff !important;
 }
 
+// 全局 a 的 !important 颜色会污染月份选择器，导致禁用月份仍显示为可点的蓝色，此处还原文字色与禁用态
+.el-month-table td .cell {
+  color: #606266 !important;
+}
+
+// 当前月、选中月的高亮保持 Element 语义；禁用态与区间起止月（蓝底白字）除外
+.el-month-table td.today:not(.disabled):not(.start-date):not(.end-date) .cell,
+.el-month-table td.current:not(.disabled):not(.start-date):not(.end-date) .cell,
+.el-month-table td:not(.disabled):not(.start-date):not(.end-date) .cell:hover {
+  color: #1890ff !important;
+}
+
+.el-month-table td.disabled .cell {
+  color: #c0c4cc !important;
+  background-color: transparent !important;
+  cursor: not-allowed;
+}
+
+.el-month-table td.today.disabled .cell {
+  font-weight: 400;
+}
+
 .btn-shadow {
   box-shadow: 0px -2px 4px 0px rgba(0, 0, 0, 0.05);
-}
-
-// 项目侧边菜单高度设置
-.el-menu-item.submenu-title-noDropdown,
-.el-submenu__title,
-.el-submenu .el-menu-item {
-  height: 50px;
-  line-height: 50px;
-  background: #fff !important;
-  color: #000 !important;
-
-}
-
-.el-menu-item.submenu-title-noDropdown:hover,
-.el-menu-item.submenu-title-noDropdown:hover i,
-.el-submenu .el-menu-item:hover {
-  color: rgb(64, 158, 255) !important;
-}
-
-.router-link-exact-active.router-link-active li {
-  background: #F0F2F5 !important;
-}
-
-.child-bar .submenu-title-noDropdown {
-  font-size: 14px !important;
-}
-
-.child-bar .el-submenu .el-menu-item {
-  font-size: 14px !important;
 }
 
 .flex {
@@ -629,8 +672,49 @@ table .el-image {
   font-size: 14px;
   line-height: 20px;
   font-weight: 500;
+  // Element Plus 的 tab 项是 flex 居中，element-ui 是 inline-block，20px 行高下文字贴顶
+  align-items: flex-start;
 }
 
+// form-create 上传：Element Plus 版默认渲染 148px 图片卡片，按旧版还原为 58px 小方块
+._fc-upload {
+  // 尺寸变量声明在 .el-upload / .el-upload-list 自身，需在元素上覆盖
+  .el-upload,
+  .el-upload-list {
+    --el-upload-picture-card-size: 58px;
+    --el-upload-list-picture-card-size: 58px;
+  }
+
+  .el-upload--picture-card {
+    border: 1px solid #c0ccda;
+    background: #fff;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+
+    .el-icon {
+      font-size: 16px;
+    }
+  }
+}
+
+// 无边框输入框：Element Plus 的 el-input / el-textarea 边框由 box-shadow 绘制，border: 0 无效。
+// 挂在 el-input 自身或其容器上均生效，覆盖常态 / hover / focus / 禁用态。
+// .el-input / .el-textarea 会在自身重新声明这些变量，挂在容器上时需一并覆盖到后代。
+.oa-input-borderless {
+  &,
+  .el-input,
+  .el-textarea {
+    --el-input-border-color: transparent;
+    --el-input-hover-border-color: transparent;
+    --el-input-focus-border-color: transparent;
+    --el-disabled-border-color: transparent;
+  }
+
+  // el-select 的边框颜色取自 --el-border-color / --el-color-primary，不走 input 变量，单独去掉
+  &.el-select .el-select__wrapper,
+  .el-select__wrapper {
+    box-shadow: none !important;
+  }
+}
 
 .cr-alert {
   .el-icon-info {
@@ -654,7 +738,6 @@ table .el-image {
     background: #edf5ff;
     border: 1px solid #97c3ff;
   }
-
 }
 
 .el-table th.el-table__cell.is-leaf,
@@ -662,21 +745,18 @@ table .el-image {
   border-bottom: none;
 }
 
-.el-table::before,
-.el-table__fixed-right::before {
+.el-table__inner-wrapper::before {
   height: 0;
 }
 
-.el-input-number .el-input__inner {
+// Element Plus 默认 align="center"，.is-center 优先级更高，一并覆盖
+.el-input-number .el-input__inner,
+.el-input-number.is-center .el-input__inner {
   text-align: left;
 }
 
 .el-select-dropdown {
   border: none;
-}
-
-.el-popper .popper__arrow {
-  display: none;
 }
 
 .inTotal {
@@ -691,10 +771,10 @@ table .el-image {
   width: 100%;
   height: 2px;
   border-top: 1px solid $--color-line04;
-
 }
 
 .el-form-item__label {
+  padding: 0 6px 0 0;
   font-size: 13px;
   font-family: PingFangSC-Regular, PingFang SC;
   font-weight: 400;
@@ -702,7 +782,7 @@ table .el-image {
 }
 
 .el-form-item {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .from-s {
@@ -715,65 +795,13 @@ table .el-image {
       display: flex;
       align-items: center;
       margin-right: 10px;
-
     }
-
   }
 
   .flex-col {
     display: flex;
     justify-content: space-between;
     align-items: center;
-  }
-
-
-  .el-input__inner {
-    border: none !important;
-    // cursor: pointer !important;
-  }
-
-  .el-range-editor--small .el-range__icon {
-    line-height: 20px;
-  }
-
-  .el-range-editor--small .el-range-separator {
-    font-size: 13px;
-    line-height: 20px;
-  }
-
-  .el-range-editor--small .el-range-input {
-    font-size: 13px;
-    cursor: pointer;
-  }
-
-  .el-input--small .el-input__inner {
-    height: 24px !important;
-    line-height: 26px;
-    font-size: 13px;
-    // cursor: pointer;
-  }
-
-  .el-range-editor.el-input__inner {
-    display: none;
-  }
-
-  .el-range-editor--small.el-input__inner {
-    height: 30px;
-
-  }
-
-  .el-date-editor--daterange.el-input__inner {
-    height: 28px;
-    display: flex;
-    align-items: center;
-
-  }
-
-  .el-form-item--medium .el-form-item__content {
-    line-height: 31px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .el-cascader {
@@ -790,7 +818,6 @@ table .el-image {
 
     .el-input__icon {
       font-size: 13px;
-
     }
   }
 
@@ -803,7 +830,8 @@ table .el-image {
     // line-height: 29px;
     border-radius: 4px;
     border: 1px solid #dcdfe6;
-
+    // 内部 el-input__inner 高度小于外框，需自身补白底，避免露出容器背景
+    background-color: #fff;
   }
 
   .select-bar:hover {
@@ -813,7 +841,6 @@ table .el-image {
   .select-bar:focus-within {
     border-color: #1890ff;
   }
-
 }
 
 .fz13 {
@@ -848,3 +875,56 @@ table .el-image {
     background-color: $--color-bg3;
   }
 }
+
+/* 定义整个滚动条的样式（适用于 Webkit 内核浏览器：Chrome、Safari、Edge 等） */
+::-webkit-scrollbar {
+  /* 滚动条宽度（垂直滚动条）/ 高度（水平滚动条） */
+  width: 8px;
+  height: 8px;
+}
+
+/* 滚动条轨道（背景）样式 */
+::-webkit-scrollbar-track {
+  /* 轨道背景色，建议用浅色系，和页面背景协调 */
+  background: #f1f1f1;
+  /* 轨道圆角，和滑块圆角呼应更美观 */
+  border-radius: 4px;
+}
+
+/* 滚动条滑块（可拖动的部分）样式 */
+::-webkit-scrollbar-thumb {
+  /* 滑块背景色，可根据品牌色调整 */
+  background: #c1c1c1;
+  /* 滑块圆角，让边角更圆润 */
+  border-radius: 4px;
+  /* 鼠标悬停时的过渡效果，更丝滑 */
+  transition: background 0.2s ease;
+}
+
+/* 滑块hover状态（鼠标悬停时） */
+::-webkit-scrollbar-thumb:hover {
+  /* hover时加深颜色，提升交互感 */
+  background: #a8a8a8;
+}
+
+/* 滑块active状态（鼠标点击拖动时） */
+::-webkit-scrollbar-thumb:active {
+  /* 点击时颜色更深，强化交互反馈 */
+  background: #888888;
+}
+
+/* 兼容 Firefox 浏览器的滚动条样式 */
+/* Firefox 没有细粒度的滚动条样式控制，只能设置基础样式 */
+* {
+  scrollbar-width: thin; /* 可选：auto | thin | none（隐藏） */
+  scrollbar-color: #c1c1c1 #f1f1f1; /* 滑块颜色 轨道颜色 */
+}
+
+/* 可选：隐藏滚动条但保留滚动功能（适合需要隐藏滚动条的场景） */
+/* .hide-scrollbar {
+  -ms-overflow-style: none;  IE and Edge
+  scrollbar-width: none;  Firefox
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;  Chrome, Safari, Opera
+} */

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -40,6 +40,21 @@ class AttendanceShift extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'               => 'integer',
+        'number'           => 'integer',
+        'rest_time'        => 'integer',
+        'rest_start_after' => 'integer',
+        'rest_end_after'   => 'integer',
+        'overtime'         => 'integer',
+        'sort'             => 'integer',
+        'uid'              => 'integer',
+        'types'            => 'integer',
+        'created_at'       => 'datetime:Y-m-d H:i:s',
+        'updated_at'       => 'datetime:Y-m-d H:i:s',
+        'deleted_at'       => 'datetime:Y-m-d H:i:s',
+    ];
 
     protected $hidden = [
         'deleted_at',
@@ -81,8 +96,6 @@ class AttendanceShift extends BaseModel
 
     /**
      * ID 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeIdGt($query, $value): void
     {
@@ -91,8 +104,6 @@ class AttendanceShift extends BaseModel
 
     /**
      * ID 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeNotId($query, $value): void
     {

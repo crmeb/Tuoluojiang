@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of PHPPresentation - A pure PHP library for reading and writing
  * presentations documents.
@@ -10,10 +11,12 @@
  * file that was distributed with this source code. For the full list of
  * contributors, visit https://github.com/PHPOffice/PHPPresentation/contributors.
  *
- * @link        https://github.com/PHPOffice/PHPPresentation
- * @copyright   2009-2015 PHPPresentation contributors
+ * @see        https://github.com/PHPOffice/PHPPresentation
+ *
  * @license     http://www.gnu.org/licenses/lgpl.txt LGPL version 3
  */
+
+declare(strict_types=1);
 
 namespace PhpOffice\PhpPresentation\Shape\RichText;
 
@@ -23,79 +26,101 @@ use PhpOffice\PhpPresentation\Style\Bullet;
 use PhpOffice\PhpPresentation\Style\Font;
 
 /**
- * \PhpOffice\PhpPresentation\Shape\RichText\Paragraph
+ * \PhpOffice\PhpPresentation\Shape\RichText\Paragraph.
  */
 class Paragraph implements ComparableInterface
 {
-    /**
-     * Rich text elements
-     *
-     * @var \PhpOffice\PhpPresentation\Shape\RichText\TextElementInterface[]
-     */
-    private $richTextElements;
+    public const LINE_SPACING_MODE_PERCENT = 'percent';
+    public const LINE_SPACING_MODE_POINT = 'point';
 
     /**
-     * Alignment
+     * Rich text elements.
      *
-     * @var \PhpOffice\PhpPresentation\Style\Alignment
+     * @var array<TextElementInterface>
+     */
+    private $richTextElements = [];
+
+    /**
+     * Alignment.
+     *
+     * @var Alignment
      */
     private $alignment;
 
     /**
-     * Font
+     * Font.
      *
-     * @var \PhpOffice\PhpPresentation\Style\Font
+     * @var null|Font
      */
     private $font;
 
     /**
-     * Bullet style
+     * Bullet style.
      *
-     * @var \PhpOffice\PhpPresentation\Style\Bullet
+     * @var Bullet
      */
     private $bulletStyle;
 
     /**
-     * @var integer
+     * @var int
      */
     private $lineSpacing = 100;
 
     /**
-     * Hash index
-     *
      * @var string
+     */
+    private $lineSpacingMode = self::LINE_SPACING_MODE_PERCENT;
+
+    /**
+     * @var float
+     */
+    private $spacingBefore = 0;
+
+    /**
+     * @var float
+     */
+    private $spacingAfter = 0;
+
+    /**
+     * Hash index.
+     *
+     * @var int
      */
     private $hashIndex;
 
     /**
-     * Create a new \PhpOffice\PhpPresentation\Shape\RichText\Paragraph instance
+     * Create a new \PhpOffice\PhpPresentation\Shape\RichText\Paragraph instance.
      */
     public function __construct()
     {
-        // Initialise variables
-        $this->richTextElements = array();
         $this->alignment = new Alignment();
         $this->font = new Font();
         $this->bulletStyle = new Bullet();
     }
 
     /**
-     * Get alignment
-     *
-     * @return \PhpOffice\PhpPresentation\Style\Alignment
+     * Magic Method : clone.
      */
-    public function getAlignment()
+    public function __clone()
+    {
+        // Clone each text
+        foreach ($this->richTextElements as &$rtElement) {
+            $rtElement = clone $rtElement;
+        }
+    }
+
+    /**
+     * Get alignment.
+     */
+    public function getAlignment(): Alignment
     {
         return $this->alignment;
     }
 
     /**
-     * Set alignment
-     *
-     * @param  \PhpOffice\PhpPresentation\Style\Alignment $alignment
-     * @return \PhpOffice\PhpPresentation\Shape\RichText\Paragraph
+     * Set alignment.
      */
-    public function setAlignment(Alignment $alignment)
+    public function setAlignment(Alignment $alignment): self
     {
         $this->alignment = $alignment;
 
@@ -103,23 +128,19 @@ class Paragraph implements ComparableInterface
     }
 
     /**
-     * Get font
-     *
-     * @return \PhpOffice\PhpPresentation\Style\Font
+     * Get font.
      */
-    public function getFont()
+    public function getFont(): ?Font
     {
         return $this->font;
     }
 
     /**
-     * Set font
+     * Set font.
      *
-     * @param  \PhpOffice\PhpPresentation\Style\Font $pFont Font
-     * @throws \Exception
-     * @return \PhpOffice\PhpPresentation\Shape\RichText\Paragraph
+     * @param null|Font $pFont Font
      */
-    public function setFont(Font $pFont = null)
+    public function setFont(?Font $pFont = null): self
     {
         $this->font = $pFont;
 
@@ -127,23 +148,17 @@ class Paragraph implements ComparableInterface
     }
 
     /**
-     * Get bullet style
-     *
-     * @return \PhpOffice\PhpPresentation\Style\Bullet
+     * Get bullet style.
      */
-    public function getBulletStyle()
+    public function getBulletStyle(): ?Bullet
     {
         return $this->bulletStyle;
     }
 
     /**
-     * Set bullet style
-     *
-     * @param  \PhpOffice\PhpPresentation\Style\Bullet $style
-     * @throws \Exception
-     * @return \PhpOffice\PhpPresentation\Shape\RichText\Paragraph
+     * Set bullet style.
      */
-    public function setBulletStyle(Bullet $style = null)
+    public function setBulletStyle(?Bullet $style = null): self
     {
         $this->bulletStyle = $style;
 
@@ -151,13 +166,11 @@ class Paragraph implements ComparableInterface
     }
 
     /**
-     * Create text (can not be formatted !)
+     * Create text (can not be formatted !).
      *
-     * @param  string $pText Text
-     * @return \PhpOffice\PhpPresentation\Shape\RichText\TextElement
-     * @throws \Exception
+     * @param string $pText Text
      */
-    public function createText($pText = '')
+    public function createText(string $pText = ''): TextElement
     {
         $objText = new TextElement($pText);
         $this->addText($objText);
@@ -166,13 +179,11 @@ class Paragraph implements ComparableInterface
     }
 
     /**
-     * Add text
+     * Add text.
      *
-     * @param  \PhpOffice\PhpPresentation\Shape\RichText\TextElementInterface $pText Rich text element
-     * @throws \Exception
-     * @return \PhpOffice\PhpPresentation\Shape\RichText\Paragraph
+     * @param null|TextElementInterface $pText Rich text element
      */
-    public function addText(TextElementInterface $pText = null)
+    public function addText(?TextElementInterface $pText = null): self
     {
         $this->richTextElements[] = $pText;
 
@@ -180,12 +191,9 @@ class Paragraph implements ComparableInterface
     }
 
     /**
-     * Create break
-     *
-     * @return \PhpOffice\PhpPresentation\Shape\RichText\BreakElement
-     * @throws \Exception
+     * Create break.
      */
-    public function createBreak()
+    public function createBreak(): BreakElement
     {
         $objText = new BreakElement();
         $this->addText($objText);
@@ -194,13 +202,11 @@ class Paragraph implements ComparableInterface
     }
 
     /**
-     * Create text run (can be formatted)
+     * Create text run (can be formatted).
      *
-     * @param  string $pText Text
-     * @return \PhpOffice\PhpPresentation\Shape\RichText\Run
-     * @throws \Exception
+     * @param string $pText Text
      */
-    public function createTextRun($pText = '')
+    public function createTextRun(string $pText = ''): Run
     {
         $objText = new Run($pText);
         $objText->setFont(clone $this->font);
@@ -210,7 +216,7 @@ class Paragraph implements ComparableInterface
     }
 
     /**
-     * Convert to string
+     * Convert to string.
      *
      * @return string
      */
@@ -220,16 +226,14 @@ class Paragraph implements ComparableInterface
     }
 
     /**
-     * Get plain text
-     *
-     * @return string
+     * Get plain text.
      */
-    public function getPlainText()
+    public function getPlainText(): string
     {
         // Return value
         $returnValue = '';
 
-        // Loop trough all \PhpOffice\PhpPresentation\Shape\RichText\TextElementInterface
+        // Loop trough all TextElementInterface
         foreach ($this->richTextElements as $text) {
             if ($text instanceof TextElementInterface) {
                 $returnValue .= $text->getText();
@@ -241,39 +245,33 @@ class Paragraph implements ComparableInterface
     }
 
     /**
-     * Get Rich Text elements
+     * Get Rich Text elements.
      *
-     * @return \PhpOffice\PhpPresentation\Shape\RichText\TextElementInterface[]
+     * @return array<TextElementInterface>
      */
-    public function getRichTextElements()
+    public function getRichTextElements(): array
     {
         return $this->richTextElements;
     }
 
     /**
-     * Set Rich Text elements
+     * Set Rich Text elements.
      *
-     * @param  \PhpOffice\PhpPresentation\Shape\RichText\TextElementInterface[] $pElements Array of elements
-     * @throws \Exception
-     * @return \PhpOffice\PhpPresentation\Shape\RichText\Paragraph
+     * @param array<TextElementInterface> $pElements Array of elements
      */
-    public function setRichTextElements($pElements = null)
+    public function setRichTextElements(array $pElements = []): self
     {
-        if (is_array($pElements)) {
-            $this->richTextElements = $pElements;
-        } else {
-            throw new \Exception("Invalid \PhpOffice\PhpPresentation\Shape\RichText\TextElementInterface[] array passed.");
-        }
+        $this->richTextElements = $pElements;
 
         return $this;
     }
 
     /**
-     * Get hash code
+     * Get hash code.
      *
      * @return string Hash code
      */
-    public function getHashCode()
+    public function getHashCode(): string
     {
         $hashElements = '';
         foreach ($this->richTextElements as $element) {
@@ -284,46 +282,100 @@ class Paragraph implements ComparableInterface
     }
 
     /**
-     * Get hash index
+     * Get hash index.
      *
      * Note that this index may vary during script execution! Only reliable moment is
      * while doing a write of a workbook and when changes are not allowed.
      *
-     * @return string Hash index
+     * @return null|int Hash index
      */
-    public function getHashIndex()
+    public function getHashIndex(): ?int
     {
         return $this->hashIndex;
     }
 
     /**
-     * Set hash index
+     * Set hash index.
      *
      * Note that this index may vary during script execution! Only reliable moment is
      * while doing a write of a workbook and when changes are not allowed.
      *
-     * @param string $value Hash index
+     * @param int $value Hash index
+     *
+     * @return $this
      */
-    public function setHashIndex($value)
+    public function setHashIndex(int $value)
     {
         $this->hashIndex = $value;
+
+        return $this;
     }
 
-    /**
-     * @return int
-     */
-    public function getLineSpacing()
+    public function getLineSpacing(): int
     {
         return $this->lineSpacing;
     }
 
     /**
-     * @param int $lineSpacing
-     * @return Paragraph
+     * Value in points.
      */
-    public function setLineSpacing($lineSpacing)
+    public function setLineSpacing(int $lineSpacing): self
     {
         $this->lineSpacing = $lineSpacing;
+
+        return $this;
+    }
+
+    public function getLineSpacingMode(): string
+    {
+        return $this->lineSpacingMode;
+    }
+
+    public function setLineSpacingMode(string $lineSpacingMode): self
+    {
+        if (in_array($lineSpacingMode, [
+            self::LINE_SPACING_MODE_PERCENT,
+            self::LINE_SPACING_MODE_POINT,
+        ])) {
+            $this->lineSpacingMode = $lineSpacingMode;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Value in points.
+     */
+    public function getSpacingBefore(): float
+    {
+        return $this->spacingBefore;
+    }
+
+    /**
+     * Value in points.
+     */
+    public function setSpacingBefore(float $spacingBefore): self
+    {
+        $this->spacingBefore = $spacingBefore;
+
+        return $this;
+    }
+
+    /**
+     * Value in points.
+     */
+    public function getSpacingAfter(): float
+    {
+        return $this->spacingAfter;
+    }
+
+    /**
+     * Value in points.
+     */
+    public function setSpacingAfter(float $spacingAfter): self
+    {
+        $this->spacingAfter = $spacingAfter;
+
         return $this;
     }
 }

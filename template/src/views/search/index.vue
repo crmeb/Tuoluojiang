@@ -6,7 +6,9 @@
           <!-- 搜索 -->
           <div class="search">
             <el-input v-model="keyword" placeholder="搜索功能和帮助" prefix-icon="el-icon-search" @change="getList">
-              <el-button slot="suffix" type="primary" @click="getList()"> 搜索</el-button>
+              <template #suffix>
+                <el-button type="primary" @click="getList()"> 搜索</el-button>
+              </template>
             </el-input>
           </div>
           <!-- tab切换 -->
@@ -83,12 +85,9 @@
 </template>
 
 <script>
-import { mapMutations } from 'vuex'
-import { helpCenterApi, templatePayCode, templateViewApi, templateExportApi } from '@/api/user'
-import file from '@/utils/file'
-import Vue from 'vue'
-Vue.use(file)
-import { roterPre } from '@/settings'
+import { helpCenterApi, templatePayCode, templateViewApi, templateExportApi } from '@/api/user.ts'
+import { fileLinkDownLoad } from '@/utils/file.ts'
+import { roterPre } from '@/settings.ts'
 import payment from '@/components/form-common/dialog-payment'
 export default {
   name: 'CrmebOaEntIndex',
@@ -137,7 +136,7 @@ export default {
     this.getList()
     window.addEventListener('scroll', this.lazyLoading)
   },
-  destroyed() {
+  unmounted() {
     window.removeEventListener('scroll', this.lazyLoading)
   },
 
@@ -151,12 +150,10 @@ export default {
 
   methods: {
     handleClick(e) {
-      this.labelText = e.label
+      this.labelText = e.props.label
 
       this.getList()
     },
-    ...mapMutations('user', ['SET_MENU_LIST']),
-
     // 滚动加载
     lazyLoading(e) {
       let scrollTop = document.documentElement.scrollTop || document.body.scrollTop
@@ -191,7 +188,7 @@ export default {
     fileDown(item) {
       templateExportApi(item.id)
         .then((res) => {
-          this.fileLinkDownLoad(res.data.url, '模板文库')
+          fileLinkDownLoad(res.data.url, '模板文库')
         })
         .catch((err) => {
           this.handlePayment(item.id)
@@ -210,7 +207,6 @@ export default {
       })
     },
     getList(val) {
-      this.$store.commit('app/SET_CLICK_KEY', this.keyword)
       this.loading = true
       if (this.activeName == 'all') {
         this.activeName = ''
@@ -251,10 +247,7 @@ export default {
     .main {
       max-width: 800px;
       margin: 0 auto;
-      /deep/.el-input--medium .el-input__icon {
-        line-height: 42px;
-      }
-      /deep/ .el-input-group__append {
+      :deep(.el-input-group__append) {
         top: 0;
         background-color: #1890ff;
         font-size: 14px;
@@ -269,7 +262,7 @@ export default {
         cursor: pointer;
         padding: 25px 0;
         border-bottom: 1px solid #eeeeee;
-        /deep/ .highlight {
+        :deep(.highlight) {
           background-color: #fff310 !important;
         }
 
@@ -286,7 +279,7 @@ export default {
               font-size: 14px;
               color: #ff9843;
             }
-            /deep/ .highlight {
+            :deep(.highlight) {
               background-color: #fff310 !important;
             }
             .iconwendang {
@@ -365,11 +358,11 @@ export default {
   align-items: center;
 }
 
-/deep/ .el-tabs__nav-wrap::after {
+:deep(.el-tabs__nav-wrap::after) {
   height: 1px;
   background: #eeeeee;
 }
-/deep/ .el-tabs__header {
+:deep(.el-tabs__header) {
   margin: 0;
 }
 .default {
@@ -391,22 +384,19 @@ export default {
   }
 }
 
-/deep/ .el-input__suffix {
+:deep(.el-input__suffix) {
   position: absolute;
   right: 0;
 }
 
-/deep/ .el-button--medium {
+:deep(.el-button) {
   height: 42px;
 
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
 }
-/deep/ .el-input--medium .el-input__inner {
-  height: 42px;
-  line-height: 42px;
-}
-/deep/ .el-input {
+:deep(.el-input) {
+  --el-input-height: 42px;
   padding-right: 50px;
 }
 .color1 {

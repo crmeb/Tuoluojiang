@@ -36,21 +36,52 @@ class CrmebOaServiceProvider extends ServiceProvider
     {
         /* @var Factory $validator */
         $validator = $this->app['validator'];
+        $toString  = static fn (mixed $value): ?string => is_scalar($value) || $value instanceof \Stringable
+            ? (string) $value
+            : null;
         // Validator extensions
-        $validator->extend('captcha_api', function ($attribute, $value, $parameters) {
-            return captcha_api_check(strtolower($value), $parameters[0], $parameters[1] ?? 'default');
+        $validator->extend('captcha_api', function ($attribute, $value, $parameters) use ($toString) {
+            $captcha = $toString($value);
+            $key     = $toString($parameters[0] ?? null);
+
+            if ($captcha === null || $key === null) {
+                return false;
+            }
+
+            return captcha_api_check(strtolower($captcha), $key, $parameters[1] ?? 'default');
         });
         // 验证码验证
-        $validator->extend('verification_api', function ($attribute, $value, $parameters) {
-            return verification_api_check($value, $parameters[0]);
+        $validator->extend('verification_api', function ($attribute, $value, $parameters) use ($toString) {
+            $verificationCode = $toString($value);
+            $phone            = $toString($parameters[0] ?? null);
+
+            if ($verificationCode === null || $phone === null) {
+                return false;
+            }
+
+            return verification_api_check($verificationCode, $phone);
         });
         // 时间比较
-        $validator->extend('time_contrast_api', function ($attribute, $value, $parameters) {
-            return time_contrast_api_check($value, $parameters[0], isset($parameters[1]) ?: false);
+        $validator->extend('time_contrast_api', function ($attribute, $value, $parameters) use ($toString) {
+            $endTime   = $toString($value);
+            $startTime = $toString($parameters[0] ?? null);
+
+            if ($endTime === null || $startTime === null) {
+                return false;
+            }
+
+            return time_contrast_api_check($endTime, $startTime, isset($parameters[1]) ?: false);
         });
         // 密码确认
-        $validator->extend('password_confirm_api', function ($attribute, $value, $parameters) {
-            return password_confirm_api_check($value, $parameters[0] ?? null);
+        $validator->extend('password_confirm_api', function ($attribute, $value, $parameters) use ($toString) {
+            $password        = $toString($value);
+            $passwordConfirm = $toString($parameters[0] ?? null);
+
+            if ($password === null || $passwordConfirm === null) {
+                return false;
+            }
+
+            return password_confirm_api_check($password, $passwordConfirm);
         });
     }
 }

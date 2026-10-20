@@ -1,5 +1,5 @@
 import uniqueId from '@form-create/utils/lib/unique'
-const label = '合同付款'
+const label = '订单付款'
 const name = 'contractPayment'
 export default {
   icon: 'iconfont iconqingjia2',
@@ -19,9 +19,9 @@ export default {
           hidden: false,
           info: '',
           input: false,
-          title: '合同名称',
+          title: '订单编号',
           type: 'select',
-          props: { disabled: false,  placeholder:'请选择合同名称'},
+          props: { disabled: false, placeholder: '请选择订单编号' },
           symbol: 'contractList',
           _fc_drag_tag: 'select',
           options: []
@@ -61,7 +61,7 @@ export default {
         {
           effect: { fetch: '', required: true },
           field: uniqueId(),
-          props: { type: 'moneyFrom',min: "0" ,precision:2},
+          props: { type: 'moneyFrom', min: '0', precision: 2 },
           title: '回款金额（元）',
           symbol: 'collectionAmount',
           type: 'moneyFrom',
@@ -173,7 +173,7 @@ export default {
         info: '',
         props: {
           value:
-            '1. 回款是否需要审批流，在客户规格设置中配置<br>2.支持财务在付款记录中进行回款修改、管理<br>3. 合同回款根据财务收入科目，自动同步财务账目收入记录',
+            '1. 回款是否需要审批流，在客户规格设置中配置<br>2.支持财务在付款记录中进行回款修改、管理<br>3. 订单回款根据财务收入科目，自动同步财务账目收入记录',
           title: '回款规则'
         },
         input: false,

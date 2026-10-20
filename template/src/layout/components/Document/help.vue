@@ -14,15 +14,15 @@
 </template>
 
 <script>
-import file from '@/utils/file'
-import Vue from 'vue'
-Vue.use(file)
-import { getAccount } from '@/utils/format'
+import { defineAsyncComponent } from 'vue'
+import { getStorageJson } from '@/utils/storage.ts'
+import { getAccount } from '@/utils/format.ts'
 export default {
+  emits: ['closeHelp'],
   name: 'CrmebOaEntHelp',
   components: {
-    payment: () => import('@/components/form-common/dialog-payment'),
-    fileTemp: () => import('@/views/user/cloudfile/components/fileTemp')
+    payment: defineAsyncComponent(() => import('@/components/form-common/dialog-payment')),
+    fileTemp: defineAsyncComponent(() => import('@/views/user/cloudfile/components/fileTemp'))
   },
   props: ['helpShow'],
 
@@ -44,21 +44,21 @@ export default {
   watch: {
     $route(val, from) {
       if (val.path !== from.path) {
-        this.wordList = JSON.parse(localStorage.getItem('navTitle'))
+        this.wordList = getStorageJson('navTitle', [])
         let keyWord = this.wordList.join('/')
         this.word = getAccount(keyWord)
-        let uniquedId = JSON.parse(localStorage.getItem('enterprise')).uniqued
-        let accountNum = getAccount(JSON.parse(localStorage.getItem('userInfo')).phone, uniquedId)
+        let uniquedId = getStorageJson('enterprise', {}).uniqued
+        let accountNum = getAccount(getStorageJson('userInfo', {}).phone, uniquedId)
         this.url = `https://doc.tuoluojiang.com/files/search?account=${accountNum}&uniqued=${uniquedId}&word=${this.word}`
       }
     },
     helpShow(val, oldVal) {
       if (val) {
-        this.wordList = JSON.parse(localStorage.getItem('navTitle'))
+        this.wordList = getStorageJson('navTitle', [])
         let keyWord = this.wordList.join('/')
         this.word = getAccount(keyWord)
-        let uniquedId = JSON.parse(localStorage.getItem('enterprise')).uniqued
-        let accountNum = getAccount(JSON.parse(localStorage.getItem('userInfo')).phone, uniquedId)
+        let uniquedId = getStorageJson('enterprise', {}).uniqued
+        let accountNum = getAccount(getStorageJson('userInfo', {}).phone, uniquedId)
         this.url = `https://doc.tuoluojiang.com/files/search?account=${accountNum}&uniqued=${uniquedId}&word=${this.word}`
       }
     }
@@ -68,7 +68,7 @@ export default {
     closeHelp() {
       this.$emit('closeHelp')
     },
-    
+
   }
 }
 </script>
@@ -82,7 +82,7 @@ export default {
   height: 100vh;
   border: none;
 
-  /deep/ .help-box {
+  :deep(.help-box) {
     min-width: none;
   }
 }

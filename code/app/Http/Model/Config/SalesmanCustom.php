@@ -29,10 +29,16 @@ class SalesmanCustom extends BaseModel
 
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'uid'        => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * id作用域
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeId($query, $value): void
     {
@@ -46,7 +52,6 @@ class SalesmanCustom extends BaseModel
     /**
      * custom_type 作用域
      * @param Builder $query
-     * @param mixed $value
      */
     public function scopeCustomType($query, $value): void
     {
@@ -59,7 +64,6 @@ class SalesmanCustom extends BaseModel
 
     /**
      * field_list 修改器.
-     * @param mixed $value
      */
     protected function setFieldListAttribute($value): void
     {
@@ -68,7 +72,6 @@ class SalesmanCustom extends BaseModel
 
     /**
      * field_list 获取器.
-     * @param mixed $value
      */
     protected function getFieldListAttribute($value): mixed
     {

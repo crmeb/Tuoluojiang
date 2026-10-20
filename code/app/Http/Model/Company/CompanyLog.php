@@ -16,7 +16,7 @@ declare(strict_types=1);
 namespace App\Http\Model\Company;
 
 use App\Http\Model\BaseModel;
-use crmeb\traits\model\TimeDataTrait;
+use Tuoluojiang\Open\traits\model\TimeDataTrait;
 use Illuminate\Database\Query\Builder;
 
 /**
@@ -41,7 +41,6 @@ class CompanyLog extends BaseModel
     /**
      * 用户名作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeUserName($query, $value)

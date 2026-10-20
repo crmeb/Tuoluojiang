@@ -3,9 +3,9 @@
   <div>
     <el-dialog
       :title="fromData.title"
-      :visible.sync="dialogVisible"
+      v-model="dialogVisible"
       :width="fromData.width"
-      :wrapper-closable="false"
+      :close-on-click-modal="false"
       :before-close="handleClose"
     >
       <div class="body">
@@ -25,7 +25,7 @@
                   <el-form-item label="物资分类：">{{ fromData.data.cate.cate_name }}</el-form-item>
                 </el-col>
                 <el-col :span="12">
-                  <el-form-item label="物资型号：">{{ fromData.data.units }}</el-form-item>
+                  <el-form-item label="物资型号：">{{ fromData.data.units || "--" }}</el-form-item>
                 </el-col>
               </el-row>
               <el-row v-if="fromData.type == 6">
@@ -38,9 +38,9 @@
             </template>
             <template v-if="fromData.type === 5 || fromData.type == 7">
               <el-form-item label="选择方式：" prop="other" class="m0">
-                <el-radio-group size="small" v-model="type" class="flex">
-                  <el-radio label="0">按人员</el-radio>
-                  <el-radio label="1">按部门</el-radio>
+                <el-radio-group v-model="type" class="flex">
+                  <el-radio label="0" value="0">按人员</el-radio>
+                  <el-radio label="1" value="1">按部门</el-radio>
                 </el-radio-group>
               </el-form-item>
               <el-form-item label="领用对象：" prop="price">
@@ -61,35 +61,36 @@
                 ></select-department>
               </el-form-item>
 
-              <div class="table-box mt20" v-if="fromData.type == 7">
-                <el-table :data="[fromData.data]" style="width: 100%">
-                  <el-table-column prop="name" label="物资名称"> </el-table-column>
-                  <el-table-column prop="units" label="规格型号"> </el-table-column>
-                  <el-table-column prop="cate.cate_name" label="物资分类"> </el-table-column>
-                  <el-table-column prop="specs" label="计量单位"> </el-table-column>
-                  <el-table-column prop="stock" label="库存数量"> </el-table-column>
-                  <el-table-column label="领用数量" width="150">
-                    <template slot-scope="scope">
-                      <el-input-number
+              <el-form-item v-if="fromData.type == 7" label="物资列表：">
+                <div class="table-box" >
+                  <el-table :data="[fromData.data]" style="width: 100%">
+                    <el-table-column prop="name" label="物资名称"> </el-table-column>
+                    <el-table-column prop="units" label="规格型号"> </el-table-column>
+                    <el-table-column prop="cate.cate_name" label="物资分类"> </el-table-column>
+                    <el-table-column prop="specs" label="计量单位"> </el-table-column>
+                    <el-table-column prop="stock" label="库存数量"> </el-table-column>
+                    <el-table-column label="领用数量" width="150">
+                      <template #default="scope">
+                        <el-input-number
                         v-model="num"
                         controls-position="right"
                         :precision="0"
-                        size="small"
                         :min="1"
                         :max="scope.row.stock"
-                      ></el-input-number>
-                    </template>
-                  </el-table-column>
-                </el-table>
-              </div>
+                        ></el-input-number>
+                      </template>
+                    </el-table-column>
+                  </el-table>
+                </div>
+              </el-form-item>
             </template>
 
             <template v-if="fromData.type === 3">
               <el-form-item style="margin-bottom: 10px" label="维修原因：">{{ markDefault.mark }}</el-form-item>
               <el-form-item label="维修处置：" prop="other">
                 <el-radio-group v-model="form.other">
-                  <el-radio :label="0">入库 <span>(入库之后该物资进入仓库，状态为未使用，可重新领用)</span></el-radio>
-                  <el-radio :label="4">报废 <span>(报废之后该物资状态为已报废，不可进行领用)</span></el-radio>
+                  <el-radio :label="0" :value="0">入库 <span>(入库之后该物资进入仓库，状态为未使用，可重新领用)</span></el-radio>
+                  <el-radio :label="4" :value="4">报废 <span>(报废之后该物资状态为已报废，不可进行领用)</span></el-radio>
                 </el-radio-group>
               </el-form-item>
               <el-form-item label="花费(元)：" prop="price">
@@ -97,7 +98,6 @@
                   v-model="form.price"
                   :precision="2"
                   controls-position="right"
-                  size="small"
                   :min="0"
                 ></el-input-number>
               </el-form-item>
@@ -109,7 +109,6 @@
                   :controls="false"
                   :min="0"
                   :precision="0"
-                  size="small"
                   placeholder="请输入入库数量"
                 ></el-input-number>
               </el-form-item>
@@ -119,7 +118,6 @@
                   :controls="false"
                   :min="0"
                   :precision="2"
-                  size="small"
                   placeholder="请输入单价"
                 ></el-input-number>
               </el-form-item>
@@ -139,22 +137,26 @@
           </el-form>
         </div>
       </div>
-      <div slot="footer" class="dialog-footer">
-        <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
-        <el-button size="small" :loading="loading" type="primary" @click="handleAdd">{{ $t('public.ok') }}</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleClose">取消</el-button>
+          <el-button :loading="loading" type="primary" @click="handleAdd">确定</el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>
 
 <script>
-import { storageRecordRepairApi, storageRecordSaveApi } from '@/api/administration'
+import { defineAsyncComponent } from 'vue'
+import { storageRecordRepairApi, storageRecordSaveApi } from '@/api/administration.ts'
 
 export default {
+  emits: ['isOk'],
   name: 'MaterialDialog',
   components: {
-    selectMember: () => import('@/components/form-common/select-member'),
-    selectDepartment: () => import('@/components/form-common/select-department')
+    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
+    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department'))
   },
   props: {
     fromData: {
@@ -345,19 +347,19 @@ export default {
 </script>
 
 <style scoped lang="scss">
-/deep/ .el-input-number--medium {
+:deep(.el-input-number) {
   width: 100%;
   .el-input__inner {
     text-align: left;
   }
 }
 .el-row {
-  /deep/ .el-form-item {
+  :deep(.el-form-item) {
     margin-bottom: 0;
   }
 }
 
-/deep/ .el-radio {
+:deep(.el-radio) {
   display: block;
   // margin-bottom: 14px;
   &:last-of-type {
@@ -370,7 +372,7 @@ export default {
     }
   }
 }
-/deep/ .el-input-number {
+:deep(.el-input-number) {
   width: 100%;
   .el-input__inner {
     text-align: left;
@@ -381,7 +383,7 @@ export default {
   // border-top: 1px solid #d8d8d8;
   padding: 0px 20px 0 20px;
 }
-/deep/.el-dialog__header {
+:deep(.el-dialog__header) {
   height: 46px;
   display: flex;
   align-items: center;
@@ -390,7 +392,7 @@ export default {
     top: 16px;
   }
 }
-/deep/ .el-dialog__body {
+:deep(.el-dialog__body) {
   padding-top: 0;
 }
 </style>

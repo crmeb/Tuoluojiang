@@ -17,6 +17,8 @@ namespace PhpCsFixer\Console\Report\FixReport;
 /**
  * @author Dariusz Rumiński <dariusz.ruminski@gmail.com>
  *
+ * @readonly
+ *
  * @internal
  */
 final class ReportSummary
@@ -25,6 +27,8 @@ final class ReportSummary
      * @var array<string, array{appliedFixers: list<string>, diff: string}>
      */
     private array $changed;
+
+    private int $filesCount;
 
     private int $time;
 
@@ -43,6 +47,7 @@ final class ReportSummary
      */
     public function __construct(
         array $changed,
+        int $filesCount,
         int $time,
         int $memory,
         bool $addAppliedFixers,
@@ -50,6 +55,7 @@ final class ReportSummary
         bool $isDecoratedOutput
     ) {
         $this->changed = $changed;
+        $this->filesCount = $filesCount;
         $this->time = $time;
         $this->memory = $memory;
         $this->addAppliedFixers = $addAppliedFixers;
@@ -83,6 +89,11 @@ final class ReportSummary
     public function getTime(): int
     {
         return $this->time;
+    }
+
+    public function getFilesCount(): int
+    {
+        return $this->filesCount;
     }
 
     public function shouldAddAppliedFixers(): bool

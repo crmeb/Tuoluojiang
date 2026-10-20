@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,8 +15,8 @@ declare(strict_types=1);
 
 namespace App\Http\Model\Crud;
 
-use App\Http\Model\BaseModel;
 use App\Observers\SystemCrudTableObserver;
+use App\Http\Model\BaseModel;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SystemCrudTable extends BaseModel
@@ -35,6 +35,16 @@ class SystemCrudTable extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'crud_id'    => 'integer',
+        'version'    => 'integer',
+        'is_index'   => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+        'deleted_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     public static function boot()
     {
         parent::boot();
@@ -44,7 +54,6 @@ class SystemCrudTable extends BaseModel
     /**
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
      */
     public function setSeniorSearchAttribute($value)
     {
@@ -52,10 +61,9 @@ class SystemCrudTable extends BaseModel
     }
 
     /**
+     * @return mixed
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
-     * @return mixed
      */
     public function getSeniorSearchAttribute($value)
     {
@@ -65,7 +73,6 @@ class SystemCrudTable extends BaseModel
     /**
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
      */
     public function setOptionsAttribute($value)
     {
@@ -73,10 +80,9 @@ class SystemCrudTable extends BaseModel
     }
 
     /**
+     * @return mixed
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
-     * @return mixed
      */
     public function getOptionsAttribute($value)
     {
@@ -86,7 +92,6 @@ class SystemCrudTable extends BaseModel
     /**
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
      */
     public function setViewSearchAttribute($value)
     {
@@ -94,10 +99,9 @@ class SystemCrudTable extends BaseModel
     }
 
     /**
+     * @return mixed
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
-     * @return mixed
      */
     public function getViewSearchAttribute($value)
     {
@@ -107,7 +111,6 @@ class SystemCrudTable extends BaseModel
     /**
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
      */
     public function setShowFieldAttribute($value)
     {
@@ -115,10 +118,9 @@ class SystemCrudTable extends BaseModel
     }
 
     /**
+     * @return mixed
      * @email 136327134@qq.com
      * @date 2024/2/24
-     * @param mixed $value
-     * @return mixed
      */
     public function getShowFieldAttribute($value)
     {

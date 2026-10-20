@@ -1,24 +1,27 @@
 <template>
   <!-- 实体设计页面 -->
   <div class="divBox">
-    <el-card class="card-box" :body-style="{ padding: '0 0 20px 0 ' }">
+    <el-card class="card-box" :body-style="{ padding: '0 0 20px 0 ' }" v-loading="infoLoading">
       <div class="header">
         <div class="left">
           <i class="el-icon-arrow-left" @click="backFn"></i>
           <div class="invoice-logo"><i class="icon iconfont iconshitosheji"></i></div>
         </div>
         <div class="right">
-          <span class="title">实体设计</span>
+          <span class="title">{{ info.table_name || '实体设计' }}</span>
           <el-tabs v-model="activeName" class="tab">
             <el-tab-pane v-for="(item, index) in tabArray" :key="index" :name="item.value">
-              <div slot="label">
-                <span>{{ item.label }}</span>
-              </div>
+              <template #label>
+                <div>
+                  <span>{{ item.label }}</span>
+                </div>
+              </template>
             </el-tab-pane>
           </el-tabs>
         </div>
       </div>
-      <div class="ml20 mr20">
+      <div class="ml20 mr20" v-if="info.id">
+     
         <!-- 实体属性 -->
         <basic-setting v-if="activeName == 1" :infoData="info"></basic-setting>
         <!-- 字段设计 -->
@@ -26,6 +29,7 @@
         <!-- 表单设计 -->
         <form-design class="mt20" v-if="activeName == 3"></form-design>
         <!-- 列表设计 -->
+      
         <list-setting v-if="activeName == 4" ref="listSetting" :infoData="info"></list-setting>
         <!-- 流程设计 -->
         <process-setting class="mt20" v-if="activeName == 5" :infoData="info"></process-setting>
@@ -36,27 +40,29 @@
   </div>
 </template>
 <script>
-import { roterPre } from '@/settings'
+import { roterPre } from '@/settings.ts'
 import basicSetting from './components/basicSetting'
 import fieldSetting from './components/fieldSetting'
 import eventSetting from './components/eventSetting'
 import processSetting from './components/processSetting'
 import listSetting from './components/listSetting'
-import { databaseInfoApi } from '@/api/develop'
+import { databaseInfoApi } from '@/api/develop.ts'
 import formDesign from '@/components/form-designer'
 export default {
   components: { basicSetting, fieldSetting, formDesign, processSetting, eventSetting, listSetting },
   data() {
     return {
-      activeName: '1',
+      activeName: '4',
+      infoLoading: false,
       info: {},
       tabArray: [
-        { label: '实体属性', value: '1', number: 1 },
+      { label: '列表设计', value: '4', number: 4 },
         { label: '字段设计', value: '2', number: 2 },
         { label: '表单设计', value: '3', number: 3 },
-        { label: '列表设计', value: '4', number: 4 },
+        
         { label: '流程设计', value: '5', number: 5 },
-        { label: '触发器设计', value: '6', number: 6 }
+        { label: '触发器设计', value: '6', number: 6 },
+          { label: '实体属性', value: '1', number: 1 },
       ]
     }
   },
@@ -67,14 +73,17 @@ export default {
       }
     }
   },
-
-  mounted() {
+  created() {
     this.id = this.$route.query.id
     this.getInfo()
+  },
+
+  mounted() {
     if (this.$route.query.tabIndex) {
-      setTimeout(() => {
-        this.activeName = this.$route.query.tabIndex + ''
-      }, 200)
+      this.activeName = this.$route.query.tabIndex + ''
+   if(this.activeName==='4'){
+    
+   }
     }
   },
 
@@ -82,23 +91,27 @@ export default {
     // 返回页面
     backFn() {
       this.$router.push({
-        path: `${roterPre}/develop/crud`,
-        query: {
-          tab: this.$route.query.tab
-        }
+        path: `${roterPre}/develop/crud/entityList`,
+        query: { cate_id: this.$route.query.cate_id }
       })
     },
     async getInfo() {
-      const data = await databaseInfoApi(this.id)
-      this.info = data.data
-    },
-    handleClick() {}
+      this.infoLoading = true;
+      try {
+        const data = await databaseInfoApi(this.id || this.$route.query.id)
+        this.info = data.data
+      } catch (error) {
+        this.$message.error(error.msg)
+      } finally {
+        this.infoLoading = false;
+      }
+    }
   }
 }
 </script>
 <style scoped lang="scss">
 .examineTabs {
-  /deep/ .el-tabs__nav-wrap::after {
+  :deep(.el-tabs__nav-wrap::after) {
     background-color: #fff;
   }
   .sp1 {
@@ -111,11 +124,11 @@ export default {
     line-height: 14px;
     font-size: 12px;
   }
-  /deep/.el-tabs__nav-scroll {
+  :deep(.el-tabs__nav-scroll) {
     display: flex;
     justify-content: left;
   }
-  /deep/ .el-tabs__item {
+  :deep(.el-tabs__item) {
     color: #909399;
     font-weight: 500;
     font-size: 14px;
@@ -130,20 +143,20 @@ export default {
     }
   }
 }
-/deep/ .el-icon-back {
+:deep(.el-icon-back) {
   display: none;
 }
-/deep/ .el-tabs__header {
+:deep(.el-tabs__header) {
   margin: 0;
 }
-/deep/ .el-page-header__content {
+:deep(.el-page-header__content) {
   font-size: 16px;
   font-weight: 500;
 }
-/deep/ .el-tabs__active-bar {
+:deep(.el-tabs__active-bar) {
   height: 3px;
 }
-/deep/.el-page-header {
+:deep(.el-page-header) {
   margin-top: 10px;
 }
 .pt20 {
@@ -199,17 +212,17 @@ export default {
       text-transform: none;
     }
     .tab {
-      /deep/ .el-tabs__nav-wrap::after {
+      :deep(.el-tabs__nav-wrap::after) {
         height: 0;
       }
-      /deep/ .el-tabs__item {
+      :deep(.el-tabs__item) {
         line-height: 37px;
         font-family: PingFang SC, PingFang SC;
         font-weight: 400;
         font-size: 13px;
         color: #606266;
       }
-      /deep/ .el-tabs__item.is-active {
+      :deep(.el-tabs__item.is-active) {
         color: #1890ff;
       }
     }

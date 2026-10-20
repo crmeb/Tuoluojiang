@@ -1,12 +1,12 @@
 <template>
   <el-form-item :label="i18nt('designer.setting.labelWidth')">
-    <el-input type="number" v-model="optionModel.labelWidth" @input.native="inputNumberHandler"
+    <el-input type="number" v-model="optionModel.labelWidth" @input="inputNumberHandler"
               min="0" class="hide-spin-button"></el-input>
   </el-form-item>
 </template>
 
 <script>
-  import i18n from "@/utils/i18n"
+  import i18n from "@/utils/i18n.ts"
   import propertyMixin from "@/components/form-designer/setting-panel/property-editor/propertyMixin"
 
   export default {
@@ -23,4 +23,3 @@
 <style scoped>
 
 </style>
-@/utils/i18ns

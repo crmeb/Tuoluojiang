@@ -38,6 +38,15 @@ class UserDailyReply extends BaseModel
      */
     protected $primaryKey = 'daily_id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'pid'        => 'integer',
+        'daily_id'   => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+        'deleted_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * 用户名片关联.
      * @return HasOne
@@ -58,7 +67,6 @@ class UserDailyReply extends BaseModel
     /**
      * id作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeIds($query, $value)

@@ -13,40 +13,40 @@
     ref="showPanel"
   >
     <el-date-picker
-      v-show="!getReadMode() || field.isShow"
+      v-if="isInputVisable"
       ref="fieldEditor"
       type="date"
       v-model="fieldModel"
       class="full-width-input"
       :readonly="field.options.readonly"
       :disabled="field.options.disabled"
-      :size="field.options.size"
+      :size="toElSize(field.options.size)"
       :clearable="field.options.clearable"
       :editable="field.options.editable"
-      :format="field.options.format"
-      :value-format="field.options.valueFormat"
+      :format="toDayjsFormat(field.options.format)"
+      :value-format="toDayjsFormat(field.options.valueFormat)"
       :placeholder="field.options.placeholder || i18nt('render.hint.datePlaceholder')"
       @focus="handleFocusCustomEvent"
       @blur="handleBlurCustomEvent"
       @change="handleChangeEvent"
     >
     </el-date-picker>
-    <template v-if="getReadMode() && !field.isShow">
+    <template v-else>
       <div class="readonly-mode-field" @click="isShowFn">{{ contentForReadMode || '--' }}</div>
     </template>
   </form-item-wrapper>
 </template>
 
 <script>
+import { toDayjsFormat } from '@/utils/date-format.ts'
+import dayjs from 'dayjs'
 import FormItemWrapper from './form-item-wrapper'
-import emitter from '@/utils/emitter'
-import i18n, { translate } from '@/utils/i18n'
+import i18n, { translate } from '@/utils/i18n.ts'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
 
 export default {
   name: 'date-picker-widget',
-  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
-  mixins: [emitter, fieldMixin, i18n],
+  mixins: [fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -83,7 +83,17 @@ export default {
       rules: []
     }
   },
+  watch: {
+    isInputVisable(val) {
+      val && this.$nextTick(() => {
+        this.isInputVisable && this.$refs.fieldEditor.focus();
+      });
+    }
+  },
   computed: {
+    isInputVisable() {
+      return !this.getReadMode() || this.field.isShow;
+    },
     contentForReadMode() {
       return this.fieldModel ? this.fieldModel : '--'
     }
@@ -104,21 +114,26 @@ export default {
 
   mounted() {
     this.handleOnMounted()
+    if (this.field.options.defaultType == '1') {
+      this.fieldModel = dayjs().format('YYYY-MM-DD')
+      this.handleChangeEvent(this.fieldModel)
+    }
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     this.unregisterFromRefList()
   },
 
-  methods: {}
+  methods: {
+    toDayjsFormat
+  }
 }
 </script>
 
 <style lang="scss" scoped>
 @import '../../../../styles/global.scss'; //* form-item-wrapper已引入，还需要重复引入吗？ *//
 
-.full-width-input {
+:deep(.full-width-input) {
   width: 100% !important;
 }
 </style>
-@/utils/i18ns

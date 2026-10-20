@@ -1,4 +1,4 @@
-import { traverseFieldWidgetsOfContainer } from "@/utils/util";
+import { traverseFieldWidgetsOfContainer } from '@/utils/formDesignerUtils'
 
 export default {
   inject: ['getGlobalDsv'],
@@ -12,8 +12,7 @@ export default {
       get() {
         return this.globalModel.formModel
       }
-    },
-
+    }
   },
 
   mounted() {
@@ -21,8 +20,9 @@ export default {
   },
 
   methods: {
-    unregisterFromRefList() {  //销毁容器组件时注销组件ref
-      if ((this.refList !== null) && !!this.widget.options.name) {
+    unregisterFromRefList() {
+      //销毁容器组件时注销组件ref
+      if (this.refList !== null && !!this.widget.options.name) {
         let oldRefName = this.widget.options.name
         delete this.refList[oldRefName]
       }
@@ -57,8 +57,9 @@ export default {
       traverseFieldWidgetsOfContainer(this.widget, clearRulesFn)
     },
 
-    activeTab(tabIndex) { //tabIndex从0计数
-      if ((tabIndex >= 0) && (tabIndex < this.widget.tabs.length)) {
+    activeTab(tabIndex) {
+      //tabIndex从0计数
+      if (tabIndex >= 0 && tabIndex < this.widget.tabs.length) {
         this.widget.tabs.forEach((tp, idx) => {
           tp.options.active = idx === tabIndex
           if (idx === tabIndex) {
@@ -69,30 +70,31 @@ export default {
     },
 
     disableTab(tabIndex) {
-      if ((tabIndex >= 0) && (tabIndex < this.widget.tabs.length)) {
+      if (tabIndex >= 0 && tabIndex < this.widget.tabs.length) {
         this.widget.tabs[tabIndex].options.disabled = true
       }
     },
 
     enableTab(tabIndex) {
-      if ((tabIndex >= 0) && (tabIndex < this.widget.tabs.length)) {
+      if (tabIndex >= 0 && tabIndex < this.widget.tabs.length) {
         this.widget.tabs[tabIndex].options.disabled = false
       }
     },
 
     hideTab(tabIndex) {
-      if ((tabIndex >= 0) && (tabIndex < this.widget.tabs.length)) {
+      if (tabIndex >= 0 && tabIndex < this.widget.tabs.length) {
         this.widget.tabs[tabIndex].options.hidden = true
       }
     },
 
     showTab(tabIndex) {
-      if ((tabIndex >= 0) && (tabIndex < this.widget.tabs.length)) {
+      if (tabIndex >= 0 && tabIndex < this.widget.tabs.length) {
         this.widget.tabs[tabIndex].options.hidden = false
       }
     },
 
-    setWidgetOption(optionName, optionValue) { //通用组件选项修改API
+    setWidgetOption(optionName, optionValue) {
+      //通用组件选项修改API
       if (this.widget.options.hasOwnProperty(optionName)) {
         this.widget.options[optionName] = optionValue
       }
@@ -106,7 +108,7 @@ export default {
     },
 
     disableSubFormRow(rowIndex) {
-      this.widget.widgetList.forEach(subWidget => {
+      this.widget.widgetList.forEach((subWidget) => {
         let swRefName = subWidget.options.name + '@row' + this.rowIdData[rowIndex]
         let foundSW = this.getWidgetRef(swRefName)
         if (!!foundSW) {
@@ -116,7 +118,7 @@ export default {
     },
 
     enableSubFormRow(rowIndex) {
-      this.widget.widgetList.forEach(subWidget => {
+      this.widget.widgetList.forEach((subWidget) => {
         let swRefName = subWidget.options.name + '@row' + this.rowIdData[rowIndex]
         let foundSW = this.getWidgetRef(swRefName)
         if (!!foundSW) {
@@ -147,7 +149,8 @@ export default {
       this.actionDisabled = false
     },
 
-    resetSubForm() { //重置subForm数据为空
+    resetSubForm() {
+      //重置subForm数据为空
       if (this.widget.type === 'sub-form') {
         let subFormModel = this.formModel[this.widget.options.name]
         if (!!subFormModel) {
@@ -212,10 +215,8 @@ export default {
       if (foundIdx > -1) {
         this.widget.options.customClass.splice(foundIdx, 1)
       }
-    },
+    }
 
     //--------------------- 以上为组件支持外部调用的API方法 end ------------------//
-
-  },
-
+  }
 }

@@ -4,19 +4,19 @@
     <div class="header-notice right-menu-item">
       <span class="el-dropdown-link">
         <el-badge
-          v-if="$store.state.user.messageCount > 0"
-          @click.native="goMessageCenter"
+          v-if="userStore.messageCount > 0"
+          @click="goMessageCenter"
           :is-dot="false"
-          :value="$store.state.user.messageCount"
+          :value="userStore.messageCount"
           :max="99"
         >
           <el-tooltip effect="dark" content="消息通知" placement="bottom">
-            <i class="el-icon-bell el-icon-notice" />
+            <i class="iconfont iconxiaoxi2" />
           </el-tooltip>
         </el-badge>
         <span v-else @click="goMessageCenter">
           <el-tooltip effect="dark" content="消息通知" placement="bottom">
-            <i class="el-icon-bell el-icon-notice" style="margin-top: 2px;" />
+            <i class="iconfont iconxiaoxi2" style="margin-top: 2px;" />
           </el-tooltip>
         </span>
       </span>
@@ -26,12 +26,17 @@
   </div>
 </template>
 <script>
-import { messageListApi } from '@/api/public'
-import { roterPre } from '@/settings'
+import { mapStores } from 'pinia'
+import { useUserStore } from '@/stores/user.ts'
+import { defineAsyncComponent } from 'vue'
+import { roterPre } from '@/settings.ts'
 export default {
   name: 'Notice',
   components: {
-    noticeList: () => import('./noticeList')
+    noticeList: defineAsyncComponent(() => import('./noticeList'))
+  },
+  computed: {
+    ...mapStores(useUserStore)
   },
   data() {
     return {
@@ -43,19 +48,8 @@ export default {
       }
     }
   },
-  mounted() {
-    this.getList()
-  },
   methods: {
-    // 列表
-    getList() {
-      messageListApi(this.where).then((res) => {
-        this.count = res.data.messageNum ? res.data.messageNum : 0
-        this.$store.commit('user/SET_MESSAGE', this.count)
-      })
-    },
     goMessageCenter() {
-      if (this.$store.name == 'user-news-unread') return
       this.$refs.noticeList.openBox()
     }
   }
@@ -66,15 +60,15 @@ export default {
 .header-notice {
   position: relative;
   cursor: pointer;
-  .el-icon-notice {
-    font-size: 22px;
+  .iconxiaoxi2 {
+    font-size: 18px;
     color: #606266;
   }
 }
 .el-badge {
   top: 1px;
 }
-/deep/ .el-badge__content {
+:deep(.el-badge__content) {
   border: none;
   top: 4px;
 }

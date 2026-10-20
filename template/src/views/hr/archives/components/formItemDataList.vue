@@ -4,8 +4,8 @@
     <template v-if="componentStatus && componentStatus.personalExperience">
       <!-- 工作经历table -->
       <div class="from-item-title mb15">
-        <span class="title">工作经历</span>
-        <el-link :underline="false" icon="el-icon-plus" @click="editWorks('work')">添加经历</el-link>
+        <span class="title">工作经历 </span>
+        <el-link underline="never" icon="el-icon-plus" @click="editWorks('work')">添加经历</el-link>
       </div>
       <div>
         <tableBox
@@ -21,7 +21,7 @@
       <!-- 教育经历table -->
       <div class="from-item-title mb15">
         <span class="title">教育经历</span>
-        <el-link :underline="false" icon="el-icon-plus" @click="editEducation('education')">添加经历</el-link>
+        <el-link underline="never" icon="el-icon-plus" @click="editEducation('education')">添加经历</el-link>
       </div>
       <div>
         <tableBox
@@ -65,21 +65,21 @@
           <!-- 修改按钮 -->
           <span v-if="FORMITEMISEDIT[itemIndex] && componentStatus.type === 'edit'" class="editBtn">
             <el-link
-              :underline="false"
+              underline="never"
               icon="el-icon-edit-outline"
               @click="FORMITEMISEDIT[itemIndex] = !FORMITEMISEDIT[itemIndex]"
               >编辑</el-link
             >
           </span>
           <div v-if="!FORMITEMISEDIT[itemIndex]">
-            <el-button size="small" @click="restFn(itemIndex)">取消</el-button>
-            <el-button size="small" type="primary" @click="formItemEdit(formItem.edit_type, itemIndex)">确定</el-button>
+            <el-button @click="restFn(itemIndex)">取消</el-button>
+            <el-button type="primary" @click="formItemEdit(formItem.edit_type, itemIndex)">确定</el-button>
           </div>
 
           <!-- 新增:添加经历 -->
           <span v-if="['工作经历', '教育经历'].includes(formItem.title)">
             <div style="padding: 10px">
-              <el-link :underline="false" icon="el-icon-plus" @click="addWorks(formItem.title)">添加经历</el-link>
+              <el-link underline="never" icon="el-icon-plus" @click="addWorks(formItem.title)">添加经历</el-link>
             </div>
           </span>
         </div>
@@ -123,13 +123,12 @@
               "
               :prop="item.value"
             >
-              <!-- 表单label -->
-
-              <span
-                slot="label"
-                :class="FORMITEMISEDIT[itemIndex] && componentStatus.type === 'edit' ? 'label' : 'labelfont'"
-                >{{ item.label }}</span
-              >
+              <template #label>
+                <span
+                  :class="FORMITEMISEDIT[itemIndex] && componentStatus.type === 'edit' ? 'label' : 'labelfont'"
+                  >{{ item.label }}</span
+                >
+              </template>
 
               <!-- 编辑状态用span来替换input来显示-->
               <div
@@ -138,27 +137,28 @@
               >
                 <span
                   v-if="
-                    !['cascader', 'frame_id', 'manage_frame'].includes(item.slot) &&
+                    !['cascader', 'frame_id', 'manage_frame', 'superior_uid'].includes(item.slot) &&
                     !['radio', 'select'].includes(item.type)
                   "
-                  >{{ ruleForm[item.value] }}</span
+                  >{{ ruleForm[item.value] || '--' }}</span
                 >
                 <div v-if="item.slot === 'frames'">
                   <span v-for="(item, index) in rangeUserText" :key="index">{{ item }} </span>
                 </div>
 
-                <span v-if="item.slot === 'cascader'">{{ positionText }}</span>
-                <span v-if="item.slot === 'manage_frame'">{{ manage_frameText }}</span>
-                <span v-if="item.value === 'is_part'">{{ is_partText }}</span>
-                <span v-if="item.value === 'type'">{{ typeText }}</span>
-                <span v-if="item.value === 'sex'">{{ sexText }}</span>
-                <span v-if="item.value === 'marriage'">{{ marriageText }}</span>
-                <span v-if="item.value === 'education'">{{ educationText }}</span>
+                <span v-if="item.slot === 'cascader'">{{ positionText || '--' }}</span>
+                <span v-if="item.slot === 'manage_frame'">{{ manage_frameText || '--' }}</span>
+                <span v-if="item.value === 'is_part'">{{ is_partText || '--' }}</span>
+                <span v-if="item.value === 'type'">{{ typeText || '--' }}</span>
+                <span v-if="item.value === 'sex'">{{ sexText || '--' }}</span>
+                <span v-if="item.value === 'marriage'">{{ marriageText || '--' }}</span>
+                <span v-if="item.value === 'education'">{{ educationText || '--' }}</span>
                 <div v-if="item.type === 'radio'">
-                  {{ is_adminText }}
+                  {{ is_adminText || '--' }}
                 </div>
-                <template v-if="item.slot === 'superior_uid' && is_adminText === '是'">
-                  <span>{{ superiorText }}</span>
+
+                <template v-if="item.slot === 'superior_uid'">
+                  <span>{{ superiorText || '--' }}</span>
                 </template>
 
                 <div v-if="item.slot === 'frame_id'">
@@ -174,7 +174,6 @@
                   v-if="item.type === 'input'"
                   v-model="ruleForm[item.value]"
                   :placeholder="item.placeholder"
-                  size="small"
                   clearable
                   @blur="getBirthday(item.value)"
                 />
@@ -184,7 +183,6 @@
                   v-model="ruleForm[item.value]"
                   :max="999999"
                   :min="1"
-                  size="small"
                   controls-position="right"
                 ></el-input-number>
 
@@ -194,8 +192,7 @@
                   v-model="ruleForm[item.value]"
                   :placeholder="item.placeholder"
                   type="date"
-                  size="small"
-                  value-format="yyyy-MM-dd"
+                  value-format="YYYY-MM-DD"
                 >
                 </el-date-picker>
 
@@ -208,7 +205,6 @@
                       :placeholder="item.placeholder"
                       :props="propsPos"
                       filterable
-                      size="small"
                     ></el-cascader>
                     <i class="el-icon-circle-plus" @click="addQuick"></i>
                   </div>
@@ -220,6 +216,7 @@
                   v-if="item.slot === 'frame_id'"
                   :value="frames || []"
                   :is-site="true"
+                  :checkStrictly="true"
                   :placeholder="`选择所属部门`"
                   @changeMastart="changeMastart"
                   style="width: 100%"
@@ -227,8 +224,8 @@
 
                 <!-- 负责人 -->
                 <template v-if="item.type === 'radio'">
-                  <el-radio v-model="ruleForm[item.value]" label="1">是</el-radio>
-                  <el-radio v-model="ruleForm[item.value]" label="0">否</el-radio>
+                  <el-radio v-model="ruleForm[item.value]" label="1" value="1">是</el-radio>
+                  <el-radio v-model="ruleForm[item.value]" label="0" value="0">否</el-radio>
                 </template>
 
                 <!-- 直属上级 -->
@@ -265,7 +262,6 @@
                   <el-select
                     v-model="ruleForm.manage_frame"
                     placeholder="请选择"
-                    size="small"
                     :disabled="ruleForm.is_admin != 1"
                     multiple
                     style="width: 100%"
@@ -280,7 +276,6 @@
                   v-model="ruleForm[item.value]"
                   :disabled="tabtypes !== 1 && item.value == 'type'"
                   :placeholder="item.placeholder"
-                  size="small"
                   clearable
                 >
                   <el-option
@@ -296,7 +291,7 @@
                 <upload-image
                   v-if="item.type === 'uploadImg'"
                   :append-to-body="true"
-                  :imageUrl.sync="ruleForm[item.value]"
+                  v-model:imageUrl="ruleForm[item.value]"
                   :isUploadStatus="componentStatus.type === 'edit' && FORMITEMISEDIT[itemIndex]"
                   :user="user"
                 ></upload-image>
@@ -306,13 +301,13 @@
                   <el-radio
                     v-model="ruleForm.radio"
                     :disabled="componentStatus.type === 'edit' && FORMITEMISEDIT[itemIndex]"
-                    label="1"
+                    label="1" value="1"
                     >直接加入</el-radio
                   >
                   <el-radio
                     v-model="ruleForm.radio"
                     :disabled="componentStatus.type === 'edit' && FORMITEMISEDIT[itemIndex]"
-                    label="2"
+                    label="2" value="2"
                     >后续邀请</el-radio
                   >
                 </template>
@@ -332,6 +327,10 @@
 </template>
 
 <script>
+import { mapStores } from 'pinia'
+import { useOrganizationStore } from '@/stores/organization.ts'
+import { defineAsyncComponent } from 'vue'
+import modalForm from '@/libs/modal-form.ts'
 import formOptions from '../mixins/index.js'
 import myMixins from '../mixins/method.js'
 import {
@@ -343,7 +342,7 @@ import {
   enterpriseEducationCreateApi,
   getWorkList,
   getEducationList
-} from '@/api/enterprise'
+} from '@/api/enterprise.ts'
 import {
   getResume,
   saveResume,
@@ -351,9 +350,10 @@ import {
   userCreateEducation,
   getUserWorkList,
   getUserEducationList
-} from '@/api/user'
+} from '@/api/user.ts'
 
 export default {
+  emits: ['hiddenSave', 'getPhoto', 'submitOk', 'userInfoFn'],
   name: 'formOptions',
   mixins: [formOptions, myMixins],
   props: {
@@ -425,7 +425,7 @@ export default {
         work_time: '', // 入职时间
         trial_time: '', // 试用时间
         formal_time: '', // 转正时间
-        treaty_time: '', // 合同到期时间
+        treaty_time: '', // 订单到期时间
         frame_id: [], // 部门
         frames: [],
         manage_frame: '',
@@ -474,32 +474,32 @@ export default {
       // 工作经历表格头部
       workLabel: [
         {
-          name: this.$t('toptable.startdate'),
+          name: '开始时间',
           prop: 'start_time',
           width: '100'
         },
         {
-          name: this.$t('toptable.endingdate'),
+          name: '结束时间',
           prop: 'end_time',
           width: '100'
         },
         {
-          name: this.$t('hr.company'),
+          name: '公司',
           prop: 'company',
           width: '110'
         },
         {
-          name: this.$t('hr.jobdescription'),
+          name: '工作描述',
           prop: 'describe',
           width: '120'
         },
         {
-          name: this.$t('toptable.post'),
+          name: '职位',
           prop: 'position',
           width: '100'
         },
         {
-          name: this.$t('hr.reasonsleaving'),
+          name: '离职原因',
           prop: 'quit_reason',
           width: '120'
         }
@@ -510,37 +510,37 @@ export default {
       // 教育经历表格头部
       educationLabel: [
         {
-          name: this.$t('hr.admissiontime'),
+          name: '入学时间',
           prop: 'start_time',
           width: '100'
         },
         {
-          name: this.$t('hr.graduationtime'),
+          name: '毕业时间',
           prop: 'end_time',
           width: '100'
         },
         {
-          name: this.$t('hr.schoolname'),
+          name: '学校名称',
           prop: 'school_name',
           width: '90'
         },
         {
-          name: this.$t('hr.major'),
+          name: '专业',
           prop: 'major',
           width: '90'
         },
         {
-          name: this.$t('hr.education'),
+          name: '学历',
           prop: 'education',
           width: '80'
         },
         {
-          name: this.$t('hr.degree'),
+          name: '学位',
           prop: 'academic',
           width: '80'
         },
         {
-          name: this.$t('public.remarks'),
+          name: '备注',
           prop: 'remark',
           width: '100'
         }
@@ -552,6 +552,7 @@ export default {
     this.getTreeData()
   },
   computed: {
+    ...mapStores(useOrganizationStore),
     newFrom() {
       // 数据在minxins
       if (this.user == '个人简历') {
@@ -610,72 +611,72 @@ export default {
     // 身份证获取出生日期
     getBirthday(val) {
       // 若当前字段不是身份证号，直接返回
-      if (val !== 'card_id') return;
+      if (val !== 'card_id') return
 
-      const cardId = this.ruleForm.card_id;
+      const cardId = this.ruleForm.card_id
       // 验证身份证号是否有效
       if (!this.isValidCardId(cardId)) {
-        this.resetBirthInfo();
-        return;
+        this.resetBirthInfo()
+        return
       }
 
-      const { birthday, sex } = this.extractInfoFromCardId(cardId);
-      this.ruleForm.birthday = this.formatBirthday(birthday);
-      this.ruleForm.sex = this.calculateSex(sex);
-      this.ruleForm.age = this.calculateAge(this.ruleForm.birthday);
+      const { birthday, sex } = this.extractInfoFromCardId(cardId)
+      this.ruleForm.birthday = this.formatBirthday(birthday)
+      this.ruleForm.sex = this.calculateSex(sex)
+      this.ruleForm.age = this.calculateAge(this.ruleForm.birthday)
     },
 
     // 验证身份证号是否有效
     isValidCardId(cardId) {
-      return cardId && (cardId.length === 15 || cardId.length === 18);
+      return cardId && (cardId.length === 15 || cardId.length === 18)
     },
 
     // 从身份证号中提取出生日期和性别信息
     extractInfoFromCardId(cardId) {
-      let birthday = '';
-      let sex = '';
+      let birthday = ''
+      let sex = ''
 
       if (cardId.length === 15) {
-        birthday = '19' + cardId.substr(6, 6);
-        sex = cardId.substring(14, 15);
+        birthday = '19' + cardId.substr(6, 6)
+        sex = cardId.substring(14, 15)
       } else if (cardId.length === 18) {
-        birthday = cardId.substr(6, 8);
-        sex = cardId.substring(16, 17);
+        birthday = cardId.substr(6, 8)
+        sex = cardId.substring(16, 17)
       }
 
-      return { birthday, sex };
+      return { birthday, sex }
     },
 
     // 格式化出生日期
     formatBirthday(birthday) {
-      return birthday.replace(/(.{4})(.{2})/, '$1-$2-');
+      return birthday.replace(/(.{4})(.{2})/, '$1-$2-')
     },
 
     // 计算性别
     calculateSex(sexNumber) {
-      return sexNumber % 2 === 0 ? 2 : 1;
+      return sexNumber % 2 === 0 ? 2 : 1
     },
 
     // 计算年龄
     calculateAge(birthday) {
-      const birthDate = new Date(birthday);
-      const currentDate = new Date();
+      const birthDate = new Date(birthday)
+      const currentDate = new Date()
       const age =
         currentDate.getFullYear() -
         birthDate.getFullYear() -
         (currentDate.getMonth() < birthDate.getMonth() ||
         (currentDate.getMonth() === birthDate.getMonth() && currentDate.getDate() < birthDate.getDate())
           ? 1
-          : 0);
+          : 0)
 
-      return isNaN(age) ? '' : age;
+      return isNaN(age) ? '' : age
     },
 
     // 重置出生日期、性别和年龄信息
     resetBirthInfo() {
-      this.ruleForm.birthday = '';
-      this.ruleForm.sex = 0;
-      this.ruleForm.age = '';
+      this.ruleForm.birthday = ''
+      this.ruleForm.sex = 0
+      this.ruleForm.age = ''
     },
 
     restFn(data) {
@@ -683,18 +684,6 @@ export default {
       this.FORMITEMISEDIT[data] = !this.FORMITEMISEDIT[data]
       this.enterpriseCardId()
     },
-   
-    // defaultFn() {
-    //   this.getDate()
-    //   if (this.tabtypes == 0) {
-    //     this.$set(this.ruleForm, 'type', '未入职')
-    //   } else if (this.tabtypes == 1) {
-    //     this.$set(this.ruleForm, 'type', 2)
-    //   } else if (this.tabtypes == 2) {
-    //     this.$set(this.ruleForm, 'type', 4)
-    //     this.typeText = '离职'
-    //   }
-    // },
 
     // 获取个人简历信息
     getResume() {
@@ -704,7 +693,7 @@ export default {
         res.data.education = Number(res.data.education)
         this.ruleForm = res.data
         if (this.ruleForm.education == 0) {
-          this.ruleForm.education = ''
+          this.ruleForm.education = undefined
         }
         this.userWorkId = res.data.id
         if (this.ruleForm.card_id) {
@@ -722,60 +711,57 @@ export default {
       let position = ''
       this.$refs.form.validate((valid) => {
         if (valid) {
+          if (this.tabtypes != 0 && this.ruleForm.frame_id.length == 0) {
+            this.$message.error('请选择所属部门')
+            return
+          }
           if (this.ruleForm.position.length > 0) {
             position = this.ruleForm.position[0]
           }
+
           saveCard(this.tabtypes, {
             ...this.ruleForm,
             position
           }).then((res) => {
             if (res.status == 200) {
               this.$emit('submitOk')
-              this.resetForm()
-              this.$store.dispatch('user/getMember')
+              this.defaultFn()
+              this.organizationStore.getMember({ force: true })
             }
           })
         }
       })
     },
+    defaultFn() {
+      for (let key in this.ruleForm) {
+        this.ruleForm[key] = ''
+      }
+      if (this.tabtypes == 0) {
+        this.ruleForm.type = '0'
+      }
+      if (this.tabtypes == 2) {
+        this.ruleForm.type = '4'
+      }
+    },
 
     // 编辑: 保存个人档案信息
+    // 编辑: 保存个人档案信息
     async formItemEdit(type, itemIndex) {
-      // 定义不同类型的验证字段数组
-      const validationFields = {
-        staff: ['interview_position', 'interview_date', 'is_part', 'type'],
-        basic: ['name', 'phone', 'position', 'frame_id'],
-        user: ['card_id']
-      };
-
-      // 获取当前类型对应的验证字段
-      const fields = validationFields[type] || [];
-
-      // 如果有需要验证的字段
-      if (fields.length > 0) {
+      const fields = type == 'staff'
+        ? ['interview_position', 'interview_date', 'is_part', 'type']
+        : type == 'basic'
+          ? ['name', 'phone', 'position', 'frame_id']
+          : type == 'user'
+            ? ['card_id']
+            : null
+      if (fields) {
         try {
-          // 并行验证所有字段
-          await Promise.all(fields.map(field => {
-            return new Promise((resolve, reject) => {
-              this.$refs.form.validateField(field, (error) => {
-                if (error && error.length > 0) {
-                  reject(error);
-                } else {
-                  resolve();
-                }
-              });
-            });
-          }));
-          // 所有字段验证通过，执行编辑操作
-          await this.editFn(type, itemIndex);
-        } catch (error) {
-          // 验证失败，不执行编辑操作
-          return;
+          if (!(await this.$refs.form.validateField(fields))) return
+        } catch {
+          return
         }
-      } else {
-        // 没有需要验证的字段，直接执行编辑操作
-        await this.editFn(type, itemIndex);
       }
+      this.editFn(type, itemIndex)
     },
     async editFn(type, itemIndex) {
       this.FORMITEMISEDIT[itemIndex] = !this.FORMITEMISEDIT[itemIndex]
@@ -791,7 +777,7 @@ export default {
 
       await putCardApi(this.id, this.ruleForm)
       await this.enterpriseCardId()
-      await this.$store.dispatch('user/getMember')
+      await this.organizationStore.getMember({ force: true })
     },
 
     // 新增：职位等级
@@ -811,11 +797,11 @@ export default {
     // 新增: 获取工作/教育经历列表
     addWorkFn(data, val) {
       // 根据 val 确定目标数组
-      const targetArray = val === 'work' ? this.workData : this.educationsData;
+      const targetArray = val === 'work' ? this.workData : this.educationsData
       if (this.editTable === '编辑') {
-        targetArray.splice(this.setIndex, 1, data);
+        targetArray.splice(this.setIndex, 1, data)
       } else {
-        targetArray.push(data);
+        targetArray.push(data)
       }
     },
 
@@ -876,43 +862,43 @@ export default {
 
     //  编辑: 新增工作经历
     addWorks(val) {
-      const isPersonalResume = this.user === '个人简历';
+      const isPersonalResume = this.user === '个人简历'
       const handlePersonalResume = (api, refreshFn) => {
-        this.$modalForm(api({})).then((res) => {
-          refreshFn();
-        });
-      };
+        modalForm(api({})).then((res) => {
+          refreshFn()
+        })
+      }
       const handleOtherUser = (type, title, formProp) => {
-        this.add = type;
-        this.editTable = '新增';
-        this.$refs.refwork.title = title;
-        this.$refs.refwork[formProp] = {};
-        this.$refs.refwork.dialogFormVisible = true;
-      };
+        this.add = type
+        this.editTable = '新增'
+        this.$refs.refwork.title = title
+        this.$refs.refwork[formProp] = {}
+        this.$refs.refwork.dialogFormVisible = true
+      }
 
       switch (val) {
         case '工作经历':
           if (isPersonalResume) {
-            handlePersonalResume(userCreateWork, this.getUserWorkList.bind(this));
+            handlePersonalResume(userCreateWork, this.getUserWorkList.bind(this))
           } else {
-            handleOtherUser('work', '新增工作经历', 'workForm');
+            handleOtherUser('work', '新增工作经历', 'workForm')
           }
-          break;
+          break
         case '教育经历':
           if (isPersonalResume) {
-            handlePersonalResume(userCreateEducation, this.getUserEducationList.bind(this));
+            handlePersonalResume(userCreateEducation, this.getUserEducationList.bind(this))
           } else {
-            handleOtherUser('education', '新增教育经历', 'educationForm');
+            handleOtherUser('education', '新增教育经历', 'educationForm')
           }
-          break;
+          break
         default:
-          break;
+          break
       }
     },
 
     // 编辑: 编辑工作经历
     editWorks() {
-      this.$modalForm(
+      modalForm(
         enterpriseWorkCreateApi({
           user_id: this.id
         })
@@ -932,7 +918,7 @@ export default {
 
     // 编辑 新增教育经历
     editEducation() {
-      this.$modalForm(
+      modalForm(
         enterpriseEducationCreateApi({
           user_id: this.id
         })
@@ -950,29 +936,27 @@ export default {
     // 选择部门回调
     changeMastart(data) {
       // 更新部门列表
-      this.frames = data;
+      this.frames = data
       // 提取部门ID数组
-      const frameIdArr = this.frames.map(item => item.id);
-      this.ruleForm.frame_id = frameIdArr;
+      const frameIdArr = this.frames.map((item) => item.id)
+      this.ruleForm.frame_id = frameIdArr
 
       // 记录之前的主部门ID
-      const preMastartId = this.mastart_id;
+      const preMastartId = this.mastart_id
       // 查找当前主部门
-      const currentMastart = this.frames.find(el => el.is_mastart);
+      const currentMastart = this.frames.find((el) => el.is_mastart)
 
       if (currentMastart) {
         // 更新主部门ID
-        this.ruleForm.main_id = currentMastart.id;
-        this.mastart_id = currentMastart.id;
+        this.ruleForm.main_id = currentMastart.id
+        this.mastart_id = currentMastart.id
 
         if (preMastartId) {
           // 替换上级部门列表中的旧主部门
-          this.superiorFrame = this.superiorFrame.map(i => 
-            i.id === preMastartId ? currentMastart : i
-          );
+          this.superiorFrame = this.superiorFrame.map((i) => (i.id === preMastartId ? currentMastart : i))
         } else {
           // 添加新的主部门到上级部门列表
-          this.superiorFrame.push(currentMastart);
+          this.superiorFrame.push(currentMastart)
         }
       }
     },
@@ -983,7 +967,7 @@ export default {
         this.$refs.selectMember[0].handlePopoverShow()
       }, 200)
     },
-    
+
     // 选择人员回调
     getSelectList(data) {
       this.superiorUser = data
@@ -1000,81 +984,77 @@ export default {
 
     // 删除所在部门
     handleDeleteDep(index) {
-      this.$refs[`popover-${index}`][0].doClose()
+      this.$refs[`popover-${index}`][0].hide()
       this.frames.splice(index, 1)
     },
 
     // 回显数据
     async enterpriseCardId() {
       // 初始化数据
-      this.superiorUser = [];
-      this.rangeUser = [];
-      this.positionText = [];
-      this.manage_frameText = '';
-      this.frameText = [];
-      this.rangeUserText = [];
+      this.superiorUser = []
+      this.rangeUser = []
+      this.positionText = []
+      this.manage_frameText = ''
+      this.frameText = []
+      this.rangeUserText = []
 
       try {
-        const res = await enterpriseCardIdApi(this.id);
-        this.formatData(res);
+        const res = await enterpriseCardIdApi(this.id)
+        this.formatData(res)
 
         // 处理主表单数据
         this.ruleForm = {
           ...res.data,
           age: res.data.age || '',
           work_years: res.data.work_years || '',
-          education: res.data.education === 0 ? '' : Number(res.data.education),
+          education: res.data.education && res.data.education !== 0 ? Number(res.data.education) : undefined,
           frame_id: res.data.frames.map((item) => item.id),
           position: res.data.job ? res.data.job.id : '',
           is_admin: (res.data.is_admin || 0).toString(),
           superior_uid: res.data.superior?.id || ''
-        };
-
-        if (!this.tabtypes) {
-          this.typeText = '未入职';
-          this.ruleForm.type = 3;
         }
 
         // 处理工作和教育经历数据
-        this.workData = res.data.works;
-        this.educationsData = res.data.educations;
+        this.workData = res.data.works
+        this.educationsData = res.data.educations
 
         // 处理部门数据
-        const newFrame = [];
-        const newId = [];
-        this.frames = res.data.frames;
+        const newFrame = []
+        const newId = []
+        this.frames = res.data.frames
         this.frames.forEach((el) => {
           if (el.is_mastart) {
-            this.ruleForm.main_id = el.id;
-            this.mastart_id = el.id;
+            this.ruleForm.main_id = el.id
+            this.mastart_id = el.id
           }
-          newFrame.push({ name: el.name, is_mastart: el.is_mastart });
-          newId.push(el.id);
-        });
-        this.frameText = newFrame;
+          newFrame.push({ name: el.name, is_mastart: el.is_mastart })
+          newId.push(el.id)
+        })
+        this.frameText = newFrame
 
         // 处理管理范围数据
-        this.rangeUser = res.data.scope;
-        this.rangeUserText = this.rangeUser.map((item) => item.name);
+        this.rangeUser = res.data.scope
+        this.rangeUserText = this.rangeUser.map((item) => item.name)
 
         // 处理职位和管理范围文本
-        this.positionText = res.data.job ? res.data.job.name : '';
-        this.manage_frameText = res.data.manage_frames.length > 0
-          ? res.data.manage_frames.map((item) => item.name).join(',')
-          : '--';
+        this.positionText = res.data.job ? res.data.job.name : ''
+        this.manage_frameText =
+          res.data.manage_frames.length > 0 ? res.data.manage_frames.map((item) => item.name).join(',') : '--'
 
         // 处理负责人和直属上级信息
-        this.is_adminText = this.ruleForm.is_admin === '1' ? '是' : '否';
+        this.is_adminText = this.ruleForm.is_admin === '1' ? '是' : '否'
         if (res.data.superior) {
-          this.superiorUser.push(res.data.superior);
-          this.superiorText = res.data.superior.name;
-        } else {
-          this.superiorText = '';
+          this.superiorText = res.data.superior.name
+          this.superiorUser.push(res.data.superior)
         }
 
         // 处理用户类型文本
-        const typeNew = !this.tabtypes ? '未入职' : this.tabtypes === 1 ? '在职' : '离职';
 
+        const typeNew = !this.tabtypes ? '未入职' : this.tabtypes === 1 ? '在职' : '离职'
+        if (this.tabtypes == 0) {
+          this.typeText = '未入职'
+          this.ruleForm.type = '0'
+        }
         // 触发事件
         this.$emit('userInfoFn', {
           name: res.data.name,
@@ -1082,34 +1062,33 @@ export default {
           type: typeNew,
           uid: res.data.uid,
           position: res.data.job ? res.data.job.name : '暂无职位'
-        });
-        this.$emit('getPhoto', res.data.photo);
+        })
+        this.$emit('getPhoto', res.data.photo)
       } catch (error) {
-        console.error('获取企业卡片信息失败:', error);
+        console.error('获取企业卡片信息失败:', error)
       }
     }
   },
 
   components: {
     // 新增: 添加工作/教育经历
-    Addwork: () => import('./addWork'),
+    Addwork: defineAsyncComponent(() => import('./addWork')),
     // 编辑: 工作/教育经历
-    tableBox: () => import('../components/tableBox'),
+    tableBox: defineAsyncComponent(() => import('../components/tableBox')),
     // 上传图片
-    UploadImage: () => import('../components/UploadImage.vue'),
-    ElImageViewer: () => import('element-ui/packages/image/src/image-viewer'),
+    UploadImage: defineAsyncComponent(() => import('../components/UploadImage.vue')),
 
-    selectMember: () => import('@/components/form-common/select-member'),
-    selectDepartment: () => import('@/components/form-common/select-department'),
+    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
+    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department')),
 
     // 职位等级
-    positionDialog: () => import('@/views/hr/archives/components/positionDialog')
+    positionDialog: defineAsyncComponent(() => import('@/views/hr/archives/components/positionDialog'))
   }
 }
 </script>
 
 <style lang="scss" scoped>
-/deep/ .el-drawer__body {
+:deep(.el-drawer__body) {
   overflow-y: hidden;
 }
 
@@ -1131,7 +1110,18 @@ export default {
   font-family: PingFangSC-Regular, PingFang SC;
 }
 .activeItem {
-  margin: -7px -10px !important;
+  // 旧版 element-ui 表单项的下边距会折叠掉，只保留上方 -7px；Element Plus 的表单项为 flex 不折叠，这里显式去掉下边距
+  margin: -7px -10px 0 !important;
+
+  // 按旧版 medium 尺寸还原 36px 行高
+  :deep(.el-form-item__label) {
+    height: 36px;
+    line-height: 36px;
+  }
+
+  :deep(.el-form-item__content) {
+    line-height: 36px;
+  }
 }
 .item-superior {
   margin-left: -88px;
@@ -1141,7 +1131,7 @@ export default {
     font-size: 13px;
   }
 }
-/deep/ .el-form-item__label,
+:deep(.el-form-item__label),
 .el-form-item__content {
   // font-size: 12px !important;
   // font-weight: 400;
@@ -1162,16 +1152,16 @@ export default {
   font-weight: 400;
   color: #303133;
 }
-/deep/ .el-cascader {
+:deep(.el-cascader) {
   width: 100%;
 }
-/deep/ .el-input--small {
+:deep(.el-input) {
   font-size: 13px;
 }
-/deep/ .el-input--medium {
+:deep(.el-input) {
   font-size: 13px;
 }
-/deep/ .el-button--small {
+:deep(.el-button) {
   width: 44px;
   height: 28px;
   padding: 0;
@@ -1187,10 +1177,10 @@ export default {
   color: #1890ff;
   opacity: 0.5;
 }
-/deep/ .form-box .form-item .el-input {
+:deep(.form-box .form-item .el-input) {
   width: 100% !important;
 }
-/deep/ .el-drawer__close-btn {
+:deep(.el-drawer__close-btn) {
   margin-bottom: 0;
 }
 .m10 {
@@ -1206,11 +1196,11 @@ export default {
   margin: 20px;
   overflow-y: hidden;
 }
-/deep/ .el-tabs__item {
+:deep(.el-tabs__item) {
   font-weight: 700;
   z-index: 9999;
 }
-/deep/ .el-form-item__label {
+:deep(.el-form-item__label) {
   padding-right: 4px !important;
 }
 .table-box {
@@ -1326,23 +1316,23 @@ export default {
   .form-item {
     width: 48%;
 
-    /deep/ .el-form-item__content {
+    :deep(.el-form-item__content) {
       width: calc(100% - 90px);
     }
 
-    /deep/ .el-input {
+    :deep(.el-input) {
       width: 95%;
     }
 
-    /deep/ .el-select {
+    :deep(.el-select) {
       width: 100%;
     }
 
-    /deep/ .el-form-item {
+    :deep(.el-form-item) {
       margin-bottom: 20px;
     }
 
-    /deep/ .el-textarea__inner {
+    :deep(.el-textarea__inner) {
       resize: none;
     }
   }
@@ -1362,23 +1352,17 @@ export default {
   }
 }
 
-.from-text {
-  margin: 20px 0;
-  font-size: 11px;
-  color: gray;
-}
-
-/deep/ .avatar-uploader .el-upload:hover {
+:deep(.avatar-uploader .el-upload:hover) {
   border-color: #409eff;
 }
 
-/deep/ .avatar-uploader-icon {
+:deep(.avatar-uploader-icon) {
   font-size: 28px;
   color: #8c939d;
   text-align: center;
 }
 
-/deep/ .el-upload--picture-card {
+:deep(.el-upload--picture-card) {
   width: 160px;
   height: 100px;
   border: 1px dashed #d9d9d9;
@@ -1389,24 +1373,9 @@ export default {
   overflow: hidden;
 }
 
-/deep/ .avatar {
+:deep(.avatar) {
   width: 160px;
   height: 100px;
   display: block;
-}
-.tabsEdit {
-  height: 56px;
-  display: flex;
-  justify-content: space-between;
-  .invitationUrl {
-    margin-top: 10px;
-    margin-right: 20px;
-  }
-}
-
-.placeholder-text {
-  font-size: 13px;
-  color: #ccc;
-  line-height: 20px;
 }
 </style>

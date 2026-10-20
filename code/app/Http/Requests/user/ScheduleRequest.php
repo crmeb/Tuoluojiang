@@ -33,6 +33,7 @@ class ScheduleRequest extends ApiValidate
 
     protected $scene = [
         'create' => ['title', 'content', 'start_time', 'end_time', 'cid', 'period', 'rate'],
+        'quick'  => ['title', 'content', 'end_time', 'member', 'remind'],
         'update' => ['title', 'content', 'start_time', 'end_time', 'cid', 'period', 'rate', 'type', 'start', 'end'],
         'delete' => ['type', 'start', 'end'],
         'status' => ['start', 'end'],
@@ -64,6 +65,11 @@ class ScheduleRequest extends ApiValidate
             'start.date'          => '请选择正确的日程开始时间',
             'end.required'        => '请选择日程结束时间',
             'end.date'            => '请选择正确的日程结束时间',
+            'member.array'        => '请选择正确的参与人',
+            'member.*.integer'    => '请选择正确的参与人',
+            'remind.integer'      => '请选择正确的提醒方式',
+            'remind.min'          => '请选择正确的提醒方式',
+            'remind.max'          => '请选择正确的提醒方式',
         ];
     }
 
@@ -77,19 +83,23 @@ class ScheduleRequest extends ApiValidate
             'title'      => 'required|max:256',
             'content'    => 'max:2000',
             'start_time' => 'required|date',
-            'end_time'   => 'required|date',
+            // 快捷创建截止时间可选；完整创建仍必填结束时间
+            'end_time'   => $this->currentScene === 'quick' ? 'nullable|date' : 'required|date',
             'cid'        => 'required|integer',
             'period'     => [
                 'required',
                 Rule::in([ScheduleEnum::REPEAT_NOT, ScheduleEnum::REPEAT_DAY, ScheduleEnum::REPEAT_WEEK, ScheduleEnum::REPEAT_MONTH, ScheduleEnum::REPEAT_YEAR]),
             ],
-            'rate' => 'required|integer|min:1',
-            'type' => [
+            'rate'     => 'required|integer|min:1',
+            'type'     => [
                 'required',
                 Rule::in([ScheduleEnum::CHANGE_ALL, ScheduleEnum::CHANGE_NOW, ScheduleEnum::CHANGE_AFTER]),
             ],
-            'start' => 'required|date',
-            'end'   => 'required|date',
+            'start'    => 'required|date',
+            'end'      => 'required|date',
+            'member'   => 'nullable|array',
+            'member.*' => 'integer|min:1',
+            'remind'   => 'nullable|integer|min:-1|max:8',
         ];
     }
 }

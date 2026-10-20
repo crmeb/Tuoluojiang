@@ -1,61 +1,63 @@
-<!-- 合同-合同续费页面组件 -->
+<!-- 订单-订单续费页面组件 -->
 <template>
   <div class="station">
-    <el-row class="mb14">
-      <el-button @click="handleContract(2, 1)" size="small" type="primary">{{ $t('customer.addrenewal') }}</el-button>
-    </el-row>
+    <div class="mb14">
+      <el-button @click="handleContract(2, 1)" type="primary">添加续费</el-button>
+    </div>
     <div class="renewal-content" v-if="renewCensusData.length > 0">
       <el-row>
         <el-col :span="20" class="over-text">
           <p v-for="item in renewCensusData" :key="item.cate_id">
             <span>{{ item.renew ? item.renew.title : '' }}</span>
             <span v-if="item.end_date !== '0000-00-00 00:00:00'" :class="getRenewDate(item.date)">{{
-              $moment(item.end_date).format('yyyy-MM-DD')
+              dayjs(item.end_date).format('YYYY-MM-DD')
             }}</span>
             <span v-else>--</span>
             到期
           </p>
         </el-col>
         <el-col :span="4" class="text-right">
-          <el-button size="small" type="text" @click="handleRenewCensus"
+          <el-button type="primary" link @click="handleRenewCensus"
             >查看全部 <i class="el-icon-d-arrow-right"></i
           ></el-button>
         </el-col>
       </el-row>
     </div>
-    <el-table :data="renewData" style="width: 100%; height: 90%;">
-      <el-table-column prop="end_date" :label="$t('customer.renewaldate')" min-width="100">
-        <template slot-scope="scope">
+    <el-table :data="renewData" style="width: 100%; height: 90%">
+      <el-table-column prop="end_date" label="续费结束日期" min-width="100">
+        <template #default="scope">
           <span v-if="scope.row.end_date !== '0000-00-00 00:00:00'">{{
-            $moment(scope.row.end_date).format('YYYY-MM-DD')
+            dayjs(scope.row.end_date).format('YYYY-MM-DD')
           }}</span>
           <span v-else>--</span>
         </template>
       </el-table-column>
-      <el-table-column prop="num" :label="$t('customer.renewalamount')" min-width="80"> </el-table-column>
-      <el-table-column prop="renew.title" :label="$t('customer.renewaltype')" min-width="110"> </el-table-column>
-      <el-table-column prop="status" :label="$t('customer.accessstatus')" min-width="80">
-        <template slot-scope="scope">
-          <el-tag v-if="scope.row.status === 0" type="warning" size="mini"> {{ $t('customer.audit') }} </el-tag>
-          <el-tag v-if="scope.row.status === 1" type="info" size="mini"> {{ $t('customer.passed') }} </el-tag>
-          <el-tag v-if="scope.row.status == -1" type="info" size="mini"> 撤回</el-tag>
+      <el-table-column prop="num" label="续费金额(元)" min-width="80"> </el-table-column>
+      <el-table-column prop="renew.title" label="续费类型" min-width="110"> </el-table-column>
+      <el-table-column prop="status" label="审核状态" min-width="80">
+        <template #default="scope">
+          <el-tag size="small" v-if="scope.row.status === 0" type="warning"> 待审核 </el-tag>
+          <el-tag size="small" v-if="scope.row.status === 1" type="info"> 已通过 </el-tag>
+          <el-tag size="small" v-if="scope.row.status == -1" type="info"> 撤回</el-tag>
           <el-popover v-if="scope.row.status === 2" trigger="hover" placement="top">
-            <p>{{ $t('customer.reason') }}:</p>
+            <p>原因:</p>
             <p>{{ scope.row.fail_msg }}</p>
-            <div slot="reference">
-              <el-tag type="danger" size="mini"> {{ $t('customer.fail') }} </el-tag>
-            </div>
+            <template #reference>
+              <div>
+                <el-tag size="small" type="danger"> 未通过 </el-tag>
+              </div>
+            </template>
           </el-popover>
         </template>
       </el-table-column>
-      <el-table-column prop="card.name" :label="$t('setting.info.founder')" min-width="80"> </el-table-column>
-      <el-table-column prop="address" min-width="160" :label="$t('public.operation')">
-        <template slot-scope="scope">
-          <el-button v-if="scope.row.status !== 1" type="text" @click="handleContract(2, 2, scope.row)">
+      <el-table-column prop="card.name" label="创建人" min-width="80"> </el-table-column>
+      <el-table-column prop="address" min-width="160" label="操作">
+        <template #default="scope">
+          <el-button v-if="scope.row.status !== 1" type="primary" link @click="handleContract(2, 2, scope.row)">
             {{ scope.row.status == 0 ? '编辑' : '重新提交' }}
           </el-button>
-          <el-button @click="setRemarks(scope.row)" type="text">{{ $t('public.remarks') }}</el-button>
-          <el-button v-if="scope.row.status == 0" @click="handleDelete(scope.row)" type="text">撤回</el-button>
+          <el-button @click="setRemarks(scope.row)" type="primary" link>备注</el-button>
+          <el-button v-if="scope.row.status == 0" @click="handleDelete(scope.row)" type="primary" link>撤回</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -75,7 +77,11 @@
 </template>
 
 <script>
-import { clientBillListApi, clientBillPutApi } from '@/api/enterprise'
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
+import { modalSure } from '@/libs/public.ts'
+import { clientBillListApi } from '@/api/enterprise.ts'
+import { clientBillPutApi } from '@/api/client.ts'
 export default {
   name: 'ContractRecord',
   props: {
@@ -87,9 +93,12 @@ export default {
     }
   },
   components: {
-    contractDialog: () => import('@/views/customer/contract/components/contractDialog'),
-    markDialog: () => import('@/views/customer/contract/components/markDialog'),
-    renewCensus: () => import('@/views/customer/contract/components/renewCensus')
+    contractDialog: defineAsyncComponent(() => import('@/views/customer/contract/components/contractDialog')),
+    markDialog: defineAsyncComponent(() => import('@/views/customer/contract/components/markDialog')),
+    renewCensus: defineAsyncComponent(() => import('@/views/customer/contract/components/renewCensus'))
+  },
+  computed: {
+    dayjs: () => dayjs
   },
   data() {
     return {
@@ -135,13 +144,13 @@ export default {
     handleContract(type, edit, row = []) {
       let str = ''
       if (type === 1 && edit === 1) {
-        str = this.$t('customer.addcollection')
+        str = '添加回款'
       } else if (type === 1 && edit === 2) {
-        str = this.$t('customer.editcollection')
+        str = '编辑回款'
       } else if (type === 2 && edit === 1) {
-        str = this.$t('customer.addrenewal')
+        str = '添加续费'
       } else if (type === 2 && edit === 2) {
-        str = this.$t('customer.editrenewal')
+        str = '编辑续费'
       }
 
       this.configContract = {
@@ -161,7 +170,7 @@ export default {
     },
     setRemarks(row) {
       this.configMark = {
-        title: this.$t('customer.remarkinformation'),
+        title: '备注信息',
         width: '480px',
         id: row.id,
         type: 1,
@@ -171,7 +180,7 @@ export default {
     },
     handleRenewCensus() {
       this.configRenewCensus = {
-        title: '合同续费',
+        title: '订单续费',
         width: '480px',
         data: this.renewCensusData
       }
@@ -179,7 +188,7 @@ export default {
     },
     getRenewDate(data) {
       let str = ''
-      let days = this.$moment(data).diff(this.$moment(new Date()), 'days')
+      let days = dayjs(data).diff(dayjs(new Date()), 'days')
       if (days > this.renewMaxDate) {
         str = 'color-success'
       } else if (days >= 0 && days <= this.renewMaxDate) {
@@ -191,7 +200,7 @@ export default {
     },
     // 删除
     handleDelete(item) {
-      this.$modalSure(this.$t('customer.placeholder23')).then(() => {
+      modalSure('请确定要撤回该记录吗').then(() => {
         clientBillPutApi(item.id).then((res) => {
           if (this.where.page > 1 && this.renewData.length <= 1) {
             this.where.page--
@@ -210,10 +219,10 @@ export default {
 .station {
   height: 100%;
 }
-/deep/ .el-table {
+:deep(.el-table) {
   height: 100% !important;
 }
-/deep/ .el-input__inner {
+:deep(.el-input__inner) {
   text-align: left;
 }
 .renewal-content {

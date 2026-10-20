@@ -44,12 +44,15 @@ class UserPosition extends BaseModel
         'end_time'   => 'datetime:Y-m-d',
         'created_at' => 'datetime:Y-m-d H:i:s',
         'updated_at' => 'datetime:Y-m-d H:i:s',
+        'id'         => 'integer',
+        'card_id'    => 'integer',
+        'is_admin'   => 'integer',
+        'status'     => 'integer',
     ];
 
     /**
      * id作用域
      * @param Builder $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeId($query, $value)

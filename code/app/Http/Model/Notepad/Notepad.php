@@ -17,9 +17,9 @@ namespace App\Http\Model\Notepad;
 
 use App\Http\Model\Admin\Admin;
 use App\Http\Model\BaseModel;
+use Tuoluojiang\Open\traits\model\TimeDataTrait;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Query\Builder;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -27,6 +27,8 @@ use Illuminate\Support\Facades\DB;
  */
 class Notepad extends BaseModel
 {
+    use TimeDataTrait;
+
     /**
      * 自动写入时间.
      * @var bool
@@ -44,6 +46,13 @@ class Notepad extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'         => 'integer',
+        'pid'        => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
 
     /**
      * 一对一关联企业用户.
@@ -131,65 +140,6 @@ class Notepad extends BaseModel
     {
         if ($value !== '') {
             return $query->where('uid', $value);
-        }
-    }
-
-    /**
-     * 时间查询作用域
-     * @param Builder $query
-     * @param mixed $value
-     * @return mixed
-     */
-    public function scopeTime($query, $value)
-    {
-        $createTimeField = $this->getTimeField();
-        switch ($value) {
-            case 'today':// 今天
-                return $query->whereDate($createTimeField, Carbon::today()->toDateString());
-            case 'week':// 本周
-                return $query->whereBetween($createTimeField, [Carbon::today()->startOfWeek()->toDateString(), Carbon::today()->endOfWeek()->toDateString()]);
-            case 'month':// 本月
-                return $query->whereBetween($createTimeField, [Carbon::today()->startOfMonth()->toDateString(), Carbon::today()->endOfMonth()->toDateString()]);
-            case 'year':// 今年
-                return $query->whereBetween($createTimeField, [Carbon::today()->startOfYear()->toDateString(), Carbon::today()->endOfYear()->toDateString()]);
-            case 'yesterday':// 昨天
-                return $query->whereDate($createTimeField, Carbon::yesterday()->toDateString());
-            case 'last year':// 去年
-                return $query->whereDate($createTimeField, Carbon::today()->subYear()->year);
-            case 'last week':// 上周
-                return $query->whereBetween($createTimeField, [Carbon::today()->subWeek()->startOfWeek()->toDateString(), Carbon::today()->subWeek()->endOfWeek()->toDateString()]);
-            case 'last month':// 上个月
-                return $query->whereBetween($createTimeField, [Carbon::today()->subMonth()->startOfMonth()->toDateString(), Carbon::today()->subMonth()->endOfMonth()->toDateString()]);
-            case 'quarter':// 本季度
-                return $query->whereBetween($createTimeField, [Carbon::today()->startOfQuarter()->toDateString(), Carbon::today()->endOfQuarter()->toDateString()]);
-            case 'lately7':// 近7天
-                return $query->whereBetween($createTimeField, [Carbon::today()->subDays(7)->toDateString(), Carbon::today()->toDateString()]);
-            case 'lately30':
-                return $query->whereBetween($createTimeField, [Carbon::today()->subDays(30)->toDateString(), Carbon::today()->toDateString()]);
-            default:
-                if (strstr($value, '-') !== false) {
-                    [$startTime, $endTime] = explode('-', $value);
-                    $startTime             = str_replace('/', '-', trim($startTime));
-                    $endTime               = str_replace('/', '-', trim($endTime));
-                    if ($startTime && $endTime && $startTime != $endTime) {
-                        return $query->whereBetween($createTimeField, [$startTime, $endTime]);
-                    }
-                    if ($startTime && $endTime && $startTime == $endTime) {
-                        return $query->whereBetween($createTimeField, [$startTime, date('Y-m-d H:i:s', strtotime($endTime) + 86400)]);
-                    }
-                    if (! $startTime && $endTime) {
-                        return $query->whereTime($createTimeField, '<', $endTime);
-                    }
-                    if ($startTime && ! $endTime) {
-                        return $query->whereTime($createTimeField, '>=', $startTime);
-                    }
-                } elseif (preg_match('/^lately+[1-9]{1,3}/', $value)) {
-                    // 最近天数 lately[1-9] 任意天数
-                    $day = (int) str_replace('lately', '', $value);
-                    if ($day) {
-                        return $query->whereBetween($createTimeField, [Carbon::today()->subDays($day)->toDateString(), Carbon::today()->toDateString()]);
-                    }
-                }
         }
     }
 

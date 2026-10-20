@@ -5,13 +5,15 @@
       :modal="true"
       :show-close="true"
       :title="title"
-      :visible.sync="dialogFormVisible"
+      v-model="dialogFormVisible"
       top="8vh"
       width="1200px"
     >
-      <div slot="title" class="dialog-title">
-        <div class="dialog-title-title">{{ title }}</div>
-      </div>
+      <template #header>
+        <div class="dialog-title">
+          <div class="dialog-title-title">{{ title }}</div>
+        </div>
+      </template>
       <el-row>
         <el-col :span="4">
           <!--部门-->
@@ -30,7 +32,6 @@
                 clearable
                 placeholder="根据关键字搜索"
                 prefix-icon="el-icon-search"
-                size="small"
                 style="width: 300px"
                 @change="handleSearch"
               />
@@ -68,20 +69,24 @@
           </div>
         </el-col>
       </el-row>
-      <div slot="footer" class="dialog-footer">
-        <el-button size="small" @click="closeDialog">取消</el-button>
-        <el-button size="small" type="primary" @click="handleConfirm">确定</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeDialog">取消</el-button>
+          <el-button type="primary" @click="handleConfirm">确定</el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>
 
 <script>
-import { assessTargetListApi } from '@/api/enterprise'
+import { defineAsyncComponent } from 'vue'
+import { assessTargetListApi } from '@/api/enterprise.ts'
 export default {
+  emits: ['dialogChangeDada'],
   name: 'SelectTarget',
   components: {
-    departmentNot: () => import('@/components/user/department')
+    departmentNot: defineAsyncComponent(() => import('@/components/user/department'))
   },
   props: {
     title: {
@@ -177,7 +182,7 @@ export default {
     line-height: 22px;
     color: rgba(0, 0, 0, 0.85);
   }
-  /deep/ .el-pagination {
+  :deep(.el-pagination) {
     padding-bottom: 0;
   }
   .dialog-title-search {
@@ -185,7 +190,7 @@ export default {
     // display: flex;
     // align-items: center;
     // width: 70%;
-    >>> button {
+    :deep(button) {
       margin-left: 15px;
     }
   }
@@ -198,7 +203,7 @@ export default {
 .table-box {
   margin-left: 12px;
 }
-/deep/.el-table th.is-leaf {
+:deep(.el-table th.is-leaf) {
   background: #f0fafe !important;
   color: #000;
 }

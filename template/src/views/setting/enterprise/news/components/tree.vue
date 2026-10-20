@@ -8,7 +8,7 @@
         </el-tooltip> -->
       </div>
       <div v-height>
-        <el-scrollbar style="height: 100%">
+        <el-scrollbar style="height: 100%" class="reset-scroll-bar">
           <div class="tree-box-con">
             <el-tree
               ref="tree"
@@ -19,32 +19,15 @@
               node-key="value"
               @node-click="handleClick"
             >
-              <div slot-scope="{ node, data }" class="custom-tree-node">
-                <div class="flex-box">
-                  <span class="over-text">{{ node.label }}</span>
-
-                  <div>
-                    <!-- <el-popover
-                      :ref="`pop-${data.value}`"
-                      :offset="10"
-                      placement="bottom-end"
-                      trigger="click"
-                      @hide="handleHide"
-                      @after-enter="handleShow(data.value)"
-                    >
-                      <div class="right-item-list">
-                        <div class="right-item" @click.stop="addDivsion(1)">
-                          {{ $t('public.edit') }}
-                        </div>
-                        <div class="right-item" @click.stop="hanleDelete(data)">
-                          {{ $t('public.delete') }}
-                        </div>
-                      </div>
-                      <div slot="reference" v-if="type !== 2" class="iconfont icongengduo right-icon" />
-                    </el-popover> -->
+              <template #default="{ node, data }">
+                <div class="custom-tree-node">
+                  <div class="flex-box">
+                    <span class="over-text">{{ node.label }}</span>
+                    <div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </template>
             </el-tree>
           </div>
         </el-scrollbar>
@@ -54,8 +37,8 @@
 </template>
 
 <script>
-import { configFrameDeleteApi } from '@/api/setting'
 export default {
+  emits: ['getTypesId', 'addType'],
   name: 'TreeVue',
   components: {},
   props: {
@@ -66,7 +49,7 @@ export default {
       }
     },
     type: {
-      type: Number | String,
+      type: [Number, String],
       default: () => {
         return 0
       }
@@ -104,7 +87,7 @@ export default {
     // tree节点点击
     handleClick(node, data) {
       if (this.activeValue) {
-        this.$refs[`pop-${this.activeValue}`].doClose()
+        this.$refs[`pop-${this.activeValue}`].hide()
       }
       this.types = node.value
       this.$emit('getTypesId', node.value)
@@ -112,19 +95,13 @@ export default {
 
     addType() {
       this.$emit('addType')
-    },
-    // 删除部门
-    async hanleDelete(data) {
-      await this.$modalSure('确定删除改部门吗')
-      await configFrameDeleteApi(data.value)
-      this.$bus.$emit('getList')
     }
   }
 }
 </script>
 
 <style lang="scss" scoped>
-/deep/ .el-scrollbar__wrap {
+:deep(.el-scrollbar__wrap) {
   overflow-x: hidden;
 }
 .title {
@@ -137,28 +114,26 @@ export default {
     cursor: pointer;
   }
 }
-/deep/ .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content {
+:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
   background: rgba(240, 250, 254, 0.6);
-  border-color: #1890ff;
   .flex-box {
     color: #1890ff;
     font-weight: 600;
   }
 }
-/deep/.tree-box-con .el-tree-node__content {
+:deep(.tree-box-con .el-tree-node__content) {
+  border-radius: 4px;
   width: 100%;
   height: 40px;
-  padding-right: 15px;
-  border-right: 2px solid transparent;
 }
-/deep/ .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node,
+:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node),
 .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .right-icon {
   display: inline-block;
   color: #1890ff;
   font-weight: 600;
 }
 
-/deep/.el-tree-node > .el-tree-node__children {
+:deep(.el-tree-node > .el-tree-node__children) {
   overflow: inherit;
 }
 
@@ -212,9 +187,11 @@ export default {
 .tree-box-con {
   padding-bottom: 12px;
 }
+:deep(.el-tree) {
+  background-color: transparent;
+}
 
 .tree-box {
-  background: #fff;
   margin: -20px 0 -20px -20px;
   border-right: 1px solid #f5f5f5;
 }

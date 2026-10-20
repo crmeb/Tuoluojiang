@@ -1,0 +1,12 @@
+{
+  "registry-mirrors": [
+    "https://docker.m.daocloud.io",
+    "https://huecker.io",
+    "https://dockerhub.timeweb.cloud",
+    "https://noohub.ru"
+  ],
+  "experimental": false,
+  "features": {
+    "buildkit": true
+  }
+}

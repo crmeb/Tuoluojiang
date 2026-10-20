@@ -16,13 +16,13 @@ declare(strict_types=1);
 namespace App\Http\Service\Finance;
 
 use App\Http\Dao\Finance\BillDao;
-use App\Http\Model\BaseModel;
 use App\Http\Service\Attach\AttachService;
-use App\Http\Service\BaseService;
 use App\Task\customer\BillListRecordTask;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\services\FormService as Form;
-use crmeb\traits\service\ResourceServiceTrait;
+use App\Http\Model\BaseModel;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\services\FormService as Form;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use FormBuilder\Exception\FormBuilderException;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Contracts\Container\BindingResolutionException;
@@ -54,9 +54,13 @@ class BillService extends BaseService implements ResourceServicesInterface
      */
     public function handleCateId(mixed $cateId): mixed
     {
-        return array_unique(array_reduce($cateId, function ($carry, $item) {
-            return array_merge($carry, $item);
-        }, []));
+        if ($cateId){
+            return array_unique(array_reduce($cateId, function ($carry, $item) {
+                return array_merge($carry, $item);
+            }, []));
+        }else{
+            return [];
+        }
     }
 
     /**
@@ -116,6 +120,7 @@ class BillService extends BaseService implements ResourceServicesInterface
                     $attach['src'] = link_file($attach['src']);
                 }
             }
+            $item['mark'] = $item['mark'] ?: ($item['client_bill']['mark'] ?? '');
         }
         $count = $this->dao->count($where);
         unset($where['types']);
@@ -130,7 +135,7 @@ class BillService extends BaseService implements ResourceServicesInterface
      */
     public function resourceCreate(array $other = []): array
     {
-        return $this->elForm('添加', $this->getRankRuleForm(collect()), '/ent/bill');
+        return $this->createElementForm('添加', $this->getRankRuleForm(collect()), '/ent/bill');
     }
 
     /**
@@ -149,7 +154,7 @@ class BillService extends BaseService implements ResourceServicesInterface
             throw $this->exception('数据不存在');
         }
 
-        return $this->elForm('编辑', $this->getRankRuleForm(collect($rankInfo->toArray())), '/ent/bill/' . $id, 'put');
+        return $this->createElementForm('编辑', $this->getRankRuleForm(collect($rankInfo->toArray())), '/ent/bill/' . $id, 'put');
     }
 
     /**
@@ -228,22 +233,22 @@ class BillService extends BaseService implements ResourceServicesInterface
      * @return array
      * @throws BindingResolutionException
      */
-    public function getTrend($time, $income, $expend, $all = false, $cateId = [], string $type = '')
+    public function getTrend($time, $income, $expend, $all = false, $cateId = [], string $type = '', array $userIds = [], int $entId = 1)
     {
         $time = explode('-', $time);
         if (count($time) != 2) {
             throw $this->exception('参数错误');
         }
-        $dayCount = (strtotime($time[1]) - strtotime($time[0])) / 86400 + 1;
+        $dayCount = (datetime_timestamp($time[1]) - datetime_timestamp($time[0])) / 86400 + 1;
         $data     = [];
         if ($dayCount == 1) {
-            $data = $this->trend($time, 0, $income, $expend, $all, $cateId, $type);
+            $data = $this->trend($time, 0, $income, $expend, $all, $cateId, $type, $userIds, $entId);
         } elseif ($dayCount > 1 && $dayCount <= 31) {
-            $data = $this->trend($time, 1, $income, $expend, $all, $cateId, $type);
+            $data = $this->trend($time, 1, $income, $expend, $all, $cateId, $type, $userIds, $entId);
         } elseif ($dayCount > 31 && $dayCount <= 92) {
-            $data = $this->trend($time, 3, $income, $expend, $all, $cateId, $type);
+            $data = $this->trend($time, 3, $income, $expend, $all, $cateId, $type, $userIds, $entId);
         } elseif ($dayCount > 92) {
-            $data = $this->trend($time, 30, $income, $expend, $all, $cateId, $type);
+            $data = $this->trend($time, 30, $income, $expend, $all, $cateId, $type, $userIds, $entId);
         }
 
         return $data;
@@ -259,25 +264,24 @@ class BillService extends BaseService implements ResourceServicesInterface
      * @return array
      * @throws BindingResolutionException
      */
-    public function trend($time, $num, $incomeLevel, $expendLevel, bool $all = false, array $cateId = [], string $type = '')
+    public function trend($time, $num, $incomeLevel, $expendLevel, bool $all = false, array $cateId = [], string $type = '', array $userIds = [], int $entId = 1)
     {
         $incomeRank = $expendRank = $income = $expend = [];
-        $entId      = 1;
         $pid        = app()->get(BillCategoryService::class)->column(['id' => $cateId], 'pid');
         if ($incomeLevel !== '' && ($type === '' || $type === '1')) {
-            $incomeRank = $this->dao->getBillRank($time, 1, $entId, $incomeLevel, $this->dao->getSum($time, 1, $incomeLevel, $entId, $cateId), array_unique($pid), cateSearch: $cateId);
+            $incomeRank = $this->dao->getBillRank($time, 1, $entId, $incomeLevel, $this->dao->getSum($time, 1, $incomeLevel, $entId, $cateId, $userIds), array_unique($pid), cateSearch: $cateId, userIds: $userIds);
         }
 
         if ($expendLevel !== '' && ($type === '' || $type === '0')) {
-            $expendRank = $this->dao->getBillRank($time, 0, $entId, $expendLevel, $this->dao->getSum($time, 0, $expendLevel, $entId, $cateId), array_unique($pid), cateSearch: $cateId);
+            $expendRank = $this->dao->getBillRank($time, 0, $entId, $expendLevel, $this->dao->getSum($time, 0, $expendLevel, $entId, $cateId, $userIds), array_unique($pid), cateSearch: $cateId, userIds: $userIds);
         }
         if ($all) {
             if ($num == 0) {
                 $xAxis    = ['00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23'];
                 $timeType = '%H';
             } else {
-                $dt_start = strtotime($time[0]);
-                $dt_end   = strtotime($time[1]);
+                $dt_start = datetime_timestamp($time[0]);
+                $dt_end   = datetime_timestamp($time[1]);
                 $xAxis    = [];
                 $timeType = '%Y-%m';
                 while ($dt_start <= $dt_end) {
@@ -294,10 +298,10 @@ class BillService extends BaseService implements ResourceServicesInterface
             }
 
             if ($type === '' || $type === '1') {
-                $income = array_column($this->dao->getTrend($time, $timeType, 'sum(num)', 1, 1, $cateId), 'num', 'days');
+                $income = array_column($this->dao->getTrend($time, $timeType, 'sum(num)', 1, $entId, $cateId, $userIds), 'num', 'days');
             }
             if ($type === '' || $type === '0') {
-                $expend = array_column($this->dao->getTrend($time, $timeType, 'sum(num)', 0, 1, $cateId), 'num', 'days');
+                $expend = array_column($this->dao->getTrend($time, $timeType, 'sum(num)', 0, $entId, $cateId, $userIds), 'num', 'days');
             }
             $data = $series = [];
             foreach ($xAxis as $item) {
@@ -347,49 +351,74 @@ class BillService extends BaseService implements ResourceServicesInterface
         $payTypeMap  = app()->get(PaytypeService::class)->column([], 'id', 'name');
         $time        = now()->toDateTimeString();
         return $this->transaction(function () use ($data, $cateService, $uid, $payTypeMap, $time) {
-            $tz = config('app.timezone');
-            foreach ($data as $val) {
-                if (! in_array($val['types'], ['收入', '支出'])) {
-                    break;
+            $tz    = config('app.timezone');
+            $saved = 0;
+            foreach ($data as $index => $val) {
+                $rowNo = $index + 1;
+                $typeName = trim((string) ($val['types'] ?? ''));
+                if ($typeName === '' || str_contains($typeName, '账目类型') || preg_match('/^示例[:：]/u', $typeName)) {
+                    continue;
                 }
-                $types = $val['types'] == '收入' ? 1 : 0;
+                if (! in_array($typeName, ['收入', '支出'], true)) {
+                    throw $this->exception("第{$rowNo}行账目类型只能填写收入或支出");
+                }
+                $types = $typeName == '收入' ? 1 : 0;
+                $num = $val['num'] ?? 0;
+                if (! is_numeric($num) || $num <= 0) {
+                    throw $this->exception("第{$rowNo}行账目金额必须大于0");
+                }
+                $cateName = trim((string) ($val['cate_id'] ?? ''));
+                if ($cateName === '') {
+                    throw $this->exception("第{$rowNo}行账目分类不能为空");
+                }
+                $payType = trim((string) ($val['pay_type'] ?? ''));
+                if ($payType === '') {
+                    throw $this->exception("第{$rowNo}行支付方式不能为空");
+                }
+                if (! isset($payTypeMap[$payType])) {
+                    throw $this->exception("第{$rowNo}行支付方式不存在");
+                }
+                $editTime = null;
                 try {
-                    if ($val['edit_time'] && strlen($val['edit_time']) >= 8) {
+                    if (! empty($val['edit_time']) && strlen((string) $val['edit_time']) >= 8) {
                         $editTime = Carbon::parse($val['edit_time'], $tz)->toDateTimeString();
                     }
                 } catch (\Exception $e) {
                     $editTime = null;
                 }
+                if (! $editTime) {
+                    throw $this->exception("第{$rowNo}行收支时间格式不正确");
+                }
 
                 $info = [
                     'types'      => $types,
-                    'num'        => $val['num'],
+                    'num'        => $num,
                     'entid'      => 1,
                     'uid'        => uid_to_uuid($uid),
                     'user_id'    => $uid,
-                    'pay_type'   => $val['pay_type'],
-                    'type_id'    => $payTypeMap[$val['pay_type']] ?? 0,
-                    'mark'       => $val['mark'],
-                    'edit_time'  => $editTime ?? null,
+                    'pay_type'   => $payType,
+                    'type_id'    => $payTypeMap[$payType],
+                    'mark'       => $val['mark'] ?? '',
+                    'edit_time'  => $editTime,
                     'created_at' => $time,
                     'updated_at' => $time,
                 ];
-                if (is_numeric($val['cate_id'])) {
-                    if (! $cateService->exists(['id' => $val['cate_id'], 'entid' => 1])) {
-                        throw $this->exception('存在无效的分类');
+                if (is_numeric($cateName)) {
+                    if (! $cateService->exists(['id' => $cateName, 'entid' => 1])) {
+                        throw $this->exception("第{$rowNo}行存在无效的分类");
                     }
-                    $info['cate_id'] = (int) $val['cate_id'];
+                    $info['cate_id'] = (int) $cateName;
                 } else {
-                    if (! $cateService->exists(['types' => $types, 'name' => $val['cate_id'], 'entid' => 1])) {
+                    if (! $cateService->exists(['types' => $types, 'name' => $cateName, 'entid' => 1])) {
                         $cate = $cateService->create([
                             'types'   => $info['types'],
-                            'name'    => $val['cate_id'],
+                            'name'    => $cateName,
                             'entid'   => 1,
                             'cate_no' => $cateService->generateNo(),
                         ]);
                         $info['cate_id'] = $cate->id;
                     } else {
-                        $info['cate_id'] = $cateService->value(['types' => $types, 'name' => $val['cate_id'], 'entid' => 1], 'id');
+                        $info['cate_id'] = $cateService->value(['types' => $types, 'name' => $cateName, 'entid' => 1], 'id');
                     }
                 }
                 $res = $this->dao->create($info);
@@ -397,6 +426,10 @@ class BillService extends BaseService implements ResourceServicesInterface
                     throw $this->exception('记账数据保存失败');
                 }
                 app()->get(BillLogService::class)->saveRecord(1, $res->id, $uid, 0, $res->toArray());
+                ++$saved;
+            }
+            if (! $saved) {
+                throw $this->exception('未读取到有效导入数据');
             }
             return true;
         });
@@ -406,7 +439,7 @@ class BillService extends BaseService implements ResourceServicesInterface
      * 占比分析.
      * @throws BindingResolutionException
      */
-    public function getRankAnalysis(string $time, int $cateId, int $types, array $cateIds = []): array
+    public function getRankAnalysis(string $time, int $cateId, int $types, array $cateIds = [], array $userIds = []): array
     {
         $time = explode('-', $time);
         if (count($time) != 2) {
@@ -416,7 +449,7 @@ class BillService extends BaseService implements ResourceServicesInterface
         $types = $types > 0 ? 1 : 0;
         $entId = 1;
 
-        return $this->dao->getBillRank($time, $types, $entId, 0, $this->dao->getSum($time, $types, 0, $entId, $cateId), $cateId, $cateIds);
+        return $this->dao->getBillRank($time, $types, $entId, 0, $this->dao->getSum($time, $types, 0, $entId, $cateId, $userIds), $cateId, $cateIds, $userIds);
     }
 
     /**
@@ -510,9 +543,13 @@ class BillService extends BaseService implements ResourceServicesInterface
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function detail($id)
+    public function detail($id, array $userIds = [])
     {
-        $detail = $this->dao->get($id, ['id', 'user_id', 'cate_id', 'num', 'edit_time', 'types', 'type_id', 'pay_type', 'mark', 'link_id', 'order_id', 'link_cate', 'created_at'], [
+        $where = ['id' => (int) $id];
+        if ($userIds) {
+            $where['user_id'] = $userIds;
+        }
+        $detail = $this->dao->get($where, ['id', 'user_id', 'cate_id', 'num', 'edit_time', 'types', 'type_id', 'pay_type', 'mark', 'link_id', 'order_id', 'link_cate', 'created_at'], [
             'files'      => fn ($q) => $q->select(['id', 'att_dir as src', 'relation_id', 'real_name']),
             'cate'       => fn ($q) => $q->select(['id', 'name', 'path']),
             'user'       => fn ($q) => $q->select(['id', 'uid', 'name', 'avatar']),
@@ -564,6 +601,13 @@ class BillService extends BaseService implements ResourceServicesInterface
             }
         }
         $typesDisabled = $collection->get('link_id', 0) > 0 && $collection->get('link_cate', '') == 'client';
+        $requiredSelectValidate = fn (string $message): array => [
+            'required' => true,
+            'type'     => 'integer',
+            'min'      => 1,
+            'message'  => $message,
+            'trigger'  => 'change',
+        ];
         return [
             Form::radio('types', '账目类型', (int) $collection->get('types', 0))->disabled($typesDisabled)->options([['value' => 1, 'label' => '收入'], ['value' => 0, 'label' => '支出']])->control([
                 [
@@ -572,7 +616,7 @@ class BillService extends BaseService implements ResourceServicesInterface
                         Form::cascader('cate_id', '账目分类')
                             ->options($cateService->getBillCateTree(0))->appendRule('value', (int) $collection->get('cate_id', 0))
                             ->props(['props' => ['checkStrictly' => true, 'emitPath' => false]])
-                            ->validate([Form::validateNum()->min(1)->required()->message('请选择账目分类')]),
+                            ->validate([$requiredSelectValidate('请选择账目分类')]),
                     ],
                 ], [
                     'value' => 1,
@@ -580,12 +624,12 @@ class BillService extends BaseService implements ResourceServicesInterface
                         Form::cascader('cate_id', '账目分类')
                             ->options($cateService->getBillCateTree(1))->appendRule('value', (int) $collection->get('cate_id', 0))
                             ->props(['props' => ['checkStrictly' => true, 'emitPath' => false]])
-                            ->validate([Form::validateNum()->min(1)->required()->message('请选择账目分类')]),
+                            ->validate([$requiredSelectValidate('请选择账目分类')]),
                     ],
                 ],
             ]),
             Form::number('num', '账目金额', $collection->get('num', 0))->min(0.01)->precision(2)->required(),
-            Form::select('type_id', '支付方式', $collection->get('type_id', '') ?: '')->options($payTypeData)->validate([Form::validateNum()->required()->message('请选择支付方式')]),
+            Form::select('type_id', '支付方式', $collection->get('type_id', '') ?: '')->options($payTypeData)->validate([$requiredSelectValidate('请选择支付方式')]),
             Form::uploadImage('file_id', '支付凭证', '/api/ent/common/upload', $collection->get('files', []) ? $collection->get('files', [])[0]['src'] : '')->headers([
                 'Authorization' => request()->header('Authorization'),
             ])->data(['way' => 3])->uploadType('image')->data(['types' => 'image'])->limit(1),

@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,12 +15,12 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Program;
 
-use App\Http\Dao\BaseDao;
 use App\Http\Model\Program\ProgramTask;
 use App\Http\Service\Program\ProgramTaskMemberService;
-use crmeb\interfaces\ResourceDaoInterface;
-use crmeb\traits\dao\ListSearchTrait;
-use crmeb\traits\dao\TogetherSearchTrait;
+use App\Http\Dao\BaseDao;
+use Tuoluojiang\Open\interfaces\ResourceDaoInterface;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
+use Tuoluojiang\Open\traits\dao\TogetherSearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 
 /**
@@ -34,7 +34,6 @@ class ProgramTaskDao extends BaseDao implements ResourceDaoInterface
 
     /**
      * 搜索.
-     * @param mixed $where
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
@@ -77,12 +76,12 @@ class ProgramTaskDao extends BaseDao implements ResourceDaoInterface
 
         $memberService = app()->get(ProgramTaskMemberService::class);
         return parent::search($where, $authWhere)
-            ->when(! is_null($types), function ($query) use ($adminUid, $types, $uid, $memberService) {
+            ->when(!is_null($types), function ($query) use ($adminUid, $types, $uid, $memberService) {
                 $query->where(function ($query) use ($adminUid, $types, $uid, $memberService) {
                     // 0：全部；1：负责；2：参与；3：创建；
                     switch ($types) {
                         case 0:
-                            $query->whereIn('uid', $uid)->orWhereIn('program_id', fn ($q) => $q->from('program')->where('uid', $adminUid)->orWhere('creator_uid', $adminUid)->select('id'));
+                            $query->whereIn('uid', $uid)->orWhereIn('program_id', fn($q) => $q->from('program')->where('uid', $adminUid)->orWhere('creator_uid', $adminUid)->select('id'));
                             break;
                         case 2:
                             $query->where(function ($query) use ($adminUid, $memberService) {

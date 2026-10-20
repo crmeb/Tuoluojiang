@@ -9,41 +9,51 @@
         :isViewSearch="false"
         :title="$route.meta.title"
         @confirmData="confirmData"
-      ></oaFromBox>
+      >
+        <template #rightBtn>
+          <el-button
+            :loading="exportLoading"
+            :disabled="exportLoading"
+            type="primary"
+            @click="exportList"
+            >导出</el-button
+          >
+        </template>
+      </oaFromBox>
       <div v-loading="loading" class="mt10">
         <div v-if="tableData.length == 0" class="defaultPage">
           <img alt="" class="img" src="../../../assets/images/defd.png" />
           <span class="text"> 暂无发票数据</span>
         </div>
-        <div v-else style="width: 100%; overflow: auto" :style="{ height: tableHeight }">
+        <div v-else style="width: 100%; overflow: auto" :style="{ height: TABLE_HEIGHT }">
           <!-- 发票页面 -->
           <div v-for="(item, index) in tableData" :key="index" class="table-box">
             <div>
               <!-- 发票顶部 -->
               <div class="header">
                 <div class="header-left">
-                  {{ item.types | titleTypeFn }}·{{ item.collect_type == 'mail' ? '电子' : '纸质' }}
-                  <span :class="item.status | bgcFn" class="table-add">{{ item.status | statusTypeFn }}</span>
+                  {{ titleTypeFn(item.types) }}·{{ item.collect_type == 'mail' ? '电子' : '纸质' }}
+                  <span :class="bgcFn(item.status)" class="table-add">{{ statusTypeFn(item.status) }}</span>
                 </div>
 
                 <div class="left">
-                  <el-button v-hasPermi="['fd:invoice:check']" type="text" @click="handleCheck(item)">查看 </el-button>
-                  <el-button v-if="item.status === 5 && item.num" type="text" @click="handleDown(item)"
+                  <el-button v-hasPermi="['fd:invoice:check']" type="primary" link @click="handleCheck(item)">查看 </el-button>
+                  <el-button v-if="item.status === 5 && item.num" type="primary" link @click="handleDown(item)"
                     >下载
                   </el-button>
 
-                  <el-button v-if="item.status === 1" type="text" @click="handleInvoicUri(item)">在线开票 </el-button>
+                  <el-button v-if="item.status === 1" type="primary" link @click="handleInvoicUri(item)">在线开票 </el-button>
 
                   <el-button
                     v-if="item.status === 1"
                     v-hasPermi="['fd:invoice:edit']"
-                    type="text"
+                    type="primary" link
                     @click="handleInvoicing(item)"
                     >录入发票
                   </el-button>
 
-                  <el-button v-if="item.status == 5" v-hasPermi="['fd:invoice:void']" type="text" @click="voidFn(item)"
-                    >作废
+                  <el-button v-if="item.status == 5" v-hasPermi="['fd:invoice:void']" type="primary" link style="color: red;" @click="voidFn(item)"
+                    >冲红
                   </el-button>
                 </div>
               </div>
@@ -71,6 +81,9 @@
                         @click="copy"
                         >{{ item.amount }}</span
                       >
+                    </el-form-item>
+                    <el-form-item label="备注：" prop="name">
+                      <span>{{ item.mark || item.remark || '--' }}</span>
                     </el-form-item>
                   </el-form>
                 </div>
@@ -135,6 +148,9 @@
                         >{{ item.amount }}</span
                       >
                     </el-form-item>
+                    <el-form-item label="备注：" prop="name">
+                      <span>{{ item.mark || item.remark || '--' }}</span>
+                    </el-form-item>
                   </el-form>
                 </div>
                 <div class="line"></div>
@@ -192,6 +208,9 @@
                         @click="copy"
                         >{{ item.amount }}</span
                       >
+                    </el-form-item>
+                    <el-form-item label="备注：" prop="name">
+                      <span>{{ item.mark || item.remark || '--' }}</span>
                     </el-form-item>
                   </el-form>
                 </div>
@@ -254,48 +273,56 @@
     <invoice-view ref="invoiceView" :form-data="invoiceData"></invoice-view>
     <!-- 开票 -->
     <invoicingDialog ref="invoicingDialog" :config="invoicingDialog" @isOk="isOk"></invoicingDialog>
-    <!-- 申请作废 -->
+    <!-- 申请冲红 -->
     <div class="toVoid">
-      <el-dialog :visible.sync="dialogFormVisible" title="作废" width="600px">
+      <el-dialog v-model="dialogFormVisible" title="冲红" width="600px">
         <div class="mt20">
           <el-form ref="voidData" :model="voidDataForm" class="from">
             <el-form-item
-              :rules="[{ required: true, message: '请填写作废原因', trigger: 'blur' }]"
-              label="作废原因："
+              :rules="[{ required: true, message: '请填写冲红原因', trigger: 'blur' }]"
+              label="冲红原因："
               label-width="100px"
               prop="voidData"
             >
               <el-input v-model="voidDataForm.voidData" placeholder="请填写原因" type="textarea"></el-input>
             </el-form-item>
             <div class="footer">
-              <el-button class="btn" size="small" @click="dialogFormVisible = false">取 消</el-button>
-              <el-button size="small" type="primary" @click="submit">确 定</el-button>
+              <el-button class="btn" @click="dialogFormVisible = false">取 消</el-button>
+              <el-button type="primary" @click="submit">确 定</el-button>
             </div>
           </el-form>
         </div>
       </el-dialog>
     </div>
 
-    <el-dialog :top="`7vh`" :visible.sync="dialogInvoiceVisible" class="headerbtn" width="90%" @close="dialogClose">
+    <el-dialog :top="`7vh`" v-model="dialogInvoiceVisible" class="headerbtn" width="90%" @close="dialogClose">
       <iframe v-if="invoiceUri" :src="invoiceUri" frameborder="0" height="650" width="100%"></iframe>
     </el-dialog>
+    <export-excel ref="exportExcel" :save-name="saveName" :export-data="exportData" />
   </div>
 </template>
 
 <script>
-import { financeInvoiceListApi, clientInvoiceStatus, clientInvoiceUriApi } from '@/api/enterprise'
+import { mapStores } from 'pinia'
+import { useAppStore } from '@/stores/app.ts'
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { financeInvoiceListApi } from '@/api/enterprise.ts'
 import ClipboardJS from 'clipboard'
-import { getInvoiceClassName, getInvoiceText, getInvoiceType, selectInvoiceFd } from '@/libs/customer'
-import { clientInvoiceDetailApi, clientInvoiceStatusPutApi } from '@/api/client'
-import { fileLinkDownLoad } from '@/libs/public'
+import { getInvoiceClassName, getInvoiceText, getInvoiceType, selectInvoiceFd } from '@/libs/customer.ts'
+import { clientInvoiceDetailApi, clientInvoiceStatus, clientInvoiceStatusPutApi, clientInvoiceUriApi } from '@/api/client.ts'
+import { fileLinkDownLoad } from '@/utils/file.ts'
 
+import oaFromBox from '@/components/common/oaFromBox'
 export default {
   components: {
-    oaFromBox: () => import('@/components/common/oaFromBox'),
-    examineDialog: () => import('@/views/fd/examine/components/examineDialog'),
-    invoiceDetails: () => import('@/components/invoice/invoiceDetails'),
-    invoicingDialog: () => import('./components/invoicingDialog'),
-    invoiceView: () => import('@/views/customer/invoice/components/invoiceView')
+    oaFromBox,
+    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel')),
+    examineDialog: defineAsyncComponent(() => import('@/views/fd/examine/components/examineDialog')),
+    invoiceDetails: defineAsyncComponent(() => import('@/components/invoice/invoiceDetails')),
+    invoicingDialog: defineAsyncComponent(() => import('./components/invoicingDialog')),
+    invoiceView: defineAsyncComponent(() => import('@/views/customer/invoice/components/invoiceView'))
   },
   props: {
     activeName: {
@@ -303,16 +330,26 @@ export default {
       default: '1'
     },
     types: {
-      type: String | Array,
+      type: [String, Number, Array],
       default: ''
     }
   },
+  computed: {
+    ...mapStores(useAppStore)
+  },
   data() {
     return {
+      TABLE_HEIGHT,
       invoiceUri: '',
       invoiceId: 0, // 发票id
       dialogInvoiceVisible: false,
       dialogFormVisible: false,
+      exportLoading: false,
+      saveName: '发票列表.xlsx',
+      exportData: {
+        data: [],
+        cols: Array.from({ length: 13 }, () => ({ wpx: 140 }))
+      },
       invoicingDialog: {},
       tableData: [],
       where: {
@@ -352,10 +389,10 @@ export default {
           field_name_en: 'types',
           form_value: 'select',
           data_dict: [
-            { value: '', label: this.$t('toptable.all') },
-            { value: 1, label: this.$t('customer.personalinvoice') },
-            { value: 2, label: this.$t('customer.enterpriseinvoice') },
-            { value: 3, label: this.$t('customer.specialinvoice') }
+            { value: '', label: '全部' },
+            { value: 1, label: '个人普通发票' },
+            { value: 2, label: '企业普通发票' },
+            { value: 3, label: '企业专用发票' }
           ]
         },
         {
@@ -386,7 +423,7 @@ export default {
     }
     this.where.status = this.types
     this.getTableData()
-    window.addEventListener('message', (event) => {
+    this._handleMessage = (event) => {
       switch (event.data.event) {
         case 'onCancel':
           this.dialogInvoiceVisible = false
@@ -401,9 +438,13 @@ export default {
           }
           break
       }
-    })
+    }
+    window.addEventListener('message', this._handleMessage)
   },
-  filters: {
+  beforeUnmount() {
+    window.removeEventListener('message', this._handleMessage)
+  },
+  methods: {
     statusTypeFn(val) {
       return getInvoiceText(val)
     },
@@ -412,9 +453,7 @@ export default {
     },
     titleTypeFn(val) {
       return getInvoiceType(val)
-    }
-  },
-  methods: {
+    },
     dialogClose() {
       this.dialogInvoiceVisible = false
       this.invoiceId = 0
@@ -452,31 +491,31 @@ export default {
       this.getTableData()
     },
     getStatus(id) {
-      var str = ''
+      let str = ''
       if (id === 0) {
-        str = this.$t('customer.audit')
+        str = '待审核'
       } else if (id === 1) {
-        str = this.$t('customer.passed')
+        str = '已通过'
       } else {
-        str = this.$t('customer.fail')
+        str = '未通过'
       }
       return str
     },
 
-    // 作废
+    // 冲红
     voidFn(data) {
       this.voidId = data.id
       this.dialogFormVisible = true
       this.voidDataForm.voidData = ''
     },
     getInvoiceType(id) {
-      var str = ''
+      let str = ''
       if (id === 1) {
-        str = this.$t('customer.personalinvoice')
+        str = '个人普通发票'
       } else if (id === 2) {
-        str = this.$t('customer.enterpriseinvoice')
+        str = '企业普通发票'
       } else {
-        str = this.$t('customer.specialinvoice')
+        str = '企业专用发票'
       }
       return str
     },
@@ -488,6 +527,72 @@ export default {
         this.tableData = res.data.list
         this.total = res.data.count
       })
+    },
+    async exportList() {
+      if (this.exportLoading) return
+      this.exportLoading = true
+      try {
+        const pageSize = 100
+        const firstRes = await financeInvoiceListApi({ ...this.where, page: 1, limit: pageSize })
+        const list = firstRes.data.list || []
+        const pages = Math.ceil((Number(firstRes.data.count) || list.length) / pageSize)
+
+        for (let page = 2; page <= pages; page++) {
+          const res = await financeInvoiceListApi({ ...this.where, page, limit: pageSize })
+          list.push(...(res.data.list || []))
+        }
+
+        if (!list.length) {
+          this.$message.error('暂无可导出的数据')
+          return
+        }
+        this.exportData.data = [
+          [
+            '发票类型',
+            '开票状态',
+            '客户名称',
+            '发票抬头',
+            '纳税人识别号',
+            '申请人',
+            '开票金额',
+            '付款金额',
+            '收取方式',
+            '收取信息',
+            '申请时间',
+            '备注',
+            '合同/回款编号'
+          ],
+          ...list.map((item) => [
+            getInvoiceType(item.types),
+            getInvoiceText(item.status),
+            this.formatExportValue(item.customer && item.customer.customer_name),
+            this.formatExportValue(item.title),
+            this.formatExportValue(item.ident),
+            this.formatExportValue(item.card && item.card.name),
+            this.formatExportValue(item.amount),
+            this.formatExportValue(item.price),
+            item.collect_type == 'mail' ? '电子' : '纸质',
+            this.getCollectInfo(item),
+            this.formatExportValue(item.created_at),
+            this.formatExportValue(item.mark || item.remark),
+            this.formatExportValue(item.num)
+          ])
+        ]
+        this.saveName = `发票列表_${dayjs(new Date()).format('YYYYMMDDHHmmssSSS')}.xlsx`
+        await this.$nextTick()
+        this.$refs.exportExcel.exportExcel()
+      } finally {
+        this.exportLoading = false
+      }
+    },
+    getCollectInfo(item) {
+      if (item.collect_type == 'mail') {
+        return this.formatExportValue(item.collect_email)
+      }
+      return this.formatExportValue([item.collect_name, item.collect_tel, item.mail_address].filter(Boolean).join(' '))
+    },
+    formatExportValue(value) {
+      return value === 0 || value ? value : '--'
     },
 
     // 开票
@@ -532,7 +637,7 @@ export default {
     async handleEdit(item, type) {
       if (type === 1) {
         this.config = {
-          title: '作废审核',
+          title: '冲红审核',
           width: '480px',
           type: 2,
           data: item
@@ -540,7 +645,7 @@ export default {
         this.$refs.examineDialog.handleOpen()
       } else {
         this.config = {
-          title: this.$t('customer.invoicereview'),
+          title: '发票审核',
           width: '480px',
           type: 2,
           data: item
@@ -572,10 +677,10 @@ export default {
       this.$nextTick(() => {
         const clipboard = new ClipboardJS('.copy')
         clipboard.on('success', () => {
-          this.$message.success(this.$t('setting.copytitle'))
+          this.$message.success('复制成功')
           clipboard.destroy()
         })
-        this.$store.commit('app/SET_CLICK_TAB', false)
+        this.appStore.setClickTab(false)
       })
     }
   }
@@ -616,16 +721,16 @@ export default {
 }
 
 .toVoid {
-  /deep/ .el-dialog {
+  :deep(.el-dialog) {
     border-radius: 6px;
     height: 249px;
   }
 
-  /deep/ .el-dialog__body {
+  :deep(.el-dialog__body) {
     padding: 0;
   }
 
-  /deep/ .el-textarea__inner {
+  :deep(.el-textarea__inner) {
     width: 400px;
     height: 90px;
     font-size: 13px;
@@ -691,7 +796,7 @@ export default {
       color: #303133;
     }
 
-    .left .el-button--medium {
+    .left .el-button {
       font-size: 13px;
     }
 
@@ -730,19 +835,20 @@ export default {
       flex: 1;
     }
 
-    /deep/ .el-form-item__label {
+    :deep(.el-form-item__label) {
       font-size: 12px !important;
       font-family: PingFang SC-常规体, PingFang SC;
       font-weight: normal;
       color: #909399;
       line-height: 12px;
+      height: auto;
     }
 
-    /deep/ .el-form-item {
+    :deep(.el-form-item) {
       margin-bottom: 20px;
     }
 
-    /deep/ .el-form-item--medium .el-form-item__content {
+    :deep(.el-form-item .el-form-item__content) {
       line-height: 12px;
     }
 
@@ -825,11 +931,11 @@ export default {
   }
 }
 
-/deep/ .el-drawer__body {
+:deep(.el-drawer__body) {
   height: 100%;
   overflow-y: auto;
 }
-/deep/.headerbtn .el-dialog__headerbtn {
+:deep(.headerbtn .el-dialog__headerbtn) {
   position: absolute;
   top: 12px;
   right: 25px;

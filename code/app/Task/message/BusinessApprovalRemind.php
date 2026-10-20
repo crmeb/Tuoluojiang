@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,17 +16,19 @@ declare(strict_types=1);
 namespace App\Task\message;
 
 use App\Constants\ApproveEnum;
-use App\Http\Service\Admin\AdminService;
+use App\Events\SystemMessageEvent;
 use App\Http\Service\Approve\ApproveApplyService;
 use App\Http\Service\Approve\ApproveProcessService;
 use App\Http\Service\Approve\ApproveService;
 use App\Http\Service\Approve\ApproveUserService;
 use App\Http\Service\Crud\SystemCrudApproveProcessService;
 use App\Http\Service\Crud\SystemCrudApproveService;
-use crmeb\utils\MessageType;
+use Tuoluojiang\Open\utils\MessageType;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Facades\Log;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 
 /**
  * 【业务类型】审批提醒
@@ -34,38 +36,53 @@ use Illuminate\Support\Facades\Log;
  */
 class BusinessApprovalRemind extends Task
 {
-    public function __construct(protected int $entId, protected int $applyId)
-    {
-    }
+    public function __construct(protected int $entId, protected int $applyId) {}
 
     public function handle()
     {
         try {
             $applyInfo = app()->get(ApproveApplyService::class)->get(
                 $this->applyId,
-                ['card_id', 'user_id', 'node_id', 'status', 'approve_id', 'created_at', 'crud_id', 'link_id'],
+                ['card_id', 'user_id', 'node_id', 'status', 'approve_id', 'created_at', 'crud_id', 'link_id', 'is_recall'],
                 [
-                    'card' => fn($q) => $q->with(['frame']),
+                    'card' => fn ($q) => $q->with(['frame']),
                 ]
             )?->toArray();
-            if (!$applyInfo) {
+            if (! $applyInfo) {
                 return;
             }
-            if ($applyInfo['crud_id']) {
+            // 提醒前先消化当前待审中的离职/停用人员，避免流程卡死
+            if ((int) ($applyInfo['status'] ?? 0) === 0) {
+                $healed = app()->get(ApproveApplyService::class)->handleInactiveApprovers($this->applyId);
+                if ($healed) {
+                    // 内部已推进节点并发送提醒或通过，避免重复提醒
+                    return;
+                }
+            }
+            $approveUserService = app()->get(ApproveUserService::class);
+            if ($applyInfo['crud_id'] && ! $applyInfo['is_recall']) {
                 $process = app()->get(SystemCrudApproveProcessService::class)->get(['approve_id' => $applyInfo['approve_id'], 'uniqued' => $applyInfo['node_id']])?->toArray();
             } else {
                 $process = app()->get(ApproveProcessService::class)->get(['approve_id' => $applyInfo['approve_id'], 'uniqued' => $applyInfo['node_id']])?->toArray();
             }
-            $approveUserService = app()->get(ApproveUserService::class);
+            if (! $process) {
+                $approveUser = $approveUserService->get([
+                    'node_id'    => $applyInfo['node_id'],
+                    'apply_id'   => $this->applyId,
+                    'status'     => 0,
+                    'approve_id' => $applyInfo['approve_id'],
+                ], ['process_info'])?->toArray() ?? [];
+                $process = $approveUser['process_info'] ?? [];
+            }
             if ($process) {
                 if ($process['types'] != 1) {
                     return;
                 }
             } else {
-                event('approve.autoCopy', [[], $this->applyId, $this->entId, $approveUserService]);
+                $applyInfo['status'] == 1 && event('approve.autoCopy', [[], $this->applyId, $this->entId, $approveUserService]);
                 return;
             }
-            if ($applyInfo['crud_id']) {
+            if ($applyInfo['crud_id'] && ! $applyInfo['is_recall']) {
                 $approveName = app()->get(SystemCrudApproveService::class)->value($applyInfo['approve_id'], 'name');
             } else {
                 $approveName = app()->get(ApproveService::class)->value($applyInfo['approve_id'], 'name');
@@ -126,7 +143,7 @@ class BusinessApprovalRemind extends Task
                 case 5:// 申请人自己
                     break;
                 case 4:// 申请人自选
-                    if ((int)$process['select_mode'] === 2) {
+                    if ((int) $process['select_mode'] === 2) {
                         // 多选
                         switch ($process['examine_mode']) {
                             case 1:
@@ -173,46 +190,38 @@ class BusinessApprovalRemind extends Task
     /**
      * 发送消息.
      * @param mixed $selfUserInfo
-     * @param mixed $approveUser
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function sendMessage($selfUserInfo, $approveUser, string $approveName, bool $isList = false)
+    public function sendMessage(array $selfUserInfo, mixed $approveUser, string $approveName, bool $isList = false)
     {
-        if (!$approveUser) {
+        if (! $approveUser) {
             return;
         }
-
         $approveData = [];
-        if (!$isList) {
+        if (! $isList) {
             $approveData[] = $approveUser->toArray();
         } else {
             $approveData = $approveUser;
         }
-        if (!$approveData) {
-            return;
-        }
-        $userService = app()->get(AdminService::class);
         foreach ($approveData as $item) {
-            $userInfo = $userService->get($item['user_id'])?->toArray();
-            $task     = new MessageSendTask(
-                entid: $this->entId,
-                i: $this->entId,
+            event(new SystemMessageEvent(
                 type: MessageType::BUSINESS_APPROVAL_TYPE,
-                toUid: ['to_uid' => $userInfo['id'], 'phone' => $userInfo['phone'] ?? ''],
                 params: [
                     '申请人部门' => $selfUserInfo['frame_name'] ?? '',
                     '申请人'     => $selfUserInfo['apply_name'] ?? '',
                     '申请时间'   => $selfUserInfo['date_time'],
                     '业务类型'   => $approveName,
                 ],
+                receiverIds: $item['user_id'],
                 other: [
                     'id' => $this->applyId,
                 ],
                 linkId: $this->applyId,
-                linkStatus: (int)$item['status'],
-            );
-            Task::deliver($task);
+                linkStatus: (int) $item['status']
+            ));
             Task::deliver(new StatusChangeTask(ApproveEnum::LINK_NOTICE, $item['status'], $this->entId, $this->applyId));
         }
     }

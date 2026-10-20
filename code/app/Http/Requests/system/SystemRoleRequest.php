@@ -27,9 +27,10 @@ class SystemRoleRequest extends ApiValidate
      * @var string[]
      */
     protected $rules = [
-        'role_name' => 'required',
-        'rules'     => 'required',
-        'status'    => 'integer',
+        'role_name'          => 'required',
+        'rules'               => 'required',
+        'status'              => 'integer',
+        'module_permission'   => 'array',
     ];
 
     /**

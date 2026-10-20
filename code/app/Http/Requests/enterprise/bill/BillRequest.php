@@ -39,9 +39,13 @@ class BillRequest extends ApiValidate
             'types.required'     => '请选择账目类型',
             'cate_id.required'   => '请选择账目分类',
             'cate_id.integer'    => '请选择正确的账目分类',
+            'cate_id.gt'         => '请选择正确的账目分类',
             'num.required'       => '请填写账目金额',
             'num.numeric'        => '账目金额必须为数字',
             'num.gt'             => '账目金额必须大于0',
+            'type_id.required'   => '请选择支付方式',
+            'type_id.integer'    => '请选择正确的支付方式',
+            'type_id.gt'         => '请选择正确的支付方式',
             'edit_time.required' => '请选择日期',
             'edit_time.date'     => '请选择正确的日期',
         ];
@@ -55,8 +59,9 @@ class BillRequest extends ApiValidate
     {
         return [
             'types'     => 'required',
-            'cate_id'   => 'required|integer',
+            'cate_id'   => 'required|integer|gt:0',
             'num'       => 'required|numeric|gt:0',
+            'type_id'   => 'required|integer|gt:0',
             'edit_time' => 'required|date',
         ];
     }

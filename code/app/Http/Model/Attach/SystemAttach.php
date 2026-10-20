@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,7 +17,7 @@ namespace App\Http\Model\Attach;
 
 use App\Http\Model\Admin\Admin;
 use App\Http\Model\BaseModel;
-use crmeb\traits\model\TimeDataTrait;
+use Tuoluojiang\Open\traits\model\TimeDataTrait;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Query\Builder;
 
@@ -39,6 +39,18 @@ class SystemAttach extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'            => 'integer',
+        'entid'         => 'integer',
+        'cid'           => 'integer',
+        'up_type'       => 'integer',
+        'way'           => 'integer',
+        'relation_type' => 'integer',
+        'relation_id'   => 'integer',
+        'created_at'    => 'datetime:Y-m-d H:i:s',
+        'updated_at'    => 'datetime:Y-m-d H:i:s',
+    ];
 
     /**
      * 附件路径.
@@ -84,13 +96,7 @@ class SystemAttach extends BaseModel
      */
     public function scopeId($query, $value)
     {
-        if (is_array($value)) {
-            return $query->whereIn('id', $value);
-        }
-        if ($value !== '') {
-            return $query->where('id', $value);
-        }
-        return null;
+        is_array($value) ? $query->whereIn('id', $value) : $query->where('id', $value);
     }
 
     /**
@@ -143,11 +149,12 @@ class SystemAttach extends BaseModel
      */
     public function scopeRelationType($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereIn('relation_type', $value);
-        } elseif ($value !== '') {
-            $query->where('relation_type', $value);
-        }
+        is_array($value) ? $query->whereIn('relation_type', $value) : $query->where('relation_type', $value);
+    }
+
+    public function scopeRelationId($query, $value)
+    {
+        is_array($value) ? $query->whereIn('relation_id', $value) : $query->where('relation_id', $value);
     }
 
     /**
@@ -157,11 +164,7 @@ class SystemAttach extends BaseModel
      */
     public function scopeFileExt($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereIn('file_ext', $value);
-        } else {
-            $query->where('file_ext', $value);
-        }
+        is_array($value) ? $query->whereIn('file_ext', $value) : $query->where('file_ext', $value);
     }
 
     /**

@@ -32,9 +32,17 @@ class GroupData extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'group_id'   => 'integer',
+        'sort'       => 'integer',
+        'status'     => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * 设置数据.
-     * @param mixed $value
      */
     public function setValueAttribute($value)
     {
@@ -43,7 +51,6 @@ class GroupData extends BaseModel
 
     /**
      * 获取vlaue数据转换.
-     * @param mixed $value
      * @return mixed
      */
     public function getValueAttribute($value)
@@ -52,8 +59,6 @@ class GroupData extends BaseModel
     }
 
     /**
-     * @param mixed $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeGroupId($query, $value)
@@ -67,8 +72,6 @@ class GroupData extends BaseModel
 
     /**
      * id作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeId($query, $value)
     {

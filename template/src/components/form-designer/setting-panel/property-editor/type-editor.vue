@@ -1,5 +1,6 @@
 <template>
   <el-form-item :label="i18nt('designer.setting.displayType')" v-if="selectedWidget.type === 'input'">
+  
     <el-select v-model="optionModel.type" @change="changeType">
       <el-option label="text" value="text"></el-option>
       <!-- 当input的type设置为number时，如果输入非数字字符，则v-model拿到的值为空字符串，无法实现输入校验！故屏蔽之！！ -->
@@ -12,7 +13,7 @@
 </template>
 
 <script>
-import i18n from '@/utils/i18n'
+import i18n from '@/utils/i18n.ts'
 
 export default {
   name: 'type-editor',
@@ -35,4 +36,3 @@ export default {
 
 <style lang="scss" scoped>
 </style>
-@/utils/i18ns

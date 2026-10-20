@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,11 +16,16 @@ declare(strict_types=1);
 namespace App\Http\Service\Config;
 
 use App\Constants\CacheEnum;
+use App\Constants\CustomEnum\ClueEnum;
 use App\Constants\CustomEnum\ContractEnum;
 use App\Constants\CustomEnum\CustomEnum;
 use App\Constants\CustomEnum\CustomerEnum;
 use App\Constants\CustomEnum\LiaisonEnum;
+use App\Constants\CustomEnum\OddsEnum;
+use App\Constants\CustomEnum\ProductEnum;
+use App\Constants\System\ViewSearchEnum;
 use App\Http\Dao\Config\SalesmanCustomDao;
+use App\Http\Service\Customer\ProductCategoryService;
 use App\Http\Service\BaseService;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Facades\Cache;
@@ -41,85 +46,75 @@ class SalesmanCustomService extends BaseService
     /**
      * 获取用户自定义表单.
      */
-    public function salesmanCustomFullField(int $customType): array
+    public function salesmanCustomFullField(string $customType): array
     {
         return match ($customType) {
-            CustomerEnum::CUSTOMER_VIEWER => [
+            ViewSearchEnum::VIEW_CUSTOMER => [
                 array_merge(CustomerEnum::CUSTOMER_LIST_FIELD, CustomerEnum::CUSTOMER_VIEWER_LIST_FIELD),
                 array_merge(CustomerEnum::CUSTOMER_SEARCH_FIELD, CustomerEnum::CUSTOMER_VIEWER_SEARCH_FIELD),
             ],
-            CustomerEnum::CUSTOMER_CHARGE => [
-                array_merge(CustomerEnum::CUSTOMER_LIST_FIELD, CustomerEnum::CUSTOMER_CHARGE_LIST_FIELD),
-                array_merge(CustomerEnum::CUSTOMER_SEARCH_FIELD, CustomerEnum::CUSTOMER_CHARGE_SEARCH_FIELD),
-            ],
-            CustomerEnum::CUSTOMER_HEIGHT_SEAS => [
+            ViewSearchEnum::VIEW_CUSTOMER_SEAS => [
                 array_merge(CustomerEnum::CUSTOMER_LIST_FIELD, CustomerEnum::CUSTOMER_HEIGHT_SEAS_LIST_FIELD),
                 array_merge(CustomerEnum::CUSTOMER_SEARCH_FIELD, CustomerEnum::CUSTOMER_HEIGHT_SEAS_SEARCH_FIELD),
             ],
-            CustomerEnum::CUSTOMER_COMPANY => [
-                array_merge(CustomerEnum::CUSTOMER_LIST_FIELD, CustomerEnum::CUSTOMER_COMPANY_LIST_FIELD),
-                array_merge(CustomerEnum::CUSTOMER_SEARCH_FIELD, CustomerEnum::CUSTOMER_COMPANY_SEARCH_FIELD),
-            ],
-            ContractEnum::CUSTOMER_VIEWER_CONTRACT,
-            ContractEnum::CUSTOMER_CHARGE_CONTRACT,
-            ContractEnum::CUSTOMER_HEIGHT_SEAS_CONTRACT,
-            ContractEnum::CONTRACT_VIEWER => [
+            ViewSearchEnum::VIEW_CONTRACT => [
                 array_merge(ContractEnum::CONTRACT_LIST_FIELD, ContractEnum::CONTRACT_VIEWER_LIST_FIELD),
                 array_merge(ContractEnum::CONTRACT_SEARCH_FIELD, ContractEnum::CONTRACT_VIEWER_SEARCH_FIELD),
             ],
-            ContractEnum::CONTRACT_CHARGE => [
-                array_merge(ContractEnum::CONTRACT_LIST_FIELD, ContractEnum::CONTRACT_CHARGE_LIST_FIELD),
-                array_merge(ContractEnum::CONTRACT_SEARCH_FIELD, ContractEnum::CONTRACT_CHARGE_SEARCH_FIELD),
+            ViewSearchEnum::VIEW_CLUE => [
+                array_merge(ClueEnum::CLUE_LIST_FIELD, ClueEnum::CLUE_VIEWER_LIST_FIELD),
+                array_merge(ClueEnum::CLUE_SEARCH_FIELD, ClueEnum::CLUE_VIEWER_SEARCH_FIELD),
             ],
-            default => [[], []]
+            ViewSearchEnum::VIEW_CLUE_SEAS => [
+                ClueEnum::CLUE_SEAS_LIST_FIELD,
+                array_merge(ClueEnum::CLUE_SEARCH_FIELD, ClueEnum::CLUE_HEIGHT_SEAS_SEARCH_FIELD),
+            ],
+            ViewSearchEnum::VIEW_PRODUCT => [ProductEnum::PRODUCT_LIST_FIELD, ProductEnum::PRODUCT_SEARCH_FIELD],
+            ViewSearchEnum::VIEW_ODDS    => [OddsEnum::ODDS_LIST_FIELD, OddsEnum::ODDS_SEARCH_FIELD],
+            ViewSearchEnum::VIEW_LIAISON => [LiaisonEnum::LIAISON_LIST_FIELD, LiaisonEnum::LIAISON_SEARCH_FIELD],
+            default                      => [[], []]
         };
     }
 
     /**
      * 获取业务列表默认数据.
      */
-    public function getListDefaultFieldByCustomType(int $customType): array
+    public function getListDefaultFieldByCustomType(string $customType): array
     {
         return match ($customType) {
-            CustomerEnum::CUSTOMER_CHARGE      => CustomerEnum::CUSTOMER_CHARGE_LIST_DEFAULT_FIELD,
-            CustomerEnum::CUSTOMER_COMPANY     => CustomerEnum::CUSTOMER_COMPANY_LIST_DEFAULT_FIELD,
-            CustomerEnum::CUSTOMER_VIEWER      => CustomerEnum::CUSTOMER_VIEWER_LIST_DEFAULT_FIELD,
-            CustomerEnum::CUSTOMER_HEIGHT_SEAS => CustomerEnum::CUSTOMER_HEIGHT_SEAS_LIST_DEFAULT_FIELD,
-            ContractEnum::CONTRACT_VIEWER      => ContractEnum::CONTRACT_VIEWER_LIST_DEFAULT_FIELD,
-            ContractEnum::CONTRACT_CHARGE      => ContractEnum::CONTRACT_CHARGE_LIST_DEFAULT_FIELD,
-            ContractEnum::CUSTOMER_VIEWER_CONTRACT,
-            ContractEnum::CUSTOMER_CHARGE_CONTRACT,
-            ContractEnum::CUSTOMER_HEIGHT_SEAS_CONTRACT,
-            LiaisonEnum::CUSTOMER_VIEWER_LIAISON,
-            LiaisonEnum::CUSTOMER_CHARGE_LIAISON,
-            LiaisonEnum::CUSTOMER_HEIGHT_SEAS_LIAISON,
-            LiaisonEnum::CUSTOMER_COMPANY_LIAISON,
-            LiaisonEnum::LIAISON_VIEWER => LiaisonEnum::LIAISON_VIEWER_LIST_DEFAULT_FIELD,
-            default                     => []
+            ViewSearchEnum::VIEW_CUSTOMER      => CustomerEnum::CUSTOMER_CHARGE_LIST_DEFAULT_FIELD,
+            ViewSearchEnum::VIEW_CUSTOMER_SEAS => CustomerEnum::CUSTOMER_HEIGHT_SEAS_LIST_DEFAULT_FIELD,
+            ViewSearchEnum::VIEW_CONTRACT      => ContractEnum::CONTRACT_VIEWER_LIST_DEFAULT_FIELD,
+            ViewSearchEnum::VIEW_CLUE          => ClueEnum::CLUE_VIEWER_LIST_DEFAULT_FIELD,
+            ViewSearchEnum::VIEW_CLUE_SEAS     => ClueEnum::CLUE_SEAS_LIST_DEFAULT_FIELD,
+            ViewSearchEnum::VIEW_ODDS          => OddsEnum::ODDS_VIEWER_LIST_DEFAULT_FIELD,
+            ViewSearchEnum::VIEW_PRODUCT       => ProductEnum::PRODUCT_VIEWER_LIST_DEFAULT_FIELD,
+            ViewSearchEnum::VIEW_LIAISON       => LiaisonEnum::LIAISON_VIEWER_LIST_DEFAULT_FIELD,
+            default                            => []
         };
     }
 
     /**
      * 获取业务搜索默认数据.
      */
-    public function getSearchDefaultFieldByCustomType(int $customType): array
+    public function getSearchDefaultFieldByCustomType(string $customType): array
     {
         return match ($customType) {
-            CustomerEnum::CUSTOMER_CHARGE,
-            CustomerEnum::CUSTOMER_COMPANY,
-            CustomerEnum::CUSTOMER_HEIGHT_SEAS,
-            CustomerEnum::CUSTOMER_VIEWER => CustomerEnum::CUSTOMER_VIEWER_SEARCH_DEFAULT_FIELD,
-            ContractEnum::CONTRACT_CHARGE,
-            ContractEnum::CONTRACT_VIEWER => ContractEnum::CONTRACT_VIEWER_SEARCH_DEFAULT_FIELD,
-            LiaisonEnum::LIAISON_VIEWER   => LiaisonEnum::LIAISON_VIEWER_LIST_DEFAULT_FIELD,
-            default                       => []
+            ViewSearchEnum::VIEW_CUSTOMER      => CustomerEnum::CUSTOMER_VIEWER_SEARCH_DEFAULT_FIELD,
+            ViewSearchEnum::VIEW_CUSTOMER_SEAS => CustomerEnum::CUSTOMER_HEIGHT_SEAS_SEARCH_DEFAULT_FIELD,
+            ViewSearchEnum::VIEW_CONTRACT      => ContractEnum::CONTRACT_VIEWER_SEARCH_DEFAULT_FIELD,
+            ViewSearchEnum::VIEW_CLUE, ViewSearchEnum::VIEW_CLUE_SEAS => ClueEnum::CLUE_VIEWER_SEARCH_DEFAULT_FIELD,
+            ViewSearchEnum::VIEW_ODDS    => OddsEnum::ODDS_VIEWER_SEARCH_DEFAULT_FIELD,
+            ViewSearchEnum::VIEW_PRODUCT => ProductEnum::PRODUCT_VIEWER_SEARCH_DEFAULT_FIELD,
+            ViewSearchEnum::VIEW_LIAISON => LiaisonEnum::LIAISON_VIEWER_SEARCH_DEFAULT_FIELD,
+            default                      => []
         };
     }
 
     /**
      * 默认数据.
      */
-    public function getDefaultField(int $customType, string $selectType): array
+    public function getDefaultField(string $customType, string $selectType): array
     {
         return match ($selectType) {
             CustomEnum::LIST_SELECT   => $this->getListDefaultFieldByCustomType($customType),
@@ -135,38 +130,84 @@ class SalesmanCustomService extends BaseService
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function salesmanCustomField(int $uid, int $customType): array
+    public function salesmanCustomField(int $uid, string $customType): array
     {
-        return Cache::tags([CacheEnum::TAG_CUSTOMER])->remember($uid . '_' . $customType, (int) sys_config('system_cache_ttl', 3600), function () use ($uid, $customType) {
-            // get custom form field by types
-            $fields = app()->get(FormService::class)->getCustomDataByTypes(
-                $this->getTypesByCustomerType($customType),
-                ['key as field', 'key_name as name', 'type', 'input_type', 'dict_ident'],
-                ['dictData' => fn ($q) => $q->whereNot('type_name', 'area_cascade')],
-            );
-            [$list, $search] = $this->salesmanCustomFullField($customType);
-            $list            = array_merge($list, $this->filterFields($fields, ['file', 'oawangeditor']));
-            $search          = array_merge($search, $this->filterFields($fields, ['images', 'file', 'oawangeditor'], ['contract_followed', 'customer_followed']));
-            $listFieldKeys   = array_column($list, 'field');
-            $searchFieldKeys = array_column($search, 'field');
-
-            if (in_array($customType, [ContractEnum::CONTRACT_VIEWER, ContractEnum::CONTRACT_CHARGE])) {
-                foreach ($search as $key => $item) {
-                    if ($item['field'] == 'contract_customer') {
-                        $search[$key] = ['field' => $item['field'], 'name' => $item['name'], 'input_type' => 'input'];
-                    }
+        $cacheVersion = 'system_no_v4';
+        $result = Cache::tags([CacheEnum::TAG_CUSTOMER])->remember(
+            md5($uid . '_' . $customType . '_' . $cacheVersion),
+            (int) sys_config('system_cache_ttl', 3600),
+            function () use ($uid, $customType) {
+                // 获取自定义字段
+                $fields = app()->get(FormService::class)->getCustomDataByTypes(
+                    $this->getTypesByCustomerType($customType),
+                    ['key as field', 'key_name as name', 'type', 'input_type', 'dict_ident'],
+                );
+                // 获取列表和搜索字段基础数据
+                [$list, $search] = $this->salesmanCustomFullField($customType);
+                // 合并并过滤列表字段
+                $list = collect($list)->concat(in_array($customType, [ViewSearchEnum::VIEW_CUSTOMER, ViewSearchEnum::VIEW_CUSTOMER_SEAS]) ? $this->filterFields($fields, ['file', 'oawangeditor', 'images'], ['clue_id']) : $this->filterFields($fields, ['images', 'file', 'oawangeditor']))->all();
+                $searchFilterFields = ['contract_followed', 'customer_followed'];
+                if (in_array($customType, [ViewSearchEnum::VIEW_CONTRACT, ViewSearchEnum::VIEW_ODDS])) {
+                    $searchFilterFields[] = 'products';
                 }
+                // 合并并过滤搜索字段，确保唯一性
+                $search = collect($search)->concat($this->filterFields($fields, ['images', 'file', 'oawangeditor'], $searchFilterFields))->unique('name')->values()->all();
+                // 提取字段键名
+                $listFieldKeys   = collect($list)->pluck('field')->all();
+                $searchFieldKeys = collect($search)->pluck('field')->all();
+                $sortFieldKeys   = collect($fields)->filter(fn ($item) => in_array($item['type'], ['number', 'date', 'datetime']))->map(fn ($item) => ['field' => $item['field'], 'name' => $item['name']])
+                    ->concat([['field' => 'created_at', 'name' => '创建时间'], ['field' => 'updated_at', 'name' => '修改时间']])->values()->all();
+                $sortValues = collect([['field' => 'asc', 'name' => '升序'], ['field' => 'desc', 'name' => '降序']])->values()->all();
+                // 处理搜索字段特殊情况及字典数据填充
+                $dictDataService = app()->get(DictDataService::class);
+                $idents          = [];
+                $search          = collect($search)->map(function ($item) use ($customType, $dictDataService, &$idents) {
+                    switch ($customType) {
+                        case ViewSearchEnum::VIEW_CONTRACT:
+                            if ($item['field'] == 'contract_customer') {
+                                return ['field' => $item['field'], 'name' => $item['name'], 'input_type' => 'input'];
+                            }
+                            break;
+                        case ViewSearchEnum::VIEW_PRODUCT:
+                            if ($item['field'] == 'path') {
+                                $item['dict'] = app()->get(ProductCategoryService::class)->getSelect(
+                                    ['status' => 1],
+                                    ['id as value', 'name as label', 'pid', 'id']
+                                );
+                            }
+                            break;
+                    }
+                    if (! empty($item['dict_ident'])) {
+                        $idents[] = $item['dict_ident'];
+                    }
+                    // 根据 dict_ident 填充字典数据
+                    if (! empty($item['dict_ident']) && $item['dict_ident'] !== 'area_cascade') {
+                        $item['dict'] = $dictDataService->getTreeData(
+                            ['type_name' => $item['dict_ident'], 'status' => 1],
+                            ['name as label', 'name', 'value', 'type_name', 'pid']
+                        );
+                    }
+                    return $item;
+                })->all();
+                // 处理列表选择字段
+                $listSelect = $this->dao->value(['uid' => $uid, 'custom_type' => $customType . '_' . CustomEnum::LIST_SELECT], 'field_list');
+                $listSelect = $listSelect ? $this->filterSelectData($listSelect, $listFieldKeys) : $this->getListDefaultFieldByCustomType($customType);
+                // 处理搜索选择字段
+                $searchSelect = $this->dao->value(['uid' => $uid, 'custom_type' => $customType . '_' . CustomEnum::SEARCH_SELECT], 'field_list');
+                $searchSelect = $searchSelect ? $this->filterSelectData($searchSelect, $searchFieldKeys) : $this->filterSelectData($this->getSearchDefaultFieldByCustomType($customType), $searchFieldKeys);
+                $dictCate     = $idents ? app(DictTypeService::class)->select(['ident' => $idents])?->toArray() : [];
+                return json_encode([
+                    'list'          => $list,
+                    'search'        => $search,
+                    'list_select'   => $listSelect,
+                    'search_select' => $searchSelect,
+                    'sort_field'    => $sortFieldKeys,
+                    'sort_value'    => $sortValues,
+                    'dict_cate'     => $dictCate,
+                ], JSON_UNESCAPED_UNICODE);
             }
-            $listSelect = $this->dao->value(['uid' => $uid, 'custom_type' => $customType . '_' . CustomEnum::LIST_SELECT], 'field_list');
-            if (! $listSelect) {
-                // get list select custom form field
-                $listSelect = $this->getListDefaultFieldByCustomType($customType);
-            }
-
-            $listSelect   = $this->filterSelectData($listSelect, $listFieldKeys);
-            $searchSelect = $this->filterSelectData($this->getSearchDefaultFieldByCustomType($customType), $searchFieldKeys);
-            return ['list' => $list, 'search' => $search, 'list_select' => $listSelect, 'search_select' => $searchSelect];
-        });
+        );
+        return json_decode($result, true);
     }
 
     /**
@@ -179,9 +220,10 @@ class SalesmanCustomService extends BaseService
 
     /**
      * 保存业务自定义字段.
+     * @param mixed $customType
      * @throws BindingResolutionException
      */
-    public function saveSalesmanCustomField(int $uid, int $customType, string $selectType, array $data): mixed
+    public function saveSalesmanCustomField(int $uid, string $customType, string $selectType, array $data): mixed
     {
         if (! in_array($selectType, [CustomEnum::LIST_SELECT, CustomEnum::SEARCH_SELECT])) {
             throw $this->exception('业务类型错误');
@@ -203,13 +245,16 @@ class SalesmanCustomService extends BaseService
     /**
      * 获取业务类型获取表单类型.
      */
-    public function getTypesByCustomerType(int $customType): int
+    public function getTypesByCustomerType(string $customType): int
     {
         return match (true) {
-            in_array($customType, CustomerEnum::CUSTOMER_TYPE) => CustomEnum::CUSTOMER,
-            in_array($customType, ContractEnum::CONTRACT_TYPE) => CustomEnum::CONTRACT,
-            in_array($customType, LiaisonEnum::LIAISON_TYPE)   => CustomEnum::LIAISON,
-            default                                            => 0
+            in_array($customType, ['customer', 'customer_seas']) => CustomEnum::CUSTOMER,
+            $customType == 'contract'                            => CustomEnum::CONTRACT,
+            $customType == 'liaison'                             => CustomEnum::LIAISON,
+            in_array($customType, ['clue', 'clue_seas'])         => CustomEnum::CLUE,
+            $customType == 'odds'                                => CustomEnum::ODDS,
+            $customType == 'product'                             => CustomEnum::PRODUCT,
+            default                                              => 0
         };
     }
 
@@ -246,17 +291,15 @@ class SalesmanCustomService extends BaseService
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
-    public function getCustomField(int $uid, int $customType, string $selectType): array
+    public function getCustomField(int $uid, string $customType, string $selectType): array
     {
         if (! in_array($selectType, [CustomEnum::LIST_SELECT, CustomEnum::SEARCH_SELECT])) {
             throw $this->exception('业务类型错误');
         }
-
         $field = $this->dao->get(['uid' => $uid, 'custom_type' => $customType . '_' . CustomEnum::LIST_SELECT], ['field_list']);
         if ($field) {
-            return $field->field_list;
+            return array_merge($field->field_list, $customType == ViewSearchEnum::VIEW_CLUE ? ['customer'] : ['salesman']);
         }
-
         return $this->getDefaultField($customType, $selectType);
     }
 
@@ -265,15 +308,12 @@ class SalesmanCustomService extends BaseService
      */
     public function filterFields(array $fields, array $filterTypes = [], array $filterFields = []): array
     {
-        return array_values(array_filter($fields, function ($value) use ($filterTypes, $filterFields) {
-            $res1 = $res2 = true;
-            if ($filterTypes) {
-                $res1 = ! in_array(strtolower($value['input_type']), $filterTypes);
-            }
-            if ($filterFields) {
-                $res2 = ! in_array(strtolower($value['field']), $filterFields);
-            }
-            return $res1 && $res2;
-        }));
+        return collect($fields)->filter(function ($value) use ($filterTypes, $filterFields) {
+            // 检查输入类型是否需要过滤
+            $isTypeValid = empty($filterTypes) || ! in_array(strtolower($value['input_type'] ?? ''), $filterTypes);
+            // 检查字段名是否需要过滤
+            $isFieldValid = empty($filterFields) || ! in_array(strtolower($value['field'] ?? ''), $filterFields);
+            return $isTypeValid && $isFieldValid;
+        })->values()->all();
     }
 }

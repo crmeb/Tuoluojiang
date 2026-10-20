@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,22 +17,25 @@ namespace App\Http\Service\Attendance;
 
 use App\Constants\AttendanceGroupEnum;
 use App\Constants\CacheEnum;
+use App\Constants\ModuleEnum;
 use App\Http\Contract\Attendance\AttendanceGroupInterface;
 use App\Http\Dao\Attendance\AttendanceGroupDao;
 use App\Http\Dao\Attendance\AttendanceGroupMemberDao;
 use App\Http\Dao\Attendance\AttendanceGroupShiftDao;
 use App\Http\Dao\Attendance\AttendanceWhitelistDao;
-use App\Http\Model\BaseModel;
+use App\Http\Dao\Attendance\AttendanceWifiDao;
+use App\Http\Service\Admin\AdminInfoService;
 use App\Http\Service\Admin\AdminService;
-use App\Http\Service\BaseService;
-use App\Http\Service\Frame\FrameAssistService;
 use App\Http\Service\Frame\FrameService;
-use App\Http\Service\System\RolesService;
-use crmeb\traits\service\ResourceServiceTrait;
+use App\Http\Service\System\ModulePermissionService;
+use App\Http\Model\BaseModel;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Concerns\BuildsQueries;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
@@ -50,25 +53,33 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
 
     protected AttendanceGroupShiftDao $shiftDao;
 
-    public function __construct(AttendanceGroupDao $dao, AttendanceGroupMemberDao $memberDao, AttendanceGroupShiftDao $shiftDao, AttendanceWhitelistDao $whitelistDao)
+    protected AttendanceWifiDao $wifiDao;
+
+    public function __construct(AttendanceGroupDao $dao, AttendanceGroupMemberDao $memberDao, AttendanceGroupShiftDao $shiftDao, AttendanceWhitelistDao $whitelistDao, AttendanceWifiDao $wifiDao)
     {
         $this->dao          = $dao;
         $this->memberDao    = $memberDao;
         $this->shiftDao     = $shiftDao;
         $this->whitelistDao = $whitelistDao;
+        $this->wifiDao      = $wifiDao;
     }
 
     /**
      * 列表.
      * @param string $sort
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
     public function getList(array $where, array $field = ['*'], $sort = 'created_at', array $with = ['shifts', 'admin', 'user']): array
     {
         [$page, $limit] = $this->getPageValue();
         $super          = $this->whitelistDao->column(['type' => AttendanceGroupEnum::WHITELIST_ADMIN], 'uid') ?: [];
-        $list           = $this->dao->setDefaultSort(sort_mode($sort))->select($where, $field, $with, $page, $limit)->each(function (&$item) use ($super) {
+        if (! in_array(auth('admin')->id(), $super)) {
+            $where['auth_uid'] = auth('admin')->id();
+        }
+        $list = $this->dao->setDefaultSort(sort_mode($sort))->select($where, $field, $with, $page, $limit)->each(function (&$item) use ($super) {
             if ($item->type) {
                 $frameIds      = $this->memberDao->column(['group_id' => $item->id, 'type' => AttendanceGroupEnum::FRAME], 'member');
                 $item->members = app()->get(FrameService::class)->select(['ids' => $frameIds], ['id', 'name']);
@@ -106,6 +117,8 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
     /**
      * 获取白名单.
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
     public function getWhitelist(): array
@@ -114,6 +127,11 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
             'members' => $this->whitelistDao->select(['type' => AttendanceGroupEnum::WHITELIST_MEMBER], ['uid', 'uid as id'], ['card']),
             'admins'  => $this->whitelistDao->select(['type' => AttendanceGroupEnum::WHITELIST_ADMIN], ['uid', 'uid as id'], ['card']),
         ];
+    }
+
+    public function updateShift(int $id, mixed $shiftIds)
+    {
+        $this->handleShift($id, array_unique($shiftIds));
     }
 
     /**
@@ -128,12 +146,14 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
     /**
      * 保存基本信息.
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
     public function saveGroup(array $data): mixed
     {
         $this->checkGroup((int) $data['type'], $data['name'], $data['members'], 0, $data['other_filters']);
-        return $this->transaction(function () use ($data) {
+        $res = $this->transaction(function () use ($data) {
             $res = $this->dao->create(['name' => $data['name'], 'uid' => auth('admin')->id(), 'type' => $data['type']]);
             if (! $res) {
                 throw $this->exception(__('common.insert.fail'));
@@ -154,6 +174,8 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
 
             return $res;
         });
+        $this->refreshTodayStatistics();
+        return $res;
     }
 
     /**
@@ -167,6 +189,13 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
     {
         if ($id && ! $this->dao->exists($id)) {
             throw $this->exception('操作失败，记录不存在');
+        }
+
+        if ($id > 0) {
+            $uid = auth('admin')->id();
+            if (! $this->isWhiteListAdmin($uid) && ! in_array($id, $this->column(['auth_uid' => $uid], 'id'))) {
+                throw $this->exception('您没有权限操作');
+            }
         }
 
         if ($name) {
@@ -187,6 +216,8 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
     /**
      * 修改基本信息.
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
     public function updateStepOne(int $id, array $data): mixed
@@ -197,7 +228,7 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
             throw $this->exception('操作失败，记录不存在');
         }
 
-        return $this->transaction(function () use ($id, $data, $info) {
+        $res = $this->transaction(function () use ($id, $data, $info) {
             $res = $this->dao->update($id, ['name' => $data['name'], 'type' => $data['type']]);
             if (! $res) {
                 throw $this->exception(__('common.insert.fail'));
@@ -217,6 +248,8 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
 
             return $res;
         });
+        $this->refreshTodayStatistics();
+        return $res;
     }
 
     /**
@@ -227,12 +260,24 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
     public function updateStepTwo(int $id, array $data): int
     {
         $this->checkGroup(id: $id);
-        return $this->dao->update($id, $data);
+        $wifiData = $data['wifi_data'] ?: [];
+        unset($data['wifi_data']);
+        $this->wifiDao->delete(['group_id' => $id]);
+        return $this->transaction(function () use ($id, $data, $wifiData) {
+            foreach ($wifiData as $item) {
+                $item['group_id'] = $id;
+                $item['entid']    = $this->entId(false);
+                $this->wifiDao->create($item);
+            }
+            return $this->dao->update($id, $data);
+        });
     }
 
     /**
      * 修改考勤规则.
      * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
     public function updateStepThree(int $id, array $data): int
@@ -264,7 +309,7 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
      */
     public function getInfo(int $id): array
     {
-        $info = $this->dao->get(['id' => $id], ['*'], ['shifts', 'admins', 'filters']);
+        $info = $this->dao->get(['id' => $id], ['*'], ['shifts', 'admins', 'filters', 'wifi']);
         if (! $info) {
             throw $this->exception('操作失败，记录不存在');
         }
@@ -291,19 +336,7 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
 
         // 根据考勤部门获取考勤人员
         if ($type) {
-            $frameService  = app()->get(FrameService::class);
-            $assistService = app()->get(FrameAssistService::class);
-            $adminService  = app()->get(AdminService::class);
-
-            $entId = 1;
-            // 获取人员
-            foreach ($members as $member) {
-                $allFrameIds     = $frameService->getFrameTotalIds($member, $entId);
-                $currenMemberIds = array_merge($currenMemberIds, array_unique($adminService->column([
-                    'status' => 1,
-                    'id'     => $assistService->column(['frame_ids' => array_merge($allFrameIds, [$member]), 'is_mastart' => 1], 'user_id'),
-                ])));
-            }
+            $currenMemberIds = $this->getMemberIdsByFrameIds(0, $members, false);
         } else {
             $currenMemberIds = $members;
         }
@@ -327,18 +360,7 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
 
         // 考勤部门
         if ($type > 0) {
-            $frameService  = app()->get(FrameService::class);
-            $assistService = app()->get(FrameAssistService::class);
-            $adminService  = app()->get(AdminService::class);
-            $tmpFrameIds   = [];
-            foreach ($members as $frameId) {
-                $tmpFrameIds = array_merge($tmpFrameIds, [$frameId], $frameService->getFrameTotalIds($frameId, 1));
-            }
-
-            $allMemberIds = array_diff($allMemberIds, array_unique($adminService->column([
-                'status' => 1,
-                'id'     => $assistService->column(['frame_ids' => $tmpFrameIds, 'is_mastart' => 1], 'user_id'),
-            ], 'id')));
+            $allMemberIds = array_diff($allMemberIds, $this->getMemberIdsByFrameIds(0, $members, false));
         }
 
         $intersect = array_intersect($members, $allMemberIds);
@@ -356,7 +378,7 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
         foreach ($list as &$item) {
             $groupId = $filterGroups[$item['id']];
             if (! isset($groups[$groupId])) {
-                $item['group'] = $groups[$groupId] = toArray($this->get($groupId, ['id', 'name']));
+                $item['group'] = $groups[$groupId] = $this->dao->get($groupId, ['id', 'name'])?->toArray();
             } else {
                 $item['group'] = $groups[$groupId];
             }
@@ -409,6 +431,7 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
             $adminService->column(['status' => 1], 'id'),
             array_unique(array_merge($this->getWhiteListMemberIds(), $allMemberIds))
         );
+        $diffIds = array_intersect($diffIds, app(AdminInfoService::class)->column(['type' => [1, 2, 3]], 'id'));
         if (! count($diffIds)) {
             return [];
         }
@@ -417,7 +440,7 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
             'card'   => fn ($query) => $query->select(['work_time', 'id']),
             'frames' => fn ($query) => $query->orderBy('frame_assist.is_admin', 'desc')->orderByDesc('frame_assist.is_mastart')->select(['frame.id', 'frame.name', 'frame_assist.is_mastart']),
         ];
-        return $adminService->getList(['id' => $diffIds], ['id', 'uid', 'avatar', 'name', 'job', 'phone'], with: $with);
+        return $adminService->getList(['id' => $diffIds, 'status' => 1], ['id', 'uid', 'avatar', 'name', 'job', 'phone'], with: $with);
     }
 
     /**
@@ -473,8 +496,9 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
         if ($admins) {
             $with['admins'] = fn ($q) => $q->select(['admin.id', 'admin.name', 'admin.job', 'admin.avatar'])->with(['job' => fn ($q) => $q->select(['id', 'name'])]);
         }
-        $field = ['id', 'name', 'address', 'lat', 'lng', 'effective_range', 'location_name', 'repair_allowed', 'repair_type',
-            'is_limit_time', 'limit_time', 'is_limit_number', 'limit_number', 'is_photo', 'is_external', 'is_external_note', 'is_external_photo', ];
+        $with['wifi'] = fn ($q) => $q->select(['group_id', 'attendance_wifi.name', 'attendance_wifi.mac']);
+        $field        = ['id', 'name', 'address', 'lat', 'lng', 'effective_range', 'location_name', 'repair_allowed', 'repair_type',
+            'is_limit_time', 'limit_time', 'is_limit_number', 'limit_number', 'is_photo', 'is_map', 'is_wifi', 'is_external', 'is_external_note', 'is_external_photo', ];
 
         if ($id) {
             $info = $this->dao->get($id, $field, $with);
@@ -500,7 +524,7 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
      */
     public function isWhitelist(int $uid, int $groupId = 0): bool
     {
-        if ($groupId && $this->memberDao->exists(['group_id' => $groupId, 'type' => AttendanceGroupEnum::FILTER])) {
+        if ($groupId && $this->memberDao->exists(['group_id' => $groupId, 'type' => AttendanceGroupEnum::FILTER, 'member' => $uid])) {
             return true;
         }
 
@@ -515,25 +539,14 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
      */
     public function getMemberIdsById(int $id, bool $filter = true): array
     {
-        $info = $this->dao->get(['id' => $id], ['id', 'type']);
+        $info = $this->dao->setTrashed()->get(['id' => $id], ['id', 'type']);
         if (! $info) {
             return [];
         }
 
         // 考勤部门
         if ($info->type) {
-            $allFrameIds  = [];
-            $entId        = 1;
-            $frameService = app()->get(FrameService::class);
-            $frameIds     = $this->getMembersById($id, AttendanceGroupEnum::FRAME);
-            foreach ($frameIds as $frameId) {
-                $allFrameIds = array_merge($allFrameIds, [$frameId], $frameService->getFrameTotalIds($frameId, $entId));
-            }
-
-            $members = array_unique(app()->get(AdminService::class)->column([
-                'status' => 1,
-                'id'     => app()->get(FrameAssistService::class)->column(['frame_id' => $allFrameIds, 'is_mastart' => 1], 'user_id'),
-            ], 'id'));
+            $members = $this->getMemberIdsByFrameIds($id, $this->getMembersById($id, AttendanceGroupEnum::FRAME), false);
         } else {
             $members = $this->memberDao->column(['group_id' => $id, 'type' => AttendanceGroupEnum::MEMBER], 'member');
         }
@@ -573,7 +586,7 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
     public function getMemberByAdminUid(int $uid, bool $filter = false): array
     {
         $groupMemberIds = [];
-        $rolesMemberIds = app()->get(RolesService::class)->getDataUids($uid);
+        $rolesMemberIds = app()->get(ModulePermissionService::class)->getAccessibleUserIds($uid, ModuleEnum::ATTENDANCE);
         $ids            = $this->memberDao->column(['member' => $uid, 'type' => AttendanceGroupEnum::ADMIN], 'group_id');
         foreach ($ids as $id) {
             $groupMemberIds = array_merge($groupMemberIds, $this->getMemberIdsById((int) $id, $filter));
@@ -637,9 +650,11 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
      */
     public function getWhiteListAdminIds(): array
     {
-        return Cache::tags([CacheEnum::TAG_ATTENDANCE])->remember('white_list_admin_ids', (int) sys_config('system_cache_ttl', 3600), function () {
-            return $this->whitelistDao->column(['type' => AttendanceGroupEnum::WHITELIST_ADMIN], 'uid');
+        $res = Cache::tags([CacheEnum::TAG_ATTENDANCE])->remember(md5('white_list_admin_ids' . $this->entId(false)), (int) sys_config('system_cache_ttl', 3600), function () {
+            $uids = app()->get(AdminService::class)->column(['status' => 1], 'id');
+            return json_encode($this->whitelistDao->column(['type' => AttendanceGroupEnum::WHITELIST_ADMIN, 'uid' => $uids], 'uid'), JSON_UNESCAPED_UNICODE);
         });
+        return json_decode($res, true);
     }
 
     /**
@@ -649,9 +664,11 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
      */
     public function getWhiteListMemberIds(): array
     {
-        return Cache::tags([CacheEnum::TAG_ATTENDANCE])->remember('white_list_member_ids', (int) sys_config('system_cache_ttl', 3600), function () {
-            return $this->whitelistDao->column(['type' => AttendanceGroupEnum::WHITELIST_MEMBER], 'uid');
+        $res = Cache::tags([CacheEnum::TAG_ATTENDANCE])->remember(md5('white_list_member_ids'), (int) sys_config('system_cache_ttl', 3600), function () {
+            $uids = app()->get(AdminService::class)->column(['status' => 1], 'id');
+            return json_encode($this->whitelistDao->column(['type' => AttendanceGroupEnum::WHITELIST_MEMBER, 'uid' => $uids], 'uid'));
         });
+        return json_decode($res, true);
     }
 
     /**
@@ -674,23 +691,12 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
         $adminService = app()->get(AdminService::class);
         // 考勤部门
         if ($info->type) {
-            $allFrameIds  = [];
-            $entId        = 1;
-            $frameService = app()->get(FrameService::class);
-            $frameIds     = $this->getMembersById($id, AttendanceGroupEnum::FRAME);
-            foreach ($frameIds as $frameId) {
-                $allFrameIds = array_merge($allFrameIds, [$frameId], $frameService->getFrameTotalIds($frameId, $entId));
-            }
-
-            $members = array_unique($adminService->column([
-                'status' => 1,
-                'id'     => app()->get(FrameAssistService::class)->column(['frame_id' => $allFrameIds, 'is_mastart' => 1], 'user_id'),
-            ]));
+            $members = $this->getMemberIdsByFrameIds($id, $this->getMembersById($id, AttendanceGroupEnum::FRAME), false);
         } else {
             $members = $this->getMembersById($id, AttendanceGroupEnum::MEMBER);
         }
         $filter && $members = $this->filterMember($id, $members);
-        return $adminService->select(['id' => $members], ['id', 'name'])->toArray();
+        return $adminService->select(['id' => $members], ['id', 'name', 'avatar'])->toArray();
     }
 
     /**
@@ -805,6 +811,26 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
     }
 
     /**
+     * 获取所有实际参与考勤人员.
+     * @throws BindingResolutionException
+     * @throws \ReflectionException
+     */
+    public function getAttendanceMemberIds(): array
+    {
+        [, $memberIds] = $this->getMemberIdsWithGroups();
+        return array_values(array_unique($memberIds));
+    }
+
+    private function refreshTodayStatistics(): void
+    {
+        try {
+            app()->get(AttendanceStatisticsService::class)->generateMemberStatistics(now(config('app.timezone'))->toDateString());
+        } catch (\Throwable $e) {
+            Log::error('考勤组成员变更后补当天统计失败:' . $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+        }
+    }
+
+    /**
      * 获取考勤组.
      * @throws BindingResolutionException
      * @throws \ReflectionException
@@ -846,36 +872,29 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
-    private function handleMember(array $members, int $type, int $groupId = 0): void
+    private function handleMember(array $members, int $type, int $groupId = 0, int $entId = 1): void
     {
-        $data = [];
-        if ($groupId) {
-            foreach ($this->memberDao->column(['group_id' => $groupId, 'type' => $type], 'member', 'id') as $key => $item) {
-                $data[$item] = $key;
+        $oldMembers = $this->memberDao->column(['group_id' => $groupId, 'type' => $type, 'entid' => $entId], 'member', 'id');
+        $delIds     = array_diff($oldMembers, $members);
+        $this->transaction(function () use ($members, $type, $groupId, $entId, $delIds) {
+            foreach ($members as $member) {
+                $this->memberDao->firstOrCreate([
+                    'group_id' => $groupId, 'type' => $type, 'entid' => $entId, 'member' => $member,
+                ], [
+                    'group_id' => $groupId, 'type' => $type, 'entid' => $entId, 'member' => $member,
+                ]);
             }
-        }
-
-        foreach ($members as $member) {
-            if ($groupId && isset($data[$member])) {
-                unset($data[$member]);
-                continue;
-            }
-            $this->memberDao->create(['group_id' => $groupId, 'member' => $member, 'type' => $type]);
-        }
-
-        if ($type == AttendanceGroupEnum::FILTER) {
-            app()->get(AttendanceArrangeService::class)->clearFutureArrangeByMembers($members);
-        }
-
-        if ($data) {
-            // 清除剩余member排班数据
-            $isAttendanceType = in_array($type, [AttendanceGroupEnum::MEMBER, AttendanceGroupEnum::FRAME]);
-            if ($isAttendanceType) {
-                $clearMembers = $type == AttendanceGroupEnum::MEMBER ? array_keys($data) : $this->getMemberIdsByFrameIds($groupId, array_keys($data));
-                app()->get(AttendanceArrangeService::class)->clearFutureArrangeByMembers($clearMembers);
-            }
-
-            $this->memberDao->forceDelete(['group_id' => $groupId, 'id' => $data, 'type' => $isAttendanceType ? [AttendanceGroupEnum::MEMBER, AttendanceGroupEnum::FRAME] : $type]);
+            $this->memberDao->delete(['id' => array_keys($delIds)]);
+            return true;
+        });
+        if ($delIds) {
+            $ids = match ($type) {
+                AttendanceGroupEnum::MEMBER => array_keys($delIds),
+                AttendanceGroupEnum::FRAME  => $this->getMemberIdsByFrameIds($groupId, array_keys($delIds)),
+                AttendanceGroupEnum::FILTER => $members,
+                default                     => [],
+            };
+            app()->get(AttendanceArrangeService::class)->clearFutureArrangeByMembers($ids);
         }
     }
 
@@ -938,25 +957,12 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
     private function getMemberIdsWithGroups(int $excludeGroupId = 0): array
     {
         $groups        = $memberIds = [];
-        $frameService  = app()->get(FrameService::class);
-        $assistService = app()->get(FrameAssistService::class);
-        $adminService  = app()->get(AdminService::class);
 
         $list = $this->dao->select($excludeGroupId ? ['not_id' => $excludeGroupId] : [], ['id', 'type']);
 
-        $entId = 1;
         foreach ($list as $item) {
             if ($item->type) {
-                $currentFrameIds = [];
-                $frameIds        = $this->getMembersById($item->id, AttendanceGroupEnum::FRAME);
-                foreach ($frameIds as $frameId) {
-                    $currentFrameIds = array_merge($currentFrameIds, [$frameId], $frameService->getFrameTotalIds($frameId, $entId));
-                }
-
-                $currentMemberIds = array_unique($this->filterMember($item->id, $adminService->column([
-                    'status' => 1,
-                    'id'     => $assistService->column(['frame_ids' => $currentFrameIds, 'is_mastart' => 1], 'user_id'),
-                ], 'id')));
+                $currentMemberIds = $this->getMemberIdsByFrameIds($item->id, $this->getMembersById($item->id, AttendanceGroupEnum::FRAME));
             } else {
                 $currentMemberIds = $this->getMemberIdsById($item->id);
             }
@@ -976,18 +982,13 @@ class AttendanceGroupService extends BaseService implements AttendanceGroupInter
      * @throws BindingResolutionException
      * @throws \ReflectionException
      */
-    private function getMemberIdsByFrameIds(int $id, array $frameIds): array
+    private function getMemberIdsByFrameIds(int $id, array $frameIds, bool $filter = true): array
     {
-        $allFrameIds  = [];
-        $entId        = 1;
-        $frameService = app()->get(FrameService::class);
-        foreach ($frameIds as $frameId) {
-            $allFrameIds = array_merge($allFrameIds, [$frameId], $frameService->getFrameTotalIds($frameId, $entId));
+        if (! $frameIds) {
+            return [];
         }
 
-        return $this->filterMember($id, array_unique(app()->get(AdminService::class)->column([
-            'status' => 1,
-            'id'     => app()->get(FrameAssistService::class)->column(['frame_id' => $allFrameIds, 'is_mastart' => 1], 'user_id'),
-        ])));
+        $members = array_unique(app()->get(FrameService::class)->scopeUser($frameIds, withMaster: true));
+        return $filter ? $this->filterMember($id, $members) : $members;
     }
 }

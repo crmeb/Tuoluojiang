@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -19,10 +19,10 @@ use App\Constants\ProgramEnum\DynamicEnum;
 use App\Constants\ProgramEnum\ProgramStatusEnum;
 use App\Http\Dao\Program\ProgramDao;
 use App\Http\Service\Admin\AdminService;
+use App\Http\Service\Customer\OrderService;
+use App\Http\Service\Customer\CustomerService;
 use App\Http\Service\BaseService;
-use App\Http\Service\Client\ContractService;
-use App\Http\Service\Client\CustomerService;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -155,8 +155,8 @@ class ProgramService extends BaseService
      */
     public function checkCustomerContact(array $data): void
     {
-        if ($data['cid'] && ! app()->get(ContractService::class)->exists(['id' => $data['cid'], 'eid' => $data['eid']])) {
-            throw $this->exception('请重新选择关联合同');
+        if ($data['cid'] && ! app()->get(OrderService::class)->exists(['id' => $data['cid'], 'eid' => $data['eid']])) {
+            throw $this->exception('请重新选择关联订单');
         }
     }
 
@@ -276,7 +276,7 @@ class ProgramService extends BaseService
         }
 
         if ($before['cid'] != $after['cid']) {
-            $contractService = app()->get(ContractService::class);
+            $contractService = app()->get(OrderService::class);
             $describe[]      = [
                 'title' => DynamicEnum::getProgramFieldText('cid') . '：',
                 'value' => '由【' . ($before['cid'] ? $contractService->value((int) $before['cid'], 'contract_name') : '空') . '】修改为【' . ($after['cid'] ? $contractService->value((int) $after['cid'], 'contract_name') : '空') . '】',

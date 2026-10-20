@@ -20,47 +20,49 @@
       class="mt10"
       :data="fileData"
       style="width: 100%"
-      :height="tableHeight"
+      :height="TABLE_HEIGHT"
       @selection-change="handleSelectionChange"
     >
       <el-table-column type="selection"> </el-table-column>
       <el-table-column prop="name" label="名称" min-width="250">
-        <template slot-scope="scope">
-          {{ scope.row.name }}
-          <span v-if="scope.row.type == 1">
-            <i class="icon iconfont" :class="getFileType(scope.row.type, scope.row.file_url)" />
+        <template #default="scope">
+          <span v-if="scope.row.type == 0">
+            <i class="icon iconfont mr10" :class="getFileTypeIconfont(scope.row.type, scope.row.file_ext)" />
           </span>
-          <span v-else>.{{ scope.row.file_ext }}</span>
+          {{ scope.row.name }}
+          <span>.{{ scope.row.file_ext }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="path" label="位置" min-width="150"> </el-table-column>
       <el-table-column prop="deleted_at" label="删除时间"> </el-table-column>
       <el-table-column prop="date" label="操作人">
-        <template slot-scope="scope">
-          <div v-if="scope.row.del_user">
+        <template #default="scope">
+          <div v-if="scope.row.del_user" class="flex">
             <img :src="scope.row.del_user.avatar" alt="" class="img" />{{ scope.row.del_user.name }}
           </div>
         </template>
       </el-table-column>
       <el-table-column prop="date" label="操作" width="100">
-        <template slot-scope="scope">
+        <template #default="scope">
           <el-dropdown>
-            <span class="el-dropdown-link el-button--text el-button more">
+            <el-button type="primary" link class="el-dropdown-link more">
               <i class="iconfont icongengduo1" />
-            </span>
-            <el-dropdown-menu style="text-align: center">
-              <el-dropdown-item v-if="userInfo.id == scope.row.master_uid" @click.native="deleteFn(scope.row.id)">
-                彻底删除
-              </el-dropdown-item>
-              <el-dropdown-item
-                v-if="
-                  scope.row.del_user && (userInfo.id == scope.row.master_uid || userInfo.id == scope.row.del_user.id)
-                "
-                @click.native="recoveryFn(scope.row.id)"
-              >
-                恢复文件
-              </el-dropdown-item>
-            </el-dropdown-menu>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu style="text-align: center">
+                <el-dropdown-item v-if="userInfo.id == scope.row.master_uid" @click="deleteFn(scope.row.id)">
+                  彻底删除
+                </el-dropdown-item>
+                <el-dropdown-item
+                  v-if="
+                    scope.row.del_user && (userInfo.id == scope.row.master_uid || userInfo.id == scope.row.del_user.id)
+                  "
+                  @click="recoveryFn(scope.row.id)"
+                >
+                  恢复文件
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
           </el-dropdown>
         </template>
       </el-table-column>
@@ -82,19 +84,21 @@
 </template>
 
 <script>
-import Vue from 'vue'
-import file from '@/utils/file'
-Vue.use(file)
+import { modalSure } from '@/libs/public.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { getFileTypeIconfont } from '@/utils/file.ts'
 import {
   folderForceDeleteApi,
   folderForceDeletesApi,
   folderSpaceEntRecoverApi,
   folderSpaceEntRecycleApi,
   folderSpaceEntAllRecoverApi
-} from '@/api/cloud'
+} from '@/api/cloud.ts'
 import defaultPage from '@/components/common/defaultPage'
+import { getStorageJson } from '@/utils/storage.ts'
 import oaFromBox from '@/components/common/oaFromBox'
 export default {
+  emits: ['backFn'],
   name: 'RecoveryFile',
   components: {
     defaultPage,
@@ -103,12 +107,13 @@ export default {
   props: {},
   data() {
     return {
+      TABLE_HEIGHT,
       fileData: [],
       where: {
         page: 1,
         limit: 15
       },
-      userInfo: JSON.parse(localStorage.getItem('userInfo')),
+      userInfo: getStorageJson('userInfo', {}),
 
       dropdownList: [{ label: '恢复文件', value: '1' }],
       search: [
@@ -133,6 +138,7 @@ export default {
     this.getTreeData()
   },
   methods: {
+    getFileTypeIconfont,
     pageChange(page) {
       this.where.page = page
       this.getTreeData()
@@ -166,7 +172,7 @@ export default {
       let data = {
         id: this.ids
       }
-      this.$modalSure('确定要恢复此文件吗').then(() => {
+      modalSure('确定要恢复此文件吗').then(() => {
         folderSpaceEntAllRecoverApi(data).then((res) => {
           if (res.status == 200) {
             this.getTreeData()
@@ -185,7 +191,7 @@ export default {
 
     // 删除文件
     deleteFn(id) {
-      this.$modalSure('删除后将无法恢复，确定删除吗').then(() => {
+      modalSure('删除后将无法恢复，确定删除吗').then(() => {
         folderForceDeleteApi(id).then((res) => {
           if (res.status == 200) {
             let totalPage = Math.ceil((this.total - 1) / this.where.limit)
@@ -209,7 +215,7 @@ export default {
       let data = {
         id: this.ids
       }
-      this.$modalSure('删除后将无法恢复，确定删除吗').then(() => {
+      modalSure('删除后将无法恢复，确定删除吗').then(() => {
         folderForceDeletesApi(data).then((res) => {
           if (res.status == 200) {
             let totalPage = Math.ceil((this.total - this.ids.length) / this.where.limit)
@@ -221,7 +227,7 @@ export default {
       })
     },
     recoveryFn(id) {
-      this.$modalSure('确定恢复此数据').then(() => {
+      modalSure('确定恢复此数据').then(() => {
         folderSpaceEntRecoverApi(id).then((res) => {
           if (res.status == 200) {
             this.getTreeData()

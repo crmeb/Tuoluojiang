@@ -11,34 +11,28 @@
         <el-table
           ref="table"
           :data="tableData"
-          :height="tableHeight"
+          :height="TABLE_HEIGHT"
           v-loading="loading"
           @selection-change="handleSelectionChange"
         >
           <el-table-column type="selection" width="35"> </el-table-column>
           <el-table-column label="查看" width="50">
-            <template slot-scope="scope">
-              <el-image
-                :src="
-                  scope.row.is_read === 0
-                    ? require('@/assets/images/unread-icon.png')
-                    : require('@/assets/images/read-icon.png')
-                "
-              ></el-image>
+            <template #default="scope">
+              <el-image :src="scope.row.is_read === 0 ? unreadIcon : readIcon"></el-image>
             </template>
           </el-table-column>
           <el-table-column prop="title" label="消息标题" min-width="80"></el-table-column>
           <el-table-column prop="message" label="消息内容" min-width="360">
-            <template slot-scope="scope">
+            <template #default="scope">
               <div class="notice">{{ scope.row.message }}</div>
             </template>
           </el-table-column>
           <el-table-column prop="cate_name" label="类型" min-width="80" />
           <el-table-column prop="created_at" label="发送时间" min-width="120"></el-table-column>
-          <el-table-column :label="$t('toptable.operation')" width="100" fixed="right">
-            <template slot-scope="scope">
+          <el-table-column label="操作" width="100" fixed="right">
+            <template #default="scope">
               <el-button
-                type="text"
+                type="primary" link
                 v-for="(item, index) in scope.row.buttons"
                 :key="index"
                 :disabled="selectedType.includes(item.action)"
@@ -53,10 +47,10 @@
       <div class="footer">
         <div class="isSelect">
           <div class="flex" style="display: inline-block">
-            <el-button @click="handleIsRead" size="small" :disabled="multipleSelection.length == 0"
+            <el-button @click="handleIsRead" :disabled="multipleSelection.length == 0"
               >标记为已读</el-button
             >
-            <el-button size="small" @click="handleDelete" :disabled="multipleSelection.length == 0">批量删除</el-button>
+            <el-button @click="handleDelete" :disabled="multipleSelection.length == 0">批量删除</el-button>
           </div>
           <span v-if="multipleSelection.length !== 0">已选中{{ multipleSelection.length }} 条</span>
         </div>
@@ -82,18 +76,33 @@
 </template>
 
 <script>
-import { noticeMessageListApi, noticeMessageReadApi, noticeMessageDeleteApi } from '@/api/user'
-import { messageListApi } from '@/api/public'
+import { mapStores } from 'pinia'
+import { useUserStore } from '@/stores/user.ts'
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { noticeMessageListApi, noticeMessageReadApi, noticeMessageDeleteApi } from '@/api/user.ts'
+import { messageListApi } from '@/api/public.ts'
+
+import unreadIcon from '@/assets/images/unread-icon.png';
+import readIcon from '@/assets/images/read-icon.png';
+
 export default {
   name: 'Apply',
   components: {
-    dialogForm: () => import('./components/index'),
-    formBox: () => import('./components/formBox'),
-    messageDetails: () => import('./components/messageDetails'),
-    messageHandlePopup: () => import('@/components/common/messageHandlePopup')
+    dialogForm: defineAsyncComponent(() => import('./components/index')),
+    formBox: defineAsyncComponent(() => import('./components/formBox')),
+    messageDetails: defineAsyncComponent(() => import('./components/messageDetails')),
+    messageHandlePopup: defineAsyncComponent(() => import('@/components/common/messageHandlePopup'))
+  },
+  computed: {
+    ...mapStores(useUserStore)
   },
   data() {
     return {
+      TABLE_HEIGHT,
+      unreadIcon,
+      readIcon,
       rolesConfig: [],
       formBoxConfig: {},
       tableData: [],
@@ -138,7 +147,7 @@ export default {
           this.tableData = res.data.list
           this.total = res.data.messageNum
           if (this.activeName === '1') {
-            this.$store.commit('user/SET_MESSAGE', this.total)
+            this.userStore.setMessageCount(this.total)
           }
         })
         .catch((error) => {
@@ -161,7 +170,7 @@ export default {
       if (this.multipleSelection.length <= 0) {
         this.$message.error('至少选择一项内容')
       } else {
-        this.$modalSure('删除后不可恢复,您确认要删除吗').then(() => {
+        modalSure('删除后不可恢复,您确认要删除吗').then(() => {
           const ids = []
           this.multipleSelection.map((value) => {
             ids.push(value.id)
@@ -213,7 +222,7 @@ export default {
     getMessage() {
       messageListApi({ page: 1, limit: 1 }).then((res) => {
         const num = res.data.messageNum ? res.data.messageNum : 0
-        this.$store.commit('user/SET_MESSAGE', num)
+        this.userStore.setMessageCount(num)
       })
     }
   }
@@ -239,21 +248,21 @@ export default {
   margin-top: 14px;
 }
 .content {
-  /deep/ .el-card__body {
+  :deep(.el-card__body) {
     height: 100%;
   }
   .el-table {
     height: calc(100vh - 184px) !important;
   }
-  /deep/ .el-image {
+  :deep(.el-image) {
     width: 23px !important;
     height: 23px !important;
   }
 }
-/deep/ .el-table th {
+:deep(.el-table th) {
   background-color: #f7fbff;
 }
-/deep/ .el-table-column--selection .cell {
+:deep(.el-table-column--selection .cell) {
   padding: 0 10px;
 }
 .paginationClass {

@@ -5,36 +5,36 @@
       :before-close="handleClose"
       :direction="direction"
       :modal="true"
-      :visible.sync="drawer"
+      v-model="drawer"
       :with-header="false"
-      :wrapper-closable="true"
-      :wrapperClosable="false"
+      :close-on-click-modal="false"
       size="700px"
       title="组织架构"
     >
       <div class="container">
         <div class="table-box">
           <span @click="activeName = 0">
-            {{ $t('setting.edit.editorialmembers') }}
+            编辑成员
           </span>
           <span v-if="false" :class="{ on: activeName == 1 }" @click="activeName = 1">
-            {{ $t('setting.edit.permissionsetting') }}
+            权限设置
           </span>
           <i class="el-icon-close" @click="handleClose" />
         </div>
         <div v-show="activeName == 0">
           <div v-if="userInfo" class="form-box ml20">
             <el-form ref="ruleForm" :model="userInfo" :rules="rules" class="demo-ruleForm" label-width="auto">
-              <el-form-item :label="$t('setting.edit.membername') + '：'" prop="name">
-                <el-input v-model="userInfo.name" clearable size="small" />
+              <el-form-item :label="'成员姓名' + '：'" prop="name">
+                <el-input v-model="userInfo.name" clearable />
               </el-form-item>
-              <el-form-item :label="$t('setting.edit.phone') + '：'" prop="phone">
-                <el-input v-model="userInfo.phone" clearable size="small" />
+              <el-form-item :label="'手机号码' + '：'" prop="phone">
+                <el-input v-model="userInfo.phone" clearable />
               </el-form-item>
               <el-form-item label="部门：" prop="name">
                 <select-department
                   ref="selectDepartment"
                   :is-site="true"
+                  :checkStrictly="true"
                   :value="frames || []"
                   @changeMastart="changeMastart"
                 >
@@ -51,34 +51,35 @@
                       >
                         <div>
                           <div class="prop-txt" @click="handleDepartment(item, index)">
-                            {{ $t('setting.edit.setdepartment') }}
+                            设为主部门
                           </div>
-                          <div class="prop-txt" @click="handleDeleteDep(index)">{{ $t('public.delete') }}</div>
+                          <div class="prop-txt" @click="handleDeleteDep(index)">删除</div>
                         </div>
-                        <el-button slot="reference" size="small">
-                          {{ item.name }}
-                          <span v-if="item.is_mastart" style="color: #1890ff; font-size: 12px"> (主) </span>
-                          <i class="el-icon-arrow-right el-icon--right" />
-                        </el-button>
+                        <template #reference>
+                          <el-button>
+                            {{ item.name }}
+                            <span v-if="item.is_mastart" style="color: #1890ff; font-size: 12px"> (主) </span>
+                            <i class="el-icon-arrow-right el-icon--right" />
+                          </el-button>
+                        </template>
                       </el-popover>
-                      <el-button class="item" size="small" type="text" @click="handleOpen"> 修改 </el-button>
+                      <el-button class="item" type="primary" link @click="handleOpen"> 修改 </el-button>
                     </div>
                   </template>
                 </select-department>
               </el-form-item>
-              <el-form-item :label="$t('setting.edit.position') + '：'" prop="position">
+              <el-form-item :label="'职位' + '：'" prop="position">
                 <el-cascader
                   v-model="userInfo.position"
                   :options="treeData"
                   :props="propsPos"
-                  size="small"
                 ></el-cascader>
               </el-form-item>
               <el-form-item label="部门负责人：" prop="name">
                 <div>
                   <el-radio-group v-model="userInfo.is_admin">
-                    <el-radio :label="0">{{ $t('customer.no') }}</el-radio>
-                    <el-radio :label="1">{{ $t('customer.yes') }}</el-radio>
+                    <el-radio :label="0" :value="0">否</el-radio>
+                    <el-radio :label="1" :value="1">是</el-radio>
                   </el-radio-group>
                 </div>
               </el-form-item>
@@ -87,14 +88,13 @@
                   v-model="userInfo.manage_frame"
                   multiple
                   placeholder="请选择"
-                  size="small"
                   style="width: 100%"
                 >
                   <el-option v-for="item in frames" :key="item.id" :label="item.name" :value="item.id"> </el-option>
                 </el-select>
               </el-form-item>
 
-              <el-form-item :label="$t('setting.edit.directsuperior') + '：'" prop="name">
+              <el-form-item :label="'直属上级' + '：'" prop="name">
                 <select-member
                   ref="selectMember"
                   :only-one="true"
@@ -103,11 +103,11 @@
                 >
                   <template v-slot:custom>
                     <div>
-                      <el-button v-if="superiorUser.length > 0" size="small">
+                      <el-button v-if="superiorUser.length > 0">
                         {{ superiorUser[0].name }}
                       </el-button>
-                      <el-button size="small" type="text" @click="handlesuperiorOpen">
-                        {{ superiorUser.length > 0 ? $t('public.modify') : $t('public.add') }}
+                      <el-button type="primary" link @click="handlesuperiorOpen">
+                        {{ superiorUser.length > 0 ? '修改' : '添加' }}
                       </el-button>
                     </div>
                   </template>
@@ -118,22 +118,23 @@
         </div>
       </div>
       <div class="from-foot-btn fix btn-shadow">
-        <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
-        <el-button size="small" type="primary" :loading="loading" @click="onSubmit">{{ $t('public.save') }}</el-button>
+        <el-button @click="handleClose">取消</el-button>
+        <el-button type="primary" :loading="loading" @click="onSubmit">保存</el-button>
       </div>
     </el-drawer>
   </div>
 </template>
 
 <script>
-import { userCardApi, userHrUpdateApi } from '@/api/user'
-import { jobsCreate } from '@/api/enterprise'
+import { defineAsyncComponent } from 'vue'
+import { userCardApi, userHrUpdateApi } from '@/api/user.ts'
+import { jobsCreate } from '@/api/enterprise.ts'
 
 export default {
   name: 'EditUser',
   components: {
-    selectMember: () => import('@/components/form-common/select-member'),
-    selectDepartment: () => import('@/components/form-common/select-department')
+    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
+    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department'))
   },
   props: {
     userId: {
@@ -161,7 +162,7 @@ export default {
       superiorFrame: [], // 上级部门
       superiorUser: [], // 上级人员
       formBoxConfig: {
-        title: this.$t('setting.edit.addmembers'),
+        title: '添加成员',
         width: '500px',
         method: 'post',
         action: '/user/create'
@@ -176,6 +177,7 @@ export default {
       propsPos: { value: 'id', label: 'name', multiple: false, checkStrictly: true }
     }
   },
+  emits: ['closed', 'saved'],
   watch: {
     userId: {
       handler(nVal, oVal) {
@@ -207,13 +209,13 @@ export default {
     handleClose() {
       this.userInfo = null
       this.drawer = false
-      this.$parent.userId = ''
+      this.$emit('closed')
     },
     open() {
       this.drawer = true
     },
     getStockSymbols(stocks) {
-      var symbols = []
+      const symbols = []
       stocks.forEach(function (stock) {
         symbols.push(stock.name)
       })
@@ -298,8 +300,8 @@ export default {
 
     // 保存
     async onSubmit() {
-      var superior_frame_id = null
-      var frames = []
+      let superior_frame_id = null
+      const frames = []
       const frame_id = [] // 部门id
       let mastart_id = '' // 主部门id
       this.frames.forEach((el) => {
@@ -312,7 +314,7 @@ export default {
         superior_frame_id = this.superiorUser[0].value
       }
       if (mastart_id === '') {
-        return this.$message.error(this.$t('setting.edit.text3'))
+        return this.$message.error('请设置主部门')
       }
       if (frame_id.length == 1 && mastart_id == '') {
         this.userInfo.mastart_id = frame_id[0]
@@ -335,12 +337,12 @@ export default {
       await userHrUpdateApi(this.userId, this.userInfo)
       this.drawer = false
       this.loading = false
-      await this.$parent.handleTree()
+      this.$emit('saved')
     },
 
     // 设为主部门
     handleDepartment(item, index) {
-      this.$refs[`popover-${index}`][0].doClose()
+      this.$refs[`popover-${index}`][0].hide()
       this.frames.forEach((el) => {
         el.is_mastart = false
       })
@@ -349,11 +351,11 @@ export default {
     },
     // 删除所在部门
     handleDeleteDep(index) {
-      this.$refs[`popover-${index}`][0].doClose()
+      this.$refs[`popover-${index}`][0].hide()
       this.frames.splice(index, 1)
     },
     handleDelSuperior(index) {
-      this.$refs[`popoverSuperior-${index}`][0].doClose()
+      this.$refs[`popoverSuperior-${index}`][0].hide()
       this.superiorUser.splice(index, 1)
     },
     cardTag(index) {
@@ -401,10 +403,10 @@ export default {
     // margin-bottom: 10px;
   }
 }
-/deep/.el-popover {
+:deep(.el-popover) {
   min-width: 80px;
 }
-/deep/ .el-cascader {
+:deep(.el-cascader) {
   width: 100%;
 }
 .form-item-section {
@@ -428,7 +430,7 @@ export default {
   font-size: 13px;
   cursor: pointer;
 }
-/deep/.el-icon-close {
+:deep(.el-icon-close) {
   cursor: pointer;
 }
 </style>

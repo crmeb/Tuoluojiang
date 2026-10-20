@@ -8,7 +8,7 @@
 
 <p align="center">
     <a href="https://github.com/php-casbin/laravel-authz/actions">
-        <img src="https://github.com/php-casbin/laravel-authz/workflows/build/badge.svg?branch=master" alt="Build Status">
+        <img src="https://github.com/php-casbin/laravel-authz/actions/workflows/phpunit.yml/badge.svg" alt="PHPUnit Status">
     </a>
     <a href="https://coveralls.io/github/php-casbin/laravel-authz">
         <img src="https://coveralls.io/repos/github/php-casbin/laravel-authz/badge.svg" alt="Coverage Status">
@@ -35,6 +35,7 @@ All you need to learn to use `Casbin` first.
   * [Using a middleware](#using-a-middleware)
     * [basic Enforcer Middleware](#basic-enforcer-middleware)
     * [HTTP Request Middleware ( RESTful is also supported )](#http-request-middleware--restful-is-also-supported-)
+  * [Using Gates](#using-gates)
   * [Multiple enforcers](#multiple-enforcers)
   * [Using artisan commands](#using-artisan-commands)
   * [Cache](#using-cache)
@@ -120,6 +121,13 @@ if (Enforcer::enforce("eve", "articles", "edit")) {
     // deny the request, show an error
 }
 
+```
+
+By default, [Gate](https://laravel.com/docs/11.x/authorization#gates) checks will be automatically intercepted
+. You can check if a user has a permission with Laravel's default `can` function:
+
+```php
+$user->can('articles,read');
 ```
 
 ### Using Enforcer Api

@@ -5,16 +5,40 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2023 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
  *  | Author: 陀螺匠 Team <admin@tuoluojiang.com>
  *  +----------------------------------------------------------------------
+ *  | @author: lunatic<453850531@qq.com>
+ *  +----------------------------------------------------------------------
  */
 use Monolog\Handler\NullHandler;
+use Monolog\Handler\RotatingFileHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
+
+if (! class_exists(MonthlyDailyRotatingFileHandler::class, false)) {
+    class MonthlyDailyRotatingFileHandler extends RotatingFileHandler
+    {
+        protected function getTimedFilename(): string
+        {
+            $fileInfo = pathinfo($this->filename);
+            $filename = $fileInfo['dirname'] . '/' . date('Y/m') . '/' . $fileInfo['filename'] . '-' . date('d');
+
+            return isset($fileInfo['extension']) ? $filename . '.' . $fileInfo['extension'] : $filename;
+        }
+
+        protected function getGlobPattern(): string
+        {
+            $fileInfo = pathinfo($this->filename);
+            $glob     = $fileInfo['dirname'] . '/[0-9][0-9][0-9][0-9]/[0-9][0-9]/' . $fileInfo['filename'] . '-[0-9][0-9]';
+
+            return isset($fileInfo['extension']) ? $glob . '.' . $fileInfo['extension'] : $glob;
+        }
+    }
+}
 
 return [
     /*
@@ -47,22 +71,47 @@ return [
     'channels' => [
         'stack' => [
             'driver'            => 'stack',
-            'channels'          => ['single'],
+            'channels'          => ['daily'],
             'ignore_exceptions' => false,
         ],
         'single' => [
             'driver'     => 'single',
-            'path'       => storage_path(sprintf('logs/%s/%s/service-%s.log', now()->tz('Asia/Shanghai')->format('Y'), now()->tz('Asia/Shanghai')->format('m'), now()->tz('Asia/Shanghai')->format('d'))),
+            'path'       => storage_path('logs/service.log'),
             'level'      => env('LOG_LEVEL', 'debug'),
             'permission' => 0755,
         ],
 
         'daily' => [
-            'driver'     => 'daily',
-            'path'       => storage_path('logs/service.log'),
-            'level'      => env('LOG_LEVEL', 'debug'),
-            'days'       => 14,
-            'permission' => 0755,
+            'driver'  => 'monolog',
+            'handler' => MonthlyDailyRotatingFileHandler::class,
+            'level'   => env('LOG_LEVEL', 'debug'),
+            'with'    => [
+                'filename'       => storage_path('logs/service.log'),
+                'maxFiles'       => 14,
+                'filePermission' => 0755,
+            ],
+        ],
+
+        'mcp' => [
+            'driver'  => 'monolog',
+            'handler' => MonthlyDailyRotatingFileHandler::class,
+            'level'   => env('LOG_LEVEL', 'debug'),
+            'with'    => [
+                'filename'       => storage_path('logs/mcp.log'),
+                'maxFiles'       => 14,
+                'filePermission' => 0755,
+            ],
+        ],
+
+        'ai' => [
+            'driver'  => 'monolog',
+            'handler' => MonthlyDailyRotatingFileHandler::class,
+            'level'   => env('LOG_LEVEL', 'debug'),
+            'with'    => [
+                'filename'       => storage_path('logs/ai.log'),
+                'maxFiles'       => 14,
+                'filePermission' => 0755,
+            ],
         ],
 
         'slack' => [

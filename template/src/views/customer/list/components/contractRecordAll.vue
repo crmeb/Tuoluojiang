@@ -4,10 +4,9 @@
     <div class="btn-box1">
       <div class="title-16">账目记录列表</div>
 
-      <div v-if="showAddButton">
+      <div>
         <el-button
           v-if="buildData.contract_renew_switch != 0"
-          size="small"
           @click="handleBuild(0, buildData.contract_renew_switch, 'contract_renew_switch')"
         >
           添加续费
@@ -15,7 +14,6 @@
 
         <el-button
           v-if="buildData.contract_disburse_switch != 0"
-          size="small"
           @click="handleBuild(0, buildData.contract_disburse_switch, 'contract_disburse_switch')"
         >
           添加支出
@@ -23,7 +21,6 @@
 
         <el-button
           v-if="buildData.contract_refund_switch != 0"
-          size="small"
           type="primary"
           @click="handleBuild(0, buildData.contract_refund_switch, 'contract_refund_switch')"
         >
@@ -35,7 +32,7 @@
     <el-table class="mt10" :data="debtData" :class="debtData.length > 0 ? '' : 'mb15'" style="width: 100%">
       <el-table-column prop="date" label="付款时间" min-width="150"> </el-table-column>
       <el-table-column prop="bill_types" label="记录类型" min-width="150">
-        <template slot-scope="scope">
+        <template #default="scope">
           <el-tag :type="scope.row.types == 2 ? 'warning' : 'success'">{{
             scope.row.types == 2 ? '支出' : '收入'
           }}</el-tag>
@@ -43,47 +40,50 @@
       </el-table-column>
       <el-table-column prop="num" label="付款金额(元)" min-width="100"> </el-table-column>
       <el-table-column prop="pay_type" label="支付方式" min-width="90">
-        <template slot-scope="scope">
+        <template #default="scope">
           <span>{{ scope.row.pay_type !== '' ? scope.row.pay_type : '--' }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="bill_no" label="付款单号" min-width="110"> </el-table-column>
       <el-table-column prop="status" label="付款审核状态" min-width="110">
-        <template slot-scope="scope">
-          <el-tag v-if="scope.row.status === 0" type="warning" size="mini"> {{ $t('customer.audit') }}</el-tag>
-          <el-tag v-if="scope.row.status === 1 && !scope.row.recall" type="info" size="mini">
-            {{ $t('customer.passed') }}</el-tag
+        <template #default="scope">
+          <el-tag size="small" v-if="scope.row.status === 0" type="warning"> 待审核</el-tag>
+          <el-tag size="small" v-if="scope.row.status === 1 && !scope.row.recall" type="info">
+            已通过</el-tag
           >
-          <el-tag v-if="scope.row.status === -1" type="info" size="mini">已撤销</el-tag>
-          <el-tag v-if="scope.row.status === 1 && scope.row.recall" type="info" size="mini">撤销中</el-tag>
+          <el-tag size="small" v-if="scope.row.status === -1" type="info">已撤销</el-tag>
+          <el-tag size="small" v-if="scope.row.status === 1 && scope.row.recall" type="info">撤销中</el-tag>
           <el-popover v-if="scope.row.status === 2" trigger="hover" placement="top">
-            <p>{{ $t('customer.reason') }}:</p>
+            <p>原因:</p>
             <p>{{ scope.row.fail_msg }}</p>
-            <div slot="reference">
-              <el-tag type="danger" size="mini"> {{ $t('customer.fail') }}</el-tag>
-            </div>
+            <template #reference>
+              <div>
+                <el-tag size="small" type="danger"> 未通过</el-tag>
+              </div>
+            </template>
           </el-popover>
         </template>
       </el-table-column>
 
-      <el-table-column prop="address" min-width="100" :label="$t('public.operation')">
-        <template slot-scope="scope">
+      <el-table-column prop="address" min-width="100" label="操作">
+        <template #default="scope">
           <div class="flex">
-            <el-button type="text" @click="handleCheck(scope.row)">查看</el-button>
+            <el-button type="primary" link @click="handleCheck(scope.row)">查看</el-button>
             <template v-if="userId == scope.row.card.id">
               <el-button
-                type="text"
+                type="primary" link
                 @click="withdraw(scope.row)"
                 v-if="
                   (scope.row.status === 1 &&
                     scope.row.approve_rule &&
                     scope.row.approve_rule.recall == 1 &&
                     !scope.row.recall) ||
-                  scope.row.status === 0
+                  scope.row.status === 0 ||
+                  (!scope.row.approve_rule && scope.row.status != -1)
                 "
                 >撤销</el-button
               >
-              <el-button type="text" v-if="scope.row.status == -1" @click="handleDelete(scope.row)">删除</el-button>
+              <el-button type="primary" link v-if="scope.row.status == -1" @click="handleDelete(scope.row)">删除</el-button>
             </template>
           </div>
         </template>
@@ -120,7 +120,7 @@
     </div>
 
     <applyForPayment ref="applyForPayment" :form-data="fromData"></applyForPayment>
-    <edit-examine ref="editExamine" :parameterData="parameterData" @isOk="getTableData()"></edit-examine>
+    <edit-examine ref="editExamine" :parameterData="parameterData" @isOk="handleBillChange"></edit-examine>
     <detail-examine ref="detailExamine" @getList="getTableData" />
     <!-- 撤销 -->
     <oa-dialog
@@ -135,11 +135,15 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
-import { clientBillAllListApi, clientBillDeleteApi, getCustomerStatisticsApi } from '@/api/enterprise'
-import { approveApplyRevokeApi } from '@/api/business'
-import { configRuleApproveApi } from '@/api/config'
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { getStorageJson } from '@/utils/storage.ts'
+import { useUserStore } from '@/stores/user.ts'
+import { clientBillAllListApi, clientBillDeleteApi, getCustomerStatisticsApi } from '@/api/enterprise.ts'
+import { approveApplyRevokeApi } from '@/api/business.ts'
+import { configRuleApproveApi } from '@/api/config.ts'
 export default {
+  emits: ['refresh-detail'],
   name: 'ContractRecord',
   props: {
     formInfo: {
@@ -150,13 +154,10 @@ export default {
     }
   },
   components: {
-    oaDialog: () => import('@/components/form-common/dialog-form'),
-    applyForPayment: () => import('./applyForPayment'),
-    editExamine: () => import('@/views/user/examine/components/editExamine'),
-    detailExamine: () => import('@/views/user/examine/components/detailExamine')
-  },
-  computed: {
-    ...mapGetters(['userInfo'])
+    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form')),
+    applyForPayment: defineAsyncComponent(() => import('./applyForPayment')),
+    editExamine: defineAsyncComponent(() => import('@/views/user/examine/components/editExamine')),
+    detailExamine: defineAsyncComponent(() => import('@/views/user/examine/components/detailExamine'))
   },
   data() {
     return {
@@ -170,7 +171,7 @@ export default {
       formDataInit: {
         info: ''
       },
-      userId: JSON.parse(localStorage.getItem('userInfo')).id,
+      userId: getStorageJson('userInfo', {}).id,
       formConfig: [
         {
           type: 'textarea',
@@ -196,7 +197,7 @@ export default {
         types: '',
         eid: ''
       },
-      userId: this.$store.state.user.userInfo.id,
+      userId: useUserStore().userInfo.id,
       fromData: {},
       total: 0,
       type: 0,
@@ -207,12 +208,17 @@ export default {
   computed: {
     showAddButton() {
       return this.formInfo.types == 2 || (this.formInfo.types == 1 && this.userId == this.formInfo.data.salesman.id)
-    } 
+    }
   },
   mounted() {
     this.getConfigApprove()
   },
   methods: {
+    async handleBillChange() {
+      await this.getTableData()
+      this.$emit('refresh-detail')
+    },
+
     async getTableData() {
       this.getCumulative()
       this.where.eid = this.formInfo.data.eid
@@ -241,7 +247,7 @@ export default {
     // 查看
     async handleCheck(item) {
       this.fromData = {
-        title: this.$t('customer.viewcustomer'),
+        title: '查看客户',
         width: '500px',
         data: item,
         isClient: false,
@@ -261,7 +267,7 @@ export default {
     withdraw(row) {
       this.rowData = row
       if (row.status === 0) {
-        this.$modalSure(this.$t('你确定要撤销申请吗')).then(() => {
+        modalSure('你确定要撤销申请吗').then(() => {
           this.getApplyRevoke()
         })
       } else {
@@ -278,7 +284,7 @@ export default {
 
     // 删除
     handleDelete(item, type) {
-      this.$modalSure('确定要删除此账目记录').then(() => {
+      modalSure('确定要删除此账目记录').then(() => {
         clientBillDeleteApi(item.id).then((res) => {
           if (type === 1) {
             if (this.where.page > 1 && this.debtData.length <= 1) {
@@ -293,6 +299,7 @@ export default {
           }
 
           this.getTableData()
+          this.$emit('refresh-detail')
         })
       })
     }

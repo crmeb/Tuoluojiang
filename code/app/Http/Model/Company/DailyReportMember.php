@@ -16,7 +16,7 @@ declare(strict_types=1);
 namespace App\Http\Model\Company;
 
 use App\Http\Model\BaseModel;
-use crmeb\traits\model\TimeDataTrait;
+use Tuoluojiang\Open\traits\model\TimeDataTrait;
 
 /**
  * 日报汇报人
@@ -33,10 +33,16 @@ class DailyReportMember extends BaseModel
      */
     protected $table = 'daily_report_member';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'daily_id'   => 'integer',
+        'member'     => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * member作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeMember($query, $value): void
     {

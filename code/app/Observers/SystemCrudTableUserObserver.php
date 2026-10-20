@@ -1,19 +1,8 @@
 <?php
 
-declare(strict_types=1);
-/**
- *  +----------------------------------------------------------------------
- *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
- *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
- *  +----------------------------------------------------------------------
- *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
- *  +----------------------------------------------------------------------
- *  | Author: 陀螺匠 Team <admin@tuoluojiang.com>
- *  +----------------------------------------------------------------------
- */
-
 namespace App\Observers;
+
+
 
 use App\Http\Model\Crud\SystemCrudTableUser;
 
@@ -21,6 +10,9 @@ class SystemCrudTableUserObserver
 {
     /**
      * Handle the SystemCrudTableUser "created" event.
+     *
+     * @param  SystemCrudTableUser  $systemCrudTableUser
+     * @return void
      */
     public function created(SystemCrudTableUser $systemCrudTableUser)
     {
@@ -29,6 +21,9 @@ class SystemCrudTableUserObserver
 
     /**
      * Handle the SystemCrudTableUser "updated" event.
+     *
+     * @param  SystemCrudTableUser  $systemCrudTableUser
+     * @return void
      */
     public function updated(SystemCrudTableUser $systemCrudTableUser)
     {
@@ -37,6 +32,9 @@ class SystemCrudTableUserObserver
 
     /**
      * Handle the SystemCrudTableUser "deleted" event.
+     *
+     * @param  SystemCrudTableUser  $systemCrudTableUser
+     * @return void
      */
     public function deleted(SystemCrudTableUser $systemCrudTableUser)
     {
@@ -45,6 +43,9 @@ class SystemCrudTableUserObserver
 
     /**
      * Handle the SystemCrudTableUser "restored" event.
+     *
+     * @param  SystemCrudTableUser  $systemCrudTableUser
+     * @return void
      */
     public function restored(SystemCrudTableUser $systemCrudTableUser)
     {
@@ -53,6 +54,9 @@ class SystemCrudTableUserObserver
 
     /**
      * Handle the SystemCrudTableUser "force deleted" event.
+     *
+     * @param  SystemCrudTableUser  $systemCrudTableUser
+     * @return void
      */
     public function forceDeleted(SystemCrudTableUser $systemCrudTableUser)
     {

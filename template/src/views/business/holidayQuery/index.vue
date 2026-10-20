@@ -18,11 +18,13 @@
               :expand-on-click-node="false"
               :default-checked-keys="defaultCheckedKeys"
             >
-              <div slot-scope="{ node, data }" class="custom-tree-node">
-                <span class="flex-box">
-                  {{ node.label }}
-                </span>
-              </div>
+              <template #default="{ node, data }">
+                <div class="custom-tree-node">
+                  <span class="flex-box">
+                    {{ node.label }}
+                  </span>
+                </div>
+              </template>
             </el-tree>
           </div>
         </el-col>
@@ -45,7 +47,7 @@
                 <el-table-column label="已休年假（天）" prop="created_at" min-width="150" />
                 <el-table-column label="剩余年假（天）" prop="created_at" min-width="150" />
                 <!-- <el-table-column label="创建时间" prop="created_at" width="100">
-                <template slot-scope="scope">
+                <template #default="scope">
                   <div style="width: 76px;">
                   </div>
                 </template>
@@ -70,10 +72,11 @@
   </div>
 </template>
 <script>
+import { defineAsyncComponent } from 'vue'
 export default {
   name: '',
   components: {
-    // formBox: () => import('../components/formBox')
+    // formBox: defineAsyncComponent(() => import('../components/formBox'))
   },
   data() {
     return {
@@ -152,7 +155,7 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-/deep/ .el-card__body {
+:deep(.el-card__body) {
   padding: 0;
 }
 .m14 {
@@ -164,17 +167,17 @@ export default {
 .pr14 {
   padding-right: 14px;
 }
-/deep/ .el-tree-node__content:hover {
+:deep(.el-tree-node__content:hover) {
   background: rgba(240, 250, 254, 0.6);
   border-color: #1890ff;
   color: #1890ff;
 }
-/deep/.el-tree-node__content {
+:deep(.el-tree-node__content) {
   height: 40px;
   padding-right: 15px;
   border-right: 2px solid transparent;
 }
-/deep/ .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node,
+:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node),
 .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .right-icon {
   display: inline-block;
   color: #1890ff;

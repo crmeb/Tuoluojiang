@@ -570,6 +570,8 @@ const data = {
       9422: [{id: 1,label: 1600},{id: 2,label: 1840},{id: 3,label: 2112}],
     }
 
+    // 以上是非响应式的静态数据，直接挂在实例上；Vue 3 要求 data() 返回对象，否则合并 mixin 时报错
+    return {};
   },
 };
 

@@ -16,59 +16,27 @@
         "issues": "https://github.com/aws/aws-sdk-php/issues"
     },
     "require": {
-        "php": ">=7.2.5",
-        "guzzlehttp/guzzle": "^6.5.8 || ^7.4.5",
-        "guzzlehttp/psr7": "^1.9.1 || ^2.4.5",
-        "guzzlehttp/promises": "^1.4.0 || ^2.0",
-        "mtdowling/jmespath.php": "^2.6",
-        "ext-pcre": "*",
-        "ext-json": "*",
-        "ext-simplexml": "*",
-        "aws/aws-crt-php": "^1.2.3",
-        "psr/http-message": "^1.0 || ^2.0"
-    },
-    "require-dev": {
-        "composer/composer" : "^1.10.22",
-        "ext-openssl": "*",
-        "ext-dom": "*",
-        "ext-pcntl": "*",
-        "ext-sockets": "*",
-        "phpunit/phpunit": "^5.6.3 || ^8.5 || ^9.5",
-        "behat/behat": "~3.0",
-        "doctrine/cache": "~1.4",
-        "aws/aws-php-sns-message-validator": "~1.0",
-        "nette/neon": "^2.3",
-        "andrewsville/php-token-reflection": "^1.4",
-        "psr/cache": "^1.0 || ^2.0 || ^3.0",
-        "psr/simple-cache": "^1.0 || ^2.0 || ^3.0",
-        "paragonie/random_compat": ">= 2",
-        "sebastian/comparator": "^1.2.3 || ^4.0",
-        "yoast/phpunit-polyfills": "^1.0",
-        "dms/phpunit-arraysubset-asserts": "^0.4.0"
+        "php": ">=5.3.3",
+        "guzzle/guzzle": "~3.7"
     },
     "suggest": {
+        "doctrine/cache": "Adds support for caching of credentials and responses",
+        "ext-apc": "Allows service description opcode caching, request and response caching, and credentials caching",
         "ext-openssl": "Allows working with CloudFront private distributions and verifying received SNS messages",
-        "ext-curl": "To send requests using cURL",
-        "ext-sockets": "To use client-side monitoring",
-        "doctrine/cache": "To use the DoctrineCacheAdapter",
-        "aws/aws-php-sns-message-validator": "To validate incoming SNS notifications"
+        "monolog/monolog": "Adds support for logging HTTP requests and responses",
+        "symfony/yaml": "Eases the ability to write manifests for creating jobs in AWS Import/Export"
+    },
+    "require-dev": {
+        "ext-openssl": "*",
+        "doctrine/cache": "~1.0",
+        "monolog/monolog": "~1.4",
+        "phpunit/phpunit": "~4.0",
+        "phpunit/phpunit-mock-objects": "2.3.1",
+        "symfony/yaml": "~2.1"
     },
     "autoload": {
-        "psr-4": {
-            "Aws\\": "src/"
-        },
-        "files": ["src/functions.php"],
-        "exclude-from-classmap": ["src/data/"]
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Aws\\Test\\": "tests/"
-        },
-        "classmap": ["build/"]
-    },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "3.0-dev"
+        "psr-0": {
+            "Aws": "src/"
         }
     }
 }

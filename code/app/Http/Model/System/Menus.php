@@ -16,8 +16,10 @@ declare(strict_types=1);
 namespace App\Http\Model\System;
 
 use App\Http\Model\BaseModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\App;
+use Staudenmeir\LaravelAdjacencyList\Eloquent\HasRecursiveRelationships;
 
 /**
  * 菜单模型
@@ -25,6 +27,8 @@ use Illuminate\Support\Facades\App;
  */
 class Menus extends BaseModel
 {
+    use HasRecursiveRelationships;
+
     /**
      * 表名.
      * @var string
@@ -36,6 +40,65 @@ class Menus extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'id'                => 'integer',
+        'value'       => 'integer',
+        'pid'               => 'integer',
+        'menu_type'         => 'integer',
+        'crud_id'           => 'integer',
+        'position'          => 'integer',
+        'level'             => 'integer',
+        'sort'              => 'integer',
+        'entid'             => 'integer',
+        'is_show'           => 'integer',
+        'status'            => 'integer',
+        'created_at'        => 'datetime:Y-m-d H:i:s',
+        'updated_at'        => 'datetime:Y-m-d H:i:s',
+        'deleted_at'        => 'datetime:Y-m-d H:i:s',
+        'crud_app_id'       => 'integer',
+        'crud_dashboard_id' => 'integer',
+    ];
+
+    public function getParentKeyName()
+    {
+        return 'parent_uniqued';
+    }
+
+    public function getLocalKeyName()
+    {
+        return 'uniqued';
+    }
+
+    public function getIdPathAttribute()
+    {
+        // 加载祖先节点（如果未加载）
+        if (! $this->relationLoaded('ancestors')) {
+            $this->load('ancestors');
+        }
+        // 拼接自身及所有祖先的 ID
+        return $this->ancestors?->pluck('id');
+    }
+
+    public function getNamePathAttribute(): array
+    {
+        $names  = [$this->menu_name];
+        $parent = $this->relationLoaded('ancestors') ? $this->ancestors : null;
+        while ($parent) {
+            $names[] = $parent->menu_name;
+            $parent  = $parent->relationLoaded('ancestors') ? $parent->ancestors : null;
+        }
+
+        return array_reverse(array_values(array_filter($names, fn ($name) => $name !== null && $name !== '')));
+    }
+
+    /**
+     * 预加载所有祖先节点（递归关联）.
+     */
+    public function ancestors()
+    {
+        return $this->parent()->with('ancestors');
+    }
 
     /**
      * other字段转json.
@@ -84,9 +147,13 @@ class Menus extends BaseModel
      * @param mixed $value
      * @return false|string[]
      */
-    public function setPathAttribute($value)
+    public function setPathsAttribute($value)
     {
-        $this->attributes['path'] = $value ? implode('/', $value) : '';
+        if(is_array($value)){
+            $this->attributes['paths'] = $value ? implode('/', $value) : '';
+        } else {
+            $this->attributes['paths'] = $value;
+        }
     }
 
     /**
@@ -94,7 +161,7 @@ class Menus extends BaseModel
      * @param mixed $value
      * @return false|string[]
      */
-    public function getPathAttribute($value)
+    public function getPathsAttribute($value)
     {
         return $value ? array_map('intval', explode('/', $value)) : [];
     }
@@ -162,11 +229,7 @@ class Menus extends BaseModel
      */
     public function scopeType($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereIn('type', $value);
-        } elseif ($value !== '') {
-            $query->where('type', $value);
-        }
+        is_array($value) ? $query->whereIn('type', $value) : $query->where('type', $value);
     }
 
     /**
@@ -189,20 +252,12 @@ class Menus extends BaseModel
      */
     public function scopeId($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereIn('id', $value);
-        } elseif ($value !== '') {
-            $query->where('id', $value);
-        }
+        is_array($value) ? $query->whereIn('id', $value) : $query->where('id', $value);
     }
 
     public function scopeUniqueAuth($query, $value)
     {
-        if (is_array($value)) {
-            $query->whereIn('unique_auth', $value);
-        } elseif ($value !== '') {
-            $query->where('unique_auth', $value);
-        }
+        is_array($value) ? $query->whereIn('unique_auth', $value) : $query->where('unique_auth', $value);
     }
 
     /**
@@ -212,12 +267,7 @@ class Menus extends BaseModel
      */
     public function scopePid($query, $value)
     {
-        if (is_array($value)) {
-            return $query->whereIn('pid', $value);
-        }
-        if ($value !== '') {
-            return $query->where('pid', $value);
-        }
+        is_array($value) ? $query->whereIn('pid', $value) : $query->where('pid', $value);
     }
 
     /**
@@ -228,9 +278,10 @@ class Menus extends BaseModel
     public function scopePathLike($query, $value)
     {
         $query->where(function ($q) use ($value) {
-            $q->orWhere('path', 'like', $value . '/%')
-                ->orWhere('path', $value)
-                ->orWhere('path', 'like', '%/' . $value . '/%');
+            $q->orWhere('paths', 'like', $value . '/%')
+                ->orWhere('paths', $value)
+                ->orWhere('paths', 'like', '%/' . $value)
+                ->orWhere('paths', 'like', '%/' . $value . '/%');
         });
     }
 
@@ -249,18 +300,29 @@ class Menus extends BaseModel
      */
     public function scopeNameLike($query, $value)
     {
-        if ($value !== '') {
-            return $query->where('menu_name', 'like', '%' . $value . '%');
-        }
+        $query->where('menu_name', 'like', '%' . $value . '%');
     }
 
     public function scopeCrudIds($query, $value)
     {
-        if ($value !== '') {
-            if (is_array($value)) {
-                return $query->whereIn('crud_id', $value);
-            }
-            return $query->where('crud_id', $value);
-        }
+        is_array($value) ? $query->whereIn('crud_id', $value) : $query->where('crud_id', $value);
+    }
+
+    public function scopeUniqued($query, $value)
+    {
+        is_array($value) ? $query->whereIn('uniqued', $value) : $query->where('uniqued', $value);
+    }
+
+    public function scopeNotId($query, $value)
+    {
+        is_array($value) ? $query->whereNotIn('id', $value) : $query->where('id', '<>', $value);
+    }
+
+    /**
+     * 父级关联.
+     */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_uniqued', 'uniqued');
     }
 }

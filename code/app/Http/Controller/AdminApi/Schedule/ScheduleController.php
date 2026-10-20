@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -172,6 +172,25 @@ class ScheduleController extends AuthController
     }
 
     /**
+     * 快捷创建日程（标题必填，可选参与人/截止时间/描述/提醒）.
+     */
+    #[Post('quick', '快捷创建日程')]
+    public function quick(ScheduleRequest $request): mixed
+    {
+        $request->scene('quick')->check();
+        $data = $this->request->postMore([
+            ['title', ''],
+            ['member', []],
+            ['content', ''],
+            ['end_time', ''],
+            ['remind', 0],
+        ]);
+        $id = $this->service->quickSaveSchedule(auth('admin')->id(), $this->entId, $data);
+
+        return $this->success('添加成功', ['id' => $id]);
+    }
+
+    /**
      * 修改日程内容.
      * @return mixed
      * @throws ValidationException
@@ -203,7 +222,7 @@ class ScheduleController extends AuthController
             ['start', ''],
             ['end', ''],
         ]);
-        $this->service->updateSchedule(auth('admin')->id(), $this->entId, (int) $id, $data);
+        $this->service->updateSchedule($this->entId, (int) $id, $data, auth('admin')->id());
         return $this->success('修改成功');
     }
 
@@ -288,13 +307,13 @@ class ScheduleController extends AuthController
      * @throws \ReflectionException
      */
     #[Get('replys', '日程评价列表')]
-    public function replys()
+    public function replays()
     {
         $where = $this->request->getMore([
             ['schedule_id', 0, 'pid'],
             ['time', '', 'time_zone'],
         ]);
-        $data = $this->service->replys($where);
+        $data = $this->service->replays($where);
         return $this->success($data);
     }
 
@@ -313,6 +332,7 @@ class ScheduleController extends AuthController
             ['start', '', 'start_time'],
             ['end', '', 'end_time'],
             ['to_uid', ''],
+            ['files', []],
         ]);
         $this->service->saveReply($this->uuid, $this->entId, $data);
         return $this->success('保存成功');

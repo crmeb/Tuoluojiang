@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,11 +15,12 @@ declare(strict_types=1);
 
 namespace App\Http\Service\User;
 
+use App\Constants\MenuEnum;
 use App\Http\Dao\User\UserQuickDao;
-use App\Http\Service\BaseService;
 use App\Http\Service\Config\QuickCateService;
 use App\Http\Service\Config\QuickService;
 use App\Http\Service\System\MenusService;
+use App\Http\Service\BaseService;
 use Illuminate\Contracts\Container\BindingResolutionException;
 
 /**
@@ -35,12 +36,12 @@ class UserQuickService extends BaseService
         'income'            => '本月业绩',
         'today_income'      => '今日业绩',
         'yesterday_income'  => '昨日业绩',
-        'client'            => '累计客户',
+//        'client'            => '累计客户',
         'month_client'      => '本月新增客户',
         'today_client'      => '今日新增客户',
         'incomplete_follow' => '跟进未完成',
         'today_follow'      => '今日跟进记录',
-        'today_contract'    => '今日新增合同',
+        'today_contract'    => '今日新增订单',
     ];
 
     public array $defaultPcMenus = ['/user/memorandum'];
@@ -54,53 +55,53 @@ class UserQuickService extends BaseService
 
     /**
      * 获取工作台快捷方式.
+     * @param mixed $admin
      */
-    public function getFastEntry(string $uuid, int $entId = 1, bool $isPc = true): array
+    public function getFastEntry($admin, bool $isPc = true): array
     {
+        $userId = auth('admin')->user()->is_admin ? 'all' : auth('admin')->id();
+        $roles  = app('enforcer')->getRolesForUser($userId);
+        if (empty($roles)) {
+            return [];
+        }
+        // 获取角色对应的所有权限策略
+        $policies = app('enforcer')->getPolicy();
+        // 筛选出菜单类型的权限（排除按钮、接口等类型）
+        $uniques = collect($policies)
+            ->filter(function ($policy) use ($roles) {
+                [$sub, $obj, $act] = $policy;
+                return in_array($sub, $roles) && $act === MenuEnum::TYPE_MENU && ! empty($obj);
+            })->map(function ($policy) {
+                return $policy[1]; // $obj对应菜单的uni_path（或其他唯一标识）
+            })->unique()->values()->toArray();
+        $menus           = app()->get(MenusService::class)->select(['uniqued' => $uniques, 'status' => 1], ['menu_path', 'uni_path'])?->toArray();
+        $field           = ['id', 'name', 'cid', 'pc_url', 'uni_url', 'image'];
+        $with            = ['cate' => fn ($q) => $q->select(['id', 'cate_name', 'pic'])];
+        $quickWhere      = ['uuid' => $admin->uid, 'entid' => 1];
         $where['cid']    = app()->get(QuickCateService::class)->column(['is_show' => 1], 'id');
         $where['status'] = 1;
-        $list            = app()->get(MenusService::class)->getMenusForUser($uuid, $entId, false);
-        //        $menuPath        = array_filter(array_column($list, $isPc ? 'menu_path' : 'uni_path'));
-        $menuPath   = array_filter(array_column($list, 'menu_path'));
-        $menuPath   = array_merge($menuPath, $isPc ? $this->defaultPcMenus : $this->defaultUniMenus);
-        $field      = ['id', 'name', 'cid', 'pc_url', 'uni_url', 'image'];
-        $with       = ['cate' => fn ($q) => $q->select(['id', 'cate_name', 'pic'])];
-        $quickWhere = [
-            'uuid'  => $uuid,
-            'entid' => $entId,
-        ];
         if ($isPc) {
             $where['pc_show'] = 1;
             $userQuickIds     = $this->dao->value($quickWhere, 'pc_menu_id') ?: [];
-            $quicks           = app()->get(QuickService::class)->select($where, $field, $with)->each(function ($item) use ($userQuickIds) {
-                foreach ($userQuickIds as $k => $v) {
-                    if ($item['id'] == $v) {
-                        $item['sort'] = $k;
-                    }
-                }
-            })?->toArray();
-            $quicks = array_filter($quicks, function ($item) use ($menuPath) {
-                return in_array('/admin' . $item['pc_url'], $menuPath);
-            });
         } else {
             $where['uni_show'] = 1;
             $userQuickIds      = $this->dao->value($quickWhere, 'app_menu_id') ?: [];
-            $quicks            = toArray(app()->get(QuickService::class)->select($where, $field, $with)->each(function ($item) use ($userQuickIds) {
-                foreach ($userQuickIds as $k => $v) {
-                    if ($item['id'] == $v) {
-                        $item['sort'] = $k;
-                    }
-                }
-            }));
-            $quicks = array_filter($quicks, function ($item) use ($menuPath) {
-                return in_array('/admin' . $item['pc_url'], $menuPath);
-            });
         }
-        $cates  = array_values(array_filter(array_column($quicks, 'cate')));
+        $quickData = collect(app()->get(QuickService::class)->select($where, $field, $with)?->toArray())->map(function ($item) use ($userQuickIds) {
+            foreach ($userQuickIds as $k => $v) {
+                if ($item['id'] == $v) {
+                    $item['sort'] = $k;
+                }
+            }
+            return $item;
+        })->filter(function ($item) use ($isPc, $menus) {
+            return $isPc ? in_array('/admin' . $item['pc_url'], array_merge(array_column($menus, 'menu_path'), $this->defaultPcMenus)) : in_array($item['uni_url'], array_merge(array_column($menus, 'uni_path'), $this->defaultUniMenus));
+        })->sortByDesc('sort')->unique()->toArray();
+        $cates  = array_values(array_column($quickData, 'cate'));
         $cates  = array_intersect_key($cates, array_unique(array_column($cates, 'id')));
         $cates  = array_values($cates);
         $checkd = [];
-        foreach ($quicks as &$quick) {
+        foreach ($quickData as &$quick) {
             if (in_array($quick['id'], $userQuickIds)) {
                 $quick['checked'] = 1;
                 $checkd[]         = $quick;
@@ -113,7 +114,7 @@ class UserQuickService extends BaseService
         $sort = array_column($checkd, 'sort');
         array_multisort($sort, SORT_ASC, $checkd);
         foreach ($cates as &$cate) {
-            $cate['fast_entry'] = array_values(array_filter($quicks, fn ($val) => $val['cid'] == $cate['id']));
+            $cate['fast_entry'] = array_values(array_filter($quickData, fn ($val) => $val['cid'] == $cate['id']));
         }
         return compact('cates', 'checkd');
     }
@@ -167,6 +168,7 @@ class UserQuickService extends BaseService
      */
     public function getSelectType(string $uuid, int $entId = 1): array
     {
+        return array_keys(self::STATISTICS_TYPE);
         $info = toArray($this->dao->get(['uuid' => $uuid, 'entid' => $entId], ['statistics_type']));
         if (! $info || ! isset($info['statistics_type'])) {
             return array_keys(self::STATISTICS_TYPE);

@@ -15,8 +15,10 @@
 </template>
 
 <script>
-import { fileUpload } from '@/api/public'
+import { fileUpload } from '@/api/public.ts'
+import { processResourceUrl } from '@/utils/resourceUtil.ts'
 export default {
+  emits: ['closeLoading'],
   name: '',
   props: {
     url: {
@@ -47,7 +49,7 @@ export default {
   },
   methods: {
     async fetchMarkdownAndConvertToHtml() {
-      const response = await fetch(this.$processResourceUrl(this.url));
+      const response = await fetch(processResourceUrl(this.url))
       this.htmlMD = await response.text()
     },
 
@@ -58,7 +60,7 @@ export default {
       }
       fileUpload(this.fid, this.file.id, data).then((res) => {
         if (res.status === 200) {
-          let path = this.$router.history.current.path
+          let path = this.$route.path
           this.$router.push({ path, query: { ...this.$route.query, word_url: res.data.file_url } })
         }
         this.$emit('closeLoading')
@@ -73,7 +75,7 @@ export default {
   margin: 0 auto;
   min-height: calc(100vh - 60px);
   padding-top: 30px;
-  /deep/ .el-textarea__inner {
+  :deep(.el-textarea__inner) {
     padding: 30px;
     height: calc(100vh - 95px);
     font-size: 14px;

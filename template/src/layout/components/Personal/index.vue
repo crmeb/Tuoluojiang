@@ -1,11 +1,12 @@
 <!-- 配置app二维码组件 -->
 <template>
-  <el-popover ref="popoverUser" placement="bottom" popper-class="user-popper" trigger="click">
+  <el-popover v-if="userInfo" ref="popoverUser" placement="bottom" popper-class="user-popper" trigger="click">
     <div class="popover-user">
       <div class="drop-head">
         <div class="flex">
           <img
-            :src="userInfo ? userInfo.avatar : '../../assets/images/f.png'"
+            v-default-avatar="userInfo"
+            :src="getAvatarSrc(userInfo)"
             alt=""
             class="drop-avatar"
           />
@@ -26,20 +27,20 @@
      
        个人信息
       </div>
-      <div class="drop-item" @click="toSubscribe">
+      <!-- <div class="drop-item" @click="toSubscribe">
         <i class="iconfont icondingyuexiaoxi"></i>
         订阅消息
-      </div>
+      </div> -->
 
       <div class="drop-item" @click="toResume">
         <i class="iconfont iconjianli"></i>
         个人简历
       </div>
-      <!-- <div class="drop-item" @click="toCommunity" v-if="this.$store.state.settings.forumShow">
+      <!-- <div class="drop-item" @click="toCommunity" v-if="forumShow">
         <i class="iconfont icongudingwuzi"></i>
         知识社区
       </div> -->
-      <div class="drop-item drop-body" @click="toForum" v-if="this.$store.state.settings.bbsShow">
+      <div class="drop-item drop-body" @click="toForum" v-if="bbsShow">
         <i class="iconfont iconcebianlan-luntanzhongxin"></i>
         论坛中心
       </div>
@@ -49,10 +50,12 @@
         退出登录
       </div>
     </div>
-    <div v-if="userInfo" slot="reference" class="user-info">
-      <img :src="userInfo.avatar || userInfo.avatar" alt="" class="img" />
-      <span>{{ userInfo.account }}</span>
-    </div>
+    <template #reference>
+      <div class="user-info">
+        <img v-default-avatar="userInfo" :src="getAvatarSrc(userInfo)" alt="" class="img" />
+        <span>{{ userInfo.account }}</span>
+      </div>
+    </template>
     <!-- 个人信息 -->
     <personalCenter ref="personalCenter"></personalCenter>
   </el-popover>
@@ -60,22 +63,28 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
-import defaultSettings, { roterPre } from '@/settings'
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { getAvatarSrc } from '@/utils/avatar.ts'
+import { mapState } from 'pinia'
+import { useUserStore } from '@/stores/user.ts'
+import { bbsShow, roterPre } from '@/settings.ts'
+import { loginRouteWithRedirect } from '@/utils/login-redirect'
 
 export default {
   name: 'configapp',
   components: {
-    personalCenter: () => import('./personalCenter'),
+    personalCenter: defineAsyncComponent(() => import('./personalCenter')),
   },
   props: ['helpShow'],
 
   data() {
     return {
+      bbsShow
     }
   },
   computed: {
-    ...mapGetters(['userInfo']),
+    ...mapState(useUserStore, ['userInfo']),
     frameName() {
       if (this.userInfo.frames && this.userInfo.frames[0] && this.userInfo.frames[0].frame) {
         return this.userInfo.frames[0].frame.name
@@ -88,23 +97,24 @@ export default {
   },
 
   methods: {
+    getAvatarSrc,
     // 去论坛中心
     toForum() {
       window.open('https://www.crmeb.com/ask/thread/list/157', '_blank')
     },
     // 去订阅消息
     toSubscribe() {
-      this.$refs.popoverUser.doClose()
+      this.$refs.popoverUser.hide()
       this.$router.push(`${roterPre}/user/news/subscribe`)
     },
     // 去个人简历
     toResume() {
-      this.$refs.popoverUser.doClose()
+      this.$refs.popoverUser.hide()
       this.$router.push(`${roterPre}/user/resume`)
     },
     // 去知识社区
     toCommunity() {
-      this.$refs.popoverUser.doClose()
+      this.$refs.popoverUser.hide()
       this.$router.push(`${roterPre}/user/forum/index`)
     },
     // 去个人中心
@@ -114,14 +124,14 @@ export default {
     },
     // 退出登录
     loginOut() {
-      this.$modalSure('确定退出登录吗').then(async () => {
-        await this.$store.dispatch('user/logout')
-        this.$router.push(`${roterPre}/login?redirect=${this.$route.fullPath}`)
+      modalSure('确定退出登录吗').then(async () => {
+        await useUserStore().logout()
+        this.$router.push(loginRouteWithRedirect(this.$route.fullPath))
       })
     },
     // 关闭popper
     closePopoverUser() {
-      this.$refs.popoverUser.doClose()
+      this.$refs.popoverUser.hide()
     }
   }
 }

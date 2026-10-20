@@ -64,8 +64,8 @@
  * @description 点选
  * */
 import { resetSize, _code_chars, _code_color1, _code_color2 } from './../utils/util'
-import { aesEncrypt } from './../utils/ase'
-import { getModuleCaptchaApi, saveModuleCaptchaApi } from '@/api/develop'
+import { aesEncrypt } from './../utils/ase.ts'
+import { getModuleCaptchaApi, saveModuleCaptchaApi } from '@/api/develop.ts'
 
 export default {
   name: 'VerifyPoints',

@@ -3,7 +3,6 @@
     <!-- 云盘主页面 -->
     <div class="v-height-flag" style="height: 100%">
       <!-- 拖拽上传 -->
-
       <el-upload
         drag
         ref="uploadServer"
@@ -24,7 +23,7 @@
           element-loading-spinner=""
           element-loading-background=" rgba(255,255,255,0.6)"
         >
-          <el-row :gutter="20" v-if="switchIndex != 7">
+          <el-row :gutter="20" v-if="switchIndex != 7" class="cloudfile-row">
             <!-- 左侧企业空间 -->
             <el-col v-bind="gridl">
               <cloudfile-left ref="cloudfileLeft" @confirmData="confirmData" />
@@ -71,6 +70,7 @@
                     :switch="switchIndex"
                     :wps_type="wps_type"
                     @handlerMyFile="handlerMyFile"
+                    @drag-move-state-change="handleMoveDragStateChange"
                     @openItemFile="openfile"
                     @shareItemFile="shareFile"
                     @totalFn="totalFn"
@@ -104,9 +104,6 @@
     <!-- 移动文件弹窗 -->
     <move-dialog ref="moveDialog" :move-data="moveData" @handlerMove="handlerMove" />
 
-    <!-- 打开文件 -->
-    <fileDialog ref="viewFile" />
-
     <!-- 文件模板弹窗 -->
     <file-temp ref="fileTemp" :from-data="fileTemp" @handleTemplate="handleTemplate" />
 
@@ -121,43 +118,47 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
 // 导入辅助工具库
-import helper from '@/libs/helper';
+import helper from '@/libs/helper.ts'
 // 导入云存储上传工具
-import { uploader } from '@/utils/uploadCloud';
+import { uploader } from '@/utils/uploadCloud.ts'
 // 导入获取令牌的工具
-import { getToken } from '@/utils/auth';
+import { getToken } from '@/utils/auth.ts'
 // 导入设置信息
-import SettingMer from '@/libs/settingMer';
+import SettingMer from '@/libs/settingMer.ts'
 // 导入分片上传工具
-import { uploadByPieces } from '@/utils/uploadChunk';
+import { uploadByPieces } from '@/utils/uploadChunk.ts'
 // 导入云盘相关API
-import { 
+import {
   folderAllDeleteApi,
   folderAllDestroyApi,
   folderAllDestroyFileApi,
   folderSpaceEntAllDeleteApi,
   folderSpaceEntAllDestroyApi,
-  folderSpaceEntAllRecoverApi 
-} from '@/api/cloud';
+  folderSpaceEntAllRecoverApi
+} from '@/api/cloud.ts'
 // 导入获取上传密钥的API
-import { getUploadKeysApi } from '@/api/public';
+import { getUploadKeysApi } from '@/api/public.ts'
 // 导入生成XMind文件的工具
-import { generateXmindFile } from '@/components/xmind-editor/utils';
+import { generateXmindFile } from '@/components/xmind-editor/utils.ts'
+import { getStorageJson } from '@/utils/storage.ts'
+// 导入文件预览服务
+import { filePreview } from '@/utils/filePreview.ts'
 
 export default {
   name: 'CloudFile',
   components: {
-    cloudfileLeft: () => import('./components/layout/cloudfileLeft'), // 左侧导航
-    formBox: () => import('./components/layout/formBox'), // 顶部操作
-    latelyFile: () => import('./components/layout/latelyFile'), // 最近的文件
-    recoveryFile: () => import('./components/layout/recoveryFile'), // 回收站的文件
-    spaceFile: () => import('./components/layout/spaceFile'), // 企业空间文件
-    newFileDialog: () => import('./components/newFileDialog'), // 新建文件弹窗
-    moveDialog: () => import('./components/moveDialog'), // 移动文件弹窗
-    fileTemp: () => import('./components/fileTemp'), // 文件模板弹窗
-    uploadProgress: () => import('./components/uploadProgress'), // 文件上传进度
-    fileDialog: () => import('@/components/openFile/previewDialog ') // 图片、MP3，MP4弹窗
+    cloudfileLeft: defineAsyncComponent(() => import('./components/layout/cloudfileLeft')), // 左侧导航
+    formBox: defineAsyncComponent(() => import('./components/layout/formBox')), // 顶部操作
+    latelyFile: defineAsyncComponent(() => import('./components/layout/latelyFile')), // 最近的文件
+    recoveryFile: defineAsyncComponent(() => import('./components/layout/recoveryFile')), // 回收站的文件
+    spaceFile: defineAsyncComponent(() => import('./components/layout/spaceFile')), // 企业空间文件
+    newFileDialog: defineAsyncComponent(() => import('./components/newFileDialog')), // 新建文件弹窗
+    moveDialog: defineAsyncComponent(() => import('./components/moveDialog')), // 移动文件弹窗
+    fileTemp: defineAsyncComponent(() => import('./components/fileTemp')), // 文件模板弹窗
+    uploadProgress: defineAsyncComponent(() => import('./components/uploadProgress')) // 文件上传进度
   },
   data() {
     return {
@@ -198,21 +199,22 @@ export default {
       spaceId: 0,
       entButton: false,
       ids: [],
-      uploadSize: JSON.parse(localStorage.getItem('sitedata')).global_attach_size || 30,
+      uploadSize: getStorageJson('sitedata', {}).global_attach_size || 30,
       moveData: {
         id: [],
         type: 2
       },
+      isMoveDragging: false,
       elemetnNode: '',
       fileData: {},
       fileTemp: {
         type: 1,
-        title: this.$t('file.selecttemplate'),
+        title: '选择模板',
         width: '820px'
       },
       isSortShow: false,
       pageLimit: 0,
-      wps_type: JSON.parse(localStorage.getItem('webConfig')).wps_type || '0',
+      wps_type: getStorageJson('webConfig', {}).wps_type || '0',
       uploadFileList: [],
       // 上传参数
       uploadRes: {}
@@ -220,7 +222,12 @@ export default {
   },
 
   mounted() {
-    this.$refs.uploadServer.$el.querySelector('.el-upload__input').disabled = true
+    // 整页 el-upload 只承接拖拽上传，点击页面任意位置都不应唤起文件选择框。
+    // Element Plus 会把 disabled 响应式绑定到 input 上，switchIndex 一变就覆盖手动设置的 disabled，
+    // 所以改为拦截 input 的 click 默认行为
+    this.$refs.uploadServer.$el
+      .querySelector('.el-upload__input')
+      .addEventListener('click', (e) => e.preventDefault())
     this.$nextTick(() => {
       let height = document.documentElement.clientHeight - 290
       this.pageLimit = Math.floor(height / 58) // 假设每行高度为 50px
@@ -232,7 +239,7 @@ export default {
     // 获取上传参数
     this.getUploadParams()
   },
-  beforeDestroy() {
+  beforeUnmount() {
     document.removeEventListener('dragenter', this.handleDragEnter)
     document.removeEventListener('dragleave', this.handleDrop)
   },
@@ -285,6 +292,7 @@ export default {
           } else {
             // 云储存上传
             uploader(file, 0, {
+              showTips: !onlyFunc,
               uplaodRes: this.uploadRes,
               fid: this.pid == 0 ? this.spaceId : this.pid,
               url: SettingMer.https + `/cloud/file/${this.pid == 0 ? this.spaceId : this.pid}/save`,
@@ -326,7 +334,7 @@ export default {
 
     // 监听上传文件拖拽进入事件
     handleDragEnter(e) {
-      if (this.switchIndex == 6) {
+      if (this.switchIndex == 6 && this.isUploadDragEvent(e) && !this.isMoveDragging) {
         this.elemetnNode = e.target
         this.loading = true
       } else {
@@ -336,10 +344,28 @@ export default {
 
     // 监听上传文件放下事件
     handleDrop(e) {
+      if (this.isMoveDragging || this.isMoveDragEvent(e)) {
+        this.loading = false
+        e.preventDefault()
+        return false
+      }
       if (this.elemetnNode === e.target) {
         this.loading = false
       }
       e.preventDefault()
+    },
+    handleMoveDragStateChange(isDragging) {
+      this.isMoveDragging = isDragging
+      if (isDragging) {
+        this.loading = false
+        this.elemetnNode = ''
+      }
+    },
+    isMoveDragEvent(e) {
+      return Array.from((e && e.dataTransfer && e.dataTransfer.types) || []).includes('application/x-cloudfile-move')
+    },
+    isUploadDragEvent(e) {
+      return Array.from((e && e.dataTransfer && e.dataTransfer.types) || []).includes('Files')
     },
 
     getUploadParams() {
@@ -361,7 +387,7 @@ export default {
 
     // 点击item项
     openfile(item) {
-      this.filePreview(item, this.spaceId, 'cloud')
+      filePreview(item, { source: 'cloud', spaceId: this.spaceId })
     },
 
     // 分享文件
@@ -379,9 +405,9 @@ export default {
         url = item.file_url
       }
 
-      let realName = JSON.parse(localStorage.getItem('userInfo'))
+      let realName = getStorageJson('userInfo', {})
       const oInput = document.createElement('input')
-      let value = '【' + realName.name + '】分享给您【' + item.name + '】' + '请点击链接打开!' + url
+      let value = '【' + (realName.name || '') + '】分享给您【' + item.name + '】' + '请点击链接打开!' + url
 
       oInput.value = value
       document.body.appendChild(oInput)
@@ -516,6 +542,7 @@ export default {
 
     confirmData(data, item) {
       this.fileStyle.keyword = ''
+      this.fileStyle.type = 1
       if (item === 'recently') {
         // 最近访问
         this.switchIndex = 1
@@ -551,7 +578,7 @@ export default {
           this.entButton = true
           setTimeout(() => {
             this.$refs.spaceFile.where.pid = ''
-            this.$refs.spaceFile.breadcrumbArray = [{ name: this.$t('file.allfiles'), pid: '' }]
+            this.$refs.spaceFile.breadcrumbArray = [{ name: '全部文件', pid: '' }]
             this.$refs.spaceFile.checked = false
             this.$refs.spaceFile.menuIds = []
             this.$refs.spaceFile.where.page = 1
@@ -599,7 +626,7 @@ export default {
     handleScreen(command) {
       if (command == 5) {
         this.configMyFile = {
-          title: this.$t('file.newfolder'),
+          title: '新建文件夹',
           pid: this.pid,
           command: command,
           switch: this.switchIndex,
@@ -613,16 +640,16 @@ export default {
         var title = ''
         var type = ''
         if (command == 1) {
-          title = this.$t('file.newdocument')
+          title = '新建文档'
           type = 'word'
         } else if (command == 2) {
-          title = this.$t('file.newtable')
+          title = '新建表格'
           type = 'excel'
         } else if (command == 9) {
-          title = this.$t('file.newmindmap')
+          title = '新建思维导图'
           type = 'mindmap'
         } else {
-          title = this.$t('file.newslide')
+          title = '新建幻灯片'
           type = 'ppt'
         }
         this.configMyFile = {
@@ -670,8 +697,6 @@ export default {
     handleIsOK() {
       if (this.switchIndex === 6) {
         this.$refs.spaceFile.getTreeData(1)
-      } else {
-        this.$refs.myFile.getTreeData(1)
       }
     },
 
@@ -685,7 +710,7 @@ export default {
 
     allDelete(type) {
       if (this.ids.length <= 0) {
-        this.$message.error(this.$t('file.placeholder05'))
+        this.$message.error('请选择要删除的内容')
       } else {
         const uids = this.ids
         if (uids.length > 0 && uids[0] === 0) {
@@ -696,16 +721,16 @@ export default {
         } else if (type === 2) {
           if (this.entButton) {
             // 企业空间
-            this.$modalSure('彻底删除后,内容无法恢复,你确定要删除该内容吗').then(() => {
+            modalSure('彻底删除后,内容无法恢复,你确定要删除该内容吗').then(() => {
               this.getFolderEntAllDestroy(this.spaceId, { id: uids })
             })
           } else {
-            this.$modalSure('彻底删除后,内容无法恢复,你确定要删除该内容吗').then(() => {
+            modalSure('彻底删除后,内容无法恢复,你确定要删除该内容吗').then(() => {
               this.getFolderAllDestroy({ id: uids })
             })
           }
         } else if (type === 3) {
-          this.$modalSure('您确定要加入回收站').then(() => {
+          modalSure('您确定要加入回收站').then(() => {
             this.getFolderEntAllDelete(this.spaceId, { id: uids })
           })
         }
@@ -714,7 +739,7 @@ export default {
 
     allDestroy() {
       if (this.ids.length <= 0) {
-        this.$message.error(this.$t('file.placeholder06'))
+        this.$message.error('请选择要恢复的内容')
       } else {
         const uids = this.ids
         if (uids.length > 0 && uids[0] === 0) {
@@ -731,7 +756,7 @@ export default {
 
     allMove() {
       if (this.ids.length <= 0) {
-        this.$message.error(this.$t('file.placeholder07'))
+        this.$message.error('请选择要移动的内容')
       } else {
         const uids = this.ids
         if (uids.length > 0 && uids[0] === 0) {
@@ -795,9 +820,6 @@ export default {
   },
 
   watch: {
-    lang() {
-      this.setOptions()
-    },
     switchIndex: {
       handler(nVal, oVal) {
         if (nVal == 6 || nVal == 1) {
@@ -832,12 +854,17 @@ export default {
 <style lang="scss" scoped>
 .card-box {
   height: calc(100vh - 80px);
+  cursor: default;
+}
+.cloudfile-row {
+  height: calc(100vh - 80px);
+  background: linear-gradient(154deg, rgba(255, 255, 255, 0.23) 0%, #ffffff 100%);
 }
 .upload {
   display: inline-block;
 }
 
-/deep/.el-loading-spinner {
+:deep(.card-box > .el-loading-mask > .el-loading-spinner) {
   /* 图片替换为你自定义的即可 */
   background: url('../../../assets/images/loading-img.png') no-repeat;
 
@@ -847,8 +874,12 @@ export default {
   position: relative;
   top: 50%;
   left: 50%;
+
+  & > .circular {
+    display: none;
+  }
 }
-/deep/ .el-loading-text {
+:deep(.el-loading-text) {
   position: relative;
   top: 50%;
   left: 50%;
@@ -856,9 +887,6 @@ export default {
   font-weight: 400;
   font-size: 16px;
   color: #303133;
-}
-/deep/.el-loading-spinner .circular {
-  display: none;
 }
 
 .mt22 {
@@ -876,6 +904,13 @@ export default {
 }
 .cloudfile-right {
   padding: 0 20px;
+  cursor: default;
+
+  // Element Plus 的 el-row 是 flex 容器，文件列表会按内容收缩；恢复旧版块级布局以撑满宽度，
+  // 用 flow-root 代替旧版 clearfix 伪元素，避免表格 margin-top 向外折叠
+  > .el-row {
+    display: flow-root;
+  }
 
   .header-16 {
     display: flex;
@@ -919,7 +954,7 @@ export default {
       // text-align: right;
       flex-wrap: wrap;
 
-      /deep/ .el-dropdown-selfdefine {
+      :deep(.el-dropdown-selfdefine) {
         display: flex;
         align-items: center;
         i {
@@ -948,7 +983,7 @@ export default {
         list-style: none;
         margin-bottom: 0;
       }
-      /deep/ .el-dropdown-menu {
+      :deep(.el-dropdown-menu) {
         position: static;
         margin: 0;
       }
@@ -962,21 +997,25 @@ export default {
     }
   }
 }
-/deep/ .el-upload {
+:deep(.el-upload) {
   width: 100%;
   height: 100%;
   border: none;
   text-align: left;
+  cursor: default;
   // pointer-events: none;
 }
-/deep/ .el-upload .el-upload-dragger {
+:deep(.el-upload .el-upload-dragger) {
   width: 100%;
   height: 100%;
+  // Element Plus 的拖拽区默认带 40px 10px 内边距，旧版没有
+  padding: 0;
   border: none;
   text-align: left;
-  // pointer-events: none;
+  cursor: default;
+  background: transparent;
 }
-/deep/.el-pagination {
+:deep(.el-pagination) {
   padding-bottom: 0;
 }
 </style>

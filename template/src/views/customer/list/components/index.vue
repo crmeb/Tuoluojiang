@@ -3,10 +3,10 @@
   <div class="station">
     <el-drawer
       :title="formData.title"
-      :visible.sync="drawer"
+      v-model="drawer"
       :direction="direction"
       :modal="true"
-      :wrapperClosable="false"
+      :close-on-click-modal="false"
       :before-close="handleClose"
       :size="formData.width"
     >
@@ -14,18 +14,24 @@
         :form-info="fromInfo"
         :types="types"
         ref="oaForm"
+        :uid="uid"
         @handleClose="handleClose"
         @submitOk="submitOk"
         @addContinueOk="addContinueOk"
       ></oaForm>
     </el-drawer>
-
-    <add-contract ref="addContract" :form-data="contractFromData"></add-contract>
+    <!-- 添加商机 -->
+    <addForm ref="addForm" :form-data="formBoxConfig" :keyword="`odds`"></addForm>
   </div>
 </template>
 <script>
-import { chargeCreateApi, clientCustomerSaveApi, chargeEditApi, chargeEditSubmitApi } from '@/api/enterprise'
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { oddsCreateApi } from '@/api/client.ts'
+import { chargeCreateApi, chargeEditApi, chargeEditSubmitApi } from '@/api/enterprise.ts'
+import { clientCustomerSaveApi } from '@/api/client.ts'
 export default {
+  emits: ['isOkEdit'],
   name: 'Index',
   props: {
     formData: {
@@ -36,8 +42,9 @@ export default {
     }
   },
   components: {
-    oaForm: () => import('@/components/customer/oaForm'),
-    addContract: () => import('@/views/customer/contract/components/addContract')
+    addForm: defineAsyncComponent(() => import('@/views/customer/components/addForm')),
+    oaForm: defineAsyncComponent(() => import('@/components/customer/oaForm')),
+    addContract: defineAsyncComponent(() => import('@/views/customer/contract/components/addContract'))
   },
   data() {
     return {
@@ -47,6 +54,8 @@ export default {
       row: {},
       types: 0,
       force: 0,
+      uid: '',
+      formBoxConfig: {},
       contractFromData: {}
     }
   },
@@ -54,7 +63,7 @@ export default {
   methods: {
     // 新增客户表单
     getData() {
-      chargeCreateApi().then((res) => {
+      chargeCreateApi({ link_id: this.formData.linkId || 0 }).then((res) => {
         this.fromInfo = res.data
       })
     },
@@ -66,9 +75,10 @@ export default {
     handleClose() {
       this.fromInfo = []
       this.row = {}
+      this.uid = ''
       this.drawer = false
     },
-    // 提交并继续添加合同
+    // 提交并继续添加订单
     addContinueOk(data) {
       this.submitOk(data, 1)
     },
@@ -83,13 +93,24 @@ export default {
           .then((res) => {
             if (res.status == 200) {
               if (type == 1) {
-                this.contractFromData = {
-                  title: '添加合同',
-                  width: '570px',
-                  id: this.row.id
+                this.formBoxConfig = {
+                  title: '新增商机',
+                  width: '1000px',
+                  types: 'odds'
                 }
-                this.$refs.addContract.openBox()
-                this.$refs.oaForm.resetForm()
+                oddsCreateApi({eid: this.row.id}).then((result) => {
+                  result.data.forEach((item) => {
+                    item.data.forEach((el) => {
+                      if (el.key == 'eid') {
+                        el.value = this.row.id
+                      }
+                    })
+                  })
+                  setTimeout(() => {
+                    this.$refs.addForm.openBox(result.data)
+                    this.$refs.oaForm.resetForm()
+                  }, 300)
+                })
               } else {
                 this.drawer = false
                 this.$refs.oaForm.resetForm()
@@ -102,12 +123,11 @@ export default {
           })
           .catch((err) => {
             if (err.data.status == 2001) {
-              this.$modalSure(err.data.message).then(() => {
+              modalSure(err.data.message).then(() => {
                 this.force = 1
                 this.submitOk(data, type)
                 this.force = 0
               })
-
               this.force = 0
             }
             this.$refs.oaForm.saveLoading = false
@@ -115,17 +135,27 @@ export default {
           })
       } else {
         // 添加新客户
+
         clientCustomerSaveApi(data)
           .then((res) => {
             if (res.status == 200) {
               if (type == 1) {
-                this.contractFromData = {
-                  title: '添加合同',
-                  width: '570px',
-                  id: res.data.id
+                this.formBoxConfig = {
+                  title: '新增商机',
+                  width: '1000px',
+                  types: 'odds'
                 }
-                this.$refs.addContract.openBox()
-                this.$refs.oaForm.resetForm()
+                oddsCreateApi({eid: res.data.id}).then((result) => {
+                  result.data.forEach((item) => {
+                    item.data.forEach((el) => {
+                      if (el.key == 'eid') {
+                        el.value = res.data.id
+                      }
+                    })
+                  })
+                  this.$refs.addForm.openBox(result.data)
+                  this.$refs.oaForm.resetForm()
+                })
               } else {
                 this.drawer = false
                 this.$refs.oaForm.resetForm()
@@ -138,7 +168,7 @@ export default {
           })
           .catch((err) => {
             if (err.data.status == 2001) {
-              this.$modalSure(err.data.message).then(() => {
+              modalSure(err.data.message).then(() => {
                 this.force = 1
                 this.submitOk(data, type)
                 this.force = 0
@@ -146,7 +176,6 @@ export default {
 
               this.force = 0
             }
-
             this.$refs.oaForm.saveLoading = false
           })
       }
@@ -156,6 +185,7 @@ export default {
       this.types = type
       if (str === 'edit') {
         this.row = row
+        this.uid = row.uid
         this.getEditData(row.id)
       } else {
         this.getData()
@@ -167,10 +197,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.station /deep/.el-drawer__body {
+.station :deep(.el-drawer__body) {
   padding: 30px 24px 50px 24px;
 }
-/deep/ .el-form--inline .el-form-item {
+:deep(.el-form--inline .el-form-item) {
   display: flex;
 }
 
@@ -179,7 +209,7 @@ export default {
     height: auto;
   }
 }
-/deep/.el-tag.el-tag--info {
+:deep(.el-tag.el-tag--info) {
   border: none;
 }
 </style>

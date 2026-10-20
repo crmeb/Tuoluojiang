@@ -4,15 +4,15 @@
       <form-box ref="formBox" @confirmData="confirmData" />
       <div class="table-box">
         <div class="inTotal">共{{ total }} 条</div>
-        <el-table ref="table" :data="tableData">
+        <el-table ref="table" :data="tableData" :height="TABLE_HEIGHT">
           <el-table-column prop="title" label="消息标题" min-width="100" />
           <el-table-column prop="content" label="消息内容" min-width="240" />
           <el-table-column prop="cate_name" label="消息类型" min-width="100" />
           <el-table-column prop="verify" label="消息通知" min-width="100">
-            <template slot-scope="scope">
+            <template #default="scope">
               <el-switch
                 v-if="scope.row.is_subscribe === 2"
-                :value="1"
+                :model-value="1"
                 active-text="订阅"
                 inactive-text="取消"
                 :disabled="true"
@@ -46,14 +46,22 @@
 </template>
 
 <script>
-import { userNoticeSubscribeApi, userNoticeSubscribeShowApi } from '@/api/user'
+import { mapStores } from 'pinia'
+import { useAppStore } from '@/stores/app.ts'
+import { defineAsyncComponent } from 'vue'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { userNoticeSubscribeApi, userNoticeSubscribeShowApi } from '@/api/user.ts'
 export default {
   name: 'subscribe',
   components: {
-    formBox: () => import('./components/formBox')
+    formBox: defineAsyncComponent(() => import('./components/formBox'))
+  },
+  computed: {
+    ...mapStores(useAppStore)
   },
   data() {
     return {
+      TABLE_HEIGHT,
       tableData: [],
       messageData: {},
       where: {
@@ -69,7 +77,7 @@ export default {
     }
   },
   mounted() {
-    this.$store.commit('app/SET_PARENTCUR', 101)
+    this.appStore.setSidebarParentCur(101)
     this.getTableData()
   },
   methods: {
@@ -114,8 +122,5 @@ export default {
 <style lang="scss" scoped>
 .pt0 {
   padding-top: 0px !important;
-}
-.divBox {
-  margin-left: -145px;
 }
 </style>

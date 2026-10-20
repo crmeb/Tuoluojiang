@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of PHPPresentation - A pure PHP library for reading and writing
  * presentations documents.
@@ -10,32 +11,34 @@
  * file that was distributed with this source code. For the full list of
  * contributors, visit https://github.com/PHPOffice/PHPPresentation/contributors.
  *
- * @link        https://github.com/PHPOffice/PHPPresentation
- * @copyright   2009-2015 PHPPresentation contributors
+ * @see        https://github.com/PHPOffice/PHPPresentation
+ *
  * @license     http://www.gnu.org/licenses/lgpl.txt LGPL version 3
  */
 
+declare(strict_types=1);
+
 namespace PhpOffice\PhpPresentation\Reader;
 
+use PhpOffice\PhpPresentation\PhpPresentation;
+
 /**
- * Reader interface
+ * Reader interface.
  */
 interface ReaderInterface
 {
     /**
-     * Can the current \PhpOffice\PhpPresentation\Reader\ReaderInterface read the file?
-     *
-     * @param  string  $pFilename
-     * @return boolean
+     * Skip loading of images.
      */
-    public function canRead($pFilename);
+    public const SKIP_IMAGES = 1;
 
     /**
-     * Loads PhpPresentation from file
-     *
-     * @param  string    $pFilename
-     * @return \PhpOffice\PhpPresentation\PhpPresentation
-     * @throws \Exception
+     * Can the current \PhpOffice\PhpPresentation\Reader\ReaderInterface read the file?
      */
-    public function load($pFilename);
+    public function canRead(string $pFilename): bool;
+
+    /**
+     * Loads PhpPresentation from file.
+     */
+    public function load(string $pFilename, int $flags = 0): PhpPresentation;
 }

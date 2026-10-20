@@ -1,6 +1,6 @@
 <template>
   <div class="divBox">
-    <div class="main employees-card-bottom">
+    <div class="main box-height">
       <div class="title">战略规划</div>
       <div v-html="content" @click="replayImgShow($event)"></div>
     </div>
@@ -9,7 +9,7 @@
 </template>
 <script>
 import imageViewer from '@/components/common/imageViewer'
-import { getEmployeeTrainApi } from '@/api/config.js'
+import { getEmployeeTrainApi } from '@/api/config.ts'
 export default {
   name: '',
   components: {
@@ -42,6 +42,10 @@ export default {
 }
 </script>
 <style scoped lang="scss">
+.divBox {
+  height: 100%;
+  border-radius: 8px;
+}
 .title {
   text-align: center;
   font-size: 30px;
@@ -56,20 +60,20 @@ export default {
   padding: 40px 86px;
   max-width: 1000px;
   margin: 0 auto;
-  /deep/ p img {
+  :deep(p img) {
     max-width: 800px;
   }
-  /deep/ img {
+  :deep(img) {
     cursor: pointer;
   }
-  /deep/ table {
+  :deep(table) {
     border: 1px solid #ccc;
   }
 
-  /deep/ table th {
+  :deep(table th) {
     border: 1px solid #ccc;
   }
-  /deep/ table td {
+  :deep(table td) {
     padding: 10px 5px;
     border: 1px solid #ccc;
   }

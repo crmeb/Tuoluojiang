@@ -55,7 +55,7 @@
         >
       </template>
     </div> -->
-    <div class="text-ellipsis" v-if="column.type == 'cascader_radio'"">
+    <div class="text-ellipsis" v-if="column.type == 'cascader_radio'">
       <span
           class="ml-a-span"
           v-for="(field, inx) of row[column.prop]"
@@ -80,7 +80,7 @@
           :zoom-rate="1.2"
           :max-scale="7"
           :min-scale="0.2"
-          :preview-src-list="[formatUrl(previewUrl)]"
+          :preview-src-list="[formatUrl(previewUrl)]" preview-teleported
           :initial-index="4"
           fit="cover"
         />
@@ -91,7 +91,9 @@
 
 <script>
 import zbDialog from '@/components/zbDialog'
+import { BASE_API } from '@/config/env.ts'
 export default {
+  emits: ['openDetailDialog'],
   components: {
     zbDialog
   },
@@ -115,10 +117,10 @@ export default {
   },
   methods: {
     formatUrl(url) {
-      return process.env.VUE_APP_BASE_API + url
+      return BASE_API + url
     },
     downField(url, fileName) {
-      window.open(process.env.VUE_APP_BASE_API + url + '?fileName=' + fileName)
+      window.open(BASE_API + url + '?fileName=' + fileName)
     },
     openDetailDialog(row) {
       this.$emit('openDetailDialog', row)

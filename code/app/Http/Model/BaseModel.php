@@ -15,9 +15,10 @@ declare(strict_types=1);
 
 namespace App\Http\Model;
 
-use crmeb\interfaces\TimeDataInterface;
-use crmeb\traits\model\TimeDataTrait;
+use Tuoluojiang\Open\interfaces\TimeDataInterface;
+use Tuoluojiang\Open\traits\model\TimeDataTrait;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 /**
  *  Class BaseModel.
@@ -45,6 +46,59 @@ abstract class BaseModel extends Model implements TimeDataInterface
         'created_at' => 'datetime:Y-m-d H:i:s',
         'updated_at' => 'datetime:Y-m-d H:i:s',
     ];
+
+    /**
+     * 分批执行 whereIn 查询.
+     * @param string $column 字段名
+     * @param array $values 待查询的大数组
+     * @param int $batchSize 每批次大小（默认 2000，可根据数据库调整）
+     * @param null|\Closure $callback 自定义查询逻辑（可选）
+     * @return Collection|\Generator
+     */
+    public function whereInBatch($baseQuery,string $column, array $values, int $batchSize = 1000, ?\Closure $callback = null)
+    {
+        if (empty($values)) {
+            return $baseQuery;
+        }
+        $uniqueValues = array_unique($values);
+        $batches      = array_chunk($uniqueValues, $batchSize);
+        $baseQuery->where(function ($query)use ($column, $baseQuery,$batches){
+            foreach ($batches as $batch) {
+                $query->orWhereIn($column, $batch);
+            }
+        });
+        return $baseQuery;
+    }
+
+    /**
+     * 分批执行 whereNotIn 查询.
+     * @param string $column 字段名
+     * @param array $values 待查询的大数组
+     * @param int $batchSize 每批次大小（默认 2000，可根据数据库调整）
+     * @param null|\Closure $callback 自定义查询逻辑（可选）
+     * @return Collection|\Generator
+     */
+    public function whereNotInBatch(string $column, array $values, int $batchSize = 1000, ?\Closure $callback = null)
+    {
+        if (empty($values)) {
+            return collect();
+        }
+        $uniqueValues = array_unique($values);
+        $batches      = array_chunk($uniqueValues, $batchSize);
+        foreach ($batches as $batch) {
+            $query = $this->newQuery()->whereNotIn($column, $batch);
+            if ($callback instanceof \Closure) {
+                $query = $callback($query);
+            } else {
+                $query->select($this->getKeyName());
+            }
+            $cursor = $query->cursor();
+            foreach ($cursor as $item) {
+                yield $item;
+            }
+            unset($cursor, $query, $batch);
+        }
+    }
 
     /**
      * 设置时间.

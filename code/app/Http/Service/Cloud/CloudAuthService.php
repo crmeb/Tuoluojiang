@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -93,6 +93,48 @@ class CloudAuthService extends BaseService
             }
         }
         return $arr ? (is_array($fileId) ? $arr : $arr[0]) : $arr;
+    }
+
+    /**
+     * 校验文件权限.
+     * @param int $folderId 文件ID
+     * @param int $uid 用户ID
+     * @param string $auth 权限类型(create,read,update,download,delete)
+     * @param bool $recursive 是否递归查询父级权限
+     * @return bool 权限检查结果
+     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
+     */
+    public function checkFilePermission(int $folderId, int $uid, string $auth = 'read', bool $recursive = true): bool
+    {
+        // 获取文件路径信息
+        $fileService = app(CloudFileService::class);
+        $fileInfo    = $fileService->get($folderId, ['id', 'pid', 'path']);
+        // 文件不存在时默认返回false（无权限）
+        if (! $fileInfo) {
+            return false;
+        }
+        // 构建需要查询的所有ID集合
+        $queryIds = collect([$folderId]);
+        if ($recursive) {
+            // 解析路径获取所有父级ID并合并
+            $pathIds  = collect(explode('/', trim($fileInfo['path'], '/')))->filter(fn ($id) => is_numeric($id) && $id > 0)->values();
+            $queryIds = $queryIds->merge($pathIds);
+        }
+        // 一次性查询所有相关的权限记录
+        $permissionMap = collect($this->dao->select(['user_id' => $uid, 'folder_id' => $queryIds->all()], ['folder_id', 'create', 'read', 'update', 'download', 'delete'])?->toArray())->keyBy('folder_id');
+        // 按照检查顺序构建ID序列
+        $checkOrder = collect([$folderId]);
+        if ($recursive) {
+            $pathIds    = collect(explode('/', trim($fileInfo['path'], '/')))->filter(fn ($id) => is_numeric($id) && $id > 0)->reverse()->values();
+            $checkOrder = $checkOrder->merge($pathIds);
+        }
+        // 使用Collection的first方法查找第一个有权限的记录
+        $result = $checkOrder->first(fn ($checkId) => $permissionMap->has($checkId));
+        // 返回权限检查结果：找到权限记录则返回对应权限值，否则返回false
+        return $result !== null && $permissionMap->get($result)[$auth];
     }
 
     /**

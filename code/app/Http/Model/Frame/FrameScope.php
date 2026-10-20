@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -36,10 +36,19 @@ class FrameScope extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'         => 'integer',
+        'uid'        => 'integer',
+        'entid'      => 'integer',
+        'link_id'    => 'integer',
+        'types'      => 'integer',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+        'deleted_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * 关联类型.
-     * @param mixed $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeTypes($query, $value)
@@ -51,8 +60,6 @@ class FrameScope extends BaseModel
 
     /**
      * 企业ID.
-     * @param mixed $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeEntid($query, $value)
@@ -64,8 +71,6 @@ class FrameScope extends BaseModel
 
     /**
      * 用户ID.
-     * @param mixed $query
-     * @param mixed $value
      * @return mixed
      */
     public function scopeUid($query, $value)

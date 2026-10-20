@@ -15,8 +15,8 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
-use crmeb\services\HttpService;
-use crmeb\utils\MessageType;
+use Tuoluojiang\Open\services\HttpService;
+use Tuoluojiang\Open\utils\MessageType;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -29,6 +29,12 @@ class WebhookJob implements ShouldQueue
     use InteractsWithQueue;
     use Queueable;
     use SerializesModels;
+
+    public $tries = 1;
+
+    public $timeout = 80;
+
+    public $failOnTimeout = true;
 
     /**
      * Create a new job instance.
@@ -96,7 +102,7 @@ class WebhookJob implements ShouldQueue
                 break;
         }
         if ($data) {
-            (new HttpService())->requests(url: $this->botUrl, method: 'POST', data: json_encode($data), header: ['Content-Type:application/json'], code: true);
+            app(HttpService::class)->setHeader(['Content-Type:application/json'])->requests(url: $this->botUrl, method: 'POST', data: json_encode($data), header: true, code: true);
         }
     }
 }

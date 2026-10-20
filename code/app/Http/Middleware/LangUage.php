@@ -15,8 +15,8 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use crmeb\interfaces\ApiMiddlewareInterface;
-use crmeb\traits\MiddlewareTrait;
+use Tuoluojiang\Open\interfaces\ApiMiddlewareInterface;
+use Tuoluojiang\Open\traits\MiddlewareTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Tymon\JWTAuth\Http\Middleware\BaseMiddleware;

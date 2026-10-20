@@ -7,79 +7,83 @@
     </div>
     <el-steps :active="indexCheck" direction="vertical">
       <el-step v-for="(item, index) in examineList" :key="index">
-        <div slot="title" class="caption" @click="itemIsShow(item)">
-          {{ item.title }}
-          <el-tag
-            v-if="item.types == 1 && item.settype != 5 && item.examine_mode > 0 && item.users.length > 1"
-            effect="plain"
-            size="mini"
-          >
-            {{ getExamineText(item.examine_mode, item) }}
-          </el-tag>
-          <i :class="!hiddenKey.includes(item.uniqued) ? 'el-icon-caret-top' : 'el-icon-caret-bottom'"></i>
-        </div>
-        <div slot="icon" class="liuchen">
-          <i :class="item.types == 1 ? 'el-icon-s-check' : 'el-icon-s-promotion'"></i>
-        </div>
-        <div slot="description">
-          <div v-show="!hiddenKey.includes(item.uniqued)">
-            <div v-for="(items, indexs) in item.users" :key="indexs" class="manList">
-              <div class="flex-between">
-                <div class="manList-avatar">
-                  <div class="manList-icon flex">
-                    <span v-if="items.is_transfer > 1" class="iconfont iconzhuanshenzhixiang"></span>
-                    <img
-                      v-if="judge(items)"
-                      :src="items.card ? items.card.avatar : items.info.card.avatar"
-                      class="mb10"
-                    />
+        <template #title>
+          <div class="caption" @click="itemIsShow(item)">
+            {{ item.title }}
+            <el-tag
+              v-if="item.types == 1 && item.settype != 5 && item.examine_mode > 0 && item.users.length > 1"
+              effect="plain"
+            >
+              {{ getExamineText(item.examine_mode, item) }}
+            </el-tag>
+            <i :class="!hiddenKey.includes(item.uniqued) ? 'el-icon-caret-top' : 'el-icon-caret-bottom'"></i>
+          </div>
+        </template>
+        <template #icon>
+          <div class="liuchen">
+            <i :class="item.types == 1 ? 'el-icon-s-check' : 'el-icon-s-promotion'"></i>
+          </div>
+        </template>
+        <template #description>
+          <div>
+            <div v-show="!hiddenKey.includes(item.uniqued)">
+              <div v-for="(items, indexs) in item.users" :key="indexs" class="manList">
+                <div class="flex-between">
+                  <div class="manList-avatar">
+                    <div class="manList-icon flex">
+                      <span v-if="items.is_transfer > 1" class="iconfont iconzhuanshenzhixiang"></span>
+                      <img
+                        v-default-avatar="items.card || (items.info && items.info.card)"
+                        :src="getAvatarSrc(items.card || (items.info && items.info.card))"
+                        class="mb10"
+                      />
 
-                    <img v-else src="../../../../assets/images/portrait.png" />
+                      <!-- 通过 -->
+                      <div
+                        v-if="items.status === 1 && item.types !== 2 && items.is_sign != 1"
+                        class="acea-icon acea-success"
+                      >
+                        <i class="el-icon-check jingshi"></i>
+                      </div>
 
-                    <!-- 通过 -->
-                    <div
-                      v-if="items.status === 1 && item.types !== 2 && items.is_sign != 1"
-                      class="acea-icon acea-success"
-                    >
-                      <i class="el-icon-check jingshi"></i>
+                      <!-- 加签 -->
+                      <div v-if="items.is_sign == 1" class="acea-icon acea-sign">
+                        <i class="iconfont iconjiaqiantubiao jingshi"></i>
+                      </div>
+
+                      <!-- 转审 -->
+                      <div v-if="items.is_transfer !== 2 && items.is_transfer" class="acea-icon acea-trans">
+                        <i class="iconfont iconzhuanshentubiao jingshi"></i>
+                      </div>
+
+                      <div v-if="items.status === 2 && item.types !== 2" class="acea-icon el-icon-warning"></div>
                     </div>
-
-                    <!-- 加签 -->
-                    <div v-if="items.is_sign == 1" class="acea-icon acea-sign">
-                      <i class="iconfont iconjiaqiantubiao jingshi"></i>
-                    </div>
-
-                    <!-- 转审 -->
-                    <div v-if="items.is_transfer !== 2 && items.is_transfer" class="acea-icon acea-trans">
-                      <i class="iconfont iconzhuanshentubiao jingshi"></i>
-                    </div>
-
-                    <div v-if="items.status === 2 && item.types !== 2" class="acea-icon el-icon-warning"></div>
+                    <span class="card-name">{{ items.card ? items.card.name : items.info.card.name }}</span>
                   </div>
-                  <span class="card-name">{{ items.card ? items.card.name : items.info.card.name }}</span>
+
+                  <div class="name">
+                    <span> {{ getDetailText(item.types, items.status, items) }} · </span>
+                    <span v-if="items.status > 0 || items.is_transfer === 3 || items.is_transfer === 1">
+                      {{ dayjs(items.updated_at).format('YYYY/M/DD HH:mm') }}
+                    </span>
+                  </div>
                 </div>
 
-                <div class="name">
-                  <span> {{ getDetailText(item.types, items.status, items) }} · </span>
-                  <span v-if="items.status > 0 || items.is_transfer === 3 || items.is_transfer === 1">
-                    {{ $moment(items.updated_at).format('YYYY/M/DD HH:mm') }}
-                  </span>
+                <div v-if="items.content" class="sign-bag flex">
+                  <span class="name">{{ getOpinionTitle(items) }}：</span>{{ items.content }}
                 </div>
-              </div>
-
-              <div v-if="items.content" class="sign-bag flex">
-                <span class="name">{{ items.is_transfer !== 2 && items.is_transfer ? '转审' : ' 加签' }}意见：</span
-                >{{ items.content }}
               </div>
             </div>
           </div>
-        </div>
+        </template>
       </el-step>
     </el-steps>
   </div>
 </template>
 
 <script>
+import dayjs from 'dayjs'
+import { getAvatarSrc } from '@/utils/avatar.ts'
 export default {
   name: 'DetailProcess',
   props: {
@@ -89,6 +93,9 @@ export default {
         return {}
       }
     }
+  },
+  computed: {
+    dayjs: () => dayjs
   },
   data() {
     return {
@@ -112,13 +119,12 @@ export default {
         this.examineList = nVal.users
         this.getChecked(nVal)
       },
+      deep: true,
       immediate: true
     },
-    lang() {
-      this.setOptions()
-    }
   },
   methods: {
+    getAvatarSrc,
     getChecked(list) {
       if (list.users && list.users.length > 0) {
         this.indexCheck = list.users.findIndex((v) => v.uniqued === list.node_id)
@@ -144,9 +150,9 @@ export default {
 
     // 判断头像是否能显示
     judge(row) {
-      const card = row?.card;
+      const card = row?.card
       // 如果 card 存在且其 avatar 属性包含 'http' 或 'https'，则返回 true，否则返回 false
-      return card && (card.avatar?.includes('https') || card.avatar?.includes('http'));
+      return card && (card.avatar?.includes('https') || card.avatar?.includes('http'))
     },
     // 选择部门关闭
     departmentClose() {
@@ -171,6 +177,15 @@ export default {
         str = '已转审 '
       }
       return str
+    },
+    getOpinionTitle(item) {
+      if (item.is_transfer && item.is_transfer !== 2) {
+        return '转审意见'
+      }
+      if (item.is_sign == 1) {
+        return '加签意见'
+      }
+      return '审批意见'
     },
     itemIsShow(row) {
       var keys = this.hiddenKey.indexOf(row.uniqued)
@@ -306,35 +321,35 @@ export default {
 
 .stepsBox {
   margin-top: 30px;
-  /deep/.el-step__head.is-finish > .el-step__icon {
+  :deep(.el-step__head.is-finish > .el-step__icon) {
     background-color: #1890ff;
     color: #fff;
     border-color: #1890ff;
   }
-  /deep/.el-step__line > .el-step__line-inner {
+  :deep(.el-step__line > .el-step__line-inner) {
     border-width: 0 !important;
   }
-  /deep/.el-step__head.is-finish > .el-step__line {
+  :deep(.el-step__head.is-finish > .el-step__line) {
     background-color: #1890ff;
     color: #fff;
     border-color: #1890ff;
     width: 1px;
     left: 12px;
   }
-  /deep/.el-step.is-vertical .el-step__line {
+  :deep(.el-step.is-vertical .el-step__line) {
     width: 1px;
   }
-  /deep/.el-step__head.is-process > .el-step__icon {
+  :deep(.el-step__head.is-process > .el-step__icon) {
     background-color: #1890ff;
     color: #fff;
     border-color: #1890ff;
   }
-  /deep/.el-step__description {
+  :deep(.el-step__description) {
     margin-top: 17px;
     margin-bottom: 30px;
     padding-right: 0;
   }
-  /deep/.el-step__title {
+  :deep(.el-step__title) {
     color: #000;
     font-size: 14px;
     font-weight: 600;
@@ -345,8 +360,12 @@ export default {
     color: #999999;
     font-weight: normal;
   }
-  /deep/.el-step__icon {
+  // 自定义 icon 插槽在 EP 下是 is-icon（无圆框），按线上 Element UI 的 is-text 补回
+  :deep(.el-step__icon) {
     background: #ccc;
+    border-radius: 50%;
+    border: 2px solid;
+    border-color: inherit;
   }
   .liuchen {
     i {

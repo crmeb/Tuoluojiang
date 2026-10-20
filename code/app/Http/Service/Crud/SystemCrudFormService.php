@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,7 +17,10 @@ namespace App\Http\Service\Crud;
 
 use App\Constants\Crud\CrudFormEnum;
 use App\Http\Dao\Crud\SystemCrudFormDao;
+use App\Http\Model\Crud\SystemCrud;
+use App\Http\Model\Crud\SystemCrudField;
 use App\Http\Service\BaseService;
+use Illuminate\Support\Facades\Log;
 
 /**
  * 实体表单
@@ -28,6 +31,32 @@ use App\Http\Service\BaseService;
  */
 class SystemCrudFormService extends BaseService
 {
+    /**
+     * 表单类型转换.
+     * @var string[][]
+     */
+    public $formType = [
+        CrudFormEnum::FORM_INPUT            => ['icon' => 'text-field'],
+        CrudFormEnum::FORM_INPUT_SELECT     => ['icon' => 'reference-field'],
+        CrudFormEnum::FORM_SELECT           => ['icon' => 'select-field'],
+        CrudFormEnum::FORM_INPUT_PERCENTAGE => ['icon' => 'slider-field'],
+        CrudFormEnum::FORM_INPUT_PRICE      => ['icon' => 'number-field'],
+        CrudFormEnum::FORM_INPUT_FLOAT      => ['icon' => 'number-field'],
+        CrudFormEnum::FORM_INPUT_NUMBER     => ['icon' => 'number-field'],
+        CrudFormEnum::FORM_CHECKBOX         => ['icon' => 'checkbox-field'],
+        CrudFormEnum::FORM_TAG              => ['icon' => 'form-label-field'],
+        CrudFormEnum::FORM_CASCADER         => ['icon' => 'cascader-field'],
+        CrudFormEnum::FORM_DATE_PICKER      => ['icon' => 'date-field'],
+        CrudFormEnum::FORM_DATE_TIME_PICKER => ['icon' => 'date-range-field'],
+        CrudFormEnum::FORM_IMAGE            => ['icon' => 'picture-upload-field'],
+        CrudFormEnum::FORM_FILE             => ['icon' => 'file-upload-field'],
+        CrudFormEnum::FORM_CASCADER_RADIO   => ['icon' => 'cascader-field'],
+        CrudFormEnum::FORM_CASCADER_ADDRESS => ['icon' => 'cascader-field'],
+        CrudFormEnum::FORM_SWITCH           => ['icon' => 'switch-field'],
+        CrudFormEnum::FORM_TEXTAREA         => ['icon' => 'textarea-field'],
+        CrudFormEnum::FORM_RADIO            => ['icon' => 'radio-field'],
+    ];
+
     /**
      * @var array
      */
@@ -98,6 +127,7 @@ class SystemCrudFormService extends BaseService
         'multiple'          => false,
         'multipleLimit'     => 0,
         'optionItems'       => [],
+        'customizeItems'    => [],
     ];
 
     /**
@@ -105,10 +135,11 @@ class SystemCrudFormService extends BaseService
      * @var array
      */
     protected $checkboxOptions = [
-        'displayStyle' => 'inline',
-        'buttonStyle'  => false,
-        'border'       => false,
-        'optionItems'  => [],
+        'displayStyle'   => 'inline',
+        'buttonStyle'    => false,
+        'border'         => false,
+        'optionItems'    => [],
+        'customizeItems' => [],
     ];
 
     /**
@@ -207,6 +238,7 @@ class SystemCrudFormService extends BaseService
         'showAllLevels'   => true,
         'disableMultiple' => false,
         'optionItems'     => [],
+        'customizeItems'  => [],
     ];
 
     /**
@@ -220,6 +252,7 @@ class SystemCrudFormService extends BaseService
         'checkStrictly'   => false,
         'showAllLevels'   => true,
         'optionItems'     => [],
+        'customizeItems'  => [],
     ];
 
     /**
@@ -250,32 +283,6 @@ class SystemCrudFormService extends BaseService
      */
     protected $textareaOptions = [
         'rows' => 3,
-    ];
-
-    /**
-     * 表单类型转换.
-     * @var string[][]
-     */
-    protected $formType = [
-        CrudFormEnum::FORM_INPUT            => ['icon' => 'text-field'],
-        CrudFormEnum::FORM_INPUT_SELECT     => ['icon' => 'reference-field'],
-        CrudFormEnum::FORM_SELECT           => ['icon' => 'select-field'],
-        CrudFormEnum::FORM_INPUT_PERCENTAGE => ['icon' => 'slider-field'],
-        CrudFormEnum::FORM_INPUT_PRICE      => ['icon' => 'number-field'],
-        CrudFormEnum::FORM_INPUT_FLOAT      => ['icon' => 'number-field'],
-        CrudFormEnum::FORM_INPUT_NUMBER     => ['icon' => 'number-field'],
-        CrudFormEnum::FORM_CHECKBOX         => ['icon' => 'checkbox-field'],
-        CrudFormEnum::FORM_TAG              => ['icon' => 'form-label-field'],
-        CrudFormEnum::FORM_CASCADER         => ['icon' => 'cascader-field'],
-        CrudFormEnum::FORM_DATE_PICKER      => ['icon' => 'date-field'],
-        CrudFormEnum::FORM_DATE_TIME_PICKER => ['icon' => 'date-range-field'],
-        CrudFormEnum::FORM_IMAGE            => ['icon' => 'picture-upload-field'],
-        CrudFormEnum::FORM_FILE             => ['icon' => 'file-upload-field'],
-        CrudFormEnum::FORM_CASCADER_RADIO   => ['icon' => 'cascader-field'],
-        CrudFormEnum::FORM_CASCADER_ADDRESS => ['icon' => 'cascader-field'],
-        CrudFormEnum::FORM_SWITCH           => ['icon' => 'switch-field'],
-        CrudFormEnum::FORM_TEXTAREA         => ['icon' => 'textarea-field'],
-        CrudFormEnum::FORM_RADIO            => ['icon' => 'radio-field'],
     ];
 
     /**
@@ -340,10 +347,12 @@ class SystemCrudFormService extends BaseService
                 if ($item['form_value'] === CrudFormEnum::FORM_CHECKBOX) {
                     $formConfig['options']['defaultValue'] = [];
                 }
-                $formConfig['options']['optionItems'] = $item['data_dict'] ?? [];
+                $formConfig['options']['optionItems']    = $item['data_dict'] ?? [];
+                $formConfig['options']['customizeItems'] = $item['data_dict'] ?? [];
                 break;
             case CrudFormEnum::FORM_TAG:
-                $formConfig['options']['optionItems'] = $item['data_dict'] ?? [];
+                $formConfig['options']['optionItems']    = $item['data_dict'] ?? [];
+                $formConfig['options']['customizeItems'] = $item['data_dict'] ?? [];
                 break;
             case CrudFormEnum::FORM_CASCADER_RADIO:
                 $formConfig['options'] = array_merge($formConfig['options'], $this->cascaderRadioOptions);
@@ -364,6 +373,7 @@ class SystemCrudFormService extends BaseService
                     $formConfig['options']['format']      = 'yyyy-MM-dd HH:mm:ss';
                     $formConfig['options']['valueFormat'] = 'yyyy-MM-dd HH:mm:ss';
                 }
+                $formConfig['options']['defaultType'] = 1;
                 break;
             case CrudFormEnum::FORM_IMAGE:
                 $formConfig['options']                 = array_merge($formConfig['options'], $this->imageOptions);
@@ -385,10 +395,13 @@ class SystemCrudFormService extends BaseService
         $formConfig['options']['dataDictId']      = $item['data_dict_id'];
         $formConfig['options']['fieldId']         = $item['id'];
         $formConfig['options']['formFieldUniqid'] = $item['form_field_uniqid'];
-        $formConfig['options']['minLength']       = (int) ($item['options']['minlength'] ?? 300);
+        $formConfig['options']['minLength']       = (int) ($item['options']['minlength'] ?? 0);
         $formConfig['options']['maxLength']       = (int) ($item['options']['maxlength'] ?? 300);
         $formConfig['options']['name']            = str_replace('.', '@', $item['form_field_uniqid']);
         $formConfig['options']['label']           = $item['field_name'];
+        $formConfig['options']['data_type']       = $item['data_type'];
+        $formConfig['options']['customizeItems']  = $item['customize_items'] ?? [];
+        $formConfig['options']['crud_id']         = $item['crud_id'] ?? 0;
         $formConfig['name']                       = $item['field_name'];
         $formConfig['hide']                       = (bool) $item['is_form'];
         $formConfig['id']                         = $item['id'];
@@ -445,6 +458,7 @@ class SystemCrudFormService extends BaseService
                     }
                 }
             } elseif (isset($option['widgetList'])) {
+                $tableDetails = $option['type'] === CrudFormEnum::FORM_TABLE;
                 foreach ($option['widgetList'] as $ii => $itemWidget) {
                     if (isset($itemWidget['cols'])) {
                         $options[$index]['widgetList'][$ii]['cols'] = $this->getFormOptions($itemWidget['cols'], $fieldConfig);
@@ -484,7 +498,7 @@ class SystemCrudFormService extends BaseService
         $item['crud_name']             = $config['crud']['table_name_en'] ?? '';
         $item['data_id']               = $config['data_id'] ?? 0;
         $item['options']['isCityShow'] = '';
-        $item['options']['required']   = ! $config['is_default_value_not_null'] ?: $item['options']['required'];
+        $item['options']['required']   = ! $config['is_default_value_not_null'] ?: $item['options']['required'] ?? false;
 
         $formValue = str_replace('-', '_', $item['type']);
         switch ($formValue) {
@@ -512,7 +526,8 @@ class SystemCrudFormService extends BaseService
             case CrudFormEnum::FORM_CASCADER:
             case CrudFormEnum::FORM_SELECT:
                 if (isset($config['data_dict'])) {
-                    $item['options']['optionItems'] = $config['data_dict'];
+                    $item['options']['optionItems']    = $config['data_dict'];
+                    $item['options']['customizeItems'] = $config['data_dict'];
                 }
                 break;
             case CrudFormEnum::FORM_INPUT_NUMBER:
@@ -584,5 +599,164 @@ class SystemCrudFormService extends BaseService
             }
         }
         return $fields;
+    }
+
+    public function getFormOptionItems(array $options)
+    {
+        $fields = [];
+
+        foreach ($options as $option) {
+            if (isset($option['cols'])) {
+                foreach ($option['cols'] as $col) {
+                    if (isset($col['widgetList'])) {
+                        foreach ($col['widgetList'] as $item) {
+                            if (isset($item['cols'])) {
+                                $fields = array_merge($fields, $this->getFormFields($item['cols']));
+                            } else {
+                                $fields[] = $item;
+                            }
+                        }
+                    }
+                }
+            } elseif (isset($option['tabs'])) {
+                foreach ($option['tabs'] as $tab) {
+                    if (isset($tab['widgetList'])) {
+                        foreach ($tab['widgetList'] as $widget) {
+                            if (isset($widget['cols'])) {
+                                $fields = array_merge($fields, $this->getFormFields($widget['cols']));
+                            } else {
+                                $fields[] = $widget;
+                            }
+                        }
+                    }
+                }
+            } elseif (isset($option['widgetList'])) {
+                foreach ($option['widgetList'] as $itemWidget) {
+                    if (isset($itemWidget['cols'])) {
+                        $fields = array_merge($fields, $this->getFormFields($itemWidget['cols']));
+                    } else {
+                        $fields[] = $itemWidget;
+                    }
+                }
+            } else {
+                $fields[] = $option;
+            }
+        }
+        return $fields;
+    }
+
+    /**
+     * 获取表单中的数据字段.
+     * @return array
+     */
+    public function getFormOptionList(array $options)
+    {
+        $fields = [];
+
+        foreach ($options as $option) {
+            if (isset($option['cols'])) {
+                foreach ($option['cols'] as $col) {
+                    if (isset($col['widgetList'])) {
+                        foreach ($col['widgetList'] as $item) {
+                            if (isset($item['cols'])) {
+                                $fields = array_merge($fields, $this->getFormOptionItems($item['cols']));
+                            } else {
+                                $fields[] = $item;
+                            }
+                        }
+                    }
+                }
+            } elseif (isset($option['tabs'])) {
+                foreach ($option['tabs'] as $tab) {
+                    if (isset($tab['widgetList'])) {
+                        foreach ($tab['widgetList'] as $widget) {
+                            if (isset($widget['cols'])) {
+                                $fields = array_merge($fields, $this->getFormOptionItems($widget['cols']));
+                            } else {
+                                $fields[] = $widget;
+                            }
+                        }
+                    }
+                }
+            } elseif (isset($option['widgetList'])) {
+                $tableDetails = $option['type'] === CrudFormEnum::FORM_TABLE;
+                foreach ($option['widgetList'] as $itemWidget) {
+                    if (isset($itemWidget['cols'])) {
+                        $fields = array_merge($fields, $this->getFormOptionItems($itemWidget['cols']));
+                    } else {
+                        $itemWidget['tableDetails'] = $tableDetails;
+                        $fields[]                   = $itemWidget;
+                    }
+                }
+            } else {
+                $fields[] = $option;
+            }
+        }
+        return $fields;
+    }
+
+    /**
+     * 获取列表表单.
+     * @return array|mixed
+     */
+    public function getListForm(SystemCrud $crud)
+    {
+        return $this->getList(['crud_id' => $crud->id]);
+    }
+
+    /**
+     * 生成默认表单数据.
+     */
+    public function saveDefaultValue(int $crudId, SystemCrudField $crudField, SystemCrud $crudInfo)
+    {
+        try {
+            $formInfo = $this->dao->get(['crud_id' => $crudId, 'is_index' => 1]);
+            if (! $formInfo) {
+                $formInfo = $this->dao->create([
+                    'crud_id'  => $crudId,
+                    'version'  => 1,
+                    'is_index' => 1,
+                ]);
+            }
+
+            $fieldForm = [];
+            $default   = json_decode(file_get_contents(resource_path('/crudform/default.json')), true);
+            $formValue = str_replace('_', '-', $crudField->form_value);
+            foreach ($default as $item) {
+                if ($item['type'] === $formValue) {
+                    $fieldForm = $item;
+                    break;
+                }
+            }
+            if (! $fieldForm) {
+                throw $this->exception('表单类型不存在');
+            }
+            $fieldForm['name']               = $crudField->field_name;
+            $fieldForm['options']['name']    = $crudField->field_name_en;
+            $fieldForm['options']['label']   = $crudField->field_name;
+            $fieldForm['options']['fieldId'] = $crudField->id;
+            $fieldForm['id']                 = str_replace('_', '', $crudField->form_value) . date('YmdHis');
+            $formInfo->options               = array_merge($formInfo->options, [$fieldForm]);
+
+            if (! $formInfo->global_options) {
+                $formInfo->global_options = json_decode(file_get_contents(resource_path('/crudform/global.json')), true);
+            }
+            if ($formInfo->fields) {
+                $formInfo->fields = array_merge($formInfo->fields, [$crudField->field_name_en]);
+            } else {
+                $formInfo->fields = [$crudField->field_name_en];
+            }
+
+            if ($crudInfo->form_fields) {
+                $crudInfo->form_fields = array_merge($crudInfo->form_fields, [$crudField->field_name_en]);
+            } else {
+                $crudInfo->form_fields = [$crudField->field_name_en];
+            }
+
+            $crudInfo->save();
+            $formInfo->save();
+        } catch (\Exception $e) {
+            Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getFile()]);
+        }
     }
 }

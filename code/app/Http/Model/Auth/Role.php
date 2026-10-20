@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -41,6 +41,16 @@ class Role extends BaseModel
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $casts = [
+        'module_permissions' => 'array',
+        'id'                 => 'integer',
+        'user_count'         => 'integer',
+        'entid'              => 'integer',
+        'data_level'         => 'integer',
+        'directly'           => 'integer',
+        'status'             => 'integer',
+    ];
 
     /**
      * 权限修改器.
@@ -149,6 +159,15 @@ class Role extends BaseModel
     }
 
     /**
+     * @param Builder $query
+     * @param mixed $value
+     */
+    public function scopeNotId($query, $value)
+    {
+        is_array($value) ? $query->whereNotIn('id', $value) : $query->where('id', '<>', $value);
+    }
+
+    /**
      * id作用域
      * @param Builder $query
      * @param mixed $value
@@ -167,17 +186,7 @@ class Role extends BaseModel
     public function scopeRuleApi($query, $value)
     {
         $query->where(function ($q) use ($value) {
-            $q->where(function ($q1) use ($value) {
-                $q1->where('rules', 'like', '[' . $value . ',%')
-                    ->orWhere('rules', 'like', '%,' . $value . ',%')
-                    ->orWhere('rules', 'like', '%,' . $value . ']')
-                    ->orWhere('rules', '[' . $value . ']');
-            })->orWhere(function ($q1) use ($value) {
-                $q1->where('apis', 'like', '[' . $value . ',%')
-                    ->orWhere('apis', 'like', '%,' . $value . ',%')
-                    ->orWhere('apis', 'like', '%,' . $value . ']')
-                    ->orWhere('apis', '[' . $value . ']');
-            });
+            $q->orWhereJsonContains('rules', $value)->orWhereJsonContains('rules', $value);
         });
     }
 }

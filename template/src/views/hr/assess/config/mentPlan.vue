@@ -12,7 +12,7 @@
 <script>
 import plan from './components/plan'
 export default {
-  name: 'Plan',
+  name: 'MentPlan',
   components: {
     plan
   }
@@ -22,5 +22,9 @@ export default {
 <style lang="scss" scoped>
 .card-box {
   height: calc(100vh - 130px);
+}
+.divBox {
+  position: relative;
+  height: 100%;
 }
 </style>

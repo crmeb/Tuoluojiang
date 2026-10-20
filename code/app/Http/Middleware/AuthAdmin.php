@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -16,9 +16,9 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Http\Service\Crud\SystemCrudQuestionnaireService;
-use crmeb\exceptions\AdminException;
-use crmeb\interfaces\ApiMiddlewareInterface;
-use crmeb\traits\MiddlewareTrait;
+use Tuoluojiang\Open\exceptions\AdminException;
+use Tuoluojiang\Open\interfaces\ApiMiddlewareInterface;
+use Tuoluojiang\Open\traits\MiddlewareTrait;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Exceptions\TokenExpiredException;
 
@@ -31,28 +31,16 @@ class AuthAdmin implements ApiMiddlewareInterface
     use MiddlewareTrait;
 
     /**
-     * @var null|\Closure|mixed|object
-     */
-    private mixed $token = '';
-
-    /**
      * 前置事件.
      */
     public function before(Request $request)
     {
         try {
             $admin = auth('admin')->userOrFail();
-            if ((int) bcsub((string) auth('admin')->getPayload()->get('exp'), (string) time()) < 21600) {
-                $this->token = auth('admin')->refresh();
-            }
         } catch (TokenExpiredException) {
-            $this->token = auth('admin')->refresh();
+            $admin = $this->resolveQuestionnaireUser($request);
         } catch (\Exception) {
-            $userInfo = app()->make(SystemCrudQuestionnaireService::class)->checkUniqueisLogin($request);
-            if (is_bool($userInfo)) {
-                throw new AdminException('Login expired, please login again', 410003);
-            }
-            $admin = $userInfo;
+            $admin = $this->resolveQuestionnaireUser($request);
         }
 
         if (isset($admin)) {
@@ -78,9 +66,17 @@ class AuthAdmin implements ApiMiddlewareInterface
     public function after($response)
     {
         $this->request = null;
-        if ($this->token) {
-            $response->headers->set('Authorization', 'Bearer ' . $this->token);
-            return $response;
+    }
+
+    /**
+     * 兼容调查问卷匿名访问；普通登录失效统一交给前端 refresh_token 续期.
+     */
+    private function resolveQuestionnaireUser(Request $request)
+    {
+        $userInfo = app()->get(SystemCrudQuestionnaireService::class)->checkUniqueisLogin($request);
+        if (is_bool($userInfo)) {
+            throw new AdminException('Login expired, please login again', 410003);
         }
+        return $userInfo;
     }
 }

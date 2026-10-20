@@ -3,19 +3,20 @@
     <el-table
       :data="tableData"
       v-loading="loading"
-      :max-height="height"
+      element-loading-text="拼命加载中"
+      element-loading-background="rgba(255, 255, 255, 0.7)"
+      :height="height"
       ref="elTable"
       @selection-change="selectionChange"
       v-bind="$attrs"
-      v-on="$listeners"
       :key="tableKey"
     >
-      <template v-for="(col, index) in tableOptions">
+      <template v-for="(col, index) in tableOptions" :key="index">
         <el-table-column v-if="col.type === 'index'" type="index" width="50" label="序号" />
 
         <!-- 自定义插槽 -->
         <el-table-column v-else-if="col.type === 'slot'" :width="col.width || null" :label="col.label">
-          <template slot-scope="{ row }">
+          <template #default="{ row }">
             <slot :row="row" :name="col.name"></slot>
           </template>
         </el-table-column>
@@ -27,7 +28,7 @@
           :label="col.label"
           :fixed="col.fixed || null"
         >
-          <template slot-scope="{ row }">
+          <template #default="{ row }">
             <slot :row="row" name="options"></slot>
           </template>
         </el-table-column>
@@ -42,12 +43,8 @@
           :min-width="col.width || null"
           :show-overflow-tooltip="true"
         >
-          <template slot-scope="{ row }">
-            <template v-if="col.render">
-              <oa-render :renderFn="() => col.render(row)" />
-            </template>
-
-            <span v-else>{{ row[col.prop] || '--' }}</span>
+          <template #default="{ row }">
+            <span>{{ row[col.prop] || '--' }}</span>
           </template>
         </el-table-column>
       </template>
@@ -67,8 +64,8 @@
 </template>
 
 <script>
-import oaRender from './oa-render.vue'
 export default {
+  emits: ['selectionChange', 'handleSizeChange', 'handleCurrentChange'],
   name: 'oaTable',
   props: {
     tableData: {
@@ -120,8 +117,6 @@ export default {
       default: () => false
     }
   },
-  components: { oaRender },
-
   data() {
     return {
       tableKey: false,

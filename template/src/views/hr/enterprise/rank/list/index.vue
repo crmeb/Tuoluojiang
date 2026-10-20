@@ -1,4 +1,4 @@
-<!-- <template>
+<template>
   <div class="divBox">
     <el-card>
       <div class="top">
@@ -13,35 +13,35 @@
         </div>
       </div>
       <div class="btn-box add">
-        <el-button type="primary" @click="addList">{{ $t('hr.addrank') }}</el-button>
+        <el-button type="primary" @click="addList">添加职级</el-button>
       </div>
       <div class="table-box mt20">
         <el-table :data="tableData" style="width: 100%;" :header-cell-style="{ background: '#F2F2F2' }">
           <el-table-column prop="id" label="ID" width="50" style="padding-left: 20px;" />
-          <el-table-column prop="name" :label="$t('hr.rankname')" min-width="180" />
+          <el-table-column prop="name" label="职级名称" min-width="180" />
           <!--          <el-table-column-->
           <!--            prop="type.name"-->
           <!--            label="职级类型"-->
           <!--            min-width="180"-->
           <!--          />-->
-          <el-table-column prop="number" :label="$t('hr.numberranks')" min-width="180" />
-          <el-table-column prop="cate.name" :label="$t('hr.prerankrequirements')" min-width="180" />
-          <el-table-column :label="$t('hr.state')" width="180">
-            <template slot-scope="scope">
+          <el-table-column prop="number" label="职级人数" min-width="180" />
+          <el-table-column prop="cate.name" label="前置职级要求" min-width="180" />
+          <el-table-column label="状态" width="180">
+            <template #default="scope">
               <el-switch
                 v-model="scope.row.status"
-                :active-text="$t('hr.open')"
-                :inactive-text="$t('hr.close')"
+                active-text="开启"
+                inactive-text="关闭"
                 :active-value="1"
                 :inactive-value="0"
                 @change="handleStatus(scope.row)"
               />
             </template>
           </el-table-column>
-          <el-table-column prop="address" :label="$t('public.operation')" fixed="right" width="160">
-            <template slot-scope="scope">
-              <el-button type="text" @click="deit(scope.row)">{{ $t('public.edit') }}</el-button>
-              <el-button type="text" @click="delet(scope.row)">{{ $t('public.delete') }}</el-button>
+          <el-table-column prop="address" label="操作" fixed="right" width="160">
+            <template #default="scope">
+              <el-button type="primary" link @click="deit(scope.row)">编辑</el-button>
+              <el-button type="primary" link @click="delet(scope.row)">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -60,7 +60,9 @@
 </template>
 
 <script>
-import {rankCateListApi, rankCreateApi, rankDeleteApi, rankEditApi, rankListApi, rankStatusApi} from '@/api/setting';
+import { modalSure } from '@/libs/public.ts'
+import modalForm from '@/libs/modal-form.ts'
+import {rankCateListApi, rankCreateApi, rankDeleteApi, rankEditApi, rankListApi, rankStatusApi} from '@/api/setting.ts';
 export default {
   name: 'List',
   data() {
@@ -99,7 +101,7 @@ export default {
     },
     // 添加列表
     addList() {
-      this.$modalForm(rankCreateApi()).then(({ message }) => {
+      modalForm(rankCreateApi()).then(({ message }) => {
         this.Info(this.id);
       });
     },
@@ -115,13 +117,13 @@ export default {
     },
     // 编辑信息
     deit(data) {
-      this.$modalForm(rankEditApi(data.id)).then(({ message }) => {
+      modalForm(rankEditApi(data.id)).then(({ message }) => {
         this.Info(this.id);
       });
     },
     // 删除
     delet(data) {
-      this.$modalSure(this.$t('hr.message7')).then(() => {
+      modalSure('确定删除该类型吗').then(() => {
         this.tableData.splice(data.id, 1);
         rankDeleteApi(data.id).then((res) => {
           this.Info(this.id);

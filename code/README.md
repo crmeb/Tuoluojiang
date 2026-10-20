@@ -1,127 +1,407 @@
-<p><img style='width:30px;height:30px;' src="https://www.tuoluojiang.com/favicon.ico"><span style="font-size: 20px;font-weight: 600;margin-left: 10px;">陀螺匠 · 企业助手</span></p>
+# 陀螺匠 · 企业助手
 
----
+陀螺匠是企业级 OA 管理系统，后端基于 Laravel 9 + LaravelS/Swoole，集成 MySQL、Redis、JWT 认证、Casbin RBAC 权限、WebSocket、企业微信、WPS 在线文档等能力。
 
-## 简介
+## 技术栈
 
-企业管理系统
+| 类型 | 说明 |
+|------|------|
+| PHP | PHP 8.0.2+，Docker 环境固定使用 PHP 8.0 |
+| 框架 | Laravel 9.52 |
+| 常驻服务 | LaravelS 3.7.43 + Swoole 4.8 |
+| 数据存储 | MySQL 8.0、Redis 7（Docker 使用 Redis Stack，含 RediSearch） |
+| 认证授权 | JWT、Casbin RBAC |
+| 路由 | spatie/laravel-route-attributes |
+| Composer 源 | 腾讯云 Composer 镜像 |
 
-### 运行环境
+## 运行要求
 
-1. PHP >= 8.0
-2. BCMath PHP 拓展
-3. Ctype PHP 拓展
-4. Fileinfo PHP 拓展
-5. JSON PHP 拓展
-6. Mbstring PHP 拓展
-7. OpenSSL PHP 拓展
-8. PDO PHP 拓展
-9. Tokenizer PHP 拓展
-10. XML PHP 拓展
-11. SWOOLE4 PHP扩展
+基础 PHP 扩展：
 
-### 主要特性
+- `bcmath`
+- `curl`
+- `fileinfo`
+- `gd`
+- `json`
+- `mbstring`
+- `openssl`
+- `pcntl`
+- `pdo_mysql`
+- `redis`
+- `sockets`
+- `swoole`
+- `tokenizer`
+- `xml`
+- `zip`
 
-1. 采用最新的Laravel9.x+Swoole4框架开发
-2. 标准接口、前后端分离
-3. 降低流量高峰，解除耦合，高可用
-4. 后台应用form-builder 无需写页面快速增删改查
-5. 后台多种角色、多重身份权限管理，权限可以控制到每一步操作
-6. 内置定时任务/异步任务
-7. 内置长连接服务减少CPU及内存使用及网络堵塞，减少请求响应时长
-8. 对接WPS在线协同编辑文档
+本仓库为开源明文版，核心类已去除加密，**无需**安装 `swoole_loader`。
 
-### 相关命令
+当前版本为 **2.6**，仅支持**全新安装**；不提供从开源 2.0 等旧版本升级到 2.6 的 SQL / 迁移命令。旧环境请备份后重装。
+
+### 与商业版的结构差异
+
+| 项 | 开源版 | 商业版 |
+|----|--------|--------|
+| 框架目录 | `tuoluojiang/` | `crmeb/`（含加密运行时） |
+| 框架命名空间 | `Tuoluojiang\Open\` | `crmeb\` |
+| 基类 Dao/Model/Service | `App\Http\{Dao,Model,Service}` | `crmeb\basic\*` |
+| 控制器/授权基类 | `App\Http\Controller\BaseController` + `App\Support\OpenAuth` | `crmeb\basic\BaseController` / `BaseAuth` |
+| 无 `basic/` 聚合目录 | 已拆到 App / services / traits | 商业版集中在 `crmeb/basic/` |
+| 常用 Artisan | `open:init` / `open:http` | 商业版自有命令 |
+
+开源包**不能**直接覆盖商业版加密文件或 `crmeb/` 目录使用。
+
+开源版**不含移动端**：已移除 `UniApi` 控制器与 `uni/...` 路由；仅提供 PC/管理端与 MCP 等后端能力。
+
+### 知识库 OCR 系统依赖（可选增强）
+
+知识库支持 PDF 多图解析与分块 Markdown 内嵌图片 OCR。依赖系统级命令行工具；**未安装时会自动跳过 OCR**，不影响文档入库与纯文本向量化。
+
+| 软件 | 用途 |
+|------|------|
+| `poppler-utils` | `pdftotext` 抽取 PDF 文本层；`pdftoppm` 将 PDF 页转为图片供 OCR |
+| `tesseract-ocr` | OCR 引擎 |
+| `tesseract-ocr-chi-sim` | 简体中文语言包 |
+| `tesseract-ocr-eng` | 英文语言包（中英混排文档推荐一并安装） |
+
+**Docker 环境**：默认构建 `ocr` 完整镜像（含 tesseract 中英语言包与 ImageMagick）。仅需更快构建、不测 OCR 时可在 `docker/.docker.env` 设 `PHP_IMAGE_TARGET=base` 后重建：
 
 ```shell
-#命令
-$ php bin/laravels {start|stop|restart|reload|info|help}
-
-命令	  说明
-start	  启动LaravelS,展示已启动的进程列表 "ps -ef|grep laravels"
-stop	  停止LaravelS,并触发自定义进程的onStop方法
-restart	  重启LaravelS,先平滑Stop,然后再Start.在Start完成之前,服务是不可用的
-reload	  平滑重启所有Task/Worker/Timer进程,并触发自定义进程的onReload方法,不会重启Master/Manger进程,修改config/laravels.php后,你只有调用restart来完成重启
-info	  显示组件的版本信息
-help	  显示帮助信息
-
-启动选项,针对start和restart命令.
-
-选项	            说明
--d|--daemonize	    以守护进程的方式运行,此选项将覆盖laravels.php中swoole.daemonize设置
--e|--env	    指定运行的环境,如--env=testing将会优先使用配置文件.env.testing,这个特性要求Laravel 5.2+
--i|--ignore	    忽略检查Master进程的PID文件
--x|--x-version	    记录当前工程的版本号,保存在$_ENV/$_SERVER中,访问方式:$_ENV['X_VERSION'] $_SERVER['X_VERSION'] $request->server->get('X_VERSION')
-
+cd docker
+# 默认完整 OCR
+docker compose --env-file .docker.env up -d --build php
+docker compose --env-file .docker.env exec php tesseract --list-langs
+# 应能看到 chi_sim、eng
 ```
-### 修改代码后自动Reload(热更新：config/laravels.php文件中的hot_reload配置项)
 
-### 安装流程
+**裸机 Linux（Debian / Ubuntu 示例）**：
 
-1. 可选执行(PHP8.1),删除composer.lock文件和vendor目录，执行:`composer install`安装扩展
-2. 可选执行:`php artisan storage:link`创建本地文件映射软链
-3. 执行:`php bin/laravels start -d`启动swoole服务(默认端口20200)
-4. 按照文档配置反向代理 [Nginx反向代理参考文档](https://doc.tuoluojiang.com/doc/own/149)
-5. 按照安装步骤完成安装
+```shell
+sudo apt-get update
+sudo apt-get install -y poppler-utils tesseract-ocr tesseract-ocr-chi-sim tesseract-ocr-eng
+pdftotext -v
+tesseract --list-langs
+```
 
-## Docker Compose 使用
+**CentOS / RHEL（需可用 EPEL 等源）示例**：
+
+```shell
+sudo yum install -y poppler-utils tesseract tesseract-langpack-chi_sim tesseract-langpack-eng
+```
+
+相关环境变量（见 `.env.example` / `config/knowledge.php`）：
+
+```env
+# PDF / 分块图片 OCR；未装 tesseract 时自动跳过
+KNOWLEDGE_PDF_OCR=true
+KNOWLEDGE_PDF_OCR_LANG=chi_sim+eng
+KNOWLEDGE_PDF_OCR_DPI=150
+KNOWLEDGE_PDF_OCR_MAX_PAGES=100
+# 单次 tesseract 超时（秒）；单图 Job 默认 = 该值 + 5（KNOWLEDGE_PDF_OCR_JOB_TIMEOUT=0）
+KNOWLEDGE_PDF_OCR_COMMAND_TIMEOUT=30
+KNOWLEDGE_PDF_OCR_JOB_TIMEOUT=0
+# 单分块最多挂图 / OCR 张数
+KNOWLEDGE_CHUNK_OCR_MAX_IMAGES=10
+# OCR 入向量策略：auto（默认，截图/演示表不入 content）| caption_only | full
+KNOWLEDGE_OCR_EMBED_MODE=auto
+# 截图/演示表命中分数折减
+KNOWLEDGE_OCR_SCREENSHOT_SCORE_FACTOR=0.85
+# OCR 专用队列名（空=默认队列）。若填写，LaravelS/worker 须同时监听该队列，建议 OCR 并发 1～2
+# KNOWLEDGE_OCR_QUEUE=knowledge_ocr
+```
+
+说明：
+
+1. PHP 进程需能执行 `exec` / `command -v`（勿在 `disable_functions` 中禁用）。
+2. 新增/编辑分块接口**仅接收 `content_html`（Markdown）**；服务端先解析纯文本落库并向量化，含图分片再按图异步 OCR 回填。客户端不要再传 `content`。
+3. 文档处理关键路径：解析正文 → 持久化 `image_urls` → 文本分片 → 入队向量化 → 文档 `DONE`（**不跑 tesseract**）。随后对每张图投递一个 OCR 队列任务；成功后按 `KNOWLEDGE_OCR_EMBED_MODE` 决定是否合并进 `content`：截图/演示表 OCR 默认只写入 `metadata.ocr_text`，`content` 保留 caption，避免演示数据污染向量检索；扫描正文型 OCR 在 `auto` 下仍会合并。超时/失败保留原文与 `image_urls`，**不会**把文档标失败。
+4. 存量已污染分片可执行 `php artisan knowledge:sanitize-ocr-embed`（可加 `--kb=` / `--dry-run`）剥离 image_only 中已合并的演示 OCR 并重向量化。
+5. 部署/发版后请执行 `php bin/laravels reload`；日志应出现 `knowledge_pipeline_version=image_ocr_embed_policy_v1`。
+
+### 知识库向量检索与 Redis Stack
+
+知识库向量召回可走 Redis Stack 内置的 **RediSearch**（KNN）；MySQL 中的 `embedding` 仍是向量真源。
+
+| 侧 | 是否需要额外安装 |
+|----|------------------|
+| **PHP** | **不需要**。沿用现有 `phpredis` / Laravel Redis 连接即可，通过原生命令（如 `MODULE LIST`、`FT.*`）访问 RediSearch，无需再装 PHP 扩展。 |
+| **Redis 服务端** | **需要 Redis Stack**（或已加载 RediSearch 模块的 Redis）。普通 `redis:7` / `redis-server` **不含**向量索引能力。 |
+
+**Docker 环境**：`docker-compose.yml` 已使用 `redis/redis-stack-server`，一般无需额外操作。验证：
+
+```shell
+cd docker
+docker compose --env-file .docker.env exec redis redis-cli MODULE LIST
+# 输出中应能看到 search / RediSearch 相关模块
+```
+
+**裸机 / 自建 Redis**：请部署 [Redis Stack](https://redis.io/docs/latest/operate/oss_and_stack/install/install-stack/)（或等价镜像 `redis/redis-stack-server`），不要用社区版纯 Redis 代替。将应用的 `REDIS_HOST` / `REDIS_PORT` 指向该实例。
+
+相关配置（见 `.env.example` / `config/knowledge.php`）：
+
+```env
+# auto：优先 Redis Stack，不可用时回退 MySQL 线性扫描
+# redis：仅用 Redis Stack（不可用则检索降级）
+# mysql：仅用 MySQL，不访问向量索引
+KNOWLEDGE_VECTOR_DRIVER=auto
+# RediSearch 只能在 DB 0 建索引，请保持 0；与业务缓存用 key 前缀隔离
+REDIS_KNOWLEDGE_DB=0
+```
+
+说明：
+
+1. `auto` 为默认：未部署 Redis Stack 时知识库仍可用，只是向量检索回退 MySQL 扫描，数据量大时更慢。
+2. 从普通 Redis 升级到 Redis Stack 后，可执行 `php artisan knowledge:vector-reindex` 将已有向量回填到 RediSearch。
+3. 缓存、队列仍可共用同一 Redis 主机；知识库索引落在 `REDIS_KNOWLEDGE_DB`（建议 `0`）。
+
+## Docker 初始化安装
+
+推荐使用 Docker 完成首次安装。Docker 环境包含 PHP、MySQL、Redis 三个服务；首次启动只创建 `tuoluojiang` 空数据库，不创建业务表。业务表和初始化数据由浏览器安装页面创建。
 
 ### 1. 启动服务
 
-在项目根目录执行以下命令, 通过端口地址可访问 `http://127.0.0.1:20300`
+```shell
+cd docker
+docker compose --env-file .docker.env up -d --build
+```
+
+也可以使用管理脚本：
 
 ```shell
-docker-compose up -d
+cd docker
+./manage.sh start
 ```
 
+启动过程中 PHP 容器会自动完成：
 
+1. 项目根目录不存在 `.env` 时，复制 `.env.example` 为 `.env`。
+2. 将 `.env` 中的 MySQL / Redis 配置写为容器内服务地址。
+3. `vendor` 不存在或与 PHP 8.0 不兼容时，重新执行 `composer install`。
 
-#### 2. 配置文件参考(默认安装流程无需调整)
+容器内连接配置如下：
 
-```
-DB_HOST=192.168.10.14
+```env
+DB_HOST=mysql
 DB_PORT=3306
 DB_DATABASE=tuoluojiang
 DB_USERNAME=root
 DB_PASSWORD=123456
 
-REDIS_HOST=192.168.10.15
-REDIS_PASSWORD=123456
+REDIS_HOST=redis
 REDIS_PORT=6379
 REDIS_DB=0
+REDIS_CACHE_DB=1
 ```
 
-### 开发规范
+### 2. 检查服务状态
 
-#### 函数和类、属性命名
+```shell
+cd docker
+docker compose --env-file .docker.env ps
+```
 
-1. 类的命名采用驼峰法（首字母大写），例如 User、UserType；
-2. common函数的命名使用小写字母和下划线（小写字母开头）的方式，例如 get_client_ip；
-3. 控制器里面的方法使用小写字母和下划线（小写字母开头）的方式，例如 get_client_ip
-4. 方法的命名使用驼峰法（首字母小写），例如 getUserName；
-5. 属性的命名使用驼峰法（首字母小写），例如 tableName、instance；
-6. 特例：以双下划线__打头的函数或方法作为魔术方法，例如 __call 和 __autoload；
+确认 `php`、`mysql`、`redis` 三个服务均为 `healthy`。
 
-#### 常量和配置
+宿主机访问端口：
 
-1. 常量以大写字母和下划线命名，例如 APP_PATH；
-2. 配置参数以小写字母和下划线命名，例如 url_route_on 和url_convert；
-3. 环境变量定义使用大写字母和下划线命名，例如APP_DEBUG；
+| 服务 | 宿主机地址 | 容器内地址 |
+|------|------------|------------|
+| 应用 | `http://127.0.0.1:20300` | `php:20200` |
+| MySQL | `127.0.0.1:3376` | `mysql:3306` |
+| Redis | `127.0.0.1:6389` | `redis:6379` |
 
-#### 数据表和字段
+### 3. 确认数据库为空
 
-1. 数据表和字段采用小写加下划线方式命名，并注意字段名不要以下划线开头，例如 laraver_user 表和
-   user_name字段，不建议使用驼峰和中文作为数据表及字段命名
+首次安装前，`tuoluojiang` 数据库应存在，但业务表数量应为 `0`：
 
-## 参与开发人员
+```shell
+cd docker
+docker compose --env-file .docker.env exec -T mysql \
+  mysql -uroot -p123456 -e "SELECT COUNT(*) AS tables_count FROM information_schema.TABLES WHERE TABLE_SCHEMA='tuoluojiang';"
+```
 
-- 产品: 寇小雨
+期望结果：
 
-- 设计: xy-yyds
+```text
+tables_count
+0
+```
 
-- 技术: Lunatic、夜风不是风、武湘军、娃哈哈
+### 4. 访问安装页面
 
-- 测试: 夏天、半山
+```text
+http://127.0.0.1:20300/install
+```
+
+按页面提示完成系统安装。安装流程会创建业务数据表并写入初始化数据。
+
+### 5. 清空 MySQL 重新安装
+
+如果本机已存在旧 Docker 数据卷，MySQL 会复用旧数据。需要重新走安装流程时，先删除并重建 MySQL 数据卷：
+
+```shell
+cd docker
+docker compose --env-file .docker.env down
+docker volume rm tuoluojiang_mysql_data
+docker compose --env-file .docker.env up -d --build
+```
+
+注意：删除 `tuoluojiang_mysql_data` 会清除 Docker MySQL 中已有数据。生产或已有业务数据环境请先备份。
+
+## 手动安装流程
+
+手动安装适用于已准备好 `.env`、Composer 依赖、应用密钥、PHP、MySQL、Redis、Swoole 的服务器（开源版无需 `swoole_loader`）。此处只说明服务启动和页面安装步骤。
+
+若需知识库 PDF / 分块图片 OCR，请先按上文「知识库 OCR 系统依赖」安装 `poppler-utils` 与 `tesseract-ocr`（含中英文语言包）；未安装亦可正常使用，仅跳过 OCR。
+
+1. 可选：创建本地文件软链：
+
+   ```shell
+   php artisan storage:link
+   ```
+
+2. 启动 LaravelS：
+
+   ```shell
+   php bin/laravels start
+   ```
+
+   生产环境可使用守护进程模式：
+
+   ```shell
+   php bin/laravels start -d
+   ```
+
+3. 通过浏览器访问 `/install` 完成系统安装。
+
+## LaravelS 常用命令
+
+```shell
+php bin/laravels start
+php bin/laravels start -d
+php bin/laravels stop
+php bin/laravels restart
+php bin/laravels reload
+php bin/laravels info
+```
+
+| 命令 | 说明 |
+|------|------|
+| `start` | 启动 LaravelS |
+| `start -d` | 以守护进程方式启动 LaravelS |
+| `stop` | 停止 LaravelS |
+| `restart` | 重启 LaravelS |
+| `reload` | 平滑重载 Worker / Task / Timer 进程 |
+| `info` | 查看组件版本和服务信息 |
+
+常用启动选项：
+
+| 选项 | 说明 |
+|------|------|
+| `-d, --daemonize` | 守护进程模式 |
+| `-e, --env` | 指定运行环境，例如 `--env=testing` |
+| `-i, --ignore` | 忽略 Master 进程 PID 文件检查 |
+| `-x, --x-version` | 写入当前工程版本号到运行环境 |
+
+## 热更新开发
+
+项目已内置热更新能力。开发环境启动后会自动监听代码变更并 reload LaravelS Worker，无需额外安装 `fswatch`、`inotify` 或执行额外监听命令。
+
+## Docker 常用命令
+
+以下命令均在 `docker` 目录执行：
+
+```shell
+cd docker
+
+# 首次启动或 Dockerfile / entrypoint.sh 变更后启动
+docker compose --env-file .docker.env up -d --build
+
+# 日常启动
+docker compose --env-file .docker.env up -d
+
+# 查看状态
+docker compose --env-file .docker.env ps
+
+# 停止
+docker compose --env-file .docker.env down
+
+# 重启 PHP 服务
+docker compose --env-file .docker.env restart php
+
+# 查看日志
+docker compose --env-file .docker.env logs -f
+docker compose --env-file .docker.env logs -f php
+docker compose --env-file .docker.env logs -f mysql
+docker compose --env-file .docker.env logs -f redis
+
+# 进入容器
+docker compose --env-file .docker.env exec php bash
+docker compose --env-file .docker.env exec mysql mysql -u root -p123456
+docker compose --env-file .docker.env exec redis redis-cli
+```
+
+更多 Docker 说明见 [docker/README.md](docker/README.md)。
+
+## 登录 Token 运维排查
+
+管理端（`ent/`）使用 JWT access token + DB `refresh_token` 轮换。业务鉴权中间件过期返回 `410003`，由前端调用 `POST .../user/token/refresh` 续期。
+
+| 检查项 | 建议 | 说明 |
+|--------|------|------|
+| `CACHE_DRIVER` | 生产务必 `redis` | JWT 黑名单与 refresh 回放缓存都走 Cache；`file` + Swoole 多 worker 会不一致 |
+| `JWT_TTL` | 默认示例 `120`（分钟） | access token 有效期；过期依赖前端 refresh，不是中间件静默续期 |
+| `single_login_switch` | 系统配置，默认开启 | 同账号同 client（web / Form-type）再次登录会踢掉旧会话 |
+| refresh 回放窗口 | 服务端 300 秒 | 多 Tab 短时间内用旧 refresh 可拿到同一次轮换结果 |
+
+掉线时优先区分：自然过期（约 `JWT_TTL`）、同端重登互踢、还是 refresh 失败（缺 `refresh_token` / 超过滑动窗 / 回放窗外的旧票）。
+
+## 开发规范
+
+### 命名规范
+
+| 类型 | 规范 | 示例 |
+|------|------|------|
+| 类名 | PascalCase | `UserController` |
+| 方法名 | camelCase | `getUserInfo` |
+| 控制器方法 | 小写加下划线 | `get_client_ip` |
+| 普通函数 | 小写加下划线 | `get_client_ip` |
+| 属性 / 变量 | camelCase | `$userId` |
+| 常量 | SNAKE_CASE | `MAX_UPLOAD_SIZE` |
+| 数据表 | 小写加下划线 | `system_user` |
+| 字段名 | 小写加下划线 | `user_name` |
+
+### 分层约定
+
+```text
+HTTP Request
+  -> Middleware
+  -> Controller
+  -> Service
+  -> Dao
+  -> Model
+  -> Database
+```
+
+业务逻辑应放在 Service 层，数据访问应通过 Dao 层封装，避免 Controller 直接操作 Model 或跨层调用。
+
+## 重要目录
+
+```text
+app/Http/Controller/   控制器
+app/Http/Service/      业务服务
+app/Http/Dao/          数据访问
+app/Http/Model/        Eloquent 模型
+app/Jobs/              队列任务
+config/laravels.php    LaravelS / Swoole 配置
+routes/install.php     安装路由
+routes/mcp.php         MCP 路由
+routes/websocket.php   WebSocket 路由
+crmeb/                 基础能力、工具类和第三方服务封装
+docker/                Docker 运行环境
+```
 
 ## 帮助文档
-https://www.tuoluojiang.com/doc/own/0
+
+- 官方文档：https://doc.crmeb.com/tuoluojiang
+

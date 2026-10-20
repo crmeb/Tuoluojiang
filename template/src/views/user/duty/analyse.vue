@@ -4,7 +4,7 @@
       <!-- 头部 -->
       <div class="flex-row flex-col">
         <div>
-          <el-tabs v-model="activeVal" class="tabs" @tab-click="activeClick">
+          <el-tabs v-model="activeVal" class="tabs" @tab-change="activeClick">
             <el-tab-pane label="我的工作分析" name="1" />
             <el-tab-pane label="下级工作分析" name="2" />
           </el-tabs>
@@ -19,7 +19,7 @@
           <div class="content" v-html="mineContent" @click="replayImgShow($event)" />
         </div>
         <div v-else>
-          <default-page v-height :index="15" :min-height="580" />
+          <default-page v-height :index="15" :min-height="580" imgWidth="128px" />
         </div>
       </div>
 
@@ -27,16 +27,15 @@
       <div v-if="activeVal == 2" class="table-box">
         <div class="inTotal">
           共 {{ totalSubmit }} 条
-          <el-form :inline="true" class="from-s" @submit.native.prevent>
+          <el-form :inline="true" class="from-s" @submit.prevent>
             <el-form-item class="select-bar">
               <el-input
                 v-model="where.name"
                 clearable
                 placeholder="请输入姓名搜索"
                 prefix-icon="el-icon-search"
-                size="small"
                 @change="getList(1)"
-                @keyup.native.stop.prevent.enter="getList(1)"
+                @keyup.stop.prevent.enter="getList(1)"
               ></el-input>
             </el-form-item>
             <el-form-item class="select-bar">
@@ -45,9 +44,8 @@
                 clearable
                 filterable
                 placeholder="请选择职位"
-                size="small"
                 @change="getList(1)"
-                @keyup.native.stop.prevent.enter="getList(1)"
+                @keyup.stop.prevent.enter="getList(1)"
               >
                 <el-option v-for="(item, index) in options" :key="index" :label="item.name" :value="item.id" />
               </el-select>
@@ -62,22 +60,29 @@
 
         <oa-table
           :tableOptions="tableOptions"
-          :height="tableHeight"
+          :height="TABLE_HEIGHT"
           :tableData="tableData"
           :total="totalSubmit"
           :loading="false"
           @handleSizeChange="handleSizeChange"
           @handleCurrentChange="handleCurrentChange"
         >
+          <template #job="{ row }">
+            <span>{{ row.job ? row.job.name : '--' }}</span>
+          </template>
+
+          <template #frame="{ row }">
+            <span>{{ row.frame ? row.frame.name : '--' }}</span>
+          </template>
+
           <template #options="{ row }">
-            <el-button v-hasPermi="['user:duty:analyse:check']" size="small" type="text" @click="onCheck(row)"
+            <el-button v-hasPermi="['user:duty:analyse:check']" type="primary" link @click="onCheck(row)"
               >查看</el-button
             >
             <el-button
               v-if="row.operate"
               v-hasPermi="['user:duty:analyse:edit']"
-              size="small"
-              type="text"
+              type="primary" link
               @click="onEdit(row)"
               >编辑</el-button
             >
@@ -99,7 +104,7 @@
     </el-card>
 
     <!-- 查看 -->
-    <el-drawer :before-close="handleClose" :visible.sync="checkDrawer" direction="rtl" size="60%" title="工作分析表">
+    <el-drawer :before-close="handleClose" v-model="checkDrawer" direction="rtl" size="60%" title="工作分析表">
       <div v-if="detailData" class="check-box">
         <div class="content mt14" v-html="detailData" @click="replayImgShow($event)" />
       </div>
@@ -110,8 +115,8 @@
     <!-- 编辑 -->
     <el-drawer
       :before-close="handleClose"
-      :visible.sync="editDrawer"
-      :wrapperClosable="false"
+      v-model="editDrawer"
+      :close-on-click-modal="false"
       direction="rtl"
       size="60%"
       title="编辑工作分析表"
@@ -134,8 +139,8 @@
         </div>
       </div>
       <div class="button from-foot-btn fix btn-shadow">
-        <el-button size="small" @click="editDrawer = false">{{ $t('public.cancel') }}</el-button>
-        <el-button :loading="loading" size="small" type="primary" @click="handleConfirm">保存</el-button>
+        <el-button @click="editDrawer = false">取消</el-button>
+        <el-button :loading="loading" type="primary" @click="handleConfirm">保存</el-button>
       </div>
     </el-drawer>
     <image-viewer ref="imageViewer" :srcList="srcList"></image-viewer>
@@ -143,12 +148,13 @@
 </template>
 
 <script>
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
 import ueditorFrom from '@/components/form-common/oa-wangeditor'
 import oaTable from '@/components/form-common/oa-table'
 import defaultPage from '@/components/common/defaultPage'
 import imageViewer from '@/components/common/imageViewer'
-import { jobSelectApi } from '@/api/config.js'
-import { jobAnalysis, mineAnalysis, jobDetails, putAnalysis } from '@/api/user'
+import { jobSelectApi } from '@/api/config.ts'
+import { jobAnalysis, mineAnalysis, jobDetails, putAnalysis } from '@/api/user.ts'
 export default {
   name: 'CrmebOaEntDutyAnalyse',
   components: {
@@ -159,6 +165,7 @@ export default {
   },
   data() {
     return {
+      TABLE_HEIGHT,
       srcList: [],
       activeVal: '1',
       loading: false,
@@ -191,15 +198,13 @@ export default {
         },
         {
           label: '职位',
-          render: (row) => {
-            return <span>{row.job ? row.job.name : '--'}</span>
-          }
+          type: 'slot',
+          name: 'job'
         },
         {
           label: '部门',
-          render: (row) => {
-            return <span>{row.frame ? row.frame.name : '--'}</span>
-          }
+          type: 'slot',
+          name: 'frame'
         },
         {
           label: '更新时间',
@@ -345,7 +350,7 @@ export default {
     }
   }
 }
-/deep/ .el-form-item {
+:deep(.el-form-item) {
   padding-bottom: 0;
 }
 .user-name {
@@ -367,7 +372,7 @@ export default {
   margin: 0 auto;
 }
 .detail-box {
-  /deep/ .el-scrollbar__wrap {
+  :deep(.el-scrollbar__wrap) {
     overflow-x: hidden;
   }
   color: #666666;
@@ -380,44 +385,44 @@ export default {
     margin-bottom: 20px;
   }
   .content {
-    /deep/ img {
+    :deep(img) {
       cursor: pointer;
     }
     margin-top: 30px;
-    /deep/ p {
+    :deep(p) {
       text-indent: 2em;
       font-size: 14px;
       line-height: 1.5;
     }
-    /deep/ td {
+    :deep(td) {
       border: 1px solid;
     }
   }
 }
 .check-box {
-  /deep/ .el-scrollbar__wrap {
+  :deep(.el-scrollbar__wrap) {
     overflow-x: hidden;
   }
   color: #666666;
   padding: 0px 20px 0 24px;
 
   .content {
-    /deep/ p {
+    :deep(p) {
       text-indent: 2em;
       font-size: 14px;
       line-height: 1.5;
     }
-    /deep/ td {
+    :deep(td) {
       border: 1px solid;
     }
   }
 }
 
-/deep/ .el-form-item {
+:deep(.el-form-item) {
   padding-bottom: 0;
 }
 
-/deep/ .el-tabs__nav-wrap::after {
+:deep(.el-tabs__nav-wrap::after) {
   content: '';
   position: absolute;
   left: 0;
@@ -425,7 +430,7 @@ export default {
   width: 100%;
   height: 0;
 }
-/deep/.el-select {
+:deep(.el-select) {
   width: 100%;
 }
 </style>

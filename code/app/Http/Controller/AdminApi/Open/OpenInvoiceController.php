@@ -17,23 +17,21 @@ namespace App\Http\Controller\AdminApi\Open;
 
 use App\Http\Controller\AdminApi\AuthController;
 use App\Http\Middleware\AuthOpenApi;
-use App\Http\Requests\enterprise\client\ClientBillRequest;
-use App\Http\Requests\enterprise\client\ClientInvoiceRequest;
+use App\Http\Requests\Customer\InvoiceRequest;
 use App\Http\Service\Admin\AdminService;
-use App\Http\Service\Client\ClientInvoiceService;
+use App\Http\Service\Customer\InvoiceService;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Validation\ValidationException;
 use Spatie\RouteAttributes\Attributes\Middleware;
-use Spatie\RouteAttributes\Attributes\Prefix;
-use Spatie\RouteAttributes\Attributes\Get;
 use Spatie\RouteAttributes\Attributes\Post;
+use Spatie\RouteAttributes\Attributes\Prefix;
 use Spatie\RouteAttributes\Attributes\Put;
 
 #[Prefix('open/invoice')]
 #[Middleware([AuthOpenApi::class])]
 class OpenInvoiceController extends AuthController
 {
-    public function __construct(ClientInvoiceService $services)
+    public function __construct(InvoiceService $services)
     {
         parent::__construct();
         $this->service = $services;
@@ -75,8 +73,8 @@ class OpenInvoiceController extends AuthController
     }
 
     /**
-     *  作废发票.
-     * @param ClientInvoiceRequest $request
+     *  发票冲红.
+     * @param InvoiceRequest $request
      * @param AdminService $adminService
      * @param $id
      * @return mixed
@@ -84,8 +82,8 @@ class OpenInvoiceController extends AuthController
      * @throws ValidationException
      * @throws \ReflectionException
      */
-    #[Put('/{id}/invalid', '作废发票接口')]
-    public function invalid(ClientInvoiceRequest $request, AdminService $adminService, $id): mixed
+    #[Put('/{id}/invalid', '发票冲红接口')]
+    public function invalid(InvoiceRequest $request, AdminService $adminService, $id): mixed
     {
         if (!$id) {
             return $this->fail('缺失发票ID！');

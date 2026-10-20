@@ -1,8 +1,8 @@
-<!-- 合同-续费到期的弹窗 -->
+<!-- 订单-续费到期的弹窗 -->
 <template>
   <el-dialog
     :title="config.title"
-    :visible.sync="dialogVisible"
+    v-model="dialogVisible"
     :width="config.width"
     :append-to-body="true"
     :show-close="true"
@@ -10,17 +10,17 @@
   >
     <div class="table-box">
       <el-table :data="config.data" :height="420">
-        <el-table-column prop="renew.title" :label="$t('customer.renewaltype')" min-width="110"> </el-table-column>
-        <el-table-column prop="date" :label="$t('customer.renewaldate')" min-width="100">
-          <template slot-scope="scope">
+        <el-table-column prop="renew.title" label="续费类型" min-width="110"> </el-table-column>
+        <el-table-column prop="date" label="续费结束日期" min-width="100">
+          <template #default="scope">
             <span v-if="scope.row.end_date.slice(0, 4) !== '0000'">{{
-              $moment(scope.row.end_date).format('YYYY-MM-DD')
+              dayjs(scope.row.end_date).format('YYYY-MM-DD')
             }}</span>
             <span v-else>--</span>
           </template>
         </el-table-column>
         <el-table-column prop="date" label="续费状态" min-width="80">
-          <template slot-scope="scope">
+          <template #default="scope">
             <span v-if="scope.row.renew_status == 1" class="color-warning">急需续费 </span>
             <span v-if="scope.row.renew_status == 2" class="color-danger">已过期 </span>
             <span v-if="scope.row.renew_status == 0" class="color-success">正常</span>
@@ -32,6 +32,7 @@
 </template>
 
 <script>
+import dayjs from 'dayjs'
 export default {
   name: 'MarkDialog',
   props: {
@@ -41,6 +42,9 @@ export default {
         return {}
       }
     }
+  },
+  computed: {
+    dayjs: () => dayjs
   },
   data() {
     return {
@@ -61,7 +65,7 @@ export default {
   },
   methods: {
     getRenewDays(date) {
-      return this.$moment(date).diff(this.$moment(new Date()), 'days')
+      return dayjs(date).diff(dayjs(new Date()), 'days')
     },
     getRenewName(date, type) {
       let str = ''

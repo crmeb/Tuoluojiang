@@ -4,22 +4,23 @@
       <!-- 搜索条件 -->
       <formBox @confirmData="confirmData" :total="total"></formBox>
       <!-- 表格 -->
-      <el-table class="mt10" :data="tableData" v-loading="loading" style="width: 100%" :height="tableHeight">
-        <el-table-column prop="card.name" label="姓名"> </el-table-column>
+      <el-table class="mt10" :data="tableData" v-loading="loading" style="width: 100%" :height="TABLE_HEIGHT">
+        <el-table-column prop="card.name" label="姓名" fixed="left" min-width="120px"> </el-table-column>
+         <el-table-column prop="created_at" label="日期" width="120" fixed="left">
+            <template #default="{ row }">
+              {{ dayjs(row.created_at).format('YYYY-MM-DD') }}
+            </template>
+          </el-table-column>
         <el-table-column prop="frame.name" label="部门" min-width="140px"> </el-table-column>
         <el-table-column label="班次信息">
           <el-table-column prop="group" label="考勤组名称" width="120">
-            <template slot-scope="{ row }">
+            <template #default="{ row }">
               {{ row.group || '--' }}
             </template>
           </el-table-column>
-          <el-table-column prop="created_at" label="日期" width="120">
-            <template slot-scope="{ row }">
-              {{ $moment(row.created_at).format('YYYY-MM-DD') }}
-            </template>
-          </el-table-column>
+         
           <el-table-column prop="name" label="考勤班次" min-width="150px">
-            <template slot-scope="{ row }">
+            <template #default="{ row }">
               <div>{{ row.shift_data.name || '--' }}</div>
               <span>{{ getShift(row.shift_data) }}</span>
             </template>
@@ -27,12 +28,13 @@
         </el-table-column>
         <el-table-column label="上班1">
           <el-table-column prop="province" label="最早打卡" width="95">
-            <template slot-scope="{ row }">
-              {{ handle(row.one_shift_status, row.one_shift_is_after, row.one_shift_time) }}
+            <template #default="{ row }">
+              <div v-if="row.one_shift_time">{{ row.one_shift_is_after ? '次日' : '当日' }}</div>
+              {{ formatTime(row.one_shift_time) }}
             </template>
           </el-table-column>
-          <el-table-column prop="city" label="打卡结果" width="120">
-            <template slot-scope="{ row }">
+          <el-table-column prop="city" label="打卡结果" width="140">
+            <template #default="{ row }">
               <div @click="openFn(row.one_shift_status, row.one_shift_location_status, 1, row.id)">
                 <span :class="row.one_shift_status > 1 || row.one_shift_location_status > 1 ? 'red' : 'pointer'">
                   {{ getStatus(row.one_shift_status, row.one_shift_location_status, row.one_shift_normal) }}
@@ -43,12 +45,13 @@
         </el-table-column>
         <el-table-column label="下班1">
           <el-table-column prop="province" label="最晚打卡" width="95">
-            <template slot-scope="{ row }">
-              {{ handle(row.two_shift_status, row.two_shift_is_after, row.two_shift_time) }}
+            <template #default="{ row }">
+              <div v-if="row.two_shift_time">{{ row.two_shift_is_after ? '次日' : '当日' }}</div>
+              {{ formatTime(row.two_shift_time) }}
             </template>
           </el-table-column>
-          <el-table-column prop="city" label="打卡结果" width="120">
-            <template slot-scope="{ row }">
+          <el-table-column prop="city" label="打卡结果" width="140">
+            <template #default="{ row }">
               <div @click="openFn(row.two_shift_status, row.two_shift_location_status, 2, row.id)">
                 <span :class="row.two_shift_status > 1 || row.two_shift_location_status > 0 ? 'red' : 'pointer'">
                   {{ getStatus(row.two_shift_status, row.two_shift_location_status, row.two_shift_normal) }}
@@ -60,12 +63,13 @@
 
         <el-table-column label="上班2">
           <el-table-column prop="province" label="最早打卡" width="95">
-            <template slot-scope="{ row }">
-              {{ handle(row.three_shift_status, row.three_shift_is_after, row.three_shift_time) }}
+            <template #default="{ row }">
+              <div v-if="row.three_shift_time">{{ row.three_shift_is_after ? '次日' : '当日' }}</div>
+              {{ formatTime(row.three_shift_time) }}
             </template>
           </el-table-column>
-          <el-table-column prop="city" label="打卡结果" width="120">
-            <template slot-scope="{ row }">
+          <el-table-column prop="city" label="打卡结果" width="140">
+            <template #default="{ row }">
               <div @click="openFn(row.three_shift_status, row.three_shift_location_status, 3, row.id)">
                 <span :class="row.three_shift_status > 1 || row.three_shift_location_status > 0 ? 'red' : 'pointer'">
                   {{ getStatus(row.three_shift_status, row.three_shift_location_status, row.three_shift_normal) }}
@@ -76,12 +80,13 @@
         </el-table-column>
         <el-table-column label="下班2">
           <el-table-column prop="province" label="最晚打卡" width="95">
-            <template slot-scope="{ row }">
-              {{ handle(row.four_shift_status, row.four_shift_is_after, row.four_shift_time) }}
+            <template #default="{ row }">
+              <div v-if="row.four_shift_time">{{ row.four_shift_is_after ? '次日' : '当日' }}</div>
+              {{ formatTime(row.four_shift_time) }}
             </template>
           </el-table-column>
-          <el-table-column prop="city" label="打卡结果" width="120">
-            <template slot-scope="{ row }">
+          <el-table-column prop="city" label="打卡结果" width="140">
+            <template #default="{ row }">
               <div @click="openFn(row.four_shift_status, row.four_shift_location_status, 4, row.id)">
                 <span :class="row.four_shift_status > 1 || row.four_shift_location_status > 0 ? 'red' : 'pointer'">
                   {{ getStatus(row.four_shift_status, row.four_shift_location_status, row.four_shift_normal) }}
@@ -93,12 +98,20 @@
         <el-table-column label="时长统计（小时）">
           <el-table-column prop="required_work_hours" label="应出勤" width="120"> </el-table-column>
           <el-table-column prop="actual_work_hours" label="实际出勤" width="120"> </el-table-column>
-          <el-table-column prop="overtime_work_hours" label="加班时长" width="120"> </el-table-column>
-          <el-table-column prop="leave_time" label="请假时长" width="120"> </el-table-column>
+          <el-table-column prop="overtime_work_hours" label="加班时长" width="120"> 
+            <template #default="{ row }">
+            <span :style="{ color: row.overtime_work_hours != 0.00 ? 'red' : '' }">{{ row.overtime_work_hours }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="leave_time" label="请假时长" width="120"> 
+            <template #default="{ row }">
+              <span :style="{ color: row.leave_time != 0.00 ? '#19BE6B' : '' }">{{ row.leave_time }}</span>
+            </template>
+          </el-table-column>
         </el-table-column>
-        <el-table-column label="操作">
-          <template slot-scope="{ row }">
-            <el-button type="text" @click="openRecord(row)">处理记录</el-button>
+        <el-table-column label="操作" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" link @click="openRecord(row)">处理记录</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -121,22 +134,22 @@
       <el-form>
         <el-form-item :label="form.name" label-width="60px">
           <div class="flex lh-center">
-            <el-select size="small" v-model="form.dis_status" placeholder="请选择" disabled>
+            <el-select v-model="form.dis_status" placeholder="请选择" disabled>
               <el-option v-for="item in salesmanList" :key="item.id" :label="item.name" :value="item.id"> </el-option>
             </el-select>
             <span class="el-icon-d-arrow-right"></span>
-            <el-select size="small" v-model="form.status" placeholder="请选择">
+            <el-select v-model="form.status" placeholder="请选择">
               <el-option v-for="item in salesmanList" :key="item.id" :label="item.name" :value="item.id"> </el-option>
             </el-select>
           </div>
         </el-form-item>
         <el-form-item label-width="60px" v-if="form.dis_locationStatus !== 0">
           <div>
-            <el-select size="small" v-model="form.dis_locationStatus" placeholder="请选择" disabled>
+            <el-select v-model="form.dis_locationStatus" placeholder="请选择" disabled>
               <el-option v-for="item in placeList" :key="item.id" :label="item.name" :value="item.id"> </el-option>
             </el-select>
             <span class="el-icon-d-arrow-right"></span>
-            <el-select size="small" v-model="form.location_status" placeholder="请选择">
+            <el-select v-model="form.location_status" placeholder="请选择">
               <el-option v-for="item in placeList" :key="item.id" :label="item.name" :value="item.id"> </el-option>
             </el-select>
           </div>
@@ -155,18 +168,25 @@
 </template>
 
 <script>
-import { dailyStatisticsApi, putStatisticsApi } from '@/api/config'
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { dailyStatisticsApi, putStatisticsApi } from '@/api/config.ts'
 export default {
   name: 'CrmebOaEntDaily',
   components: {
-    formBox: () => import('./components/formBox'),
-    oaDialog: () => import('@/components/form-common/dialog-form'),
-    recordDrawer: () => import('./components/recordDrawer'),
-    exportExcel: () => import('@/components/common/exportExcel')
+    formBox: defineAsyncComponent(() => import('./components/formBox')),
+    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form')),
+    recordDrawer: defineAsyncComponent(() => import('./components/recordDrawer')),
+    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel'))
   },
 
+  computed: {
+    dayjs: () => dayjs
+  },
   data() {
     return {
+      TABLE_HEIGHT,
       saveName: '上下班打卡_日报_统计日期范围.xlsx',
       loading: false,
       exportData: {
@@ -247,6 +267,27 @@ export default {
   },
 
   methods: {
+    // 格式化时间为时分秒
+    formatTime(timeString) {
+      if (!timeString) return '--'
+      // 如果时间字符串包含日期和时间，则只提取时间部分
+      if (timeString.includes('T')) {
+        const timePart = new Date(timeString).toTimeString()
+        return timePart.substring(0, 8) // HH:MM:SS
+      } else if (timeString.includes(' ')) {
+        const parts = timeString.split(' ')
+        const timePart = parts[1]
+        return timePart ? timePart.substring(0, 8) : '--'
+      } else {
+        // 如果已经是时间格式（HH:MM:SS 或 HH:MM），则截取到分钟或秒
+        const timeParts = timeString.split(':')
+        if (timeParts.length >= 2) {
+          return timeParts[0] + ':' + timeParts[1] + ':' + (timeParts[2] || '00')
+        } else {
+          return timeString
+        }
+      }
+    },
     openRecord(data) {
       this.$refs.recordDrawer.openBox(data)
     },
@@ -340,7 +381,7 @@ export default {
     async exportFn() {
       let aoaData = [
         ['概况统计与打卡明细'],
-        [`统计时间：${this.where.time} 制表时间：${this.$moment(new Date()).format('YYYY/MM/DD')}`],
+        [`统计时间：${this.where.time} 制表时间：${dayjs(new Date()).format('YYYY/MM/DD')}`],
         [
           '姓名',
           '部门',
@@ -389,7 +430,7 @@ export default {
           item.card ? item.card.name : '--',
           item.frame ? item.frame.name : '--',
           item.group || '--',
-          this.$moment(item.created_at).format('YYYY-MM-DD'),
+          dayjs(item.created_at).format('YYYY-MM-DD'),
           item.shift_data.name + this.getShift(item.shift_data),
 
           this.handle(item.one_shift_status, item.one_shift_is_after, item.one_shift_time),
@@ -459,18 +500,18 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/deep/ .el-table thead.is-group th {
+:deep(.el-table thead.is-group th) {
   background-color: rgba(247, 251, 255, 1);
-  border-color: #fff;
+  border-color: #f5f5f5;
 }
 .el-icon-d-arrow-right {
   margin: 0 12px;
 }
 
-/deep/ .el-table td {
+:deep(.el-table td) {
   border: none;
 }
-/deep/ .el-table {
+:deep(.el-table) {
   border: none;
 }
 .red {

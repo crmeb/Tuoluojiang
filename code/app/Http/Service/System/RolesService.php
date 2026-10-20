@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -17,23 +17,31 @@ namespace App\Http\Service\System;
 
 use App\Constants\CacheEnum;
 use App\Constants\CommonEnum;
+use App\Constants\DataPermissionLevelEnum;
 use App\Constants\MenuEnum;
+use App\Constants\ModuleEnum;
 use App\Constants\RuleEnum;
 use App\Http\Contract\System\MenusInterface;
 use App\Http\Contract\System\RolesInterface;
 use App\Http\Dao\Auth\RoleDao;
 use App\Http\Dao\Auth\RoleUserDao;
 use App\Http\Dao\Auth\SystemRoleDao;
+use App\Http\Service\Admin\AdminInfoService;
 use App\Http\Service\Admin\AdminService;
-use App\Http\Service\BaseService;
 use App\Http\Service\Crud\SystemCrudRoleService;
 use App\Http\Service\Crud\SystemCrudService;
 use App\Http\Service\Frame\FrameAssistService;
 use App\Http\Service\Frame\FrameService;
 use App\Jobs\SystemRoleJob;
-use crmeb\traits\service\RolesTrait;
+use Casbin\Exceptions\CasbinException;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\services\SwooleTaskService;
+use Tuoluojiang\Open\socket\Room;
+use Tuoluojiang\Open\traits\service\RolesTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
@@ -227,9 +235,53 @@ class RolesService extends BaseService implements RolesInterface
         $userIds = app()->get(AdminService::class)->column(['status' => 1], 'id');
         return $this->dao->setDefaultSort($sort)->select($where, $field, $with)
             ->each(function (&$item) use ($service, $userIds) {
+                $summary            = $this->summarizeModulePermissions($item['module_permissions'] ?? []);
+                $item['data_level'] = $summary['data_level'];
+                $item['frame_id']   = $summary['frame_id'];
+                $item['directly']   = $summary['directly'];
                 $item['frame']      = toArray($service->select(['ids' => $item['frame_id']], ['id', 'name']));
-                $item['user_count'] = $this->roleUserDao->count(['role_id' => $item['id'], 'user_ids' => $userIds]);
+                $item['user_count'] = $this->roleUserDao->getCount(['role_id' => $item['id'], 'user_ids' => $userIds]);
+                unset($item['module_permissions']);
             })?->toArray();
+    }
+
+    /**
+     * 汇总模块权限为列表兼容字段；不再读取角色表旧数据权限列.
+     */
+    protected function summarizeModulePermissions(array $modulePermissions): array
+    {
+        $permissions = collect(ModuleEnum::getModuleFieldConfig())
+            ->map(function ($item, $module) use ($modulePermissions) {
+                if (! isset($modulePermissions[$module])) {
+                    return null;
+                }
+
+                return [
+                    'data_level' => (int) ($modulePermissions[$module]['data_level'] ?? DataPermissionLevelEnum::SELF),
+                    'frame_id'   => (array) ($modulePermissions[$module]['frame_id'] ?? []),
+                    'directly'   => ! empty($modulePermissions[$module]['directly']) ? 1 : 0,
+                ];
+            })
+            ->filter();
+
+        if ($permissions->isEmpty()) {
+            return [
+                'data_level' => DataPermissionLevelEnum::NONE,
+                'frame_id'   => [],
+                'directly'   => 0,
+            ];
+        }
+
+        $maxLevel = $permissions->max(fn ($permission) => $permission['data_level']);
+        return [
+            'data_level' => $maxLevel,
+            'frame_id'   => $permissions->filter(fn ($permission) => $permission['data_level'] === $maxLevel)
+                ->flatMap(fn ($permission) => $permission['frame_id'])
+                ->unique()
+                ->values()
+                ->all(),
+            'directly'   => $permissions->contains(fn ($permission) => $permission['directly']) ? 1 : 0,
+        ];
     }
 
     /**
@@ -241,26 +293,58 @@ class RolesService extends BaseService implements RolesInterface
      */
     public function getRoleInfo(int $entId, int $id = 0): array
     {
-        return Cache::tags(CacheEnum::TAG_ROLE)->remember(md5('info_' . $entId . $id), (int) sys_config('system_cache_ttl', 3600), function () use ($entId, $id) {
-            $rules        = $this->getCompanySuperRole($entId);
-            $ruleInfo     = (object) [];
+        return Cache::tags(CacheEnum::TAG_ROLE)->remember(md5('role_info_' . $entId . $id), (int) sys_config('system_cache_ttl', 3600), function () use ($id) {
+            $ruleInfo     = [];
             $apis         = [];
             $frameService = app()->get(FrameService::class);
             if ($id) {
-                $ruleInfo = toArray($this->dao->get($id, ['id', 'role_name', 'rules', 'apis', 'status', 'data_level', 'directly', 'frame_id']));
+                $ruleInfo = $this->dao->get($id);
                 if (! $ruleInfo) {
                     throw $this->exception('修改的角色不存在');
                 }
-                $ruleInfo['frame'] = toArray($frameService->select(['ids' => $ruleInfo['frame_id']], ['id', 'name']));
-                $apis              = $ruleInfo['apis'];
+                $summary                = $this->summarizeModulePermissions($ruleInfo['module_permissions'] ?? []);
+                $ruleInfo['data_level'] = $summary['data_level'];
+                $ruleInfo['frame_id']   = $summary['frame_id'];
+                $ruleInfo['directly']   = $summary['directly'];
+                $ruleInfo['frame']      = $frameService->select(['ids' => $ruleInfo['frame_id']], ['id', 'name'])?->toArray();
+                $apis                   = $ruleInfo['apis'];
             }
-            $tree = app()->get(MenusInterface::class)->getCascaderMenus([
-                'status' => 1,
-                'ids'    => is_string($rules) ? json_decode($rules, true) : $rules,
-            ], isDefault: $apis);
-            $crud = app()->get(SystemCrudService::class)->setDefaultSort('id')->select(['crud_id' => 0], ['id', 'table_name', 'table_name_en', 'cate_ids'], [
+            $modules           = ModuleEnum::all();
+            $modulePermissions = $ruleInfo['module_permissions'] ?? [];
+            $moduleFrameIds    = collect($modulePermissions)
+                ->flatMap(fn ($permission) => (array) ($permission['frame_id'] ?? []))
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+            $moduleFrames      = $moduleFrameIds
+                ? ($frameService->select(['ids' => $moduleFrameIds], ['id', 'name'])?->keyBy('id') ?? collect())
+                : collect();
+            $module_permission = collect();
+            collect(ModuleEnum::getModuleFieldConfig())->each(function ($item, $key) use ($modules, &$module_permission, $modulePermissions, $moduleFrames) {
+                $frameIds = (array) ($modulePermissions[$key]['frame_id'] ?? []);
+                $frames   = collect($frameIds)
+                    ->map(fn ($frameId) => $moduleFrames->get($frameId))
+                    ->filter()
+                    ->map(fn ($frame) => [
+                        'id'   => (int) $frame['id'],
+                        'name' => $frame['name'],
+                    ])
+                    ->values()
+                    ->all();
+                $module_permission->put($key, [
+                    'data_level'  => $modulePermissions[$key]['data_level'] ?? DataPermissionLevelEnum::SELF,
+                    'directly'    => $modulePermissions[$key]['directly'] ?? 0,
+                    'frame_id'    => $frameIds,
+                    'frames'      => $frames,
+                    'frame_names' => array_column($frames, 'name'),
+                    'module_name' => $modules[$key],
+                ]);
+            });
+            $tree = app()->get(MenusService::class)->getRolesMenuTree(isDefault: $apis);
+            $crud = collect(app()->get(SystemCrudService::class)->setDefaultSort('id')->select(['crud_id' => 0], ['id', 'table_name', 'table_name_en', 'cate_ids'], [
                 'role' => fn ($q) => $q->where('role_id', $id)->select(['created', 'reade', 'reade_frame', 'updated', 'updated_frame', 'deleted', 'deleted_frame', 'role_id', 'crud_id', 'transfer', 'transfer_frame', 'share', 'share_frame']),
-            ])->each(function ($item) use ($frameService, $id) {
+            ]))->each(function ($item) use ($frameService, $id) {
                 if (! $id) {
                     $item['role'] = [];
                 }
@@ -284,8 +368,9 @@ class RolesService extends BaseService implements RolesInterface
                 $item['share_frames'] = $frameService->select(['ids' => $item['share_frame']], ['id', 'name', 'pid']) ?? [];
 
                 unset($item['role']);
-            });
-            return ['tree' => $tree, 'rule' => $ruleInfo, 'crud' => $crud];
+            })->toArray();
+            unset($ruleInfo['module_permissions']);
+            return ['tree' => $tree, 'module_permission' => $module_permission->all(), 'crud' => $crud, 'rule' => $ruleInfo];
         });
     }
 
@@ -294,27 +379,28 @@ class RolesService extends BaseService implements RolesInterface
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    public function saveRole(int $entId, string $name = '', array $rules = [], array $apis = [], int $status = 1, int $dataLevel = 1, int $directly = 0, array $frameId = [], array $crud = []): bool
+    public function saveRole(string $name = '', array $rules = [], array $apis = [], int $status = 1, array $modulePermissions = [], array $crud = []): bool
     {
+        $name        = trim($name);
+        $entId       = 1;
         $menuService = app()->get(MenusInterface::class);
-        $save        = $this->transaction(function () use ($entId, $rules, $apis, $name, $status, $menuService, $dataLevel, $directly, $frameId, $crud) {
+        $this->checkRoleNameUnique($entId, $name);
+        $save        = $this->transaction(function () use ($rules, $apis, $name, $status, $menuService, $crud, $modulePermissions, $entId) {
             $save = $this->dao->create([
                 'rules'       => $rules,
                 'rule_unique' => $menuService->getMenuUnique($rules),
-                'apis'        => $apis,
+                'apis'        => collect($apis)->filter(fn ($api) => in_array($api, $menuService->column(['status' => 1], 'id')))->all(),
                 'api_unique'  => $menuService->getMenuUnique($apis),
                 'entid'       => $entId,
                 'role_name'   => $name,
                 'status'      => $status,
-                'data_level'  => $dataLevel,
-                'directly'    => $directly,
-                'frame_id'    => $frameId,
             ]);
             $crud && app()->get(SystemCrudRoleService::class)->saveRoles($save->id, $crud);
+            $modulePermissions && app(ModulePermissionService::class)->setRoleModulePermissions($save->id, $modulePermissions);
             return $save;
         });
-        SystemRoleJob::dispatch($save->id, $rules, $apis);
-        return $save && Cache::tags([CacheEnum::TAG_ROLE])->flush();
+        SystemRoleJob::dispatch($save->id, array_merge($rules, $menuService->batchParentIdsByIds($rules)), $apis);
+        return $save->id && Cache::tags([CacheEnum::TAG_ROLE])->flush();
     }
 
     /**
@@ -333,12 +419,13 @@ class RolesService extends BaseService implements RolesInterface
         if ($role['status'] == $status) {
             return true;
         }
+        $affectedUserIds   = $this->getRoleUserIds($roleId);
+        $affectedUserUuids = $this->getUserUuids($affectedUserIds);
         if ($status) {
-            $res = $this->transaction(function () use ($roleId, $status) {
-                $userIds = toArray($this->roleUserDao->column(['role_id' => $roleId], 'user_id'));
-                if ($userIds) {
-                    foreach ($userIds as $userId) {
-                        app('enforcer')->addRoleForUser('user:' . $userId, 'role_' . $roleId);
+            $res = $this->transaction(function () use ($roleId, $status, $affectedUserIds) {
+                if ($affectedUserIds) {
+                    foreach ($affectedUserIds as $userId) {
+                        app('enforcer')->addRoleForUser((string) $userId, 'role_' . $roleId);
                     }
                     $this->roleUserDao->update(['role_id' => $roleId], ['status' => $status]);
                 }
@@ -351,8 +438,11 @@ class RolesService extends BaseService implements RolesInterface
                 return (bool) $this->dao->update($roleId, ['status' => $status]);
             });
         }
-        $res && Cache::tags([CacheEnum::TAG_ROLE])->flush();
-        return true;
+        if ($res) {
+            Cache::tags([CacheEnum::TAG_ROLE])->flush();
+            $this->notifyPermissionChangedForRoleStatus($roleId, $affectedUserIds, $affectedUserUuids, $entId);
+        }
+        return (bool) $res;
     }
 
     /**
@@ -362,28 +452,50 @@ class RolesService extends BaseService implements RolesInterface
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function updateRole(int $id, int $entId, string $name = '', array $rules = [], array $apis = [], int $status = 1, int $dataLevel = 1, int $directly = 0, array $frameId = [], array $crud = []): bool
+    public function updateRole(int $id, string $name = '', array $rules = [], array $apis = [], int $status = 1, array $modulePermissions = [], array $crud = []): bool
     {
+        $name  = trim($name);
+        $entId = 1;
         if (! $this->dao->exists(['id' => $id, 'entid' => $entId])) {
             throw $this->exception('未找到可修改的角色');
         }
-        /** @var MenusInterface $menuService */
-        $menuService = app()->get(MenusInterface::class);
+        $this->checkRoleNameUnique($entId, $name, $id);
+        $menuService = app()->get(MenusService::class);
         $save        = $this->dao->update($id, [
             'rules'       => $rules,
             'rule_unique' => $menuService->getMenuUnique($rules),
-            'apis'        => $apis,
+            'apis'        => collect($apis)->filter(fn ($api) => in_array($api, $menuService->column(['status' => 1], 'id')))->all(),
             'api_unique'  => $menuService->getMenuUnique($apis),
             'entid'       => $entId,
             'role_name'   => $name,
             'status'      => $status,
-            'data_level'  => $dataLevel,
-            'directly'    => $directly,
-            'frame_id'    => $frameId,
         ]);
         $crud && app()->get(SystemCrudRoleService::class)->saveRoles($id, $crud) && Cache::tags([CacheEnum::TAG_ROLE])->flush();
-        SystemRoleJob::dispatch($id, $rules, $apis, true);
+        $modulePermissions && app(ModulePermissionService::class)->setRoleModulePermissions($id, $modulePermissions) && Cache::tags([CacheEnum::TAG_ROLE])->flush();
+        SystemRoleJob::dispatch($id, array_merge($rules, $menuService->batchParentIdsByIds($rules)), $apis, true);
+        Cache::tags([CacheEnum::TAG_ROLE])->flush();
         return (bool) $save;
+    }
+
+    /**
+     * 校验同企业下角色名称唯一.
+     */
+    protected function checkRoleNameUnique(int $entId, string $name, int $ignoreId = 0): void
+    {
+        if ($name === '') {
+            throw $this->exception('角色名称必须填写');
+        }
+
+        $where = [
+            'entid'     => $entId,
+            'role_name' => $name,
+        ];
+        if ($ignoreId) {
+            $where['not_id'] = $ignoreId;
+        }
+        if ($this->dao->exists($where)) {
+            throw $this->exception('角色名称已存在，请勿重复添加');
+        }
     }
 
     /**
@@ -393,11 +505,15 @@ class RolesService extends BaseService implements RolesInterface
     public function saveSystemRole(int $entId, array $rules = [], array $apis = []): bool
     {
         Cache::tags([CacheEnum::TAG_ROLE])->flush();
-        return $this->roleDao->updateOrCreate(['type' => 'enterprise', 'entid_like' => $entId], [
+        $res = $this->roleDao->updateOrCreate(['type' => 'enterprise', 'entid_like' => $entId], [
             'rules' => $rules,
             'apis'  => $apis,
             'entid' => $entId,
         ]);
+        if ($res) {
+            $this->notifyPermissionChangedForEnterpriseOnline('enterprise_menu_changed', $entId);
+        }
+        return $res;
     }
 
     /**
@@ -406,14 +522,18 @@ class RolesService extends BaseService implements RolesInterface
     public function deleteRole(int $id, int $entId): bool
     {
         if ($this->dao->exists(['id' => $id, 'entid' => $entId])) {
-            $res = $this->transaction(function () use ($id) {
+            $userIds = toArray($this->roleUserDao->column(['role_id' => $id], 'user_id'));
+            $res     = $this->transaction(function () use ($id) {
                 app('enforcer')->deleteRole('role_' . $id);
                 $this->roleUserDao->delete(['role_id' => $id]);
                 app()->get(SystemCrudRoleService::class)->delete(['role_id' => $id]);
                 return (bool) $this->dao->delete($id);
             });
-            $this->refresh();
-            return $res && Cache::tags([CacheEnum::TAG_ROLE])->flush();
+            if ($res) {
+                Cache::tags([CacheEnum::TAG_ROLE])->flush();
+                $this->notifyPermissionChanged($this->getUserUuids($userIds), 'role_deleted', $entId);
+            }
+            return (bool) $res;
         }
         throw $this->exception('未找到可删除的角色');
     }
@@ -430,8 +550,22 @@ class RolesService extends BaseService implements RolesInterface
         if (! $this->dao->exists(['id' => $id, 'entid' => $entId])) {
             throw $this->exception('无效的角色ID');
         }
-        $uid = $this->roleUserDao->column(['role_id' => $id, 'entid' => $entId], 'user_id');
-        return app()->get(AdminService::class)->getList(['id' => $uid, 'status' => 1], with: ['frame']);
+        [$page, $limit] = $this->getPageValue();
+        $list           = $this->roleUserDao->select(['role_id' => $id, 'entid' => $entId], with: [
+            'user' => fn ($q) => $q->where('status', 1)->select('id', 'name', 'avatar', 'uid')->with('frame'),
+        ], page: $page, limit: $limit)
+            ->filter(fn ($item) => isset($item['user']['id']))
+            ->map(function ($item) {
+                $item['id']     = $item['user']['id'];
+                $item['name']   = $item['user']['name'];
+                $item['avatar'] = $item['user']['avatar'];
+                $item['uid']    = $item['user']['uid'];
+                $item['frame']  = $item['user']['frame'];
+                unset($item['user']);
+                return $item;
+            })->values()->all();
+        $count = count($list);
+        return $this->listData($list, $count);
     }
 
     /**
@@ -466,12 +600,13 @@ class RolesService extends BaseService implements RolesInterface
      */
     public function changeUserRole(int $entId, int $userId, array $roleIds = []): bool
     {
+        $roleIds      = $this->formatRoleIds($roleIds);
         $adminService = app()->get(AdminService::class);
         if ($roleIds) {
             $res = $this->transaction(function () use ($entId, $userId, $roleIds, $adminService) {
-                app('enforcer')->deleteRolesForUser('user:' . $userId);
+                app('enforcer')->deleteRolesForUser((string) $userId);
                 $this->roleUserDao->delete(['user_id' => $userId]);
-                app('enforcer')->addRolesForUser('user:' . $userId, array_map(function ($val) {
+                app('enforcer')->addRolesForUser((string) $userId, array_map(function ($val) {
                     return 'role_' . $val;
                 }, $roleIds));
                 foreach ($roleIds as $roleId) {
@@ -489,11 +624,12 @@ class RolesService extends BaseService implements RolesInterface
             }) && Cache::tags([CacheEnum::TAG_ROLE])->flush();
         } else {
             $res = $this->transaction(function () use ($userId, $roleIds, $adminService) {
-                app('enforcer')->deleteRolesForUser('user:' . $userId);
+                app('enforcer')->deleteRolesForUser((string) $userId);
                 $this->roleUserDao->delete(['user_id' => $userId]);
                 return (bool) $adminService->update($userId, ['roles' => $roleIds]);
             }) && Cache::tags([CacheEnum::TAG_ROLE])->flush();
         }
+        $res && $this->notifyPermissionChanged($this->getUserUuids([$userId]), 'user_role_changed', $entId);
         return $res;
     }
 
@@ -531,12 +667,16 @@ class RolesService extends BaseService implements RolesInterface
             }
             app()->get(AdminService::class)->updateRole($newUserId, $roleId);
             foreach ($newUserId as $value) {
-                app('enforcer')->addRoleForUser('user:' . $value, 'role_' . $roleId);
+                app('enforcer')->addRoleForUser((string) $value, 'role_' . $roleId);
             }
             $this->dao->inc($roleId, count($userIds), 'user_count');
             return $this->roleUserDao->insert($data);
         });
-        return $res && Cache::tags([CacheEnum::TAG_ROLE])->flush();
+        if ($res) {
+            Cache::tags([CacheEnum::TAG_ROLE])->flush();
+            $this->notifyPermissionChanged($this->getUserUuids($userIds), 'role_user_added', $entId);
+        }
+        return (bool) $res;
     }
 
     /**
@@ -549,19 +689,21 @@ class RolesService extends BaseService implements RolesInterface
      */
     public function changeRoleUser(int $uid, int $entId, int $roleId, $status): bool
     {
-        if ($this->roleUserDao->exists(['role_id' => $roleId, 'user_id' => $uid])) {
-            if ($this->roleUserDao->value(['role_id' => $roleId, 'user_id' => $uid], 'status') == $status) {
+        $info = $this->roleUserDao->get(['role_id' => $roleId, 'user_id' => $uid]);
+        if ($info) {
+            if ($info->status == $status) {
                 return true;
             }
-            $res = $this->roleUserDao->update(['role_id' => $roleId, 'user_id' => $uid], ['status' => $status]);
+            $info->status = $status;
+            $info->save();
             if ($status) {
-                app('enforcer')->addRoleForUser('user:' . $uid, 'role_' . $roleId);
+                app('enforcer')->addRoleForUser((string) $uid, 'role_' . $roleId);
             } else {
-                app('enforcer')->deleteRoleForUser('user:' . $uid, 'role_' . $roleId);
+                app('enforcer')->deleteRoleForUser((string) $uid, 'role_' . $roleId);
             }
-            $this->refresh();
             Cache::tags([CacheEnum::TAG_ROLE])->flush();
-            return (bool) $res;
+            $this->notifyPermissionChanged($this->getUserUuids([$uid]), 'role_user_status_changed', $entId);
+            return (bool) $info;
         }
         throw $this->exception('修改的成员不存在!');
     }
@@ -579,17 +721,188 @@ class RolesService extends BaseService implements RolesInterface
     {
         if ($this->roleUserDao->exists(['role_id' => $roleId, 'user_id' => $uid])) {
             $res = $this->transaction(function () use ($uid, $roleId) {
+                $adminService = app()->get(AdminService::class);
                 $res = $this->roleUserDao->delete(['role_id' => $roleId, 'user_id' => $uid]);
                 $this->dao->dec($roleId, 1, 'user_count');
-                if (app('enforcer')->hasRoleForUser('user:' . $uid, 'role_' . $roleId)) {
-                    app('enforcer')->deleteRoleForUser('user:' . $uid, 'role_' . $roleId);
+                $roles = $adminService->value($uid, 'roles');
+                $roles = is_string($roles) ? json_decode($roles, true) : $roles;
+                $roles = array_values(array_filter((array) $roles, fn ($value) => (int) $value !== $roleId));
+                $adminService->update($uid, ['roles' => $roles]);
+                if (app('enforcer')->hasRoleForUser((string) $uid, 'role_' . $roleId)) {
+                    app('enforcer')->deleteRoleForUser((string) $uid, 'role_' . $roleId);
                 }
                 return (bool) $res;
             });
-            $this->refresh();
-            return $res && Cache::tags([CacheEnum::TAG_ROLE])->flush();
+            if ($res) {
+                Cache::tags([CacheEnum::TAG_ROLE])->flush();
+                $this->notifyPermissionChanged($this->getUserUuids([$uid]), 'role_user_deleted', $entId);
+            }
+            return (bool) $res;
         }
         throw $this->exception('删除的成员不存在!');
+    }
+
+    protected function getRoleUserUuids(int $roleId): array
+    {
+        return $this->getUserUuids($this->getRoleUserIds($roleId));
+    }
+
+    protected function getRoleUserIds(int $roleId): array
+    {
+        return toArray($this->roleUserDao->column(['role_id' => $roleId], 'user_id'));
+    }
+
+    protected function getUserUuids(array $userIds): array
+    {
+        $userIds = array_values(array_filter(array_unique(array_map('intval', $userIds))));
+        if (! $userIds) {
+            return [];
+        }
+
+        $uuids = app()->get(AdminService::class)->column(['id' => $userIds], 'uid');
+        return array_values(array_filter(array_unique(array_map('strval', $uuids))));
+    }
+
+    protected function notifyPermissionChangedByRole(int $roleId, string $reason, int $entId = 1): void
+    {
+        $this->notifyPermissionChanged($this->getRoleUserUuids($roleId), $reason, $entId);
+    }
+
+    protected function notifyPermissionChangedForRoleStatus(int $roleId, array $userIds, array $userUuids, int $entId = 1): void
+    {
+        $fdCounts = $this->getSocketFdCounts($userUuids, $entId);
+        Log::info('角色启用禁用 websocket 推送准备', [
+            'role_id'       => $roleId,
+            'entid'         => $entId,
+            'user_ids'      => array_values(array_unique(array_map('intval', $userIds))),
+            'user_uuids'    => $userUuids,
+            'fd_counts'     => $fdCounts,
+            'matched_count' => array_sum($fdCounts),
+        ]);
+
+        if ($userUuids && array_sum($fdCounts) > 0) {
+            $this->notifyPermissionChanged($userUuids, 'role_status_changed', $entId);
+            return;
+        }
+
+        $fds = Room::userFd('ent', '', $entId);
+        Log::warning('角色启用禁用 websocket 推送目标未命中在线房间，使用企业在线用户兜底', [
+            'role_id'        => $roleId,
+            'entid'          => $entId,
+            'user_ids'       => array_values(array_unique(array_map('intval', $userIds))),
+            'user_uuids'     => $userUuids,
+            'fallback_fds'   => $fds,
+            'fd_counts'      => $fdCounts,
+        ]);
+        $this->notifyPermissionChangedForEnterpriseOnline('role_status_changed', $entId);
+    }
+
+    protected function notifyPermissionChanged(array $userIds, string $reason, int $entId = 1): void
+    {
+        $userIds = array_values(array_filter(array_unique(array_map('strval', $userIds))));
+        if (! $userIds) {
+            Log::warning('权限变更 websocket 推送跳过：目标用户为空', [
+                'reason' => $reason,
+                'entid'  => $entId,
+            ]);
+            return;
+        }
+
+        try {
+            $fdCounts = $this->getSocketFdCounts($userIds, $entId);
+            SwooleTaskService::ent()
+                ->entid($entId)
+                ->data('ent', [
+                    'reason' => $reason,
+                    'time'   => time(),
+                ])
+                ->type('permission_changed')
+                ->to($userIds)
+                ->push();
+            Log::info('权限变更 websocket 推送成功', [
+                'reason' => $reason,
+                'users'  => $userIds,
+                'count'  => count($userIds),
+                'entid'  => $entId,
+                'fds'    => $fdCounts,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('权限变更 websocket 推送失败：' . $e->getMessage(), [
+                'reason' => $reason,
+                'users'  => $userIds,
+                'entid'  => $entId,
+            ]);
+        }
+    }
+
+    protected function notifyPermissionChangedForEnterpriseOnline(string $reason, int $entId = 1): void
+    {
+        try {
+            $fds = Room::userFd('ent', '', $entId);
+            SwooleTaskService::ent()
+                ->entid($entId)
+                ->data('ent', [
+                    'reason' => $reason,
+                    'time'   => time(),
+                ])
+                ->type('permission_changed')
+                ->to([])
+                ->push();
+            Log::info('权限变更 websocket 企业在线用户广播成功', [
+                'reason' => $reason,
+                'entid'  => $entId,
+                'fds'    => $fds,
+                'count'  => count($fds),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('权限变更 websocket 企业在线用户广播失败：' . $e->getMessage(), [
+                'reason' => $reason,
+                'entid'  => $entId,
+            ]);
+        }
+    }
+
+    protected function getSocketFdCounts(array $userIds, int $entId): array
+    {
+        $counts = [];
+        foreach ($userIds as $userId) {
+            $userId          = (string) $userId;
+            $counts[$userId] = count(Room::userFd('ent', $userId, $entId));
+        }
+        return $counts;
+    }
+
+    /**
+     * 规范化角色ID列表.
+     */
+    private function formatRoleIds(array $roleIds): array
+    {
+        $roles = [];
+        foreach ($roleIds as $roleId) {
+            $roleId = $this->parseRoleId($roleId);
+            if ($roleId && ! in_array($roleId, $roles, true)) {
+                $roles[] = $roleId;
+            }
+        }
+        return $roles;
+    }
+
+    /**
+     * 解析角色ID，仅接受正整数或纯数字字符串.
+     *
+     * @param mixed $roleId
+     */
+    private function parseRoleId($roleId): int
+    {
+        if (is_int($roleId)) {
+            return $roleId > 0 ? $roleId : 0;
+        }
+
+        if (is_string($roleId) && ctype_digit(trim($roleId))) {
+            return (int) $roleId;
+        }
+
+        return 0;
     }
 
     /**
@@ -617,7 +930,7 @@ class RolesService extends BaseService implements RolesInterface
         if (! $entInfo) {
             throw $this->exception('接口未授权,无法访问!');
         }
-        if (! $userInfo['is_admin'] && ! app('enforcer')->enforce('user:' . $userInfo['id'], $uri, $method) && app('enforcer')->enforce('user:all', $uri, $method)) {
+        if (! $userInfo['is_admin'] && app('enforcer')->enforce('all', $uri, $method) && ! app('enforcer')->enforce((string) $userInfo['id'], $uri, $method)) {
             throw $this->exception('接口未授权,无法访问!');
         }
     }
@@ -630,52 +943,93 @@ class RolesService extends BaseService implements RolesInterface
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function initRules($entId): void
+    public function initRules(int $entId = 1): void
     {
-        if (! app('enforcer')->hasRoleForUser('user:all', 'role_all')) {
-            $this->transaction(function () use ($entId) {
-                $ruleMenus = app()->get(MenusInterface::class)->select(['status' => 1, 'type' => MenuEnum::TYPE_API], ['id', 'api', 'methods', 'menu_path', 'methods', 'uni_path', 'type'])?->toArray();
-                if ($ruleMenus) {
-                    foreach ($ruleMenus as $menu) {
-                        $menu['api'] && app('enforcer')->addPermissionForUser('role_all', $menu['api'], $menu['methods']);
+        if (! app('enforcer')->hasRoleForUser('all', 'role_all')) {
+            $service   = app()->get(MenusService::class);
+            $ruleMenus = $service->select(['status' => 1], ['id', 'api', 'methods', 'menu_path', 'methods', 'uni_path', 'type', 'uniqued', 'unique_auth'])?->toArray();
+            $rules     = $this->dao->column(['entid' => $entId], ['id', 'rules', 'apis']);
+
+            $menusById = array_column($ruleMenus, null, 'id');
+            $policies  = [];
+            foreach ($ruleMenus as $menu) {
+                $this->pushPolicy($policies, $this->buildMenuPolicy('role_all', $menu));
+            }
+
+            $roleIds = [];
+            foreach ($rules as &$rule) {
+                $roleIds[]     = (int) $rule['id'];
+                $rule['rules'] = array_values(array_unique(array_merge($rule['rules'] ?? [], $service->batchParentIdsByIds($rule['rules'] ?? []))));
+                $rule['apis']  = array_values(array_unique($rule['apis'] ?? []));
+            }
+            unset($rule);
+
+            foreach ($rules as $rule) {
+                $roleKey = 'role_' . $rule['id'];
+                foreach ($rule['rules'] as $menuId) {
+                    if (($menusById[$menuId]['type'] ?? null) === MenuEnum::TYPE_MENU) {
+                        $this->pushPolicy($policies, $this->buildMenuPolicy($roleKey, $menusById[$menuId]));
                     }
                 }
-                app('enforcer')->addRoleForUser('user:all', 'role_all');
-                $rules = $this->dao->column(['entid' => $entId], ['id', 'rules', 'apis']);
-                foreach ($rules as $rule) {
-                    $menus = array_filter($ruleMenus, function ($item) use ($rule) {
-                        return in_array($item['id'], $rule['apis']);
+                foreach ($rule['apis'] as $menuId) {
+                    if (isset($menusById[$menuId]) && ($menusById[$menuId]['type'] ?? null) !== MenuEnum::TYPE_MENU) {
+                        $this->pushPolicy($policies, $this->buildMenuPolicy($roleKey, $menusById[$menuId]));
+                    }
+                }
+            }
+
+            if (! empty($policies)) {
+                app('enforcer')->addPolicies(array_values($policies));
+            }
+
+            $userRoles = [];
+            if ($roleIds) {
+                $this->roleUserDao->getModel()
+                    ->whereIn('role_id', array_unique($roleIds))
+                    ->select(['id', 'role_id', 'user_id'])
+                    ->chunkById(1000, function ($items) use (&$userRoles) {
+                        foreach ($items as $item) {
+                            if (empty($item->user_id)) {
+                                continue;
+                            }
+                            $userRoles[$item->user_id]['role_' . $item->role_id] = true;
+                        }
                     });
-                    foreach ($menus as $menu) {
-                        $menu['api'] && app('enforcer')->addPermissionForUser('role_' . $rule['id'], $menu['api'], $menu['methods']);
-                    }
-                    $userIds = $this->roleUserDao->column(['role_id' => $rule['id']], 'user_id');
-                    foreach (array_unique($userIds) as $userId) {
-                        $userId && app('enforcer')->addRoleForUser('user:' . $userId, 'role_' . $rule['id']);
-                    }
+            }
+
+            foreach ($userRoles as $userId => $roles) {
+                if (! empty($roles)) {
+                    app('enforcer')->addRolesForUser((string) $userId, array_keys($roles));
                 }
-            });
+            }
+            app('enforcer')->addRoleForUser('all', 'role_all');
         }
     }
 
-    public function checkAuthStatus($uuid, $entId, $permission): bool
+    private function buildMenuPolicy(string $role, array $menu): array
     {
-        $menus = app()->get(MenusService::class)->getMenusForUser($uuid, $entId, false);
-        //        $roles = app('enforcer')->getRolesForUserInDomain($uuid, 'ent_' . $entId);
-        $auth = false;
-        if ($menus) {
-            foreach ($menus as $menu) {
-                if ($permission == $menu['menu_path']) {
-                    $auth = true;
-                    break;
-                }
-                //                if (app('enforcer')->hasPermissionForUser(str_replace('role_', 'rule_', $role), $permission)) {
-                //                    $auth = true;
-                //                    break;
-                //                }
-            }
-        }
-        return $auth;
+        return match ($menu['type']) {
+            MenuEnum::TYPE_MENU => [$role, $menu['uniqued'], $menu['type']],
+            MenuEnum::TYPE_API  => [$role, $menu['api'], $menu['methods']],
+            default             => [$role, $menu['uniqued'], $menu['unique_auth']],
+        };
+    }
+
+    private function pushPolicy(array &$policies, array $policy): void
+    {
+        $policies[implode("\0", array_map('strval', $policy))] = $policy;
+    }
+
+    /**
+     * 检测权限状态.
+     * @param mixed $admin
+     * @param mixed $uri
+     * @param mixed $method
+     * @throws CasbinException
+     */
+    public function checkAuthStatus($admin, $uri, $method): bool
+    {
+        return ! $admin->is_admin && app('enforcer')->enforce('all', $uri, $method) && app('enforcer')->enforce((string) $admin->id, $uri, $method);
     }
 
     /**
@@ -720,14 +1074,18 @@ class RolesService extends BaseService implements RolesInterface
 
     /**
      * 获取某个管理员的权限ID.
-     * @return array
+     * @return string
+     * @throws BindingResolutionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ReflectionException
      */
     public function getAdminRole(array $ids, string $field = 'rules')
     {
         return Cache::tags(CacheEnum::TAG_ROLE)->remember(md5('admin_rule' . $field . implode(',', $ids)), (int) sys_config('system_cache_ttl', 3600), function () use ($ids, $field) {
             $rules   = $this->dao->column(['id' => $ids], $field, 'id');
             $newRule = [];
-            $service = app()->get(SystemMenusService::class);
+            $service = app()->get(MenusService::class);
             if ($field === 'rules') {
                 $rulesId = [];
                 foreach ($rules as $rule) {
@@ -801,184 +1159,174 @@ class RolesService extends BaseService implements RolesInterface
 
     /**
      * 获取用户数据范围下的用户ID.
-     * @param int $userId 当前用户ID
-     * @param string $module 业务模块
+     * @return string
      * @throws BindingResolutionException
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function getDataUids(int $userId, string $module = '', int $type = 0, int $normal = 1, int $crudId = 0, int $crudRouleType = 1): array
+    public function getDataUids(int $userId, string $module = '', int $type = 0, bool $normal = true, int $crudId = 0, int $crudRoleType = 1)
     {
         return Cache::tags(CacheEnum::TAG_ROLE)->remember(
-            md5($userId . $module . $type . $normal . $crudId . $crudRouleType),
+            md5($userId . $module . $type . $normal . $crudId . $crudRoleType),
             (int) sys_config('system_cache_ttl', 3600),
-            function () use ($userId, $module, $type, $normal, $crudId, $crudRouleType) {
+            function () use ($userId, $module, $type, $normal, $crudId, $crudRoleType) {
+                if ($module && ModuleEnum::isValid($module)) {
+                    return app(ModulePermissionService::class)->getAccessibleUserIds($userId, $module, $normal);
+                }
+
                 $roleIds       = $this->roleUserDao->column(['user_id' => $userId, 'status' => 1], 'role_id');
                 $assistService = app()->get(FrameAssistService::class);
                 $frameService  = app()->get(FrameService::class);
-                if (! $module) {
-                    if (! $roleIds) {
-                        return array_filter([$userId], function ($value) {
-                            return $value;
-                        });
-                    }
-                    $roles            = toArray($this->dao->select(['ids' => $roleIds, 'status' => 1], ['id', 'rules', 'data_level', 'directly', 'frame_id']));
-                    $userIds          = [$userId];
-                    $crudRouleService = app()->make(SystemCrudRoleService::class);
-                    foreach ($roles as $role) {
-                        if ($crudId) {
-                            $levelField = 'reade';
-                            $frameField = 'reade_frame';
-                            switch ($crudRouleType) {
-                                case 3:
-                                    $levelField = 'updated';
-                                    $frameField = 'updated_frame';
-                                    break;
-                                case 4:
-                                    $levelField = 'deleted';
-                                    $frameField = 'deleted_frame';
-                                    break;
-                                case 5:
-                                    $levelField = 'transfer';
-                                    $frameField = 'transfer_frame';
-                                    break;
-                                case 6:
-                                    $levelField = 'share';
-                                    $frameField = 'share_frame';
-                                    break;
-                            }
-                            $crudRoule = $crudRouleService->get(['role_id' => $role['id'], 'crud_id' => $crudId], [$levelField, $frameField]);
-                            if (! $crudRoule) {
-                                continue;
-                            }
-                            $userIds = array_merge($userIds, $this->getUserids($userId, $crudRoule[$levelField], $crudRoule[$frameField], $frameService, $assistService));
-                        } else {
-                            $userIds = array_merge($userIds, $this->getUserids($userId, $role['data_level'], $role['frame_id'], $frameService, $assistService));
+                if ($module) {
+                    $crud = DB::table('system_crud')->where('table_name_en', $module)->whereNull('deleted_at')->first(['id', 'table_name']);
+                    if ($crud) {
+                        $crudName = $crud->table_name ?: $module;
+                        $roles    = app()->get(SystemCrudRoleService::class)->select(['role_id' => $roleIds, 'crud_id' => $crud->id])?->toArray();
+                        $userIds = [];
+                        switch ($type) {
+                            case 1:// 查看
+                                foreach ($roles as $role) {
+                                    $userIds = array_merge($userIds, $this->getUserids($userId, $role['reade'], $role['reade_frame'], $frameService, $assistService));
+                                }
+                                break;
+                            case 2:// 新增
+                                foreach ($roles as $role) {
+                                    $userIds = array_merge($userIds, $this->getUserids($userId, $role['created'], [], $frameService, $assistService));
+                                }
+                                if (! in_array($userId, $userIds)) {
+                                    throw $this->exception('暂无权限在' . $crudName . '模块中新增数据！');
+                                }
+                                break;
+                            case 3:// 修改
+                                foreach ($roles as $role) {
+                                    $userIds = array_merge($userIds, $this->getUserids($userId, $role['updated'], $role['updated_frame'], $frameService, $assistService));
+                                }
+                                if (! in_array($userId, $userIds)) {
+                                    throw $this->exception('暂无权限在' . $crudName . '模块中更新该数据！');
+                                }
+                                break;
+                            case 4:// 删除
+                                foreach ($roles as $role) {
+                                    $userIds = array_merge($userIds, $this->getUserids($userId, $role['deleted'], $role['deleted_frame'], $frameService, $assistService));
+                                }
+                                if (! in_array($userId, $userIds)) {
+                                    throw $this->exception('暂无权限在' . $crudName . '模块中删除该数据！');
+                                }
+                                break;
+                            case 5:// 分配
+                                foreach ($roles as $role) {
+                                    $userIds = array_merge($userIds, $this->getUserids($userId, $role['transfer'], $role['transfer_frame'], $frameService, $assistService));
+                                }
+                                if (! in_array($userId, $userIds)) {
+                                    throw $this->exception('暂无权限在' . $crudName . '模块中分配该数据！');
+                                }
+                                break;
+                            case 6:// 分享
+                                foreach ($roles as $role) {
+                                    $userIds = array_merge($userIds, $this->getUserids($userId, $role['share'], $role['share_frame'], $frameService, $assistService));
+                                }
+                                if (! in_array($userId, $userIds)) {
+                                    throw $this->exception('暂无权限在' . $crudName . '模块中分享该数据！');
+                                }
+                                break;
                         }
                     }
-                } else {
-                    $crud = app()->get(SystemCrudService::class)->get(['table_name_en' => $module], ['id', 'table_name'])?->toArray();
-                    if (! $crud) {
-                        throw $this->exception('无效的模块');
+                } elseif ($crudId) {
+                    if (! $roleIds) {
+                        return array_filter([$userId]);
                     }
-                    $roles   = app()->get(SystemCrudRoleService::class)->select(['role_id' => $roleIds, 'crud_id' => $crud['id']])?->toArray();
-                    $userIds = [];
-                    switch ($type) {
-                        case 1:// 查看
-                            foreach ($roles as $role) {
-                                $userIds = array_merge($userIds, $this->getUserids($userId, $role['reade'], $role['reade_frame'], $frameService, $assistService));
-                            }
-                            break;
-                        case 2:// 新增
-                            foreach ($roles as $role) {
-                                $userIds = array_merge($userIds, $this->getUserids($userId, $role['created'], [], $frameService, $assistService));
-                            }
-                            if (! in_array($userId, $userIds)) {
-                                throw $this->exception('暂无权限在' . $crud['table_name'] . '模块中新增数据！');
-                            }
-                            break;
-                        case 3:// 修改
-                            foreach ($roles as $role) {
-                                $userIds = array_merge($userIds, $this->getUserids($userId, $role['updated'], $role['updated_frame'], $frameService, $assistService));
-                            }
-                            if (! in_array($userId, $userIds)) {
-                                throw $this->exception('暂无权限在' . $crud['table_name'] . '模块中更新该数据！');
-                            }
-                            break;
-                        case 4:// 删除
-                            foreach ($roles as $role) {
-                                $userIds = array_merge($userIds, $this->getUserids($userId, $role['deleted'], $role['deleted_frame'], $frameService, $assistService));
-                            }
-                            if (! in_array($userId, $userIds)) {
-                                throw $this->exception('暂无权限在' . $crud['table_name'] . '模块中删除该数据！');
-                            }
-                            break;
-                        case 5:// 分配
-                            foreach ($roles as $role) {
-                                $userIds = array_merge($userIds, $this->getUserids($userId, $role['transfer'], $role['transfer_frame'], $frameService, $assistService));
-                            }
-                            if (! in_array($userId, $userIds)) {
-                                throw $this->exception('暂无权限在' . $crud['table_name'] . '模块中分配该数据！');
-                            }
-                            break;
-                        case 6:// 分享
-                            foreach ($roles as $role) {
-                                $userIds = array_merge($userIds, $this->getUserids($userId, $role['share'], $role['share_frame'], $frameService, $assistService));
-                            }
-                            if (! in_array($userId, $userIds)) {
-                                throw $this->exception('暂无权限在' . $crud['table_name'] . '模块中分享该数据！');
-                            }
-                            break;
+                    $roles    = $this->dao->select(['ids' => $roleIds, 'status' => 1], ['id'])?->toArray();
+                    $userIds  = [$userId];
+                    $levelMap = match ($crudRoleType) {
+                        3       => ['updated', 'updated_frame'],
+                        4       => ['deleted', 'deleted_frame'],
+                        5       => ['transfer', 'transfer_frame'],
+                        6       => ['share', 'share_frame'],
+                        default => ['reade', 'reade_frame'],
+                    };
+                    foreach ($roles as $role) {
+                        $crudRole = app()->get(SystemCrudRoleService::class)->get(['role_id' => $role['id'], 'crud_id' => $crudId], $levelMap);
+                        if (! $crudRole) {
+                            continue;
+                        }
+                        $userIds = array_merge($userIds, $this->getUserids($userId, $crudRole[$levelMap[0]], $crudRole[$levelMap[1]], $frameService, $assistService, $normal));
                     }
                 }
+
+                if (isset($userIds)) {
+                    if ($normal) {
+                        $userIds = array_unique(array_intersect($userIds, app(AdminInfoService::class)->column(['type' => [1, 2, 3]], 'id')));
+                    }
+                    return array_filter($userIds);
+                }
+
+                $userIds = $normal
+                    ? array_intersect(
+                        app(AdminService::class)->column(['status' => 1], 'id'),
+                        app(AdminInfoService::class)->column(['type' => [1, 2, 3]], 'id')
+                    )
+                    : app(AdminService::class)->column([], 'id');
+
                 if ($normal) {
-                    $userIds = array_unique(array_intersect($userIds, app()->get(AdminService::class)->column(['status' => 1], 'id')));
+                    $userIds = array_unique($userIds);
                 }
-                return array_filter($userIds, function ($value) {
-                    return $value;
-                });
+                return array_filter($userIds);
             }
         );
     }
 
     /**
      * 获取用户数据范围下的组织架构ID.
-     * @param int $crudRouleType 1:查看 2:新增 3:修改 4:删除 5:分配 6:分享
+     * @param int $crudRoleType 1:查看 2:新增 3:修改 4:删除 5:分配 6:分享
      * @throws BindingResolutionException
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function getDataFrames(string $uuid, int $entId = 1, bool $withScope = false, int $crudId = 0, int $crudRouleType = 1): array
+    public function getDataFrames(int|string $uuid, int $entId = 1, bool $withScope = false, int $crudId = 0, int $crudRoleType = 1)
     {
-        $userId = uuid_to_uid($uuid, $entId);
-        return Cache::tags([CacheEnum::TAG_ROLE])->remember(md5('frames_' . $userId . (int) $withScope . $crudId . $crudRouleType), (int) sys_config('system_cache_ttl', 3600), function () use ($userId, $withScope, $crudId, $crudRouleType) {
-            $roleIds = $this->roleUserDao->column(['user_id' => $userId, 'status' => 1], 'role_id');
-            if (! $roleIds) {
-                return [[], []];
-            }
-            $roles            = toArray($this->dao->select(['ids' => $roleIds, 'status' => 1], ['id', 'rules', 'data_level', 'directly', 'frame_id']));
-            $frameIds         = [];
-            $crudRouleService = app()->make(SystemCrudRoleService::class);
-            foreach ($roles as $role) {
-                if ($crudId) {
-                    $levelField = 'reade';
-                    $frameField = 'reade_frame';
-                    switch ($crudRouleType) {
-                        case 3:
-                            $levelField = 'updated';
-                            $frameField = 'updated_frame';
-                            break;
-                        case 4:
-                            $levelField = 'deleted';
-                            $frameField = 'deleted_frame';
-                            break;
-                        case 5:
-                            $levelField = 'transfer';
-                            $frameField = 'transfer_frame';
-                            break;
-                        case 6:
-                            $levelField = 'share';
-                            $frameField = 'share_frame';
-                            break;
-                    }
-                    $crudRoule = $crudRouleService->get(['role_id' => $role['id'], 'crud_id' => $crudId], [$levelField, $frameField]);
-                    if (! $crudRoule) {
+        $userId = is_string($uuid) ? uuid_to_uid($uuid, $entId) : $uuid;
+        return Cache::tags([CacheEnum::TAG_ROLE])->remember(md5('frames_' . $userId . (int) $withScope . $crudId . $crudRoleType), (int) sys_config('system_cache_ttl', 3600), function () use ($userId, $entId, $withScope, $crudId, $crudRoleType) {
+            if ($crudId) {
+                $roleIds = $this->roleUserDao->column(['user_id' => $userId, 'status' => 1], 'role_id');
+                if (! $roleIds) {
+                    return [[], []];
+                }
+
+                $roles    = toArray($this->dao->select(['ids' => $roleIds, 'status' => 1], ['id']));
+                $frameIds = [];
+                $levels   = [];
+                $levelMap = match ($crudRoleType) {
+                    3       => ['updated', 'updated_frame'],
+                    4       => ['deleted', 'deleted_frame'],
+                    5       => ['transfer', 'transfer_frame'],
+                    6       => ['share', 'share_frame'],
+                    default => ['reade', 'reade_frame'],
+                };
+                foreach ($roles as $role) {
+                    $crudRole = app()->get(SystemCrudRoleService::class)->get(['role_id' => $role['id'], 'crud_id' => $crudId], $levelMap);
+                    if (! $crudRole) {
                         continue;
                     }
-                    $frameIds = array_merge($frameIds, $this->getFrameIds($userId, $crudRoule[$levelField], $crudRoule[$frameField]));
-                } else {
-                    $frameIds = array_merge($frameIds, $this->getFrameIds($userId, $role['data_level'], $role['frame_id']));
+                    $levels[] = $crudRole[$levelMap[0]];
+                    $frameIds = array_merge($frameIds, $this->getFrameIds($userId, $crudRole[$levelMap[0]], $crudRole[$levelMap[1]]));
                 }
+
+                if ($withScope) {
+                    return [
+                        array_unique($frameIds),
+                        array_unique($levels),
+                    ];
+                }
+                return array_unique($frameIds);
             }
+
+            $frameIds = app(FrameService::class)->column(['entid' => $entId, 'is_show' => 1], 'id');
             if ($withScope) {
-                $arr = array_filter(array_column($roles, 'directly'), function ($value) {
-                    return $value;
-                }) ? [RuleEnum::DATA_SUB] : [];
                 return [
                     array_unique($frameIds),
-                    array_unique(array_merge(array_column($roles, 'data_level'), $arr)),
+                    [RuleEnum::DATA_ALL],
                 ];
             }
             return array_unique($frameIds);
@@ -997,17 +1345,29 @@ class RolesService extends BaseService implements RolesInterface
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    private function getUserids(int $userId, int $level, array $frameIds = [], ?FrameService $frameService = null, ?FrameAssistService $assistService = null)
+    private function getUserids(int $userId, int $level, array $frameIds = [], ?FrameService $frameService = null, ?FrameAssistService $assistService = null, ?bool $normal = true)
     {
         $userIds = match ($level) {
-            RuleEnum::DATA_SUB     => $assistService->getSubUid($userId),
-            RuleEnum::DATA_ALL     => app()->get(AdminService::class)->column(['status' => 1], 'id'),
-            RuleEnum::DATA_APPOINT => $assistService->column(['frame_id' => $frameIds], 'user_id'),
+            RuleEnum::DATA_SUB     => $assistService->getSubUid($userId, $normal),
+            RuleEnum::DATA_ALL     => $normal ? app()->get(AdminInfoService::class)->column(['type' => [1, 2, 3]], 'id') : app()->get(AdminService::class)->column([], 'id'),
+            RuleEnum::DATA_APPOINT => $this->filterNormalUsers($assistService->setTrashed($normal)->column(['frame_id' => $frameIds], 'user_id'), $normal),
             RuleEnum::DATA_CURRENT => $frameService->getFrameSubUids($userId),
             RuleEnum::DATA_SELF    => [$userId],
             default                => [],
         };
         return array_unique($userIds);
+    }
+
+    /**
+     * 过滤在职用户（type为1、2、3）.
+     */
+    private function filterNormalUsers(array $userIds, bool $normal = true): array
+    {
+        if (! $normal || empty($userIds)) {
+            return $userIds;
+        }
+        $normalUserIds = app()->get(AdminInfoService::class)->column(['type' => [1, 2, 3]], 'id');
+        return array_intersect($userIds, $normalUserIds);
     }
 
     private function getFrameIds($userId, $level, $frameIds = [])

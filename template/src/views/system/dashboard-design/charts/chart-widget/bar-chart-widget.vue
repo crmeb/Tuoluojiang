@@ -1,10 +1,11 @@
 <template>
+
   <myEcharts :isShowEmpty="isShowEmpty" :option="option" :field="field" :designer="designer" v-loading="loading" />
 </template>
 <script>
 import myEcharts from '@/components/scEcharts/chart-widget.vue'
-import { queryChartData } from '@/api/chart'
-import { EventBus } from '@/libs/bus'
+import { queryChartData } from '../chartQuery.ts'
+import { EventBus } from '@/libs/bus.ts'
 
 export default {
   name: 'barChart-widget',
@@ -61,21 +62,26 @@ export default {
   mounted() {
     this.cutField = this.field
     this.initOption()
-    EventBus.$on('barChangeValue', (e, type) => {
+    EventBus.$on('barChangeValue', this.handleBarChangeValue)
+  },
+  unmounted() {
+    EventBus.$off('barChangeValue', this.handleBarChangeValue)
+  },
+  methods: {
+    handleBarChangeValue(e, type) {
       if (type) {
         this.drillDown = true
       }
       this.cutField.options.setDimensional.dimension[0].value = e
       this.initOption(1)
-    })
-  },
-  destroyed() {
-    EventBus.$off('barChangeValue')
-  },
-  methods: {
+    },
     async getChartData(options, type, isClick) {
       this.loading = true
-      let res = await queryChartData(options, type)
+      let chartData = JSON.stringify({
+        widgetList: this.designer.widgetList,
+        formConfig: this.designer.formConfig
+      })
+      let res = await queryChartData(options, type,chartData)
       if ((this.drillDown && res.data.xAxis.length > 0) || !this.drillDown) {
         this.option.xAxis.data = [...res.data.xAxis]
         let { chartStyle, setChartConf, axisCoordinates } = this.cutField.options

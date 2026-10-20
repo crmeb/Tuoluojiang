@@ -1,8 +1,8 @@
 <template>
   <div class="pivot-table-widget" @click.stop="setSelected" v-resize="handleResize">
     <div class="table-box" v-if="tableColumn.length > 0" v-loading="tableLoading">
+      <!-- sortable -->
       <el-table
-        size="small"
         :data="tableData"
         :border="true"
         style="width: 100%"
@@ -11,15 +11,17 @@
         :summary-method="getSummaries"
         class="tableAuto"
       >
+      
         <el-table-column
           v-for="(column, inx) of tableColumn"
           :key="inx"
           show-overflow-tooltip
           :label="column.alias"
-          :prop="column.fieldName"
+          :prop="column.prop ? column.prop : column.alias"
+          :sortable="shouldSort(column.type)"
         >
           <template #header>
-            <div class="yichu">{{ column.alias }}</div>
+            <span class="yichu ">{{ column.alias }}  </span>
           </template>
           <template #default="scope">
             <FormatRow :row="scope.row" :column="column" />
@@ -36,7 +38,8 @@
 
 <script>
 import FormatRow from '@/components/simpleTable/FormatRow.vue'
-import { getDataList } from '@/api/chart'
+import { getDataList } from '@/api/chart.ts'
+import { getStorageJson } from '@/utils/storage.ts'
 
 export default {
   name: 'listTable-widget',
@@ -68,7 +71,7 @@ export default {
       tableLoading: false,
       fieldsList: [],
       sortFields: [],
-      allEntityName: JSON.parse(localStorage.getItem('allEntityName')),
+      allEntityName: getStorageJson('allEntityName', {}),
       maxHeight: '320',
       boxHeight: '100%'
     }
@@ -116,6 +119,9 @@ export default {
         }
       }
     },
+    shouldSort(type) {
+      return ['input_number', 'date_picker','input_float','input_price','input_percentage','date_time_picker'].includes(type)
+    },
     handleResize(data) {
       // console.log(data, 'data')
       // this.maxHeight = data.height + ''
@@ -125,7 +131,6 @@ export default {
     setSelected() {
       this.designer?.setSelected(this.field)
     },
-
     async getTableData(options) {
       this.tableLoading = true
       let listArr = []
@@ -175,6 +180,7 @@ export default {
         showField: this.fieldsList,
         limit: options.setChartConf.pageSize,
         page: 1,
+        search: options.search||{},
         additionalSearch_boolean: options.setChartFilter.additional_search_boolean || '',
         additionalSearch: options.setChartFilter.list || [],
         sortFields: this.sortFields
@@ -206,7 +212,7 @@ export default {
             fieldName: 'sumcol'
           })
           this.$nextTick(() => {
-            this.$set(this, 'tableData', list)
+            this.tableData = list
           })
         } else if (showSumcol) {
           return

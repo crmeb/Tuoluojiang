@@ -15,7 +15,7 @@
         @dropdownFn="drawer = true"
       ></oaFromBox>
       <div class="table-box mt10">
-        <el-table :data="tableData" :height="tableHeight" style="width: 100%">
+        <el-table :data="tableData" :height="TABLE_HEIGHT" style="width: 100%">
           <el-table-column label="考勤组名称" min-width="180" prop="name" show-overflow-tooltip> </el-table-column>
           <el-table-column label="考勤组成员" min-width="250" prop="members" show-overflow-tooltip>
             <template #default="{ row }">
@@ -23,27 +23,31 @@
             </template>
           </el-table-column>
           <el-table-column label="考勤班次" min-width="300" prop="shifts">
-            <template slot-scope="scope">
-              <span v-for="(item, index) in scope.row.shifts" v-if="scope.row.shifts.length <= 3" :key="index"
-                >{{ item.name }}&nbsp;{{ item.times[0].first_day_after == 0 ? '当日' : '次日'
-                }}{{ item.times[0].work_hours }}-{{ item.times[0].second_day_after == 0 ? '当日' : '次日'
-                }}{{ item.times[0].off_hours }}
-                <span v-if="item.times.length > 1">
-                  {{ item.times[1].first_day_after == 0 ? '当日' : '次日' }}{{ item.times[1].work_hours }} -
-                  {{ item.times[1].second_day_after == 0 ? '当日' : '次日' }}{{ item.times[1].off_hours }}
+            <template #default="scope">
+              <template v-if="scope.row.shifts.length <= 3">
+                <span v-for="(item, index) in scope.row.shifts" :key="index"
+                  >{{ item.name }}&nbsp;{{ item.times[0].first_day_after == 0 ? '当日' : '次日'
+                  }}{{ item.times[0].work_hours }}-{{ item.times[0].second_day_after == 0 ? '当日' : '次日'
+                  }}{{ item.times[0].off_hours }}
+                  <span v-if="item.times.length > 1">
+                    {{ item.times[1].first_day_after == 0 ? '当日' : '次日' }}{{ item.times[1].work_hours }} -
+                    {{ item.times[1].second_day_after == 0 ? '当日' : '次日' }}{{ item.times[1].off_hours }}
+                  </span>
                 </span>
-              </span>
+              </template>
               <el-popover v-if="scope.row.shifts.length > 3" placement="top-start" trigger="hover" width="400">
                 <span v-for="(item, index) in scope.row.shifts" :key="index"
                   >{{ item.name }}&nbsp;{{ item.times[0].work_hours }}-{{ item.times[0].off_hours }}、</span
                 >
-                <div slot="reference">
-                  <span v-for="(item, index) in scope.row.shifts" v-show="index <= 2" :key="index">
-                    {{ item.name }}&nbsp;{{ item.times[0].work_hours }}-{{ item.times[0].off_hours }}&nbsp;<span>{{
-                      index < 2 ? '、' : '...'
-                    }}</span>
-                  </span>
-                </div>
+                <template #reference>
+                  <div>
+                    <span v-for="(item, index) in scope.row.shifts" v-show="index <= 2" :key="index">
+                      {{ item.name }}&nbsp;{{ item.times[0].work_hours }}-{{ item.times[0].off_hours }}&nbsp;<span>{{
+                        index < 2 ? '、' : '...'
+                      }}</span>
+                    </span>
+                  </div>
+                </template>
               </el-popover>
             </template>
           </el-table-column>
@@ -53,7 +57,7 @@
               <el-button
                 v-if="row.admins.includes(userInfo.id) || row.super.includes(userInfo.id)"
                 v-hasPermi="['hr:attendance:team:edit']"
-                type="text"
+                type="primary" link
                 @click="editFn(row)"
                 >编辑</el-button
               >
@@ -61,7 +65,7 @@
               <el-button
                 v-if="row.admins.includes(userInfo.id) || row.super.includes(userInfo.id)"
                 v-hasPermi="['hr:attendance:team:delete']"
-                type="text"
+                type="primary" link
                 @click="deleteFn(row)"
                 >删除</el-button
               >
@@ -82,13 +86,13 @@
       </div>
     </el-card>
     <!-- 查看未设置考勤组人员 -->
-    <el-drawer :before-close="handleClose" :visible.sync="drawer" size="700px" title="未设置考勤组人员">
+    <el-drawer :before-close="handleClose" v-model="drawer" size="700px" title="未设置考勤组人员">
       <!-- 表格 -->
       <div class="box">
         <el-table ref="multipleTable" :data="listData" style="width: 100%" tooltip-effect="dark">
           <el-table-column label="人员姓名" prop="name"> </el-table-column>
           <el-table-column label="部门" prop="position">
-            <template slot-scope="scope">
+            <template #default="scope">
               <div v-for="(item, index) in scope.row.frames" :key="index" class="frame-name over-text">
                 <span class="icon-h">
                   {{ item.name
@@ -114,14 +118,18 @@
 </template>
 
 <script>
-import { roterPre } from '@/settings'
+import { modalSure } from '@/libs/public.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { roterPre } from '@/settings.ts'
 import oaFromBox from '@/components/common/oaFromBox'
-import { attendanceGroupListApi, deleteAttendanceGroup, attendanceUnattendedMember } from '@/api/config'
-import { mapGetters } from 'vuex'
+import { attendanceGroupListApi, deleteAttendanceGroup, attendanceUnattendedMember } from '@/api/config.ts'
+import { mapState } from 'pinia'
+import { useUserStore } from '@/stores/user.ts'
 export default {
   components: { oaFromBox },
   data() {
     return {
+      TABLE_HEIGHT,
       total: 0,
       totalList: 0,
       where: {
@@ -154,7 +162,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(['userInfo'])
+    ...mapState(useUserStore, ['userInfo'])
   },
   mounted() {
     this.getList()
@@ -188,7 +196,7 @@ export default {
     },
 
     deleteFn(val) {
-      this.$modalSure('你确定要删除这条数据吗').then(() => {
+      modalSure('你确定要删除这条数据吗').then(() => {
         deleteAttendanceGroup(val.id).then((res) => {
           let totalPage = Math.ceil((this.total - 1) / this.where.limit)
           let currentPage = this.where.page > totalPage ? totalPage : this.where.page

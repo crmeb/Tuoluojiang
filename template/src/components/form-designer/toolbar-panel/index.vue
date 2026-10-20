@@ -1,13 +1,12 @@
 // 表单操作预览
-
 <template>
   <div class="toolbar-container">
     <div class="left-toolbar">
-      <el-button type="text" :disabled="undoDisabled" title="撤销" @click="undoHistory">
+      <el-button type="primary" link :disabled="undoDisabled" title="撤销" @click="undoHistory">
         <!-- <i class="el-icon-arrow-left"></i> -->
         <span class="iconfont iconicon_back"></span>
       </el-button>
-      <el-button type="text" :disabled="redoDisabled" title="重做" @click="redoHistory">
+      <el-button type="primary" link :disabled="redoDisabled" title="重做" @click="redoHistory">
         <!-- <i class="el-icon-arrow-right"></i> -->
         <span class="iconfont icona-icon_nextstep"></span>
       </el-button>
@@ -16,11 +15,12 @@
       <div class="right-toolbar-con">
         <el-button class="view-btn" @click="previewForm"> <i class="el-icon-view" />预览</el-button>
         <el-button class="clear-btn" @click="clearFormWidget"> <i class="el-icon-delete" />清空</el-button>
+
         <el-button type="primary" @click="exportJson">
           <i class="el-icon-collection"></i>
           保存</el-button
         >
-        <template v-for="(idx, slotName) in $slots">
+        <template v-for="(idx, slotName) in $slots" :key="slotName">
           <slot :name="slotName"></slot>
         </template>
       </div>
@@ -28,13 +28,13 @@
 
     <el-dialog
       title="预览"
-      :visible.sync="showPreviewDialogFlag"
+      v-model="showPreviewDialogFlag"
       v-if="showPreviewDialogFlag"
       :show-close="true"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
       center
-      v-dialog-drag
+      draggable
       :destroy-on-close="true"
       :append-to-body="true"
       class="small-padding-dialog"
@@ -50,7 +50,7 @@
             ref="preForm"
             :form-json="formJson"
             :form-data="testFormData"
-            :preview-state="true"
+            :preview-state="previewState"
             :option-data="testOptionData"
             :global-dsv="designerDsv"
             @appendButtonClick="testOnAppendButtonClick"
@@ -63,66 +63,72 @@
           </VFormRender>
         </div>
       </div>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="getFormData">获取数据</el-button>
-        <el-button type="primary" @click="resetForm">重置表单</el-button>
-        <el-button type="primary" @click="setFormDisabled">禁用编辑</el-button>
-        <el-button type="primary" @click="setFormEnabled">恢复编辑</el-button>
-        <el-button type="primary" @click="onlyReadMode">只读查看</el-button>
-        <el-button type="" @click="showPreviewDialogFlag = false">关闭</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="getFormData">获取数据</el-button>
+          <el-button type="primary" @click="resetForm">重置表单</el-button>
+          <el-button type="primary" @click="setFormDisabled">禁用编辑</el-button>
+          <el-button type="primary" @click="setFormEnabled">恢复编辑</el-button>
+          <el-button type="primary" @click="onlyReadMode">只读查看</el-button>
+          <el-button type="" @click="showPreviewDialogFlag = false">关闭</el-button>
+        </div>
+      </template>
     </el-dialog>
 
     <el-dialog
       title="导出JSON"
-      :visible.sync="showExportJsonDialogFlag"
+      v-model="showExportJsonDialogFlag"
       v-if="showExportJsonDialogFlag"
       :show-close="true"
       class="small-padding-dialog"
       center
       append-to-body
-      v-dialog-drag
+      draggable
       :close-on-click-modal="false"
       :close-on-press-escape="false"
       :destroy-on-close="true"
     >
-      <code-editor :mode="'json'" :readonly="true" v-model="jsonContent"></code-editor>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" class="copy-json-btn" :data-clipboard-text="jsonRawContent" @click="copyFormJson">
-          复制JSON</el-button
-        >
-        <!-- <el-button @click="saveFormJson">保存为文件</el-button> -->
-        <el-button type="" @click="showExportJsonDialogFlag = false"> 关闭</el-button>
-      </div>
+      <code-editor mode="json" :readonly="true" v-model="jsonContent"></code-editor>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" class="copy-json-btn" :data-clipboard-text="jsonRawContent" @click="copyFormJson">
+            复制JSON</el-button
+          >
+          <!-- <el-button @click="saveFormJson">保存为文件</el-button> -->
+          <el-button type="" @click="showExportJsonDialogFlag = false"> 关闭</el-button>
+        </div>
+      </template>
     </el-dialog>
     <el-dialog
       title="表单数据"
-      :visible.sync="showFormDataDialogFlag"
+      v-model="showFormDataDialogFlag"
       v-if="showFormDataDialogFlag"
       :show-close="true"
       class="dialog-title-light-bg"
       center
-      v-dialog-drag
+      draggable
       :close-on-click-modal="false"
       :close-on-press-escape="false"
       :destroy-on-close="true"
       :append-to-body="true"
     >
       <div style="border: 1px solid #dcdfe6">
-        <code-editor :mode="'json'" :readonly="true" v-model="formCopyJson"></code-editor>
+        <code-editor mode="json" :readonly="true" v-model="formCopyJson"></code-editor>
       </div>
-      <div slot="footer" class="dialog-footer">
-        <el-button
-          type="primary"
-          class="copy-form-data-json-btn"
-          :data-clipboard-text="formDataRawJson"
-          @click="copyFormDataJson"
-        >
-          复制JSON</el-button
-        >
-        <!-- <el-button @click="saveFormData">保存为文件</el-button> -->
-        <el-button type="" @click="showFormDataDialogFlag = false"> 关闭</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button
+            type="primary"
+            class="copy-form-data-json-btn"
+            :data-clipboard-text="formDataRawJson"
+            @click="copyFormDataJson"
+          >
+            复制JSON</el-button
+          >
+          <!-- <el-button @click="saveFormData">保存为文件</el-button> -->
+          <el-button type="" @click="showFormDataDialogFlag = false"> 关闭</el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -137,12 +143,11 @@ import {
   getQueryParam,
   traverseAllWidgets,
   addWindowResizeHandler
-} from '@/utils/util'
-import i18n from '@/utils/i18n'
-// import { saveAs } from 'file-saver'
-// import SvgIcon from '@/components/svg-icon'
+} from '@/utils/formDesignerUtils'
+import i18n from '@/utils/i18n.ts'
+import { saveAs } from 'file-saver'
 import CodeEditor from '@/components/code-editor/index'
-import { formCrudSave, formInfo } from '@/api/form'
+import { formCrudSave, formInfo } from '@/api/form.ts'
 export default {
   name: 'ToolbarPanel',
   mixins: [i18n],
@@ -163,7 +168,6 @@ export default {
   data() {
     return {
       designerConfig: this.getDesignerConfig(),
-
       toolbarWidth: 220,
       showPreviewDialogFlag: false,
       showImportJsonDialogFlag: false,
@@ -172,9 +176,7 @@ export default {
       showFormDataDialogFlag: false,
       showExportSFCDialogFlag: false,
       showNodeTreeDrawerFlag: false,
-
       nodeTreeData: [],
-
       testFunc: '',
       importTemplate: {
         formConfig: {},
@@ -182,13 +184,11 @@ export default {
       },
       jsonContent: '',
       jsonRawContent: '',
-
       formDataJson: '',
       formDataRawJson: '',
-
       vueCode: '',
       htmlCode: '',
-
+      previewState: false,
       sfcCode: '',
       sfcCodeV3: '',
 
@@ -277,16 +277,27 @@ export default {
   },
   methods: {
     onlyReadMode() {
+      this.previewState = true
       this.$refs.preForm.setReadMode(!this.$refs.preForm.$data.readModeFlag)
     },
     formInfo() {
       formInfo(this.id).then((res) => {
         if (res.data.global_options) {
           this.importTemplate.formConfig = res.data.global_options
+if( res.data.fields && res.data.fields.length > 0){
+ res.data.fields.forEach((item) => {
+            item = item.replace('.', '@')
 
-          this.designer.selectNames = res.data.fields
+            this.designer.selectNames.push(item)
+          })
+}
+         
         }
         this.importTemplate.widgetList = res.data.options || []
+        this.importTemplate.widgetList.forEach((item) => {
+          item.children_table_name_en = res.data.children_table_name_en || ''
+          item.table_name_en = res.data.table_name_en || ''
+        })
         this.doJsonImport()
       })
     },
@@ -407,8 +418,11 @@ export default {
     },
 
     clearFormWidget() {
-      this.designer.clearDesigner()
-      this.designer.clearWidgetRefList()
+      if (this.designer) {
+        this.designer.clearDesigner()
+        this.designer.clearSelected()
+        // this.designer.cloneContainer()
+      }
     },
     previewForm() {
       this.showPreviewDialogFlag = true
@@ -462,6 +476,8 @@ export default {
       // 请求数据
 
       let saveData = {
+        form_id: this.designer.form_id,
+        name: this.designer.name,
         options: this.designer.widgetList,
         fields: this.designer.selectNames,
         global_options: this.designer.formConfig
@@ -567,27 +583,21 @@ export default {
     },
 
     setFormEnabled() {
+      this.previewState = false
       if (this.$refs.preForm.$data.readModeFlag) this.$refs.preForm.setReadMode(!this.$refs.preForm.$data.readModeFlag)
       this.$refs['preForm'].enableForm()
     },
 
     handleFormChange(fieldName, newValue, oldValue, formModel) {
-      /*
-        console.log('---formChange start---')
-        console.log('fieldName', fieldName)
-        console.log('newValue', newValue)
-        console.log('oldValue', oldValue)
-        console.log('formModel', formModel)
-        console.log('---formChange end---')
-        */
+      // 表单变化处理
     },
 
     testOnAppendButtonClick(clickedWidget) {
-      console.log('test', clickedWidget)
+      // 按钮点击测试
     },
 
     testOnButtonClick(button) {
-      console.log('test', button)
+      // 按钮点击测试
     },
 
     findWidgetById(wId) {
@@ -640,39 +650,10 @@ div.toolbar-container {
     width: max-content;
   }
 
-  ::v-deep .el-button--text {
-    font-size: 14px !important;
-  }
 }
 
 .el-button i {
   margin-right: 3px;
-}
-
-.small-padding-dialog {
-  ::v-deep .el-dialog__header {
-    //padding-top: 3px;
-    //padding-bottom: 3px;
-    background: #f1f2f3;
-  }
-
-  ::v-deep .el-dialog__body {
-    padding: 12px 15px 12px 15px;
-
-    .el-alert.alert-padding {
-      padding: 0 10px;
-    }
-  }
-
-  ::v-deep .ace-container {
-    border: 1px solid #dcdfe6;
-  }
-}
-
-.dialog-title-light-bg {
-  ::v-deep .el-dialog__header {
-    background: #f1f2f3;
-  }
 }
 
 .no-box-shadow {
@@ -680,7 +661,7 @@ div.toolbar-container {
 }
 
 .no-padding.el-tabs--border-card {
-  ::v-deep .el-tabs__content {
+  :deep(.el-tabs__content) {
     padding: 0;
   }
 }
@@ -713,18 +694,18 @@ div.toolbar-container {
   overflow-x: hidden;
 }
 
-.node-tree-drawer ::v-deep {
-  .el-drawer {
+.node-tree-drawer {
+  :deep(.el-drawer) {
     padding: 10px;
     overflow: auto;
   }
 
-  .el-drawer__header {
+  :deep(.el-drawer__header) {
     margin-bottom: 12px;
     padding: 5px 5px 0;
   }
 
-  .el-drawer__body {
+  :deep(.el-drawer__body) {
     padding-left: 5px;
   }
 }
@@ -734,23 +715,23 @@ div.toolbar-container {
 /*  overflow: auto;*/
 /*}*/
 
-.node-tree ::v-deep {
-  .el-tree > .el-tree-node:after {
+.node-tree {
+  :deep(.el-tree > .el-tree-node:after) {
     border-top: none;
   }
-  .el-tree-node {
+  :deep(.el-tree-node) {
     position: relative;
     padding-left: 12px;
   }
 
-  .el-tree-node__content {
+  :deep(.el-tree-node__content) {
     padding-left: 0 !important;
   }
 
-  .el-tree-node__expand-icon.is-leaf {
+  :deep(.el-tree-node__expand-icon.is-leaf) {
     display: none;
   }
-  .el-tree-node__children {
+  :deep(.el-tree-node__children) {
     padding-left: 12px;
     overflow: visible !important; /* 加入此行让el-tree宽度自动撑开，超出宽度el-draw自动出现水平滚动条！ */
   }
@@ -818,5 +799,33 @@ div.toolbar-container {
 }
 .clear-btn.el-button:hover {
   background-color: #fef0ed;
+}
+</style>
+
+<style lang="scss">
+// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
+.el-dialog.small-padding-dialog {
+  .el-dialog__header {
+    //padding-top: 3px;
+    //padding-bottom: 3px;
+    background: #f1f2f3;
+  }
+
+  .el-dialog__body {
+    padding: 12px 15px 12px 15px;
+
+    .el-alert.alert-padding {
+      padding: 0 10px;
+    }
+  }
+
+  .ace-container {
+    border: 1px solid #dcdfe6;
+  }
+}
+.el-dialog.dialog-title-light-bg {
+  .el-dialog__header {
+    background: #f1f2f3;
+  }
 }
 </style>

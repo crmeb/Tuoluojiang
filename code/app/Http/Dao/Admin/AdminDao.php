@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,16 +15,16 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Admin;
 
-use App\Http\Dao\BaseDao;
 use App\Http\Model\Admin\Admin;
 use App\Http\Model\Admin\AdminInfo;
-use App\Http\Model\BaseModel;
 use App\Http\Model\Frame\FrameAssist;
 use App\Http\Service\Frame\FrameAssistService;
-use crmeb\interfaces\ResourceDaoInterface;
-use crmeb\traits\dao\JoinSearchTrait;
-use crmeb\traits\dao\ListSearchTrait;
-use crmeb\traits\dao\TogetherSearchTrait;
+use App\Http\Dao\BaseDao;
+use App\Http\Model\BaseModel;
+use Tuoluojiang\Open\interfaces\ResourceDaoInterface;
+use Tuoluojiang\Open\traits\dao\JoinSearchTrait;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
+use Tuoluojiang\Open\traits\dao\TogetherSearchTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -61,7 +61,7 @@ class AdminDao extends BaseDao implements ResourceDaoInterface
                         $query->whereBetween($this->getFiled('work_time', $this->aliasB), [$startTime, $endTime]);
                     }
                     if ($startTime && $endTime && $startTime == $endTime) {
-                        $query->whereBetween($this->getFiled('work_time', $this->aliasB), [$startTime, date('Y-m-d H:i:s', strtotime($endTime) + 86400)]);
+                        $query->whereBetween($this->getFiled('work_time', $this->aliasB), [$startTime, date('Y-m-d H:i:s', datetime_timestamp($endTime) + 86400)]);
                     }
                     if (! $startTime && $endTime) {
                         $query->whereTime($this->getFiled('work_time', $this->aliasB), '<', $endTime);
@@ -84,7 +84,7 @@ class AdminDao extends BaseDao implements ResourceDaoInterface
                         $query->whereBetween($this->getFiled('quit_time', $this->aliasB), [$startTime, $endTime]);
                     }
                     if ($startTime && $endTime && $startTime == $endTime) {
-                        $query->whereBetween($this->getFiled('quit_time', $this->aliasB), [$startTime, date('Y-m-d H:i:s', strtotime($endTime) + 86400)]);
+                        $query->whereBetween($this->getFiled('quit_time', $this->aliasB), [$startTime, date('Y-m-d H:i:s', datetime_timestamp($endTime) + 86400)]);
                     }
                     if (! $startTime && $endTime) {
                         $query->whereTime($this->getFiled('quit_time', $this->aliasB), '<', $endTime);
@@ -105,7 +105,8 @@ class AdminDao extends BaseDao implements ResourceDaoInterface
                 $query->whereIn($this->getFiled('id'), $where['ids']);
             })
             ->when(isset($where['education']) && $where['education'] !== '', function ($query) use ($where) {
-                $query->where($this->getFiled('education', $this->aliasB), $where['education']);
+                is_array($where['education']) ? $query->whereIn($this->getFiled('education', $this->aliasB), $where['education'])
+                : $query->where($this->getFiled('education', $this->aliasB), $where['education']);
             })
             ->when(isset($where['sex']) && $where['sex'] !== '', function ($query) use ($where) {
                 $query->where($this->getFiled('sex', $this->aliasB), $where['sex']);
@@ -125,7 +126,8 @@ class AdminDao extends BaseDao implements ResourceDaoInterface
             ->when(isset($where['search']) && $where['search'], function ($query) use ($where) {
                 $query->where(function ($q) use ($where) {
                     $q->orWhere('name', 'LIKE', "%{$where['search']}%")
-                        ->orWhere('phone', 'LIKE', "%{$where['search']}%");
+                        ->orWhere('phone', 'LIKE', "%{$where['search']}%")
+                        ->orWhere('account', 'LIKE', "%{$where['search']}%");
                 });
             })
             ->when($page && $limit, function ($query) use ($page, $limit) {
@@ -280,10 +282,17 @@ class AdminDao extends BaseDao implements ResourceDaoInterface
                     $query->where($this->getFiled('type', $this->aliasB), $where['types']);
                 }
             })
+            ->when(isset($where['id']) && $where['id'] !== '', function ($query) use ($where) {
+                is_array($where['id']) ? $query->whereIn($this->getFiled('id'), $where['id']) : $query->where($this->getFiled('id'), $where['id']);
+            })
+            ->when(isset($where['status']) && $where['status'] !== '', function ($query) use ($where) {
+                $query->where($this->getFiled('status'), $where['status']);
+            })
             ->when(isset($where['search']) && $where['search'], function ($query) use ($where) {
                 $query->where(function ($q) use ($where) {
                     $q->orWhere('name', 'LIKE', "%{$where['search']}%")
-                        ->orWhere('phone', 'LIKE', "%{$where['search']}%");
+                        ->orWhere('phone', 'LIKE', "%{$where['search']}%")
+                        ->orWhere('account', 'LIKE', "%{$where['search']}%");
                 });
             });
     }

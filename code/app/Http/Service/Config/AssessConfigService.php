@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2026 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -15,15 +15,15 @@ declare(strict_types=1);
 
 namespace App\Http\Service\Config;
 
+use App\Constants\CacheEnum;
 use App\Http\Contract\Config\AssessConfigInterface;
-use App\Http\Dao\Access\AssessFrameDao;
 use App\Http\Dao\Access\AssessPlanDao;
-use App\Http\Dao\Access\AssessPlanUserDao;
 use App\Http\Dao\Access\AssessScoreDao;
 use App\Http\Service\Admin\AdminService;
 use App\Http\Service\Assess\AssessScoreService;
 use App\Http\Service\BaseService;
 use Illuminate\Contracts\Container\BindingResolutionException;
+use Illuminate\Support\Facades\Cache;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
@@ -35,23 +35,15 @@ class AssessConfigService extends BaseService implements AssessConfigInterface
     /**
      * 绩效考核部门.
      */
-    protected AssessFrameDao $frameDao;
-
-    /**
-     * 绩效考核人员.
-     */
-    protected AssessPlanUserDao $userDao;
 
     /**
      * 绩效评分.
      */
     protected AssessScoreDao $scoreDao;
 
-    public function __construct(AssessPlanDao $dao, AssessFrameDao $frameDao, AssessPlanUserDao $userDao, AssessScoreDao $scoreDao)
+    public function __construct(AssessPlanDao $dao, AssessScoreDao $scoreDao)
     {
         $this->dao      = $dao;
-        $this->frameDao = $frameDao;
-        $this->userDao  = $userDao;
         $this->scoreDao = $scoreDao;
     }
 
@@ -82,6 +74,7 @@ class AssessConfigService extends BaseService implements AssessConfigInterface
     {
         sys_config('assess_score_mark', $data['score_mark'], true);
         sys_config('assess_compute_mode', $data['compute_mode'], true);
+        Cache::tags([CacheEnum::TAG_CONFIG])->flush();
         return $this->transaction(function () use ($data) {
             $score_list = $data['score_list'] ? $this->initScoreData($data['score_list']) : [];
             if ($score_list) {

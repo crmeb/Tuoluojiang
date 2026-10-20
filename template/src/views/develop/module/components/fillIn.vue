@@ -2,10 +2,9 @@
   <div>
     <el-drawer
       title="邀请链接记录"
-      :visible.sync="drawer"
+      v-model="drawer"
       direction="rtl"
       :show-close="true"
-      :wrapper-closable="true"
       :append-to-body="true"
       :before-close="handleClose"
       :size="`65%`"
@@ -13,11 +12,11 @@
       <div class="table-box">
         <div class="mb10 flex-between">
           <div class="title-16">邀请链接生成记录</div>
-          <el-button type="primary" size="small" @click="addShare">邀请填写</el-button>
+          <el-button type="primary" @click="addShare">邀请填写</el-button>
         </div>
         <el-table :data="tableData" style="width: 100%" :height="height">
           <el-table-column prop="user.name" label="邀请链接" min-width="100px">
-            <template slot-scope="scope">
+            <template #default="scope">
               <div class="flex">
                 <div class="over-text w-180">{{ scope.row.url || '--' }}</div>
                 <span class="iconfont iconfuzhi-01" @click="copy(scope.row.url)"></span>
@@ -25,7 +24,7 @@
             </template>
           </el-table-column>
           <el-table-column prop="name" label="人员范围" width="90">
-            <template slot-scope="scope">
+            <template #default="scope">
               {{ scope.row.role_type == 0 ? '仅企业员工' : '所有人员' }}
             </template>
           </el-table-column>
@@ -33,7 +32,7 @@
           <el-table-column prop="updated_at" label="创建时间" width="180"> </el-table-column>
           <el-table-column prop="user.name" label="创建人" width="80"> </el-table-column>
           <el-table-column label="链接状态" width="110">
-            <template slot-scope="scope">
+            <template #default="scope">
               <el-switch
                 v-model="scope.row.status"
                 :active-value="1"
@@ -46,8 +45,8 @@
             </template>
           </el-table-column>
           <el-table-column prop="address" label="操作" width="80">
-            <template slot-scope="scope">
-              <el-button type="text" @click="delModuleShare(scope.row.id)">删除</el-button>
+            <template #default="scope">
+              <el-button type="primary" link @click="delModuleShare(scope.row.id)">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -69,8 +68,10 @@
   </div>
 </template>
 <script>
+import { modalSure } from '@/libs/public.ts'
 import fillInDialog from './fillInDialog'
-import { getModuleQuestionnaireApi, delModuleQuestionnaireApi, putModuleQuestionnaireApi } from '@/api/develop'
+import { getModuleQuestionnaireApi, delModuleQuestionnaireApi, putModuleQuestionnaireApi } from '@/api/develop.ts'
+import { writeClipboard } from '@/utils/clipboard'
 export default {
   name: '',
   components: { fillInDialog },
@@ -124,7 +125,7 @@ export default {
 
     // 删除
     delModuleShare(id) {
-      this.$modalSure('您确认要删除此数据吗').then(() => {
+      modalSure('您确认要删除此数据吗').then(() => {
         delModuleQuestionnaireApi(this.keyName, id).then((res) => {
           this.getList()
         })
@@ -135,8 +136,9 @@ export default {
       this.drawer = false
     },
     copy(val) {
-      clipboard.writeText(val)
-      this.$message.success('复制成功')
+      writeClipboard(val).then((isOk) => {
+        isOk ? this.$message.success('复制成功') : this.$message.error('复制失败')
+      })
     }
   }
 }

@@ -33,9 +33,11 @@
             {{ item.name }}
           </div>
         </div>
-        <div class="btn" slot="reference">
-          <span class="icon xmind-iconfont iconxingzhuang-wenzi"></span>
-        </div>
+        <template #reference>
+          <div class="btn">
+            <span class="icon xmind-iconfont iconxingzhuang-wenzi"></span>
+          </div>
+        </template>
       </el-popover>
     </el-tooltip>
 
@@ -49,27 +51,33 @@
             {{ item }}px
           </div>
         </div>
-        <div class="btn" slot="reference">
-          <span class="icon xmind-iconfont iconcase fontColor"></span>
-        </div>
+        <template #reference>
+          <div class="btn">
+            <span class="icon xmind-iconfont iconcase fontColor"></span>
+          </div>
+        </template>
       </el-popover>
     </el-tooltip>
 
     <el-tooltip content="字体颜色" placement="top">
       <el-popover placement="bottom" trigger="hover">
         <Color :color="fontColor" @change="changeFontColor"></Color>
-        <div class="btn" slot="reference" :style="{ color: formatInfo.color }">
-          <span class="icon xmind-iconfont iconzitiyanse"></span>
-        </div>
+        <template #reference>
+          <div class="btn" :style="{ color: formatInfo.color }">
+            <span class="icon xmind-iconfont iconzitiyanse"></span>
+          </div>
+        </template>
       </el-popover>
     </el-tooltip>
 
     <el-tooltip content="背景颜色" placement="top">
       <el-popover placement="bottom" trigger="hover">
         <Color :color="fontBackgroundColor" @change="changeFontBackgroundColor"></Color>
-        <div class="btn" slot="reference">
-          <span class="icon xmind-iconfont iconbeijingyanse"></span>
-        </div>
+        <template #reference>
+          <div class="btn">
+            <span class="icon xmind-iconfont iconbeijingyanse"></span>
+          </div>
+        </template>
       </el-popover>
     </el-tooltip>
 
@@ -82,8 +90,9 @@
 </template>
 
 <script>
-import { fontFamilyList, fontSizeList } from '../config'
-import { RICH_TEXT_SELECTION_CHANGE } from '../event-constant';
+import { EventBus } from '@/libs/bus.ts'
+import { fontFamilyList, fontSizeList } from '../config.ts'
+import { RICH_TEXT_SELECTION_CHANGE } from '../event-constant.ts';
 import Color from './Color.vue'
 
 export default {
@@ -111,13 +120,13 @@ export default {
     }
   },
   created() {
-    this.$bus.$on(RICH_TEXT_SELECTION_CHANGE, this.onRichTextSelectionChange)
+    EventBus.$on(RICH_TEXT_SELECTION_CHANGE, this.onRichTextSelectionChange)
   },
   mounted() {
     document.body.append(this.$refs.richTextToolbar)
   },
-  beforeDestroy() {
-    this.$bus.$off(RICH_TEXT_SELECTION_CHANGE, this.onRichTextSelectionChange)
+  beforeUnmount() {
+    EventBus.$off(RICH_TEXT_SELECTION_CHANGE, this.onRichTextSelectionChange)
   },
   methods: {
     onRichTextSelectionChange(hasRange, rect, formatInfo) {

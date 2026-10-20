@@ -16,10 +16,11 @@ declare(strict_types=1);
 namespace App\Http\Service\Train;
 
 use App\Http\Dao\Train\PromotionDataDao;
-use App\Http\Service\BaseService;
 use App\Http\Service\Position\PositionJobService;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\traits\service\ResourceServiceTrait;
+use App\Http\Service\Position\PositionService;
+use App\Http\Service\BaseService;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 
 /**
@@ -44,10 +45,12 @@ class PromotionDataService extends BaseService implements ResourceServicesInterf
      */
     public function getList(array $where = [], array $field = ['*'], $sort = ['sort'], array $with = []): array
     {
-        $list               = $this->dao->getList($where, $field, 0, 0, $sort, $with);
+        $positionService    = app()->get(PositionService::class);
         $positionJobService = app()->get(PositionJobService::class);
+        $list               = $this->dao->getList($where, $field, 0, 0, $sort, $with);
         foreach ($list as &$item) {
             $item['positions'] = $item['position'] ? $positionJobService->select(['id' => $item['position']], ['id', 'name']) : [];
+            $item['ranks'] = $item['rank'] ? $positionService->select(['id' => $item['rank']], ['id', 'name', 'alias']) : [];
         }
 
         return $list;
@@ -92,11 +95,11 @@ class PromotionDataService extends BaseService implements ResourceServicesInterf
 
     public function resourceCreate(array $other = []): array
     {
-        // TODO: Implement resourceCreate() method.
+        return [];
     }
 
     public function resourceEdit(int $id, array $other = []): array
     {
-        // TODO: Implement resourceEdit() method.
+        return [];
     }
 }

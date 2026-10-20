@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of PHPPresentation - A pure PHP library for reading and writing
  * presentations documents.
@@ -10,23 +11,22 @@
  * file that was distributed with this source code. For the full list of
  * contributors, visit https://github.com/PHPOffice/PHPPresentation/contributors.
  *
- * @link        https://github.com/PHPOffice/PHPPresentation
- * @copyright   2009-2015 PHPPresentation contributors
+ * @see        https://github.com/PHPOffice/PHPPresentation
+ *
  * @license     http://www.gnu.org/licenses/lgpl.txt LGPL version 3
  */
+
+declare(strict_types=1);
 
 namespace PhpOffice\PhpPresentation\Writer;
 
 /**
- * Writer interface
+ * Writer interface.
  */
 interface WriterInterface
 {
     /**
-     * Save PhpPresentation to file
-     *
-     * @param  string    $pFilename
-     * @throws \Exception
+     * Save PhpPresentation to file.
      */
-    public function save($pFilename);
+    public function save(string $pFilename): void;
 }

@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace App\Task\message;
 
-use crmeb\services\SmsService;
+use Tuoluojiang\Open\services\SmsService;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Support\Facades\Log;
 

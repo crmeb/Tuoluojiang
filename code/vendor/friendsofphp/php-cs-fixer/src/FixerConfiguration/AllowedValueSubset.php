@@ -15,6 +15,8 @@ declare(strict_types=1);
 namespace PhpCsFixer\FixerConfiguration;
 
 /**
+ * @readonly
+ *
  * @internal
  */
 final class AllowedValueSubset
@@ -29,6 +31,7 @@ final class AllowedValueSubset
      */
     public function __construct(array $allowedValues)
     {
+        sort($allowedValues, SORT_FLAG_CASE | SORT_STRING);
         $this->allowedValues = $allowedValues;
     }
 

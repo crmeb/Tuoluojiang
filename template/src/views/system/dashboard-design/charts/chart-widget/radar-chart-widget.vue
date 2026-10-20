@@ -4,7 +4,7 @@
 
 <script>
 import myEcharts from '@/components/scEcharts/chart-widget.vue'
-import { queryChartData } from '@/api/chart'
+import { queryChartData } from '../chartQuery.ts'
 import { getPreviewNum } from '@/utils/util'
 
 export default {
@@ -62,12 +62,12 @@ export default {
           return
         }
         metrics.forEach((el) => {
-          this.$set(this.units, el.field_name, {
+          this.units[el.field_name] = {
             showDecimalPlaces: el.showDecimalPlaces,
             decimalPlaces: el.decimalPlaces,
             thousandsSeparator: el.thousandsSeparator,
             numericUnits: el.numericUnits == '无' ? '' : el.numericUnits
-          })
+          }
         })
         await this.getChartData(options, type)
         this.option.isNoData = false
@@ -77,7 +77,11 @@ export default {
     },
     async getChartData(options, type) {
       this.loading = true
-      let res = await queryChartData(options, type)
+          let chartData = JSON.stringify({
+    widgetList: this.designer.widgetList,
+    formConfig: this.designer.formConfig
+  })
+      let res = await queryChartData(options, type,chartData)
       if (res && res.status === 200) {
         let { setChartConf } = this.cutField.options
         this.option.legend = {

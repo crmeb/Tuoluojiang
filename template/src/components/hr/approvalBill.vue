@@ -2,33 +2,34 @@
 <template>
   <div class="ab-container">
     <div v-for="(item, idx) in cacheRule" :key="idx">
+    
       <el-alert
-        v-if="idx !== Object.keys(cacheRule)[0] && !formCreateInject.preview"
         :key="'a' + idx"
-        :title="'明细' + (Object.keys(cacheRule).indexOf(idx) + 1)"
+        :title="getTitle()+ (Object.keys(cacheRule).indexOf(idx) + 1)"
         type="info"
         close-text="删除"
         @close="del(idx)"
       />
-      <div v-if="formCreateInject.preview" class="num">{{ '明细' + (Object.keys(cacheRule).indexOf(idx) + 1) }}</div>
+      <div v-if="formCreateInject.preview" class="num">{{ getTitle() + (Object.keys(cacheRule).indexOf(idx) + 1) }}</div>
       <component
         :is="type"
         :key="'b' + idx"
         :rule="item.rule"
         :extend-option="true"
         :option="item.options"
-        @update:value="(val) => formData(idx, val)"
-        @input="($f) => add$f(idx, $f)"
+        @update:model-value="(val) => formData(idx, val)"
+        @update:api="($f) => add$f(idx, $f)"
       />
       <el-divider v-if="Object.keys(cacheRule).indexOf(idx) - 1"></el-divider>
     </div>
-    <ElButton v-if="!formCreateInject.preview" type="text" @click="add">添加明细</ElButton>
+    <ElButton v-if="!formCreateInject.preview" type="text" @click="add">添加{{ getTitle() }}</ElButton>
   </div>
 </template>
 
 <script>
 export default {
   name: 'ApprovalBill',
+  emits: ['update:modelValue', 'change', 'add', 'remove'],
   formCreateParser: {
     loadChildren: false,
     renderChildren(ctx) {
@@ -40,10 +41,16 @@ export default {
       type: Object,
       default: () => ({})
     },
-    value: {
+    modelValue: {
       type: Array,
       default: () => []
     }
+  },
+  computed: {
+    // Vue 3 的 v-model 走 modelValue，保留 value 供组件内部沿用
+    value() {
+      return this.modelValue
+    },
   },
   data() {
     return {
@@ -81,6 +88,7 @@ export default {
     }
   },
   created() {
+
     this.type = this.formCreateInject.form.$form()
     if (!this.value.length) this.expandRule(1)
     for (let i = 0; i < this.value.length; i++) {
@@ -88,11 +96,14 @@ export default {
     }
   },
   methods: {
+    getTitle() {
+      return this.formCreateInject.rule.title?this.formCreateInject.rule.title:'明细'
+    },
     cache(k, val) {
       this.cacheValue[k] = JSON.stringify(val)
     },
     input(value) {
-      this.$emit('input', value)
+      this.$emit('update:modelValue', value)
       this.$emit('change', value)
     },
     formData(key, formData) {
@@ -124,7 +135,7 @@ export default {
             resetBtn: false
           }
       options.formData = this.value[i]
-      this.$set(this.cacheRule, ++this.len, { rule, options })
+      this.cacheRule[++this.len] = { rule, options }
       if (emit) {
         this.$nextTick(() => this.$emit('add', rule, Object.keys(this.cacheRule).length - 1))
       }
@@ -138,8 +149,8 @@ export default {
     },
     removeRule(key, emit) {
       const index = Object.keys(this.cacheRule).indexOf(key)
-      this.$delete(this.cacheRule, key)
-      this.$delete(this.cacheValue, key)
+      delete this.cacheRule[key]
+      delete this.cacheValue[key]
       if (emit) {
         this.$nextTick(() => this.$emit('remove', index))
       }
@@ -165,32 +176,34 @@ export default {
 
 <style lang="scss" scoped>
 .ab-container {
+  // 表单项内容区是 flex 容器，不设宽度会按内容收缩
+  width: 100%;
   .num {
     font-size: 14px;
     color: #000000;
   }
   position: relative;
   min-height: 177px;
-  /deep/ .el-alert {
+  :deep(.el-alert) {
     height: 32px;
     margin-bottom: 17px;
     background-color: #f2f9fe;
   }
 
-  /deep/ .el-alert__title {
+  :deep(.el-alert__title) {
     color: #000;
   }
 
-  /deep/ .el-alert.is-light .el-alert__closebtn {
+  :deep(.el-alert.is-light .el-alert__closebtn) {
     top: 0;
     color: #f5222d;
     line-height: 32px;
   }
 
-  /deep/ .el-form-item--medium .el-form-item__label {
-    text-align: right;
+  :deep(.el-form-item .el-form-item__label) {
+    width: 110px;
+    justify-content: flex-end;
     vertical-align: middle;
-    float: left;
     font-size: 14px;
     color: #606266;
     line-height: 40px;

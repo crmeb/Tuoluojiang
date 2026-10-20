@@ -5,7 +5,7 @@ declare(strict_types=1);
  *  +----------------------------------------------------------------------
  *  | 陀螺匠 [ 赋能开发者，助力企业发展 ]
  *  +----------------------------------------------------------------------
- *  | Copyright (c) 2016~2025 https://www.tuoluojiang.com All rights reserved.
+ *  | Copyright (c) 2016~2024 https://www.tuoluojiang.com All rights reserved.
  *  +----------------------------------------------------------------------
  *  | Licensed 陀螺匠并不是自由软件，未经许可不能去掉陀螺匠相关版权
  *  +----------------------------------------------------------------------
@@ -38,6 +38,16 @@ class ProgramVersion extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'id'          => 'integer',
+        'program_id'  => 'integer',
+        'creator_uid' => 'integer',
+        'sort'        => 'integer',
+        'created_at'  => 'datetime:Y-m-d H:i:s',
+        'updated_at'  => 'datetime:Y-m-d H:i:s',
+        'deleted_at'  => 'datetime:Y-m-d H:i:s',
+    ];
+
     /**
      * 隐藏字段.
      * @var string[]
@@ -48,8 +58,6 @@ class ProgramVersion extends BaseModel
 
     /**
      * id 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeId($query, $value): void
     {
@@ -62,8 +70,6 @@ class ProgramVersion extends BaseModel
 
     /**
      * creator_uid 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeCreatorUid($query, $value): void
     {
@@ -76,8 +82,6 @@ class ProgramVersion extends BaseModel
 
     /**
      * program_id 作用域
-     * @param mixed $query
-     * @param mixed $value
      */
     public function scopeProgramId($query, $value): void
     {

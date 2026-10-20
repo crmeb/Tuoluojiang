@@ -15,11 +15,11 @@ declare(strict_types=1);
 
 namespace App\Http\Dao\Notice;
 
-use App\Http\Dao\BaseDao;
 use App\Http\Model\Message\MessageNotice;
-use crmeb\traits\dao\BatchSearchTrait;
-use crmeb\traits\dao\ListSearchTrait;
-use crmeb\utils\MessageType;
+use App\Http\Dao\BaseDao;
+use Tuoluojiang\Open\traits\dao\BatchSearchTrait;
+use Tuoluojiang\Open\traits\dao\ListSearchTrait;
+use Tuoluojiang\Open\utils\MessageType;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -137,6 +137,11 @@ class MessageNoticeDao extends BaseDao
      */
     public function getMessageGroupCount(int $entid, int $toUid)
     {
-        return $this->getModel()->where('entid', $entid)->where('is_read', 0)->where('to_uid', $toUid)->groupBy('cate_id')->select(['cate_id', DB::raw('count(*) as count')])->get()->toArray();
+        $uuid = uid_to_uuid($toUid);
+        return $this->getModel()->where('entid', $entid)->where('is_read', 0)
+            ->where(function ($query) use ($uuid, $toUid) {
+                $query->where('to_uid', $uuid)->orWhere('to_uid', $toUid);
+            })
+            ->groupBy('cate_id')->select(['cate_id', DB::raw('count(*) as count')])->get()->toArray();
     }
 }

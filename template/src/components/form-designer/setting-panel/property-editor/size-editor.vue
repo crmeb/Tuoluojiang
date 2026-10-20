@@ -9,7 +9,7 @@
 </template>
 
 <script>
-  import i18n from "@/utils/i18n"
+  import i18n from "@/utils/i18n.ts"
 
   export default {
     name: "size-editor",
@@ -24,9 +24,7 @@
         widgetSizes: [
           {label: 'default', value: ''},
           {label: 'large', value: 'large'},
-          {label: 'medium', value: 'medium'},
-          {label: 'small', value: 'small'},
-          {label: 'mini', value: 'mini'},
+          {label: 'small', value: 'small'}
         ],
       }
     }
@@ -36,4 +34,3 @@
 <style scoped>
 
 </style>
-@/utils/i18ns

@@ -2,13 +2,12 @@
   <div class="divBox">
     <el-card class="card-box">
       <el-form>
-        <el-row v-if="!searchBtn" class="flex-row flex">
+        <div v-if="!searchBtn" class="flex-row flex">
           <el-form-item class="select-bar">
             <el-select
               v-model="period"
               style="width: 160px"
-              size="small"
-              :placeholder="$t('finance.pleaseselect')"
+              placeholder="请选择"
               @change="handlePeriod"
             >
               <el-option v-for="(item, index) in periodOptions" :key="index" :label="item.label" :value="item.value" />
@@ -19,21 +18,20 @@
             <el-date-picker
               v-model="time"
               type="daterange"
-              size="small"
-              :picker-options="pickerOptions"
-              :placeholder="$t('toptable.selecttime')"
-              format="yyyy/MM/dd"
-              value-format="yyyy/MM/dd"
-              :range-separator="$t('toptable.to')"
-              :start-placeholder="$t('toptable.startdate')"
-              :end-placeholder="$t('toptable.endingdate')"
+              v-bind="$pickerProps(pickerOptions)"
+              placeholder="选择时间"
+              format="YYYY/MM/DD"
+              value-format="YYYY/MM/DD"
+              range-separator="至"
+              start-placeholder="开始时间"
+              end-placeholder="结束时间"
               :clearable="false"
               style="width: 250px"
               @change="onchangeTime"
             />
           </el-form-item>
 
-          <div v-if="type > 0">
+          <div v-if="typeLocal > 0">
             <el-form-item class="select-bar">
               <select-department
                 :value="departmentList || []"
@@ -45,7 +43,7 @@
               ></select-department>
             </el-form-item>
           </div>
-          <div v-if="type > 0">
+          <div v-if="typeLocal > 0">
             <el-form-item class="select-bar">
               <select-member
                 :value="userList || []"
@@ -62,7 +60,7 @@
               <div class="reset" @click="reset"><i class="iconfont iconqingchu"></i></div>
             </el-tooltip>
           </el-form-item>
-        </el-row>
+        </div>
       </el-form>
       <div class="statistics-title mt10">
         <ul>
@@ -84,14 +82,17 @@
 </template>
 
 <script>
-import { assessCensusApi } from '@/api/enterprise'
-import Commnt from '@/components/user/accessCommon'
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
+import pickerOptions from '@/libs/pickerOptions.ts'
+import { assessCensusApi } from '@/api/enterprise.ts'
+import Commnt from '@/components/user/accessCommon.ts'
 import echarts from 'echarts'
 export default {
   name: 'AssessStatistics',
   components: {
-    selectMember: () => import('@/components/form-common/select-member'),
-    selectDepartment: () => import('@/components/form-common/select-department')
+    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
+    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department'))
   },
   props: {
     searchBtn: {
@@ -107,9 +108,23 @@ export default {
       default: 2
     }
   },
+  watch: {
+    // prop 由父组件更新时同步到本地副本（组件内部改写的是 typeLocal）
+    type(val) {
+      this.typeLocal = val
+    },
+    // prop 由父组件更新时同步到本地副本（组件内部改写的是 planIdLocal）
+    planId(val) {
+      this.planIdLocal = val
+    }
+  },
   data() {
     return {
-      pickerOptions: this.$pickerOptionsTimeEle,
+      // Vue 3 的 prop 只读，组件内部需要改写时用本地副本
+      typeLocal: this.type,
+      // Vue 3 的 prop 只读，组件内部需要改写时用本地副本
+      planIdLocal: this.planId,
+      pickerOptions,
       departmentList: [],
       periodOptions: Commnt.periodOption,
       statusOptions: Commnt.statusOptions,
@@ -128,27 +143,27 @@ export default {
       ],
       periodOptions: Commnt.periodOptions,
       fromList: [
-        { label: this.$t('toptable.all'), value: '' },
-        { label: this.$t('toptable.today'), value: 'today' },
-        { label: this.$t('toptable.yesterday'), value: 'yesterday' },
-        { label: this.$t('toptable.day7'), value: 'lately7' },
-        { label: this.$t('toptable.day30'), value: 'lately30' },
-        { label: this.$t('toptable.thismonth'), value: 'month' },
-        { label: this.$t('toptable.thisyear'), value: 'year' }
+        { label: '全部', value: '' },
+        { label: '今天', value: 'today' },
+        { label: '昨天', value: 'yesterday' },
+        { label: '最近7天', value: 'lately7' },
+        { label: '最近30天', value: 'lately30' },
+        { label: '本月', value: 'month' },
+        { label: '本年', value: 'year' }
       ],
-      frameArray: [{ name: this.$t('setting.selectdepartment'), id: '' }],
-      userArray: [{ label: this.$t('access.selectpersonnel'), value: '' }],
+      frameArray: [{ name: '选择部门', id: '' }],
+      userArray: [{ label: '选择人员', value: '' }],
       tableData: [],
       frame: [],
       period: 2,
       time: [
-        this.$moment().subtract(1, 'month').startOf('month').format('YYYY/MM/DD'),
-        this.$moment().subtract(1, 'month').endOf('month').format('YYYY/MM/DD')
+        dayjs().subtract(1, 'month').startOf('month').format('YYYY/MM/DD'),
+        dayjs().subtract(1, 'month').endOf('month').format('YYYY/MM/DD')
       ],
       date:
-        this.$moment().subtract(1, 'month').startOf('month').format('YYYY/MM/DD') +
+        dayjs().subtract(1, 'month').startOf('month').format('YYYY/MM/DD') +
         '-' +
-        this.$moment().subtract(1, 'month').endOf('month').format('YYYY/MM/DD'),
+        dayjs().subtract(1, 'month').endOf('month').format('YYYY/MM/DD'),
       frame_id: '',
       test_uid: '',
       total: 0,
@@ -169,7 +184,7 @@ export default {
   methods: {
     // 选择成员回调
     getSelectList(data) {
-      var testUid = []
+      const testUid = []
       data.forEach((item) => {
         testUid.push(item.value)
       })
@@ -178,7 +193,7 @@ export default {
       this.getTableData()
     },
     changeMastart(data) {
-      var frame = []
+      const frame = []
       data.forEach((value) => {
         frame.push(value.id)
       })
@@ -187,15 +202,14 @@ export default {
       this.getTableData()
     },
 
-  
     async getTableData() {
       const data = {
         period: this.period,
         time: this.date,
         frame_id: this.frame_id,
         test_uid: this.test_uid,
-        number: this.planId,
-        types: this.type
+        number: this.planIdLocal,
+        types: this.typeLocal
       }
 
       const result = await assessCensusApi(data)
@@ -204,57 +218,57 @@ export default {
       this.init()
       this.frame = result.data.frame ? result.data.frame : []
       this.frameArray = this.frame
-      this.frameArray.unshift({ name: this.$t('setting.selectdepartment'), id: '' })
+      this.frameArray.unshift({ name: '选择部门', id: '' })
     },
-    
+
     reset() {
       // 统一获取上个月的开始和结束时间
-      const lastMonthStart = this.$moment().subtract(1, 'month').startOf('month').format('YYYY/MM/DD');
-      const lastMonthEnd = this.$moment().subtract(1, 'month').endOf('month').format('YYYY/MM/DD');
+      const lastMonthStart = dayjs().subtract(1, 'month').startOf('month').format('YYYY/MM/DD')
+      const lastMonthEnd = dayjs().subtract(1, 'month').endOf('month').format('YYYY/MM/DD')
 
       // 重置表单数据
-      this.period = 2;
-      this.time = [lastMonthStart, lastMonthEnd];
-      this.date = `${lastMonthStart}-${lastMonthEnd}`;
-      this.frame_id = '';
-      this.test_uid = '';
-      this.planId = '';
-      this.type = 2;
-      this.departmentList = [];
-      this.userList = [];
+      this.period = 2
+      this.time = [lastMonthStart, lastMonthEnd]
+      this.date = `${lastMonthStart}-${lastMonthEnd}`
+      this.frame_id = ''
+      this.test_uid = ''
+      this.planIdLocal = ''
+      this.typeLocal = 2
+      this.departmentList = []
+      this.userList = []
 
       // 重新获取表格数据
-      this.getTableData();
+      this.getTableData()
     },
-    
+
     handlePeriod(num) {
-      this.period = num;
-      this.frame_id = '';
-      this.test_uid = '';
+      this.period = num
+      this.frame_id = ''
+      this.test_uid = ''
 
       // 定义一个获取时间范围的函数，减少代码重复
       const getTimeRange = (startFn, endFn) => [
-        this.$moment()[startFn]().format('YYYY/MM/DD'),
-        this.$moment()[endFn]().format('YYYY/MM/DD')
-      ];
+        dayjs()[startFn]().format('YYYY/MM/DD'),
+        dayjs()[endFn]().format('YYYY/MM/DD')
+      ]
 
       // 使用对象映射来简化条件判断
       const timeRangeMap = {
-        1: () => getTimeRange('startOf', 'endOf').map(fn => fn.call(this.$moment(), 'week')),
-        2: () => getTimeRange('startOf', 'endOf').map(fn => fn.call(this.$moment(), 'month')),
-        5: () => getTimeRange('startOf', 'endOf').map(fn => fn.call(this.$moment(), 'quarter')),
-        3: () => getTimeRange('startOf', 'endOf').map(fn => fn.call(this.$moment(), 'year')),
+        1: () => getTimeRange('startOf', 'endOf').map((fn) => fn.call(dayjs(), 'week')),
+        2: () => getTimeRange('startOf', 'endOf').map((fn) => fn.call(dayjs(), 'month')),
+        5: () => getTimeRange('startOf', 'endOf').map((fn) => fn.call(dayjs(), 'quarter')),
+        3: () => getTimeRange('startOf', 'endOf').map((fn) => fn.call(dayjs(), 'year')),
         4: () => {
-          const m = new Date().getMonth() + 1;
+          const m = new Date().getMonth() + 1
           return m < 7
-            ? [this.$moment().format('YYYY/01/01'), this.$moment().format('YYYY/06/30')]
-            : [this.$moment().format('YYYY/07/01'), this.$moment().format('YYYY/12/31')];
+            ? [dayjs().format('YYYY/01/01'), dayjs().format('YYYY/06/30')]
+            : [dayjs().format('YYYY/07/01'), dayjs().format('YYYY/12/31')]
         }
-      };
+      }
 
-      this.time = timeRangeMap[num] ? timeRangeMap[num]() : this.time;
-      this.date = this.time[0] + '-' + this.time[1];
-      this.getTableData();
+      this.time = timeRangeMap[num] ? timeRangeMap[num]() : this.time
+      this.date = this.time[0] + '-' + this.time[1]
+      this.getTableData()
     },
 
     onchangeTime(e) {
@@ -263,7 +277,7 @@ export default {
         this.date = ''
       } else {
         if (e[0] === e[1]) {
-          const lastDate = this.$moment(e[0], 'YYYY/MM/DD').endOf('month').format('YYYY/MM/DD')
+          const lastDate = dayjs(e[0], 'YYYY/MM/DD').endOf('month').format('YYYY/MM/DD')
           this.time[1] = lastDate
           this.date = e[0] + '-' + lastDate
         } else {
@@ -343,7 +357,7 @@ export default {
             itemStyle: {
               normal: {
                 color: (params) => {
-                  var colorList = this.colorList
+                  const colorList = this.colorList
                   return colorList[params.dataIndex]
                 },
                 label: {
@@ -360,13 +374,13 @@ export default {
           }
         ]
       }
-      var xAxisName = []
-      var xAxisCount = []
-      var seriesData = []
+      const xAxisName = []
+      const xAxisCount = []
+      const seriesData = []
       if (this.tableData.length > 0) {
         this.tableData.forEach((value) => {
           xAxisName.push(value.name)
-          xAxisCount.push(!this.test_uid ? value.count + this.$t('access.ren') : value.count + this.$t('access.ci'))
+          xAxisCount.push(!this.test_uid ? value.count + ' 人' : value.count + ' 次')
           seriesData.push(value.count)
         })
         this.optionData.xAxis[0].data = xAxisName
@@ -378,8 +392,7 @@ export default {
       option = this.optionData
       // 基于准备好的dom，初始化echarts实例
       this.myChart.setOption(option, true)
-    },
-   
+    }
   }
 }
 </script>
@@ -430,7 +443,7 @@ export default {
   }
 }
 
-/deep/.el-range-editor--small .el-range-input {
+:deep(.el-range-editor .el-range-input) {
   font-size: 13px;
   cursor: pointer;
 }

@@ -1,10 +1,10 @@
 <template>
   <!-- 绩效考核 -->
-  <div class="divBox">
+  <div class="divBox" :class="{ 'none-bg': !checkBtn }">
     <div v-if="checkBtn">
       <el-card class="employees-card-bottom">
         <div class="plan-tabs-content mb20">
-          <el-tabs v-model="tabCur" @tab-click="tapClick">
+          <el-tabs v-model="tabCur" @tab-change="tapClick">
             <el-tab-pane label="待处理" name="6" />
             <el-tab-pane label="考核记录" name="7" />
           </el-tabs>
@@ -27,11 +27,12 @@
   </div>
 </template>
 <script>
+import { defineAsyncComponent } from 'vue'
 export default {
   name: 'DepartmentAssessment',
   components: {
-    merits: () => import('./components/merits'),
-    auditProcess: () => import('./components/auditProcess')
+    merits: defineAsyncComponent(() => import('./components/merits')),
+    auditProcess: defineAsyncComponent(() => import('./components/auditProcess'))
   },
 
   data() {
@@ -84,10 +85,12 @@ export default {
     getList() {
       const tabCur = parseInt(this.tabCur)
       setTimeout(() => {
+        const merits = this.$refs.merits
+        if (!merits) return
         this.handle = tabCur == 6 ? 1 : ''
-        this.$refs.merits.getFormBoxFrame()
+        merits.getFormBoxFrame()
         if (this.checkBtn) {
-          this.$refs.merits.getTableData()
+          merits.getTableData()
         }
       }, 300)
 
@@ -96,10 +99,15 @@ export default {
   }
 }
 </script>
-
+<style>
+.none-bg {
+  background: none !important;
+  border: none !important;
+}
+</style>
 <style lang="scss" scoped>
 .plan-tabs-content {
-  ::v-deep .el-tabs__header {
+  :deep(.el-tabs__header) {
     margin-bottom: 0;
     .el-tabs__nav-wrap::after {
       height: 1px;

@@ -16,7 +16,7 @@ declare(strict_types=1);
 namespace App\Task\folder;
 
 use App\Http\Service\Cloud\CloudFileService;
-use crmeb\services\UploadService;
+use Tuoluojiang\Open\services\UploadService;
 use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Illuminate\Support\Facades\Log;
 use Psr\Container\ContainerExceptionInterface;

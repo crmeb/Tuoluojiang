@@ -1,23 +1,16 @@
-<!-- 合同-付款提醒页面组件 -->
+<!-- 订单-付款提醒页面组件 -->
 <template>
   <div class="station">
     <div class="mb10 btn-box1">
       <div class="title-16">付款提醒列表</div>
-      <el-button
-        v-if="!formInfo.types || formInfo.types == 2 || (formInfo.types == 1 && userId == formInfo.data.salesman.id)"
-        size="small"
-        type="primary"
-        @click="handleContract(3, 1)"
-      >
-        添加付款提醒
-      </el-button>
+      <el-button type="primary" @click="handleContract(3, 1)"> 添加付款提醒 </el-button>
     </div>
     <el-table :data="debtData" style="width: 100%">
       <el-table-column label="付款提醒日期" min-width="150" prop="time"> </el-table-column>
       <el-table-column label="业务类型" min-width="160" prop="">
-        <template slot-scope="scope">
-          <span v-if="scope.row.types == 0">合同回款</span>
-          <span v-if="scope.row.types == 1">合同续费</span>
+        <template #default="scope">
+          <span v-if="scope.row.types == 0">订单回款</span>
+          <span v-if="scope.row.types == 1">订单续费</span>
         </template>
       </el-table-column>
       <el-table-column label="金额(元)" min-width="100" prop="num"> </el-table-column>
@@ -31,50 +24,48 @@
       <el-table-column label="付款提醒" min-width="150" prop="mark">
         <template #default="{ row }">
           <el-popover :content="row.mark" placement="top-start" trigger="hover" width="250">
-            <span v-show="row.mark" slot="reference" class="over-text hand"> {{ row.mark }} </span>
+            <template #reference>
+              <span v-show="row.mark" class="over-text hand"> {{ row.mark }} </span>
+            </template>
           </el-popover>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('hr.founder')" min-width="100" prop="card.name"> </el-table-column>
+      <el-table-column label="创建人" min-width="100" prop="card.name"> </el-table-column>
 
-      <!-- 合同管理-编辑/删除 -->
-      <el-table-column :label="$t('public.operation')" fixed="right" min-width="180" prop="address">
-        <template slot-scope="scope">
+      <!-- 订单管理-编辑/删除 -->
+      <el-table-column label="操作" fixed="right" min-width="180" prop="address">
+        <template #default="scope">
           <el-button
             v-if="scope.row.types === 0"
             :disabled="scope.row.status !== 0"
-            type="text"
+            type="primary" link
             @click="handleBuild(scope.row, buildData.contract_refund_switch, 'contract_refund_switch')"
             >添加回款</el-button
           >
           <el-button
             v-if="scope.row.types === 1"
             :disabled="scope.row.status !== 0"
-            type="text"
+            type="primary" link
             @click="handleBuild(scope.row, buildData.contract_renew_switch, 'contract_renew_switch')"
             >添加续费</el-button
           >
-          <el-button :disabled="scope.row.status !== 0" type="text" @click="handleContract(3, 2, scope.row)">{{
-            $t('public.edit')
-          }}</el-button>
+          <el-button :disabled="scope.row.status !== 0" type="primary" link @click="handleContract(3, 2, scope.row)">编辑</el-button>
           <el-button
             v-if="scope.row.bill_id > 0"
             :disabled="scope.row.status !== 0"
-            type="text"
+            type="primary" link
             @click="giveUpFn(scope.row)"
           >
             放弃</el-button
           >
-          <el-button v-if="scope.row.bill_id <= 0" type="text" @click="handleDelete(scope.row, 1)">{{
-            $t('public.delete')
-          }}</el-button>
+          <el-button v-if="scope.row.bill_id <= 0" type="primary" link @click="handleDelete(scope.row, 1)">删除</el-button>
         </template>
       </el-table-column>
 
       <!-- 客户管理-修改备注 -->
-      <!-- <el-table-column v-else prop="address" min-width="120" :label="$t('public.operation')">
-        <template slot-scope="scope">
-          <el-button @click="setRemarks(scope.row)" type="text">{{ $t('public.remarks') }}</el-button>
+      <!-- <el-table-column v-else prop="address" min-width="120" label="操作">
+        <template #default="scope">
+          <el-button @click="setRemarks(scope.row)" type="primary" link>备注</el-button>
         </template>
       </el-table-column> -->
     </el-table>
@@ -91,17 +82,22 @@
       ref="editExamine"
       :ids="formInfo.data.id"
       :parameterData="parameterData"
-      @isOk="getTableData()"
+      @isOk="handleBillChange"
     ></edit-examine>
-    <contract-dialog ref="contractDialog" :config="configContract" @isOk="isOk"></contract-dialog>
+    <contract-dialog ref="contractDialog" :config="configContract" @isOk="handleRemindChange"></contract-dialog>
     <mark-dialog ref="markDialog" :config="configMark" @isMark="isOk"></mark-dialog>
   </div>
 </template>
 
 <script>
-import { clientRemindDeleteApi, clientRemindListApi, remindAbjureApi } from '@/api/enterprise'
-import { configRuleApproveApi } from '@/api/config'
+import { defineAsyncComponent } from 'vue'
+import { modalSure } from '@/libs/public.ts'
+import { remindAbjureApi } from '@/api/enterprise.ts'
+import { clientRemindDeleteApi, clientRemindListApi } from '@/api/client.ts'
+import { configRuleApproveApi } from '@/api/config.ts'
+import { getStorageJson } from '@/utils/storage.ts'
 export default {
+  emits: ['refresh-detail'],
   name: 'ContractRemind',
   props: {
     formInfo: {
@@ -116,9 +112,9 @@ export default {
     }
   },
   components: {
-    contractDialog: () => import('@/views/customer/contract/components/contractDialog'),
-    markDialog: () => import('@/views/customer/contract/components/markDialog'),
-    editExamine: () => import('@/views/user/examine/components/editExamine')
+    contractDialog: defineAsyncComponent(() => import('@/views/customer/contract/components/contractDialog')),
+    markDialog: defineAsyncComponent(() => import('@/views/customer/contract/components/markDialog')),
+    editExamine: defineAsyncComponent(() => import('@/views/user/examine/components/editExamine'))
   },
   data() {
     return {
@@ -130,7 +126,7 @@ export default {
       renewData: [],
       renewTotal: 0,
       configContract: {},
-      userId: JSON.parse(localStorage.getItem('userInfo')).id,
+      userId: getStorageJson('userInfo', {}).id || '',
       debtPage: 1,
       renewPage: 1,
       isShow: true,
@@ -145,7 +141,8 @@ export default {
         contract_id: '',
         customer_id: '',
         invoice_id: '',
-        bill_id: ''
+        bill_id: '',
+        remind_id: ''
       },
       configMark: {}
     }
@@ -163,12 +160,26 @@ export default {
     this.getConfigApprove()
   },
   methods: {
+    handleBillChange() {
+      this.getTableData()
+      this.$emit('refresh-detail')
+    },
+
+    handleRemindChange() {
+      this.where.types = ''
+      this.getTableData()
+      if (this.configContract.edit !== 2) {
+        this.$emit('refresh-detail')
+      }
+    },
+
     handleBuild(command, val, type) {
       if (this.type == 1) {
         this.parameterData.customer_id = command.eid
       } else {
         this.parameterData.contract_id = command.cid
       }
+      this.parameterData.remind_id = command.id
 
       this.$refs.editExamine.openBox(val, command.cid, type)
     },
@@ -208,12 +219,12 @@ export default {
       this.$refs.contractDialog.handleOpen()
     },
     async giveUpFn(row) {
-      await this.$modalSure('确定之后变为已放弃状态，您确定此合同不再续费了吗')
+      await modalSure('确定之后变为已放弃状态，您确定此订单不再续费了吗')
       await remindAbjureApi(row.id)
       this.getTableData()
     },
     handleContract(type, edit, row = []) {
-      var str = '添加付款提醒'
+      let str = '添加付款提醒'
       if (edit == 2) {
         str = '编辑付款提醒'
       }
@@ -238,7 +249,7 @@ export default {
     },
     setRemarks(row) {
       this.configMark = {
-        title: this.$t('customer.remarkinformation'),
+        title: '备注信息',
         width: '480px',
         id: row.id,
         type: 3,
@@ -248,7 +259,7 @@ export default {
     },
     // 删除
     handleDelete(item, type) {
-      this.$modalSure(this.$t('customer.placeholder77')).then(() => {
+      modalSure('请确定要删除该提醒吗').then(() => {
         clientRemindDeleteApi(item.id).then((res) => {
           if (type === 1) {
             if (this.where.page > 1 && this.debtData.length <= 1) {
@@ -262,6 +273,7 @@ export default {
             }
           }
           this.getTableData()
+          this.$emit('refresh-detail')
         })
       })
     }
@@ -270,7 +282,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/deep/ .el-input__inner {
+:deep(.el-input__inner) {
   text-align: left;
 }
 
@@ -295,7 +307,7 @@ export default {
     font-size: 14px;
   }
 }
-/deep/ .el-table__body {
+:deep(.el-table__body) {
   width: 100%;
   table-layout: fixed !important;
 }

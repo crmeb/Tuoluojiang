@@ -6,7 +6,7 @@
         <el-table
           v-loading="tableLoading"
           :data="tableData"
-          :height="tableHeight"
+          :height="TABLE_HEIGHT"
           default-expand-all
           row-key="id"
           style="width: 100%"
@@ -22,23 +22,27 @@
           <el-table-column label="部门" min-width="150" prop="frame.name" show-overflow-tooltip />
           <el-table-column label="审批类型" min-width="150" prop="approve.name" show-overflow-tooltip />
           <el-table-column label="审批状态" min-width="120" prop="name" show-overflow-tooltip>
-            <template slot-scope="scope">
-              <el-tag effect="plain" v-if="scope.row.status === -1" size="mini" type="info"> 已撤销 </el-tag>
-              <el-tag effect="plain" v-if="scope.row.status === 0" size="mini" type="warning"> 待审核 </el-tag>
-              <el-tag effect="plain" v-if="scope.row.status === 1" size="mini" type="info"> 已通过 </el-tag>
-              <el-tag effect="plain" v-if="scope.row.status === 2" size="mini" type="danger"> 已拒绝 </el-tag>
+            <template #default="scope">
+              <el-tag size="small" effect="plain" v-if="scope.row.status === -1" type="info"> 已撤销 </el-tag>
+              <el-tag size="small" effect="plain" v-if="scope.row.status === 0" type="warning"> 待审核 </el-tag>
+              <el-tag size="small" effect="plain" v-if="scope.row.status === 1" type="info"> 已通过 </el-tag>
+              <el-tag size="small" effect="plain" v-if="scope.row.status === 2" type="danger"> 已拒绝 </el-tag>
             </template>
           </el-table-column>
           <el-table-column label="提交时间" min-width="150" prop="created_at" show-overflow-tooltip />
-          <el-table-column :label="$t('public.operation')" prop="name" show-overflow-tooltip width="120">
-            <template slot-scope="scope">
-              <el-button v-hasPermi="['business:record:index:details']" type="text" @click="handleDetail(scope.row)"
+          <el-table-column label="操作" prop="name" show-overflow-tooltip width="180">
+            <template #default="scope">
+              <el-button v-hasPermi="['business:record:index:details']" type="primary" link @click="handleDetail(scope.row)"
                 >详情</el-button
               >
 
-              <el-button v-hasPermi="['business:record:index:delete']" type="text" @click="handleDelete(scope.row)"
+              <el-button v-hasPermi="['business:record:index:delete']" type="primary" link @click="handleDelete(scope.row)"
                 >删除</el-button
               >
+
+              <el-button type="primary" link @click="handlePrint(scope.row)">
+                打印
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -61,22 +65,28 @@
 
     <export-excel ref="exportExcel" :export-data="exportData" :save-name="saveName" :template="false" />
     <detail-examine ref="detailExamine" :type="3" />
+    <print-preview ref="printPreview"  :print-data="printData" />
   </div>
 </template>
 
 <script>
-import { approveApplyApi, approveApplyDeleteApi, approveApplyExportApi } from '@/api/business'
-import func from '@/utils/preload'
+import { defineAsyncComponent } from 'vue'
+import dayjs from 'dayjs'
+import { modalSure } from '@/libs/public.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { approveApplyApi, approveApplyDeleteApi, approveApplyExportApi, approveApplyEditApi } from '@/api/business.ts'
 export default {
   name: 'IndexVue',
   components: {
-    formBox: () => import('./components/formBox'),
-    detailExamine: () => import('@/views/user/examine/components/detailExamine'),
-    exportExcel: () => import('@/components/common/exportExcel'),
-    defaultPage: () => import('@/components/common/defaultPage')
+    formBox: defineAsyncComponent(() => import('./components/formBox')),
+    detailExamine: defineAsyncComponent(() => import('@/views/user/examine/components/detailExamine')),
+    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel')),
+    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage')),
+    printPreview: defineAsyncComponent(() => import('./components/printPreview'))
   },
   data() {
     return {
+      TABLE_HEIGHT,
       where: {
         page: 1,
         limit: 15,
@@ -90,11 +100,9 @@ export default {
       },
       saveName: '',
       exportLoading: false,
-      tableLoading: false
+      tableLoading: false,
+      printData: {}
     }
-  },
-  beforeCreate() {
-    this.$vue.prototype.$func = func
   },
   mounted() {
     this.getTableData()
@@ -128,7 +136,7 @@ export default {
       this.$refs.detailExamine.openBox(row)
     },
     handleDelete(row) {
-      this.$modalSure('你确定要删除这条申请记录吗').then(() => {
+      modalSure('你确定要删除这条申请记录吗').then(() => {
         approveApplyDeleteApi(row.id).then((res) => {
           if (this.where.page > 1 && this.tableData.length <= 1) {
             this.where.page--
@@ -137,9 +145,19 @@ export default {
         })
       })
     },
+    // 打印
+    handlePrint(row) {
+      approveApplyEditApi(row.id, { types: 1 }).then((res) => {
+
+        this.printData = res.data
+
+        this.$refs.printPreview.openBox(res.data)
+
+      })
+    },
     getExportData() {
       if (this.where.approve_id == '') return this.$message.error('请选择审批类型')
-      this.saveName = '审批导出_' + this.$moment(new Date()).format('HH_mm_ss') + '.xlsx'
+      this.saveName = '审批导出_' + dayjs(new Date()).format('HH_mm_ss') + '.xlsx'
       const where = JSON.parse(JSON.stringify(this.where))
       where.limit = 0
       this.exportLoading = true
@@ -168,7 +186,7 @@ export default {
 // .normal-page {
 //   padding-bottom: 0;
 // }
-/deep/ .el-table th {
+:deep(.el-table th) {
   background-color: #f7fbff;
 }
 .search {

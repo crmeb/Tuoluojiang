@@ -19,9 +19,10 @@
 </template>
 
 <script>
-import { rankLevelRelationApi, rankLevelRelationDeleteApi } from '@/api/setting';
+import { rankLevelRelationApi, rankLevelRelationDeleteApi } from '@/api/setting.ts';
 
 export default {
+  emits: ['handleRightClick'],
   name: 'RightClick',
   props: {
     configData: {
@@ -38,7 +39,9 @@ export default {
       clickData: {},
     };
   },
-  mounted() {},
+  beforeUnmount() {
+    document.removeEventListener('click', this.foo);
+  },
   methods: {
     rightItemClick() {
       this.clickData.type = 1;
@@ -50,10 +53,10 @@ export default {
       this.menuVisible = false; // 先把模态框关死，目的是 第二次或者第n次右键鼠标的时候 它默认的是true
       this.menuVisible = true; // 显示模态窗口，跳出自定义菜单栏
       event.preventDefault(); // 关闭浏览器右键默认事件
-      var menu = document.querySelector('#contextmenu');
+      const menu = document.querySelector('#contextmenu');
       this.$nextTick(() => {
-        var menuH = menu.clientHeight;
-        var cha = document.body.clientHeight - event.clientY;
+        const menuH = menu.clientHeight;
+        const cha = document.body.clientHeight - event.clientY;
         // 防止菜单太靠底，根据可视高度调整菜单出现位置
         if (cha < menuH) {
           menu.style.top = event.clientY - menuH + 'px';
@@ -64,16 +67,14 @@ export default {
       });
       document.addEventListener('click', this.foo); // 给整个document添加监听鼠标事件，点击任何位置执行foo方法
     },
-    foo() {
+    foo(e) {
       // 监听，除了点击自己，点击其他地方将自身隐藏
-      document.addEventListener('click', (e) => {
-        const contextMenuBox = document.getElementById('contextmenu');
-        if (contextMenuBox) {
-          if (!contextMenuBox.contains(e.target)) {
-            this.menuVisible = false;
-          }
+      const contextMenuBox = document.getElementById('contextmenu');
+      if (contextMenuBox) {
+        if (!contextMenuBox.contains(e.target)) {
+          this.menuVisible = false;
         }
-      });
+      }
     },
     rankItemClick(item) {
       const id = this.configData.rank_item.info ? this.configData.rank_item.info.id : 0;

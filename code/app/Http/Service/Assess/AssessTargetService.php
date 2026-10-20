@@ -18,10 +18,10 @@ namespace App\Http\Service\Assess;
 use App\Constants\CacheEnum;
 use App\Http\Dao\Access\EnterpriseTargetDao;
 use App\Http\Service\BaseService;
-use crmeb\interfaces\ResourceServicesInterface;
-use crmeb\services\FormService as Form;
-use crmeb\services\synchro\Company;
-use crmeb\traits\service\ResourceServiceTrait;
+use Tuoluojiang\Open\interfaces\ResourceServicesInterface;
+use Tuoluojiang\Open\services\FormService as Form;
+use Tuoluojiang\Open\services\synchro\Company;
+use Tuoluojiang\Open\traits\service\ResourceServiceTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -62,7 +62,7 @@ class AssessTargetService extends BaseService implements ResourceServicesInterfa
      */
     public function resourceCreate(array $other = []): array
     {
-        return $this->elForm('添加指标模板', $this->getRankRuleForm(collect()), '/admin/enterprise/assess/target');
+        return $this->createElementForm('添加指标模板', $this->getRankRuleForm(collect()), '/admin/enterprise/assess/target');
     }
 
     /**
@@ -76,7 +76,7 @@ class AssessTargetService extends BaseService implements ResourceServicesInterfa
         if (! $rankInfo) {
             throw $this->exception('修改的指标模板不存在');
         }
-        return $this->elForm('添加指标模板', $this->getRankRuleForm(collect($rankInfo->toArray())), '/admin/enterprise/assess/target/' . $id, 'put');
+        return $this->createElementForm('添加指标模板', $this->getRankRuleForm(collect($rankInfo->toArray())), '/admin/enterprise/assess/target/' . $id, 'put');
     }
 
     /**
@@ -108,25 +108,23 @@ class AssessTargetService extends BaseService implements ResourceServicesInterfa
      * @param mixed $targetId
      * @param mixed $spaceId
      * @param mixed $data
-     * @param mixed $uuid
-     * @param mixed $entId
+     * @param mixed $uid
      * @return mixed
      * @throws BindingResolutionException
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      * @throws \ReflectionException
      */
-    public function selfEvalTarget($assessId, $targetId, $spaceId, $data, $uuid, $entId)
+    public function selfEvalTarget($assessId, $targetId, $spaceId, $data, $uid)
     {
         $info = toArray(app()->get(AssessService::class)->get($assessId));
         if (empty($info)) {
             throw $this->exception('未找到相关考核信息');
         }
-        $uid = uuid_to_uid($uuid, $entId);
         if ($info['test_uid'] != $uid) {
             throw $this->exception('您暂无权限修改该考核信息');
         }
-        $space = toArray(app()->get(AssessSpaceService::class)->get(['entid' => $entId, 'id' => $spaceId, 'assessid' => $assessId]));
+        $space = toArray(app()->get(AssessSpaceService::class)->get(['id' => $spaceId, 'assessid' => $assessId]));
         if (empty($space)) {
             throw $this->exception('未找到相关考核信息');
         }

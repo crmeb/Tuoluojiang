@@ -2,13 +2,12 @@
   <div>
     <el-drawer
       title="用户权限"
-      :visible.sync="drawer"
+      v-model="drawer"
       :direction="direction"
       :before-close="handleClose"
       :modal="true"
-      :wrapper-closable="true"
       :with-header="false"
-      size="700px"
+      size="1000px"
     >
       <div class="container">
         <div class="table-box">
@@ -24,8 +23,7 @@
                   <el-select
                     v-model="pageData.roles"
                     multiple
-                    size="small"
-                    :placeholder="$t('setting.edit.pleaseselect')"
+                    placeholder="请选择"
                     @change="handleRoles"
                     style="width: 100%"
                   >
@@ -37,7 +35,7 @@
                     />
                   </el-select>
                 </div>
-                <span class="tips">{{ $t('setting.edit.text2') }}</span>
+                <span class="tips">可为成员快速设置管理员拥有的权限身份，普通成员无需设置为管理员</span>
               </el-form-item>
             </el-form>
           </div>
@@ -46,22 +44,24 @@
             :tree-data="pageData.menus"
             :default-checked-keys="defaultCheckedKeys"
             :roles-list="rolesList"
+            :table-data="modulePermissionList"
             :is-admin="true"
           />
         </div>
       </div>
       <div class="from-foot-btn fix btn-shadow">
-        <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
-        <el-button size="small" type="primary" @click="onSubmit">{{ $t('public.save') }}</el-button>
+        <el-button @click="handleClose">取消</el-button>
+        <el-button type="primary" @click="onSubmit">保存</el-button>
       </div>
     </el-drawer>
   </div>
 </template>
 
 <script>
-import { systemUserRoleApi, userEntCardApi } from '@/api/user'
+import { systemUserRoleApi, userEntCardApi } from '@/api/user.ts'
+import { systemRoleEditApi } from '@/api/config.ts'
 import rolesTree from '@/components/setting/rolesTree'
-import { jobsCreate } from '@/api/enterprise'
+import { jobsCreate } from '@/api/enterprise.ts'
 export default {
   name: 'EditUser',
   components: {
@@ -83,6 +83,7 @@ export default {
       },
       rules: {},
       options: [],
+      modulePermissionList: [],
       userInfo: null,
       pageData: {},
       openStatus: false,
@@ -94,6 +95,7 @@ export default {
       propsPos: { value: 'id', label: 'name', multiple: false, checkStrictly: true }
     }
   },
+  emits: ['closed', 'saved'],
   watch: {
     userId: {
       handler(nVal, oVal) {
@@ -109,7 +111,7 @@ export default {
     handleClose() {
       this.userInfo = null
       this.drawer = false
-      this.$parent.userId = ''
+      this.$emit('closed')
     },
     open() {
       this.drawer = true
@@ -167,7 +169,7 @@ export default {
       this.userInfo.role_id = this.pageData.roles
       systemUserRoleApi(this.userInfo).then((res) => {
         this.drawer = false
-        this.$parent.getList()
+        this.$emit('saved')
       })
     }
   }
@@ -178,7 +180,7 @@ export default {
 .table-box {
   height: 52px;
   line-height: 52px;
-  padding: 0 30px;
+  padding: 0 20px;
   font-size: 14px;
   border-bottom: 1px solid #d8d8d8;
 
@@ -206,10 +208,10 @@ export default {
     margin-bottom: 10px;
   }
 }
-/deep/.el-popover {
+:deep(.el-popover) {
   min-width: 80px;
 }
-/deep/ .el-cascader--medium {
+:deep(.el-cascader) {
   width: 100%;
 }
 .prop-txt {
@@ -217,5 +219,12 @@ export default {
   line-height: 30px;
   font-size: 13px;
   cursor: pointer;
+}
+:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
+  border-color: #edf6ff !important;
+}
+
+:deep(.tree-con) {
+  height: calc(100vh - 220px) !important;
 }
 </style>

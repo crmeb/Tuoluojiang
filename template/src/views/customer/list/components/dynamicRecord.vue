@@ -8,15 +8,14 @@
         <el-timeline-item
           v-for="(activity, index) in dynamicRecord"
           :key="index"
-          :icon="activity.icon"
+          :icon="$icon(activity.icon)"
           :size="activity.size"
-          :type="String(activity.type)"
           color="#1890FF"
         >
           <div v-if="activity.types === 1">
             <div class="head">
               <div class="head-right">
-                <span class="head-name">{{ getTypeStr(activity.type) }}</span>
+                <span class="head-name">{{ getTypeStr(activity.type, activity.link_type) }}</span>
                 <span class="head-time">{{ activity.created_at }}</span>
               </div>
             </div>
@@ -31,18 +30,21 @@
             <div v-if="editIndex !== index">
               <div class="head">
                 <div class="head-right">
-                  <span class="head-name">{{ activity.creator ? activity.creator.name : '--' }}</span>
+                  <span class="head-name">{{ getTypeStr(activity.type, activity.link_type) }}</span>
                   <span class="head-time"
-                    >{{ activity.creator ? activity.creator.name : '--' }} | {{ activity.created_at }}</span
+                    >{{ activity.creator ? activity.creator.name : '系统' }} | {{ activity.created_at }}</span
                   >
                 </div>
               </div>
-              <div class="record"><span class="c-30">说明：</span> {{ activity.reason || '--' }}</div>
-              <div v-for="(fileItem, g) in activity.attachs" :key="g" class="flex">
+              <div class="record"><span class="c-30">说明：</span> {{ activity.reason || '' }}</div>
+          <div class="p20" v-if="activity.attachs.length > 0">
+                <oa-uploadList :fileList="activity.attachs" :isTwoColumnShow="true"></oa-uploadList>
+          </div>
+              <!-- <div v-for="(fileItem, g) in activity.attachs" :key="g" >
                 <div class="fileItem">
-                  <img 
+                  <img
                     :src="require(`@/assets/images/${fileTypeIcon(toSrc(fileItem.name))}.png`)"
-                    alt="文件图标" 
+                    alt="文件图标"
                     class="img"
                   />
                   {{ fileItem.real_name }}
@@ -59,7 +61,7 @@
                     @click="downloadFile(fileItem.url, fileItem.real_name)"
                   ></span>
                 </div>
-              </div>
+              </div> -->
             </div>
             <record-upload v-if="editIndex === index" :form-info="formInfo" @change="uploadChange"></record-upload>
           </div>
@@ -68,27 +70,30 @@
     </div>
 
     <div v-if="dynamicRecord.length == 0" class="default">
-      <img alt="" class="img" src="../../../../assets/images/def1.png" />
-      <span class="text">{{ $t('public.message14') + '~' }}</span>
+      <EmptyState type="record" :text="'暂无数据' + '~'" />
     </div>
     <!-- 查看图片 -->
-    <el-image-viewer v-if="isImage" :on-close="closeImageViewer" :url-list="srcList" />
+    <el-image-viewer v-if="isImage" @close="closeImageViewer" :url-list="srcList" />
     <remind-dialog ref="remindDialog" :config="remindConfig" @change="remindChange"></remind-dialog>
   </div>
 </template>
 
 <script>
-import { clientRecordApi } from '@/api/enterprise'
-import { toSrcFn } from '@/utils/format'
-import file from '@/utils/file'
-import Vue from 'vue'
-Vue.use(file)
+import { defineAsyncComponent } from 'vue'
+import { clientRecordApi } from '@/api/enterprise.ts'
+import { toSrcFn } from '@/utils/format.ts'
+import { fileLinkDownLoad } from '@/utils/file.ts'
+import EmptyState from '@/components/common/emptyState.vue'
+import RecordUpload from './recordUpload'
+import RemindDialog from './remindDialog'
+import OaUploadList from '@/components/form-common/oa-uploadList.vue'
 export default {
   name: 'dynamicRecord',
   components: {
-    ElImageViewer: () => import('element-ui/packages/image/src/image-viewer'),
-    recordUpload: () => import('./recordUpload'),
-    remindDialog: () => import('./remindDialog')
+    EmptyState,
+    recordUpload: RecordUpload,
+    remindDialog: RemindDialog,
+    oaUploadList: OaUploadList
   },
   props: {
     formInfo: {
@@ -119,11 +124,18 @@ export default {
       remindConfig: {}
     }
   },
+  mounted() {
+    this.getTableData()
+  },
 
   methods: {
     getTableData() {
       this.dynamicRecord = []
-      this.liaison.eid = this.formInfo.data.eid
+      const key = this.formInfo.link_type === 'customer' ? 'eid' : 'id';
+      this.liaison.eid = this.formInfo.data?.[key] ?? this.formInfo.id
+      this.liaison.link_type = this.formInfo.link_type
+      if(!this.liaison.eid) return false
+   
       clientRecordApi(this.liaison).then((res) => {
         this.liaisonTotal = res.data.count
         res.data.list.map((item, index) => {
@@ -136,29 +148,80 @@ export default {
     },
 
     fileTypeIcon(type) {
-    const iconMap = {
-      1: 'doc',
-      2: 'ppt', 
-      3: 'xls',
-      4: 'record2',
-      5: 'pdf'
-    }
-    return iconMap[type] || 'file-default'
-  },
+      const iconMap = {
+        1: 'doc',
+        2: 'ppt',
+        3: 'xls',
+        4: 'record2',
+        5: 'pdf'
+      }
+      return iconMap[type] || 'file-default'
+    },
     // 关闭查看图片弹窗
     closeImageViewer() {
       this.isImage = false
       this.srcList = []
     },
-    getTypeStr(type) {
-      let obj = {
-        1: '转为公海客户',
-        2: '领取客户',
-        3: '标为流失',
-        4: '取消流失',
-        5: '移交客户'
+    getTypeStr(type, link) {
+      if (link === 'customer') {
+        let obj = {
+          0:'跟进客户',
+          1: '转为公海客户',
+          2: '领取客户',
+          3: '标为流失',
+          4: '取消流失',
+          5: '移交客户',
+          6: '新增客户',
+          7: '线索转客户',
+          10: '数据变更'
+        }
+        return obj[type]
+      } else if (link === 'clue') {
+        let obj = {
+          0:'跟进线索',
+          1: '新增线索',
+          2: '修改线索',
+          3: '领取线索',
+          4: '退回线索池',
+          5: '转客户',
+          6: '转移',
+          10: '数据变更'
+        }
+        return obj[type]
+      } else if (link === 'contract') {
+        let obj = {
+          10: '数据变更',
+          5: '移交订单',
+          6: '新增订单'
+        }
+        return obj[type]
+      } else if (link === 'liaison') {
+        let obj = {
+          6: '新增联系人',
+          10: '数据变更'
+        }
+        return obj[type]
+      } else if (link === 'odds') {
+        let obj = {
+          0:'跟进商机',
+          1: '新增商机',
+          2: '修改商机',
+          6: '转移',
+          10: '数据变更'
+        }
+        return obj[type]
+      }else if (link === 'contract_doc') {
+        let obj = {
+         '-1':'合同签约审批拒绝',
+          '1':'新增合同签约',
+          '2':'合同签约审批通过',
+          '3':'合同签约完成',
+          '4':'拒绝合同签约',
+          '5':'签约已过期',
+          '6':'签约已撤销'
+        }
+        return obj[type]
       }
-      return obj[type]
     },
     // 查看图片
     handlePictureCardPreview(row) {
@@ -175,7 +238,7 @@ export default {
     },
     // 下载文件
     downloadFile(row, name) {
-      this.fileLinkDownLoad(row, name)
+      fileLinkDownLoad(row, name)
     },
     // 添加
     addRecord() {
@@ -248,9 +311,6 @@ export default {
 .el-tag {
   padding: 0px;
   margin-right: 16px;
-}
-.el-button--medium {
-  padding: 10px 15px !important;
 }
 .recordContent {
   padding-top: 38px;
@@ -358,33 +418,35 @@ export default {
 .iconfont {
   color: #1890ff;
 }
-/deep/ .el-timeline-item__tail {
+:deep(.el-timeline-item__tail) {
   position: absolute;
   left: 4px;
   height: 100%;
 
   border-left: 1px solid #dfe4ed;
 }
-/deep/.el-timeline-item__node--normal {
+:deep(.el-timeline-item__node--normal) {
   left: 0px;
   width: 10px;
   height: 10px;
 }
-/deep/ .el-timeline-item__wrapper {
+:deep(.el-timeline-item__wrapper) {
   position: relative;
   top: -12px;
 }
-/deep/ .el-textarea__inner {
+:deep(.el-textarea__inner) {
   min-height: 96px;
   border: none;
+  box-shadow: none;
   font-size: 12px;
 }
-/deep/ .icondangqian {
+:deep(.icondangqian) {
   font-size: 16px;
   color: #1890ff;
   background-color: none;
 }
 .default {
+  margin-top: 80px;
   .img {
     width: 200px;
     height: 150px;
