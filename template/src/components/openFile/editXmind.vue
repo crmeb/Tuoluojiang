@@ -4,14 +4,13 @@
 </template>
 
 <script>
-import { fileUpload } from "@/api/public.ts";
+import { fileUpload } from "@/api/public";
 import XmindEditor from "@/components/xmind-editor/index.vue";
-import { processResourceUrl } from '@/utils/resourceUtil.ts'
+import { processResourceUrl } from '@/utils/resourceUtil'
 import XmindParse from 'simple-mind-map/src/parse/xmind';
 
 export default {
   name: "editXmind",
-  emits: ['startLoading', 'closeLoading'],
   props: {
     url: {
       type: String,

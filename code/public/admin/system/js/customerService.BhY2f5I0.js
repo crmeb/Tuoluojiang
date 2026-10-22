@@ -1,0 +1,1 @@
+import{B as e,Z as t,bt as n,kt as r,q as i,st as a}from"./chunk-vendor.Di-Ybv3u.js";import{t as o}from"./constants.VEFnJ1Sg.js";import{t as s}from"./applicationManagement.CmJIXxCT.js";t(),n();var c=i({__name:`index`,setup(t){return(t,n)=>(a(),e(s,{title:`智能客服`,"app-type":r(o).EXTERNAL},null,8,[`app-type`]))}});export{c as default};

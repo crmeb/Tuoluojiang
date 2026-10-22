@@ -9,9 +9,9 @@
     :validate-on-rule-change="false"
     :model="formDataModel"
     ref="renderForm"
-    @submit.prevent
+    @submit.native.prevent
   >
-    <template v-for="(widget, index) in widgetList" :key="index">
+    <template v-for="(widget, index) in widgetList">
       <template v-if="'container' === widget.category">
         <component
           :ref="`container_${widget.type}`"
@@ -28,7 +28,7 @@
           :parent-widget="developData"
         >
           <!-- 递归传递插槽！！！ -->
-          <template v-for="slot in Object.keys($slots)" :key="slot" v-slot:[slot]="scope">
+          <template v-for="slot in Object.keys($scopedSlots)" v-slot:[slot]="scope">
             <slot :name="slot" v-bind="scope" />
           </template>
         </component>
@@ -46,7 +46,7 @@
           :index-of-parent-list="index"
         >
           <!-- 递归传递插槽！！！ -->
-          <template v-for="(slot, index) in Object.keys($slots)" :key="index" v-slot:[slot]="scope">
+          <template v-for="(slot, index) in Object.keys($scopedSlots)" v-slot:[slot]="scope">
             <slot :name="slot" v-bind="scope" />
           </template>
         </component>
@@ -56,12 +56,9 @@
 </template>
 
 <script>
-import { watchActiveField } from '@/components/form-render/activeField.ts'
-import { toElSize } from '@/utils/el-size.ts'
 //import ElForm from 'element-ui/packages/form/src/form.vue'  /* 用于源码调试Element UI */
-import { createEventHub, FORM_RENDER_HUB } from '@/utils/eventHub.ts'
+import emitter from '@/utils/emitter'
 import './container-item/index'
-import '@/views/system/dashboard-design/charts/runtime'
 import FieldComponents from '@/components/form-designer/form-widget/field-widget/index'
 import {
   generateId,
@@ -73,12 +70,12 @@ import {
   traverseFieldWidgets,
   buildDefaultFormJson
 } from '@/utils/formDesignerUtils'
-import i18n, { changeLocale } from '../../utils/i18n.ts'
+import i18n, { changeLocale } from '../../utils/i18n'
 
 export default {
-  emits: ['formChange', 'appendButtonClick', 'buttonClick'],
   name: 'VFormRender',
-  mixins: [i18n],
+  componentName: 'VFormRender',
+  mixins: [emitter, i18n],
   components: {
     //ElForm,
     ...FieldComponents
@@ -116,8 +113,6 @@ export default {
   },
   provide() {
     return {
-      // 后代字段 / 容器通过它与渲染器互发事件（替代原 dispatch / broadcast）
-      [FORM_RENDER_HUB]: this.formHub,
       refList: this.widgetRefList,
       sfRefList: this.subFormRefList, //收集SubForm引用
       formConfig: this.formConfig,
@@ -171,10 +166,10 @@ export default {
 
     size() {
       if (!!this.formConfig && !!this.formConfig.size) {
-        return toElSize(this.formConfig.size)
+        return this.formConfig.size
       }
 
-      return 'default'
+      return 'medium'
     },
 
     customClass() {
@@ -185,12 +180,15 @@ export default {
     }
   },
 
-  beforeCreate() {
-    // 非响应式实例属性：provide() 执行时已可用
-    this.formHub = createEventHub()
+  watch: {
+    '$store.state.user.activeField': {
+      deep: true, //深度监听设置为 true
+      handler: function (newVal, oldVal) {
+        this.fieldShowFn(newVal)
+      }
+    }
   },
   created() {
-    watchActiveField((field) => this.fieldShowFn(field))
     this.buildFormModel(!this.formJsonObj ? null : this.formJsonObj.widgetList)
     this.initFormObject()
   },
@@ -204,7 +202,7 @@ export default {
     },
     fieldShowFn(val) {
       this.widgetList.forEach((item) => {
-        item.isShow = item.id == val.id
+        this.$set(item, 'isShow', item.id == val.id)
       })
     },
 
@@ -218,7 +216,6 @@ export default {
       }
       this.addFieldChangeEventHandler()
       this.addFieldValidateEventHandler()
-      this.addButtonClickEventHandler()
       this.registerFormToRefList()
       this.handleOnCreated()
     },
@@ -297,13 +294,13 @@ export default {
                 }
               })
 
-              this.formDataModel[subFormName] = [subFormDataRow] //
+              this.$set(this.formDataModel, subFormName, [subFormDataRow]) //
             } else {
-              this.formDataModel[subFormName] = [] //
+              this.$set(this.formDataModel, subFormName, []) //
             }
           } else {
             let initialValue = this.formData[subFormName]
-            this.formDataModel[subFormName] = deepClone(initialValue)
+            this.$set(this.formDataModel, subFormName, deepClone(initialValue))
           }
         } else if (wItem.type === 'grid-col' || wItem.type === 'table-cell') {
           if (!!wItem.widgetList && wItem.widgetList.length > 0) {
@@ -329,35 +326,27 @@ export default {
       } else if (!!wItem.formItemFlag) {
         if (!this.formData.hasOwnProperty(wItem.options.name)) {
           //this.formDataModel[wItem.options.name] = '' //这种写法不支持对象属性响应式更新，必须用$set方法！！
-          this.formDataModel[wItem.options.name] = wItem.options.defaultValue //设置字段默认值
+          this.$set(this.formDataModel, wItem.options.name, wItem.options.defaultValue) //设置字段默认值
         } else {
           let initialValue = this.formData[wItem.options.name]
-          this.formDataModel[wItem.options.name] = deepClone(initialValue)
+          this.$set(this.formDataModel, wItem.options.name, deepClone(initialValue))
         }
       }
     },
 
     addFieldChangeEventHandler() {
-      this.formHub.off('fieldChange') //移除原有事件监听
-      this.formHub.on('fieldChange', (fieldName, newValue, oldValue, subFormName, subFormRowIndex) => {
+      this.$off('fieldChange') //移除原有事件监听
+      this.$on('fieldChange', (fieldName, newValue, oldValue, subFormName, subFormRowIndex) => {
         this.handleFieldDataChange(fieldName, newValue, oldValue, subFormName, subFormRowIndex)
         this.$emit('formChange', fieldName, newValue, oldValue, this.formDataModel, subFormName, subFormRowIndex)
       })
     },
 
     addFieldValidateEventHandler() {
-      this.formHub.off('fieldValidation') //移除原有事件监听
-      this.formHub.on('fieldValidation', (fieldName) => {
+      this.$off('fieldValidation') //移除原有事件监听
+      this.$on('fieldValidation', (fieldName) => {
         this.$refs.renderForm.validateField(fieldName)
       })
-    },
-
-    // 按钮 / 输入框后缀按钮未配置自定义脚本时，把点击事件抛给使用方（Vue 2 时 dispatch 即目标组件的 $emit）
-    addButtonClickEventHandler() {
-      this.formHub.off('appendButtonClick')
-      this.formHub.on('appendButtonClick', (widget) => this.$emit('appendButtonClick', widget))
-      this.formHub.off('buttonClick')
-      this.formHub.on('buttonClick', (widget) => this.$emit('buttonClick', widget))
     },
 
     registerFormToRefList() {
@@ -510,9 +499,9 @@ export default {
           this.clearFormDataModel() //上行代码有问题，会导致表单校验失败，故保留原对象引用只清空对象属性！！
           this.buildFormModel(newFormJsonObj.widgetList)
 
-          this.formJsonObj.formConfig = newFormJsonObj.formConfig
+          this.$set(this.formJsonObj, 'formConfig', newFormJsonObj.formConfig)
           this._provided.formConfig = newFormJsonObj.formConfig //强制更新provide的formConfig对象
-          this.formJsonObj.widgetList = newFormJsonObj.widgetList
+          this.$set(this.formJsonObj, 'widgetList', newFormJsonObj.widgetList)
 
           this.insertCustomStyleAndScriptNode() /* 必须先插入表单全局函数，否则VForm内部引用全局函数会报错！！！ */
           this.$nextTick(() => {
@@ -536,7 +525,7 @@ export default {
       } else if (!!widgetNames && Array.isArray(widgetNames)) {
         eventParams = [...widgetNames]
       }
-      this.formHub.emit('field:reloadOptionItems', eventParams)
+      this.broadcast('FieldWidget', 'reloadOptionItems', [eventParams])
     },
 
     async getone() {
@@ -594,9 +583,9 @@ export default {
       })
 
       // 通知SubForm组件：表单数据更新事件！！
-      this.formHub.emit('container:setFormData', this.formDataModel)
+      this.broadcast('ContainerItem', 'setFormData', this.formDataModel)
       // 通知FieldWidget组件：表单数据更新事件！！
-      this.formHub.emit('field:setFormData', this.formDataModel)
+      this.broadcast('FieldWidget', 'setFormData', this.formDataModel)
     },
 
     getFieldValue(fieldName) {
@@ -824,10 +813,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.el-form :deep(.el-row) {
+.el-form ::v-deep .el-row {
   padding: 8px;
 }
-:deep(.el-form-item__error) {
+::v-deep .el-form-item__error {
   position: relative;
 }
 </style>

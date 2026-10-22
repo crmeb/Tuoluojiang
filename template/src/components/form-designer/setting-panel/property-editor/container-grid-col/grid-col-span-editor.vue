@@ -23,7 +23,7 @@
 </template>
 
 <script>
-  import i18n from "@/utils/i18n.ts";
+  import i18n from "@/utils/i18n";
 
   export default {
     name: "grid-col-span-editor",
@@ -46,3 +46,4 @@
 <style scoped>
 
 </style>
+@/utils/i18ns

@@ -15,10 +15,10 @@
     <el-input-number
       v-if="isInputVisable"
       ref="fieldEditor"
-      v-model="numberModel"
+      v-model="fieldModel"
       class="full-width-input"
       :disabled="field.options.disabled"
-      :size="toElSize(field.options.size)"
+      :size="field.options.size"
       :controls-position="field.options.controlsPosition"
       :placeholder="field.options.placeholder"
       :min="Number(field.options.min)"
@@ -38,12 +38,14 @@
 
 <script>
 import FormItemWrapper from './form-item-wrapper'
-import i18n, { translate } from '@/utils/i18n.ts'
+import emitter from '@/utils/emitter'
+import i18n, { translate } from '@/utils/i18n'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
 
 export default {
   name: 'input-price-widget',
-  mixins: [fieldMixin, i18n],
+  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
+  mixins: [emitter, fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -88,14 +90,6 @@ export default {
     }
   },
   computed: {
-    numberModel: {
-      get() {
-        return this.fieldModel === '' || this.fieldModel == null ? null : Number(this.fieldModel)
-      },
-      set(value) {
-        this.fieldModel = value
-      }
-    },
     isInputVisable() {
       return !this.getReadMode() || this.field.isShow;
     },
@@ -121,7 +115,7 @@ export default {
     this.handleOnMounted()
   },
 
-  beforeUnmount() {
+  beforeDestroy() {
     this.unregisterFromRefList()
   },
 
@@ -136,3 +130,4 @@ export default {
   width: 100% !important;
 }
 </style>
+@/utils/i18ns

@@ -1,15 +1,15 @@
 <template>
   <div class="_fc_struct">
     <ElButton @click="visible = true" style="width: 100%">{{ title }}</ElButton>
-    <ElDialog :title="title" v-model="visible" :close-on-click-modal="false" append-to-body>
+    <ElDialog :title="title" :visible.sync="visible" :close-on-click-modal="false" append-to-body>
       <div ref="editor" v-if="visible"></div>
       <template #footer>
         <span class="dialog-footer">
           <span style="color: red; float: left; text-align: left" v-if="err">
             输入内容格式有误{{ err !== true ? err : '' }}
           </span>
-          <ElButton @click="visible = false">取 消</ElButton>
-          <ElButton type="primary" @click="onOk">确 定</ElButton>
+          <ElButton @click="visible = false" size="small">取 消</ElButton>
+          <ElButton type="primary" @click="onOk" size="small">确 定</ElButton>
         </span>
       </template>
     </ElDialog>
@@ -24,10 +24,9 @@ import { deepParseFn, toJSON } from '../utils/index';
 import { deepCopy } from '@form-create/utils/lib/deepextend';
 
 export default {
-  emits: ['update:modelValue'],
   name: 'Struct',
   props: {
-    modelValue: [Object, Array],
+    value: [Object, Array],
     title: {
       type: String,
       default: '编辑数据',
@@ -36,12 +35,6 @@ export default {
       require: false,
     },
     validate: Function,
-  },
-  computed: {
-    // Vue 3 的 v-model 走 modelValue，保留 value 供组件内部沿用
-    value() {
-      return this.modelValue
-    },
   },
   data() {
     return {
@@ -101,7 +94,7 @@ export default {
       }
       this.visible = false;
       if (toJSON(val, null, 2) !== this.oldVal) {
-        this.$emit('update:modelValue', val);
+        this.$emit('input', val);
       }
     },
   },

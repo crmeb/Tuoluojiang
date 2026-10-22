@@ -15,6 +15,7 @@
             :loading="exportLoading"
             :disabled="exportLoading"
             type="primary"
+            size="small"
             @click="exportList"
             >导出</el-button
           >
@@ -37,22 +38,22 @@
                 </div>
 
                 <div class="left">
-                  <el-button v-hasPermi="['fd:invoice:check']" type="primary" link @click="handleCheck(item)">查看 </el-button>
-                  <el-button v-if="item.status === 5 && item.num" type="primary" link @click="handleDown(item)"
+                  <el-button v-hasPermi="['fd:invoice:check']" type="text" @click="handleCheck(item)">查看 </el-button>
+                  <el-button v-if="item.status === 5 && item.num" type="text" @click="handleDown(item)"
                     >下载
                   </el-button>
 
-                  <el-button v-if="item.status === 1" type="primary" link @click="handleInvoicUri(item)">在线开票 </el-button>
+                  <el-button v-if="item.status === 1" type="text" @click="handleInvoicUri(item)">在线开票 </el-button>
 
                   <el-button
                     v-if="item.status === 1"
                     v-hasPermi="['fd:invoice:edit']"
-                    type="primary" link
+                    type="text"
                     @click="handleInvoicing(item)"
                     >录入发票
                   </el-button>
 
-                  <el-button v-if="item.status == 5" v-hasPermi="['fd:invoice:void']" type="primary" link style="color: red;" @click="voidFn(item)"
+                  <el-button v-if="item.status == 5" v-hasPermi="['fd:invoice:void']" type="text" style="color: red;" @click="voidFn(item)"
                     >冲红
                   </el-button>
                 </div>
@@ -275,7 +276,7 @@
     <invoicingDialog ref="invoicingDialog" :config="invoicingDialog" @isOk="isOk"></invoicingDialog>
     <!-- 申请冲红 -->
     <div class="toVoid">
-      <el-dialog v-model="dialogFormVisible" title="冲红" width="600px">
+      <el-dialog :visible.sync="dialogFormVisible" title="冲红" width="600px">
         <div class="mt20">
           <el-form ref="voidData" :model="voidDataForm" class="from">
             <el-form-item
@@ -287,15 +288,15 @@
               <el-input v-model="voidDataForm.voidData" placeholder="请填写原因" type="textarea"></el-input>
             </el-form-item>
             <div class="footer">
-              <el-button class="btn" @click="dialogFormVisible = false">取 消</el-button>
-              <el-button type="primary" @click="submit">确 定</el-button>
+              <el-button class="btn" size="small" @click="dialogFormVisible = false">取 消</el-button>
+              <el-button size="small" type="primary" @click="submit">确 定</el-button>
             </div>
           </el-form>
         </div>
       </el-dialog>
     </div>
 
-    <el-dialog :top="`7vh`" v-model="dialogInvoiceVisible" class="headerbtn" width="90%" @close="dialogClose">
+    <el-dialog :top="`7vh`" :visible.sync="dialogInvoiceVisible" class="headerbtn" width="90%" @close="dialogClose">
       <iframe v-if="invoiceUri" :src="invoiceUri" frameborder="0" height="650" width="100%"></iframe>
     </el-dialog>
     <export-excel ref="exportExcel" :save-name="saveName" :export-data="exportData" />
@@ -303,26 +304,22 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useAppStore } from '@/stores/app.ts'
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { financeInvoiceListApi } from '@/api/enterprise.ts'
+import moment from 'moment'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { financeInvoiceListApi } from '@/api/enterprise'
 import ClipboardJS from 'clipboard'
-import { getInvoiceClassName, getInvoiceText, getInvoiceType, selectInvoiceFd } from '@/libs/customer.ts'
-import { clientInvoiceDetailApi, clientInvoiceStatus, clientInvoiceStatusPutApi, clientInvoiceUriApi } from '@/api/client.ts'
-import { fileLinkDownLoad } from '@/utils/file.ts'
+import { getInvoiceClassName, getInvoiceText, getInvoiceType, selectInvoiceFd } from '@/libs/customer'
+import { clientInvoiceDetailApi, clientInvoiceStatus, clientInvoiceStatusPutApi, clientInvoiceUriApi } from '@/api/client'
+import { fileLinkDownLoad } from '@/utils/file'
 
-import oaFromBox from '@/components/common/oaFromBox'
 export default {
   components: {
-    oaFromBox,
-    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel')),
-    examineDialog: defineAsyncComponent(() => import('@/views/fd/examine/components/examineDialog')),
-    invoiceDetails: defineAsyncComponent(() => import('@/components/invoice/invoiceDetails')),
-    invoicingDialog: defineAsyncComponent(() => import('./components/invoicingDialog')),
-    invoiceView: defineAsyncComponent(() => import('@/views/customer/invoice/components/invoiceView'))
+    oaFromBox: () => import('@/components/common/oaFromBox'),
+    exportExcel: () => import('@/components/common/exportExcel'),
+    examineDialog: () => import('@/views/fd/examine/components/examineDialog'),
+    invoiceDetails: () => import('@/components/invoice/invoiceDetails'),
+    invoicingDialog: () => import('./components/invoicingDialog'),
+    invoiceView: () => import('@/views/customer/invoice/components/invoiceView')
   },
   props: {
     activeName: {
@@ -330,12 +327,9 @@ export default {
       default: '1'
     },
     types: {
-      type: [String, Number, Array],
+      type: String | Array,
       default: ''
     }
-  },
-  computed: {
-    ...mapStores(useAppStore)
   },
   data() {
     return {
@@ -389,10 +383,10 @@ export default {
           field_name_en: 'types',
           form_value: 'select',
           data_dict: [
-            { value: '', label: '全部' },
-            { value: 1, label: '个人普通发票' },
-            { value: 2, label: '企业普通发票' },
-            { value: 3, label: '企业专用发票' }
+            { value: '', label: this.$t('toptable.all') },
+            { value: 1, label: this.$t('customer.personalinvoice') },
+            { value: 2, label: this.$t('customer.enterpriseinvoice') },
+            { value: 3, label: this.$t('customer.specialinvoice') }
           ]
         },
         {
@@ -441,7 +435,7 @@ export default {
     }
     window.addEventListener('message', this._handleMessage)
   },
-  beforeUnmount() {
+  beforeDestroy() {
     window.removeEventListener('message', this._handleMessage)
   },
   methods: {
@@ -493,11 +487,11 @@ export default {
     getStatus(id) {
       let str = ''
       if (id === 0) {
-        str = '待审核'
+        str = this.$t('customer.audit')
       } else if (id === 1) {
-        str = '已通过'
+        str = this.$t('customer.passed')
       } else {
-        str = '未通过'
+        str = this.$t('customer.fail')
       }
       return str
     },
@@ -511,11 +505,11 @@ export default {
     getInvoiceType(id) {
       let str = ''
       if (id === 1) {
-        str = '个人普通发票'
+        str = this.$t('customer.personalinvoice')
       } else if (id === 2) {
-        str = '企业普通发票'
+        str = this.$t('customer.enterpriseinvoice')
       } else {
-        str = '企业专用发票'
+        str = this.$t('customer.specialinvoice')
       }
       return str
     },
@@ -578,7 +572,7 @@ export default {
             this.formatExportValue(item.num)
           ])
         ]
-        this.saveName = `发票列表_${dayjs(new Date()).format('YYYYMMDDHHmmssSSS')}.xlsx`
+        this.saveName = `发票列表_${moment(new Date()).format('YYYYMMDDHHmmssSSS')}.xlsx`
         await this.$nextTick()
         this.$refs.exportExcel.exportExcel()
       } finally {
@@ -645,7 +639,7 @@ export default {
         this.$refs.examineDialog.handleOpen()
       } else {
         this.config = {
-          title: '发票审核',
+          title: this.$t('customer.invoicereview'),
           width: '480px',
           type: 2,
           data: item
@@ -677,10 +671,10 @@ export default {
       this.$nextTick(() => {
         const clipboard = new ClipboardJS('.copy')
         clipboard.on('success', () => {
-          this.$message.success('复制成功')
+          this.$message.success(this.$t('setting.copytitle'))
           clipboard.destroy()
         })
-        this.appStore.setClickTab(false)
+        this.$store.commit('app/SET_CLICK_TAB', false)
       })
     }
   }
@@ -721,16 +715,16 @@ export default {
 }
 
 .toVoid {
-  :deep(.el-dialog) {
+  ::v-deep .el-dialog {
     border-radius: 6px;
     height: 249px;
   }
 
-  :deep(.el-dialog__body) {
+  ::v-deep .el-dialog__body {
     padding: 0;
   }
 
-  :deep(.el-textarea__inner) {
+  ::v-deep .el-textarea__inner {
     width: 400px;
     height: 90px;
     font-size: 13px;
@@ -796,7 +790,7 @@ export default {
       color: #303133;
     }
 
-    .left .el-button {
+    .left .el-button--medium {
       font-size: 13px;
     }
 
@@ -835,20 +829,19 @@ export default {
       flex: 1;
     }
 
-    :deep(.el-form-item__label) {
+    ::v-deep .el-form-item__label {
       font-size: 12px !important;
       font-family: PingFang SC-常规体, PingFang SC;
       font-weight: normal;
       color: #909399;
       line-height: 12px;
-      height: auto;
     }
 
-    :deep(.el-form-item) {
+    ::v-deep .el-form-item {
       margin-bottom: 20px;
     }
 
-    :deep(.el-form-item .el-form-item__content) {
+    ::v-deep .el-form-item--medium .el-form-item__content {
       line-height: 12px;
     }
 
@@ -931,11 +924,11 @@ export default {
   }
 }
 
-:deep(.el-drawer__body) {
+::v-deep .el-drawer__body {
   height: 100%;
   overflow-y: auto;
 }
-:deep(.headerbtn .el-dialog__headerbtn) {
+::v-deep .headerbtn .el-dialog__headerbtn {
   position: absolute;
   top: 12px;
   right: 25px;

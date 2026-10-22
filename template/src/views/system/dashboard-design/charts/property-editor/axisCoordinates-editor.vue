@@ -31,7 +31,6 @@
 </template>
 <script>
 export default {
-  emits: ['update:optionModel'],
   name: 'axisCoordinates-editor',
   props: {
     designer: Object,

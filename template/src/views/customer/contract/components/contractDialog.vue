@@ -1,12 +1,11 @@
 <!-- 添加付款记录/付款提醒弹窗页面 以config.type来区分 type=1:回款记录和续费记录/ type=3 回款提醒和续费提醒 -->
 <template>
   <el-dialog
-      class="customer-contract-dialog"
     :append-to-body="true"
     :before-close="handleClose"
     :close-on-click-modal="false"
     :title="config.title"
-    v-model="dialogVisible"
+    :visible.sync="dialogVisible"
     width="540px"
   >
     <el-form ref="form" :label-width="labelWidth + 'px'" :model="rules" :rules="rule" class="mt15">
@@ -14,7 +13,7 @@
         <template #label>
           <span>选择订单： </span>
         </template>
-        <el-select v-model="rules.cid" placeholder="请选择订单">
+        <el-select v-model="rules.cid" placeholder="请选择订单" size="small">
           <el-option v-for="item in contractData" :key="item.id" :label="item.title" :value="item.id" />
         </el-select>
       </el-form-item>
@@ -23,8 +22,8 @@
           <span>{{ config.type !== 3 ? '业务类型' : '提醒类型' }}： </span>
         </template>
         <el-radio-group v-model="rules.radio" @change="radioChange">
-          <el-radio :label="1" :value="1"> {{ config.type !== 3 ? '回款' : '回款提醒' }}</el-radio>
-          <el-radio :label="2" :value="2"> {{ config.type !== 3 ? '续费' : '续费提醒' }}</el-radio>
+          <el-radio :label="1"> {{ config.type !== 3 ? '回款' : '回款提醒' }}</el-radio>
+          <el-radio :label="2"> {{ config.type !== 3 ? '续费' : '续费提醒' }}</el-radio>
         </el-radio-group>
       </el-form-item>
       <el-form-item prop="amount">
@@ -37,6 +36,7 @@
           :min="0"
           :placeholder="placeholder01"
           :precision="2"
+          size="small"
         ></el-input-number>
       </el-form-item>
       <!-- 续费结束时间 -->
@@ -46,9 +46,10 @@
         </template>
         <el-date-picker
           v-model="rules.endDate"
-          :default-time="config.type == 3 ? new Date(2000, 0, 1, 9, 0, 0) : undefined"
+          :default-time="config.type == 3 ? '09:00:00' : ''"
           :placeholder="placeholder02"
           :type="config.type == 3 ? 'datetime' : 'date'"
+          size="small"
         >
         </el-date-picker>
       </el-form-item>
@@ -57,7 +58,7 @@
         <template #label>
           <span>支付方式：</span>
         </template>
-        <el-select v-model="rules.type_id" placeholder="请选择支付方式">
+        <el-select v-model="rules.type_id" placeholder="请选择支付方式" size="small">
           <el-option v-for="item in paymentOptions" :key="item.id" :label="item.name" :value="item.id" />
         </el-select>
       </el-form-item>
@@ -69,8 +70,10 @@
         </template>
         <el-date-picker
           v-model="rules.dateTime"
-          v-bind="$pickerProps(pickerOptions)"
+          :picker-options="pickerOptions"
           :placeholder="placeholder02"
+          picker-options="expireTimeOption"
+          size="small"
           type="datetime"
         >
         </el-date-picker>
@@ -105,30 +108,29 @@
     </el-form>
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleClose">取消</el-button>
-        <el-button :loading="loading" type="primary" @click="handleConfirm">确定</el-button>
+        <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
+        <el-button :loading="loading" size="small" type="primary" @click="handleConfirm">{{ $t('public.ok') }}</el-button>
       </div>
     </template>
   </el-dialog>
 </template>
 
 <script>
-import dayjs from 'dayjs'
+import moment from 'moment'
 import {
   clientBillEditApi,
   clientBillSaveApi,
   clientConfigListApi,
   selectContractListApi,
   enterprisePayTypeApi
-} from '@/api/enterprise.ts'
-import { clientFollowEditApi, clientFollowSaveApi, clientRemindEditApi, clientRemindSaveApi } from '@/api/client.ts'
-import { getDictDataListApi } from '@/api/form.ts'
-import { getToken } from '@/utils/auth.ts'
-import SettingMer from '@/libs/settingMer.ts'
-import { uploader } from '@/utils/uploadCloud.ts'
+} from '@/api/enterprise'
+import { clientFollowEditApi, clientFollowSaveApi, clientRemindEditApi, clientRemindSaveApi } from '@/api/client'
+import { getDictDataListApi } from '@/api/form'
+import { getToken } from '@/utils/auth'
+import SettingMer from '@/libs/settingMer'
+import { uploader } from '@/utils/uploadCloud'
 
 export default {
-  emits: ['isOk'],
   name: 'ContractDialog',
   props: {
     config: {
@@ -141,13 +143,13 @@ export default {
   data() {
     const checkAmount = (rule, value, callback) => {
       if (this.rules.radio == 1 && !value) {
-        return callback(new Error('请输入回款金额'))
+        return callback(new Error(this.$t('customer.placeholder33')))
       } else if (this.rules.radio == 2 && !value) {
-        return callback(new Error('请输入续费金额'))
+        return callback(new Error(this.$t('customer.placeholder35')))
       } else if (this.config.type === 3 && !value) {
-        return callback(new Error('请输入预计回款金额'))
+        return callback(new Error(this.$t('customer.placeholder37')))
       } else if (this.config.type === 4 && !value) {
-        return callback(new Error('请输入续费金额'))
+        return callback(new Error(this.$t('customer.placeholder35')))
       } else {
         callback()
       }
@@ -155,23 +157,23 @@ export default {
     const checkDateTime = (rule, value, callback) => {
       if (this.rules.radio == 1 && !value) {
         if (this.config.type == 3) {
-          return callback(new Error('请选择回款提醒时间'))
+          return callback(new Error(this.$t('customer.placeholder38')))
         } else {
-          return callback(new Error('请选择回款日期'))
+          return callback(new Error(this.$t('customer.placeholder34')))
         }
       } else if (this.rules.radio == 2 && !value) {
-        return callback(new Error('请选择续费结束日期'))
+        return callback(new Error(this.$t('customer.placeholder36')))
       } else if (this.config.type === 4 && !value) {
-        return callback(new Error('请选择续费提醒时间'))
+        return callback(new Error(this.$t('customer.placeholder39')))
       } else if (this.config.type === 5 && !value) {
-        return callback(new Error('请选择提醒日期'))
+        return callback(new Error(this.$t('customer.placeholder41')))
       } else {
         callback()
       }
     }
     const checkType = (rule, value, callback) => {
       if ((this.rules.radio == 2 || this.config.type === 4) && !value) {
-        return callback(new Error('请选择续费类型'))
+        return callback(new Error(this.$t('customer.placeholder31')))
       } else {
         callback()
       }
@@ -179,7 +181,7 @@ export default {
 
     const checkRemark = (rule, value, callback) => {
       if (!value) {
-        return callback(new Error('请输入提醒内容'))
+        return callback(new Error(this.$t('customer.placeholder40')))
       } else {
         callback()
       }
@@ -187,7 +189,7 @@ export default {
 
     const checkContent = (rule, value, callback) => {
       if (this.config.type === 5 && !value) {
-        return callback(new Error('请输入提醒内容'))
+        return callback(new Error(this.$t('customer.placeholder40')))
       } else {
         callback()
       }
@@ -234,16 +236,16 @@ export default {
       title01: '回款金额(元)',
       title02: '',
       placeholder01: '请输入回款金额',
-      placeholder02: '请输入回款金额',
+      placeholder02: this.$t('customer.placeholder33'),
       labelWidth: 120,
       payText: '',
       sourceOptions: [],
       paymentOptions: [],
       typeOptions: [
-        { value: 0, label: '天' },
-        { value: 1, label: '周' },
-        { value: 2, label: '月' },
-        { value: 3, label: '年' }
+        { value: 0, label: this.$t('access.day') },
+        { value: 1, label: this.$t('user.work.week') },
+        { value: 2, label: this.$t('user.work.month') },
+        { value: 3, label: this.$t('calendar.year') }
       ],
       loading: false,
       pickerOptions: {
@@ -289,7 +291,7 @@ export default {
             this.rules.radio = 2
             this.title01 = '续费金额(元)'
             this.title02 = '续费结束日期'
-            this.placeholder02 = '请选择续费结束日期'
+            this.placeholder02 = this.$t('customer.placeholder36')
           } else {
             this.rules.radio = 1
             this.title01 = '回款金额(元)'
@@ -328,8 +330,8 @@ export default {
           }
           this.title01 = '续费金额(元)'
           this.title02 = '续费结束日期'
-          this.placeholder01 = '请输入续费金额'
-          this.placeholder02 = '请选择续费结束日期'
+          this.placeholder01 = this.$t('customer.placeholder35')
+          this.placeholder02 = this.$t('customer.placeholder36')
         }
         if (nVal.type == 3) {
           this.rules.amount = nVal.data.num
@@ -346,18 +348,24 @@ export default {
           } else {
             this.rules.radio = 1
             this.title02 = '回款提醒日期' // 回款提醒日期
-            this.placeholder02 = '请选择回款提醒时间'
+            this.placeholder02 = this.$t('customer.placeholder38')
             this.rules.endDate = nVal.data.time
-            this.title01 = '预计回款金额' // 预计回款金额
-            this.placeholder01 = '请输入预计回款金额' //
+            this.title01 = this.$t('customer.collectionamount01') // 预计回款金额
+            this.placeholder01 = this.$t('customer.placeholder37') //
           }
           this.rules.remarks = nVal.data.mark
         }
       },
       deep: true
     },
+    lang() {
+      this.setOptions()
+    }
   },
   computed: {
+    lang: function () {
+      return this.$store.getters.lang
+    },
 
     fileUrl() {
       return SettingMer.https + `/system/attach/upload`
@@ -380,6 +388,14 @@ export default {
   },
 
   methods: {
+    setOptions() {
+      this.typeOptions = [
+        { value: 0, label: this.$t('access.day') },
+        { value: 1, label: this.$t('user.work.week') },
+        { value: 2, label: this.$t('user.work.month') },
+        { value: 3, label: this.$t('calendar.year') }
+      ]
+    },
 
     getTableData() {
       selectContractListApi({ data: [this.config.eid] }).then((res) => {
@@ -402,19 +418,19 @@ export default {
           this.title01 = '回款金额(元)'
           this.title02 = '回款提醒日期'
         }
-        this.placeholder02 = '请选择回款日期'
-        this.placeholder01 = '请输入回款金额'
+        this.placeholder02 = this.$t('customer.placeholder34')
+        this.placeholder01 = this.$t('customer.placeholder33')
       } else if (e == 2) {
         if (this.config.type == 3) {
-          this.title01 = '续费金额(元)'
-          this.placeholder01 = '请输入续费金额'
-          this.title02 = '续费提醒日期'
-          this.placeholder02 = '请选择续费提醒时间'
+          this.title01 = this.$t('customer.renewalamount')
+          this.placeholder01 = this.$t('customer.placeholder35')
+          this.title02 = this.$t('customer.renewaldate01')
+          this.placeholder02 = this.$t('customer.placeholder39')
         } else {
           this.title01 = '续费金额(元)'
           this.title02 = '续费结束日期'
-          this.placeholder01 = '请输入续费金额'
-          this.placeholder02 = '请选择续费结束日期'
+          this.placeholder01 = this.$t('customer.placeholder35')
+          this.placeholder02 = this.$t('customer.placeholder36')
         }
       }
     },
@@ -441,7 +457,7 @@ export default {
 
     // 获取当前时间
     getTime() {
-      this.rules.dateTime = dayjs().format('YYYY-MM-DD HH:mm:ss')
+      this.rules.dateTime = moment().format('YYYY-MM-DD HH:mm:ss')
     },
 
     // 列表
@@ -488,8 +504,8 @@ export default {
               cate_id: 0,
               num: this.rules.amount,
               mark: this.rules.remarks,
-              date: dayjs(this.rules.dateTime).format('YYYY-MM-DD HH:mm:ss'),
-              end_date: this.rules.endDate ? dayjs(this.rules.endDate).format('YYYY-MM-DD ') : '',
+              date: moment(this.rules.dateTime).format('YYYY-MM-DD HH:mm:ss'),
+              end_date: this.rules.endDate ? moment(this.rules.endDate).format('YYYY-MM-DD ') : '',
               type_id: this.rules.type_id,
               attach_ids: this.rules.attach_ids,
               bill_types: 1,
@@ -512,8 +528,8 @@ export default {
               num: this.rules.amount,
               cate_id: this.rules.type,
               mark: this.rules.remarks,
-              date: dayjs(this.rules.dateTime).format('YYYY-MM-DD HH:mm:ss'),
-              end_date: this.rules.endDate ? dayjs(this.rules.endDate).format('YYYY-MM-DD ') : '',
+              date: moment(this.rules.dateTime).format('YYYY-MM-DD HH:mm:ss'),
+              end_date: this.rules.endDate ? moment(this.rules.endDate).format('YYYY-MM-DD ') : '',
               type_id: this.rules.type_id,
               attach_ids: this.rules.attach_ids,
               remind_id: this.remind_id
@@ -530,7 +546,7 @@ export default {
             data = {
               eid: this.config.eid,
               types: 1,
-              time: dayjs(this.rules.dateTime).format('YYYY-MM-DD HH:mm:ss'),
+              time: moment(this.rules.dateTime).format('YYYY-MM-DD HH:mm:ss'),
               content: this.rules.content
             }
             this.config.edit === 1 ? this.clientFollowSave(data) : this.clientFollowEdit(this.config.data.id, data)
@@ -542,7 +558,7 @@ export default {
               num: this.rules.amount,
               types: 0,
               mark: this.rules.remarks,
-              time: dayjs(this.rules.endDate).format('YYYY-MM-DD HH:mm:ss')
+              time: moment(this.rules.endDate).format('YYYY-MM-DD HH:mm:ss')
             }
             if (this.config.title == '编辑付款提醒') {
               this.clientRemindEdit(this.config.data.id, data)
@@ -557,7 +573,7 @@ export default {
               num: this.rules.amount,
               types: 1,
               mark: this.rules.remarks,
-              time: dayjs(this.rules.endDate).format('YYYY-MM-DD HH:mm:ss'),
+              time: moment(this.rules.endDate).format('YYYY-MM-DD HH:mm:ss'),
               cate_id: this.rules.type
             }
             if (this.config.title == '编辑付款提醒') {
@@ -716,32 +732,28 @@ export default {
   text-align: center;
   cursor: pointer;
 }
-:deep(.el-date-editor) {
+::v-deep .el-date-editor {
   width: 100%;
 }
-:deep(.el-textarea__inner) {
+::v-deep .el-textarea__inner {
   resize: none;
 }
-:deep(.el-input-number) {
+::v-deep .el-input-number {
   width: 100%;
 }
-:deep(.el-select) {
+::v-deep .el-select {
   width: 100%;
 }
-:deep(.el-form-item:last-of-type) {
+::v-deep .el-form-item:last-of-type {
   margin-bottom: 0;
+}
+::v-deep .el-dialog__footer {
+  padding: 20px 0;
 }
 .dialog-footer {
   padding-top: 20px;
   padding-right: 20px;
 
   border-top: 1px solid #e6ebf5;
-}
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.customer-contract-dialog .el-dialog__footer {
-  padding: 20px 0;
 }
 </style>

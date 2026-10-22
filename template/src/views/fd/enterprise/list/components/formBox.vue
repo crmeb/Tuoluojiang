@@ -23,26 +23,23 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { fileLinkDownLoad } from '@/utils/file.ts'
-import { billCateApi, billImportApi, enterprisePayTypeApi } from '@/api/enterprise.ts'
+import moment from 'moment'
+import { fileLinkDownLoad } from '@/utils/file'
+import { billCateApi, billImportApi, enterprisePayTypeApi } from '@/api/enterprise'
 
-import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'FormBox',
-  emits: ['addFinance', 'confirmData', 'exportTemplate', 'getExportData', 'importExcelDFn'],
   props: ['total'],
   components: {
-    importExcel: defineAsyncComponent(() => import('@/components/common/importExcel')),
-    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel')),
-    oaFromBox
+    importExcel: () => import('@/components/common/importExcel'),
+    exportExcel: () => import('@/components/common/exportExcel'),
+    oaFromBox: () => import('@/components/common/oaFromBox')
   },
   data() {
     return {
       timeVal: [
-        dayjs().startOf('months').format('YYYY/MM/DD'),
-        dayjs().endOf('months').format('YYYY/MM/DD')
+        moment().startOf('months').format('YYYY/MM/DD'),
+        moment().endOf('months').format('YYYY/MM/DD')
       ],
       gettime: '',
       tableFrom: {
@@ -57,11 +54,11 @@ export default {
       payData: [],
       exportFileUrl: '',
       sexOptions: [
-        { label: '全部', value: '' },
-        { label: '收入', value: '1' },
-        { label: '支出', value: '0' }
+        { label: this.$t('finance.all'), value: '' },
+        { label: this.$t('finance.income'), value: '1' },
+        { label: this.$t('finance.pay'), value: '0' }
       ],
-      statusOptions: [{ label: '全部', value: '' }],
+      statusOptions: [{ label: this.$t('toptable.all'), value: '' }],
       saveName: '',
       exportData: {
         data: [],
@@ -94,8 +91,8 @@ export default {
           field_name_en: 'time',
           form_value: 'date_picker',
           data_dict: [
-            dayjs().startOf('months').format('YYYY/MM/DD'),
-            dayjs().endOf('months').format('YYYY/MM/DD')
+            moment().startOf('months').format('YYYY/MM/DD'),
+            moment().endOf('months').format('YYYY/MM/DD')
           ]
         },
         {
@@ -135,6 +132,16 @@ export default {
       ]
     }
   },
+  computed: {
+    lang: function () {
+      return this.$store.getters.lang
+    }
+  },
+  watch: {
+    lang() {
+      this.setOptions()
+    }
+  },
   created() {
     this.tableFrom.time = `${this.timeVal[0]}-${this.timeVal[1]}`
     this.getBillCate()
@@ -160,6 +167,28 @@ export default {
           break
       }
     },
+    setOptions() {
+      this.sexOptions = [
+        {
+          label: this.$t('finance.all'),
+          value: ''
+        },
+        {
+          label: this.$t('finance.income'),
+          value: '0'
+        },
+        {
+          label: this.$t('finance.pay'),
+          value: '1'
+        }
+      ]
+      this.statusOptions = [
+        {
+          label: this.$t('toptable.all'),
+          value: ''
+        }
+      ]
+    },
     addFinance() {
       this.$emit('addFinance')
     },
@@ -169,7 +198,7 @@ export default {
       const data = {
         types: type
       }
-      const list = [{ label: '全部', value: '' }]
+      const list = [{ label: this.$t('toptable.all'), value: '' }]
       billCateApi(data).then((res) => {
         res.data === undefined ? (res.data = []) : res.data
         this.statusOptions = res.data
@@ -187,7 +216,7 @@ export default {
         const data = res.data.list ? res.data.list : []
         this.exportFileUrl = res.data.import_temp
         this.payData = data
-        this.payData.unshift({ name: '全部', id: '' })
+        this.payData.unshift({ name: this.$t('toptable.all'), id: '' })
         this.setDataDict('type_id', this.payData)
       })
     },
@@ -252,7 +281,7 @@ export default {
               cate_id: data[i][1],
               num: data[i][2],
               pay_type: data[i][3],
-              edit_time: dayjs(data[i][4], 'YYYY-MM-DD HH:mm:ss').format('YYYY-MM-DD HH:mm:ss'),
+              edit_time: moment(data[i][4], 'YYYY-MM-DD HH:mm:ss').format('YYYY-MM-DD HH:mm:ss'),
               mark: data[i][5]
             })
           }
@@ -269,7 +298,7 @@ export default {
       }
     },
     exportTemplate() {
-      this.gettime = dayjs().format('YYYY-MM-DD HH:mm:ss')
+      this.gettime = moment().format('YYYY-MM-DD HH:mm:ss')
       if (!this.exportFileUrl) {
         this.$message.error('暂无导入模板,请联系管理员')
       } else {
@@ -299,10 +328,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-cascader__tags) {
+::v-deep .el-cascader__tags {
   flex-wrap: nowrap;
 }
-:deep(.el-cascader__search-input) {
+::v-deep .el-cascader__search-input {
   cursor: pointer;
 }
 </style>

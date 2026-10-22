@@ -8,7 +8,7 @@
 </template>
 
 <script>
-import { aoaToXlsxBlob } from '@/utils/excel/writeSheet.ts'
+import XLSX from 'xlsx'
 
 export default {
   name: 'ExportExcel',
@@ -51,34 +51,55 @@ export default {
     /**
      * 执行Excel导出
      */
-    async exportExcel() {
+    exportExcel() {
       if (this.exportData.data.length <= 0) {
         this.$message.error('内容为空')
         return
       }
-
-      let merges
-      let rows
+      
+      // 创建工作表
+      const sheet = XLSX.utils.aoa_to_sheet(this.exportData.data)
+      
       // 模板模式处理
       if (this.template) {
+        // 自定义合并配置
         if (this.merges.length) {
-          // 自定义合并配置。标题行原先还配置了字体 / 背景样式，但 SheetJS 社区版不会写出样式，
-          // 导出文件里从未生效；这里保持无样式，避免导出结果与之前不一致
-          merges = this.merges
-          rows = [{ hpx: 80 }]
+          sheet['!merges'] = this.merges
+          sheet['!rows'] = [{ hpx: 80 }]
+          // 设置标题样式
+          sheet['A1'].s = {
+            font: {
+              sz: 20,        // 字体大小
+              bold: true,    // 加粗
+              color: { rgb: '666666' } // 字体颜色
+            },
+            alignment: { 
+              horizontal: 'center', // 水平居中
+              vertical: 'center',   // 垂直居中
+              wrapText: true        // 自动换行
+            },
+            fill: {
+              fgColor: { rgb: 'ebebeb' } // 背景色
+            }
+          }
         } else {
           // 默认合并配置
-          merges = [{ s: { r: 1, c: 0 }, e: { r: 1, c: 10 } }]
-          rows = [{ hpt: 30 }]
+          sheet['!merges'] = [
+            { s: { r: 1, c: 0 }, e: { r: 1, c: 10 } },
+            // ...其他合并配置
+          ]
+          sheet['!rows'] = [{ hpt: 30 }]
         }
       } else {
         // 非模板模式使用传入的行配置
-        rows = this.exportData.rows
+        sheet['!rows'] = this.exportData.rows
       }
-
-      const blob = await aoaToXlsxBlob(this.exportData.data, { merges, rows, cols: this.exportData.cols })
+      
+      // 设置列宽
+      sheet['!cols'] = this.exportData.cols
+      
       // 触发下载
-      this.openDownloadDialog(blob, this.saveName)
+      this.openDownloadDialog(this.sheet2blob(sheet), this.saveName)
     },
 
     /**
@@ -104,6 +125,43 @@ export default {
           )
       
       aLink.dispatchEvent(event)
+    },
+
+    /**
+     * 工作表转Blob对象
+     * @param {Object} sheet - 工作表对象
+     * @param {String} sheetName - 工作表名称
+     * @returns {Blob} - 返回Blob对象
+     */
+    sheet2blob(sheet, sheetName = 'sheet1') {
+      const workbook = {
+        SheetNames: [sheetName],
+        Sheets: { [sheetName]: sheet }
+      }
+      
+      // Excel生成配置
+      const wopts = {
+        bookType: 'xlsx',  // 文件类型
+        bookSST: false,    // 不生成Shared String Table
+        type: 'binary'     // 输出类型
+      }
+      
+      // 生成Excel二进制数据
+      const wbout = XLSX.write(workbook, wopts)
+      
+      // 字符串转ArrayBuffer
+      function s2ab(s) {
+        const buf = new ArrayBuffer(s.length)
+        const view = new Uint8Array(buf)
+        for (let i = 0; i < s.length; i++) {
+          view[i] = s.charCodeAt(i) & 0xff
+        }
+        return buf
+      }
+      
+      return new Blob([s2ab(wbout)], { 
+        type: 'application/octet-stream' 
+      })
     }
   }
 }

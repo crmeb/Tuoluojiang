@@ -4,7 +4,7 @@
 
 <script>
 import myEcharts from '@/components/scEcharts/chart-widget.vue'
-import { queryChartData } from '../chartQuery.ts'
+import { queryChartData } from '@/api/chart'
 import { getPreviewNum } from '@/utils/util'
 
 export default {
@@ -62,12 +62,12 @@ export default {
           return
         }
         metrics.forEach((el) => {
-          this.units[el.field_name] = {
+          this.$set(this.units, el.field_name, {
             showDecimalPlaces: el.showDecimalPlaces,
             decimalPlaces: el.decimalPlaces,
             thousandsSeparator: el.thousandsSeparator,
             numericUnits: el.numericUnits == '无' ? '' : el.numericUnits
-          }
+          })
         })
         await this.getChartData(options, type)
         this.option.isNoData = false

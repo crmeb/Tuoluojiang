@@ -17,16 +17,14 @@
               </div>
             </div>
             <div class="flex lh-center">
-              <el-button type="primary" class="mr10 h32" icon="el-icon-plus" @click="addLevel(1)"
+              <el-button type="primary" class="mr10 h32" size="small" icon="el-icon-plus" @click="addLevel(1)"
                 >添加职等</el-button
               >
               <el-dropdown>
                 <span class="iconfont icongengduo2 pointer"></span>
-                <template #dropdown>
-                  <el-dropdown-menu style="text-align: left">
-                    <el-dropdown-item @click="addLevel(2)"> 批量修改职等区间 </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
+                <el-dropdown-menu style="text-align: left">
+                  <el-dropdown-item @click.native="addLevel(2)"> 批量修改职等区间 </el-dropdown-item>
+                </el-dropdown-menu>
               </el-dropdown>
             </div>
           </div>
@@ -53,8 +51,7 @@
                       </el-popover>
                     </template>
                   </el-table-column>
-                  <!-- Element Plus 只收集直接子级的列，动态列需用 template 循环，不能包 div -->
-                  <template v-for="info in tableHeader" :key="info.id">
+                  <div v-for="info in tableHeader" :key="info.id">
                     <el-table-column label="职级" width="110px">
                       <template #default="scope">
                         <div @click.stop="addRankColumn($event, scope.row, info.id)">
@@ -83,7 +80,7 @@
                         </div>
                       </template>
                     </el-table-column>
-                  </template>
+                  </div>
                 </el-table>
               </div>
               <div v-else>
@@ -104,15 +101,14 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { rankLevelDeleteApi, rankLevelListApi, rankLevelRankApi } from '@/api/setting.ts'
+import { modalSure } from '@/libs/public'
+import { rankLevelDeleteApi, rankLevelListApi, rankLevelRankApi } from '@/api/setting'
 export default {
   name: 'JobLevel',
   components: {
-    rankDialog: defineAsyncComponent(() => import('./components/rankDialog')),
-    rightClick: defineAsyncComponent(() => import('./components/rightClick')),
-    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage'))
+    rankDialog: () => import('./components/rankDialog'),
+    rightClick: () => import('./components/rightClick'),
+    defaultPage: () => import('@/components/common/defaultPage')
   },
   data() {
     return {
@@ -244,7 +240,7 @@ export default {
   color: #606266;
 }
 .rank-right {
-  :deep(.el-table .cell) {
+  ::v-deep .el-table .cell {
     text-align: center;
     font-size: 13px;
     cursor: pointer;
@@ -269,11 +265,11 @@ export default {
   }
 }
 
-:deep(.el-table td),
-:deep(.el-table th) {
+::v-deep .el-table td,
+::v-deep .el-table th {
   padding: 0;
 }
-:deep(.el-table .cell > div) {
+::v-deep .el-table .cell > div {
   min-height: 42px;
   width: 100%;
   display: flex;

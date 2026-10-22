@@ -14,9 +14,9 @@
 
     <div class="card-footer">
       <div class="card-stats">
-        <template :key="item.label" v-for="(item, index) in stats">
+        <template v-for="(item, index) in stats">
           <el-divider v-if="index > 0" :key="item.label + '-line'" direction="vertical" />
-          <span class="stat">{{ item.value }} {{ item.label }}</span>
+          <span :key="item.label" class="stat">{{ item.value }} {{ item.label }}</span>
         </template>
       </div>
 
@@ -38,8 +38,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { CARD_ACTIONS, DEFAULT_ICON_COLOR } from '../constants.ts'
-import { getIconClass } from '../utils/icon.ts'
+import { CARD_ACTIONS, DEFAULT_ICON_COLOR } from '../constants'
+import { getIconClass } from '../utils/icon'
 
 interface KnowledgeRow {
   id: number
@@ -175,7 +175,7 @@ function handleCommand(command: string) {
     white-space: nowrap;
   }
 
-  :deep(.el-divider--vertical) {
+  ::v-deep .el-divider--vertical {
     margin: 0 12px;
     background-color: #dcdfe6;
   }

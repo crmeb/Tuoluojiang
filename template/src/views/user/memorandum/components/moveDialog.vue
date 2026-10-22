@@ -1,16 +1,15 @@
 <template>
   <div>
     <el-dialog
-      class="user-memorandum-move-dialog"
-      v-model="dialogVisible"
+      :visible.sync="dialogVisible"
       title="移动到"
       width="480px"
       :append-to-body="true"
       :before-close="handleClose"
     >
       <div class="tree-box">
-        <div class="move-search oa-input-borderless">
-          <el-input v-model="searchKey" placeholder="搜索" prefix-icon="el-icon-search" clearable />
+        <div class="move-search">
+          <el-input v-model="searchKey" placeholder="搜索" size="small" prefix-icon="el-icon-search" clearable />
         </div>
         <el-scrollbar style="height: calc(100% - 42px)">
           <el-tree
@@ -35,8 +34,10 @@
       </div>
       <template #footer>
         <div class="dialog-footer text-right">
-          <el-button @click="handleClose">取消</el-button>
-          <el-button type="primary" :loading="saveLoading" @click="handleSave">确定</el-button>
+          <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
+          <el-button size="small" type="primary" :loading="saveLoading" @click="handleSave">{{
+            $t('public.ok')
+          }}</el-button>
         </div>
       </template>
     </el-dialog>
@@ -44,10 +45,9 @@
 </template>
 
 <script>
-import { memorialCateListApi, memorialEditApi } from '@/api/user.ts'
+import { memorialCateListApi, memorialEditApi } from '@/api/user'
 
 export default {
-  emits: ['handlerMove'],
   name: 'MoveDialog',
   props: {
     moveData: {
@@ -169,23 +169,26 @@ export default {
 </script>
 
 <style scoped lang="scss">
+::v-deep .el-dialog__body {
+  padding: 0 !important;
+}
 .tab-move {
-  :deep(.el-tabs__nav-wrap::after) {
+  ::v-deep .el-tabs__nav-wrap::after {
     height: 0;
   }
-  :deep(.el-tabs__header) {
+  ::v-deep .el-tabs__header {
     margin: 0;
   }
-  :deep(.el-tabs__active-bar) {
+  ::v-deep .el-tabs__active-bar {
     height: 0;
   }
-  :deep(.el-tabs__item) {
+  ::v-deep .el-tabs__item {
     padding-bottom: 15px;
     height: 0;
     line-height: 0;
   }
 }
-:deep(.el-tabs__item.is-active) {
+::v-deep .el-tabs__item.is-active {
   color: #303133;
   font-weight: 600;
 }
@@ -195,33 +198,34 @@ export default {
   .move-search {
     padding: 10px 10px 0;
 
-    :deep(.el-input__wrapper) {
+    ::v-deep .el-input__inner {
       background-color: #f2f3f5;
+      border: none;
       border-radius: 6px;
     }
   }
 
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
 
   // 与左侧目录树样式统一
-  :deep(.el-tree) {
+  ::v-deep .el-tree {
     background: transparent;
     padding: 4px 10px 0;
   }
 
-  :deep(.el-tree-node__expand-icon) {
+  ::v-deep .el-tree-node__expand-icon {
     color: #8a919f;
     font-size: 12px;
   }
 
   // 无下级的目录不展示展开箭头（保持占位对齐）
-  :deep(.el-tree-node__expand-icon.is-leaf) {
+  ::v-deep .el-tree-node__expand-icon.is-leaf {
     color: transparent;
   }
 
-  :deep(.el-tree-node__content) {
+  ::v-deep .el-tree-node__content {
     height: 44px;
     border-radius: 4px;
     font-family: PingFang SC, PingFang SC;
@@ -233,11 +237,11 @@ export default {
     }
   }
 
-  :deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
+  ::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content {
     background: #e8f4ff;
   }
 
-  :deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node) {
+  ::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node {
     font-weight: 600;
     color: #1890ff;
   }
@@ -263,12 +267,5 @@ export default {
       text-overflow: ellipsis;
     }
   }
-}
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.user-memorandum-move-dialog .el-dialog__body {
-  padding: 0 !important;
 }
 </style>

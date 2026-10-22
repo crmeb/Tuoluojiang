@@ -22,13 +22,12 @@
       </app-link>
     </template>
 
-    <el-sub-menu
+    <el-submenu
       v-else-if="item.is_show && hasVisibleChild(item)"
       ref="subMenu"
       :index="resolvePath(item.menu_path, 1)"
-      teleported
+      popper-append-to-body
       popper-class="sidebar-menu-popper"
-      :popper-offset="isNest ? 6 : 22"
     >
       <template #title>
         <i v-if="item.icon" :class="getIconCss(item.icon,item)"></i>
@@ -44,19 +43,18 @@
         v-show="child.is_show"
         class="nest-menu"
       />
-    </el-sub-menu>
+    </el-submenu>
   </div>
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { resolve } from '@/utils/path.ts'
-import { isExternal } from '@/utils/validate.ts'
-import FixiOSBug from './FixiOSBug.ts'
+import { resolve } from '@/utils/path'
+import { isExternal } from '@/utils/validate'
+import FixiOSBug from './FixiOSBug'
 
 export default {
   name: 'SidebarItem',
-  components: { AppLink: defineAsyncComponent(() => import('./Link')) },
+  components: { AppLink: () => import('./Link') },
   mixins: [FixiOSBug],
   props: {
     // route object
@@ -144,32 +142,31 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-:deep(.el-sub-menu__icon-arrow) {
+::v-deep .el-submenu__icon-arrow {
   position: absolute;
   right: 15px;
   top: 55%;
-  color: #909399;
 }
 .iconfont {
   font-size: 20px;
   color: #606266;
 }
-:deep(.el-menu) {
+::v-deep .el-menu {
 background-color: transparent;
-.el-sub-menu__title {
+.el-submenu__title {
   background-attachment: scroll;
 }
 }
 
-:deep(.el-menu-item) {
+::v-deep .el-menu-item {
   padding: 0 10px !important;
 }
-:deep(.el-sub-menu__title:hover)  {
+::v-deep .el-submenu__title:hover  {
 background: #F3F5F9 !important;
 border-radius: 8px 8px 8px 8px;
 
 }
-  :deep(.router-link-exact-active.router-link-active li) {
+  ::v-deep .router-link-exact-active.router-link-active li {
     background-color: #EDF6FF !important;
     color: #1890ff !important;
     border-radius: 8px;

@@ -2,11 +2,11 @@
   <!-- 添加人员弹窗/批量导入 -->
   <el-dialog
     :title="personConfig.title"
-    v-model="dialogFormVisible"
+    :visible.sync="dialogFormVisible"
     width="500px"
     :modal="false"
     :close-on-click-modal="false"
-    class="person"
+    custom-class="person"
     :before-close="handleClose"
   >
     <div v-if="personConfig.type == 2">
@@ -24,26 +24,28 @@
           :before-upload="beforeUpload"
         >
           <template #trigger>
-            <el-button type="primary">选取文件</el-button>
+            <el-button size="small" type="primary">{{ $t('public.selectfile') }}</el-button>
           </template>
         </el-upload>
         <a
-          ><el-button type="primary" link @click="handleDownLoad">点击下载模板</el-button></a
+          ><el-button size="small" type="text" @click="handleDownLoad">{{
+            $t('public.down')
+          }}</el-button></a
         >
       </div>
       <div class="dialog-footer">
-        <el-button @click="close">取消</el-button>
-        <el-button type="primary" @click="determine">确定</el-button>
+        <el-button @click="close">{{ $t('public.cancel') }}</el-button>
+        <el-button type="primary" @click="determine">{{ $t('public.ok') }}</el-button>
       </div>
     </div>
   </el-dialog>
 </template>
 
 <script>
-import { getToken } from '@/utils/auth.ts'
-import SettingMer from '@/libs/settingMer.ts'
-import { downloadUrlApi } from '@/api/public.ts'
-import { userBatchCreate } from '@/api/user.ts'
+import { getToken } from '@/utils/auth'
+import SettingMer from '@/libs/settingMer'
+import { downloadUrlApi } from '@/api/public'
+import { userBatchCreate } from '@/api/user'
 export default {
   name: 'UpdataXls',
   props: {
@@ -77,7 +79,7 @@ export default {
               closeBtn: false,
               okBtn: false,
               onLoad: (e) => {
-                e.fApi = this.$refs.fc.fapi
+                e.fApi = this.$refs.fc.$f
               }
             }
           }
@@ -96,7 +98,7 @@ export default {
             placeholder: 'asdasd'
           },
           value: '',
-          validate: [{ type: 'string', required: true, message: '请输入名称' }]
+          validate: [{ type: 'string', required: true, message: this.$t('public.tipstext') }]
         },
         {
           type: 'div',
@@ -113,7 +115,7 @@ export default {
   },
   methods: {
     determine() {
-      if (!this.excelFail.url) return this.$message.error('请选取文件')
+      if (!this.excelFail.url) return this.$message.error(this.$t('public.tipstext1'))
       const data = {
         frame_id: this.frameId,
         file: this.excelFail.url
@@ -138,7 +140,7 @@ export default {
     // 上传成功
     handleSuccess(response) {
       if (response.status === 200) {
-        this.$message.success('上传成功')
+        this.$message.success(this.$t('public.tipstext2'))
         this.excelFail = response.data
       } else {
         this.$message.error(response.message)
@@ -150,7 +152,7 @@ export default {
       const extension2 = testmsg === 'xlsx'
       if (!extension && !extension2) {
         this.$message({
-          message: '上传文件只能是 xls、xlsx格式!',
+          message: this.$t('public.tipstext3'),
           type: 'warning'
         })
       }

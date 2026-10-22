@@ -1,6 +1,6 @@
 <template>
   <div class="toolbarNodeBtnList" :class="[dir]">
-    <template v-for="item in list" :key="item">
+    <template v-for="item in list">
       <div v-if="item === 'back'" class="toolbarBtn" :class="{
         disabled: readonly || backEnd
       }" @click="emitBus(EXEC_COMMAND, 'BACK')">
@@ -67,7 +67,7 @@
 </template>
 
 <script>
-import { EventBus } from '@/libs/bus.ts'
+import { EventBus } from '@/libs/bus'
 import {
   BACK_FORWARD,
   EXEC_COMMAND,
@@ -77,7 +77,7 @@ import {
   SHOW_NODE_LINK,
   SHOW_NODE_NOTE,
   SHOW_NODE_TAG
-} from '../event-constant.ts';
+} from '../event-constant';
 
 export default {
   props: {
@@ -138,7 +138,7 @@ export default {
         EventBus.$on(eventName, handler);
       });
   },
-  beforeUnmount() {
+  beforeDestroy() {
     Object.entries(this.listenEventMap)
       .forEach(([eventName, handler]) => {
         EventBus.$off(eventName, handler);

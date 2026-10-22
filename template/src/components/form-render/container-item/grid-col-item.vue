@@ -8,7 +8,7 @@
     v-show="!widget.options.hidden"
   >
     <template v-if="!!widget.widgetList && widget.widgetList.length > 0">
-      <template v-for="(subWidget, swIdx) in widget.widgetList" :key="swIdx">
+      <template v-for="(subWidget, swIdx) in widget.widgetList">
         <template v-if="'container' === subWidget.category">
           <component
             :is="getComponentByContainer(subWidget)"
@@ -20,7 +20,7 @@
             :parent-widget="widget"
           >
             <!-- 递归传递插槽！！！ -->
-            <template v-for="slot in Object.keys($slots)" :key="slot" v-slot:[slot]="scope">
+            <template v-for="slot in Object.keys($scopedSlots)" v-slot:[slot]="scope">
               <slot :name="slot" v-bind="scope" />
             </template>
           </component>
@@ -37,7 +37,7 @@
             :parent-widget="widget"
           >
             <!-- 递归传递插槽！！！ -->
-            <template v-for="slot in Object.keys($slots)" :key="slot" v-slot:[slot]="scope">
+            <template v-for="slot in Object.keys($scopedSlots)" v-slot:[slot]="scope">
               <slot :name="slot" v-bind="scope" />
             </template>
           </component>
@@ -55,14 +55,15 @@
 </template>
 
 <script>
-import { watchActiveField } from '@/components/form-render/activeField.ts'
-import i18n from '../../../utils/i18n.ts'
+import emitter from '@/utils/emitter'
+import i18n from '../../../utils/i18n'
 import refMixin from '../../../components/form-render/refMixin'
 import FieldComponents from '@/components/form-designer/form-widget/field-widget/index'
 
 export default {
   name: 'GridColItem',
-  mixins: [i18n, refMixin],
+  componentName: 'ContainerItem',
+  mixins: [emitter, i18n, refMixin],
   components: {
     ...FieldComponents
   },
@@ -91,6 +92,14 @@ export default {
       }
     }
   },
+  watch: {
+    '$store.state.user.activeField': {
+      deep: true,
+      handler: function (newVal, oldVal) {
+        this.fieldShowFn(newVal)
+      }
+    }
+  },
 
   computed: {
     customClass() {
@@ -102,7 +111,6 @@ export default {
     }
   },
   created() {
-    watchActiveField((field) => this.fieldShowFn(field))
     this.initLayoutProps()
     this.initRefList()
   },
@@ -115,7 +123,7 @@ export default {
     },
     fieldShowFn(val) {
       this.widget.widgetList.forEach((item) => {
-        item.isShow = item.id == val.id
+        this.$set(item, 'isShow', item.id == val.id)
       })
     },
     initLayoutProps() {
@@ -156,3 +164,4 @@ export default {
   }
 }
 </style>
+../../../utils/i18ns

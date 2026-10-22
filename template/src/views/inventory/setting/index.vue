@@ -4,17 +4,17 @@
       @confirmData="handleSearch" title="库存设置">
       <template #rightBtn>
         <!-- 操作栏：批量设置库存 -->
-        <el-button type="primary" :disabled="!hasSelection" @click="handleBatchSet">设置库存限制</el-button>
+        <el-button type="primary" size="small" :disabled="!hasSelection" @click="handleBatchSet">设置库存限制</el-button>
       </template>
     </oaFromBox>
 
     <BaseTable ref="tableRef" class="mt-10" selection row-key="id" :table-columns="tableColumns" :data="tableData"
-      :loading="isLoading" :total="total" v-model:page="page" v-model:page-size="pageSize"
+      :loading="isLoading" :total="total" :page.sync="page" :page-size.sync="pageSize"
       @selection-change="handleSelectionChange">
       <!-- 商品信息：缩略图 + 名称 -->
       <template #goods="{ row }">
         <div class="goods-cell flex">
-          <el-image :src="row.sku && row.sku.image" :preview-src-list="row.sku && row.sku.image ? [row.sku.image] : []" preview-teleported
+          <el-image :src="row.sku && row.sku.image" :preview-src-list="row.sku && row.sku.image ? [row.sku.image] : []"
             class="goods-img" />
           <span class="goods-name">{{ getGoodsName(row) }}</span>
         </div>
@@ -53,8 +53,8 @@ import BaseTable from "@/components/BaseTable/index.vue";
 import oaFromBox from "@/components/common/oaFromBox.vue";
 import StockLimitDialog from "./components/StockLimitDialog.vue";
 import EditableLimitCell from "./components/EditableLimitCell.vue";
-import { useSetting } from "./composables/useSetting.ts";
-import { getGoodsName, getSpecName, getProductCode, getBarcode, getUnit, formatStock } from "../utils.ts";
+import { useSetting } from "./composables/useSetting";
+import { getGoodsName, getSpecName, getProductCode, getBarcode, getUnit, formatStock } from "../utils";
 
 export default {
   name: "InventorySetting",

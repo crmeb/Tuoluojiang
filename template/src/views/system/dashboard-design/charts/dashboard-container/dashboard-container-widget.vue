@@ -9,7 +9,7 @@
       :is-static="false"
       :auto-size="true"
     >
-      <template v-for="(item, index) in widget.widgetList" :key="index" #[item.id]>
+      <template v-for="(item, index) in widget.widgetList" #[item.id]>
         <smart-widget
           :padding="getGridPadding(item)"
           :simple="!item.options.showHeader"
@@ -115,11 +115,11 @@ export default {
       return [12, 20]
     },
     onRefresh(item) {
-      item.options.isRefresh = !item.options.isRefresh
+      this.$set(item.options, 'isRefresh', !item.options.isRefresh)
     },
     onFullscreen(item) {
       setTimeout(() => {
-        item.options.isRefresh = !item.options.isRefresh
+        this.$set(item.options, 'isRefresh', !item.options.isRefresh)
       }, 200)
     },
     removeSelectedChart(chartIndex, chartId) {

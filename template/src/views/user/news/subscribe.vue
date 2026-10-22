@@ -12,7 +12,7 @@
             <template #default="scope">
               <el-switch
                 v-if="scope.row.is_subscribe === 2"
-                :model-value="1"
+                :value="1"
                 active-text="订阅"
                 inactive-text="取消"
                 :disabled="true"
@@ -46,18 +46,12 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useAppStore } from '@/stores/app.ts'
-import { defineAsyncComponent } from 'vue'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { userNoticeSubscribeApi, userNoticeSubscribeShowApi } from '@/api/user.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { userNoticeSubscribeApi, userNoticeSubscribeShowApi } from '@/api/user'
 export default {
   name: 'subscribe',
   components: {
-    formBox: defineAsyncComponent(() => import('./components/formBox'))
-  },
-  computed: {
-    ...mapStores(useAppStore)
+    formBox: () => import('./components/formBox')
   },
   data() {
     return {
@@ -77,7 +71,7 @@ export default {
     }
   },
   mounted() {
-    this.appStore.setSidebarParentCur(101)
+    this.$store.commit('app/SET_PARENTCUR', 101)
     this.getTableData()
   },
   methods: {

@@ -4,14 +4,14 @@
 
 ## 适用范围
 
-- 技术栈：Vue 3 + Element Plus。
+- 技术栈：Vue 2.7 + Element UI。
 - PC 端 `el-dialog` 模态弹窗与 `el-drawer` 侧滑弹窗。
 - 全新页面、完全重构组件、常用模块的侧滑统一改造必须遵守本文档。
 - 历史页面的小改动只在触及弹窗/侧滑本身时顺手规范，不为统一尺寸扩大改动范围。
 
 ## 尺寸常量
 
-统一从 `src/constants/popupSize.ts` 引入：
+统一从 `src/constants/popupSize.js` 引入：
 
 ```js
 import { DIALOG_SIZE, DRAWER_SIZE } from '@/constants/popupSize'
@@ -92,7 +92,7 @@ const formData = {
 
 ## AI 生成要求
 
-- 新建 CRUD 页、管理页、列表页时，弹窗/侧滑必须引入 `src/constants/popupSize.ts`。
+- 新建 CRUD 页、管理页、列表页时，弹窗/侧滑必须引入 `src/constants/popupSize.js`。
 - 优先在 `components/editDialog.vue`、`components/details.vue` 等子组件里维护尺寸，不把尺寸散落在列表页。
 - 如果用户只要求小改动，不为了尺寸规范迁移 Options API 到 `<script setup>`。
 - 如果必须使用非标准尺寸，先说明原因，并尽量局部封闭，避免扩散为新规范。

@@ -12,23 +12,25 @@
         <el-dropdown
           ref="buildDropdown"
           trigger="click"
+          size="small"
           placement="bottom-end"
           :hide-on-click="false"
           @command="handleBuild"
           @visible-change="handleBuildVisibleChange"
         >
-          <el-button type="primary">发起申请</el-button>
+          <el-button type="primary" size="small">发起申请</el-button>
           <template #dropdown>
             <el-dropdown-menu class="build-dropdown" style="overflow: visible; max-height: none">
               <!-- 顶部搜索框：固定在容器顶部，位于滚动区之外，滚动列表时不受影响 -->
               <div class="build-search" style="padding: 8px 12px; background: #fff" @click.stop>
                 <el-input
                   v-model="buildKeyword"
+                  size="small"
                   placeholder="请输入名称搜索"
                   prefix-icon="el-icon-search"
                   clearable
                   style="width: 170px"
-                  @keydown.stop
+                  @keydown.native.stop
                 />
               </div>
               <!-- 可滚动列表区：与搜索框分离，因此列表滚动时搜索框保持固定 -->
@@ -67,39 +69,39 @@
       >
         <el-table-column prop="name" label="审批类型" min-width="250">
           <template #default="scope">
-            <div class="table-title">
-              <div class="table-title-left">
+            <el-row class="table-title">
+              <el-col class="table-title-left">
                 <div class="selIcon" :style="{ backgroundColor: scope.row.approve.color }">
                   <i class="icon iconfont" :class="scope.row.approve.icon"></i>
                 </div>
-              </div>
-              <div class="table-title-right">
+              </el-col>
+              <el-col class="table-title-right">
                 <p class="title">{{ scope.row.approve.name }}</p>
                 <p class="over-text">{{ getValue(scope.row.content) }}</p>
-              </div>
-            </div>
+              </el-col>
+            </el-row>
           </template>
         </el-table-column>
         <el-table-column prop="name" label="审批状态" min-width="80">
           <template #default="scope">
             <span class="status">
-              <el-tag v-if="scope.row.status === -1" type="info" effect="plain" size="small"> 已撤销 </el-tag>
-              <el-tag v-if="scope.row.status === 1 && scope.row.recall" type="info" effect="plain" size="small">
+              <el-tag v-if="scope.row.status === -1" type="info" effect="plain" size="mini"> 已撤销 </el-tag>
+              <el-tag v-if="scope.row.status === 1 && scope.row.recall" type="info" effect="plain" size="mini">
                 撤销中
               </el-tag>
-              <el-tag v-if="scope.row.status === 0" type="warning" effect="plain" size="small"> 审核中 </el-tag>
-              <el-tag v-if="scope.row.status === 1 && !scope.row.recall" type="info" effect="plain" size="small">
+              <el-tag v-if="scope.row.status === 0" type="warning" effect="plain" size="mini"> 审核中 </el-tag>
+              <el-tag v-if="scope.row.status === 1 && !scope.row.recall" type="info" effect="plain" size="mini">
                 已通过
               </el-tag>
-              <el-tag v-if="scope.row.status === 2" type="danger" effect="plain" size="small"> 已拒绝 </el-tag>
+              <el-tag v-if="scope.row.status === 2" type="danger" effect="plain" size="mini"> 已拒绝 </el-tag>
             </span>
           </template>
         </el-table-column>
         <el-table-column prop="created_at" label="提交时间" min-width="150" />
-        <el-table-column prop="name" label="操作" width="200">
+        <el-table-column prop="name" :label="$t('public.operation')" width="200">
           <template #default="scope">
-            <el-button type="primary" link @click="handleDetail(scope.row)">详情 </el-button>
-            <el-button v-if="scope.row.status === 1 && scope.row.type < 6" type="primary" link @click="handleEdit(scope.row)"
+            <el-button type="text" @click="handleDetail(scope.row)">详情 </el-button>
+            <el-button v-if="scope.row.status === 1 && scope.row.type < 6" type="text" @click="handleEdit(scope.row)"
               >再次提交</el-button
             >
 
@@ -109,7 +111,7 @@
                   scope.row.status === 0) &&
                 !scope.row.recall
               "
-              type="primary" link
+              type="text"
               @click="handleRefuse(scope.row)"
             >
               撤销
@@ -121,7 +123,7 @@
                 scope.row.crud_id == 0 &&
                 scope.row.approve.types != 12
               "
-              type="primary" link
+              type="text"
               @click="handleEdit(scope.row)"
             >
               重新提交
@@ -157,18 +159,17 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { approveApplyApi, approveApplyRevokeApi, approveConfigSearchApi } from '@/api/business.ts'
-import oaFromBox from '@/components/common/oaFromBox'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { approveApplyApi, approveApplyRevokeApi, approveConfigSearchApi } from '@/api/business'
+import func from '@/utils/preload'
 export default {
   name: 'Submission',
   components: {
-    detailExamine: defineAsyncComponent(() => import('@/views/user/examine/components/detailExamine')),
-    editExamine: defineAsyncComponent(() => import('@/views/user/examine/components/editExamine')),
-    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form')),
-    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage')),
-    oaFromBox
+    detailExamine: () => import('@/views/user/examine/components/detailExamine'),
+    editExamine: () => import('@/views/user/examine/components/editExamine'),
+    oaDialog: () => import('@/components/form-common/dialog-form'),
+    defaultPage: () => import('@/components/common/defaultPage'),
+    oaFromBox: () => import('@/components/common/oaFromBox')
   },
   props: {
     // 进入页面时预置的审批状态（0 审核中 / 1 已通过 / 2 已拒绝 / -1 已撤销），空字符串表示不预置
@@ -261,6 +262,10 @@ export default {
     }
   },
   async created() {
+    // 挂载全局工具函数
+    if (!this.$root.func) {
+      this.$root.func = func
+    }
     // 并行请求数据以提高性能
     try {
       await Promise.all([this.getTableData(), this.getConfigSearch(0), this.getConfigSearch(3)])
@@ -278,7 +283,7 @@ export default {
       }
       // hide-on-click 已关闭自动收起，这里手动收起下拉并清空搜索关键词
       if (this.$refs.buildDropdown) {
-        this.$refs.buildDropdown.handleClose()
+        this.$refs.buildDropdown.hide()
       }
       this.buildKeyword = ''
     },
@@ -404,7 +409,7 @@ export default {
     handleRefuse(row) {
       this.rowData = row
       if (row.status === 0) {
-        this.$confirm('你确定要撤销申请吗', '提示', {
+        this.$confirm(this.$t('你确定要撤销申请吗'), '提示', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
           type: 'warning'
@@ -486,7 +491,7 @@ export default {
 }
 
 .status {
-  :deep(.el-tag) {
+  ::v-deep .el-tag {
     background: #fff;
   }
 }
@@ -542,7 +547,7 @@ export default {
     }
   }
 
-  :deep(.el-table .cell) {
+  ::v-deep .el-table .cell {
     line-height: 1;
   }
 }

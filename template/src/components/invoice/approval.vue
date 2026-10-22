@@ -26,15 +26,14 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { approveApplyEditApi } from '@/api/business.ts'
+import { approveApplyEditApi } from '@/api/business'
 import uploadList from '@/components/form-common/oa-uploadList'
 export default {
   name: 'DetailExamine',
   components: {
-    detailProcecss: defineAsyncComponent(() => import('@/views/user/examine/components/detailProcecss')),
+    detailProcecss: () => import('@/views/user/examine/components/detailProcecss'),
     uploadList,
-    city: defineAsyncComponent(() => import('@/components/hr/city'))
+    city: () => import('@/components/hr/city')
   },
   props: {
     linkId: {
@@ -124,26 +123,26 @@ export default {
     padding-right: 30px;
     padding-bottom: 10px;
   }
-  :deep(.select-item) {
+  ::v-deep .select-item {
     margin-top: 0 !important;
   }
-  :deep(.el-divider--horizontal) {
+  ::v-deep .el-divider--horizontal {
     margin-top: 0;
     margin-bottom: 30px;
   }
-  :deep(.el-form-item__label) {
+  ::v-deep .el-form-item__label {
     font-size: 13px;
     color: #999999;
     font-weight: normal;
   }
-  :deep(.el-form-item) {
+  ::v-deep .el-form-item {
     margin-bottom: 0;
   }
-  :deep(.el-form-item__content) {
+  ::v-deep .el-form-item__content {
     font-size: 13px;
     color: #000000;
   }
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
   .shu {
@@ -170,7 +169,7 @@ export default {
     padding: 0 12px 0 0;
   }
 }
-:deep(.el-form-item__content) {
+::v-deep .el-form-item__content {
   margin-left: 0 !important;
 }
 </style>

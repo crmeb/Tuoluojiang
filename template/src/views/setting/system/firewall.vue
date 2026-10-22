@@ -2,7 +2,7 @@
   <div class="divBox firewall-box">
     <div class="box-height">
       <el-card class="card-head normal-page" shadow="never" :body-style="{ padding: '20px 20px 0 20px' }">
-        <el-form :model="formData" :inline="true" class="form-box" label-width="84px">
+        <el-form :model="formData" :inline="true" class="form-box" size="small" label-width="84px">
           <el-form-item label="开关：">
             <el-radio-group v-model="formData.status">
               <el-radio :label="0" :value="0">关闭</el-radio>
@@ -32,16 +32,16 @@
             </el-form-item>
             <el-form-item label="规则设置：">
               <div class="firewall-rule-item" v-for="(item, index) of formData.ruleList" :key="index">
-                <el-tag v-if="ruleLabelMap[item]" type="info" class="rule-tag">{{
+                <el-tag v-if="ruleLabelMap[item]" size="mini" type="info" class="rule-tag">{{
                   ruleLabelMap[item]
                 }}</el-tag>
                 <el-input v-model="formData.ruleList[index]" placeholder="请输入正则规则，如 /select|union/i" clearable />
 
                 <div class="delete-btn-box">
-                  <el-button type="primary" link class="delete-btn" @click="handleDeleteRule(index)">删除</el-button>
+                  <el-button type="text" class="delete-btn" @click="handleDeleteRule(index)">删除</el-button>
                 </div>
               </div>
-              <el-button type="primary" link icon="el-icon-plus" @click="handleAddRule" style="margin: 10px 0"
+              <el-button type="text" icon="el-icon-plus" @click="handleAddRule" style="margin: 10px 0"
                 >添加规则</el-button
               >
             </el-form-item>
@@ -56,7 +56,7 @@
 </template>
 
 <script>
-import { getFirewallConfigApi, saveFirewallConfigApi } from '@/api/setting.ts'
+import { getFirewallConfigApi, saveFirewallConfigApi } from '@/api/setting'
 
 export default {
   data() {
@@ -197,25 +197,25 @@ export default {
 }
 
 .firewall-box {
-  :deep(.el-form-item) {
+  ::v-deep .el-form-item {
     width: 100%;
     display: flex;
   }
 
-  :deep(.el-form-item__content) {
+  ::v-deep .el-form-item__content {
     flex: 1;
   }
 
-  :deep(.el-icon-circle-close::before) {
+  ::v-deep .el-icon-circle-close::before {
     content: '\e79d';
   }
 
-  :deep(.el-form-item__label) {
+  ::v-deep .el-form-item__label {
     color: #606266;
   }
 
   // 保存按钮与表单内容列对齐
-  .save-item :deep(.el-form-item__content) {
+  .save-item ::v-deep .el-form-item__content {
     margin-left: 84px;
   }
 
@@ -259,7 +259,7 @@ export default {
       margin-right: 8px;
     }
 
-    :deep(.el-input) {
+    ::v-deep .el-input {
       flex: 1;
     }
 

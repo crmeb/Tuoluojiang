@@ -2,27 +2,26 @@
 <template>
   <div class="station">
     <el-drawer
-      class="customer-product-details-drawer"
       :append-to-body="true"
       :before-close="handleClose"
       :direction="direction"
       :show-close="true"
       :size="formData.width"
       :title="formData.title"
-      v-model="drawer"
+      :visible.sync="drawer"
     >
-      <template #header>
+      <template #title>
         <div class="invoice-title">
-          <div class="invoice-header">
-            <div class="invoice-left">
+          <el-row class="invoice-header">
+            <el-col class="invoice-left">
               <div class="invoice-logo"><i class="icon iconfont iconhetong"></i></div>
-            </div>
-            <div v-if="drawer" class="invoice-right">
+            </el-col>
+            <el-col v-if="drawer" class="invoice-right">
               <div class="txt1 over-text">
                 {{ dataInfo.name }}
               </div>
-            </div>
-          </div>
+            </el-col>
+          </el-row>
         </div>
       </template>
 
@@ -58,6 +57,7 @@
                       v-model="value.files"
                       :only-image="false"
                       :onlyRead="true"
+                      :value="value.files"
                     ></upload-file>
 
                     <span v-else>--</span>
@@ -160,14 +160,13 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { getProductInfoApi } from '@/api/client.ts'
+import { getProductInfoApi } from '@/api/client'
 export default {
   name: 'ProductDetailsDrawer',
   components: {
-    uploadFile: defineAsyncComponent(() => import('@/components/form-common/oa-upload')),
-    imageViewer: defineAsyncComponent(() => import('@/components/common/imageViewer')),
-    file: defineAsyncComponent(() => import('@/views/customer/list/components/file'))
+    uploadFile: () => import('@/components/form-common/oa-upload'),
+    imageViewer: () => import('@/components/common/imageViewer'),
+    file: () => import('@/views/customer/list/components/file')
   },
   props: {
     formData: {
@@ -269,15 +268,26 @@ export default {
   max-height: 400px;
   // border: 1px solid #d7dbe0;
   overflow: auto;
-  :deep(p) {
+  ::v-deep p {
     img {
       width: 50%;
     }
   }
 }
 
-:deep(.el-form--inline .el-form-item) {
+::v-deep .el-form--inline .el-form-item {
   display: flex;
+}
+::v-deep .el-drawer__body {
+  padding-bottom: 50px;
+}
+::v-deep .el-drawer__header {
+  height: 80px !important;
+  border: none;
+  padding: 14px 18px;
+}
+::v-deep .el-drawer__header {
+  border-bottom: 1px solid #d7dbe0;
 }
 .product-img {
   cursor: pointer;
@@ -368,16 +378,16 @@ export default {
       justify-content: space-between;
       .form-item {
         width: 49%;
-        :deep(.el-form-item__content) {
+        ::v-deep .el-form-item__content {
           width: calc(100% - 110px);
         }
-        :deep(.el-select) {
+        ::v-deep .el-select--medium {
           width: 100%;
         }
-        :deep(.el-form-item) {
+        ::v-deep .el-form-item {
           margin-bottom: 15px;
         }
-        :deep(.el-textarea__inner) {
+        ::v-deep .el-textarea__inner {
           resize: none;
         }
       }
@@ -392,7 +402,7 @@ export default {
   .contract-list {
     width: 100%;
     height: calc(100% - 44px);
-    :deep(.el-button) {
+    ::v-deep .el-button--medium {
       font-size: 13px;
     }
   }
@@ -415,7 +425,7 @@ export default {
     font-size: 14px;
   }
 }
-:deep(.el-form-item__label) {
+::v-deep .el-form-item__label {
   color: #606266;
 }
 .form-box {
@@ -425,16 +435,16 @@ export default {
   .form-item {
     width: 49%;
 
-    :deep(.el-form-item__content) {
+    ::v-deep .el-form-item__content {
       width: calc(100% - 110px);
     }
-    :deep(.el-select) {
+    ::v-deep .el-select--medium {
       width: 100%;
     }
-    :deep(.el-form-item) {
+    ::v-deep .el-form-item {
       margin-bottom: 0;
     }
-    :deep(.el-textarea__inner) {
+    ::v-deep .el-textarea__inner {
       resize: none;
     }
 
@@ -453,26 +463,11 @@ export default {
 .oneline {
   width: 100% !important;
 }
-:deep(.btn-box) {
+::v-deep .btn-box {
   display: flex;
   justify-content: flex-end;
   .upload-box {
     text-align: right;
   }
-}
-</style>
-
-<style lang="scss">
-// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
-.customer-product-details-drawer .el-drawer__body {
-  padding-bottom: 50px;
-}
-.customer-product-details-drawer .el-drawer__header {
-  height: 80px !important;
-  border: none;
-  padding: 14px 18px;
-}
-.customer-product-details-drawer .el-drawer__header {
-  border-bottom: 1px solid #d7dbe0;
 }
 </style>

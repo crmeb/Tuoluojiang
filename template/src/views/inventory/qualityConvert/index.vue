@@ -4,7 +4,7 @@
       @confirmData="handleSearch" btnText="新增正次转换" @addDataFn="handleAddConvert" />
 
     <BaseTable class="mt-10" :table-columns="tableColumns" :data="tableData" :loading="isLoading" :total="total"
-      v-model:page="page" v-model:page-size="pageSize">
+      :page.sync="page" :page-size.sync="pageSize">
       <!-- 商品信息：缩略图 + 角标数量，最多展示 3 个 -->
       <template #goods="{ row }">
         <GoodsInfoCell :details="row.details" />
@@ -39,7 +39,7 @@
 
       <!-- 操作列 -->
       <template #action="{ row }">
-        <el-button type="primary" link @click="handleViewDetail(row)">查看详情</el-button>
+        <el-button type="text" @click="handleViewDetail(row)">查看详情</el-button>
       </template>
     </BaseTable>
 
@@ -53,10 +53,10 @@ import BaseTable from "@/components/BaseTable/index.vue";
 import oaFromBox from "@/components/common/oaFromBox.vue";
 import GoodsInfoCell from "@/components/common/goodsInfoCell.vue";
 import InventoryStatusTag from "../components/InventoryStatusTag.vue";
-import { useConvert } from "./composables/useConvert.ts";
+import { useConvert } from "./composables/useConvert";
 import ConvertDetail from "./components/detail.vue"; // 转换单详情抽屉
-import { CONVERT_TYPE_MAP } from "./constants.ts";
-import dayjs from "dayjs";
+import { CONVERT_TYPE_MAP } from "./constants";
+import moment from "moment";
 
 export default {
   name: "InventoryQualityConvert",
@@ -79,7 +79,7 @@ export default {
     };
 
     const formatTime = (time) => {
-      return time ? dayjs(time).format("YYYY-MM-DD HH:mm") : "--";
+      return time ? moment(time).format("YYYY-MM-DD HH:mm") : "--";
     };
 
     return {

@@ -139,23 +139,23 @@
                 <el-button
                   v-if="scope.row.show == false"
                   v-hasPermi="['hr:training:promotion:edit']"
-                  type="primary" link
+                  type="text"
                   @click="editFn(scope.row)"
                   >编辑</el-button
                 >
                 <el-button
                   v-if="scope.row.show == true"
                   v-hasPermi="['hr:training:promotion:edit']"
-                  type="primary" link
+                  type="text"
                   @click="addRow(scope.row)"
                   >保存</el-button
                 >
 
-                <el-button v-hasPermi="['hr:training:promotion:details']" type="primary" link @click="handleCheck(scope.row)"
+                <el-button v-hasPermi="['hr:training:promotion:details']" type="text" @click="handleCheck(scope.row)"
                   >晋升标准</el-button
                 >
 
-                <el-button v-hasPermi="['hr:training:promotion:delete']" type="primary" link @click="onDelete(scope)"
+                <el-button v-hasPermi="['hr:training:promotion:delete']" type="text" @click="onDelete(scope)"
                   >删除</el-button
                 >
               </template>
@@ -167,7 +167,7 @@
     </el-card>
 
     <!-- 晋升标准侧滑 -->
-    <el-drawer :before-close="handleClose" v-model="editDrawer" direction="rtl" size="61%" title="晋升标准">
+    <el-drawer :before-close="handleClose" :visible.sync="editDrawer" direction="rtl" size="61%" title="晋升标准">
       <div class="check-box">
         <div class="user-name mb20">
           <span>职级：</span>
@@ -188,15 +188,14 @@
         />
       </div>
       <div class="button from-foot-btn fix btn-shadow">
-        <el-button :loading="loading" type="primary" @click="handleConfirm">保存</el-button>
+        <el-button :loading="loading" size="small" type="primary" @click="handleConfirm">保存</el-button>
       </div>
     </el-drawer>
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
 import Sortable from 'sortablejs'
-import { getIdsArray, getArrayDifference, modalSure } from '@/libs/public.ts'
+import { getIdsArray, getArrayDifference, modalSure } from '@/libs/public'
 
 import {
   jobSelectApi,
@@ -206,14 +205,14 @@ import {
   putPromotionDataApi,
   sortPromotionDataApi,
   standardDataApi
-} from '@/api/config.ts'
-import { rankListApi } from '@/api/setting.ts'
+} from '@/api/config.js'
+import { rankListApi } from '@/api/setting'
 
 export default {
   name: '',
   components: {
-    left: defineAsyncComponent(() => import('./components/left')),
-    ueditorFrom: defineAsyncComponent(() => import('@/components/form-common/oa-wangeditor'))
+    left: () => import('./components/left'),
+    ueditorFrom: () => import('@/components/form-common/oa-wangeditor')
   },
 
   data() {
@@ -415,7 +414,7 @@ export default {
 
     // 表格拖拽函数
     rowDrop() {
-      const tbody = this.$refs.table.$el.querySelectorAll('.el-table__body-wrapper tbody')[0]
+      const tbody = this.$refs.table.$el.querySelectorAll('.el-table__body-wrapper > table > tbody')[0]
 
       Sortable.create(tbody, {
         animation: 300,
@@ -442,11 +441,11 @@ export default {
 }
 .assess-right {
   padding-left: 14px;
-  :deep(.el-table thead.is-group th) {
+  ::v-deep .el-table thead.is-group th {
     background-color: rgba(247, 251, 255, 1);
     border-color: #f5f5f5;
   }
-  :deep(.el-table td) {
+  ::v-deep .el-table td {
     border: none;
   }
   .el-table {
@@ -492,7 +491,7 @@ export default {
   border-radius: 4px;
 }
 .check-box {
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
   color: #666666;
@@ -500,12 +499,12 @@ export default {
   padding-bottom: 0;
 
   .content {
-    :deep(p) {
+    ::v-deep p {
       text-indent: 2em;
       font-size: 14px;
       line-height: 1.5;
     }
-    :deep(td) {
+    ::v-deep td {
       border: 1px solid;
     }
   }

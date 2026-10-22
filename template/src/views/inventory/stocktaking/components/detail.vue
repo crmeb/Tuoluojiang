@@ -1,5 +1,5 @@
 <template>
-  <el-drawer v-model="isOpen" :size="DRAWER_SIZE.LG" title="盘点单详情" class="stocktaking-detail-drawer">
+  <el-drawer :visible.sync="isOpen" :size="DRAWER_SIZE.LG" title="盘点单详情" custom-class="stocktaking-detail-drawer">
     <div v-loading="isLoading" class="stocktaking-detail">
       <!-- 基本信息：标题 + 字段网格 -->
       <InfoSelection title="基本信息" :fields="basicFields" />
@@ -16,7 +16,7 @@
           <!-- 商品信息：缩略图 + 名称 -->
           <template #goods="{ row }">
             <div class="goods-cell flex">
-              <el-image :src="row.image" :preview-src-list="[row.image]" preview-teleported class="goods-img" />
+              <el-image :src="row.image" :preview-src-list="[row.image]" class="goods-img" />
               <span class="goods-name">{{ row.name }}</span>
             </div>
           </template>
@@ -48,9 +48,9 @@
 <script>
 import InfoSelection from "../../components/InfoSelection.vue";
 import BaseTable from "@/components/BaseTable/index.vue";
-import { DRAWER_SIZE } from "@/constants/popupSize.ts";
-import { useStocktakingDetail } from "../composables/useStocktakingDetail.ts";
-import { getSpecName, getProductCode, getBarcode } from "../../utils.ts";
+import { DRAWER_SIZE } from "@/constants/popupSize";
+import { useStocktakingDetail } from "../composables/useStocktakingDetail";
+import { getSpecName, getProductCode, getBarcode } from "../../utils";
 
 export default {
   name: "StocktakingDetail",

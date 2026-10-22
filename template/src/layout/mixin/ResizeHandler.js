@@ -1,5 +1,4 @@
-import { mapActions } from 'pinia'
-import { useAppStore } from '@/stores/app'
+import store from '@/store'
 
 const WIDTH = 992 // refer to Bootstrap's responsive design
 
@@ -7,25 +6,26 @@ export default {
   watch: {
     $route(route) {
       if (this.device === 'mobile' && this.sidebar.opened) {
-        this.closeSideBar(false)
+        store.dispatch('app/closeSideBar', { withoutAnimation: false })
       }
     }
   },
   beforeMount() {
     window.addEventListener('resize', this.$_resizeHandler)
   },
-  beforeUnmount() {
+  beforeDestroy() {
     window.removeEventListener('resize', this.$_resizeHandler)
   },
   mounted() {
     const isMobile = this.$_isMobile()
     if (isMobile) {
-      this.toggleDevice('mobile')
-      this.closeSideBar(true)
+      store.dispatch('app/toggleDevice', 'mobile')
+      store.dispatch('app/closeSideBar', { withoutAnimation: true })
+    }else {
+      // store.dispatch('app/openSideBar')
     }
   },
   methods: {
-    ...mapActions(useAppStore, ['toggleDevice', 'closeSideBar']),
     // use $_ for mixins properties
     // https://vuejs.org/v2/style-guide/index.html#Private-property-names-essential
     $_isMobile() {
@@ -35,10 +35,12 @@ export default {
     $_resizeHandler() {
       if (!document.hidden) {
         const isMobile = this.$_isMobile()
-        this.toggleDevice(isMobile ? 'mobile' : 'desktop')
+        store.dispatch('app/toggleDevice', isMobile ? 'mobile' : 'desktop')
 
         if (isMobile) {
-          this.closeSideBar(true)
+          store.dispatch('app/closeSideBar', { withoutAnimation: true })
+        }else {
+          // store.dispatch('app/openSideBar')
         }
       }
     }

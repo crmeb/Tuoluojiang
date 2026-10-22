@@ -1,7 +1,7 @@
 <!-- 渠道活码-批量移动分组弹窗 -->
 <template>
   <el-dialog
-    v-model="visible"
+    :visible.sync="visible"
     title="批量移动分组"
     :width="DIALOG_SIZE.SM"
     :close-on-click-modal="false"
@@ -13,7 +13,6 @@
           v-model="form.groupId"
           filterable
           clearable
-          value-on-clear=""
           placeholder="请输入分组名称"
           class="w-full"
         >
@@ -24,8 +23,8 @@
     </el-form>
     <template #footer>
       <span>
-        <el-button @click="visible = false">取 消</el-button>
-        <el-button type="primary" :loading="loading" @click="submit">确 定</el-button>
+        <el-button size="small" @click="visible = false">取 消</el-button>
+        <el-button size="small" type="primary" :loading="loading" @click="submit">确 定</el-button>
       </span>
     </template>
   </el-dialog>
@@ -33,9 +32,9 @@
 
 <script>
 import { ref, reactive } from 'vue'
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
-import { batchChannelCodeGroupApi } from '@/api/weCom.ts'
-import { useChannelCodeGroup } from '../composables/useChannelCodeGroup.ts'
+import { DIALOG_SIZE } from '@/constants/popupSize'
+import { batchChannelCodeGroupApi } from '@/api/weCom'
+import { useChannelCodeGroup } from '../composables/useChannelCodeGroup'
 
 export default {
   name: 'BatchMoveGroupDialog',

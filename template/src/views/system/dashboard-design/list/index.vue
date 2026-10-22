@@ -5,17 +5,18 @@
         <div class="flex-between">
           <div class="title-16">图表列表</div>
           <div class="flex">
-            <el-button type="primary" icon="el-icon-plus" @click="addFinance">新建图表</el-button>
+            <el-button type="primary" size="small" icon="el-icon-plus" @click="addFinance">新建图表</el-button>
           </div>
         </div>
 
-        <el-form :inline="true" class="from-s mt14" @submit.prevent>
+        <el-form :inline="true" class="from-s mt14" @submit.native.prevent>
           <div class="flex">
             <div class="inTotal">共 {{ total }} 项</div>
             <el-form-item label="" class="select-bar">
               <el-input
                 v-model="where.name"
-                @keyup.stop.prevent.enter="getList"
+                size="small"
+                @keyup.native.stop.prevent.enter="getList"
                 clearable
                 style="width: 250px"
                 @change="getList"
@@ -54,9 +55,9 @@
             </el-table-column>
             <el-table-column prop="address" label="操作" fixed="right" width="150">
               <template #default="scope">
-                <el-button type="primary" link @click="designFn(scope.row)">设计</el-button>
-                <el-button type="primary" link @click="editFn(scope.row)">编辑</el-button>
-                <el-button type="primary" link @click="deleteFn(scope.row)">删除</el-button>
+                <el-button type="text" @click="designFn(scope.row)">设计</el-button>
+                <el-button type="text" @click="editFn(scope.row)">编辑</el-button>
+                <el-button type="text" @click="deleteFn(scope.row)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -87,13 +88,13 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { modalSure } from '@/libs/public'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
 import oaDialog from '@/components/form-common/dialog-form'
-import { roterPre } from '@/settings.ts'
-import { menuListApi } from '@/api/system.ts'
-import { getcrudCateListApi, dataEventActionApi, dashboardDelApi } from '@/api/develop.ts'
-import { dashboardList, saveDashboard, changeDashboard } from '@/api/chart.ts'
+import { roterPre } from '@/settings'
+import { menuListApi } from '@/api/system'
+import { getcrudCateListApi, dataEventActionApi, dashboardDelApi } from '@/api/develop'
+import { dashboardList, saveDashboard, changeDashboard } from '@/api/chart'
 export default {
   name: 'dashboard-list',
   components: {
@@ -292,11 +293,5 @@ export default {
 .title {
   font-size: 16px;
   font-weight: 500;
-}
-
-.select-bar :deep(.el-input__wrapper),
-.select-bar :deep(.el-input__wrapper:hover),
-.select-bar :deep(.el-input__wrapper.is-focus) {
-  box-shadow: none;
 }
 </style>

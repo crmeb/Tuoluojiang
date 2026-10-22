@@ -31,7 +31,7 @@
         <el-table-column prop="trip_hours" label="出差（小时）" width="130"> </el-table-column>
         <el-table-column prop="out_hours" label="外出（小时）" width="130"> </el-table-column>
         <el-table-column label="请假">
-          <template v-for="(item, index) in holiday_type" :key="index">
+          <div v-for="(item, index) in holiday_type" :key="index">
             <el-table-column
               prop="holiday_data"
               :label="item.name + (item.duration_type === 0 ? ' (天)' : ' (小时)')"
@@ -41,7 +41,7 @@
                 {{ scope.row.holiday_data[index].duration }}
               </template>
             </el-table-column>
-          </template>
+          </div>
         </el-table-column>
       </el-table>
       <div class="page-fixed">
@@ -62,16 +62,15 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { monthlyStatisticsApi } from '@/api/config.ts'
+import moment from 'moment'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { monthlyStatisticsApi } from '@/api/config'
 
 export default {
   name: 'CrmebOaEntDaily',
   components: {
-    formBox: defineAsyncComponent(() => import('./components/formBox')),
-    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel'))
+    formBox: () => import('./components/formBox'),
+    exportExcel: () => import('@/components/common/exportExcel')
   },
 
   data() {
@@ -139,7 +138,7 @@ export default {
     },
     async exportFn() {
       let aoaData = [
-        [`统计时间：${this.where.time} 制表时间：${dayjs(new Date()).format('YYYY/MM/DD')}`],
+        [`统计时间：${this.where.time} 制表时间：${moment(new Date()).format('YYYY/MM/DD')}`],
         [
           '姓名',
           '部门',
@@ -207,14 +206,14 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-table thead.is-group th) {
+::v-deep .el-table thead.is-group th {
   background-color: rgba(247, 251, 255, 1);
   border-color: #f5f5f5;
 }
-:deep(.el-table) {
+::v-deep .el-table {
   border: none;
 }
-:deep(.el-table td) {
+::v-deep .el-table td {
   border: none;
 }
 </style>

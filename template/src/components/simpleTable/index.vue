@@ -12,7 +12,7 @@
         :header-cell-style="{ background: '#f6f8f9' }"
       >
         <el-table-column v-if="showCheckBox" type="selection" width="45"></el-table-column>
-        <template v-for="(item, index) in columns" :key="index">
+        <template v-for="(item, index) in columns">
           <el-table-column
             v-if="item.show !== false"
             :key="index"
@@ -56,7 +56,6 @@
 //TODO: 如果实体对应的数据库表已经存在数据记录，则不允许修改引用实体，防止数据错乱！！
 
 export default {
-  emits: ['handleSelectionChange', 'handleSizeChange', 'handleCurrentChange'],
   name: 'SimpleTable',
   props: {
     tableWidth: [String, Number],
@@ -112,8 +111,16 @@ export default {
   // 必须设置
   position: relative;
 
+  :deep(.el-table__fixed-header-wrapper) thead th > .cell {
+    white-space: nowrap !important; /* 禁止表头换行 */
+  }
+
   :deep(.el-table__header-wrapper) thead th > .cell {
     white-space: nowrap !important; /* 禁止表头换行 */
+  }
+
+  :deep(.el-table__body-wrapper) {
+    //height: 100% !important;
   }
 }
 </style>

@@ -1,7 +1,7 @@
 <template>
   <div class="base-table-wrapper" :style="selectionCountStyle">
-    <!-- height 必须传：el-table 只有拿到 height / max-height 才会计算表体高度，
-         固定列与表体的滚动位置才会同步。
+    <!-- height 必须传：el-table 只有拿到 height / max-height 才会计算 bodyHeight，
+         进而给固定列的影子表格（.el-table__fixed）设定高度，滚动同步才有效。
          例外是 autoHeight（表单页内嵌明细表）：容器高度由行数撑开，此时传 height 会把
          body 锁死在首次布局的高度，新增行只能靠内部滚动才看得见 -->
     <el-table ref="tableRef" class="base-table" :height="autoHeight ? undefined : '100%'" :data="data"
@@ -10,7 +10,8 @@
       @selection-change="handleSelectionChange" @row-click="handleRowClick"
       :class="{ 'transparent-bg': transparentBg }">
       <el-table-column v-if="selection" type="selection" width="50" :fixed="selectionFixed" :selectable="selectable" />
-      <!-- show-overflow-tooltip 的气泡限宽由全局 styles/element-ui.scss 的 tooltip 规则统一控制 -->
+      <!-- show-overflow-tooltip 的气泡限宽由全局 styles/element-ui.scss 的 .el-tooltip__popper 控制：
+           element-ui 2.x 没有列级 tooltip-options / popper-class，无法在此按列指定 -->
       <el-table-column v-for="col of tableColumns" :key="col.field" :label="col.name" :prop="col.field"
         :min-width="col.minWidth" :width="col.width" :fixed="col.fixed" :class-name="col.className"
         :show-overflow-tooltip="col.showOverflowTooltip">
@@ -18,11 +19,8 @@
           <slot :name="col.headerSlot" :column="scope.column" :index="scope.$index" />
         </template>
         <template #default="scope">
-          <!-- Element Plus 注册列时会用 $index=-1、row={} 预调用插槽；不要把占位行传给业务组件 -->
-          <template v-if="scope.$index >= 0">
-            <slot v-if="col.slot" :name="col.slot" :row="scope.row" :index="scope.$index" :column="col" />
-            <template v-else>{{ getCellText(scope.row, col.field) }}</template>
-          </template>
+          <slot v-if="col.slot" :name="col.slot" :row="scope.row" :index="scope.$index" :column="col" />
+          <template v-else>{{ getCellText(scope.row, col.field) }}</template>
         </template>
       </el-table-column>
     </el-table>
@@ -208,7 +206,7 @@ export default {
   }
 
   .base-pagination {
-    justify-content: flex-end;
+    text-align: right;
     margin-top: 14px;
   }
 

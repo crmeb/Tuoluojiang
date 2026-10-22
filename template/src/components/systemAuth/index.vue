@@ -3,7 +3,7 @@
   <div style="background: #fff">
     <!-- 顶部选项卡和搜索框 -->
     <div class="tab-box">
-      <el-tabs v-model="activeName" @tab-change="handleClickFn" style="width: 100%">
+      <el-tabs v-model="activeName" @tab-click="handleClickFn" style="width: 100%">
         <el-tab-pane label="web端" name="first"></el-tab-pane>
         <el-tab-pane label="移动端" name="second"></el-tab-pane>
       </el-tabs>
@@ -12,6 +12,7 @@
         style="width: 250px"
         clearable
         class="mr10"
+        size="small"
         suffix-icon="el-icon-search"
         placeholder="输入权限名称"
       ></el-input>
@@ -35,7 +36,7 @@
 </template>
 
 <script>
-import { menuNotSaveApi } from '@/api/system.ts'
+import { menuNotSaveApi } from '@/api/system'
 
 export default {
   name: 'SystemAuth',

@@ -17,8 +17,8 @@
         <i class="iconfont iconqingchu" />
       </el-button>
       <el-radio-group v-if="source === 'crmeb'" v-model="iconType" class="toolbar__segmented">
-        <el-radio-button label="outlined" value="outlined">线性</el-radio-button>
-        <el-radio-button label="filled" value="filled">面性</el-radio-button>
+        <el-radio-button label="outlined">线性</el-radio-button>
+        <el-radio-button label="filled">面性</el-radio-button>
       </el-radio-group>
     </div>
 
@@ -40,13 +40,10 @@
 
 <script>
 import { ref, computed, onMounted, getCurrentInstance } from 'vue'
-import iconfontIcons from '../../libs/iconfont-icons.ts'
-import { ELEMENT_ICON_NAMES } from '@/bootstrap/element-icons.ts'
+import iconfontIcons from '../../libs/iconfont-icons'
 
 export default {
   name: 'SelectIcon',
-  // 须声明：否则 @select 会落到根节点成为原生监听，搜索框里拖选文字触发的原生 select 事件冒泡上来被当成选中值
-  emits: ['select'],
   props: {
     // 为 true 时通过 select 事件向外抛出选中值，否则写入 form_create
     isEmit: {
@@ -75,14 +72,18 @@ export default {
       name: i.name
     }))
 
-    // ELEMENT 图标：沿用保留下来的 element-ui 图标字体，类名列表见 bootstrap/element-icons
-    const elementIcons = ref(
-      ELEMENT_ICON_NAMES.map((cls) => ({
+    // ELEMENT 图标：组件挂载后从 element-ui 的 icon.scss 中解析类名
+    const elementIcons = ref([])
+    onMounted(async () => {
+      // `?raw` 是 Vite 读取文件原文的写法，等价于 webpack 的 `!!raw-loader!`
+      const cssString = (await import('element-ui/packages/theme-chalk/src/icon.scss?raw')).default
+      const matches = cssString.matchAll(/(el-icon-[a-zA-Z0-9-]+):before\s*{/g)
+      elementIcons.value = Array.from(matches, ([, cls]) => ({
         value: cls,
         iconClass: cls,
         name: cls.slice(8) // 去掉 'el-icon-' 前缀
       }))
-    )
+    })
 
     // 当前来源 + 线性/面性 + 关键词，全部由计算属性派生
     const displayList = computed(() => {
@@ -191,7 +192,7 @@ export default {
 }
 
 // 用 el-radio-button 重置出 segmented 分段控制器样式
-:deep(.toolbar__segmented) {
+::v-deep .toolbar__segmented {
   .el-radio-button__inner {
     width: 42px;
     height: 28px;
@@ -221,6 +222,21 @@ export default {
   .el-radio-button__inner:hover {
     color: #303133;
   }
+}
+
+::v-deep .toolbar__search .el-input__inner {
+  height: 32px;
+  line-height: 32px;
+}
+::v-deep .toolbar__search .el-input__icon {
+  line-height: 32px;
+}
+::v-deep .toolbar__category .el-input__inner {
+  height: 32px;
+  line-height: 32px;
+}
+::v-deep .toolbar__category .el-input__icon {
+  line-height: 32px;
 }
 
 .icons-container {

@@ -14,7 +14,7 @@
         <ve-calendar
           :ref="`vc${m}`"
           mode="mini"
-          :model-value="selected"
+          :value="selected"
           :right-menu="false"
           :activate-date="{ year: year, month: m }"
           :offDays="offDays"
@@ -58,10 +58,10 @@
 </template>
 
 <script>
-import dayjs from 'dayjs'
+import moment from 'moment'
 import calendar from './components/calendar'
-import veCalendar from '@/components/ve-calendar'
-import { calendarYearApi } from '@/api/config.ts'
+import veCalendar from 've-calendar'
+import { calendarYearApi } from '@/api/config'
 export default {
   name: 'CrmebOaEntCalendarsetUp',
   components: {
@@ -97,8 +97,8 @@ export default {
   mounted() {
     const myDate = new Date()
     this.year = myDate.getFullYear()
-    this.todayTime = dayjs().subtract('day').format('M') // 当天日期
-    this.todayDate = dayjs().format('YYYY') // 当天日期
+    this.todayTime = moment().subtract('day').format('M') // 当天日期
+    this.todayDate = moment().format('YYYY') // 当天日期
     this.getList()
     window.onresize = () => {
       return (() => {
@@ -204,7 +204,7 @@ export default {
   display: inline-block;
 }
 
-:deep(.ve-calendar) {
+::v-deep .ve-calendar {
   border: none;
   box-shadow: none;
   border-right: 43px;
@@ -215,7 +215,7 @@ export default {
     align-items: center;
   }
 }
-:deep(.ve-calendar.mini) {
+::v-deep .ve-calendar.mini {
   padding: 0;
   margin-right: 20px;
   margin-bottom: 20px;
@@ -247,7 +247,7 @@ export default {
     // justify-content: center;
   }
 }
-:deep(.day-grid.mini.today) {
+::v-deep .day-grid.mini.today {
   border: none;
 
   .day-number {
@@ -260,7 +260,7 @@ export default {
   }
 }
 
-:deep(.day-grid.selected) {
+::v-deep .day-grid.selected {
   background: #fff;
 
   .day-number div {
@@ -271,7 +271,7 @@ export default {
     color: #ed4014;
   }
 }
-:deep(.day-grid.mini.today.selected) {
+::v-deep .day-grid.mini.today.selected {
   border: none;
 
   .day-number {

@@ -7,7 +7,7 @@
           <div class="title-16 mt23">流程设计</div>
         </el-col>
         <el-col :span="12">
-          <el-tabs v-model="activeName" class="examineTabs">
+          <el-tabs v-model="activeName" class="examineTabs" @tab-click="handleClick(activeName)">
             <el-tab-pane v-for="(item, index) in tabArray" :key="index" :name="item.value">
               <template #label>
                 <div>
@@ -20,8 +20,8 @@
         </el-col>
         <el-col :span="3">
           <div class="flex-end">
-            <el-button class="mt14" @click="submit">仅保存</el-button>
-            <el-button class="mt14" type="primary" @click="submit(1)">保存并关闭</el-button>
+            <el-button class="mt14" size="small" @click="submit">仅保存</el-button>
+            <el-button class="mt14" type="primary" size="small" @click="submit(1)">保存并关闭</el-button>
           </div>
         </el-col>
       </el-row>
@@ -38,6 +38,7 @@
               :show-all-levels="false"
               filterable
               :disabled="$route.query.crud_id ? true : false"
+              size="small"
               :props="props"
               style="width: 100%"
               clearable
@@ -61,7 +62,7 @@
                 <i class="icon iconfont" :class="i.icon" :style="{ color: i.color }"></i>
               </div>
               <template #reference>
-                <el-button>选择图标</el-button>
+                <el-button>{{ $t('business.changeIcon') }}</el-button>
               </template>
             </el-popover>
           </el-form-item>
@@ -69,7 +70,7 @@
             <el-input
               v-model="baseConfig.info"
               type="textarea"
-              placeholder="请输入审批类型说明"
+              :placeholder="$t('business.message3')"
               :maxlength="100"
               show-word-limit
               :autosize="{ minRows: 4, maxRows: 4 }"
@@ -92,11 +93,11 @@
       </div>
       <!-- 规则设置 -->
       <div class="main" v-show="activeName === 'ruleSetting'">
-        <el-form ref="elForm" class="mt30" :model="ruleConfig" :rules="rules" size="default" label-width="150px">
+        <el-form ref="elForm" class="mt30" :model="ruleConfig" :rules="rules" size="medium" label-width="150px">
           <el-form-item label="异常处理：" prop="abnormal">
-            <el-radio-group v-model="ruleConfig.abnormal">
-              <el-radio :value="0">自动同意</el-radio>
-              <el-radio :value="1">转交给指定人员处理</el-radio>
+            <el-radio-group v-model="ruleConfig.abnormal" size="small">
+              <el-radio :label="0">自动同意</el-radio>
+              <el-radio :label="1">转交给指定人员处理</el-radio>
             </el-radio-group>
             <select-member
               v-if="ruleConfig.abnormal !== 0"
@@ -108,32 +109,36 @@
           </el-form-item>
 
           <el-form-item label="自动审批：">
-            <div class="auto-text">当同一个审批人重复审批同一单据时</div>
-            <el-radio-group v-model="ruleConfig.auto" class="shu">
-              <el-radio :value="0">仅首个节点需审批，其余自动同意</el-radio>
-              <el-radio :value="1">仅连续审批时自动同意</el-radio>
-              <el-radio :value="2">每个节点都需要审批</el-radio>
+            <div class="auto-text">{{ $t('business.automatic1') }}</div>
+            <el-radio-group v-model="ruleConfig.auto" class="shu" size="small">
+              <el-radio :label="0">{{ $t('business.automatic2') }}</el-radio>
+              <el-radio :label="1">{{ $t('business.automatic3') }}</el-radio>
+              <el-radio :label="2">{{ $t('business.automatic4') }}</el-radio>
             </el-radio-group>
           </el-form-item>
 
           <el-form-item label="修改权限：" class="shu">
             <el-checkbox-group v-model="ruleConfig.edit">
-              <el-checkbox :value="1">提交申请时，员工不可修改固定人审批人</el-checkbox>
-              <el-checkbox :value="2">提交申请时，员工不可删除固定抄送人</el-checkbox>
+              <el-checkbox :label="1">{{ $t('business.editAuthority1') }}</el-checkbox>
+              <el-checkbox :label="2">{{ $t('business.editAuthority2') }}</el-checkbox>
             </el-checkbox-group>
           </el-form-item>
 
-          <el-form-item label="撤销权限：">
+          <el-form-item :label="$t('business.revokeAuthority')">
             <template #label>
               <div>撤销审批：</div>
             </template>
 
-            <el-checkbox v-model="ruleConfig.recall">通过后允许撤销</el-checkbox>
-            <span class="tips">审批通过后，经审批人同意可撤销</span>
+            <el-checkbox-group v-model="ruleConfig.recall">
+              <el-checkbox :label="1">{{ $t('business.revokeAuthority1') }}</el-checkbox>
+            </el-checkbox-group>
+            <span class="tips">{{ $t('business.revokeAuthority2') }}</span>
             <div class="explain"></div>
           </el-form-item>
           <el-form-item label="加签权限：">
-            <el-checkbox v-model="ruleConfig.is_sign">允许在审批单中增加临时审批人</el-checkbox>
+            <el-checkbox-group v-model="ruleConfig.is_sign">
+              <el-checkbox :label="1">允许在审批单中增加临时审批人</el-checkbox>
+            </el-checkbox-group>
           </el-form-item>
         </el-form>
       </div>
@@ -144,10 +149,10 @@
 <script>
 import selectMember from '@/components/form-common/select-member'
 import processSetting from '@/components/develop/processSetting'
-import iconfontList from '@/views/business/components/basicSetting/iconfontList.ts'
+import iconfontList from '@/views/business/components/basicSetting/iconfontList.js'
 import basicSetting from '@/views/business/components/basicSetting/index'
 import debounce from '@form-create/utils/lib/debounce'
-import { getDatabaseApi, dataApproveSaveApi, dataApproveInfoApi, dataApprovePutApi } from '@/api/develop.ts'
+import { getDatabaseApi, dataApproveSaveApi, dataApproveInfoApi, dataApprovePutApi } from '@/api/develop'
 
 export default {
   components: { basicSetting, processSetting, selectMember },
@@ -161,9 +166,9 @@ export default {
       userList: [], // 选择指定人员
       activeName: 'basicSetting',
       tabArray: [
-        { label: '基础配置', value: 'basicSetting', number: 1 },
-        { label: '流程配置', value: 'processSetting', number: 2 },
-        { label: '规则配置', value: 'ruleSetting', number: 3 }
+        { label: this.$t('business.basicConfiguration'), value: 'basicSetting', number: 1 },
+        { label: this.$t('business.processSetting'), value: 'processSetting', number: 2 },
+        { label: this.$t('business.ruleConfiguration'), value: 'ruleSetting', number: 3 }
       ],
       baseConfig: {
         // 基础设置
@@ -184,8 +189,8 @@ export default {
         abnormal: 0,
         auto: 0,
         edit: [1, 2],
-        recall: false,
-        is_sign: false
+        recall: '',
+        is_sign: ''
         // 规则设置
       },
       rules: {
@@ -206,7 +211,7 @@ export default {
         icon: [
           {
             required: true,
-            message: '请选择模板图标',
+            message: this.$t('business.message2'),
             trigger: 'change'
           }
         ],
@@ -277,7 +282,7 @@ export default {
     itemChose(row) {
       this.baseConfig.icon = row.icon
       this.baseConfig.color = row.color
-      this.$refs.iconPopover.hide()
+      this.$refs.iconPopover.doClose()
     },
 
     // 仅保存
@@ -387,6 +392,12 @@ export default {
 .mt23 {
   margin-top: 23px;
 }
+.el-input__inner {
+  height: 32px;
+  line-height: 32px;
+  display: flex;
+}
+
 .icon-item,
 .selIcon {
   display: inline-block;
@@ -410,33 +421,33 @@ export default {
   color: #303133;
 }
 
-:deep(.el-tabs__header) {
+::v-deep .el-tabs__header {
   margin: 0;
 }
-:deep(.el-page-header) {
+::v-deep .el-page-header {
   margin-top: 25px;
 }
 
-:deep(.el-table th) {
+::v-deep .el-table th {
   background-color: #f7fbff;
 }
 .shu {
-  :deep(.el-radio),
-  :deep(.el-checkbox) {
+  ::v-deep .el-radio,
+  ::v-deep .el-checkbox {
     display: block;
     height: 32px;
     line-height: 32px;
   }
 }
 
-:deep(.el-page-header__content) {
+::v-deep .el-page-header__content {
   font-family: PingFang SC, PingFang SC;
   font-weight: 500;
   font-size: 18px;
   color: #303133;
 }
 .examineTabs {
-  :deep(.el-tabs__nav-wrap::after) {
+  ::v-deep .el-tabs__nav-wrap::after {
     background-color: #fff;
   }
   .sp1 {
@@ -449,11 +460,11 @@ export default {
     line-height: 14px;
     font-size: 12px;
   }
-  :deep(.el-tabs__nav-scroll) {
+  ::v-deep .el-tabs__nav-scroll {
     display: flex;
     justify-content: left;
   }
-  :deep(.el-tabs__item) {
+  ::v-deep .el-tabs__item {
     font-family: PingFang SC, PingFang SC;
     font-weight: 500;
     font-size: 14px;
@@ -487,7 +498,7 @@ export default {
   height: 64px;
   border-bottom: 1px solid #dcdfe6;
 
-  :deep(.el-card__body) {
+  ::v-deep .el-card__body {
     padding: 0px 20px 0 20px;
   }
 
@@ -502,7 +513,7 @@ export default {
   bottom: 0;
   width: calc(100% + 220px);
 }
-:deep(.el-form-item) {
+::v-deep .el-form-item {
   .el-form-item__label {
     font-family: PingFang SC, PingFang SC;
     font-weight: 500;

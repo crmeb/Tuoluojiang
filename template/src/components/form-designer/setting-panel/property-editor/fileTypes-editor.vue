@@ -22,7 +22,7 @@
 </template>
 
 <script>
-import i18n from '@/utils/i18n.ts'
+import i18n from '@/utils/i18n'
 
 export default {
   name: 'fileTypes-editor',
@@ -47,3 +47,4 @@ export default {
 
 <style scoped>
 </style>
+@/utils/i18ns

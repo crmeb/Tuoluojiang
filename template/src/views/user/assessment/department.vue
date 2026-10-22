@@ -5,7 +5,7 @@
       <el-card v-show="checkBtn" class="employees-card-bottom">
         <div>
           <div class="plan-tabs-content mb20">
-            <el-tabs v-model="tabCur" @tab-change="tapClick">
+            <el-tabs v-model="tabCur" @tab-click="tapClick">
               <el-tab-pane label="考核记录" name="4" />
               <el-tab-pane label="待处理" name="3" />
               <el-tab-pane label="考核统计" name="5" />
@@ -14,9 +14,10 @@
               v-if="tabCur == 3 || tabCur == 4"
               class="btn-create"
               icon="el-icon-plus"
+              size="small"
               type="primary"
               @click="addFinance"
-              >创建考核</el-button
+              >{{ $t('access.createassessment') }}</el-button
             >
           </div>
           <!-- 待处理与考核记录  -->
@@ -48,13 +49,12 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
 export default {
   name: 'DepartmentAssessment',
   components: {
-    auditProcess: defineAsyncComponent(() => import('./components/auditProcess')),
-    lowerLevel: defineAsyncComponent(() => import('./components/lowerLevel')),
-    assessStatistics: defineAsyncComponent(() => import('@/views/user/workStatistics/components/assessStatistics'))
+    auditProcess: () => import('./components/auditProcess'),
+    lowerLevel: () => import('./components/lowerLevel'),
+    assessStatistics: () => import('@/views/user/workStatistics/components/assessStatistics')
   },
 
   data() {
@@ -119,31 +119,27 @@ export default {
       const DELAY_TIME = 300
       setTimeout(() => {
         const tabCur = parseInt(this.tabCur)
-        const lower = this.$refs.lower
-        const lowerStatistics = this.$refs.lowerStatistics
         // 使用对象映射替代多个条件判断，提高代码可维护性
         const actions = {
           3: () => {
-            if (!lower) return
-            lower.handleLocal = 1
-            lower.getFormBoxFrame()
+            this.$refs.lower.handle = 1
+            this.$refs.lower.getFormBoxFrame()
             if (!this.tabButton) {
-              lower.getTableData()
+              this.$refs.lower.getTableData()
             }
             this.tabButton = true
           },
           4: () => {
-            if (!lower) return
-            lower.handleLocal = ''
-            lower.getFormBoxFrame()
+            this.$refs.lower.handle = ''
+            this.$refs.lower.getFormBoxFrame()
             if (!this.tabButton) {
-              lower.getTableData()
+              this.$refs.lower.getTableData()
             }
             this.tabButton = true
           },
           default: () => {
             this.tabButton = false
-            lowerStatistics?.getTableData()
+            this.$refs.lowerStatistics.getTableData()
           }
         }
         // 根据tabCur的值执行相应的操作
@@ -163,7 +159,7 @@ export default {
   margin: 14px;
   margin-top: 1px;
   box-sizing: border-box;
-  :deep(.divBox) {
+  ::v-deep .divBox {
     // margin: 0;
     padding: 0;
   }
@@ -173,7 +169,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #e6ebf5;
-  :deep(.el-tabs__header) {
+  ::v-deep .el-tabs__header {
     margin-bottom: 0;
     .el-tabs__item {
       font-size: 15px;

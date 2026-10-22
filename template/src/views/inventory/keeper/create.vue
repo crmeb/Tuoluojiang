@@ -5,7 +5,7 @@
 
     <!-- 表单内容（可滚动区域） -->
     <div class="keeper-create__body" v-loading="detailLoading">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="keeper-form">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="keeper-form" size="small">
         <el-form-item label="库管角色：" prop="name">
           <el-input v-model="form.name" placeholder="请输入库管角色" maxlength="100" show-word-limit class="form-control" />
         </el-form-item>
@@ -33,7 +33,7 @@
 
         <el-form-item label="权限类型：">
           <el-radio-group v-model="form.manager_type">
-            <el-radio v-for="item of managerTypes" :key="item.value" :label="item.value" :value="item.value">{{ item.label }}</el-radio>
+            <el-radio v-for="item of managerTypes" :key="item.value" :label="item.value">{{ item.label }}</el-radio>
           </el-radio-group>
           <div class="form-tip">超级管理员拥有最高库管权限，可以查看并操作所有仓库数据</div>
         </el-form-item>
@@ -47,18 +47,18 @@
               accessible 接口只返回当前登录人已有权限的仓库，用它做选项会导致
               ①待授权的仓库根本选不到 ②编辑回显时匹配不到 option，只显示裸 ID。
               同理刻意不传 permission（按业务动作过滤同样会漏掉待授权的仓库） -->
-                <WareHouseSelect v-model="row.warehouse_id" :scope="WAREHOUSE_SCOPE.ALL"
+                <WareHouseSelect v-model="row.warehouse_id" :scope="WAREHOUSE_SCOPE.ALL" size="small"
                   @change="() => onWarehouseChange(index)" />
               </template>
               <template #permission="{ row }">
-                <el-checkbox v-for="item of permissionList" :key="item.name" :label="item.name" :value="item.name" :true-value="1"
-                  :false-value="0" v-model="row[item.key]" />
+                <el-checkbox v-for="item of permissionList" :key="item.name" :label="item.name" :true-label="1"
+                  :false-label="0" v-model="row[item.key]" />
               </template>
               <template #action="{ index }">
-                <el-button type="primary" link @click="removeWarehouse(index)">删除</el-button>
+                <el-button type="text" @click="removeWarehouse(index)">删除</el-button>
               </template>
             </BaseTable>
-            <el-button @click="onAddWarehouse" class="mt-10 ml-20">添加管理仓库</el-button>
+            <el-button size="small" @click="onAddWarehouse" class="mt-10 ml-20">添加管理仓库</el-button>
           </el-form-item>
 
           <el-form-item label="查看其他仓库库存权限" prop="can_view_other" class="view-other-item">
@@ -83,8 +83,8 @@ import WareHouseSelect from "../components/WareHouseSelect.vue";
 import FormPageHeader from "@/components/FormPageHeader/index.vue";
 import FormPageFooter from "@/components/FormPageFooter/index.vue";
 import BaseTable from "@/components/BaseTable/index.vue";
-import { useKeeperForm } from "./composables/useKeeperForm.ts";
-import { WAREHOUSE_SCOPE } from "../constants.ts";
+import { useKeeperForm } from "./composables/useKeeperForm";
+import { WAREHOUSE_SCOPE } from "../constants";
 
 export default {
   name: "InventoryKeeperCreate",
@@ -125,12 +125,12 @@ export default {
   .warehouse-table {
     width: 100%;
 
-    :deep(.warehouse-table__header th) {
+    ::v-deep .warehouse-table__header th {
       font-size: 12px;
       padding: 8px 0;
     }
 
-    :deep(.el-checkbox) {
+    ::v-deep .el-checkbox {
       margin-right: 0;
     }
   }
@@ -144,11 +144,8 @@ export default {
 }
 
 .view-other-item {
-  // Element Plus 的 label[for] 为自动生成的 id，不能再按 prop 选中；label 默认 flex + 固定 32px 高，改回块级两行排版
-  :deep(.el-form-item__label) {
+  :deep(.el-form-item__label[for=can_view_other]) {
     position: relative;
-    display: block;
-    height: auto;
     line-height: 20px;
     padding-right: 18px;
 
@@ -158,11 +155,6 @@ export default {
       bottom: 0;
       right: 5px;
     }
-  }
-
-  // 开关与首行文字对齐，不随两行 label 垂直居中
-  :deep(.el-form-item__content) {
-    align-items: flex-start;
   }
 }
 </style>

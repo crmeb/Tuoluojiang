@@ -22,11 +22,11 @@
           style="width: 100%"
           @sort-change="sortChange"
         >
-          <el-table-column label="收支时间" min-width="160" prop="edit_time" sortable />
-          <el-table-column label="记账类型" min-width="100" prop="types">
+          <el-table-column :label="$t('finance.entrytime')" min-width="160" prop="edit_time" sortable />
+          <el-table-column :label="$t('finance.accounttype')" min-width="100" prop="types">
             <template #default="scope">
-              <el-tag v-if="scope.row.types == 0" plain type="warning">支出</el-tag>
-              <el-tag v-else plain type="success">收入</el-tag>
+              <el-tag v-if="scope.row.types == 0" plain size="small" type="warning">支出</el-tag>
+              <el-tag v-else plain size="small" type="success">收入</el-tag>
             </template>
           </el-table-column>
           <el-table-column label="收支金额(元)" min-width="120" prop="num" show-overflow-tooltip>
@@ -36,26 +36,28 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="支付方式" min-width="120" prop="pay_type" />
-          <el-table-column label="账目分类" min-width="120" prop="cate.name" />
+          <el-table-column :label="$t('finance.mode')" min-width="120" prop="pay_type" />
+          <el-table-column :label="$t('finance.accounttabtype')" min-width="120" prop="cate.name" />
           <el-table-column label="操作时间" min-width="180" prop="updated_at" sortable />
           <el-table-column label="备注" min-width="180" prop="mark" show-overflow-tooltip>
             <template #default="scope">{{
               scope.row.client_bill ? scope.row.client_bill.mark||'--' : scope.row.mark||'--'
             }}</template>
           </el-table-column>
-          <el-table-column label="操作" prop="types" width="200">
+          <el-table-column :label="$t('public.operation')" prop="types" width="200">
             <template #default="scope">
               <div v-if="scope.row.types !== 10">
-                <el-button v-hasPermi="['fd:enterprise:list:check']" type="primary" link @click="handleCheck(scope.row)"
+                <el-button v-hasPermi="['fd:enterprise:list:check']" type="text" @click="handleCheck(scope.row)"
                   >查看</el-button
                 >
-                <el-button v-hasPermi="['fd:enterprise:list:edit']" type="primary" link @click="handleEdit(scope.row)">编辑</el-button>
+                <el-button v-hasPermi="['fd:enterprise:list:edit']" type="text" @click="handleEdit(scope.row)">{{
+                  $t('public.edit')
+                }}</el-button>
                 <el-button
                   v-hasPermi="['fd:enterprise:list:delete']"
-                  type="primary" link
+                  type="text"
                   @click="handleDelete(scope.row, scope.$index)"
-                  >删除</el-button
+                  >{{ $t('public.delete') }}</el-button
                 >
               </div>
             </template>
@@ -77,10 +79,10 @@
           </div>
           <div v-else class="expend ml14">
             <span v-if="where.types == 1"
-              >总收入: <span class="income">{{ totalIncome }}</span></span
+              >{{ $t('finance.totalrevenue') }}: <span class="income">{{ totalIncome }}</span></span
             >
             <span v-if="where.types == 0"
-              >总支出: <span class="expend-color">{{ totalExpend }}</span></span
+              >{{ $t('finance.totalexpenditure') }}: <span class="expend-color">{{ totalExpend }}</span></span
             >
           </div>
           <div class="page-fixed">
@@ -107,10 +109,9 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { modalSure } from '@/libs/public.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import moment from 'moment'
+import { modalSure } from '@/libs/public'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
 import {
   billListApi,
   billListEditApi,
@@ -118,15 +119,15 @@ import {
   billListCreateApi,
   enterprisePayTypeApi,
   billImportApi
-} from '@/api/enterprise.ts'
+} from '@/api/enterprise'
 export default {
   name: 'FinanceList',
   components: {
-    formBox: defineAsyncComponent(() => import('./components/formBox')),
-    dialogForm: defineAsyncComponent(() => import('./components/index')),
-    viewDetails: defineAsyncComponent(() => import('./components/viewDetails')),
-    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel')),
-    importExcel: defineAsyncComponent(() => import('@/components/common/importExcel'))
+    formBox: () => import('./components/formBox'),
+    dialogForm: () => import('./components/index'),
+    viewDetails: () => import('./components/viewDetails'),
+    exportExcel: () => import('@/components/common/exportExcel'),
+    importExcel: () => import('@/components/common/importExcel')
   },
   data() {
     return {
@@ -138,8 +139,8 @@ export default {
       formBoxConfig: {},
 
       timeVal: [
-        dayjs().startOf('months').format('YYYY/MM/DD'),
-        dayjs().endOf('months').format('YYYY/MM/DD')
+        moment().startOf('months').format('YYYY/MM/DD'),
+        moment().endOf('months').format('YYYY/MM/DD')
       ],
       exportData: {
         data: [],
@@ -218,7 +219,7 @@ export default {
     },
     parseImportDate(value) {
       if (value instanceof Date) {
-        return dayjs(value).isValid() ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : ''
+        return moment(value).isValid() ? moment(value).format('YYYY-MM-DD HH:mm:ss') : ''
       }
       const raw = String(value || '').trim()
       if (!raw) {
@@ -226,15 +227,15 @@ export default {
       }
       const excelSerial = Number(raw)
       if (!Number.isNaN(excelSerial) && excelSerial > 20000 && excelSerial < 60000) {
-        const date = dayjs('1899-12-30').add(excelSerial, 'days')
+        const date = moment('1899-12-30').add(excelSerial, 'days')
         return date.isValid() ? date.format('YYYY-MM-DD HH:mm:ss') : ''
       }
       const formats = ['YYYY-MM-DD HH:mm:ss', 'YYYY/M/D HH:mm:ss', 'YYYY-MM-DD', 'YYYY/M/D']
-      const date = dayjs(raw, formats, true)
+      const date = moment(raw, formats, true)
       if (date.isValid()) {
         return date.format('YYYY-MM-DD HH:mm:ss')
       }
-      const isoDate = dayjs(raw)
+      const isoDate = moment(raw, moment.ISO_8601, true)
       return isoDate.isValid() ? isoDate.format('YYYY-MM-DD HH:mm:ss') : ''
     },
     buildImportRow(row, rowIndex) {
@@ -293,7 +294,7 @@ export default {
           if (res.status == 200) {
             this.$refs.formBox.tableFrom.search = 0
             this.where.page = 1
-            const today = dayjs().format('YYYY/MM/DD')
+            const today = moment().format('YYYY/MM/DD')
             const hasCurrentFilter = this.where.time && this.where.time.includes(today)
             if (!hasCurrentFilter) {
               this.where.time = ''
@@ -329,12 +330,12 @@ export default {
       this.saveName = '导出账目模板.xlsx'
       let aoaData = [
         [
-          '账目类型',
-          '账目分类',
-          '金额(元)',
-          '收支时间',
-          '支付方式',
-          '备注信息'
+          this.$t('finance.accounttabtitle'),
+          this.$t('finance.accounttabtype'),
+          this.$t('finance.accounttabmoney'),
+          this.$t('finance.entrytime'),
+          this.$t('finance.accountpay'),
+          this.$t('finance.accounttabremark')
         ]
       ]
 
@@ -343,15 +344,15 @@ export default {
     },
     // 导出
     getExportData() {
-      this.saveName = '导出账目_' + dayjs(new Date()).format('MM_DD_HH_mm_ss') + '.xlsx'
+      this.saveName = '导出账目_' + moment(new Date()).format('MM_DD_HH_mm_ss') + '.xlsx'
       let aoaData = [
         [
-          '账目类型',
-          '账目分类',
-          '金额(元)',
-          '收支时间',
-          '支付方式',
-          '备注信息'
+          this.$t('finance.accounttabtitle'),
+          this.$t('finance.accounttabtype'),
+          this.$t('finance.accounttabmoney'),
+          this.$t('finance.entrytime'),
+          this.$t('finance.accountpay'),
+          this.$t('finance.accounttabremark')
         ]
       ]
 
@@ -367,7 +368,7 @@ export default {
         if (data.length > 0) {
           data.forEach((value) => {
             aoaData.push([
-              value.types == 0 ? '支出' : '收入',
+              value.types == 0 ? this.$t('finance.pay') : this.$t('finance.income'),
               value.cate ? value.cate.name : '',
               value.num,
               value.edit_time,
@@ -431,7 +432,7 @@ export default {
     },
     // 删除
     async handleDelete(item, index) {
-      await modalSure('你确定要删除资金记录吗')
+      await modalSure(this.$t('finance.message4'))
       await billListDeleteApi(item.id)
       this.getTableData()
     },
@@ -453,7 +454,7 @@ export default {
   margin-bottom: 0px;
 }
 
-:deep(.el-drawer__body) {
+::v-deep .el-drawer__body {
   height: 100%;
   overflow-y: auto;
 }

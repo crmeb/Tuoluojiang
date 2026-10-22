@@ -174,7 +174,7 @@ export default {
   transition: opacity 0.25s;
 }
 
-.demo-support-fade-enter-from,
+.demo-support-fade-enter,
 .demo-support-fade-leave-to {
   opacity: 0;
 }

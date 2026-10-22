@@ -13,6 +13,7 @@
             <el-tag
               v-if="item.types == 1 && item.settype != 5 && item.examine_mode > 0 && item.users.length > 1"
               effect="plain"
+              size="mini"
             >
               {{ getExamineText(item.examine_mode, item) }}
             </el-tag>
@@ -64,7 +65,7 @@
                   <div class="name">
                     <span> {{ getDetailText(item.types, items.status, items) }} · </span>
                     <span v-if="items.status > 0 || items.is_transfer === 3 || items.is_transfer === 1">
-                      {{ dayjs(items.updated_at).format('YYYY/M/DD HH:mm') }}
+                      {{ moment(items.updated_at).format('YYYY/M/DD HH:mm') }}
                     </span>
                   </div>
                 </div>
@@ -82,8 +83,8 @@
 </template>
 
 <script>
-import dayjs from 'dayjs'
-import { getAvatarSrc } from '@/utils/avatar.ts'
+import moment from 'moment'
+import { getAvatarSrc } from '@/utils/avatar'
 export default {
   name: 'DetailProcess',
   props: {
@@ -95,7 +96,7 @@ export default {
     }
   },
   computed: {
-    dayjs: () => dayjs
+    moment: () => moment
   },
   data() {
     return {
@@ -122,6 +123,9 @@ export default {
       deep: true,
       immediate: true
     },
+    lang() {
+      this.setOptions()
+    }
   },
   methods: {
     getAvatarSrc,
@@ -321,35 +325,35 @@ export default {
 
 .stepsBox {
   margin-top: 30px;
-  :deep(.el-step__head.is-finish > .el-step__icon) {
+  ::v-deep .el-step__head.is-finish > .el-step__icon {
     background-color: #1890ff;
     color: #fff;
     border-color: #1890ff;
   }
-  :deep(.el-step__line > .el-step__line-inner) {
+  ::v-deep .el-step__line > .el-step__line-inner {
     border-width: 0 !important;
   }
-  :deep(.el-step__head.is-finish > .el-step__line) {
+  ::v-deep .el-step__head.is-finish > .el-step__line {
     background-color: #1890ff;
     color: #fff;
     border-color: #1890ff;
     width: 1px;
     left: 12px;
   }
-  :deep(.el-step.is-vertical .el-step__line) {
+  ::v-deep .el-step.is-vertical .el-step__line {
     width: 1px;
   }
-  :deep(.el-step__head.is-process > .el-step__icon) {
+  ::v-deep .el-step__head.is-process > .el-step__icon {
     background-color: #1890ff;
     color: #fff;
     border-color: #1890ff;
   }
-  :deep(.el-step__description) {
+  ::v-deep .el-step__description {
     margin-top: 17px;
     margin-bottom: 30px;
     padding-right: 0;
   }
-  :deep(.el-step__title) {
+  ::v-deep .el-step__title {
     color: #000;
     font-size: 14px;
     font-weight: 600;
@@ -360,12 +364,8 @@ export default {
     color: #999999;
     font-weight: normal;
   }
-  // 自定义 icon 插槽在 EP 下是 is-icon（无圆框），按线上 Element UI 的 is-text 补回
-  :deep(.el-step__icon) {
+  ::v-deep .el-step__icon {
     background: #ccc;
-    border-radius: 50%;
-    border: 2px solid;
-    border-color: inherit;
   }
   .liuchen {
     i {

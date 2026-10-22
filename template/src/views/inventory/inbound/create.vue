@@ -5,7 +5,7 @@
 
     <!-- 表单内容（可滚动区域） -->
     <div class="inbound-create__body">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="85px" class="inbound-form"
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="85px" class="inbound-form" size="small"
         label-suffix="：">
         <el-form-item label="入库仓库" prop="warehouse_id">
           <WareHouseSelect v-model="form.warehouse_id" placeholder="请选择" class="form-control"
@@ -14,7 +14,7 @@
 
         <el-form-item label="入库类型" prop="inbound_type">
           <el-radio-group v-model="form.inbound_type">
-            <el-radio v-for="item of inboundTypes" :key="item.value" :label="item.value" :value="item.value">{{ item.label }}</el-radio>
+            <el-radio v-for="item of inboundTypes" :key="item.value" :label="item.value">{{ item.label }}</el-radio>
           </el-radio-group>
           <p class="form-tip">{{ currentTypeDesc }}</p>
         </el-form-item>
@@ -49,7 +49,7 @@
             <el-table-column label="商品信息" min-width="220">
               <template #default="{ row }">
                 <div class="goods-cell">
-                  <el-image :src="row.image" :preview-src-list="[row.image]" preview-teleported class="goods-img" />
+                  <el-image :src="row.image" :preview-src-list="[row.image]" class="goods-img" />
                   <span class="goods-name">{{ row.name }}</span>
                 </div>
               </template>
@@ -71,42 +71,42 @@
             </el-table-column>
             <el-table-column v-if="isPurchase" label="库存属性" min-width="130">
               <template #default="{ row }">
-                <el-select v-model="row.stock_quality" placeholder="请选择" class="cell-control">
+                <el-select v-model="row.stock_quality" size="small" placeholder="请选择" class="cell-control">
                   <el-option v-for="item of stockQualities" :key="item.value" :label="item.label" :value="item.value" />
                 </el-select>
               </template>
             </el-table-column>
             <el-table-column v-if="isPurchase" label="入库单价" min-width="140">
               <template #default="{ row }">
-                <el-input-number v-model="row.unit_price" :min="0" :precision="2" :controls="false"
+                <el-input-number v-model="row.unit_price" :min="0" :precision="2" :controls="false" size="small"
                   class="cell-control" />
               </template>
             </el-table-column>
             <el-table-column label="入库数量" min-width="140">
               <template #default="{ row }">
-                <el-input-number v-model="row.quantity" :min="1" :precision="0" :controls="false"
+                <el-input-number v-model="row.quantity" :min="1" :precision="0" :controls="false" size="small"
                   class="cell-control" />
               </template>
             </el-table-column>
             <el-table-column v-if="isPurchase" label="赠送数量" min-width="140">
               <template #default="{ row }">
-                <el-input-number v-model="row.gift_quantity" :min="0" :precision="0" :controls="false"
+                <el-input-number v-model="row.gift_quantity" :min="0" :precision="0" :controls="false" size="small"
                   class="cell-control" />
               </template>
             </el-table-column>
             <el-table-column v-if="isPurchase" label="金额小计" min-width="150">
               <template #default="{ row }">
-                <el-input :model-value="`¥${getRowSubtotal(row)}`" disabled class="cell-control" />
+                <el-input :value="`¥${getRowSubtotal(row)}`" size="small" disabled class="cell-control" />
               </template>
             </el-table-column>
             <el-table-column v-if="isPurchase" label="明细备注" min-width="160">
               <template #default="{ row }">
-                <el-input v-model="row.remark" maxlength="100" placeholder="请输入备注" class="cell-control" />
+                <el-input v-model="row.remark" size="small" maxlength="100" placeholder="请输入备注" class="cell-control" />
               </template>
             </el-table-column>
             <el-table-column label="操作" width="80" fixed="right">
               <template #default="{ $index }">
-                <el-button type="primary" link @click="removeGoods($index)">删除</el-button>
+                <el-button type="text" @click="removeGoods($index)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -126,13 +126,13 @@
 import { ref } from "vue";
 import BaseContainer from "@/components/BaseContainer/index.vue";
 import specifications from "@/views/customer/components/specifications.vue";
-import { useInboundCreate } from "./composables/useInboundCreate.ts";
+import { useInboundCreate } from "./composables/useInboundCreate";
 import OrderSelect from "../components/OrderSelect.vue";
 import WareHouseSelect from "../components/WareHouseSelect.vue";
 import FormPageHeader from "@/components/FormPageHeader/index.vue";
 import FormPageFooter from "@/components/FormPageFooter/index.vue";
-import { WAREHOUSE_PERMISSION } from "../constants.ts";
-import { getSpecName, getProductCode, getBarcode } from "../utils.ts";
+import { WAREHOUSE_PERMISSION } from "../constants";
+import { getSpecName, getProductCode, getBarcode } from "../utils";
 
 export default {
   name: "InventoryInboundCreate",
@@ -238,7 +238,7 @@ export default {
   }
 
   // el-input-number 左对齐，去除计数器后还原为普通输入框观感
-  :deep(.el-input-number .el-input__inner) {
+  ::v-deep .el-input-number .el-input__inner {
     text-align: left;
   }
 }

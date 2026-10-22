@@ -1,12 +1,12 @@
 <!-- @FileDescription: 公共-预览图片组件 -->
 <template>
   <div>
-    <el-image-viewer v-if="isImage" @close="closeImageViewer" :url-list="srcList" />
+    <el-image-viewer v-if="isImage" :on-close="closeImageViewer" :url-list="srcList" />
   </div>
 </template>
 
 <script>
-import { ElImageViewer } from 'element-plus'
+import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 export default {
   name: 'ImageViewer',
   props: {

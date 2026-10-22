@@ -28,7 +28,7 @@ description: 拉起本项目后体检本地开发环境——Node/pnpm 版本、
 - 缺失或不一致 → 征得同意后 `pnpm install`。
 
 ### 4. 补丁与构建脚本许可
-- 补丁走 **pnpm 原生 patch**，登记在 `pnpm-workspace.yaml > patchedDependencies`（当前为 `qrcodejs2@0.0.2`），`pnpm install` 时自动应用。**没有 patch-package，也没有 postinstall 脚本**。
+- 补丁走 **pnpm 原生 patch**，登记在 `pnpm-workspace.yaml > patchedDependencies`（当前两条：`element-ui@2.15.14`、`qrcodejs2@0.0.2`），`pnpm install` 时自动应用。**没有 patch-package，也没有 postinstall 脚本**。
 - 若补丁未生效（运行时行为与未打补丁一致），提示重跑 `pnpm install`，必要时先删 `node_modules`。
 - `pnpm-workspace.yaml > allowBuilds` 白名单控制哪些依赖允许跑安装脚本（esbuild、core-js 等）。安装时若 pnpm 提示某个包的 build 被忽略且确实影响运行，提示用户按需补进白名单，**不要擅自加**。
 
@@ -45,7 +45,7 @@ description: 拉起本项目后体检本地开发环境——Node/pnpm 版本、
 
 ### 7. dev 端口与访问路径
 - `vite.config.ts > server`：`port: 9527`、`host: true`（局域网可访问）。端口被占用时提示释放，或用 `pnpm dev --port <n>`。
-- 站点 base 为 `roterPre + '/'`（`src/settings.ts` 中 `roterPre = '/admin'`），根路径由 `build/plugins/redirect-root` 自动重定向，无需手动拼。
+- 站点 base 为 `roterPre + '/'`（`src/settings.js` 中 `roterPre = '/admin'`），根路径由 `build/plugins/redirect-root` 自动重定向，无需手动拼。
 
 ### 8. 启动
 - 体检通过后：`pnpm dev`。

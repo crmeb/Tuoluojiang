@@ -24,8 +24,8 @@
     >
     </ueditorFrom>
     <div v-if="getReadMode() && isShow" class="mt14">
-      <el-button @click="isShow = false">取消</el-button>
-      <el-button type="primary" @click="handlePopoverHideFn">保存</el-button>
+      <el-button size="small" @click="isShow = false">取消</el-button>
+      <el-button size="small" type="primary" @click="handlePopoverHideFn">保存</el-button>
     </div>
 
     <template v-if="getReadMode() && !isShow">
@@ -36,13 +36,15 @@
 
 <script>
 import FormItemWrapper from './form-item-wrapper'
-import i18n, { translate } from '@/utils/i18n.ts'
+import emitter from '@/utils/emitter'
+import i18n, { translate } from '@/utils/i18n'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
 import ueditorFrom from '@/components/form-common/oa-wangeditor'
 
 export default {
   name: 'rich-text-widget',
-  mixins: [fieldMixin, i18n],
+  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
+  mixins: [emitter, fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -117,7 +119,7 @@ export default {
     }
   },
 
-  beforeUnmount() {
+  beforeDestroy() {
     this.unregisterFromRefList()
   }
 }
@@ -134,10 +136,11 @@ img {
 }
 .readonly-mode-field {
   padding-top: 10px;
-  :deep(p) {
+  ::v-deep p {
     img {
       width: 80% !important;
     }
   }
 }
 </style>
+@/utils/i18ns

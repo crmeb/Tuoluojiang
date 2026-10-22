@@ -5,13 +5,13 @@
 
     <!-- 表单内容（可滚动区域） -->
     <div v-loading="detailLoading" class="transfer-create__body">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="85px" class="transfer-form"
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="85px" class="transfer-form" size="small"
         label-suffix="：">
         <p class="section-title">基本信息</p>
 
         <el-form-item label="调拨方式" prop="transfer_type">
           <el-radio-group v-model="form.transfer_type">
-            <el-radio v-for="item of transferTypes" :key="item.value" :label="item.value" :value="item.value">{{ item.label }}</el-radio>
+            <el-radio v-for="item of transferTypes" :key="item.value" :label="item.value">{{ item.label }}</el-radio>
           </el-radio-group>
           <div class="form-tip">
             <p v-for="item of transferTypes" :key="item.value">{{ item.desc }}</p>
@@ -54,7 +54,7 @@
             <!-- 商品信息：缩略图 + 名称 -->
             <template #goods="{ row }">
               <div class="goods-cell">
-                <el-image :src="row.image" :preview-src-list="[row.image]" preview-teleported class="goods-img" />
+                <el-image :src="row.image" :preview-src-list="[row.image]" class="goods-img" />
                 <span class="goods-name">{{ row.name }}</span>
               </div>
             </template>
@@ -69,7 +69,7 @@
             </template>
 
             <template #stock_quality="{ row }">
-              <el-select v-model="row.stock_quality" placeholder="请选择" class="cell-control">
+              <el-select v-model="row.stock_quality" size="small" placeholder="请选择" class="cell-control">
                 <el-option v-for="item of stockQualities" :key="item.value" :label="item.label" :value="item.value" />
               </el-select>
             </template>
@@ -78,18 +78,18 @@
             <template #stock="{ row }">{{ getRowStockText(row) }}</template>
 
             <template #quantity="{ row }">
-              <el-input-number v-model="row.quantity" :min="1" :precision="0" :controls="false"
+              <el-input-number v-model="row.quantity" :min="1" :precision="0" :controls="false" size="small"
                 :max="getRowMax(row)" class="cell-control" />
             </template>
 
             <template #price="{ row }">¥{{ row.price }}</template>
 
             <template #subtotal="{ row }">
-              <el-input :model-value="`¥${getRowSubtotal(row)}`" disabled class="cell-control" />
+              <el-input :value="`¥${getRowSubtotal(row)}`" size="small" disabled class="cell-control" />
             </template>
 
             <template #action="{ index }">
-              <el-button type="primary" link @click="removeGoods(index)">删除</el-button>
+              <el-button type="text" @click="removeGoods(index)">删除</el-button>
             </template>
           </BaseTable>
         </el-form-item>
@@ -109,12 +109,12 @@ import { ref, getCurrentInstance } from "vue";
 import BaseContainer from "@/components/BaseContainer/index.vue";
 import BaseTable from "@/components/BaseTable/index.vue";
 import specifications from "@/views/customer/components/specifications.vue";
-import { useTransferCreate } from "./composables/useTransferCreate.ts";
+import { useTransferCreate } from "./composables/useTransferCreate";
 import WareHouseSelect from "../components/WareHouseSelect.vue";
 import FormPageHeader from "@/components/FormPageHeader/index.vue";
 import FormPageFooter from "@/components/FormPageFooter/index.vue";
-import { WAREHOUSE_PERMISSION } from "../constants.ts";
-import { getSpecName, getProductCode, getBarcode } from "../utils.ts";
+import { WAREHOUSE_PERMISSION } from "../constants";
+import { getSpecName, getProductCode, getBarcode } from "../utils";
 
 export default {
   name: "InventoryTransferCreate",
@@ -259,7 +259,7 @@ export default {
   }
 
   // el-input-number 左对齐，去除计数器后还原为普通输入框观感
-  :deep(.el-input-number .el-input__inner) {
+  ::v-deep .el-input-number .el-input__inner {
     text-align: left;
   }
 }

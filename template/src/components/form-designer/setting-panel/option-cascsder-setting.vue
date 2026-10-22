@@ -5,35 +5,38 @@
       <template #default="{ node, data }">
         <div class="custom-tree-node">
           <el-input
+            size="small"
             v-model="data.name"
             @change="changeCard(data)"
             placeholder="数据值"
             style="width: 150px; margin-bottom: 5px"
           >
           </el-input>
-          <span class="iconfont icontianjia1 text-color" @click="addFn(node, data)" />
-          <span
-            class="iconfont icona-ziji1x text-color"
-            @click="addChildFn(node, data)"
-            v-if="selectedWidget.type == 'tag' && node.level !== 2"
-          />
-          <span
-            class="iconfont icona-ziji1x text-color"
-            @click="addChildFn(node, data)"
-            v-if="selectedWidget.type !== 'tag' && node.level !== 4"
-          />
-          <span class="iconfont iconshanchujilu" @click="deleteFn(node, data)" />
+          <template>
+            <span class="iconfont icontianjia1 text-color" @click="addFn(node, data)" />
+            <span
+              class="iconfont icona-ziji1x text-color"
+              @click="addChildFn(node, data)"
+              v-if="selectedWidget.type == 'tag' && node.level !== 2"
+            />
+            <span
+              class="iconfont icona-ziji1x text-color"
+              @click="addChildFn(node, data)"
+              v-if="selectedWidget.type !== 'tag' && node.level !== 4"
+            />
+            <span class="iconfont iconshanchujilu" @click="deleteFn(node, data)" />
+          </template>
         </div>
       </template>
     </el-tree>
-    <el-button type="primary" link class="mt10" @click="addRowFn()">新增选项</el-button>
+    <el-button type="text" class="mt10" @click="addRowFn()">新增选项</el-button>
   </div>
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import { delCrudSaveApi } from '@/api/develop.ts'
-import { getDictDataDeleteApi } from '@/api/form.ts'
+import { modalSure } from '@/libs/public'
+import { delCrudSaveApi } from '@/api/develop'
+import { getDictDataDeleteApi } from '@/api/form'
 export default {
   name: 'OptionItemsSetting',
   props: {
@@ -132,7 +135,7 @@ export default {
       const maxValue = this.findMaxValueInTree(this.optionModel.customizeItems)
       const newValue = String(maxValue + 1)
       if (!data.children) {
-        data.children = []
+        this.$set(data, 'children', [])
       }
       let obj = {
         name: '选项' + newValue,
@@ -180,11 +183,11 @@ export default {
   overflow: auto;
 }
 
-:deep(.el-tree-node__content) {
+::v-deep .el-tree-node__content {
   height: 40px;
 }
 
-:deep(.el-tree-node > .el-tree-node__children) {
+::v-deep .el-tree-node > .el-tree-node__children {
   overflow: visible;
 }
 
@@ -196,3 +199,4 @@ export default {
   color: #1890ff !important;
 }
 </style>
+@/utils/i18ns

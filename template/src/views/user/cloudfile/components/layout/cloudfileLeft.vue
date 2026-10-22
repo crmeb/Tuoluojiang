@@ -64,14 +64,14 @@
                 >
                   <div class="right-item-list">
                     <div class="right-item" @click.stop="addEdit(item)">
-                      {{ userStore.userInfo.uid === item.uid ? '编辑' : '查看' }}
+                      {{ $store.state.user.userInfo.uid === item.uid ? $t('public.edit') : $t('public.check') }}
                     </div>
                     <div
-                      v-if="userStore.userInfo.uid === item.uid"
+                      v-if="$store.state.user.userInfo.uid === item.uid"
                       class="right-item"
                       @click.stop="handleDelete(item)"
                     >
-                      删除
+                      {{ $t('public.delete') }}
                     </div>
                   </div>
                   <template #reference>
@@ -95,22 +95,15 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useUserStore } from '@/stores/user.ts'
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { folderSpaceDeleteApi, folderSpaceListApi, folderTotalApi, folderMatchtListApi } from '@/api/cloud.ts'
+import { modalSure } from '@/libs/public'
+import { folderSpaceDeleteApi, folderSpaceListApi, folderTotalApi, folderMatchtListApi } from '@/api/cloud'
 import debounce from '@form-create/utils/lib/debounce'
-import { CountTo as countTo } from 'vue3-count-to'
+import countTo from 'vue-count-to'
 export default {
-  emits: ['confirmData'],
   name: 'CloudfileLeft',
   components: {
-    spaceDialog: defineAsyncComponent(() => import('../spaceDialog')),
+    spaceDialog: () => import('../spaceDialog'),
     countTo
-  },
-  computed: {
-    ...mapStores(useUserStore)
   },
   data() {
     return {
@@ -128,22 +121,22 @@ export default {
       searchList: [],
       shareArray: [
         { name: '最近浏览', type: 1, icon: 'iconzuijin' } //最近访问
-        // { name: '我的收藏', type: 2, icon: 'iconshoucang1', number: 0 }, //收藏
-        // { name: '共享', type: 3, icon: 'iconchangyongwenjianjia', number: 0 } //分享
+        // { name: this.$t('file.collection'), type: 2, icon: 'iconshoucang1', number: 0 }, //收藏
+        // { name: this.$t('file.share'), type: 3, icon: 'iconchangyongwenjianjia', number: 0 } //分享
       ],
       commonlyArray: [
-        { name: '我的文件', type: 4, icon: 'iconquanbuwendang' }, //我的文件
-        { name: '常用文件夹', type: 5, icon: 'iconchangyongwenjianjia' } //常用文件夹
+        { name: this.$t('file.myfiles'), type: 4, icon: 'iconquanbuwendang' }, //我的文件
+        { name: this.$t('file.commonfolders'), type: 5, icon: 'iconchangyongwenjianjia' } //常用文件夹
       ],
-      recoveryArray: [{ name: '回收站', type: 7, icon: 'iconhuishouzhan' }],
+      recoveryArray: [{ name: this.$t('file.recyclebin'), type: 7, icon: 'iconhuishouzhan' }],
       fileSortData: [
-        { name: '文件名称', id: 1 }, //文件名
-        { name: '创建时间', id: 2 }, //创建时间
-        { name: '更新时间', id: 3 }, //图片
-        { name: '文件大小', id: 4 }, //大小
-        { name: '删除时间', id: 5 }, //删除时间
-        { name: '升序', id: 6 }, //升序
-        { name: '降序', id: 7 } //降序
+        { name: this.$t('file.filename'), id: 1 }, //文件名
+        { name: this.$t('file.creationtime'), id: 2 }, //创建时间
+        { name: this.$t('file.updatetime'), id: 3 }, //图片
+        { name: this.$t('file.filesize'), id: 4 }, //大小
+        { name: this.$t('file.deletetime'), id: 5 }, //删除时间
+        { name: this.$t('file.order'), id: 6 }, //升序
+        { name: this.$t('file.desc'), id: 7 } //降序
       ],
       shareIndex: 0,
       entIndex: 'recently',
@@ -154,11 +147,34 @@ export default {
       spaceId: 0
     }
   },
+  computed: {
+    lang: function () {
+      return this.$store.getters.lang
+    }
+  },
+  watch: {
+    lang() {
+      this.setOptions()
+    }
+  },
   mounted() {
     this.getEntList()
     this.confirmData('recently')
   },
   methods: {
+    setOptions() {
+      this.shareArray = [
+        { name: this.$t('file.lately'), type: 1, icon: 'iconzuijin' }, //最近访问
+        { name: this.$t('file.collection'), type: 2, icon: 'iconshoucang1', number: 0 }, //收藏
+        { name: this.$t('file.share'), type: 3, icon: 'iconchangyongwenjianjia', number: 0 } //分享
+      ]
+      this.commonlyArray = [
+        { name: this.$t('file.myfiles'), type: 4, icon: 'iconquanbuwendang' }, //我的文件
+        { name: this.$t('file.commonfolders'), type: 5, icon: 'iconchangyongwenjianjia' } //常用文件夹
+      ]
+      this.recoveryArray = [{ name: this.$t('file.recyclebin'), type: 7, icon: 'iconhuishouzhan' }] //回收站文件
+      this.getFolderTotal()
+    },
     // 展示常用文件夹和我的文件
     showCommonly() {
       this.showComBtn === false ? (this.showComBtn = true) : (this.showComBtn = false)
@@ -257,8 +273,8 @@ export default {
 
     addName() {
       this.fromData = {
-        title: '空间设置',
-        name: '选择成员',
+        title: this.$t('file.spacesettings'),
+        name: this.$t('setting.edit.selectmembers1'),
         edit: 1
       }
       this.$refs.spaceDialog.dialogVisible = true
@@ -274,8 +290,8 @@ export default {
     // 修改分类
     addEdit(item) {
       this.fromData = {
-        title: `空间${this.userStore.userInfo.uid === item.uid ? '编辑' : '查看'}`,
-        name: '选择成员',
+        title: `空间${this.$store.state.user.userInfo.uid === item.uid ? '编辑' : '查看'}`,
+        name: this.$t('setting.edit.selectmembers1'),
         edit: 2,
         data: item
       }
@@ -283,7 +299,7 @@ export default {
     },
     // 删除
     async handleDelete(item) {
-      await modalSure('你确定要删除该空间吗')
+      await modalSure(this.$t('file.placeholder02'))
       await folderSpaceDeleteApi(item.id)
       this.getEntList()
     }
@@ -294,6 +310,9 @@ export default {
 <style lang="scss" scoped>
 .isAcitive {
   background-color: #f5f5f5;
+}
+::v-deep .el-input--small .el-input__inner {
+  cursor: pointer;
 }
 .box {
   height: calc(100vh - 220px);
@@ -332,7 +351,7 @@ export default {
   }
 }
 
-:deep(.el-empty__image svg) {
+::v-deep .el-empty__image svg {
   width: 50%;
 }
 .icontianjia {
@@ -346,7 +365,7 @@ export default {
   .p0 {
     padding: 0 !important;
   }
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
   border-right: 1px solid #f5f5f5;
@@ -474,7 +493,7 @@ export default {
     background-color: #f5f7fa;
   }
 }
-:deep(.el-scrollbar__view) {
+::v-deep .el-scrollbar__view {
   height: 100%;
   overflow-y: scroll;
   scrollbar-width: none; /* firefox */

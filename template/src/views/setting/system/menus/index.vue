@@ -51,8 +51,8 @@
             <el-table-column label="排序" prop="sort" width="150"> </el-table-column>
             <el-table-column fixed="right" label="操作" prop="desc" width="150">
               <template #default="scope">
-                <el-button type="primary" link @click="editMenu(scope.row.id)">编辑</el-button>
-                <el-button type="primary" link @click="delMenu(scope.row.id)">删除</el-button>
+                <el-button type="text" @click="editMenu(scope.row.id)">编辑</el-button>
+                <el-button type="text" @click="delMenu(scope.row.id)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -67,8 +67,8 @@
 import rightDrawer from '@/components/setting/rightDrawer'
 import oaFromBox from '@/components/common/oaFromBox'
 import formCreate from '@form-create/element-ui'
-import { menuListApi, menuDeleteitApi, menuShowApi } from '@/api/system.ts'
-import Tips from '@/utils/tips.ts'
+import { menuListApi, menuDeleteitApi, menuShowApi } from '@/api/system'
+import Tips from '@/utils/tips'
 
 export default {
   name: 'list',

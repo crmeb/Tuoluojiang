@@ -12,16 +12,14 @@
         </div>
       </div>
     </div>
-    <el-dialog :append-to-body="true" :before-close="handleClose" v-model="dialogVisible" title="选择图片"
+    <el-dialog :append-to-body="true" :before-close="handleClose" :visible.sync="dialogVisible" title="选择图片"
       width="850px">
       <upload-picture ref="uploadPicture" :check-button="true" @getImage="getImage"></upload-picture>
     </el-dialog>
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
 export default {
-  emits: ['getImage'],
   props: {
     value: {
       type: String,
@@ -29,7 +27,7 @@ export default {
     }
   },
   components: {
-    uploadPicture: defineAsyncComponent(() => import('@/components/uploadPicture/index'))
+    uploadPicture: () => import('@/components/uploadPicture/index')
   },
   data() {
     return {

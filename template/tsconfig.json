@@ -25,14 +25,20 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
-    // vite.config.ts 走 native configLoader 时要求相对导入带扩展名
-    "allowImportingTsExtensions": true,
+
+    // Vue 2.7 基于 defineProperty，类字段必须是 [[Set]] 语义
+    "useDefineForClassFields": false,
 
     // 不设 baseUrl：TS 6 起它已弃用，paths 会相对本文件所在目录解析，语义等价
     "paths": {
       "@/*": ["./src/*"]
     },
     "types": ["vite/client", "node"]
+  },
+
+  // Volar 需要显式声明目标是 Vue 2.7，否则按 Vue 3 模板语义编译
+  "vueCompilerOptions": {
+    "target": 2.7
   },
 
   "include": [
@@ -45,5 +51,5 @@
     "vite.config.ts",
     "eslint.config.ts"
   ],
-  "exclude": ["node_modules", "dist", "src/assets"]
+  "exclude": ["node_modules", "dist", "src/assets", "src/views/business/components/formSetting"]
 }

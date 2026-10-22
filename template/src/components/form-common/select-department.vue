@@ -2,7 +2,7 @@
 <template>
   <el-popover
     ref="treePopover"
-    :visible="showPopover"
+    v-model="showPopover"
     placement="bottom-start"
     popper-class="popover"
     :width="isSite ? 306 : 266"
@@ -16,6 +16,7 @@
             style="width: 218px"
             placeholder="请输入部门搜索"
             prefix-icon="el-icon-search"
+            size="small"
           >
           </el-input>
         </div>
@@ -65,56 +66,49 @@
     </isFullScreen>
 
     <!-- 部门数据 -->
-    <!-- 与 element-ui 一致：调用方的 class / style 落在包裹触发元素的 span 上（el-popover 不透传 attrs） -->
     <template #reference>
-      <span v-bind="$attrs">
-        <slot v-if="$slots.custom" name="custom"></slot>
-        <div v-else ref="select" class="select plan-footer-one mr10" @click="handlePopoverShow">
-          <span class="el-icon-arrow-down"></span>
-          <span v-if="selectList && selectList.length == 0" class="placeholder">{{ placeholder }}</span>
-          <div v-if="selectList.length > 0 && !isSearch" class="flex-box">
-            <span
-              v-for="(item, index) in selectList"
-              :key="index"
-              class="el-tag el-tag--small el-tag--info el-tag--light"
-              @click.stop=""
-            >
-              {{ item.label || item.name }}
-              <span v-if="isSite && item.id == is_mastartId">(主) </span>
-              <i class="el-tag__close el-icon-close" @click.stop="cardTag(index)" />
-            </span>
-          </div>
-
-          <!-- 以下是筛选条件展示样式 -->
-          <div v-if="selectList.length > 0 && isSearch" class="flex">
-            <div
-              v-for="(item, index) in selectList.slice(0, 1)"
-              :key="index"
-              class="el-tag el-tag--small el-tag--info el-tag--light mr10 flex-search"
-              @click.stop=""
-            >
-              <span class="left over-text"> {{ item.label || item.name }}</span>
-
-              <i class="right el-tag__close el-icon-close" @click.stop="cardTag(0)" />
-            </div>
-            <el-tag v-if="selectList.length > 1" class="el-tag el-tag--small el-tag--info el-tag--light mt3">
-              {{ selectList.length - 1 }}</el-tag
-            >
-          </div>
+      <slot name="custom"></slot>
+      <div v-if="!isSlots" ref="select" class="select plan-footer-one mr10" @click="handlePopoverShow">
+        <span class="el-icon-arrow-down"></span>
+        <span v-if="selectList && selectList.length == 0" class="placeholder">{{ placeholder }}</span>
+        <div v-if="selectList.length > 0 && !isSearch" class="flex-box">
+          <span
+            v-for="(item, index) in selectList"
+            :key="index"
+            class="el-tag el-tag--small el-tag--info el-tag--light"
+            @click.stop=""
+          >
+            {{ item.label || item.name }}
+            <span v-if="isSite && item.id == is_mastartId">(主) </span>
+            <i class="el-tag__close el-icon-close" @click.stop="cardTag(index)" />
+          </span>
         </div>
-      </span>
+
+        <!-- 以下是筛选条件展示样式 -->
+        <div v-if="selectList.length > 0 && isSearch" class="flex">
+          <div
+            v-for="(item, index) in selectList.slice(0, 1)"
+            :key="index"
+            class="el-tag el-tag--small el-tag--info el-tag--light mr10 flex-search"
+            @click.stop=""
+          >
+            <span class="left over-text"> {{ item.label || item.name }}</span>
+
+            <i class="right el-tag__close el-icon-close" @click.stop="cardTag(0)" />
+          </div>
+          <el-tag v-if="selectList.length > 1" class="el-tag el-tag--small el-tag--info el-tag--light mt3">
+            {{ selectList.length - 1 }}</el-tag
+          >
+        </div>
+      </div>
     </template>
   </el-popover>
 </template>
 <script>
-import { mapStores } from 'pinia'
-import { useOrganizationStore } from '@/stores/organization.ts'
-import { extractArrayIds, isInArray, removeDuplicateObjects, getArrayDifference } from '@/libs/public.ts'
+import { extractArrayIds, isInArray, removeDuplicateObjects, getArrayDifference } from '@/libs/public'
 import isFullScreen from '@/components/isFullScreen/index'
 
 export default {
-  inheritAttrs: false,
-  emits: ['changeMastart'],
   name: '',
   components: {
     isFullScreen
@@ -153,7 +147,7 @@ export default {
       default: false
     },
     isSearch: {
-      type: [Boolean, String],
+      type: Boolean || String,
       default: false
     },
     // 开启权限
@@ -168,9 +162,6 @@ export default {
         return []
       }
     }
-  },
-  computed: {
-    ...mapStores(useOrganizationStore)
   },
   data() {
     return {
@@ -190,6 +181,7 @@ export default {
       treeData: []
     }
   },
+  computed: {},
   watch: {
     filterText(val) {
       this.$refs.tree?.filter(val)
@@ -202,17 +194,13 @@ export default {
       // 根据选中的部门id获取完整的对象数组
       this.selectList = this.getSelectListByIds(newVal)
     },
-    // deep: 1 对齐 Vue 2 语义：push / splice 等原地修改也要触发
-    selectList: {
-      handler() {
-        if (this.isSite && this.selectList.length) {
-          if (!this.is_mastartId) {
-            this.is_mastartId = this.selectList[0].id
-            this.selectList[0].is_mastart = true
-          }
+    selectList(newVal, oldValue) {
+      if (this.isSite && this.selectList.length) {
+        if (!this.is_mastartId) {
+          this.is_mastartId = this.selectList[0].id
+          this.selectList[0].is_mastart = true
         }
-      },
-      deep: 1
+      }
     },
     value(newVal, oldValue) {
       this.selectList = newVal
@@ -254,13 +242,8 @@ export default {
     }
   },
   methods: {
-    // 点击是否落在触发框或弹层内：Element Plus 的 popover 根节点是片段，$el 不能用来判断
-    isInsidePopover(target) {
-      const popper = this.$refs.treePopover?.popperRef
-      return [popper?.triggerRef, popper?.contentRef].some((el) => el?.contains?.(target))
-    },
     handleGlobalClick(event) {
-      if (!this.isInsidePopover(event.target)) {
+      if (!this.$refs.treePopover.$el.contains(event.target)) {
         this.showPopover = false
       }
     },
@@ -388,13 +371,14 @@ export default {
       ]
       this.departmentIds = extractArrayIds(this.selectList)
       this.$emit('changeMastart', this.selectList)
-      this.$refs.treePopover.hide()
+      this.$refs.treePopover.doClose()
     },
 
     async getTreeData() {
-      // 已有缓存时同步取用，避免多一个微任务导致回显时序变化
-      const cached = this.organizationStore.departmentList
-      const treeData = cached.length ? cached : await this.organizationStore.getDepartment()
+      let treeData = this.$store.state.user.departmentList || []
+      if (!treeData.length) {
+        treeData = await this.$store.dispatch('user/getDepartment')
+      }
       this.treeData = treeData || []
       this.getRoleTreeRootNode(this.treeData)
       this.selectIds = this.findNamesByIds(this.treeData, this.departmentIds)
@@ -484,7 +468,7 @@ export default {
       return subDepartments
     }
   },
-  beforeUnmount() {
+  beforeDestroy() {
     document.removeEventListener('click', this.handleGlobalClick)
   }
 }
@@ -521,7 +505,7 @@ export default {
     }
   }
 
-  :deep(.el-tree) {
+  ::v-deep .el-tree {
     margin-top: 12px;
     max-height: 350px;
     overflow-y: auto;
@@ -610,7 +594,7 @@ export default {
 .isChecked {
   color: #1890ff !important;
 }
-:deep(.el-popper) {
+::v-deep .el-popper {
   padding: 0;
   margin-top: 5px;
 }

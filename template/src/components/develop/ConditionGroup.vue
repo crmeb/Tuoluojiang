@@ -6,7 +6,7 @@
     <div class="condition-group">
       <div class="condition-group-header" v-if="item.type === 'group'">
         <div class="condition-group-left">
-          <el-select v-model="item.relation" placeholder="请选择" class="center-select first-select">
+          <el-select v-model="item.relation" size="small" placeholder="请选择" class="center-select first-select">
             <el-option v-for="opt in relationOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
           </el-select>
         </div>
@@ -24,32 +24,38 @@
               <el-select
                 v-model="child.field"
                 placeholder="请选择字段类型"
+                size="small"
                 style="width: 80px"
                 class="field-select"
               >
                 <el-option v-for="opt in fieldOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
               </el-select>
 
-              <el-input
-                v-if="child.field == 1"
-                v-model="child.value"
-                placeholder="请输入值"
-                style="width: 210px"
-              />
-              <el-select
-                v-if="child.field == 2"
-                v-model="child.dataKey"
-                placeholder="请选择"
-                class="operator-select"
-              >
-                <el-option v-for="opt in widgetList" :key="opt.id" :label="opt.name" :value="opt.id" />
-              </el-select>
+              <template>
+                <el-input
+                  v-if="child.field == 1"
+                  v-model="child.value"
+                  placeholder="请输入值"
+                  size="small"
+                  style="width: 210px"
+                />
+                <el-select
+                  v-if="child.field == 2"
+                  v-model="child.dataKey"
+                  placeholder="请选择"
+                  size="small"
+                  class="operator-select"
+                >
+                  <el-option v-for="opt in widgetList" :key="opt.id" :label="opt.name" :value="opt.id" />
+                </el-select>
+              </template>
 
               <!-- 条件 -->
               <el-select
                 v-if="child.field == 2 && child.dataKey"
                 v-model="child.operator"
                 placeholder="请选择条件"
+                size="small"
                 style="width: 120px"
               >
                 <el-option v-for="opt in operatorOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
@@ -62,6 +68,7 @@
                   v-if="!item.checked"
                   v-model="child.value"
                   placeholder="请输入值"
+                  size="small"
                   style="width: 210px"
                 />
 
@@ -69,6 +76,7 @@
                   v-if="item.checked"
                   v-model="child.value"
                   placeholder="请选择"
+                  size="small"
                   class="operator-select"
                 >
                   <el-option v-for="opt in widgetList" :key="opt.id" :label="opt.name" :value="opt.id" />
@@ -76,7 +84,7 @@
                 <el-checkbox v-model="item.checked">字段</el-checkbox>
               </template>
 
-              <el-button type="primary" link icon="el-icon-delete" @click="removeItem(index)" class="delete-btn" />
+              <el-button type="text" icon="el-icon-delete" @click="removeItem(index)" class="delete-btn" />
             </div>
 
             <!-- 递归渲染子条件组 -->
@@ -91,14 +99,16 @@
       </div>
       <div class="attr-box">
         <el-button
-          type="primary" link
+          size="small"
+          type="text"
           icon="el-icon-circle-plus-outline"
           @click="addItem('condition')"
           class="action-btn"
           >添加条件</el-button
         >
         <el-button
-          type="primary" link
+          size="small"
+          type="text"
           icon="el-icon-circle-plus-outline"
           @click="addItem('group')"
           class="action-btn"
@@ -111,7 +121,6 @@
 
 <script>
 export default {
-  emits: ['remove'],
   name: 'ConditionGroup', // 递归组件必须声明name
   props: {
     item: {

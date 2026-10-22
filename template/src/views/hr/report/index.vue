@@ -16,14 +16,14 @@
 
       <div class="mt10 table-box">
         <el-table :data="tableData" :height="TABLE_HEIGHT">
-          <el-table-column label="姓名" prop="name" width="100" />
-          <el-table-column label="部门" prop="frame_name" width="120" />
-          <el-table-column label="工作总结" min-width="250" prop="finish">
+          <el-table-column :label="$t('toptable.name')" prop="name" width="100" />
+          <el-table-column :label="$t('toptable.department')" prop="frame_name" width="120" />
+          <el-table-column :label="$t('toptable.worktoday')" min-width="250" prop="finish">
             <template #default="scope">
               <div v-for="(item, index) in scope.row.finish" :key="index" class="textover3">{{ item }}</div>
             </template>
           </el-table-column>
-          <el-table-column label="工作计划" min-width="250" prop="plan">
+          <el-table-column :label="$t('toptable.tomorrowplan')" min-width="250" prop="plan">
             <template #default="scope">
               <div v-if="scope.row.types !== 3">
                 <div v-for="(item, index) in scope.row.plan" :key="index" class="textover3">{{ item }}</div>
@@ -37,7 +37,7 @@
             </template>
           </el-table-column>
 
-          <el-table-column label="汇报类型" width="100">
+          <el-table-column :label="$t('user.work.dailytype')" width="100">
             <template #default="{ row }">
               <span v-if="row.types === 1">周报</span>
               <span v-else-if="row.types === 2">月报</span>
@@ -45,16 +45,17 @@
               <span v-else>日报</span>
             </template>
           </el-table-column>
-          <el-table-column label="更新时间" prop="updated_at" width="160" />
-          <el-table-column label="创建时间" prop="created_at" width="160" />
-          <el-table-column label="操作" fixed="right" width="100">
+          <el-table-column :label="$t('toptable.updatetime')" prop="updated_at" width="160" />
+          <el-table-column :label="$t('user.work.creationtime')" prop="created_at" width="160" />
+          <el-table-column :label="$t('public.operation')" fixed="right" width="100">
             <template #default="scope">
               <el-button
                 v-hasPermi="['hr:report:check']"
-                type="primary" link
+                size="small"
+                type="text"
                 @click="onCheck(scope.row.daily_id, 'check', scope.row)"
               >
-                查看
+                {{ $t('public.check') }}
               </el-button>
             </template>
           </el-table-column>
@@ -79,19 +80,18 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { enterpriseDailyApi, getEnterpriseUsersApi, enterpriseDailyExportApi } from '@/api/enterprise.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { enterpriseDailyApi, getEnterpriseUsersApi, enterpriseDailyExportApi } from '@/api/enterprise'
 import oaFromBox from '@/components/common/oaFromBox'
-import dayjs from 'dayjs'
+import moment from 'moment'
 
-const defaultTimeRange = [dayjs().startOf('month').format('YYYY/MM/DD'), dayjs().format('YYYY/MM/DD')]
+const defaultTimeRange = [moment().startOf('month').format('YYYY/MM/DD'), moment().format('YYYY/MM/DD')]
 
 export default {
   name: 'IndexVue',
   components: {
-    addBox: defineAsyncComponent(() => import('@/views/user/daily/components/addBox')),
-    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel')),
+    addBox: () => import('@/views/user/daily/components/addBox'),
+    exportExcel: () => import('@/components/common/exportExcel'),
     oaFromBox
   },
   data() {
@@ -99,16 +99,16 @@ export default {
       TABLE_HEIGHT,
       // 搜索条件列表
       fromList: [
-        { text: '全部', val: '' },
-        { text: '本周', val: 'week' },
-        { text: '本月', val: 'month' },
-        { text: '上月', val: 'lastmonth' } // 修正为和其他逻辑一致的格式
+        { text: this.$t('toptable.all'), val: '' },
+        { text: this.$t('toptable.thisweek'), val: 'week' },
+        { text: this.$t('toptable.thismonth'), val: 'month' },
+        { text: this.$t('toptable.lastmonth'), val: 'lastmonth' } // 修正为和其他逻辑一致的格式
       ],
       // 日报类型数据
       dailyData: [
-        { name: '填写日报', id: 1 },
-        { name: '填写周报', id: 2 },
-        { name: '填写月报', id: 3 }
+        { name: this.$t('user.work.writedaily'), id: 1 },
+        { name: this.$t('user.work.writedailyweek'), id: 2 },
+        { name: this.$t('user.work.writedailymonth'), id: 3 }
       ],
       // 当前日报名称
       dailyName: '',
@@ -147,9 +147,19 @@ export default {
       exportLoading: false
     }
   },
+  computed: {
+    lang: function () {
+      return this.$store.getters.lang
+    }
+  },
+  watch: {
+    lang() {
+      this.setOptions()
+    }
+  },
   mounted() {
-    this.nowDateStar = parseInt(dayjs(new Date()).startOf('day').format('x'))
-    this.nowDateEnd = parseInt(dayjs(new Date()).endOf('day').format('x'))
+    this.nowDateStar = parseInt(moment(new Date()).startOf('day').format('x'))
+    this.nowDateEnd = parseInt(moment(new Date()).endOf('day').format('x'))
     this.dailyName = this.dailyData[this.dailyIndex - 1].name
     this.getList()
     // this.getUsersOption()
@@ -179,9 +189,9 @@ export default {
           field: 'repeat',
           select_type: 'single',
           data_dict: [
-            { name: '日报', value: '0' },
-            { name: '周报', value: '1' }, // 统一为字符串形式
-            { name: '月报', value: '2' }, // 统一为字符串形式
+            { name: this.$t('user.work.dailyday'), value: '0' },
+            { name: this.$t('user.work.weekday'), value: '1' }, // 统一为字符串形式
+            { name: this.$t('user.work.monthday'), value: '2' }, // 统一为字符串形式
             { name: '汇报', value: '3' } // 统一为字符串形式
           ],
           value: ''
@@ -193,6 +203,14 @@ export default {
           data_dict: [...defaultTimeRange],
           value: defaultTimeRange.join('-')
         }
+      ]
+    },
+    setOptions() {
+      this.fromList = [
+        { text: this.$t('toptable.all'), val: '' },
+        { text: this.$t('toptable.thisweek'), val: 'week' },
+        { text: this.$t('toptable.thismonth'), val: 'month' },
+        { text: this.$t('toptable.lastmonth'), val: 'lastmonth' }
       ]
     },
     confirmData(data) {
@@ -268,7 +286,7 @@ export default {
       this.addDaily()
     },
     getExportData() {
-      this.saveName = '汇报导出_' + dayjs(new Date()).format('HH_mm_ss') + '.xlsx'
+      this.saveName = '汇报导出_' + moment(new Date()).format('HH_mm_ss') + '.xlsx'
       const where = JSON.parse(JSON.stringify(this.tableFrom))
       where.limit = 0
       this.exportLoading = true
@@ -310,14 +328,14 @@ export default {
   white-space: pre-wrap;
 }
 
-:deep(.el-dropdown-menu__item) {
+::v-deep .el-dropdown-menu__item {
   text-align: left;
   i {
     color: #00c050;
   }
 }
 
-:deep(.el-dropdown__caret-button) {
+::v-deep .el-dropdown__caret-button {
   height: 32px;
 }
 </style>

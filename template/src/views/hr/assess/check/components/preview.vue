@@ -2,13 +2,13 @@
   <div>
     <el-dialog
       :title="title"
-      v-model="dialogFormVisible"
+      :visible.sync="dialogFormVisible"
       :modal="true"
       width="698px"
       :before-close="closeDialog"
       :show-close="false"
     >
-      <template #header>
+      <template #title>
         <div class="dialog-title">
           <div class="dialog-title-title">选择封面</div>
           <div class="dialog-title-upload">
@@ -88,8 +88,8 @@
       </el-col>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="closeDialog">取消</el-button>
-          <el-button type="primary" @click="handleConfirm">确定</el-button>
+          <el-button size="small" @click="closeDialog">{{ $t('public.cancel') }}</el-button>
+          <el-button size="small" type="primary" @click="handleConfirm">{{ $t('public.ok') }}</el-button>
         </div>
       </template>
     </el-dialog>
@@ -97,17 +97,14 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useUserStore } from '@/stores/user.ts'
 import '@/utils/rgbaster'
-import { attachCoverDeleteApi, attachCoverListApi, attachCoverSetApi } from '@/api/enterprise.ts'
-import SettingMer from '@/libs/settingMer.ts'
-import { getToken } from '@/utils/auth.ts'
+import { attachCoverDeleteApi, attachCoverListApi, attachCoverSetApi } from '@/api/enterprise'
+import SettingMer from '@/libs/settingMer'
+import { getToken } from '@/utils/auth'
 
 import morenImg from '@/assets/images/moren.jpg';
 
 export default {
-  emits: ['handlePreview'],
   name: 'Preview',
 
   props: {
@@ -150,7 +147,6 @@ export default {
     }
   },
   computed: {
-    ...mapStores(useUserStore),
     fileUrl() {
       return SettingMer.https + `/system/attach/cover`
     }
@@ -191,7 +187,7 @@ export default {
       this.isImage = true
       this.defaultImg = item.thumb_dir
       var _this = this
-      this.deleteButton = this.userStore.userInfo.uid === item.uid && item.thumb_dir !== this.data.cover
+      this.deleteButton = this.$store.state.user.userInfo.uid === item.uid && item.thumb_dir !== this.data.cover
       window.RGBaster.colors(this.defaultImg, {
         paletteSize: 30,
         // 颜色排除
@@ -357,7 +353,7 @@ export default {
       float: left;
       margin: 0 30px 10px 0;
       position: relative;
-      :deep(.el-image__inner) {
+      ::v-deep .el-image__inner {
         width: 86px;
         height: 104px;
       }

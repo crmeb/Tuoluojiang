@@ -17,7 +17,7 @@
 </template>
 
 <script>
-import { roterPre } from '@/settings.ts'
+import { roterPre } from '@/settings'
 export default {
   name: 'Page404',
   data() {

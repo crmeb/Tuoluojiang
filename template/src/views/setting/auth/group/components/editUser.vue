@@ -2,10 +2,11 @@
   <div>
     <el-drawer
       title="用户权限"
-      v-model="drawer"
+      :visible.sync="drawer"
       :direction="direction"
       :before-close="handleClose"
       :modal="true"
+      :wrapper-closable="true"
       :with-header="false"
       size="1000px"
     >
@@ -23,7 +24,8 @@
                   <el-select
                     v-model="pageData.roles"
                     multiple
-                    placeholder="请选择"
+                    size="small"
+                    :placeholder="$t('setting.edit.pleaseselect')"
                     @change="handleRoles"
                     style="width: 100%"
                   >
@@ -35,7 +37,7 @@
                     />
                   </el-select>
                 </div>
-                <span class="tips">可为成员快速设置管理员拥有的权限身份，普通成员无需设置为管理员</span>
+                <span class="tips">{{ $t('setting.edit.text2') }}</span>
               </el-form-item>
             </el-form>
           </div>
@@ -50,18 +52,18 @@
         </div>
       </div>
       <div class="from-foot-btn fix btn-shadow">
-        <el-button @click="handleClose">取消</el-button>
-        <el-button type="primary" @click="onSubmit">保存</el-button>
+        <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
+        <el-button size="small" type="primary" @click="onSubmit">{{ $t('public.save') }}</el-button>
       </div>
     </el-drawer>
   </div>
 </template>
 
 <script>
-import { systemUserRoleApi, userEntCardApi } from '@/api/user.ts'
-import { systemRoleEditApi } from '@/api/config.ts'
+import { systemUserRoleApi, userEntCardApi } from '@/api/user'
+import { systemRoleEditApi } from '@/api/config'
 import rolesTree from '@/components/setting/rolesTree'
-import { jobsCreate } from '@/api/enterprise.ts'
+import { jobsCreate } from '@/api/enterprise'
 export default {
   name: 'EditUser',
   components: {
@@ -95,7 +97,6 @@ export default {
       propsPos: { value: 'id', label: 'name', multiple: false, checkStrictly: true }
     }
   },
-  emits: ['closed', 'saved'],
   watch: {
     userId: {
       handler(nVal, oVal) {
@@ -111,7 +112,7 @@ export default {
     handleClose() {
       this.userInfo = null
       this.drawer = false
-      this.$emit('closed')
+      this.$parent.userId = ''
     },
     open() {
       this.drawer = true
@@ -169,7 +170,7 @@ export default {
       this.userInfo.role_id = this.pageData.roles
       systemUserRoleApi(this.userInfo).then((res) => {
         this.drawer = false
-        this.$emit('saved')
+        this.$parent.getList()
       })
     }
   }
@@ -208,10 +209,10 @@ export default {
     margin-bottom: 10px;
   }
 }
-:deep(.el-popover) {
+::v-deep .el-popover {
   min-width: 80px;
 }
-:deep(.el-cascader) {
+::v-deep .el-cascader--medium {
   width: 100%;
 }
 .prop-txt {
@@ -220,11 +221,11 @@ export default {
   font-size: 13px;
   cursor: pointer;
 }
-:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
+::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content {
   border-color: #edf6ff !important;
 }
 
-:deep(.tree-con) {
+::v-deep .tree-con {
   height: calc(100vh - 220px) !important;
 }
 </style>

@@ -2,6 +2,7 @@
   <!-- 实体管理页面 -->
   <div class="divBox">
     <el-card class="normal-page">
+      <template v-if="!isShow">
         <formBox :title="`应用管理`" :total="total" :search="search" :btnText="`新建应用`" :isViewSearch="false"
           :sortSearch="false" @confirmData="confirmData" @addDataFn="addDataFn"></formBox>
         <div id="content-box " class="mt10" v-loading="loading">
@@ -33,31 +34,36 @@
           <el-pagination :current-page="where.page" :page-size="where.limit" :total="total" class="page-fixed"
             layout="total, prev, pager, next, jumper" @current-change="pageChange" />
         </div>
+      </template>
+      <entityTable v-if="isShow" ref="entityTable" :cate_id="cate_id" :cateItem="cateItem" :applicationTabData="listData" @goBack="goBack" ></entityTable>
     </el-card>
 
     <applicatDialog v-if="applicatIsShow" ref="applicatDialog" @getList="getCrudAllType"></applicatDialog>
   </div>
 </template>
 <script>
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import formBox from '@/components/common/oaFromBox'
 import defaultPage from '@/components/common/defaultPage'
+import entityTable from './components/entityTable'
 import applicatDialog from './components/applicatDialog'
-import { getcrudCateListApi ,delcrudCateApi} from '@/api/develop.ts'
-import { roterPre } from '@/settings.ts'
+import { getcrudCateListApi ,delcrudCateApi} from '@/api/develop'
 export default {
   name: 'CrmebOaEntIndex',
   components: {
     applicatDialog,
+    entityTable,
     formBox,defaultPage
   },
   data() {
     return {
+      isShow: false,
       where: {
         name: '',
         page: 1,
         limit: 10
       },
+      cateItem: {},
       applicatIsShow: false,
       search: [
         {
@@ -66,6 +72,7 @@ export default {
           field_name_en: 'name'
         }
       ],
+      cate_id: '',
       id: 0,
       total: 0,
       loading: false,
@@ -75,13 +82,14 @@ export default {
   },
 
   created() {
-    if (this.$route.query.isShow == 1) {
-      this.$router.replace({
-        path: `${roterPre}/develop/crud/entityList`,
-        query: { cate_id: this.$route.query.cate_id }
-      })
-      return
+    if(this.$route.query.isShow == 1) {
+      this.isShow = true
     }
+    if(this.$route.query.cate_id) {
+       this.cate_id =this.$route.query.cate_id
+    
+    }
+  
     this.getCrudAllType()
   },
 
@@ -94,6 +102,9 @@ export default {
       }, 300)
     },
 
+    goBack() {
+      this.isShow = false
+    },
     // 获取应用分类
     async getCrudAllType() {
       const data = await getcrudCateListApi(this.where)
@@ -101,10 +112,10 @@ export default {
       this.listData = data.data.list
     },
     handleClick(item) {
-      this.$router.push({
-        path: `${roterPre}/develop/crud/entityList`,
-        query: { cate_id: item.id }
-      })
+      this.isShow = true
+      this.cate_id = item.id
+      this.cateItem = item
+
     },
      getIconCss(cssName) {
       if (/^el-icon-/.test(cssName)) {

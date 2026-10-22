@@ -13,6 +13,7 @@
               class="mr14"
               clearable
               placeholder="请输入员工姓名"
+              size="small"
               style="width: 260px"
               @change="getList"
             >
@@ -25,6 +26,7 @@
             <el-date-picker
               v-model="where.date"
               placeholder="选择月"
+              size="small"
               style="width: 150px"
               type="month"
               @change="getList"
@@ -57,7 +59,7 @@
           <template v-slot:header>
             <div :class="item.is_rest == 1 ? 'addDate' : ''">
               <div class="date">
-                <div class="day">{{ dayjs(item.date).format('D') }}</div>
+                <div class="day">{{ moment(item.date).format('D') }}</div>
                 <div class="week">{{ getWeek(item.date) }}</div>
               </div>
             </div>
@@ -85,13 +87,12 @@
 </template>
 
 <script>
-import dayjs from 'dayjs'
-import { attendanceShiftListApi, rosterCycleListApi, getAttendanceArrangeApi } from '@/api/config.ts'
-import { toGetWeek } from '@/utils/format.ts'
+import moment from 'moment'
+import { attendanceShiftListApi, rosterCycleListApi, getAttendanceArrangeApi } from '@/api/config'
+import { toGetWeek } from '@/utils/format'
 import BaseContainer from '@/components/BaseContainer/index.vue'
 import FormPageHeader from '@/components/FormPageHeader/index.vue'
 export default {
-  emits: ['backFn'],
   name: 'CrmebOaEntAddSchedul',
   components: { BaseContainer, FormPageHeader },
 
@@ -107,7 +108,7 @@ export default {
   },
 
   computed: {
-    dayjs: () => dayjs
+    moment: () => moment
   },
   data() {
     return {
@@ -134,7 +135,7 @@ export default {
   },
 
   mounted() {
-    this.where.date = dayjs(this.newData.date).format('YYYY-MM')
+    this.where.date = moment(this.newData.date).format('yyyy-MM')
     this.getDataOptionalList().then(() => {
       this.getList()
     })
@@ -185,7 +186,7 @@ export default {
     async getList() {
       this.tableData = []
       this.colData = []
-      this.where.date = dayjs(this.where.date).format('YYYY-MM')
+      this.where.date = moment(this.where.date).format('yyyy-MM')
       const result = await getAttendanceArrangeApi(this.id, this.where)
       this.tableData = result.data.members.map((per) => {
         return {
@@ -252,7 +253,7 @@ export default {
 
     restFn() {
       this.where.name = ''
-      this.where.date = dayjs(this.newData.date).format('YYYY-MM')
+      this.where.date = moment(this.newData.date).format('yyyy-MM')
     },
 
     getWeek(date) {
@@ -287,7 +288,7 @@ export default {
   overflow: hidden;
   text-align: center;
 }
-:deep(.el-table td) {
+::v-deep .el-table--medium td {
   padding: 6px 0;
 }
 
@@ -393,10 +394,10 @@ export default {
   -webkit-background-clip: text;
 }
 
-:deep(.el-table__body tr.hover-row) {
+::v-deep .el-table__body tr.hover-row {
   background-color: transparent !important;
 }
-:deep(.el-tabs__nav-wrap::after) {
+::v-deep .el-tabs__nav-wrap::after {
   height: 1px;
 }
 </style>

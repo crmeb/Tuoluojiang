@@ -5,9 +5,9 @@
 <template>
   <div class="oa-dialog">
     <!-- 弹窗主体 -->
-    <el-dialog :close-on-click-modal="false" :show-close="false" v-model="show" :width="`516px`">
+    <el-dialog :close-on-click-modal="false" :show-close="false" :visible.sync="show" :width="`516px`">
       <!-- 弹窗标题 -->
-      <template #header>
+      <template #title>
         <div class="header">
           <span class="title">{{ id ? '编辑' : '新建' }}应用管理</span>
           <span class="el-icon-close" @click="handleClose"></span>
@@ -16,10 +16,10 @@
       <div class="pl20 pr20 mt20">
         <el-form :model="fromItem" :rules="rules" ref="formRef" label-width="auto">
           <el-form-item label="应用名称：" prop="name">
-            <el-input v-model="fromItem.name" placeholder="请填写应用名称" />
+            <el-input v-model="fromItem.name" placeholder="请填写应用名称" size="small" />
           </el-form-item>
           <el-form-item label="应用图标：" prop="icon">
-            <el-input placeholder="请选择图标" v-model="fromItem.icon" readonly @click="showIconDialog = true"
+            <el-input placeholder="请选择图标" v-model="fromItem.icon" readonly @click.native="showIconDialog = true"
               clearable>
               <template #suffix>
                 <i v-if="!fromItem.icon" class="el-icon-circle-plus-outline" style="cursor: pointer;"></i>
@@ -29,13 +29,14 @@
             </el-input>
           </el-form-item>
           <el-form-item label="应用简介：" prop="info">
-            <el-input v-model="fromItem.info" type="textarea" rows="4" resize="none" placeholder="请填写应用简介" />
+            <el-input v-model="fromItem.info" type="textarea" rows="4" resize="none" placeholder="请填写应用简介"
+              size="small" />
           </el-form-item>
           <el-form-item label="排序：" prop="sort">
-            <el-input v-model="fromItem.sort" placeholder="请填写排序" />
+            <el-input v-model="fromItem.sort" placeholder="请填写排序" size="small" />
           </el-form-item>
           <el-form-item label="上级菜单：" prop="menu">
-            <el-cascader v-model="fromItem.path" :options="menuList"
+            <el-cascader v-model="fromItem.path" size="small" :options="menuList"
               :props="{ checkStrictly: true, label: 'menu_name', value: 'id', children: 'children' }" clearable
               style="width: 100%;"></el-cascader>
             <span class="tips">若不选择上级菜单，则不生成菜单</span>
@@ -47,15 +48,15 @@
       <template #footer>
         <div>
           <div class="dialog-footer">
-            <el-button @click="handleClose">取消</el-button>
-            <el-button type="primary" @click="submit">确定</el-button>
+            <el-button size="small" @click="handleClose">取消</el-button>
+            <el-button size="small" type="primary" @click="submit">确定</el-button>
 
           </div>
         </div>
       </template>
     </el-dialog>
     <!-- 选择图标 -->
-    <el-dialog title="选择菜单图标" v-model="showIconDialog" width="50%">
+    <el-dialog title="选择菜单图标" :visible.sync="showIconDialog" width="50%">
       <div class="icon-box">
         <select-icon ref="selectIconRef" :isEmit="true" @select="handleSelectIcon"></select-icon>
       </div>
@@ -66,15 +67,14 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { savecrudCateApi, delcrudCateApi, saveCrudApi, getCrudInfoApi } from '@/api/develop.ts'
-import { menuListApi } from '@/api/system.ts'
+
+import { savecrudCateApi, delcrudCateApi, saveCrudApi, getCrudInfoApi } from '@/api/develop'
+import { menuListApi } from '@/api/system'
 export default {
-  emits: ['getList'],
   name: 'ApplicatDialog',
   components: {
-    oaSystemImage: defineAsyncComponent(() => import('@/components/form-common/oa-systemImage.vue')),
-    selectIcon: defineAsyncComponent(() => import('@/components/form-common/select-icon.vue')),
+    oaSystemImage: () => import('@/components/form-common/oa-systemImage.vue'),
+    selectIcon: () => import('@/components/form-common/select-icon.vue'),
   },
 
   props: {
@@ -132,7 +132,7 @@ export default {
       this.$refs.formRef.validateField('icon')
     },
     handleClearIcon() {
-      this.fromItem.icon = ''
+      this.$set(this.fromItem, 'icon', '')
     },
 
 
@@ -255,13 +255,17 @@ export default {
     justify-content: flex-end;
   }
 
-  :deep(.el-dialog) {
+  ::v-deep .el-dialog {
     border-radius: 6px;
   }
 
-  :deep(.el-dialog__body) {
+  ::v-deep .el-dialog__body {
     margin-bottom: 0;
     padding: 0;
+  }
+
+  ::v-deep .el-button--medium {
+    padding: 10px 15px;
   }
 }
 

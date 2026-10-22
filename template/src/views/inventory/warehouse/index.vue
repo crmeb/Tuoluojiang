@@ -4,7 +4,7 @@
       @confirmData="handleSearch" @addDataFn="handleAdd" />
 
     <BaseTable class="mt-10" :table-columns="tableColumns" :data="tableData" :loading="isLoading" :total="total"
-      v-model:page="page" v-model:page-size="pageSize">
+      :page.sync="page" :page-size.sync="pageSize">
 
       <!-- 开启状态：开关切换 -->
       <template #status="{ row }">
@@ -14,9 +14,9 @@
 
       <!-- 操作列 -->
       <template #action="{ row }">
-        <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
+        <el-button type="text" @click="handleEdit(row)">编辑</el-button>
         <el-divider direction="vertical" />
-        <el-button type="primary" link @click="handleDelete(row)">删除</el-button>
+        <el-button type="text" @click="handleDelete(row)">删除</el-button>
       </template>
     </BaseTable>
 
@@ -29,7 +29,7 @@ import BaseContainer from "@/components/BaseContainer/index.vue";
 import BaseTable from "@/components/BaseTable/index.vue";
 import oaFromBox from "@/components/common/oaFromBox.vue";
 import WarehouseForm from "./components/form.vue";
-import { useWarehouse } from "./composables/useWarehouse.ts";
+import { useWarehouse } from "./composables/useWarehouse";
 
 export default {
   name: "InventoryWarehouse",

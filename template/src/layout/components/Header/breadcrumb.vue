@@ -4,18 +4,15 @@
       <img v-if="brandLogo" :src="brandLogo" alt="" />
       <span v-if="enterpriseName" class="enterprise-name" v-show="sidebar.opened">{{ enterpriseName }}</span>
     </div>
-    <el-breadcrumb class="breadcrumb-list" separator-icon="el-icon-arrow-right">
+    <el-breadcrumb class="breadcrumb-list" separator-class="el-icon-arrow-right">
       <el-breadcrumb-item v-for="(item, index) in levaList" :key="index"> {{ item }}</el-breadcrumb-item>
     </el-breadcrumb>
   </div>
 </template>
 
 <script>
-import { roterPre } from '@/settings.ts'
-import { mapState } from 'pinia'
-import { useAppStore } from '@/stores/app.ts'
-import { useUserStore } from '@/stores/user.ts'
-import { useAppConfigStore } from '@/stores/appConfig.ts'
+import { roterPre } from '@/settings'
+import { mapGetters } from 'vuex'
 export default {
   name: 'Breadcrumb',
   data() {
@@ -25,9 +22,10 @@ export default {
     }
   },
    computed: {
-    ...mapState(useAppStore, ['sidebar']),
-    ...mapState(useUserStore, ['menuList', 'enterprise']),
-    ...mapState(useAppConfigStore, { webConfig: 'configData' }),
+    ...mapGetters(['sidebar', 'avatar', 'device', 'sidebarParentCur', 'menuList', 'enterprise']),
+    webConfig() {
+      return this.$store.getters['appConfig/configData'];
+    },
     brandLogo() {
       return this.enterprise?.logo || this.webConfig?.site_logo || '';
     },
@@ -52,7 +50,7 @@ export default {
       let newPath = this.$route.fullPath
       newPath = newPath.split('?')[0]
       // 获取缓存菜单
-      let routerInfo = this.menuList
+      let routerInfo = this.$store.getters.menuList
       if (newPath == `${roterPre}/search`) {
         this.levaList = ['搜索']
         return
@@ -112,13 +110,13 @@ export default {
   overflow: hidden;
 }
 
-:deep(.el-breadcrumb__item:last-child .el-breadcrumb__inner) {
+::v-deep .el-breadcrumb__item:last-child .el-breadcrumb__inner {
   color: #303133;
   font-family: PingFang SC-Regular, PingFang SC;
   font-weight: 400;
   font-size: 13px;
 }
-:deep(.el-breadcrumb__inner) {
+::v-deep .el-breadcrumb__inner {
   font-size: 13px;
   font-family: PingFang SC-Regular, PingFang SC;
   font-weight: 400;

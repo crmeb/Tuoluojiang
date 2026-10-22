@@ -1,0 +1,1 @@
+var e=`/admin/system/img/loading-DCwTdloR.gif`;export{e as t};

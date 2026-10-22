@@ -1,7 +1,7 @@
 <template>
   <!-- 明细表详情 -->
   <container-item-wrapper :widget="widget">
-    <div
+    <el-row
       :key="widget.id"
       class="card-container"
       :class="[!!widget.options.folded ? 'folded' : '', customClass]"
@@ -18,7 +18,7 @@
         明细表
         <span v-if="previewState && !isShow" class="iconfont iconbianji3 ml10" @click="isShow = true"></span>
       </div>
-      <el-table :data="tableData" :key="refreshKey" border style="width: 100%; margin-top: 10px">
+      <el-table :data="tableData" :key="refreshKey" size="mini" border style="width: 100%; margin-top: 10px">
         <!-- 操作列 -->
         <el-table-column label="操作" width="180" fixed="left" align="center">
           <template #default="scope">
@@ -37,7 +37,7 @@
         </el-table-column>
 
         <!-- 动态生成的列（根据 widget.widgetList） -->
-        <template v-for="(subWidget, swIdx) in widget.widgetList" :key="swIdx">
+        <template v-for="(subWidget, swIdx) in widget.widgetList">
           <el-table-column min-width="200px" :align="subWidget.options.labelAlign || 'left'">
             <template #header>
               <span class="required" v-if="subWidget.options.required">*</span>
@@ -49,7 +49,7 @@
                 :validate-on-rule-change="true"
                 :model="scope.row"
                 :ref="`form_${scope.$index}_${swIdx}`"
-                @submit.prevent
+                @submit.native.prevent
               >
                 <component
                   :ref="`item_${scope.$index}`"
@@ -71,17 +71,17 @@
         </template>
       </el-table>
       <div class="mt14" v-if="previewState && isShow">
-        <el-button @click="isShow = false">取消</el-button>
-        <el-button type="primary" @click="handlDetailsHideFn">保存</el-button>
+        <el-button size="small" @click="isShow = false">取消</el-button>
+        <el-button size="small" type="primary" @click="handlDetailsHideFn">保存</el-button>
       </div>
-    </div>
+    </el-row>
   </container-item-wrapper>
 </template>
 
 <script>
-import { watchActiveField } from '@/components/form-render/activeField.ts'
-import { putUpdateFieldApi } from '@/api/develop.ts'
-import i18n from '@/utils/i18n.ts'
+import { putUpdateFieldApi } from '@/api/develop'
+import emitter from '@/utils/emitter'
+import i18n from '@/utils/i18n'
 import refMixin from '@/components/form-render/refMixin'
 import ContainerItemWrapper from '@/components/form-render/container-item/container-item-wrapper'
 import containerItemMixin from '@/components/form-render/container-item/containerItemMixin'
@@ -89,7 +89,8 @@ import FieldComponents from '@/components/form-designer/form-widget/field-widget
 
 export default {
   name: 'details-item',
-  mixins: [i18n, refMixin, containerItemMixin],
+  componentName: 'ContainerItem',
+  mixins: [emitter, i18n, refMixin, containerItemMixin],
   components: {
     ContainerItemWrapper,
     ...FieldComponents
@@ -124,7 +125,6 @@ export default {
   },
 
   created() {
-    watchActiveField((field) => this.fieldShowFn(field))
     this.initRefList()
     this.tableKey = this.widget.table_name_en + '_' + this.widget.children_table_name_en
 
@@ -136,13 +136,21 @@ export default {
       this.initTableData()
     }
   },
-  beforeUnmount() {
+  beforeDestroy() {
     this.unregisterFromRefList()
+  },
+  watch: {
+    '$store.state.user.activeField': {
+      deep: true,
+      handler: function (newVal, oldVal) {
+        this.fieldShowFn(newVal)
+      }
+    }
   },
   methods: {
     fieldShowFn(val) {
       this.widget.widgetList.forEach((item) => {
-        item.isShow = item.id == val.id
+        this.$set(item, 'isShow', item.id == val.id)
       })
     },
 
@@ -232,7 +240,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-form-item__content) {
+::v-deep .el-form-item__content {
   flex-shrink: 0;
   margin: 0 !important; /* 清除默认左外边距（关键） */
   padding: 0 !important;
@@ -244,13 +252,13 @@ export default {
   font-size: 13px;
   text-align: left;
 }
-:deep(.el-row) {
+::v-deep .el-row {
   padding: 0;
 }
-:deep(.el-form-item) {
+::v-deep .el-form-item {
   margin-bottom: 0 !important;
 }
-:deep(.el-form-item__label) {
+::v-deep .el-form-item__label {
   display: none;
 }
 .el-icon-delete {

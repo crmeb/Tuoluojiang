@@ -31,15 +31,14 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import Common from '@/components/user/accessCommon.ts'
-import { userAssessExplain, userAssessSubord } from '@/api/user.ts'
+import Common from '@/components/user/accessCommon'
+import { userAssessExplain, userAssessSubord } from '@/api/user'
 export default {
   name: 'Current',
   components: {
-    goalSetting: defineAsyncComponent(() => import('./goalSetting')),
-    execution: defineAsyncComponent(() => import('./execution')),
-    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage'))
+    goalSetting: () => import('./goalSetting'),
+    execution: () => import('./execution'),
+    defaultPage: () => import('@/components/common/defaultPage')
   },
   data() {
     return {
@@ -131,6 +130,44 @@ export default {
       background-color: #1890ff;
       color: #ffffff;
       border-color: transparent;
+    }
+  }
+}
+.current-list {
+  .current-table {
+    margin: 15px 0;
+    ::v-deep .current-table-title {
+      padding: 5px 0;
+      background-color: #f7f8fa;
+      span {
+        font-size: 13px;
+      }
+      span:first-of-type {
+        padding-left: 10px;
+        font-size: 13px;
+        font-weight: bold;
+        color: #000000;
+      }
+    }
+    ::v-deep .el-table th > .cell {
+      font-weight: normal;
+      font-size: 13px;
+    }
+    ::v-deep .el-table--medium td {
+      padding: 6px 0;
+    }
+    ::v-deep .el-input__inner {
+      height: 28px;
+      line-height: 28px;
+    }
+    .current-task {
+      display: flex;
+      ::v-deep .el-input__inner {
+        width: 30px;
+        border: none;
+        background-color: transparent;
+        padding: 0 0 0 3px;
+      }
     }
   }
 }

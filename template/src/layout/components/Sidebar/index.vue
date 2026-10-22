@@ -23,6 +23,7 @@
           :collapse-transition="false"
           :router="false"
           mode="vertical"
+          @select="selectMenu"
         >
           <template v-if="currentMenu">
             
@@ -31,6 +32,7 @@
               :key="'sidebar' + route.id"
               :item="route"
               :base-path="route.menu_path"
+              @click.native="routerClick(route)"
             />
           </template>
         </el-menu>
@@ -44,28 +46,42 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { mapActions, mapState } from 'pinia'
-import { useAppStore } from '@/stores/app.ts'
-import { useUserStore } from '@/stores/user.ts'
+import { mapGetters, mapMutations } from 'vuex'
 import variables from '@/styles/variables.module.scss'
-import { shouldShowSubSidebar } from '@/layout/utils/menu.ts'
+import { shouldShowSubSidebar } from '@/layout/utils/menu'
 
 // 与 layout/mixin/ResizeHandler 保持一致
 const SIDEBAR_RESPONSIVE_WIDTH = 992
 
 export default {
-  components: { SidebarItem: defineAsyncComponent(() => import('./SidebarItem')), Logo: defineAsyncComponent(() => import('./Logo')) },
+  components: { SidebarItem: () => import('./SidebarItem'), Logo: () => import('./Logo') },
   data() {
     return {
+      parentCur: 0,
+      childcur: 0,
       isShow: false,
+      activePath: '',
       menuName: '',
       windowWidth: document.documentElement.clientWidth
     }
   },
   computed: {
-    ...mapState(useAppStore, ['sidebar', 'isClickTab', 'sidebarParentCur']),
-    ...mapState(useUserStore, ['menuList']),
+    ...mapGetters([
+      'permission_routes',
+      'sidebar',
+      'menuList',
+      'sidebarType',
+      'parentMenuId',
+      'defaultOpen',
+      'isClickTab',
+      'menuStatus'
+    ]),
+    sidebarParentCur: {
+      get() {
+        return this.$store.state.app.sidebarParentCur
+      },
+      set() {}
+    },
     activeMenu() {
       const route = this.$route
       const { meta, path } = route
@@ -74,6 +90,9 @@ export default {
         return meta.activeMenu
       }
       return this.matchVisibleMenuPath(path)
+    },
+    showLogo() {
+      return this.$store.state.settings.sidebarLogo
     },
     currentMenuIndex() {
       const index = this.sidebarParentCur
@@ -116,12 +135,12 @@ export default {
             firstChild.children !== undefined &&
             firstChild.children.length
           ) {
-            this.setClickTab(false)
+            this.$store.commit('app/SET_CLICK_TAB', false)
             this.$router.push({
               path: firstChild.children[0].menu_path
             })
           } else {
-            this.setClickTab(false)
+            this.$store.commit('app/SET_CLICK_TAB', false)
             const menuPath = firstChild ? firstChild.menu_path : ''
             if (menuPath) {
               this.$router.push({
@@ -130,6 +149,7 @@ export default {
             }
           }
         }
+        this.sidebarParentCur = nVals
       },
       deep: true
     }
@@ -141,13 +161,24 @@ export default {
 
     this.$nextTick(() => {
       if (this.sidebarParentCur >= 0) this.isShow = true
+      this.menuList.forEach((nav, i) => {
+        if (nav.id === this.parentMenuId) {
+          this.parentCur = i
+        }
+      })
+
+      if (this.menuList[this.parentCur] && this.menuList[this.parentCur].children) {
+        this.$store.commit('app/SET_BARTYPE', true)
+      } else {
+        this.$store.commit('app/SET_BARTYPE', false)
+      }
     })
   },
-  beforeUnmount() {
+  beforeDestroy() {
     window.removeEventListener('resize', this.syncSidebarOnResize)
   },
   methods: {
-    ...mapActions(useAppStore, ['setClickTab', 'openSideBar', 'closeSideBar']),
+    ...mapMutations('user', ['SET_MENU_LIST']),
     // 收集当前一级菜单下所有可见的叶子菜单路径
     collectVisiblePaths(menus, result = []) {
       const list = Array.isArray(menus) ? menus : []
@@ -193,14 +224,73 @@ export default {
     syncSidebarOnResize() {
       this.windowWidth = document.documentElement.clientWidth
       if (this.windowWidth < SIDEBAR_RESPONSIVE_WIDTH && this.sidebar.opened) {
-        this.closeSideBar(true)
+        this.$store.dispatch('app/closeSideBar', { withoutAnimation: true })
       }
+    },
+    // 父级导航点击
+    handelParentClick(item, index) {
+      this.parentCur = index
+      this.$store.commit('app/SETPID', item.id)
+      const childUrl = ''
+      let chiidLink = ''
+      const children = Array.isArray(item.children) ? item.children : []
+      const firstChild = children[0]
+      if (firstChild) {
+        if (firstChild.children) {
+          var recursiveFunction = function () {
+            const getStr = function (list) {
+              list.children.forEach(function (row, index) {
+                if (row.children) {
+                  getStr(row)
+                } else {
+                  if (index == 0) {
+                    return (chiidLink = row.menu_path)
+                  }
+                }
+              })
+            }
+            getStr(firstChild)
+          }
+          recursiveFunction()
+        } else {
+          chiidLink = firstChild.menu_path
+        }
+
+        this.childcur = 0
+        if (chiidLink) {
+          this.$router.push({
+            path: chiidLink
+          })
+        }
+        this.$store.commit('app/SET_BARTYPE', true)
+      } else {
+        this.$router.push({
+          path: item.menu_path
+        })
+        this.$store.commit('app/SET_BARTYPE', false)
+      }
+    },
+    routerClick(item) {
+      if (item.children) {
+        item.children.forEach((el) => {
+          if (el.top_position && el.top_position.length > 0) {
+            if (this.activePath == el.menu_path) {
+              this.$store.commit('app/SETPID', el.pid)
+            }
+          }
+        })
+      } else {
+        this.$store.commit('app/SETPID', item.pid)
+      }
+    },
+    selectMenu(index) {
+      this.activePath = index
     },
     clickOutside() {
       if (this.isCollapse) {
-        this.openSideBar()
+        this.$store.dispatch('app/openSideBar')
       } else {
-        this.closeSideBar(false)
+        this.$store.dispatch('app/closeSideBar', { withoutAnimation: false })
       }
     }
   }
@@ -297,7 +387,7 @@ export default {
     // }
   }
 }
-:deep(.el-menu--popup) {
+::v-deep .el-menu--popup {
   min-width: 114px;
 }
 .child-bar {
@@ -306,10 +396,10 @@ export default {
   padding: 0 10px;
   
 
-  :deep(.el-menu) {
+  ::v-deep .el-menu {
     border-right: none;
   }
-  :deep(.el-menu-item) {
+  ::v-deep .el-menu-item {
     font-size: 13px !important;
     display: flex;
     align-items: center;
@@ -317,20 +407,20 @@ export default {
   }
   // 选中态统一由 el-menu 的 default-active 驱动（新建页等隐藏路由下不存在 router-link-exact-active），
   // 这里补齐选中态文字色，底色见 styles/sidebar.scss
-  :deep(.el-menu-item.is-active) {
+  ::v-deep .el-menu-item.is-active {
     color: #1890ff !important;
   }
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
-  :deep(.router-link-exact-active) {
+  ::v-deep .router-link-exact-active {
     margin-bottom: 1px;
   }
 
-  :deep(.el-sub-menu__title) {
+  ::v-deep .el-submenu__title {
     font-size: 13px;
   }
-  :deep(.el-menu .el-sub-menu .el-sub-menu__title > i) {
+  ::v-deep .el-menu .el-submenu .el-submenu__title > i {
     width: auto !important;
   }
 

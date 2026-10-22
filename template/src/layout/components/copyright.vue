@@ -6,17 +6,17 @@
       }}</span>
       </div>
     
-    &copy;{{ dayjs().format('YYYY') }} 陀螺匠. All Rights Reserved. Version {{ title || 'v1.5' }}
+    &copy;{{ moment().format('YYYY') }} 陀螺匠. All Rights Reserved. Version {{ title || 'v1.5' }}
   </div>
 </template>
 
 <script>
-import dayjs from 'dayjs'
-import { getStorageJson } from '@/utils/storage.ts'
+import moment from 'moment'
+import { getStorageJson } from '@/utils/storage'
 export default {
   name: 'CrmebOaEntCopyright',
   computed: {
-    dayjs: () => dayjs
+    moment: () => moment
   },
   data() {
     return {

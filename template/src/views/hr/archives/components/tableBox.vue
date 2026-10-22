@@ -1,20 +1,20 @@
 <template>
   <div>
-    <el-table :data="tableDataLocal" tooltip-effect="light" :header-cell-style="{ background: 'rgba(245, 245, 245, .3)' }">
+    <el-table :data="tableData" tooltip-effect="light" :header-cell-style="{ background: 'rgba(245, 245, 245, .3)' }">
       <el-table-column v-for="(item, index) in tableLabel" show-overflow-tooltip :key="index" :label="item.name">
         <template #default="scope">
           <template v-if="!item.slot">
             {{ scope.row[item.prop] }}
           </template>
           <template v-else>
-            <span v-if="item.name == '任职状态'">{{ scope.row.status ? '在职' : '离职' }}</span>
+            <span v-if="item.name == '任职状态'">{{ scope.row.status ? $t('hr.onob') : $t('hr.dimission') }}</span>
           </template>
         </template>
       </el-table-column>
-      <el-table-column prop="address" label="操作">
+      <el-table-column prop="address" :label="$t('public.operation')">
         <template #default="scope">
-          <el-button type="primary" link @click="handlePut(scope.row, scope.$index)">编辑</el-button>
-          <el-button type="primary" link @click="handleDelete(scope.row, scope.$index)">删除</el-button>
+          <el-button type="text" @click="handlePut(scope.row, scope.$index)">编辑</el-button>
+          <el-button type="text" @click="handleDelete(scope.row, scope.$index)">{{ $t('public.delete') }}</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -22,8 +22,8 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import modalForm from '@/libs/modal-form.ts'
+import { modalSure } from '@/libs/public'
+import modalForm from '@/libs/modal-form'
 import {
   enterpriseWorkEditApi,
   getWorkList,
@@ -31,7 +31,7 @@ import {
   enterpriseEducationApi,
   educationDeleteApi,
   getEducationList
-} from '@/api/enterprise.ts'
+} from '@/api/enterprise'
 import {
   userDeleteWork,
   userDeleteEducation,
@@ -39,9 +39,8 @@ import {
   userPutEducation,
   userWorkList,
   userEducationList
-} from '@/api/user.ts'
+} from '@/api/user'
 export default {
-  emits: ['deleteWork', 'putWork'],
   name: 'Table',
   props: {
     tableData: {
@@ -77,32 +76,20 @@ export default {
       default: 'edit'
     }
   },
-  watch: {
-    // prop 由父组件更新时同步到本地副本（组件内部改写的是 tableDataLocal）
-    tableData(val) {
-      this.tableDataLocal = val
-    }
-  },
-  data() {
-    return {
-      // Vue 3 的 prop 只读，组件内部需要改写时用本地副本
-      tableDataLocal: this.tableData,
-    }
-  },
 
   methods: {
     // 删除
     handleDelete(row, index) {
-      modalSure('删除该经历吗').then(() => {
+      modalSure(this.$t('hr.deletetitle')).then(() => {
         if (this.user == '个人简历') {
           if (this.tableName === 'works') {
             userDeleteWork(row.id).then((res) => {
-              this.tableDataLocal.splice(index, 1)
+              this.tableData.splice(index, 1)
             })
           }
           if (this.tableName === 'education') {
             userDeleteEducation(row.id).then((res) => {
-              this.tableDataLocal.splice(index, 1)
+              this.tableData.splice(index, 1)
             })
           }
         } else if (this.type === 'edit') {
@@ -111,13 +98,13 @@ export default {
               card_id: this.id
             }
             enterpriseWorkDeleteApi(row.id, data).then((res) => {
-              this.tableDataLocal.splice(index, 1)
+              this.tableData.splice(index, 1)
             })
           }
 
           if (this.tableName === 'education') {
             educationDeleteApi(row.id).then((res) => {
-              this.tableDataLocal.splice(index, 1)
+              this.tableData.splice(index, 1)
             })
           }
         } else if (this.type === 'add') {
@@ -167,7 +154,7 @@ export default {
     // 刷新工作经历列表
     async userWorkList() {
       const result = await userWorkList()
-      this.tableDataLocal = result.data.list
+      this.tableData = result.data.list
     },
 
     // 刷新个人档案工作经历列表
@@ -176,7 +163,7 @@ export default {
         user_id: this.id
       }
       const result = await getWorkList(data)
-      this.tableDataLocal = result.data.list
+      this.tableData = result.data.list
     },
 
     // 刷新个人档案教育经历列表
@@ -185,20 +172,20 @@ export default {
         user_id: this.id
       }
       const result = await getEducationList(data)
-      this.tableDataLocal = result.data.list
+      this.tableData = result.data.list
     },
 
     // 刷新教育经历列表
     async userEducationList() {
       const result = await userEducationList()
-      this.tableDataLocal = result.data.list
+      this.tableData = result.data.list
     }
   }
 }
 </script>
 
 <style>
-.el-tooltip:where(.el-popper:not(.is-pure, .el-popover)) {
+.el-tooltip__popper {
   border: none !important;
   font-size: 13px !important;
   line-height: 22px;
@@ -207,10 +194,10 @@ export default {
 }
 </style>
 <style scoped lang="scss">
-:deep(.el-table .cell) {
+::v-deep .el-table .cell {
   padding-right: 0;
 }
-:deep(.el-textarea__inner) {
+::v-deep .el-textarea__inner {
   width: 92%;
 }
 </style>

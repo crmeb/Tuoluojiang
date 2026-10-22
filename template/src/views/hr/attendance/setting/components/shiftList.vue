@@ -3,15 +3,16 @@
     <!-- 考勤班次弹窗 -->
     <el-drawer
       title="选择班次"
-      v-model="drawer"
+      :visible.sync="drawer"
       size="700px"
-      :close-on-click-modal="false"
+      :wrapperClosable="false"
       :before-close="handleClose"
     >
       <!-- 搜索 -->
       <div class="box">
         <div class="flex mb10 flex-between">
           <el-input
+            size="small"
             placeholder="请输入内容"
             v-model="where.name"
             class="input-with-select"
@@ -22,7 +23,7 @@
               <el-button icon="el-icon-search" @click="getList(1)"></el-button>
             </template>
           </el-input>
-          <el-button class="ml10" @click="addFn">新建班次</el-button>
+          <el-button size="small" class="ml10" @click="addFn">新建班次</el-button>
         </div>
 
         <!-- 表格 -->
@@ -51,7 +52,7 @@
           <el-table-column prop="card.name" label="创建人" show-overflow-tooltip> </el-table-column>
           <el-table-column prop="address" label="操作" show-overflow-tooltip>
             <template #default="scope">
-              <el-button type="primary" link @click="checkFn(scope.row)">查看班次</el-button>
+              <el-button type="text" @click="checkFn(scope.row)">查看班次</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -68,8 +69,8 @@
         </div>
       </div>
       <div class="button from-foot-btn fix btn-shadow">
-        <el-button @click="handleClose">取消</el-button>
-        <el-button type="primary" @click="submitForm">确定</el-button>
+        <el-button @click="handleClose" size="small">取消</el-button>
+        <el-button type="primary" size="small" @click="submitForm">确定</el-button>
       </div>
     </el-drawer>
     <!-- 新建班次 -->
@@ -78,12 +79,11 @@
 </template>
 
 <script>
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
 import addShift from './addShift'
-import { attendanceShiftListApi } from '@/api/config.ts'
+import { attendanceShiftListApi } from '@/api/config'
 
 export default {
-  emits: ['selected'],
   name: 'CrmebOaEntShiftList',
   components: { addShift },
 
@@ -186,11 +186,11 @@ export default {
     align-items: center;
   }
 
-  :deep(.el-input-group__append) {
+  ::v-deep .el-input-group__append {
     background-color: #1890ff;
     color: #fff;
   }
-  :deep(.el-input-group__append) {
+  ::v-deep .el-input-group__append {
     top: 0;
   }
 }

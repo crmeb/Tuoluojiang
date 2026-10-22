@@ -19,21 +19,14 @@
 </template>
 
 <script>
-import { approveHolidayTypeApi } from '@/api/business.ts'
+import { approveHolidayTypeApi } from '@/api/business'
 export default {
-  emits: ['update:value', 'update:modelValue'],
   name: 'HolidaySetting',
   props: {
-    modelValue: {
+    value: {
       default: undefined,
       type: String
     }
-  },
-  computed: {
-    // Vue 3 的 v-model 走 modelValue，保留 value 供组件内部沿用
-    value() {
-      return this.modelValue
-    },
   },
   data() {
     return {
@@ -49,7 +42,7 @@ export default {
       this.$emit('update:value', value)
     },
     handleInputChange(value) {
-      this.$emit('update:modelValue', value)
+      this.$emit('input', value)
     },
     // 获取假期类型列表
     async getTableData() {
@@ -59,3 +52,12 @@ export default {
   }
 }
 </script>
+
+<style scoped lang="scss">
+.el-select .el-input {
+  width: 130px;
+}
+.el-input-group__prepend .el-select {
+  width: 100px;
+}
+</style>

@@ -24,11 +24,10 @@
  * this.$refs.fullScreenRef.request()
  */
 import { ref } from 'vue'
-import { useZIndex } from 'element-plus'
+import { PopupManager } from 'element-ui/src/utils/popup'
 
 export default {
   name: 'IsFullScreen',
-  emits: ['call-parent-method'],
   setup(props, { emit }) {
     /**
      * 全屏状态标志
@@ -36,12 +35,11 @@ export default {
      * @description 控制是否显示为全屏模式
      */
     const isFullScreen = ref(false)
-    const { nextZIndex } = useZIndex()
 
     /**
      * 当前 z-index 层级
      * @type {Ref<number|null>}
-     * @description 由 Element Plus 的 useZIndex 自动分配，确保弹层在最上层
+     * @description 由 Element UI PopupManager 自动分配，确保弹层在最上层
      */
     const currentZIndex = ref(null)
 
@@ -54,8 +52,8 @@ export default {
      */
     const request = () => {
       isFullScreen.value = true
-      // 从 Element Plus 的 z-index 管理器获取下一个可用的 z-index
-      currentZIndex.value = nextZIndex()
+      // 从 Element UI PopupManager 获取下一个可用的 z-index
+      currentZIndex.value = PopupManager.nextZIndex()
     }
 
     /**

@@ -11,7 +11,7 @@
 </template>
 
 <script>
-import i18n from '@/utils/i18n.ts'
+import i18n from '@/utils/i18n'
 
 export default {
   name: 'precision-editor',
@@ -25,3 +25,4 @@ export default {
 </script>
 
 <style scoped></style>
+@/utils/i18ns

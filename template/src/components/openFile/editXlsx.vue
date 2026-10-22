@@ -12,16 +12,15 @@
   </div>
 </template>
 <script>
-import { roterPre } from '@/settings.ts'
+import { roterPre } from '@/settings'
 import LuckyExcel from 'luckyexcel'
 import { exportExcel } from './export'
-import { fileUpload } from '@/api/public.ts'
-import { loadLuckysheet } from '@/utils/luckysheetLoader.ts'
-import { processResourceUrl } from '@/utils/resourceUtil.ts'
-import { normalizeLuckySheetCellValue, normalizeLuckySheetFormula } from './excelFormula.ts'
+import { fileUpload } from '@/api/public'
+import { loadLuckysheet } from '@/utils/luckysheetLoader'
+import { processResourceUrl } from '@/utils/resourceUtil'
+import { normalizeLuckySheetCellValue, normalizeLuckySheetFormula } from './excelFormula'
 
 export default {
-  emits: ['closeLoading'],
   name: 'excelEdit',
   props: {
     url: {
@@ -209,10 +208,10 @@ export default {
     }
   }
   
-  :deep(.luckysheet-icon-img-container.luckyiconfont) {
+  ::v-deep .luckysheet-icon-img-container.luckyiconfont {
     font-size: 24px;
   }
-  :deep(.luckysheet-toolbar-menu-button) {
+  ::v-deep .luckysheet-toolbar-menu-button {
     font-size: 14px;
   }
   .export-box {

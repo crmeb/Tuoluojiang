@@ -29,16 +29,14 @@ export default {
 
 <style lang="scss" scoped>
 .ab-container {
-  // 表单项内容区是 flex 容器，不设宽度会按内容收缩
-  width: 100%;
   position: relative;
   z-index: 4;
   background: #f3f9ff;
-  :deep(.drag-tool) {
+  ::v-deep .drag-tool {
     padding: 0 !important;
     background: #f3f9ff;
   }
-  :deep(.drag-box) {
+  ::v-deep .drag-box {
     min-height: 177px;
     position: relative;
     z-index: 2;

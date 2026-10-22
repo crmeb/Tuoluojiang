@@ -35,20 +35,20 @@
                 <template #default="scope">
                   <el-switch
                     v-model="scope.row.status"
-                    active-text="显示"
-                    inactive-text="隐藏"
+                    :active-text="$t('hr.display')"
+                    :inactive-text="$t('hr.hide')"
                     :active-value="1"
                     :inactive-value="0"
                     @change="handleStatus(scope.row)"
                   />
                 </template>
               </el-table-column>
-              <el-table-column prop="address" label="操作" fixed="right" width="180">
+              <el-table-column prop="address" :label="$t('public.operation')" fixed="right" width="180">
                 <template #default="scope">
-                  <el-button type="primary" link @click="handleEdit(scope.row)">编辑</el-button>
+                  <el-button type="text" @click="handleEdit(scope.row)">{{ $t('public.edit') }}</el-button>
 
-                  <el-button type="primary" link @click="handleDelete(scope.row, scope.$index)">
-                    删除
+                  <el-button type="text" @click="handleDelete(scope.row, scope.$index)">
+                    {{ $t('public.delete') }}
                   </el-button>
                 </template>
               </el-table-column>
@@ -68,25 +68,24 @@
       </el-col>
     </el-card>
     <!-- 通用弹窗表单   -->
-    <dialogForm ref="dialogForm" :roles-config="rolesConfig" :form-data="formBoxConfig" :hide-textarea="false" @isOk="getTableData()" />
+    <dialogForm ref="dialogForm" :roles-config="rolesConfig" :form-data="formBoxConfig" @isOk="getTableData()" />
   </div>
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import {
   assessTargetCreateApi,
   assessTargetDeleteApi,
   assessTargetEditApi,
   assessTargetListApi,
   assessTargetStatusApi
-} from '@/api/enterprise.ts'
+} from '@/api/enterprise'
 export default {
   name: 'AssessQuota',
   components: {
-    dialogForm: defineAsyncComponent(() => import('../check/components/index')),
-    departmentNot: defineAsyncComponent(() => import('@/components/user/department'))
+    dialogForm: () => import('./components/index'),
+    departmentNot: () => import('@/components/user/department')
   },
   data() {
     return {

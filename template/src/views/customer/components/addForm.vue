@@ -2,16 +2,16 @@
 <template>
   <div class="station">
     <el-drawer
-      class="customer-add-form-drawer"
       :title="formData.title"
-      v-model="drawer"
+      :visible.sync="drawer"
       :direction="direction"
       :modal="true"
       :append-to-body="true"
+      :wrapper-closable="true"
       :before-close="handleClose"
-     
+      :modal-append-to-body="false"
       :size="formData.width"
-      :close-on-click-modal="false"
+      :wrapperClosable="false"
     >
       <div class="p20">
         <oaForm
@@ -32,13 +32,11 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { savecluesApi, oddsSaveApi, oddsEditApi, savecluesEditApi } from '@/api/client.ts'
+import { savecluesApi, oddsSaveApi, oddsEditApi, savecluesEditApi } from '@/api/client'
 import productList from './productList'
-import { generateEmptyProduct } from "./helper.ts";
+import { generateEmptyProduct } from "./helper";
 
 export default {
-  emits: ['getTableData'],
   name: 'AddContract',
   props: {
     formData: {
@@ -54,7 +52,7 @@ export default {
   },
   components: {
     productList,
-    oaForm: defineAsyncComponent(() => import('@/components/customer/oaForm'))
+    oaForm: () => import('@/components/customer/oaForm')
   },
   data() {
     return {
@@ -204,16 +202,16 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-form--inline .el-form-item) {
+::v-deep .el-form--inline .el-form-item {
   display: flex;
 }
-:deep(.el-input-number) {
+::v-deep .el-input-number--medium {
   width: 100%;
 }
-:deep(.el-input__inner) {
+::v-deep .el-input__inner {
   text-align: left;
 }
-:deep(.el-date-editor) {
+::v-deep .el-date-editor {
   width: 100%;
 }
 
@@ -232,16 +230,16 @@ export default {
   justify-content: space-between;
   .form-item {
     width: 48%;
-    :deep(.el-form-item__content) {
+    ::v-deep .el-form-item__content {
       width: calc(100% - 90px);
     }
-    :deep(.el-select) {
+    ::v-deep .el-select--medium {
       width: 100%;
     }
-    :deep(.el-form-item) {
+    ::v-deep .el-form-item {
       margin-bottom: 20px;
     }
-    :deep(.el-textarea__inner) {
+    ::v-deep .el-textarea__inner {
       resize: none;
     }
   }
@@ -256,15 +254,11 @@ export default {
     height: auto;
   }
 }
-</style>
-
-<style lang="scss">
-// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
-.customer-add-form-drawer .el-drawer__body {
+::v-deep .el-drawer__body {
   padding: 20px;
   padding-bottom: 40px;
 }
-.customer-add-form-drawer .el-drawer__header {
+::v-deep .el-drawer__header {
   font-size: 15px;
 }
 </style>

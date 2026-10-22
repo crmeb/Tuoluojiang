@@ -19,9 +19,8 @@
 <script>
 export default {
   name: 'CascaderConfirm',
-  emits: ['update:modelValue', 'change'],
   props: {
-    modelValue: {
+    value: {
       type: [Array, Number, String],
       default: () => null
     },
@@ -45,10 +44,9 @@ export default {
       type: Boolean,
       default: true
     },
-    // element-ui 的 small（32px）对应 Element Plus 的 default，EP 的 small 只有 24px
     size: {
       type: String,
-      default: 'default'
+      default: 'small'
     },
     cascaderStyle: {
       type: [String, Object],
@@ -59,19 +57,12 @@ export default {
       default: false
     }
   },
-  computed: {
-    // Vue 3 的 v-model 走 modelValue，保留 value 供组件内部沿用
-    value() {
-      return this.modelValue
-    },
-  },
   data() {
     return {
       tempValue: [],
       confirmedValue: [],
       confirmBtn: null,
       confirmBtnEl: null,
-      isDropdownVisible: false,
       isInternalReset: false
     }
   },
@@ -93,19 +84,18 @@ export default {
       handler(newVal) {
         if (this.isInternalReset) return
         // 下拉面板关闭时的值变化来自 tag 删除或清空按钮，立即同步
-        if (!this.isDropdownVisible) {
+        if (this.$refs.cascader && !this.$refs.cascader.dropDownVisible) {
           this.syncValue()
         }
       },
       deep: true
     }
   },
-  beforeUnmount() {
+  beforeDestroy() {
     this.removeConfirmBtn()
   },
   methods: {
     onVisibleChange(visible) {
-      this.isDropdownVisible = visible
       if (visible) {
         this.isInternalReset = true
         this.tempValue = JSON.parse(JSON.stringify(this.confirmedValue))
@@ -137,7 +127,7 @@ export default {
       // 值未变化时跳过，防止重复 emit
       if (JSON.stringify(newVal) === JSON.stringify(this.confirmedValue)) return
       this.confirmedValue = newVal
-      this.$emit('update:modelValue', this.confirmedValue)
+      this.$emit('input', this.confirmedValue)
       this.$emit('change', this.confirmedValue)
     },
 
@@ -154,7 +144,7 @@ export default {
 
       const btn = document.createElement('button')
       btn.textContent = '确定'
-      btn.className = 'el-button el-button--primary el-button--small'
+      btn.className = 'el-button el-button--primary el-button--mini'
       btn.style.cssText = 'margin: 0;'
       btn.addEventListener('click', this.onConfirm)
 
@@ -175,7 +165,7 @@ export default {
 
     onConfirm() {
       this.syncValue()
-      this.$refs.cascader.togglePopperVisible(false)
+      this.$refs.cascader.dropDownVisible = false
     }
   }
 }

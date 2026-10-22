@@ -1,0 +1,1 @@
+import{n as a}from"./chunk-vendor.PvV0voEW.js";const s={};var t=function(){var e=this,n=e._self._c;return n("div",e._b({staticClass:"base-container flex flex-column"},"div",e.$attrs,!1),[e._t("default")],2)},r=[],_=a(s,t,r,!1,null,"a65c3863");const f=_.exports;export{f as B};

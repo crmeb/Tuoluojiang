@@ -3,7 +3,7 @@
   <div>
     <el-dialog
       :title="fromData.title"
-      v-model="dialogVisible"
+      :visible.sync="dialogVisible"
       :width="fromData.width"
       :before-close="handleClose"
       :close-on-click-modal="false"
@@ -26,7 +26,7 @@
               v-show="fromData.type <= item.value"
               :disabled="fromData.type === item.value"
               :key="item.value"
-              :label="item.value" :value="item.value"
+              :label="item.value"
               >{{ item.label }}</el-checkbox
             >
           </el-checkbox-group>
@@ -34,8 +34,8 @@
       </div>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="handleClose">取消</el-button>
-          <el-button :loading="loading" type="primary" @click="handleAdd">确定</el-button>
+          <el-button @click="handleClose" size="small">{{ $t('public.cancel') }}</el-button>
+          <el-button :loading="loading" size="small" type="primary" @click="handleAdd">{{ $t('public.ok') }}</el-button>
         </div>
       </template>
     </el-dialog>
@@ -43,14 +43,12 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { customerShiftApi, clientInvoiceShiftApi, cluesShiftApi } from '@/api/enterprise.ts'
-import { clientContractShiftApi, oddsShiftApi } from '@/api/client.ts'
+import { customerShiftApi, clientInvoiceShiftApi, cluesShiftApi } from '@/api/enterprise'
+import { clientContractShiftApi, oddsShiftApi } from '@/api/client'
 export default {
-  emits: ['handleTransfer'],
   name: 'TransferDialog',
   components: {
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member'))
+    selectMember: () => import('@/components/form-common/select-member')
   },
   props: {
     fromData: {
@@ -67,11 +65,16 @@ export default {
       checkList: [],
       keyword: '',
       transfer: [
-        { value: 1, label: '客户转移' },
-        { value: 2, label: '订单转移' },
-        { value: 3, label: '发票转移' }
+        { value: 1, label: this.$t('customer.customertransfer') },
+        { value: 2, label: this.$t('customer.contracttransfer') },
+        { value: 3, label: this.$t('customer.invoicetransfer') }
       ],
       loading: false
+    }
+  },
+  computed: {
+    lang: function () {
+      return this.$store.getters.lang
     }
   },
   watch: {
@@ -105,7 +108,7 @@ export default {
 
     handleAdd() {
       if (this.userList.length <= 0) {
-        this.$message.error('请选择要转移的成员')
+        this.$message.error(this.$t('customer.placeholder25'))
       } else {
         const data = {
           to_uid: this.userList[0].value,

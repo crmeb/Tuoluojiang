@@ -49,7 +49,7 @@
                     :key="item.sku_id"
                     style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px"
                   >
-                    <el-avatar shape="square" size="default" :src="item.image"></el-avatar>
+                    <el-avatar shape="square" size="medium" :src="item.image"></el-avatar>
                     <span>{{ item.product_name || '--' }} | {{ item.price }} x {{ item.count }}</span>
                   </div>
                 </div>
@@ -73,44 +73,50 @@
                     width="400"
                     trigger="hover"
                   >
-                    <div class="flex_box">
-                      <div v-for="(item, index) in scope.row[header.field]" :key="index" class="tips">
-                        <el-tag
-                          v-if="item.name.length <= 6"
-                          class="mb10"
-                          :class="{ 'label-hit': labelClickable }"
-                          @click="handleLabelClick(scope.row)"
-                        >
-                          {{ item.name }}
-                        </el-tag>
-                        <el-tag
-                          v-else
-                          class="mb10"
-                          :class="{ 'label-hit': labelClickable }"
-                          @click="handleLabelClick(scope.row)"
-                        >
-                          {{ item.name }}
-                        </el-tag>
+                    <template>
+                      <div class="flex_box">
+                        <div v-for="(item, index) in scope.row[header.field]" :key="index" class="tips">
+                          <el-tag
+                            v-if="item.name.length <= 6"
+                            size="small"
+                            class="mb10"
+                            :class="{ 'label-hit': labelClickable }"
+                            @click.native="handleLabelClick(scope.row)"
+                          >
+                            {{ item.name }}
+                          </el-tag>
+                          <el-tag
+                            v-else
+                            size="small"
+                            class="mb10"
+                            :class="{ 'label-hit': labelClickable }"
+                            @click.native="handleLabelClick(scope.row)"
+                          >
+                            {{ item.name }}
+                          </el-tag>
+                        </div>
                       </div>
-                    </div>
+                    </template>
                     <template #reference>
                       <div>
                         <div class="flex_box">
-                          <template v-for="(item, index) in scope.row[header.field]" :key="index">
+                          <template v-for="(item, index) in scope.row[header.field]">
                             <el-tag
                               v-if="index < 2"
+                              size="small"
                               :key="index"
                               class="tips"
                               :class="{ 'label-hit': labelClickable }"
-                              @click="handleLabelClick(scope.row)"
+                              @click.native="handleLabelClick(scope.row)"
                             >
                               {{ item.name }}
                             </el-tag>
                           </template>
                           <el-tag
                             v-if="scope.row[header.field].length > 2"
+                            size="small"
                             :class="{ 'label-hit': labelClickable }"
-                            @click="handleLabelClick(scope.row)"
+                            @click.native="handleLabelClick(scope.row)"
                           >
                             ...
                           </el-tag>
@@ -124,13 +130,14 @@
                       <div v-for="(item, index) in scope.row[header.field]" :key="index" class="tips">
                         <el-tag
                           v-if="index < 2"
+                          size="small"
                           :class="{ 'label-hit': labelClickable }"
-                          @click="handleLabelClick(scope.row)"
+                          @click.native="handleLabelClick(scope.row)"
                         >
                           {{ item.name }}
                         </el-tag>
                       </div>
-                      <el-tag v-if="scope.row[header.field].length > 2">...</el-tag>
+                      <el-tag v-if="scope.row[header.field].length > 2" size="small">...</el-tag>
                     </div>
                   </template>
                 </div>
@@ -204,7 +211,7 @@
                       >
                       </select-member>
                     </div>
-                    <el-tooltip v-if="adminIndex !== scope.$index" class="item" effect="dark" placement="top">
+                    <el-tooltip v-show="adminIndex !== scope.$index" class="item" effect="dark" placement="top">
                       <template #content>
                         <span>
                           <div class="flex">
@@ -220,7 +227,7 @@
                         class="flex"
                         :style="{ alignItems: scope.row[header.field].length == 1 ? 'center' : 'flex-start' }"
                       >
-                        <template v-for="(item, index) in scope.row[header.field]" :key="index">
+                        <template v-for="(item, index) in scope.row[header.field]">
                           <span v-if="index < 4" :key="index" class="flex" style="cursor: pointer; align-items: center">
                             <img v-default-avatar="item" :src="getAvatarSrc(item)" alt="" class="avatar" />
                             <span v-show="scope.row[header.field].length == 1"> {{ item.name }}</span>
@@ -308,24 +315,22 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { getAvatarSrc } from '@/utils/avatar.ts'
-import { getStorageJson } from '@/utils/storage.ts'
-import { getColor } from '@/utils/format.ts'
-import { customerSubscribeApi, contractSubscribeApi } from '@/api/enterprise.ts'
+import { getAvatarSrc } from '@/utils/avatar'
+import { getStorageJson } from '@/utils/storage'
+import { getColor } from '@/utils/format'
+import { customerSubscribeApi, contractSubscribeApi } from '@/api/enterprise'
 import {
   salesmanCustomApi,
   saveSalesmanCustomApi,
   oddsSubscribeApi,
   cluesSubscribeApi,
   clientMemberApi
-} from '@/api/client.ts'
+} from '@/api/client'
 export default {
   name: 'customTable',
-  emits: ['getSearch', 'getTableData', 'handleCheck', 'handleCustomerCheck', 'handleLabelClick', 'handleSelectionChange'],
   components: {
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
-    VisibleDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-transfer'))
+    selectMember: () => import('@/components/form-common/select-member'),
+    VisibleDialog: () => import('@/components/form-common/dialog-transfer')
   },
   props: {
     // 是否启用 flex 布局，启用后表格高度将适应父容器高度，无需传入 formBoxHeight 高度
@@ -440,7 +445,7 @@ export default {
     this.scheduleTableLayout()
   },
 
-  beforeUnmount() {
+  beforeDestroy() {
     if (this.tableLayoutTimer) {
       clearTimeout(this.tableLayoutTimer)
     }
@@ -467,9 +472,9 @@ export default {
     setInputRef(el, rowId, field) {
       if (el) {
         if (!this.inputRefs[rowId]) {
-          this.inputRefs[rowId] = {}
+          this.$set(this.inputRefs, rowId, {})
         }
-        this.inputRefs[rowId][field] = el
+        this.$set(this.inputRefs[rowId], field, el)
       }
     },
 
@@ -728,7 +733,7 @@ export default {
 }
 </script>
 <style scoped lang="scss">
-:deep(.co-member-item) {
+::v-deep .co-member-item {
   flex-flow: column;
 
   & + .co-member-item {
@@ -782,7 +787,7 @@ export default {
   cursor: pointer;
   color: #1890ff;
 }
-:deep(.el-table__empty-block) {
+::v-deep .el-table__empty-block {
   width: 100% !important; /* 让空状态容器宽度占满表格内容区 */
 }
 
@@ -796,11 +801,8 @@ export default {
 }
 /* 客户标签列开启点击时，仅标签与无标签占位符本身响应点击，避免单元格空白处误触 */
 .label-hit {
-  cursor: pointer;
-}
-// el-tag 本身是 inline-flex 垂直居中，不能改成 inline-block
-.label-hit:not(.el-tag) {
   display: inline-block;
+  cursor: pointer;
 }
 .header-content {
   width: 100%;
@@ -823,24 +825,26 @@ export default {
   display: inline-block;
 }
 .table-box {
-  :deep(.el-table__column-resize-proxy) {
+  ::v-deep .el-table__column-resize-proxy {
     margin-top: 46px;
     border-left-color: #6fbaff;
   }
 
-  // 保留 border 以支持拖动列宽，但不显示边框
-  :deep(.el-table--border) {
-    --el-table-border-color: transparent;
-    --el-table-border: none;
+  ::v-deep .el-table--border {
+    border: none;
+    .el-table__cell {
+      border-right: none;
+    }
   }
-  :deep(.el-table__body tr) {
-    height: 61px;
-  }
-  :deep(.el-table th.el-table__cell > .cell) {
+  ::v-deep .el-table th.el-table__cell > .cell {
     padding-right: 0px;
   }
 
-  :deep(.el-loading-mask) {
+  ::v-deep .el-table__fixed-right .el-table__fixed-body-wrapper {
+    border-right: 1px solid #fff;
+  }
+
+  ::v-deep .el-loading-mask {
     z-index: 800;
   }
 }
@@ -858,12 +862,12 @@ export default {
   display: none;
 }
 
-:deep(.el-table__header .el-table-column--selection .cell) {
+::v-deep .el-table__header .el-table-column--selection .cell {
   position: relative;
   overflow: visible;
 }
 
-:deep(.el-table__header .el-table-column--selection .cell::after) {
+::v-deep .el-table__header .el-table-column--selection .cell::after {
   content: var(--selection-count);
   position: absolute;
   top: -8px;

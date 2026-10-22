@@ -3,7 +3,7 @@
   <div class="station">
     <div class="mb10 btn-box1">
       <div class="title-16">付款提醒列表</div>
-      <el-button type="primary" @click="handleContract(3, 1)"> 添加付款提醒 </el-button>
+      <el-button size="small" type="primary" @click="handleContract(3, 1)"> 添加付款提醒 </el-button>
     </div>
     <el-table :data="debtData" style="width: 100%">
       <el-table-column label="付款提醒日期" min-width="150" prop="time"> </el-table-column>
@@ -30,42 +30,46 @@
           </el-popover>
         </template>
       </el-table-column>
-      <el-table-column label="创建人" min-width="100" prop="card.name"> </el-table-column>
+      <el-table-column :label="$t('hr.founder')" min-width="100" prop="card.name"> </el-table-column>
 
       <!-- 订单管理-编辑/删除 -->
-      <el-table-column label="操作" fixed="right" min-width="180" prop="address">
+      <el-table-column :label="$t('public.operation')" fixed="right" min-width="180" prop="address">
         <template #default="scope">
           <el-button
             v-if="scope.row.types === 0"
             :disabled="scope.row.status !== 0"
-            type="primary" link
+            type="text"
             @click="handleBuild(scope.row, buildData.contract_refund_switch, 'contract_refund_switch')"
             >添加回款</el-button
           >
           <el-button
             v-if="scope.row.types === 1"
             :disabled="scope.row.status !== 0"
-            type="primary" link
+            type="text"
             @click="handleBuild(scope.row, buildData.contract_renew_switch, 'contract_renew_switch')"
             >添加续费</el-button
           >
-          <el-button :disabled="scope.row.status !== 0" type="primary" link @click="handleContract(3, 2, scope.row)">编辑</el-button>
+          <el-button :disabled="scope.row.status !== 0" type="text" @click="handleContract(3, 2, scope.row)">{{
+            $t('public.edit')
+          }}</el-button>
           <el-button
             v-if="scope.row.bill_id > 0"
             :disabled="scope.row.status !== 0"
-            type="primary" link
+            type="text"
             @click="giveUpFn(scope.row)"
           >
             放弃</el-button
           >
-          <el-button v-if="scope.row.bill_id <= 0" type="primary" link @click="handleDelete(scope.row, 1)">删除</el-button>
+          <el-button v-if="scope.row.bill_id <= 0" type="text" @click="handleDelete(scope.row, 1)">{{
+            $t('public.delete')
+          }}</el-button>
         </template>
       </el-table-column>
 
       <!-- 客户管理-修改备注 -->
-      <!-- <el-table-column v-else prop="address" min-width="120" label="操作">
+      <!-- <el-table-column v-else prop="address" min-width="120" :label="$t('public.operation')">
         <template #default="scope">
-          <el-button @click="setRemarks(scope.row)" type="primary" link>备注</el-button>
+          <el-button @click="setRemarks(scope.row)" type="text">{{ $t('public.remarks') }}</el-button>
         </template>
       </el-table-column> -->
     </el-table>
@@ -90,14 +94,12 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { remindAbjureApi } from '@/api/enterprise.ts'
-import { clientRemindDeleteApi, clientRemindListApi } from '@/api/client.ts'
-import { configRuleApproveApi } from '@/api/config.ts'
-import { getStorageJson } from '@/utils/storage.ts'
+import { modalSure } from '@/libs/public'
+import { remindAbjureApi } from '@/api/enterprise'
+import { clientRemindDeleteApi, clientRemindListApi } from '@/api/client'
+import { configRuleApproveApi } from '@/api/config'
+import { getStorageJson } from '@/utils/storage'
 export default {
-  emits: ['refresh-detail'],
   name: 'ContractRemind',
   props: {
     formInfo: {
@@ -112,9 +114,9 @@ export default {
     }
   },
   components: {
-    contractDialog: defineAsyncComponent(() => import('@/views/customer/contract/components/contractDialog')),
-    markDialog: defineAsyncComponent(() => import('@/views/customer/contract/components/markDialog')),
-    editExamine: defineAsyncComponent(() => import('@/views/user/examine/components/editExamine'))
+    contractDialog: () => import('@/views/customer/contract/components/contractDialog'),
+    markDialog: () => import('@/views/customer/contract/components/markDialog'),
+    editExamine: () => import('@/views/user/examine/components/editExamine')
   },
   data() {
     return {
@@ -249,7 +251,7 @@ export default {
     },
     setRemarks(row) {
       this.configMark = {
-        title: '备注信息',
+        title: this.$t('customer.remarkinformation'),
         width: '480px',
         id: row.id,
         type: 3,
@@ -259,7 +261,7 @@ export default {
     },
     // 删除
     handleDelete(item, type) {
-      modalSure('请确定要删除该提醒吗').then(() => {
+      modalSure(this.$t('customer.placeholder77')).then(() => {
         clientRemindDeleteApi(item.id).then((res) => {
           if (type === 1) {
             if (this.where.page > 1 && this.debtData.length <= 1) {
@@ -282,7 +284,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-input__inner) {
+::v-deep .el-input__inner {
   text-align: left;
 }
 
@@ -307,7 +309,7 @@ export default {
     font-size: 14px;
   }
 }
-:deep(.el-table__body) {
+::v-deep .el-table__body {
   width: 100%;
   table-layout: fixed !important;
 }

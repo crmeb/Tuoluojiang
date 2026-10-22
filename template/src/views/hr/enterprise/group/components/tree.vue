@@ -4,8 +4,9 @@
       <div class="clearfix el-card__header">
         <el-input
           v-model="filterText"
-          placeholder="搜索部门"
+          :placeholder="$t('public.searchdepartment')"
           clearable
+          size="small"
           suffix-icon="el-icon-search"
         />
       </div>
@@ -39,12 +40,12 @@
                         @after-enter="handleShow(data.value)"
                       >
                         <div class="right-item-list">
-                          <div class="right-item" @click.stop="addDivsion(0)">添加子部门</div>
+                          <div class="right-item" @click.stop="addDivsion(0)">{{ $t('public.Adddepartment') }}</div>
                           <div v-if="data.pid !== 0" class="right-item" @click.stop="addDivsion(1)">
-                            编辑
+                            {{ $t('public.edit') }}
                           </div>
                           <div v-if="data.pid !== 0" class="right-item" @click.stop="hanleDelete(data)">
-                            删除
+                            {{ $t('public.delete') }}
                           </div>
                         </div>
                         <template #reference>
@@ -71,15 +72,13 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { EventBus } from '@/libs/bus.ts'
-import { configFrameDeleteApi } from '@/api/setting.ts'
+import { modalSure } from '@/libs/public'
+import { EventBus } from '@/libs/bus'
+import { configFrameDeleteApi } from '@/api/setting'
 export default {
-  emits: ['frameId'],
   name: 'TreeVue',
   components: {
-    rightRole: defineAsyncComponent(() => import('./rightRole'))
+    rightRole: () => import('./rightRole')
   },
   props: {
     parentTree: {
@@ -89,7 +88,7 @@ export default {
       }
     },
     frameId: {
-      type: [Number, String],
+      type: Number | String,
       default: () => {
         return 0
       }
@@ -145,7 +144,7 @@ export default {
     // tree节点点击
     handleClick(node, data) {
       if (this.activeValue) {
-        this.$refs[`pop-${this.activeValue}`].hide()
+        this.$refs[`pop-${this.activeValue}`].doClose()
       }
       this.frame_id = node.value
       this.isShowEdit = ''
@@ -179,8 +178,8 @@ export default {
         this.parentId.push(node.value)
       }
       this.drawerConfig.title = type
-        ? '编辑部门'
-        : '添加部门'
+        ? this.$t('setting.group.editorialdepartment')
+        : this.$t('setting.group.adddepartment')
       this.drawerConfig.type = type
       this.drawerConfig.id = node.value
       this.drawerConfig.disabled = !!(this.topId === node.value && type)
@@ -197,14 +196,14 @@ export default {
   font-size: 15px;
   color: #ffca28;
 }
-// .el-card__header :deep(.el-input--small .el-input__inner) {
+// .el-card__header ::v-deep .el-input--small .el-input__inner {
 //   cursor: pointer;
 // }
 
-:deep(.el-scrollbar__wrap) {
+::v-deep .el-scrollbar__wrap {
   overflow-x: hidden;
 }
-:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
+::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content {
   background: rgba(240, 250, 254, 0.6);
   border-color: #1890ff;
   .flex-box {
@@ -212,7 +211,7 @@ export default {
     font-weight: 600;
   }
 }
-:deep(.tree-box-con) {
+::v-deep .tree-box-con {
   margin-top: 10px;
   .el-tree-node__content {
     width: 100%;
@@ -220,13 +219,13 @@ export default {
     border-radius: 4px;
   }
 }
-:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node),
+::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node,
 .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .right-icon {
   display: inline-block;
   font-weight: 600;
 }
 
-:deep(.el-tree-node > .el-tree-node__children) {
+::v-deep .el-tree-node > .el-tree-node__children {
   overflow: inherit;
 }
 
@@ -280,7 +279,7 @@ export default {
 .tree-box-con {
   padding-bottom: 12px;
 }
-:deep(.el-tree) {
+::v-deep .el-tree {
   background-color: transparent;
 }
 

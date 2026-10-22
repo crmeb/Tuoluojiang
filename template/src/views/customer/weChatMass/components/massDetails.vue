@@ -2,21 +2,20 @@
 <template>
   <div class="station">
     <el-drawer
-      class="customer-we-chat-mass-mass-details-drawer"
       :append-to-body="true"
       :direction="direction"
       :show-close="false"
       :size="DRAWER_SIZE.LG"
       title="查看"
-      v-model="drawer"
+      :visible.sync="drawer"
     >
-      <template #header>
+      <template #title>
         <div class="invoice-title">
-          <div class="invoice-header">
-            <div class="invoice-left">
+          <el-row class="invoice-header">
+            <el-col class="invoice-left">
               <div class="invoice-logo"><i class="icon iconfont iconhetong"></i></div>
-            </div>
-            <div class="invoice-right">
+            </el-col>
+            <el-col class="invoice-right">
               <div class="txt1 over-text">{{ title }}</div>
 
               <div class="txt2">
@@ -48,8 +47,8 @@
                   >
                 </template>
               </div>
-            </div>
-          </div>
+            </el-col>
+          </el-row>
           <div @click="handleClose" class="el-icon-close"></div>
         </div>
       </template>
@@ -195,10 +194,10 @@
   </div>
 </template>
 <script>
-import { getWorkMassEdit, getWorkMassResult } from '@/api/weCom.ts'
-import { getFileExtension, getFileType } from '@/utils/file.ts'
-import { DRAWER_SIZE } from '@/constants/popupSize.ts'
-import { filePreview } from '@/utils/filePreview.ts'
+import { getWorkMassEdit, getWorkMassResult } from '@/api/weCom'
+import { getFileExtension, getFileType } from '@/utils/file'
+import { DRAWER_SIZE } from '@/constants/popupSize'
+import { filePreview } from '@/utils/filePreview'
 export default {
   name: 'detailsDrawer',
   props: {},
@@ -300,7 +299,7 @@ export default {
 
     // 点击tab切换
     handleClick(event) {
-      this.tabNumber = Number(event.paneName)
+      this.tabNumber = Number(event.name)
       if (this.tabNumber == 2) {
         this.getTableData()
       }
@@ -310,7 +309,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-tabs__item.is-active) {
+::v-deep .el-tabs__item.is-active {
   border-right-color: transparent !important;
   border-left-color: transparent !important;
   &::after {
@@ -334,21 +333,29 @@ export default {
   font-size: 13px;
   z-index: 99;
 }
-:deep(.el-tabs__item) {
+::v-deep .el-drawer__body {
+  padding-bottom: 50px;
+}
+::v-deep .el-drawer__header {
+  height: 80px !important;
+  border: none;
+  padding: 14px 18px;
+}
+::v-deep .el-tabs__item {
   line-height: 40px !important;
   font-family: PingFang SC, PingFang SC;
   font-weight: 400;
   font-size: 13px;
   color: #303133;
 }
-:deep(.el-tabs__header) {
+::v-deep .el-tabs__header {
   background-color: #f7fbff;
   border-bottom: none;
 }
-:deep(.el-tabs__nav-wrap::after) {
+::v-deep .el-tabs__nav-wrap::after {
   height: 0;
 }
-:deep(.el-tabs__active-bar) {
+::v-deep .el-tabs__active-bar {
   top: 0;
 }
 .el-tabs--border-card {
@@ -360,11 +367,6 @@ export default {
   background-color: transparent;
   border: none;
   box-shadow: none;
-
-  // Element Plus 的 tabs 是 flex 列布局，内容区默认会被压进 39px 的容器里
-  :deep(.el-tabs__content) {
-    flex-shrink: 0;
-  }
 }
 .invoice-title {
   display: flex;
@@ -582,19 +584,7 @@ export default {
     margin-left: 4px;
   }
 }
-:deep(.el-form-item) {
+::v-deep .el-form-item {
   margin-bottom: 10px;
-}
-</style>
-
-<style lang="scss">
-// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
-.customer-we-chat-mass-mass-details-drawer .el-drawer__body {
-  padding-bottom: 50px;
-}
-.customer-we-chat-mass-mass-details-drawer .el-drawer__header {
-  height: 80px !important;
-  border: none;
-  padding: 14px 18px;
 }
 </style>

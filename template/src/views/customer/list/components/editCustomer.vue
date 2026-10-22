@@ -2,22 +2,21 @@
 <template>
   <div>
     <el-drawer
-      class="customer-list-edit-customer-drawer"
       :append-to-body="true"
       :before-close="handleClose"
       :direction="direction"
       :show-close="true"
       :size="DRAWER_SIZE.XL"
       :title="formData.title"
-      v-model="drawer"
+      :visible.sync="drawer"
     >
-      <template #header>
+      <template #title>
         <div class="invoice-title">
-          <div class="invoice-header">
-            <div class="invoice-left">
+          <el-row class="invoice-header">
+            <el-col class="invoice-left">
               <div class="invoice-logo"><i class="icon iconfont iconhetong"></i></div>
-            </div>
-            <div v-if="drawer" class="invoice-right">
+            </el-col>
+            <el-col v-if="drawer" class="invoice-right">
               <div class="txt1 over-text">
                 {{ dataInfo.data ? dataInfo.data.customer_name : '--' }}
                 <i class="el-icon-message-solid default-color pointer" @click="addRecord"></i>
@@ -45,13 +44,13 @@
                 >
                   {{ dataInfo.data ? dataInfo.data.customer_status.name : '--' }}
                 </span>
-                <span class="title">业务员：</span
+                <span class="title">{{ $t('customer.salesman') }}：</span
                 ><span class="weight">{{ dataInfo.data ? dataInfo.data.salesman : '--' }}</span>
                 <span class="title">添加时间：</span
                 ><span class="weight">{{ dataInfo.data ? dataInfo.data.created_at : '--' }}</span>
               </div>
-            </div>
-          </div>
+            </el-col>
+          </el-row>
         </div>
       </template>
 
@@ -151,31 +150,27 @@
   </div>
 </template>
 <script>
-import { mapStores } from 'pinia'
-import { useAppConfigStore } from '@/stores/appConfig.ts'
-import { defineAsyncComponent } from 'vue'
-import { chargeEditApi } from '@/api/enterprise.ts';
-import { getAvatarSrc } from '@/utils/avatar.ts';
-import { CUSTOMER_MODULE_KEYS } from '@/constants/customerModules.ts';
-import { DRAWER_SIZE } from '@/constants/popupSize.ts';
+import { chargeEditApi } from '@/api/enterprise';
+import { getAvatarSrc } from '@/utils/avatar';
+import { CUSTOMER_MODULE_KEYS } from '@/constants/customerModules';
+import { DRAWER_SIZE } from '@/constants/popupSize';
 
 export default {
-  emits: ['isOkEdit'],
   name: 'EditCustomer',
   components: {
-    uploadFile: defineAsyncComponent(() => import('@/components/form-common/oa-upload')),
-    contractRecordAll: defineAsyncComponent(() => import('./contractRecordAll')),
-    sign: defineAsyncComponent(() => import('./sign')),
-    contractInvoice: defineAsyncComponent(() => import('@/views/customer/contract/components/contractInvoice')),
-    liaison: defineAsyncComponent(() => import('@/views/customer/list/components/liaison')),
-    odds: defineAsyncComponent(() => import('@/views/customer/list/components/odds')),
-    record: defineAsyncComponent(() => import('@/views/customer/list/components/record')),
-    file: defineAsyncComponent(() => import('@/views/customer/list/components/file')),
-    contract: defineAsyncComponent(() => import('@/views/customer/list/components/contract')),
-    contractRemind: defineAsyncComponent(() => import('@/views/customer/contract/components/contractRemind')),
-    remindDialog: defineAsyncComponent(() => import('./remindDialog')),
-    oaForm: defineAsyncComponent(() => import('@/components/customer/oaForm')),
-    dynamicRecord: defineAsyncComponent(() => import('./dynamicRecord'))
+    uploadFile: () => import('@/components/form-common/oa-upload'),
+    contractRecordAll: () => import('./contractRecordAll'),
+    sign: () => import('./sign'),
+    contractInvoice: () => import('@/views/customer/contract/components/contractInvoice'),
+    liaison: () => import('@/views/customer/list/components/liaison'),
+    odds: () => import('@/views/customer/list/components/odds'),
+    record: () => import('@/views/customer/list/components/record'),
+    file: () => import('@/views/customer/list/components/file'),
+    contract: () => import('@/views/customer/list/components/contract'),
+    contractRemind: () => import('@/views/customer/contract/components/contractRemind'),
+    remindDialog: () => import('./remindDialog'),
+    oaForm: () => import('@/components/customer/oaForm'),
+    dynamicRecord: () => import('./dynamicRecord')
   },
   props: {
     formData: {
@@ -199,7 +194,6 @@ export default {
     }
   },
   computed: {
-    ...mapStores(useAppConfigStore),
     // 企微/微信客户信息，无则不展示
     workCustomer() {
       const info = this.dataInfo.data && this.dataInfo.data.work_customer
@@ -207,19 +201,19 @@ export default {
       return info
     },
     tabData() {
-      const isCustomerModuleEnabled = this.appConfigStore.isCustomerModuleEnabled;
+      const isCustomerModuleEnabled = this.$store.getters['appConfig/isCustomerModuleEnabled'];
 
       const config = [
-        { value: '1', label: '基本信息' },
-        { value: '2', label: '跟进记录', badgeKey: 'follow_count' },
-        { value: '8', label: '联系人', badgeKey: 'liaisons_count', moduleKey: CUSTOMER_MODULE_KEYS.LIAISON },
+        { value: '1', label: this.$t('setting.info.essentialinformation') },
+        { value: '2', label: this.$t('customer.followrecord'), badgeKey: 'follow_count' },
+        { value: '8', label: this.$t('customer.contacts'), badgeKey: 'liaisons_count', moduleKey: CUSTOMER_MODULE_KEYS.LIAISON },
         { value: '10', label: '商机', badgeKey: 'odds_count', moduleKey: CUSTOMER_MODULE_KEYS.OPPORTUNITY },
         { value: '11', label: '合同', badgeKey: 'contract_doc_count', moduleKey: CUSTOMER_MODULE_KEYS.CONTRACT },
         { value: '3', label: '订单', badgeKey: 'contract_count', moduleKey: CUSTOMER_MODULE_KEYS.ORDER },
         { value: '4', label: '账目记录', badgeKey: 'bill_count' },
-        { value: '5', label: '付款提醒', badgeKey: 'remind_count' },
-        { value: '6', label: '发票', badgeKey: 'invoice_count', moduleKey: CUSTOMER_MODULE_KEYS.INVOICE },
-        { value: '7', label: '附件相关', badgeKey: 'file_count' },
+        { value: '5', label: this.$t('customer.paymentreminder'), badgeKey: 'remind_count' },
+        { value: '6', label: this.$t('customer.invoice'), badgeKey: 'invoice_count', moduleKey: CUSTOMER_MODULE_KEYS.INVOICE },
+        { value: '7', label: this.$t('customer.annexrelated'), badgeKey: 'file_count' },
         { value: '9', label: '动态记录', badgeKey: 'record_count' }
       ];
 
@@ -295,7 +289,7 @@ export default {
 
     // 点击tab切换
     handleClick(event) {
-      this.tabNumber = Number(event.paneName)
+      this.tabNumber = Number(event.name)
 
       const actions = {
         2: () => this.$refs.record.getTableData(),
@@ -346,7 +340,7 @@ export default {
   height: 400px;
   border: 1px solid #d7dbe0;
 }
-:deep(.el-tabs__item.is-active) {
+::v-deep .el-tabs__item.is-active {
   border-right-color: transparent !important;
   border-left-color: transparent !important;
   &::after {
@@ -359,21 +353,29 @@ export default {
     top: 0;
   }
 }
-:deep(.el-date-editor.el-input) {
+::v-deep .el-date-editor.el-input {
   width: 100%;
 }
 
-.addBox :deep(.el-dialog__body) {
+.addBox ::v-deep .el-dialog__body {
   padding: 0;
 }
-.addBox :deep(.el-dialog) {
+.addBox ::v-deep .el-dialog {
   border-radius: 6px;
   height: 300px;
 }
-:deep(.el-form--inline .el-form-item) {
+::v-deep .el-form--inline .el-form-item {
   display: flex;
 }
-:deep(.el-tabs__item) {
+::v-deep .el-drawer__body {
+  // padding-bottom: 50px;
+}
+::v-deep .el-drawer__header {
+  height: 80px !important;
+  border: none;
+  padding: 14px 18px;
+}
+::v-deep .el-tabs__item {
   line-height: 40px !important;
   .tab-label-wrap {
     position: relative;
@@ -387,14 +389,14 @@ export default {
     font-weight: 400;
   }
 }
-:deep(.el-tabs__header) {
+::v-deep .el-tabs__header {
   background-color: #f7fbff;
   border-bottom: none;
 }
-:deep(.el-tabs__nav-wrap::after) {
+::v-deep .el-tabs__nav-wrap::after {
   height: 0;
 }
-:deep(.el-tabs__active-bar) {
+::v-deep .el-tabs__active-bar {
   top: 0;
 }
 .el-tabs--border-card {
@@ -497,21 +499,9 @@ export default {
   .contract-list {
     width: 100%;
     height: calc(100% - 44px);
-    :deep(.el-button) {
+    ::v-deep .el-button--medium {
       font-size: 13px;
     }
   }
-}
-</style>
-
-<style lang="scss">
-// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
-.customer-list-edit-customer-drawer .el-drawer__body {
-  // padding-bottom: 50px;
-}
-.customer-list-edit-customer-drawer .el-drawer__header {
-  height: 80px !important;
-  border: none;
-  padding: 14px 18px;
 }
 </style>

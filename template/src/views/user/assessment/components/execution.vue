@@ -8,6 +8,7 @@
             <el-button
               v-if="!testAccess && dimensionMax > 0"
               :disabled="dimensionMax <= 0"
+              size="small"
               type="primary"
               @click="addAssess"
             >
@@ -18,7 +19,7 @@
 
           <div class="total-score">
             <p>
-              <span class="total-score-name">总分:</span>
+              <span class="total-score-name">{{ $t('access.totalscore') }}:</span>
               <span class="number">{{ assessInfo.max || max }}</span>
             </p>
             <p>
@@ -32,7 +33,7 @@
           </div>
         </div>
         <el-scrollbar>
-          <div v-for="(item, index) in tableData" :key="index" class="current-table oa-input-borderless">
+          <div v-for="(item, index) in tableData" :key="index" class="current-table">
             <div class="current-table-title">
               <div class="left">
                 <template v-if="(!testAccess && !isShow) || processIndex == 1">
@@ -47,7 +48,7 @@
                   </span>
 
                   <span>
-                    {{ assessInfo.types == 0 ? '维度权重' : '维度分数' }}
+                    {{ assessInfo.types == 0 ? $t('access.dimensionweight') : $t('access.dimensionscore') }}
 
                     <el-input-number
                       v-model="item.ratio"
@@ -55,7 +56,6 @@
                       :max="item.weight"
                       :min="0"
                       :precision="0"
-                      @wheel.prevent
                     />
                     {{ assessInfo.types == 0 ? '%' : '' }}
                   </span>
@@ -64,9 +64,8 @@
                 </template>
                 <template v-else>
                   <span>{{ item.name }}</span>
-                  <!-- Vue 3 会压缩首尾空白，用左边距还原名称与「维度分数」之间的空格 -->
-                  <span class="dimension-ratio">
-                    {{ assessInfo.types == 0 ? '维度权重' : '维度分数' }}
+                  <span>
+                    {{ assessInfo.types == 0 ? $t('access.dimensionweight') : $t('access.dimensionscore') }}
                     {{ item.ratio }}
                     {{ assessInfo.types == 0 ? '%' : '' }}
                   </span>
@@ -79,12 +78,12 @@
               </div>
             </div>
             <el-table :data="item.target" default-expand-all row-key="id" style="width: 100%">
-              <el-table-column label="指标名称" prop="name" width="160">
+              <el-table-column :label="$t('access.targetname')" prop="name" width="160">
                 <template #default="scope">
                   <el-input
                     v-if="!testAccess && !verifyAccess && strType !== 'check'"
                     v-model="scope.row.name"
-                    placeholder="输入指标名称"
+                    :placeholder="$t('access.placeholder01')"
                     autosize
                     style="width: 140px"
                     type="textarea"
@@ -92,13 +91,13 @@
                   <span v-else>{{ scope.row.name }}</span>
                 </template>
               </el-table-column>
-              <el-table-column label="指标说明" min-width="300" prop="content">
+              <el-table-column :label="$t('access.targetexplain')" min-width="300" prop="content">
                 <template #default="scope">
                   <el-input
                     v-if="!testAccess && !verifyAccess && strType !== 'check'"
                     v-model="scope.row.content"
                     :disabled="testAccess"
-                    placeholder="输入指标说明"
+                    :placeholder="$t('access.placeholder02')"
                     autosize
                     type="textarea"
                   />
@@ -125,7 +124,7 @@
                   <el-input
                     v-if="testAccess && strType !== 'check'"
                     v-model="scope.row.finish_info"
-                    placeholder="输入完成情况"
+                    :placeholder="$t('access.inputcompletion')"
                     autosize
                     type="textarea"
                   />
@@ -187,7 +186,6 @@
                       v-model="scope.row.finish_ratio"
                       :min="0"
                       type="number"
-                      @wheel.prevent
                       @change="numberChange(scope.row.finish_ratio, 100, index, scope.$index)"
                     ></el-input>
                     <span v-else class="padding">{{ scope.row.finish_ratio }}</span>
@@ -202,7 +200,6 @@
                     v-model="scope.row.finish_ratio"
                     :min="0"
                     type="number"
-                    @wheel.prevent
                     @change="numberChange(scope.row.finish_ratio, scope.row.ratio, index, scope.$index)"
                   ></el-input>
 
@@ -223,7 +220,6 @@
                       v-model="scope.row.score"
                       :min="0"
                       type="number"
-                      @wheel.prevent
                       @change="scopeChange(scope.row.score, 100, index, scope.$index)"
                     ></el-input>
 
@@ -244,7 +240,6 @@
                     v-model="scope.row.score"
                     :min="0"
                     type="number"
-                    @wheel.prevent
                     @change="scopeChange(scope.row.score, scope.row.ratio, index, scope.$index)"
                   ></el-input>
 
@@ -253,7 +248,7 @@
               </el-table-column>
               <el-table-column
                 v-if="!testAccess"
-                label="操作"
+                :label="$t('public.operation')"
                 fixed="right"
                 prop="address"
                 width="70"
@@ -262,7 +257,7 @@
                   <el-button
                     class="current-delete"
                     icon="el-icon-delete"
-                    type="primary" link
+                    type="text"
                     @click="handleDelete(index, scope.$index, scope.row)"
                   />
                 </template>
@@ -271,8 +266,8 @@
             <div v-if="!testAccess" class="current-bottom">
               <el-row v-if="strType !== 'check'">
                 <el-col :lg="12">
-                  <el-button type="primary" link @click="addTarget(index)">添加指标</el-button>
-                  <el-button type="primary" link @click="selectTarget(index)">选择指标库</el-button>
+                  <el-button type="text" @click="addTarget(index)">{{ $t('access.addTarget02') }}</el-button>
+                  <el-button type="text" @click="selectTarget(index)">{{ $t('access.addTarget01') }}</el-button>
                 </el-col>
               </el-row>
             </div>
@@ -293,7 +288,7 @@
                 <el-input
                   v-model="item.content"
                   :disabled="userInfo.id !== assessInfo.test_uid || item.types === 1"
-                  placeholder="请输入内容"
+                  :placeholder="$t('access.placeholder16')"
                   :rows="3"
                   resize="none"
                   type="textarea"
@@ -313,7 +308,7 @@
                 <el-input
                   v-model="assessInfo.self_reply"
                   :disabled="!testAccess || strType == 'check'"
-                  placeholder="请输入内容"
+                  :placeholder="$t('access.placeholder16')"
                   maxlength="512"
                   show-word-limit
                   rows="4"
@@ -332,7 +327,7 @@
                 <el-input
                   v-model="assessInfo.reply"
                   :disabled="!checkAccess || strType == 'check'"
-                  placeholder="请输入内容"
+                  :placeholder="$t('access.placeholder16')"
                   maxlength="512"
                   show-word-limit
                   rows="4"
@@ -351,7 +346,7 @@
                 <el-input
                   v-model="assessInfo.hide_reply"
                   :disabled="strType == 'check'"
-                  placeholder="填写考核备注信息，此信息仅自己可见"
+                  :placeholder="$t('access.tips12')"
                   type="textarea"
                 />
               </el-col>
@@ -360,8 +355,8 @@
           <div class="current-footer text-center">
             <div>
               <template v-if="processIndex == 3">
-                <el-button v-if="testAccess" @click="addFinance">{{ message2 }}</el-button>
-                <el-button v-else v-show="verifyAccess" @click="addFinance">
+                <el-button v-if="testAccess" size="small" @click="addFinance">{{ message2 }}</el-button>
+                <el-button v-else v-show="verifyAccess" size="small" @click="addFinance">
                   {{ message1 }}
                 </el-button>
               </template>
@@ -370,10 +365,11 @@
               <el-button
                 v-if="checkAccess || testAccess"
                 :loading="loading"
+                size="small"
                 type="primary"
                 @click="addPreserve"
               >
-                保存
+                {{ $t('access.saveandsubmit') }}
               </el-button>
             </div>
           </div>
@@ -383,16 +379,16 @@
     <!--添加考核维度-->
     <el-dialog
       :before-close="handleClose"
-      title="添加考核维度"
-      v-model="dialogVisible"
+      :title="$t('access.adddimension')"
+      :visible.sync="dialogVisible"
       width="450px"
     >
       <div class="current-dialog mb15">
-        <span>维度名称：</span>
+        <span>{{ $t('access.dimensionname') }}：</span>
         <el-input v-model="from.name" type="text" />
       </div>
       <div v-if="assessInfo.types === 0" class="current-dialog">
-        <span>维度权重(%)：</span>
+        <span>{{ $t('access.dimensionweight') }}(%)：</span>
         <div>
           <el-input-number
             v-model="from.ratio"
@@ -401,15 +397,14 @@
             :min="1"
             :precision="0"
             style="width: 100%"
-            @wheel.prevent
           />
           <span v-if="assessInfo.types === 0" class="current-dialog-icon">%</span>
         </div>
       </div>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="clickCancel">取消</el-button>
-          <el-button type="primary" @click="addOk">确定</el-button>
+          <el-button @click="clickCancel">{{ $t('public.cancel') }}</el-button>
+          <el-button type="primary" @click="addOk">{{ $t('public.ok') }}</el-button>
         </span>
       </template>
     </el-dialog>
@@ -419,15 +414,13 @@
       :set-template="setTemplate"
       @handleTemplate="handleTemplate"
     ></setTemplate>
-    <selectTarget ref="selectTarget" title="指标模板库" @dialogChangeDada="dialogChangeDada" />
+    <selectTarget ref="selectTarget" :title="$t('access.targetibrary')" @dialogChangeDada="dialogChangeDada" />
     <!-- 通用弹窗表单   -->
     <dialogForm ref="dialogForm" :form-data="formBoxConfig" :roles-config="rolesConfig" @isOk="isOk" />
   </div>
 </template>
 
 <script>
-import { useUserStore } from '@/stores/user.ts'
-import { defineAsyncComponent } from 'vue'
 import {
   userAssessInfo,
   userAssessMark,
@@ -436,15 +429,14 @@ import {
   userSuperiorEvalSaveApi,
   userExamineEvalSaveApi,
   userAssessEditApi
-} from '@/api/user.ts'
-import { getStorageJson } from '@/utils/storage.ts'
+} from '@/api/user'
+import { getStorageJson } from '@/utils/storage'
 export default {
-  emits: ['saveOk'],
   name: 'Execution',
   components: {
-    selectTarget: defineAsyncComponent(() => import('@/components/form-common/dialog-target')),
-    dialogForm: defineAsyncComponent(() => import('../components/index')),
-    setTemplate: defineAsyncComponent(() => import('./setTemplate'))
+    selectTarget: () => import('@/components/form-common/dialog-target'),
+    dialogForm: () => import('../components/index'),
+    setTemplate: () => import('./setTemplate')
   },
   props: {
     id: {
@@ -467,7 +459,7 @@ export default {
     },
 
     isShow: {
-      type: [Number, Boolean],
+      type: Number | Boolean,
       default: false
     },
     appeal: {
@@ -522,8 +514,8 @@ export default {
         success: 0
       },
       total: 0,
-      userInfo: useUserStore().userInfo,
-      enterprise: useUserStore().enterprise
+      userInfo: this.$store.state.user.userInfo,
+      enterprise: this.$store.state.user.enterprise
     }
   },
   computed: {
@@ -648,9 +640,9 @@ export default {
     // 添加考核维度
     addOk() {
       if (this.from.name == '') {
-        this.$message.error('考核维度名称为空')
+        this.$message.error(this.$t('access.placeholder03'))
       } else if (this.from.ratio == '') {
-        this.$message.error('考核维度权重为空')
+        this.$message.error(this.$t('access.placeholder04'))
       } else {
         this.tableData.push({
           name: this.from.name,
@@ -705,11 +697,11 @@ export default {
         ]
       } else {
         if (this.tableData[index].target[len].name == '') {
-          this.$message.error('填写指标名称')
+          this.$message.error(this.$t('access.placeholder09'))
         } else if (this.tableData[index].target[len].content == '') {
-          this.$message.error('填写指标内容')
+          this.$message.error(this.$t('access.placeholder10'))
         } else if (this.tableData[index].target[len].ratio == '') {
-          this.$message.error('填写指标权重')
+          this.$message.error(this.$t('access.placeholder11'))
         } else {
           this.tableData[index].target.push({
             name: '',
@@ -880,12 +872,12 @@ export default {
     judge() {
       var res = []
       if (this.tableData.length <= 0) {
-        this.$message.error('考核维度不能为空')
+        this.$message.error(this.$t('access.placeholder12'))
       } else if (this.dimensionMax > 0) {
         if (this.assessInfo.types === 1) {
           this.$message.error('分数之和必须为' + (this.max) + '分')
         } else {
-          this.$message.error('考核维度权重必须为100')
+          this.$message.error(this.$t('access.placeholder13'))
         }
       } else {
         for (let i = 0; i < this.tableData.length; i++) {
@@ -1137,10 +1129,10 @@ export default {
 .text-right {
   text-align: right;
 }
-:deep(.el-scrollbar__wrap) {
+::v-deep .el-scrollbar__wrap {
   overflow-x: hidden;
 }
-:deep(.el-textarea__inner) {
+::v-deep .el-textarea__inner {
   padding-left: 0;
   padding-right: 0;
 }
@@ -1200,9 +1192,6 @@ export default {
     span {
       font-size: 13px;
     }
-.dimension-ratio {
-      margin-left: 4px;
-    }
     span:first-of-type {
       padding-left: 10px;
       font-size: 13px;
@@ -1210,75 +1199,74 @@ export default {
       color: #000000;
     }
   }
-  // 维度分数：30px 宽的无按钮数字框，去掉 Element Plus 输入框的左右内边距，避免数字被裁切
-  :deep(.el-input-number) {
+  ::v-deep .el-input-number--medium {
     width: 30px;
-
-    .el-input__wrapper {
-      padding: 0;
-    }
   }
-  // 自评分 / 上级评分：不显示原生步进按钮，数值居中
-  :deep(.el-input input[type='number']) {
-    -moz-appearance: textfield;
-    text-align: center;
-
-    &::-webkit-inner-spin-button,
-    &::-webkit-outer-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-  }
-  :deep(.el-table th > .cell) {
+  ::v-deep .el-table th > .cell {
     font-weight: normal;
     font-size: 13px;
   }
-  :deep(.el-table td) {
+  ::v-deep .el-table--medium td {
     padding: 3px 0;
   }
-  :deep(.el-input__wrapper) {
-    min-height: 28px;
-    padding-left: 3px;
+  ::v-deep .el-input__inner {
+    // height: 28px;
+    line-height: 28px;
+    // border: none;
+    font-size: 13px;
+    padding: 0 0 0 3px;
+    text-align: left;
     background-color: transparent;
   }
-  :deep(.el-input__inner) {
-    font-size: 13px;
-    text-align: left;
-  }
-  :deep(.el-textarea__inner) {
+  ::v-deep .el-textarea__inner {
     resize: none;
     overflow-y: hidden;
+    border: none;
     background-color: transparent;
   }
-  :deep(.el-table--enable-row-hover) {
+  ::v-deep .el-table--enable-row-hover {
     .el-table__body tr:hover > td {
       background: transparent;
     }
   }
+  ::v-deep .el-input__inner {
+    // height: 28px;
+    // line-height: 28px;
+    // border: none;
+
+    font-size: 13px;
+    background-color: transparent;
+  }
   .current-delete {
     color: #000000;
+  }
+  ::v-deep .el-input__inner {
+    width: 100%;
+    border: none;
+    background-color: transparent;
+    padding: 0 0 0 3px;
   }
 
   .current-task {
     display: flex;
     align-items: center;
-    .el-input,
-    .el-input-number {
+    .el-input--medium,
+    .el-input-number--medium {
       width: 30px;
     }
     .padding {
       padding: 0 5px;
     }
+    .el-input__inner {
+      width: 100%;
+      border: none;
+      background-color: transparent;
+      padding: 0 0 0 3px;
+    }
   }
 }
 .comment-list {
-  // Element Plus 的 el-col 用 flex-basis 定宽，会盖过 width：头像列固定 32px，且不换行
-  .el-row {
-    flex-wrap: nowrap;
-  }
   .comment-list-left {
-    flex: 0 0 32px;
-    max-width: none;
     width: 32px;
     height: 32px;
     margin-right: 15px;
@@ -1301,11 +1289,11 @@ export default {
     font-size: 13px;
     font-weight: bold;
   }
-  :deep(.el-textarea.is-disabled .el-textarea__inner) {
+  ::v-deep .el-textarea.is-disabled .el-textarea__inner {
     color: #666666;
   }
 
-  :deep(.el-textarea__inner) {
+  ::v-deep .el-textarea__inner {
     padding: 5px 10px;
   }
 }
@@ -1338,11 +1326,11 @@ export default {
     width: auto;
     top: 12px;
   }
-  :deep(.el-input__inner) {
+  ::v-deep .el-input__inner {
     text-align: left;
   }
 }
-:deep(.el-table th.is-leaf) {
+::v-deep .el-table th.is-leaf {
   background-color: #fff !important;
 }
 // #

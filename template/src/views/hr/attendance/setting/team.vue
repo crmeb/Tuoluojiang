@@ -57,7 +57,7 @@
               <el-button
                 v-if="row.admins.includes(userInfo.id) || row.super.includes(userInfo.id)"
                 v-hasPermi="['hr:attendance:team:edit']"
-                type="primary" link
+                type="text"
                 @click="editFn(row)"
                 >编辑</el-button
               >
@@ -65,7 +65,7 @@
               <el-button
                 v-if="row.admins.includes(userInfo.id) || row.super.includes(userInfo.id)"
                 v-hasPermi="['hr:attendance:team:delete']"
-                type="primary" link
+                type="text"
                 @click="deleteFn(row)"
                 >删除</el-button
               >
@@ -86,7 +86,7 @@
       </div>
     </el-card>
     <!-- 查看未设置考勤组人员 -->
-    <el-drawer :before-close="handleClose" v-model="drawer" size="700px" title="未设置考勤组人员">
+    <el-drawer :before-close="handleClose" :visible.sync="drawer" size="700px" title="未设置考勤组人员">
       <!-- 表格 -->
       <div class="box">
         <el-table ref="multipleTable" :data="listData" style="width: 100%" tooltip-effect="dark">
@@ -118,13 +118,12 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { roterPre } from '@/settings.ts'
+import { modalSure } from '@/libs/public'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { roterPre } from '@/settings'
 import oaFromBox from '@/components/common/oaFromBox'
-import { attendanceGroupListApi, deleteAttendanceGroup, attendanceUnattendedMember } from '@/api/config.ts'
-import { mapState } from 'pinia'
-import { useUserStore } from '@/stores/user.ts'
+import { attendanceGroupListApi, deleteAttendanceGroup, attendanceUnattendedMember } from '@/api/config'
+import { mapGetters } from 'vuex'
 export default {
   components: { oaFromBox },
   data() {
@@ -162,7 +161,7 @@ export default {
     }
   },
   computed: {
-    ...mapState(useUserStore, ['userInfo'])
+    ...mapGetters(['userInfo'])
   },
   mounted() {
     this.getList()

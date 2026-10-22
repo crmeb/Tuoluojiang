@@ -46,7 +46,7 @@
 </template>
 
 <script>
-import i18n from '@/utils/i18n.ts'
+import i18n from '@/utils/i18n'
 
 export default {
   name: 'static-content-wrapper',
@@ -204,7 +204,7 @@ export default {
   display: flex; /* 垂直居中 */
   align-items: center; /* 垂直居中 */
 
-  :deep(.el-divider--horizontal) {
+  ::v-deep .el-divider--horizontal {
     margin: 0;
   }
 }
@@ -214,3 +214,4 @@ export default {
   outline: 2px solid #409eff;
 }
 </style>
+@/utils/i18ns

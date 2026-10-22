@@ -2,11 +2,11 @@
 <template>
   <div class="toolbar-container">
     <div class="left-toolbar">
-      <el-button type="primary" link :disabled="undoDisabled" title="撤销" @click="undoHistory">
+      <el-button type="text" :disabled="undoDisabled" title="撤销" @click="undoHistory">
         <!-- <i class="el-icon-arrow-left"></i> -->
         <span class="iconfont iconicon_back"></span>
       </el-button>
-      <el-button type="primary" link :disabled="redoDisabled" title="重做" @click="redoHistory">
+      <el-button type="text" :disabled="redoDisabled" title="重做" @click="redoHistory">
         <!-- <i class="el-icon-arrow-right"></i> -->
         <span class="iconfont icona-icon_nextstep"></span>
       </el-button>
@@ -20,7 +20,7 @@
           <i class="el-icon-collection"></i>
           保存</el-button
         >
-        <template v-for="(idx, slotName) in $slots" :key="slotName">
+        <template v-for="(idx, slotName) in $slots">
           <slot :name="slotName"></slot>
         </template>
       </div>
@@ -28,13 +28,13 @@
 
     <el-dialog
       title="预览"
-      v-model="showPreviewDialogFlag"
+      :visible.sync="showPreviewDialogFlag"
       v-if="showPreviewDialogFlag"
       :show-close="true"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
       center
-      draggable
+      v-dialog-drag
       :destroy-on-close="true"
       :append-to-body="true"
       class="small-padding-dialog"
@@ -77,18 +77,18 @@
 
     <el-dialog
       title="导出JSON"
-      v-model="showExportJsonDialogFlag"
+      :visible.sync="showExportJsonDialogFlag"
       v-if="showExportJsonDialogFlag"
       :show-close="true"
       class="small-padding-dialog"
       center
       append-to-body
-      draggable
+      v-dialog-drag
       :close-on-click-modal="false"
       :close-on-press-escape="false"
       :destroy-on-close="true"
     >
-      <code-editor mode="json" :readonly="true" v-model="jsonContent"></code-editor>
+      <code-editor :mode="'json'" :readonly="true" v-model="jsonContent"></code-editor>
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" class="copy-json-btn" :data-clipboard-text="jsonRawContent" @click="copyFormJson">
@@ -101,19 +101,19 @@
     </el-dialog>
     <el-dialog
       title="表单数据"
-      v-model="showFormDataDialogFlag"
+      :visible.sync="showFormDataDialogFlag"
       v-if="showFormDataDialogFlag"
       :show-close="true"
       class="dialog-title-light-bg"
       center
-      draggable
+      v-dialog-drag
       :close-on-click-modal="false"
       :close-on-press-escape="false"
       :destroy-on-close="true"
       :append-to-body="true"
     >
       <div style="border: 1px solid #dcdfe6">
-        <code-editor mode="json" :readonly="true" v-model="formCopyJson"></code-editor>
+        <code-editor :mode="'json'" :readonly="true" v-model="formCopyJson"></code-editor>
       </div>
       <template #footer>
         <div class="dialog-footer">
@@ -144,10 +144,10 @@ import {
   traverseAllWidgets,
   addWindowResizeHandler
 } from '@/utils/formDesignerUtils'
-import i18n from '@/utils/i18n.ts'
+import i18n from '@/utils/i18n'
 import { saveAs } from 'file-saver'
 import CodeEditor from '@/components/code-editor/index'
-import { formCrudSave, formInfo } from '@/api/form.ts'
+import { formCrudSave, formInfo } from '@/api/form'
 export default {
   name: 'ToolbarPanel',
   mixins: [i18n],
@@ -650,10 +650,39 @@ div.toolbar-container {
     width: max-content;
   }
 
+  ::v-deep .el-button--text {
+    font-size: 14px !important;
+  }
 }
 
 .el-button i {
   margin-right: 3px;
+}
+
+.small-padding-dialog {
+  ::v-deep .el-dialog__header {
+    //padding-top: 3px;
+    //padding-bottom: 3px;
+    background: #f1f2f3;
+  }
+
+  ::v-deep .el-dialog__body {
+    padding: 12px 15px 12px 15px;
+
+    .el-alert.alert-padding {
+      padding: 0 10px;
+    }
+  }
+
+  ::v-deep .ace-container {
+    border: 1px solid #dcdfe6;
+  }
+}
+
+.dialog-title-light-bg {
+  ::v-deep .el-dialog__header {
+    background: #f1f2f3;
+  }
 }
 
 .no-box-shadow {
@@ -661,7 +690,7 @@ div.toolbar-container {
 }
 
 .no-padding.el-tabs--border-card {
-  :deep(.el-tabs__content) {
+  ::v-deep .el-tabs__content {
     padding: 0;
   }
 }
@@ -694,18 +723,18 @@ div.toolbar-container {
   overflow-x: hidden;
 }
 
-.node-tree-drawer {
-  :deep(.el-drawer) {
+.node-tree-drawer ::v-deep {
+  .el-drawer {
     padding: 10px;
     overflow: auto;
   }
 
-  :deep(.el-drawer__header) {
+  .el-drawer__header {
     margin-bottom: 12px;
     padding: 5px 5px 0;
   }
 
-  :deep(.el-drawer__body) {
+  .el-drawer__body {
     padding-left: 5px;
   }
 }
@@ -715,23 +744,23 @@ div.toolbar-container {
 /*  overflow: auto;*/
 /*}*/
 
-.node-tree {
-  :deep(.el-tree > .el-tree-node:after) {
+.node-tree ::v-deep {
+  .el-tree > .el-tree-node:after {
     border-top: none;
   }
-  :deep(.el-tree-node) {
+  .el-tree-node {
     position: relative;
     padding-left: 12px;
   }
 
-  :deep(.el-tree-node__content) {
+  .el-tree-node__content {
     padding-left: 0 !important;
   }
 
-  :deep(.el-tree-node__expand-icon.is-leaf) {
+  .el-tree-node__expand-icon.is-leaf {
     display: none;
   }
-  :deep(.el-tree-node__children) {
+  .el-tree-node__children {
     padding-left: 12px;
     overflow: visible !important; /* 加入此行让el-tree宽度自动撑开，超出宽度el-draw自动出现水平滚动条！ */
   }
@@ -799,33 +828,5 @@ div.toolbar-container {
 }
 .clear-btn.el-button:hover {
   background-color: #fef0ed;
-}
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.small-padding-dialog {
-  .el-dialog__header {
-    //padding-top: 3px;
-    //padding-bottom: 3px;
-    background: #f1f2f3;
-  }
-
-  .el-dialog__body {
-    padding: 12px 15px 12px 15px;
-
-    .el-alert.alert-padding {
-      padding: 0 10px;
-    }
-  }
-
-  .ace-container {
-    border: 1px solid #dcdfe6;
-  }
-}
-.el-dialog.dialog-title-light-bg {
-  .el-dialog__header {
-    background: #f1f2f3;
-  }
 }
 </style>

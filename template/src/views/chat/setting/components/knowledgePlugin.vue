@@ -34,14 +34,14 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import fieldLabel from './fieldLabel.vue'
 import knowledgeSelectDialog from './knowledgeSelectDialog.vue'
-import { DEFAULT_ICON_COLOR } from '../../knowledge/constants.ts'
-import { getIconClass } from '../../knowledge/utils/icon.ts'
-import { FIELD_TIPS } from '../constants.ts'
-import type { KnowledgeItem } from '../types.ts'
-import { useApplicationSetting } from '../composables/useApplicationSetting.ts'
+import { DEFAULT_ICON_COLOR } from '../../knowledge/constants'
+import { getIconClass } from '../../knowledge/utils/icon'
+import { FIELD_TIPS } from '../constants'
+import type { KnowledgeItem } from '../types'
+import { useApplicationSetting } from '../composables/useApplicationSetting'
 
 const { knowledge, form } = useApplicationSetting()
 

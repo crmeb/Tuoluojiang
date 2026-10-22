@@ -3,18 +3,16 @@
     <div class="header">
       <div class="title"><span class="el-icon-arrow-left" @click="goBack"></span>实体列表</div>
       <div class="right lh-center">
-        <el-button type="primary" icon="el-icon-plus" @click="createEntity('', 'add')">
+        <el-button type="primary" icon="el-icon-plus" size="small" @click="createEntity('', 'add')">
           新建实体</el-button
         >
         <el-dropdown>
           <span class="iconfont icongengduo2 pointer ml10"></span>
-          <template #dropdown>
-            <el-dropdown-menu style="text-align: left">
-              <el-dropdown-item @click="importEntity"> 导入实体</el-dropdown-item>
-  
-              <el-dropdown-item @click="downloadFile"> 下载模板</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
+          <el-dropdown-menu style="text-align: left">
+            <el-dropdown-item @click.native="importEntity"> 导入实体</el-dropdown-item>
+
+            <el-dropdown-item @click.native="downloadFile"> 下载模板</el-dropdown-item>
+          </el-dropdown-menu>
         </el-dropdown>
       </div>
     </div>
@@ -25,11 +23,12 @@
         <el-input
           v-model="where.table_name"
           prefix-icon="el-icon-search"
+          size="small"
           placeholder="请输入关键字"
           clearable
           style="width: 250px"
           @change="getList(1)"
-          @keyup.stop.prevent.enter="getList(1)"
+          @keyup.native.stop.prevent.enter="getList(1)"
           class="input"
         ></el-input>
       </div>
@@ -57,12 +56,12 @@
         </el-table-column>
         <el-table-column prop="info" label="关联应用" min-width="200" show-overflow-tooltip>
           <template #default="{ row }">
-            <span>{{ (row.cate || []).join('、') || '--' }}</span>
+            <span>{{ row.cate.join('、') || '--' }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="menu_name_path" label="关联菜单" min-width="250" show-overflow-tooltip>
           <template #default="{ row }">
-            <span>{{ (row.menu_name_path || []).join(' - ') || '--' }}</span>
+            <span>{{ row.menu_name_path.join(' - ') || '--' }}</span>
           </template>
         </el-table-column>
 
@@ -80,32 +79,30 @@
         <el-table-column prop="created_at" label="创建时间" width="230"> </el-table-column>
         <el-table-column prop="address" label="操作" fixed="right" width="150">
           <template #default="scope">
-            <el-button type="primary" link @click="designFn(scope.row)">实体设计</el-button>
+            <el-button type="text" @click="designFn(scope.row)">实体设计</el-button>
             <el-dropdown>
-              <el-button type="primary" link class="el-dropdown-link more">
+              <span class="el-dropdown-link el-button--text el-button more">
                 更多
                 <i class="el-icon-arrow-down" />
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu style="text-align: left">
-                  <el-dropdown-item @click="designFn(scope.row, 1)"> 实体属性 </el-dropdown-item>
-                  <el-dropdown-item @click="designFn(scope.row, 2)"> 字段设计 </el-dropdown-item>
-                  <template v-if="scope.row.crud_id == 0">
-                    <el-dropdown-item @click="designFn(scope.row, 3)"> 表单设计 </el-dropdown-item>
-                    <el-dropdown-item @click="designFn(scope.row, 4)"> 列表设计 </el-dropdown-item>
-                    <el-dropdown-item @click="designFn(scope.row, 5)"> 流程设计 </el-dropdown-item>
-                    <el-dropdown-item @click="designFn(scope.row, 6)"> 触发器设计 </el-dropdown-item>
-                  </template>
-                  <el-dropdown-item
-                    divided
-                    v-if="scope.row.children && scope.row.children.length == 0 && scope.row.crud_id == 0"
-                    @click="createEntity(scope.row)"
-                  >
-                    添加从实体
-                  </el-dropdown-item>
-                  <el-dropdown-item divided @click="deleteEntity(scope.row)"> 删除实体 </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
+              </span>
+              <el-dropdown-menu style="text-align: left">
+                <el-dropdown-item @click.native="designFn(scope.row, 1)"> 实体属性 </el-dropdown-item>
+                <el-dropdown-item @click.native="designFn(scope.row, 2)"> 字段设计 </el-dropdown-item>
+                <template v-if="scope.row.crud_id == 0">
+                  <el-dropdown-item @click.native="designFn(scope.row, 3)"> 表单设计 </el-dropdown-item>
+                  <el-dropdown-item @click.native="designFn(scope.row, 4)"> 列表设计 </el-dropdown-item>
+                  <el-dropdown-item @click.native="designFn(scope.row, 5)"> 流程设计 </el-dropdown-item>
+                  <el-dropdown-item @click.native="designFn(scope.row, 6)"> 触发器设计 </el-dropdown-item>
+                </template>
+                <el-dropdown-item
+                  divided
+                  v-if="scope.row.children && scope.row.children.length == 0 && scope.row.crud_id == 0"
+                  @click.native="createEntity(scope.row)"
+                >
+                  添加从实体
+                </el-dropdown-item>
+                <el-dropdown-item divided @click.native="deleteEntity(scope.row)"> 删除实体 </el-dropdown-item>
+              </el-dropdown-menu>
             </el-dropdown>
           </template>
         </el-table-column>
@@ -145,8 +142,8 @@
   </div>
 </template>
 <script>
-import { modalSure } from '@/libs/public.ts'
-import { fileLinkDownLoad } from '@/utils/file.ts'
+import { modalSure } from '@/libs/public'
+import { fileLinkDownLoad } from '@/utils/file'
 import {
   databaseSaveApi,
   databaseListApi,
@@ -154,16 +151,15 @@ import {
   databaseCopyApi,
   getDatabaseApi,
   getImportTempApi
-} from '@/api/develop.ts'
+} from '@/api/develop'
 import { pinyin } from 'pinyin-pro'
-import { roterPre } from '@/settings.ts'
-import { menuListApi } from '@/api/system.ts'
+import { roterPre } from '@/settings'
+import { menuListApi } from '@/api/system'
 import fieldsettingAi from './fieldsettingAi'
 import oaDialog from '@/components/form-common/dialog-form'
 import Commnt from '@/components/develop/commonData'
 import importExcel from '@/components/common/importExcel'
 export default {
-  emits: ['goBack'],
   components: {
     fieldsettingAi,
     oaDialog,

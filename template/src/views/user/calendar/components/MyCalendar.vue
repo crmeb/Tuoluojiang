@@ -11,14 +11,15 @@
           <div class="add-btn">
             <div class="content-right"></div>
             <div class="content-button">
-              <el-radio-group v-model="time" @change="selectChange">
-                <el-radio-button v-for="(itemn, indexn) in fromList" :key="indexn" :label="itemn.val" :value="itemn.val">
+              <el-radio-group v-model="time" size="small" @change="selectChange">
+                <el-radio-button v-for="(itemn, indexn) in fromList" :key="indexn" :label="itemn.val">
                   {{ itemn.text }}
                 </el-radio-button>
               </el-radio-group>
               <el-button
                 v-if="showAddButton"
                 type="primary"
+                size="small"
                 icon="el-icon-plus"
                 @click="addSchedule"
               >
@@ -29,8 +30,8 @@
           <full-calendar ref="calendar" id="calendar" style="height: calc(100vh - 150px)" :options="calendarOptions">
             <template v-slot:slotLabelContent="arg">
               <div class="calendar-timeline">
-                <span v-if="dayjs(arg.date).format('HH:mm') !== '00:00'">{{
-                  dayjs(arg.date).format('HH:mm')
+                <span v-if="moment(arg.date).format('HH:mm') !== '00:00'">{{
+                  moment(arg.date).format('HH:mm')
                 }}</span>
               </div>
             </template>
@@ -38,7 +39,7 @@
               <div class="header-box">
                 <div class="day-header" :class="period == 1 ? 'ml30' : ''">
                   <span class="week">{{ getWeek(arg.date) }}</span>
-                  <span class="date" v-if="period !== 3">{{ dayjs(arg.date).format('D') }}</span>
+                  <span class="date" v-if="period !== 3">{{ moment(arg.date).format('D') }}</span>
                 </div>
               </div>
             </template>
@@ -87,7 +88,7 @@
     <calendarDetails ref="calendarDetails" @deleteFn="getList" @editFn="editFn" :dateInfo="dateInfo"></calendarDetails>
     <contract-dialog ref="contractDialog" :config="configContract" @isOk="getList"></contract-dialog>
     <!-- 跟进弹窗 -->
-    <el-dialog title="添加跟进记录" class="record" v-model="dialogVisible" width="40%">
+    <el-dialog title="添加跟进记录" class="record" :visible.sync="dialogVisible" width="40%">
       <recordUpload :form-info="formInfo" @change="recordChange"></recordUpload>
     </el-dialog>
     <edit-examine
@@ -99,8 +100,7 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
+import moment from 'moment'
 // 导入FullCalendar插件
 import dayGridPlugin from '@fullcalendar/daygrid'
 import listPlugin from '@fullcalendar/list'
@@ -108,13 +108,13 @@ import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 
 // 导入API接口
-import { clientRemindDetailApi } from '@/api/enterprise.ts'
-import { scheduleListApi, scheduleStatusApi } from '@/api/user.ts'
-import { configRuleApproveApi } from '@/api/config.ts'
+import { clientRemindDetailApi } from '@/api/enterprise'
+import { scheduleListApi, scheduleStatusApi } from '@/api/user'
+import { configRuleApproveApi } from '@/api/config'
 
 // 导入工具函数
-import { toGetWeek, getColor } from '@/utils/format.ts'
-import { getStorageJson } from '@/utils/storage.ts'
+import { toGetWeek, getColor } from '@/utils/format'
+import { getStorageJson } from '@/utils/storage'
 
 export default {
   name: 'MyCalendar',
@@ -125,16 +125,16 @@ export default {
     }
   },
   components: {
-    calendarBar: defineAsyncComponent(() => import('./calendarBar')),
-    FullCalendar: defineAsyncComponent(() => import('@fullcalendar/vue3')),
-    addTodo: defineAsyncComponent(() => import('./addTodo')),
-    contractDialog: defineAsyncComponent(() => import('@/views/customer/contract/components/contractDialog')),
-    recordUpload: defineAsyncComponent(() => import('@/views/customer/list/components/recordUpload')),
-    calendarDetails: defineAsyncComponent(() => import('./calendarDetails')),
-    editExamine: defineAsyncComponent(() => import('@/views/user/examine/components/editExamine'))
+    calendarBar: () => import('./calendarBar'),
+    FullCalendar: () => import('@fullcalendar/vue'),
+    addTodo: () => import('./addTodo'),
+    contractDialog: () => import('@/views/customer/contract/components/contractDialog'),
+    recordUpload: () => import('@/views/customer/list/components/recordUpload'),
+    calendarDetails: () => import('./calendarDetails'),
+    editExamine: () => import('@/views/user/examine/components/editExamine')
   },
   computed: {
-    dayjs: () => dayjs
+    moment: () => moment
   },
   data() {
     return {
@@ -153,9 +153,9 @@ export default {
         follow_id: 0
       },
       fromList: [
-        { text: '天', val: '1' },
-        { text: '周', val: '2' },
-        { text: '月', val: '3' }
+        { text: this.$t('access.day'), val: '1' },
+        { text: this.$t('user.work.week'), val: '2' },
+        { text: this.$t('user.work.month'), val: '3' }
       ],
 
       start_time: '',
@@ -166,7 +166,7 @@ export default {
       calendarOptions: {
         height: 'calc(100vh - 232px)',
         eventColor: '',
-        initialDate: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+        initialDate: moment().format('yyyy-MM-DD HH:mm:ss'),
         plugins: [dayGridPlugin, interactionPlugin, timeGridPlugin, listPlugin],
         handleWindowResize: true,
         displayEventTime: false,
@@ -251,7 +251,7 @@ export default {
       if (this.$refs.calendar) {
         this.calendarApi = this.$refs.calendar.getApi()
         this.dayRender()
-        this.title = dayjs(this.calendarApi.view.currentStart).format('YYYY-MM-DD')
+        this.title = moment(this.calendarApi.view.currentStart).format('YYYY-MM-DD')
         this.start_time = this.title + ' 00:00:00'
         this.end_time = this.title + ' 23:59:59'
       }
@@ -326,10 +326,10 @@ export default {
     },
     handleDateClick(e) {
       this.detailedData = {
-        startDate: dayjs(e.date).format('YYYY-MM-DD'),
-        startTime: dayjs(e.date).format('HH:mm:ss'),
-        endDate: dayjs(e.date).format('YYYY-MM-DD'),
-        time: dayjs(e.date).format('YYYY-MM-DD HH:mm:ss')
+        startDate: moment(e.date).format('YYYY-MM-DD'),
+        startTime: moment(e.date).format('HH:mm:ss'),
+        endDate: moment(e.date).format('YYYY-MM-DD'),
+        time: moment(e.date).format('YYYY-MM-DD HH:mm:ss')
       }
       this.$refs.addTodo.openBox(this.detailedData)
     },
@@ -374,9 +374,9 @@ export default {
 
       if (this.period === 2) {
         const date = this.$refs.calendarBar.value
-        this.$refs.calendarBar.value = dayjs(date).subtract(7, 'd').format('YYYY-MM-DD')
+        this.$refs.calendarBar.value = moment(date).subtract(7, 'd').format('YYYY-MM-DD')
       } else {
-        this.$refs.calendarBar.value = dayjs(this.calendarApi.view.currentStart).format('YYYY-MM-DD')
+        this.$refs.calendarBar.value = moment(this.calendarApi.view.currentStart).format('YYYY-MM-DD')
       }
     },
     removeTitle() {
@@ -394,9 +394,9 @@ export default {
       this.getList()
       if (this.period == 2) {
         let date = this.$refs.calendarBar.value
-        this.$refs.calendarBar.value = dayjs(dayjs(date).add(7, 'd'))
+        this.$refs.calendarBar.value = moment(moment(date).add(7, 'd'))
       } else {
-        this.$refs.calendarBar.value = dayjs(this.calendarApi.view.currentStart).format('YYYY-MM-DD')
+        this.$refs.calendarBar.value = moment(this.calendarApi.view.currentStart).format('YYYY-MM-DD')
       }
     },
     getList() {
@@ -404,14 +404,14 @@ export default {
       let currentStart = this.calendarApi.view.currentStart
       let currentEnd = this.calendarApi.view.currentEnd
       if (this.period == 1) {
-        this.start_time = dayjs(currentStart).format('YYYY-MM-DD') + ' 00:00:00'
-        this.end_time = dayjs(currentStart).format('YYYY-MM-DD') + ' 23:59:59'
+        this.start_time = moment(currentStart).format('YYYY-MM-DD') + ' 00:00:00'
+        this.end_time = moment(currentStart).format('YYYY-MM-DD') + ' 23:59:59'
       } else if (this.period == 2) {
-        this.start_time = dayjs(currentStart).format('YYYY-MM-DD') + ' 00:00:00'
-        this.end_time = dayjs(currentEnd).subtract(1, 'days').format('YYYY-MM-DD') + ' 23:59:59'
+        this.start_time = moment(currentStart).format('YYYY-MM-DD') + ' 00:00:00'
+        this.end_time = moment(currentEnd).subtract(1, 'days').format('YYYY-MM-DD') + ' 23:59:59'
       } else {
-        this.start_time = dayjs(this.calendarApi.view.activeStart).format('YYYY-MM-DD') + ' 00:00:00'
-        this.end_time = dayjs(currentEnd).subtract(1, 'days').format('YYYY-MM-DD') + ' 23:59:59'
+        this.start_time = moment(this.calendarApi.view.activeStart).format('YYYY-MM-DD') + ' 00:00:00'
+        this.end_time = moment(currentEnd).subtract(1, 'days').format('YYYY-MM-DD') + ' 23:59:59'
       }
       let data = {
         start_time: this.start_time,
@@ -426,8 +426,8 @@ export default {
         res.data.map((item) => {
           let start_time = item.start_time
           let end_time = item.end_time
-          let itemStartTime = dayjs(item.start_time).format('YYYY-MM-DD')
-          let itemEndTime = dayjs(item.end_time).format('YYYY-MM-DD')
+          let itemStartTime = moment(item.start_time).format('YYYY-MM-DD')
+          let itemEndTime = moment(item.end_time).format('YYYY-MM-DD')
 
           if (itemEndTime != itemStartTime) {
             item.all_day = true
@@ -465,7 +465,7 @@ export default {
         })
 
         this.calendarOptions.events = newArr
-        this.$refs.calendarBar?.getList(dayjs(currentEnd).format('YYYY-MM-DD'))
+        this.$refs.calendarBar?.getList(moment(currentEnd).format('YYYY-MM-DD'))
       })
     },
 
@@ -497,9 +497,7 @@ export default {
         this.calendarApi.gotoDate(data.time)
       }
       setTimeout(() => {
-        const calendar = this.$refs.calendar
-        if (!calendar) return
-        this.calendarApi = calendar.getApi()
+        this.calendarApi = this.$refs.calendar.getApi()
         this.time = 1
         this.day()
       }, 300)
@@ -523,12 +521,17 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.fc-header-toolbar) {
+::v-deep .fc-header-toolbar {
   position: absolute;
   top: 0;
   left: 0;
 }
 
+.record {
+  ::v-deep .el-dialog__body {
+    padding: 20px 20px 30px 20px;
+  }
+}
 .day-header {
   display: flex;
   flex-direction: column;
@@ -550,55 +553,55 @@ export default {
   }
 }
 
-:deep(.fc .fc-button .fc-icon) {
+::v-deep .fc .fc-button .fc-icon {
   color: #c0c4cc;
 }
-:deep(.fc .fc-timegrid-axis-frame-liquid) {
+::v-deep .fc .fc-timegrid-axis-frame-liquid {
   border-bottom: none !important;
 }
-:deep(.fc .fc-popover) {
+::v-deep .fc .fc-popover {
   z-index: 22;
 }
 .ml30 {
   margin-left: -30px;
 }
 
-:deep(.fc .fc-timegrid-slot) {
+::v-deep .fc .fc-timegrid-slot {
   height: 3.5em !important;
 }
-:deep(.fc .fc-timegrid-divider) {
+::v-deep .fc .fc-timegrid-divider {
   border: none;
   padding: 0;
 }
 
-:deep(.fc .fc-cell-shaded) {
+::v-deep .fc .fc-cell-shaded {
   background: #fff;
 }
-:deep(.fc-timegrid-slot-label-cushion) {
+::v-deep .fc-timegrid-slot-label-cushion {
   color: #909399;
   font-size: 12px;
 }
 
-:deep(.fc .fc-daygrid-day-top) {
+::v-deep .fc .fc-daygrid-day-top {
   padding-top: 6px;
   display: block;
 }
 
-:deep(.fc .fc-timegrid-slot-label) {
+::v-deep .fc .fc-timegrid-slot-label {
   border-bottom: 1px solid #fff;
   vertical-align: top;
   position: relative;
 }
-:deep(.fc .fc-scrollgrid-shrink) {
+::v-deep .fc .fc-scrollgrid-shrink {
   width: 60px !important;
 }
-:deep(.fc-timegrid-slot-label-cushion) {
+::v-deep .fc-timegrid-slot-label-cushion {
   position: absolute;
   left: 0;
   top: -8px;
 }
 
-:deep(.fcTime) {
+::v-deep .fcTime {
   position: absolute;
   left: 0;
   top: -16px !important;
@@ -656,19 +659,19 @@ export default {
   text-overflow: ellipsis !important;
 }
 
-:deep(.fc-direction-ltr .fc-daygrid-event.fc-event-start) {
+::v-deep .fc-direction-ltr .fc-daygrid-event.fc-event-start {
   border-radius: 13px !important;
 }
 
-:deep(.el-tabs__nav-wrap::after) {
+::v-deep .el-tabs__nav-wrap::after {
   display: none;
 }
 .plan-tabs-content {
   margin-top: 14px;
-  :deep(.el-tabs) {
+  ::v-deep .el-tabs {
     padding: 0 20px;
   }
-  :deep(.el-tabs__item) {
+  ::v-deep .el-tabs__item {
     line-height: 26px;
   }
 }
@@ -688,45 +691,45 @@ export default {
   position: relative;
 }
 
-:deep(.fc .fc-button-primary) {
+::v-deep .fc .fc-button-primary {
   background-color: #fff;
   color: #606266;
   border: none;
 }
 
-:deep(.fc .fc-toolbar-chunk) {
+::v-deep .fc .fc-toolbar-chunk {
   display: flex;
   align-items: center;
 }
-:deep(.fc .fc-button-primary:hover) {
+::v-deep .fc .fc-button-primary:hover {
   background-color: #fff;
   color: #606266;
   border: none;
 }
-:deep(.fc .fc-button:focus) {
+::v-deep .fc .fc-button:focus {
   box-shadow: none !important;
 }
-:deep(.fc-h-event) {
+::v-deep .fc-h-event {
   margin: 2px 0 !important;
 }
 
-:deep(.fc .fc-toolbar-title) {
+::v-deep .fc .fc-toolbar-title {
   font-size: 16px;
   font-weight: 500;
   color: #303133;
 }
-:deep(.fc-scrollgrid-sync-inner) {
+::v-deep .fc-scrollgrid-sync-inner {
   a {
     color: #606266 !important;
   }
 }
 
-:deep(a) {
+::v-deep a {
   text-decoration: none;
   outline: none;
 }
 
-:deep(.fc-timeGridWeek-view) {
+::v-deep .fc-timeGridWeek-view {
   th {
     text-align: left;
   }
@@ -736,7 +739,7 @@ export default {
   }
 }
 
-:deep(.fc-dayGridMonth-view) {
+::v-deep .fc-dayGridMonth-view {
   th {
     text-align: left;
   }
@@ -755,12 +758,12 @@ export default {
   }
 }
 
-:deep(.fc-timegrid-axis) {
+::v-deep .fc-timegrid-axis {
   width: 100px !important;
 
   z-index: 99;
 }
-:deep(.fc-widget-content) {
+::v-deep .fc-widget-content {
   width: 150px !important;
   background-color: pink;
   z-index: 99;
@@ -770,17 +773,8 @@ export default {
   display: flex;
   justify-content: center;
 }
-:deep(.fc .fc-more-popover .fc-popover-body) {
+::v-deep .fc .fc-more-popover .fc-popover-body {
   max-height: 300px;
   overflow-y: scroll;
-}
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.record {
-  .el-dialog__body {
-    padding: 20px 20px 30px 20px;
-  }
 }
 </style>

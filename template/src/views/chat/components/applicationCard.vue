@@ -7,6 +7,7 @@
         <div class="over-text creator">创建者：{{ creator }}</div>
       </div>
       <div class="card-tags">
+        <span v-if="appTypeLabel" class="tag" :class="{ 'is-external': isExternal }">{{ appTypeLabel }}</span>
         <span class="tag">{{ isPublished ? '已发布' : '未发布' }}</span>
       </div>
     </div>
@@ -14,9 +15,9 @@
     <div class="card-desc" :title="data.info">{{ data.info }}</div>
 
     <div class="card-actions">
-      <template :key="item.value" v-for="(item, index) in actions">
+      <template v-for="(item, index) in actions">
         <el-divider v-if="index > 0" :key="item.value + '-line'" direction="vertical" />
-        <span class="action" @click="emit('action', item.value)">{{ item.label }}</span>
+        <span :key="item.value" class="action" @click="emit('action', item.value)">{{ item.label }}</span>
       </template>
     </div>
   </div>
@@ -25,8 +26,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import defaultAppIcon from '@/assets/images/ai.png'
-import { APP_TYPE } from '../setting/constants.ts'
-import { APP_STATUS } from '../constants.ts'
+// 应用类型枚举与文案跟设置页共用一份，避免两处各写一套「内部 / 外部应用」
+import { APP_TYPE, APP_TYPE_OPTIONS } from '../setting/constants'
+import { APP_STATUS } from '../constants'
 
 interface ApplicationRow {
   id: number
@@ -58,6 +60,11 @@ const creator = computed(() => (props.data.user && props.data.user.name) || '--'
 const isPublished = computed(() => props.data.status === APP_STATUS.PUBLISHED)
 
 const isExternal = computed(() => props.data.app_type === APP_TYPE.EXTERNAL)
+
+const appTypeLabel = computed(() => {
+  const option = APP_TYPE_OPTIONS.find((item) => item.value === props.data.app_type)
+  return option ? option.label : ''
+})
 
 /**
  * 底部操作项
@@ -150,6 +157,13 @@ const actions = computed(() => {
   line-height: 12px;
   color: #1890ff;
   white-space: nowrap;
+
+  // 外部应用用橙色区分，其余标签（内部应用、发布状态）统一主色
+  &.is-external {
+    border-color: #ff9900;
+    background: rgba(255, 153, 0, 0.05);
+    color: #ff9900;
+  }
 }
 
 .card-desc {

@@ -4,7 +4,7 @@
       <el-card :body-style="{ padding: '20px' }">
         <el-row>
           <el-col>
-            <el-page-header content="文章详情" @click="handleEmit">
+            <el-page-header content="文章详情" @click.native="handleEmit">
               <template #title>
                 <div>返回</div>
               </template>
@@ -41,12 +41,10 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
 export default {
-  emits: ['handleNoticeDetail'],
   name: 'NoticeDetail',
   components: {
-    imageViewer: defineAsyncComponent(() => import('@/components/common/imageViewer'))
+    imageViewer: () => import('@/components/common/imageViewer')
   },
   props: {
     data: {
@@ -119,16 +117,16 @@ export default {
 .p60 {
   padding: 40px 60px;
 }
-:deep(.el-page-header__content) {
+::v-deep .el-page-header__content {
   font-size: 15px;
   font-weight: 600;
 }
-:deep(.el-page-header__left::after) {
+::v-deep .el-page-header__left::after {
   position: absolute;
   right: -10px;
 }
 
-:deep(.el-page-header__left) {
+::v-deep .el-page-header__left {
   margin-right: 20px;
 }
 
@@ -139,26 +137,26 @@ export default {
   margin-top: 30px;
   margin-bottom: 20px;
   word-break: break-all;
-  :deep(img) {
+  ::v-deep img {
     cursor: pointer;
   }
-  :deep(table) {
+  ::v-deep table {
     width: 100%;
     border: 1px solid #ccc;
   }
 
-  :deep(table th) {
+  ::v-deep table th {
     border: 1px solid #ccc;
   }
-  :deep(table td) {
+  ::v-deep table td {
     padding: 10px 5px;
     border: 1px solid #ccc;
   }
 
-  :deep(p img) {
+  ::v-deep p img {
     max-width: 800px;
   }
-  :deep(p) {
+  ::v-deep p {
     margin: 0;
     padding: 0;
   }

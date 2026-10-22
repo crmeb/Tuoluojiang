@@ -3,17 +3,19 @@
   <div class="station">
     <el-drawer
       :title="formData.title"
-      v-model="drawer"
+      :visible.sync="drawer"
       :direction="direction"
       :modal="true"
-      :close-on-click-modal="false"
+      :wrapper-closable="false"
       :before-close="handleClose"
       size="550px"
     >
       <formCreate v-if="rules.length > 0" ref="fc" :option="option" :rule="rules" />
       <div class="button from-foot-btn fix btn-shadow">
-        <el-button @click="drawer = false">取消</el-button>
-        <el-button type="primary" @click="handleConfirm('ruleForm')" :loading="loading">确定</el-button>
+        <el-button size="small" @click="drawer = false">{{ $t('public.cancel') }}</el-button>
+        <el-button size="small" type="primary" @click="handleConfirm('ruleForm')" :loading="loading">{{
+          $t('public.ok')
+        }}</el-button>
       </div>
     </el-drawer>
   </div>
@@ -21,12 +23,11 @@
 
 <script>
 import formCreate from '@form-create/element-ui'
-import request from '@/api/request.ts'
+import request from '@/api/request'
 import ueditorFrom from '@/components/form-common/oa-wangeditor'
 formCreate.component('ueditorFrom', ueditorFrom)
 let fileData = {}
 export default {
-  emits: ['isOk', 'changData'],
   name: 'Index',
   components: { formCreate: formCreate.$form() },
   props: {
@@ -69,7 +70,7 @@ export default {
               closeBtn: false,
               okBtn: false,
               onLoad: (e) => {
-                e.fApi = this.$refs.fc.fapi
+                e.fApi = this.$refs.fc.$f
               }
             }
           },
@@ -106,7 +107,7 @@ export default {
     },
     // 提交
     handleConfirm() {
-      this.$refs.fc.fapi.submit((formDatas, fApi) => {
+      this.$refs.fc.$f.submit((formDatas, fApi) => {
         this.loading = true
         if (this.formData.hasOwnProperty('options')) {
           formDatas = Object.assign(formDatas, this.formData.options)
@@ -125,20 +126,20 @@ export default {
         } else {
           this.$emit('changData', formDatas)
         }
-      }).catch(() => {}) // 校验不通过时 reject，错误已显示在表单上
+      })
     }
   }
 }
 </script>
 
 <style lang="scss" scoped>
-.station :deep(.edui-editor-iframeholder) {
+.station ::v-deep .edui-editor-iframeholder {
   height: 300px !important;
 }
-.station :deep(.el-drawer__body) {
+.station ::v-deep .el-drawer__body {
   padding: 20px 20px 50px 20px;
 }
-:deep(.tips) {
+::v-deep .tips {
   font-size: 13px;
   color: #999;
   margin-bottom: 20px;
@@ -149,10 +150,10 @@ export default {
   border-top: 1px solid #e6ebf5;
   text-align: right;
 }
-:deep(.el-cascader),
-:deep(.el-input-number),
-:deep(.el-select),
-:deep(.el-date-editor) {
+::v-deep .el-cascader,
+::v-deep .el-input-number,
+::v-deep .el-select,
+::v-deep .el-date-editor {
   width: 100%;
 }
 </style>

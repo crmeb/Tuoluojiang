@@ -1,9 +1,9 @@
 <template>
   <div>
     <el-form :inline="true" class="from-s">
-      <div class="flex-row">
-        <el-form-item label="业务类型" class="select-bar">
-          <el-select v-model="tableFrom.type" @change="handleConfirm">
+      <el-row class="flex-row">
+        <el-form-item :label="$t('customer.businesstype')" class="select-bar">
+          <el-select v-model="tableFrom.type" size="small" @change="handleConfirm">
             <el-option v-for="item in sexOptions" :key="item.value" :label="item.label" :value="item.value"></el-option>
           </el-select>
         </el-form-item>
@@ -12,7 +12,7 @@
           <manage-range ref="manageRange" @change="changeMastart"></manage-range>
         </el-form-item>
         <el-form-item label="审核状态" class="select-bar">
-          <el-select v-model="tableFrom.status" @change="handleConfirm">
+          <el-select v-model="tableFrom.status" size="small" @change="handleConfirm">
             <el-option
               v-for="(itemn, indexn) in fromStatus"
               :key="indexn"
@@ -25,6 +25,7 @@
         <el-form-item class="select-bar">
           <el-select
             class="sel"
+            size="small"
             style="width: 100px"
             placeholder="时间类型"
             v-model="tableFrom.time_field"
@@ -36,15 +37,16 @@
           <el-date-picker
             class="time"
             v-model="paymentTimeVal"
+            size="small"
             type="daterange"
-            placeholder="选择时间"
-            format="YYYY/MM/DD"
-            value-format="YYYY/MM/DD"
-            range-separator="至"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
+            :placeholder="$t('toptable.selecttime')"
+            format="yyyy/MM/dd"
+            value-format="yyyy/MM/dd"
+            :range-separator="$t('toptable.to')"
+            :start-placeholder="$t('toptable.startdate')"
+            :end-placeholder="$t('toptable.endingdate')"
             clearable
-            v-bind="$pickerProps(pickerOptions)"
+            :picker-options="pickerOptions"
             @change="establishTime"
           />
         </el-form-item>
@@ -53,18 +55,17 @@
             <div class="reset" @click="reset"><i class="iconfont iconqingchu"></i></div>
           </el-tooltip>
         </el-form-item>
-      </div>
+      </el-row>
     </el-form>
   </div>
 </template>
 
 <script>
-import dayjs from 'dayjs'
-import pickerOptions from '@/libs/pickerOptions.ts'
+import moment from 'moment'
+import pickerOptions from '@/libs/pickerOptions'
 import manageRange from '@/components/form-common/select-manageRange'
 
 export default {
-  emits: ['confirmData'],
   name: 'FormBox',
   components: { manageRange },
   props: ['activeName'],
@@ -72,15 +73,15 @@ export default {
     return {
       pickerOptions,
       fromStatus: [
-        { text: '全部', val: '' },
-        { text: '待审核', val: 0 },
-        { text: '已通过', val: 1 },
-        { text: '未通过', val: 2 }
+        { text: this.$t('toptable.all'), val: '' },
+        { text: this.$t('customer.audit'), val: 0 },
+        { text: this.$t('customer.passed'), val: 1 },
+        { text: this.$t('customer.fail'), val: 2 }
       ],
 
       paymentTimeVal: [
-        dayjs().startOf('months').format('YYYY/MM/DD'),
-        dayjs().endOf('months').format('YYYY/MM/DD')
+        moment().startOf('months').format('YYYY/MM/DD'),
+        moment().endOf('months').format('YYYY/MM/DD')
       ],
 
       tableFrom: {
@@ -89,9 +90,9 @@ export default {
         status: '',
         name: '',
         time:
-          dayjs().startOf('months').format('YYYY/MM/DD') +
+          moment().startOf('months').format('YYYY/MM/DD') +
           '-' +
-          dayjs().endOf('months').format('YYYY/MM/DD'),
+          moment().endOf('months').format('YYYY/MM/DD'),
         salesman_name: '',
         scope_frame: 'all'
       },
@@ -103,7 +104,30 @@ export default {
       ]
     }
   },
+  computed: {
+    lang: function () {
+      return this.$store.getters.lang
+    }
+  },
+  watch: {
+    lang() {
+      this.setOptions()
+    }
+  },
   methods: {
+    setOptions() {
+      this.sexOptions = [
+        { label: this.$t('finance.all'), value: 2 },
+        { label: this.$t('customer.Contractpayment'), value: 1 },
+        { label: this.$t('customer.contractrenewal'), value: 0 }
+      ]
+      this.fromStatus = [
+        { text: this.$t('toptable.all'), val: '' },
+        { text: this.$t('customer.audit'), val: 0 },
+        { text: this.$t('customer.passed'), val: 1 },
+        { text: this.$t('customer.fail'), val: 2 }
+      ]
+    },
 
     changeStatus() {
       this.confirmData()
@@ -141,9 +165,9 @@ export default {
     reset() {
       this.tableFrom = {
         time:
-          dayjs().startOf('months').format('YYYY/MM/DD') +
+          moment().startOf('months').format('YYYY/MM/DD') +
           '-' +
-          dayjs().endOf('months').format('YYYY/MM/DD'),
+          moment().endOf('months').format('YYYY/MM/DD'),
         type: '',
         status: '',
         search: '',
@@ -153,8 +177,8 @@ export default {
       }
       this.$refs.manageRange.frame_id = 'all'
       this.paymentTimeVal = [
-        dayjs().startOf('months').format('YYYY/MM/DD'),
-        dayjs().endOf('months').format('YYYY/MM/DD')
+        moment().startOf('months').format('YYYY/MM/DD'),
+        moment().endOf('months').format('YYYY/MM/DD')
       ]
       this.confirmData()
     },

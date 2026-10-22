@@ -49,15 +49,15 @@
             </el-table-column>
             <el-table-column pstatus label="状态" min-width="80" show-overflow-tooltip>
               <template #default="scope">
-                <el-tag size="small" v-if="scope.row.status === 1">已领用</el-tag>
-                <el-tag size="small" v-if="scope.row.status === 2" type="success">已归还</el-tag>
-                <el-tag size="small" v-if="scope.row.status === 3" type="warning">维修中</el-tag>
-                <el-tag size="small" v-if="scope.row.status === 4" type="danger">已报废</el-tag>
+                <el-tag v-if="scope.row.status === 1" size="mini">已领用</el-tag>
+                <el-tag v-if="scope.row.status === 2" type="success" size="mini">已归还</el-tag>
+                <el-tag v-if="scope.row.status === 3" type="warning" size="mini">维修中</el-tag>
+                <el-tag v-if="scope.row.status === 4" type="danger" size="mini">已报废</el-tag>
               </template>
             </el-table-column>
             <el-table-column prop="updated_at" label="操作时间" min-width="120" show-overflow-tooltip>
               <template #default="scope">
-                {{ dayjs(scope.row.updated_at).format('YYYY-MM-DD') }}
+                {{ moment(scope.row.updated_at).format('yyyy-MM-DD') }}
               </template>
             </el-table-column>
           </el-table>
@@ -81,22 +81,21 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import pickerOptions from '@/libs/pickerOptions.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { storageCateApi, storageRecordApi, storageRecordUsersApi } from '@/api/administration.ts'
-import oaFromBox from '@/components/common/oaFromBox'
+import moment from 'moment'
+import pickerOptions from '@/libs/pickerOptions'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { storageCateApi, storageRecordApi, storageRecordUsersApi } from '@/api/administration'
+import 'animate.css'
 export default {
   name: 'Fixed',
   components: {
-    tree: defineAsyncComponent(() => import('./tree')),
-    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel')),
+    tree: () => import('./tree'),
+    exportExcel: () => import('@/components/common/exportExcel'),
 
-    oaFromBox
+    oaFromBox: () => import('@/components/common/oaFromBox')
   },
   computed: {
-    dayjs: () => dayjs
+    moment: () => moment
   },
   data() {
     return {
@@ -245,11 +244,11 @@ export default {
       // 先将对象变为字符串，然后再变为json对象，防止对象的指针指向问题，为深拷贝
       let where = JSON.parse(JSON.stringify(this.where))
       where.limit = 0
-      this.saveName = '导出固定物资记录_' + dayjs(new Date()).format('MM_DD_HH_mm_ss') + '.xlsx'
+      this.saveName = '导出固定物资记录_' + moment(new Date()).format('MM_DD_HH_mm_ss') + '.xlsx'
       const res = await storageRecordApi(where)
       let data = res.data.list
       if (data.length <= 0) {
-        this.$message.error('暂无内容可导出')
+        this.$message.error(this.$t('access.placeholder24'))
       } else {
         const aoaData = [
           ['领取部门/人员', '物资编号', '物资名称', '规格型号', '物资分类', '计量单位', '物资状态', '操作时间']
@@ -271,7 +270,7 @@ export default {
             value.storage.cate.cate_name,
             value.storage.specs,
             this.getMaterialStatus(value.status),
-            dayjs(value.updated_at).format('YYYY-MM-DD')
+            moment(value.updated_at).format('yyyy-MM-DD')
           ])
         })
         this.exportData.data = aoaData
@@ -324,7 +323,7 @@ export default {
 }
 
 .table-box {
-  :deep(.el-table th) {
+  ::v-deep .el-table th {
     background-color: rgba(247, 251, 255, 1);
   }
 }

@@ -3,7 +3,7 @@
     <div class="card-box">
       <el-card :body-style="{ padding: '20px 20px 0' }" class="box-card">
         <div class="setting-container">
-          <el-form ref="elForm" :model="formData" :rules="rules" size="default" label-width="125px">
+          <el-form ref="elForm" :model="formData" :rules="rules" size="medium" label-width="125px">
             <div class="card-list">
               <div class="head">
                 <span class="line">|</span>
@@ -28,6 +28,7 @@
                     clearable
                     placeholder="请输入正整数"
                     show-word-limit
+                    size="small"
                     style="width: 350px"
                     type="number"
                   >
@@ -41,6 +42,7 @@
                     clearable
                     placeholder="请输入正整数"
                     show-word-limit
+                    size="small"
                     style="width: 350px"
                     type="number"
                   >
@@ -54,6 +56,7 @@
                     clearable
                     placeholder="请输入正整数"
                     show-word-limit
+                    size="small"
                     style="width: 350px"
                     type="number"
                   >
@@ -88,6 +91,7 @@
                     clearable
                     placeholder="请输入正整数"
                     show-word-limit
+                    size="small"
                     style="width: 350px"
                     type="number"
                   >
@@ -101,14 +105,13 @@
         </div>
       </el-card>
       <div class="cr-bottom-button">
-        <el-button type="primary" @click="saveEvt">保存</el-button>
+        <el-button size="small" type="primary" @click="saveEvt">保存</el-button>
       </div>
     </div>
   </div>
 </template>
 <script>
 export default {
-  emits: ['returnData', 'saveEvt'],
   name: 'ReturnRule',
   props: {
     formData: {
@@ -252,18 +255,18 @@ export default {
     }
   }
 }
-:deep(.el-card.is-always-shadow) {
+::v-deep .el-card.is-always-shadow {
   border: none;
 }
-:deep(.el-form-item__label) {
+::v-deep .el-form-item__label {
   line-height: 36px;
 }
 .el-form-item::before,
 .el-form-item::after {
   display: none;
 }
-:deep(.el-form-item__content::before),
-:deep(.el-form-item__content::after) {
+::v-deep .el-form-item__content::before,
+::v-deep .el-form-item__content::after {
   display: none;
 }
 </style>

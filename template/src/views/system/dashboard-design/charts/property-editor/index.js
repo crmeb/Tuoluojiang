@@ -58,7 +58,6 @@ export const registerPEWidgets = (app) => {
   const requireComponent = import.meta.glob('./*.vue', { eager: true })
   Object.keys(requireComponent).forEach((fileName) => {
     let comp = requireComponent[fileName].default
-    // registerChartLibProperties 已注册过其中一部分，重复注册在 Vue 3 下会告警
-    if (!app.component(comp.name)) app.component(comp.name, comp)
+    app.component(comp.name, comp)
   })
 }

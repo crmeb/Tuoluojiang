@@ -1,14 +1,14 @@
 <template>
   <el-dialog
     class="generate-prompt-dialog"
-    v-model="visible"
+    :visible.sync="visible"
     :width="DIALOG_SIZE.LG"
     append-to-body
     :close-on-click-modal="false"
     top="8vh"
     @close="handleClose"
   >
-    <template #header>
+    <template #title>
       <div class="dialog-title">
         <span class="title-icon">
           <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
@@ -52,7 +52,7 @@
             + {{ item }}
           </span>
         </div>
-        <el-button class="generate-btn" type="primary" :loading="isGenerating" @click="handleGenerate">
+        <el-button class="generate-btn" size="small" type="primary" :loading="isGenerating" @click="handleGenerate">
           {{ isGenerating ? '生成中' : text ? '重新生成' : '开始生成' }}
         </el-button>
       </div>
@@ -72,7 +72,7 @@
           ref="resultRef"
           v-model="text"
           type="textarea"
-          class="result-box oa-input-borderless"
+          class="result-box"
           :maxlength="maxlength"
           :readonly="isGenerating"
           placeholder=""
@@ -91,8 +91,8 @@
 
     <template #footer>
       <span class="dialog-footer">
-        <el-button @click="visible = false">取消</el-button>
-        <el-button type="primary" :disabled="isGenerating || !text.trim()" @click="submit">
+        <el-button size="small" @click="visible = false">取消</el-button>
+        <el-button size="small" type="primary" :disabled="isGenerating || !text.trim()" @click="submit">
           确定并填入
         </el-button>
       </span>
@@ -102,8 +102,8 @@
 
 <script setup lang="ts">
 import { nextTick, ref } from 'vue'
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
-import { useGeneratePrompt } from '../composables/useGeneratePrompt.ts'
+import { DIALOG_SIZE } from '@/constants/popupSize'
+import { useGeneratePrompt } from '../composables/useGeneratePrompt'
 
 /** 生成要求的字数上限 */
 const DEMAND_MAX = 200
@@ -197,6 +197,32 @@ defineExpose({ openBox })
 
 <style scoped lang="scss">
 $primary: #1890ff;
+
+.generate-prompt-dialog {
+  :deep(.el-dialog) {
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  :deep(.el-dialog__header) {
+    padding: 20px 24px 16px;
+    border: none;
+    background: linear-gradient(180deg, #f3f8ff 0%, #fff 100%);
+  }
+
+  :deep(.el-dialog__headerbtn) {
+    top: 22px;
+    right: 22px;
+  }
+
+  :deep(.el-dialog__body) {
+    padding: 4px 24px 0;
+  }
+
+  :deep(.el-dialog__footer) {
+    padding: 16px 24px 20px;
+  }
+}
 
 .dialog-title {
   display: flex;
@@ -413,6 +439,7 @@ $primary: #1890ff;
     height: min(var(--textarea-height), 40vh);
     padding: 12px 14px;
     resize: none;
+    border: none;
     border-radius: 8px;
     background: transparent;
     font-size: 13px;
@@ -443,34 +470,5 @@ $primary: #1890ff;
 .dialog-footer .el-button {
   padding: 9px 20px;
   border-radius: 8px;
-}
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.generate-prompt-dialog {
-  & {
-    border-radius: 12px;
-    overflow: hidden;
-  }
-
-  .el-dialog__header {
-    padding: 20px 24px 16px;
-    border: none;
-    background: linear-gradient(180deg, #f3f8ff 0%, #fff 100%);
-  }
-
-  .el-dialog__headerbtn {
-    top: 22px;
-    right: 22px;
-  }
-
-  .el-dialog__body {
-    padding: 4px 24px 0;
-  }
-
-  .el-dialog__footer {
-    padding: 16px 24px 20px;
-  }
 }
 </style>

@@ -6,13 +6,13 @@
       :key="viewerKey"
       :url-list="urlList"
       :initial-index="initialIndex"
-      @close="close"
+      :on-close="close"
     />
   </div>
 </template>
 
 <script>
-import { ElImageViewer } from 'element-plus'
+import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 
 export default {
   name: 'ImageViewer',

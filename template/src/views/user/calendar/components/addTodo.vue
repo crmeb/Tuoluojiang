@@ -2,15 +2,15 @@
   <div class="divBox">
     <el-drawer
       :title="edit ? '编辑日程' : '新增日程'"
-      v-model="drawer"
-      :close-on-click-modal="false"
+      :visible.sync="drawer"
+      :wrapperClosable="false"
       size="600px"
       :before-close="handleClose"
     >
       <div class="box" ref="scrollRef">
         <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="100px" class="demo-ruleForm">
           <el-form-item label="待办标题：" prop="title">
-            <el-input v-model="ruleForm.title" placeholder="请输入待办标题"></el-input>
+            <el-input size="small" v-model="ruleForm.title" placeholder="请输入待办标题"></el-input>
           </el-form-item>
 
           <el-form-item label="参与人：" prop="member" v-if="ruleForm.cid !== 5" style="margin-bottom: 15px">
@@ -22,18 +22,20 @@
           <el-form-item label="开始时间：" prop="start_time">
             <div class="start-time">
               <el-date-picker
+                size="small"
                 :style="{ width: ruleForm.all_day ? '85%' : '190px' }"
                 v-model="startDate"
                 type="date"
                 :clearable="false"
                 placeholder="选择日期"
-                format="YYYY-MM-DD"
+                format="yyyy-MM-dd"
                 @change="durationTypeFn"
                 :validate-event="false"
               >
               </el-date-picker>
               <el-time-picker
                 v-if="!ruleForm.all_day"
+                size="small"
                 style="width: 190px"
                 :clearable="false"
                 v-model="startTime"
@@ -48,7 +50,7 @@
           </el-form-item>
 
           <el-form-item label="时长：" prop="" v-if="!ruleForm.all_day && !edit">
-            <el-select v-model="durationType" placeholder="请选择" @change="durationTypeFn">
+            <el-select size="small" v-model="durationType" placeholder="请选择" @change="durationTypeFn">
               <el-option v-for="item in durationList" :key="item.value" :label="item.label" :value="item.value">
               </el-option>
             </el-select>
@@ -58,11 +60,12 @@
           <el-form-item label="结束时间：" prop="end_time" v-if="durationType == 5 || ruleForm.all_day">
             <div class="end-time">
               <el-date-picker
+                size="small"
                 :style="{ width: ruleForm.all_day ? '85%' : '190px' }"
                 v-model="endDate"
                 type="date"
-                format="YYYY-MM-DD"
-                value-format="YYYY-MM-DD"
+                format="yyyy-MM-dd"
+                value-format="yyyy-MM-dd"
                 :clearable="false"
                 placeholder="选择日期"
                 :validate-event="false"
@@ -70,6 +73,7 @@
               </el-date-picker>
               <el-time-picker
                 v-if="!ruleForm.all_day"
+                size="small"
                 v-model="endTime"
                 value-format="HH:mm:ss"
                 style="width: 190px"
@@ -83,12 +87,12 @@
           </el-form-item>
 
           <el-form-item label="提醒时间：" prop="remind">
-            <el-select v-model="ruleForm.remind" placeholder="请选择">
+            <el-select size="small" v-model="ruleForm.remind" placeholder="请选择">
               <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value"> </el-option>
             </el-select>
           </el-form-item>
           <el-form-item label="重复：" prop="period">
-            <el-select v-model="ruleForm.period" @change="daysChange" placeholder="请选择">
+            <el-select size="small" v-model="ruleForm.period" @change="daysChange" placeholder="请选择">
               <el-option v-for="item in repeatOptions" :key="item.value" :label="item.label" :value="item.value">
               </el-option>
             </el-select>
@@ -97,25 +101,26 @@
           <el-form-item prop="rate" label="频率:" v-if="ruleForm.period == 1 || ruleForm.period == 4">
             <el-input-number
               v-model="ruleForm.rate"
+              size="small"
               :controls="false"
               :min="1"
-              placeholder="请输入提醒频率"
+              :placeholder="$t('calendar.placeholder17')"
             />
             <span>{{ ruleForm.period == 1 ? '天' : '年' }}</span>
           </el-form-item>
           <el-form-item prop="days" label="每周:" v-if="ruleForm.period == 2">
-            <el-checkbox-group v-model="ruleForm.days">
-              <el-checkbox-button v-for="item in week" :key="item.value" :label="item.value" :value="item.value">{{
+            <el-checkbox-group v-model="ruleForm.days" size="small">
+              <el-checkbox-button v-for="item in week" :key="item.value" :label="item.value">{{
                 item.label
               }}</el-checkbox-button>
             </el-checkbox-group>
           </el-form-item>
           <el-form-item prop="days" label="每月:" v-if="ruleForm.period == 3" class="month">
-            <el-checkbox-group v-model="ruleForm.days">
+            <el-checkbox-group v-model="ruleForm.days" size="small">
               <el-checkbox-button
                 v-for="item in 31"
                 :key="item"
-                :label="item.toString()" :value="item.toString()"
+                :label="item.toString()"
                 >{{ item > 9 ? item : '0' + item }}</el-checkbox-button
               >
             </el-checkbox-group>
@@ -124,17 +129,19 @@
             <el-date-picker
               style="width: 100%"
               v-model="ruleForm.fail_time"
-              format="YYYY-MM-DD"
-              value-format="YYYY-MM-DD"
+              size="small"
+              format="yyyy-MM-dd"
+              value-format="yyyy-MM-dd"
               prefix-icon="el-icon-date"
               :clearable="true"
-              placeholder="永不结束"
+              :placeholder="$t('calendar.neverend')"
             />
           </el-form-item>
           <el-form-item label="日程类型：" prop="cid">
             <div v-if="ruleForm.type && ruleForm.cid < 7 && ruleForm.cid != 1">{{ cidName }}</div>
             <div class="start-time" v-else>
               <el-select
+                size="small"
                 v-model="ruleForm.cid"
                 placeholder="请选择"
                 @change="cidChangeFn"
@@ -166,24 +173,22 @@
           />
         </el-form>
         <div class="button from-foot-btn fix btn-shadow">
-          <el-button @click="handleClose">取消</el-button>
-          <el-button type="primary" :loading="loading" @click="submitForm">保存</el-button>
+          <el-button @click="handleClose" size="small">取消</el-button>
+          <el-button type="primary" :loading="loading" size="small" @click="submitForm">保存</el-button>
         </div>
       </div>
     </el-drawer>
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { scheduleStoreApi, scheduleTypesApi, scheduleEditApi, scheduleInfoApi } from '@/api/user.ts'
-import { getStorageJson } from '@/utils/storage.ts'
+import moment from 'moment'
+import { scheduleStoreApi, scheduleTypesApi, scheduleEditApi, scheduleInfoApi } from '@/api/user'
+import { getStorageJson } from '@/utils/storage'
 export default {
-  emits: ['getList'],
   name: '',
   components: {
-    ueditorFrom: defineAsyncComponent(() => import('@/components/form-common/oa-wangeditor')),
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member'))
+    ueditorFrom: () => import('@/components/form-common/oa-wangeditor'),
+    selectMember: () => import('@/components/form-common/select-member')
   },
   props: ['leftTime'],
   data() {
@@ -225,13 +230,13 @@ export default {
         { value: 5, label: '自定义结束时间' }
       ],
       week: [
-        { value: '1', label: '星期一' },
-        { value: '2', label: '星期二' },
-        { value: '3', label: '星期三' },
-        { value: '4', label: '星期四' },
-        { value: '5', label: '星期五' },
-        { value: '6', label: '星期六' },
-        { value: '7', label: '星期天' }
+        { value: '1', label: this.$t('hr.monday') },
+        { value: '2', label: this.$t('hr.tuesday') },
+        { value: '3', label: this.$t('hr.wednesday') },
+        { value: '4', label: this.$t('hr.thursday') },
+        { value: '5', label: this.$t('hr.friday') },
+        { value: '6', label: this.$t('hr.saturday') },
+        { value: '7', label: this.$t('hr.sunday') }
       ],
 
       ruleForm: {
@@ -381,17 +386,17 @@ export default {
 
   methods: {
     formatTime() {
-      const currentDate = dayjs().format('YYYY-MM-DD ')
-      const baseTime = this.leftTime ? dayjs(this.leftTime) : dayjs()
+      const currentDate = moment().format('yyyy-MM-DD ')
+      const baseTime = this.leftTime ? moment(this.leftTime) : moment()
 
-      this.startDate = baseTime.format('YYYY-MM-DD ') || currentDate
-      this.endDate = baseTime.format('YYYY-MM-DD ')
+      this.startDate = baseTime.format('yyyy-MM-DD ') || currentDate
+      this.endDate = baseTime.format('yyyy-MM-DD ')
 
-      this.startTime = dayjs().format('HH:mm:ss')
-      this.endTime = dayjs().add(1, 'hours').format('HH:mm:ss')
+      this.startTime = moment().format('HH:mm:ss')
+      this.endTime = moment().add(1, 'hours').format('HH:mm:ss')
     },
     durationTypeFn() {
-      const startTime = dayjs(this.startDate).format('YYYY-MM-DD ') + this.startTime
+      const startTime = moment(this.startDate).format('YYYY-MM-DD ') + this.startTime
       const durationMap = {
         1: 30,
         2: 60,
@@ -400,11 +405,11 @@ export default {
       }
 
       if (durationMap.hasOwnProperty(this.durationType)) {
-        this.ruleForm.end_time = dayjs(startTime)
+        this.ruleForm.end_time = moment(startTime)
           .add(durationMap[this.durationType], 'minutes')
           .format('YYYY-MM-DD HH:mm:ss')
       } else if (this.durationType === 5) {
-        this.ruleForm.end_time = dayjs(this.endDate + ' ' + this.endTime).format('YYYY-MM-DD HH:mm:ss')
+        this.ruleForm.end_time = moment(this.endDate + ' ' + this.endTime).format('YYYY-MM-DD HH:mm:ss')
       }
     },
 
@@ -416,15 +421,15 @@ export default {
       // 处理全天日程
       if (this.ruleForm.all_day) {
         this.ruleForm.all_day = 1
-        this.ruleForm.start_time = dayjs(this.startDate).format('YYYY-MM-DD ') + '00:00:00'
-        this.ruleForm.end_time = dayjs(this.endDate).format('YYYY-MM-DD ') + '23:59:59'
+        this.ruleForm.start_time = moment(this.startDate).format('YYYY-MM-DD ') + '00:00:00'
+        this.ruleForm.end_time = moment(this.endDate).format('YYYY-MM-DD ') + '23:59:59'
       } else {
         this.ruleForm.all_day = 0
         if (this.startDate && this.startTime) {
-          this.ruleForm.start_time = dayjs(this.startDate).format('YYYY-MM-DD ') + this.startTime
+          this.ruleForm.start_time = moment(this.startDate).format('YYYY-MM-DD ') + this.startTime
         }
         if (this.edit && this.endDate && this.endTime) {
-          this.ruleForm.end_time = dayjs(this.endDate).format('YYYY-MM-DD ') + this.endTime
+          this.ruleForm.end_time = moment(this.endDate).format('YYYY-MM-DD ') + this.endTime
         }
       }
 
@@ -512,23 +517,23 @@ export default {
 
             if (this.ruleForm.all_day) {
               if (data.type == 2) {
-                this.endDate = dayjs(res.data.end_time).format('YYYY-MM-DD ')
-                this.startDate = dayjs(res.data.start_time).format('YYYY-MM-DD ')
+                this.endDate = moment(res.data.end_time).format('yyyy-MM-DD ')
+                this.startDate = moment(res.data.start_time).format('yyyy-MM-DD ')
               } else {
-                this.endDate = dayjs(data.date.end).format('YYYY-MM-DD ')
-                this.startDate = dayjs(data.date.start).format('YYYY-MM-DD ')
+                this.endDate = moment(data.date.end).format('yyyy-MM-DD ')
+                this.startDate = moment(data.date.start).format('yyyy-MM-DD ')
               }
             } else {
               if (data.type == 2) {
-                this.endTime = dayjs(res.data.end_time).format('HH:mm:ss')
-                this.endDate = dayjs(res.data.end_time).format('YYYY-MM-DD ')
-                this.startDate = dayjs(res.data.start_time).format('YYYY-MM-DD ')
-                this.startTime = dayjs(res.data.start_time).format('HH:mm:ss')
+                this.endTime = moment(res.data.end_time).format('HH:mm:ss')
+                this.endDate = moment(res.data.end_time).format('yyyy-MM-DD ')
+                this.startDate = moment(res.data.start_time).format('yyyy-MM-DD ')
+                this.startTime = moment(res.data.start_time).format('HH:mm:ss')
               } else {
-                this.endTime = dayjs(data.date.end).format('HH:mm:ss')
-                this.endDate = dayjs(data.date.end).format('YYYY-MM-DD ')
-                this.startDate = dayjs(data.date.start).format('YYYY-MM-DD ')
-                this.startTime = dayjs(data.date.start).format('HH:mm:ss')
+                this.endTime = moment(data.date.end).format('HH:mm:ss')
+                this.endDate = moment(data.date.end).format('yyyy-MM-DD ')
+                this.startDate = moment(data.date.start).format('yyyy-MM-DD ')
+                this.startTime = moment(data.date.start).format('HH:mm:ss')
               }
             }
             this.ruleForm.member = res.data.member || []
@@ -547,7 +552,7 @@ export default {
           this.startDate = data.startDate
           this.startTime = data.startTime
           this.endDate = data.endDate
-          this.endTime = dayjs(data.time).add(1, 'hours').format('HH:mm:ss')
+          this.endTime = moment(data.time).add(1, 'hours').format('HH:mm:ss')
           this.durationTypeFn()
         }
       } else {
@@ -667,11 +672,15 @@ export default {
   flex-wrap: wrap;
 }
 
-:deep(.el-checkbox-button__inner) {
+::v-deep .el-checkbox-button__inner {
   padding: 9px 14px;
 }
-:deep(.el-checkbox-button .el-checkbox-button__inner) {
+::v-deep .el-checkbox-button .el-checkbox-button__inner {
   border: 1px solid #dcdfe6;
+}
+
+::v-deep .el-select .el-input__inner {
+  color: unset;
 }
 
 .user {
@@ -749,10 +758,10 @@ export default {
   padding-top: 80px;
   text-align: center;
 }
-:deep(.el-drawer__body) {
+::v-deep .el-drawer__body {
   padding-bottom: 0;
 }
-:deep(.el-drawer__header) {
+::v-deep .el-drawer__header {
   padding: 16px 24px 16px 24px;
 }
 </style>

@@ -2,7 +2,7 @@
   <div class="box">
     <div class="box-height workbench-page">
       <!-- 第一行：顶部问候 + 欢迎卡片 -->
-      <el-row :gutter="14">
+      <el-row :gutter="14" type="flex">
         <el-col :span="16">
           <header-need />
         </el-col>
@@ -12,7 +12,7 @@
       </el-row>
 
       <!-- 第二行：业绩统计 + 常用功能 / 待办事项 -->
-      <el-row class="mt14" :gutter="14">
+      <el-row class="mt14" type="flex" :gutter="14">
         <el-col :span="16">
           <achievement />
           <quick />
@@ -42,22 +42,22 @@
   </div>
 </template>
 <script>
-import { ref, computed, defineAsyncComponent } from 'vue'
-import { useWorkbenchTasks } from './composables/useWorkbenchTasks.ts'
+import { ref, computed } from 'vue'
+import { useWorkbenchTasks } from './composables/useWorkbenchTasks'
 
 export default {
   name: 'Workbench',
   components: {
-    headerNeed: defineAsyncComponent(() => import('./components/cards/headerNeed')),
-    headerPic: defineAsyncComponent(() => import('./components/cards/headerPic')),
-    achievement: defineAsyncComponent(() => import('./components/cards/achievement')),
-    quick: defineAsyncComponent(() => import('./components/cards/quick')),
-    todoCalendar: defineAsyncComponent(() => import('./components/cards/todoCalendar')),
-    assess: defineAsyncComponent(() => import('./components/cards/assess')),
-    systemNotice: defineAsyncComponent(() => import('./components/cards/systemNotice')),
-    enterpriseNotice: defineAsyncComponent(() => import('./components/cards/enterpriseNotice')),
-    password: defineAsyncComponent(() => import('./components/password')),
-    copyright: defineAsyncComponent(() => import('@/layout/components/copyright.vue'))
+    headerNeed: () => import('./components/cards/headerNeed'),
+    headerPic: () => import('./components/cards/headerPic'),
+    achievement: () => import('./components/cards/achievement'),
+    quick: () => import('./components/cards/quick'),
+    todoCalendar: () => import('./components/cards/todoCalendar'),
+    assess: () => import('./components/cards/assess'),
+    systemNotice: () => import('./components/cards/systemNotice'),
+    enterpriseNotice: () => import('./components/cards/enterpriseNotice'),
+    password: () => import('./components/password'),
+    copyright: () => import('@/layout/components/copyright.vue')
   },
   setup() {
     // 第三行动态布局状态（由对应卡片上报）
@@ -89,7 +89,7 @@ export default {
   margin: 14px;
   margin-top: 1px;
   box-sizing: border-box;
-  :deep(.divBox) {
+  ::v-deep .divBox {
     padding: 0;
   }
 }

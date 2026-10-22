@@ -43,7 +43,6 @@ window._AMapSecurityConfig = {
 
 export default {
   name: 'MapContainer',
-  emits: ['select'],
   props: {
     // 位置信息对象
     positionInfo: {
@@ -385,17 +384,18 @@ export default {
   }
 }
 
-/* 地图搜索表单样式 */
-:deep(.el-form-item) {
+/* Element UI 样式覆盖 */
+::v-deep {
+  .el-form-item {
     margin-bottom: 0 !important;
-}
+  }
 
-:deep(.el-input__suffix) {
+  .el-input__suffix {
     position: absolute;
     top: 10px;
-}
+  }
 
-:deep(.el-input-group__append) {
+  .el-input-group__append {
     top: 0;
 
     button.el-button {
@@ -403,5 +403,6 @@ export default {
       color: #fff;
       border-radius: 0 4px 4px 0;
     }
+  }
 }
 </style>

@@ -40,7 +40,7 @@
         </el-table-column>
         <el-table-column label="执行结果" prop="log" min-width="100">
           <template #default="scope">
-            <el-tag :type="scope.row.result === 'success' ? 'success' : 'danger'" effect="plain">
+            <el-tag size="small" :type="scope.row.result === 'success' ? 'success' : 'danger'" effect="plain">
               {{ scope.row.result === 'success' ? '成功' : '失败' }}
             </el-tag>
           </template>
@@ -52,7 +52,7 @@
         </el-table-column>
         <el-table-column label="操作" fixed="right" width="100">
           <template #default="scope">
-            <el-button type="primary" link @click="editFn(scope.row)">查看</el-button>
+            <el-button type="text" @click="editFn(scope.row)">查看</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -77,9 +77,9 @@
   </div>
 </template>
 <script>
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { dataEventLogApi, dataEventTypeApi, dataEventActionApi, getDatabaseApi } from '@/api/develop.ts'
-import JsonViewer from '@/components/common/jsonViewer.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { dataEventLogApi, dataEventTypeApi, dataEventActionApi, getDatabaseApi } from '@/api/develop'
+import JsonViewer from 'vue-json-viewer'
 import oaDialog from '@/components/form-common/drawer-form'
 import oaFromBox from '@/components/common/oaFromBox'
 export default {

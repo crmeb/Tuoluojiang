@@ -3,7 +3,7 @@
     <div class="flex-between">
       <div class="title-16">字段列表</div>
       <div class="flex">
-        <el-button @click="handleAdd" class="mr10">AI生成字段</el-button>
+        <el-button size="small" @click="handleAdd" class="mr10">AI生成字段</el-button>
         <field-popover  title="新建字段" :infoData="infoData" :typesObj="typesList" @getInfo="getList" ></field-popover>
       </div>
     </div>
@@ -14,11 +14,12 @@
         <el-input
           v-model="where.name"
           prefix-icon="el-icon-search"
+          size="small"
           placeholder="请输入关键字"
           clearable
           style="width: 250px"
           @change="getList"
-          @keyup.stop.prevent.enter="getList"
+          @keyup.native.stop.prevent.enter="getList"
           class="input"
         ></el-input>
       </div>
@@ -29,14 +30,14 @@
         <el-table-column prop="field_name_en" label="字段名称" :min-width="150">
           <template #default="scope">
             <span class="mr10"> {{ scope.row.field_name_en }}</span>
-            <el-tooltip v-if="scope.row.field_name_en == 'id'" class="item" effect="dark" content="主键字段" placement="top-start">
-              <el-tag size="small" class="ml4">主</el-tag>
+            <el-tooltip class="item" effect="dark" content="主键字段" placement="top-start">
+              <el-tag class="ml4" size="mini" v-if="scope.row.field_name_en == 'id'">主</el-tag>
             </el-tooltip>
-            <el-tooltip v-if="scope.row.is_default == 1" class="item" effect="dark" content="系统字段" placement="top-start">
-              <el-tag size="small" class="ml4" type="warning">系</el-tag>
+            <el-tooltip class="item" effect="dark" content="系统字段" placement="top-start">
+              <el-tag class="ml4" size="mini" type="warning" v-if="scope.row.is_default == 1">系</el-tag>
             </el-tooltip>
-            <el-tooltip v-if="scope.row.is_re_table > 0" class="item" effect="dark" content="主从字段" placement="top-start">
-              <el-tag size="small" class="ml4" type="info">从</el-tag>
+            <el-tooltip class="item" effect="dark" content="主从字段" placement="top-start">
+              <el-tag class="ml4" size="mini" type="info" v-if="scope.row.is_re_table > 0">从</el-tag>
             </el-tooltip>
           </template>
         </el-table-column>
@@ -77,8 +78,8 @@
 
         <el-table-column prop="address" label="操作" fixed="right" width="170">
           <template #default="scope">
-            <el-button v-if="scope.row.is_default !== 1" type="primary" link @click="editFn(scope.row)">编辑</el-button>
-            <el-button v-if="scope.row.is_default !== 1" type="primary" link @click="deleteFn(scope.row)">删除</el-button>
+            <el-button v-if="scope.row.is_default !== 1" type="text" @click="editFn(scope.row)">编辑</el-button>
+            <el-button v-if="scope.row.is_default !== 1" type="text" @click="deleteFn(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -96,12 +97,12 @@
   </div>
 </template>
 <script>
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import Commnt from '@/components/develop/commonData'
 import oaDialog from '@/components/form-common/dialog-form'
 import fieldPopover from './fieldPopover'
 import fieldsettingAi from './fieldsettingAi'
-import { getDictListApi } from '@/api/form.ts'
+import { getDictListApi } from '@/api/form'
 
 import {
   dataFieldTypeApi,
@@ -110,7 +111,7 @@ import {
   dataFieldInfoApi,
   dataFieldUpdateApi,
   dataFieldMainApi
-} from '@/api/develop.ts'
+} from '@/api/develop'
 
 export default {
   name: '',

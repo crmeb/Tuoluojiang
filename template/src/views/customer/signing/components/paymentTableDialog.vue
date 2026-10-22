@@ -1,24 +1,22 @@
 <template>
     <div>
-        <el-drawer title="关联订单" v-model="show" size="1000px"  :append-to-body="true">
+        <el-drawer title="关联订单" :visible.sync="show" size="1000px"  :append-to-body="true">
             <div class="p20">
                 <paymentTable ref="paymentTable" type="check"  @handleSelectionFn="handleSelectionFn"></paymentTable>
                 <div class="button from-foot-btn fix btn-shadow">
-                    <el-button @click="handleClose">取消</el-button>
-                    <el-button type="primary" @click="submit">确定</el-button>
+                    <el-button size="small" @click="handleClose">取消</el-button>
+                    <el-button type="primary" size="small" @click="submit">确定</el-button>
                 </div>
             </div>
         </el-drawer>
     </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { contractLinkOrderApi } from '@/api/contractSign.ts'
+import { contractLinkOrderApi } from '@/api/contractSign'
 export default {
-  emits: ['getTableData'],
     name: 'paymentTableDialog',
     components: {
-        paymentTable: defineAsyncComponent(() => import('./paymentTable.vue')),
+        paymentTable: () => import('./paymentTable.vue'),
     },
     props: {
         list: {

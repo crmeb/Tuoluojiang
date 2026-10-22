@@ -1,0 +1,1 @@
+var e={NORMAL:0,LOW:1,HIGH:2,SOLD_OUT:3},t=[{value:e.NORMAL,label:`正常`,theme:`success`,variant:`filled`},{value:e.LOW,label:`偏低`,theme:`warning`,variant:`filled`},{value:e.HIGH,label:`偏高`,theme:`primary`,variant:`filled`},{value:e.SOLD_OUT,label:`已售罄`,theme:`pink`,variant:`filled`}];t.reduce((e,t)=>(e[t.value]=t,e),{});export{t as n,e as t};

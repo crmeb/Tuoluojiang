@@ -2,7 +2,7 @@
   <el-dialog
     class="textarea-dialog"
     :title="title"
-    v-model="visible"
+    :visible.sync="visible"
     :width="DIALOG_SIZE.MD"
     :close-on-click-modal="false"
     top="10vh"
@@ -11,7 +11,7 @@
     <el-input
       v-model="text"
       type="textarea"
-      class="textarea-box oa-input-borderless"
+      class="textarea-box"
       :style="{ '--textarea-height': height + 'px' }"
       :maxlength="maxlength"
       show-word-limit
@@ -19,8 +19,8 @@
     />
     <template #footer>
       <span class="dialog-footer">
-        <el-button @click="visible = false">取消</el-button>
-        <el-button type="primary" @click="submit">确定</el-button>
+        <el-button size="small" @click="visible = false">取消</el-button>
+        <el-button size="small" type="primary" @click="submit">确定</el-button>
       </span>
     </template>
   </el-dialog>
@@ -28,7 +28,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
+import { DIALOG_SIZE } from '@/constants/popupSize'
 
 const emit = defineEmits<{ (e: 'submit', value: string): void }>()
 
@@ -67,29 +67,26 @@ defineExpose({ openBox })
 </script>
 
 <style scoped lang="scss">
+.textarea-dialog {
+  :deep(.el-dialog__header) {
+    border: none;
+  }
+
+  :deep(.el-dialog__body) {
+    padding-top: 0;
+  }
+}
 
 .textarea-box {
   :deep(.el-textarea__inner) {
     height: var(--textarea-height);
     resize: none;
     background: #f2f5f9;
+    border: none;
   }
 
   :deep(.el-input__count) {
     background: #f2f5f9;
-  }
-}
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.textarea-dialog {
-  .el-dialog__header {
-    border: none;
-  }
-
-  .el-dialog__body {
-    padding-top: 0;
   }
 }
 </style>

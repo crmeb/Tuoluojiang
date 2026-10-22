@@ -20,9 +20,8 @@
                 ghost-class="ghost"
                 tag="ul"
                 @end="onContainerDragEnd"
-                :item-key="$draggableKey"
               >
-                <template #item="{ element: ctn, index }">
+                <template v-for="(ctn, index) in containers">
                   <li
                     v-if="!isShowContainerList.includes(ctn.type)"
                     :key="index"
@@ -51,20 +50,19 @@
                 animation="100"
                 ghost-class="ghost"
                 tag="ul"
-                :item-key="$draggableKey"
               >
                 <!-- !designer.selectNames.includes(fld.options.name) -->
 
-                <template #item="{ element: fld, index }">
-                  <li
-                    v-show="!designer.selectNames.includes(fld.options.name)"
-                    :title="fld.name"
-                    class="field-widget-item line1"
-                    @dblclick="addFieldByDbClick(fld)"
-                  >
-                    <span class="line1">{{ fld.name }} </span>
-                  </li>
-                </template>
+                <li
+                  v-for="(fld, index) in item.field"
+                  v-show="!designer.selectNames.includes(fld.options.name)"
+                  :key="index"
+                  :title="fld.name"
+                  class="field-widget-item line1"
+                  @dblclick="addFieldByDbClick(fld)"
+                >
+                  <span class="line1">{{ fld.name }} </span>
+                </li>
               </draggable>
             </el-collapse-item>
           </el-collapse>
@@ -78,9 +76,10 @@
 import Draggable from 'vuedraggable'
 import { containers, basicFields, advancedFields, customFields } from './widgetsConfig'
 import { addWindowResizeHandler } from '@/utils/formDesignerUtils'
-import i18n from '@/utils/i18n.ts'
+import i18n from '@/utils/i18n'
 import axios from 'axios'
-import { formCrudList } from '@/api/form.ts'
+import { formCrudList } from '@/api/form'
+import { mapGetters } from 'vuex'
 
 export default {
   name: 'FieldPanel',
@@ -95,8 +94,6 @@ export default {
   inject: ['getBannedWidgets', 'getDesignerConfig'],
   data() {
     return {
-      // 当前实体及其关联实体的字段分组，渲染为可拖拽的字段列表
-      crudList: [],
       designerConfig: this.getDesignerConfig(),
       firstTab: 'componentLib',
       scrollerHeight: 0,
@@ -131,6 +128,9 @@ export default {
       deep: true,
       immediate: true
     }
+  },
+  computed: {
+    ...mapGetters(['crudList'])
   },
   created() {
     let id = this.$route.query.id
@@ -170,7 +170,7 @@ export default {
         }
 
         setTimeout(() => {
-          this.crudList = res.data || []
+          this.$store.dispatch('app/setFormList', res.data)
         }, 300)
       })
     },
@@ -259,7 +259,7 @@ export default {
 }
 
 .side-scroll-bar {
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
 }
@@ -273,29 +273,29 @@ div.panel-container {
   padding-bottom: 10px;
 }
 
-.no-bottom-margin :deep(.el-tabs__header) {
+.no-bottom-margin ::v-deep .el-tabs__header {
   margin-bottom: 0;
 }
 
 .indent-left-margin {
-  :deep(.el-tabs__nav) {
+  ::v-deep .el-tabs__nav {
     margin-left: 8px;
   }
 }
 
-.el-collapse-item :deep(ul > li) {
+.el-collapse-item ::v-deep ul > li {
   list-style: none;
 }
 
 .widget-collapse {
   border-top-width: 0;
 
-  :deep(.el-collapse-item__header) {
+  ::v-deep .el-collapse-item__header {
     margin-left: 8px;
     font-weight: bold;
   }
 
-  :deep(.el-collapse-item__content) {
+  ::v-deep .el-collapse-item__content {
     padding-bottom: 6px;
 
     ul {
@@ -392,3 +392,4 @@ div.panel-container {
   color: #fff;
 }
 </style>
+@/utils/i18ns

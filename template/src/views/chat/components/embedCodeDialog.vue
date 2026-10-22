@@ -6,10 +6,10 @@
 <template>
   <el-dialog
     title="嵌入代码"
-    v-model="visible"
+    :visible.sync="visible"
     :width="DIALOG_SIZE.LG"
     append-to-body
-    class="embed-code-dialog"
+    custom-class="embed-code-dialog"
   >
     <div class="guide">
       <div class="guide-title">使用说明</div>
@@ -38,17 +38,17 @@
     </div>
 
     <template #footer>
-      <el-button @click="visible = false">关 闭</el-button>
-      <el-button type="primary" @click="handleCopy">复制代码</el-button>
+      <el-button size="small" @click="visible = false">关 闭</el-button>
+      <el-button size="small" type="primary" @click="handleCopy">复制代码</el-button>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ElMessage as Message } from 'element-plus'
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
-import { getEmbedCode, getSdkUrl, copyEmbedCode } from '../utils/share.ts'
+import { Message } from 'element-ui'
+import { DIALOG_SIZE } from '@/constants/popupSize'
+import { getEmbedCode, getSdkUrl, copyEmbedCode } from '../utils/share'
 
 const visible = ref(false)
 const appName = ref('')

@@ -4,10 +4,10 @@
     <div class="header-notice right-menu-item">
       <span class="el-dropdown-link">
         <el-badge
-          v-if="userStore.messageCount > 0"
-          @click="goMessageCenter"
+          v-if="$store.state.user.messageCount > 0"
+          @click.native="goMessageCenter"
           :is-dot="false"
-          :value="userStore.messageCount"
+          :value="$store.state.user.messageCount"
           :max="99"
         >
           <el-tooltip effect="dark" content="消息通知" placement="bottom">
@@ -26,17 +26,11 @@
   </div>
 </template>
 <script>
-import { mapStores } from 'pinia'
-import { useUserStore } from '@/stores/user.ts'
-import { defineAsyncComponent } from 'vue'
-import { roterPre } from '@/settings.ts'
+import { roterPre } from '@/settings'
 export default {
   name: 'Notice',
   components: {
-    noticeList: defineAsyncComponent(() => import('./noticeList'))
-  },
-  computed: {
-    ...mapStores(useUserStore)
+    noticeList: () => import('./noticeList')
   },
   data() {
     return {
@@ -50,6 +44,7 @@ export default {
   },
   methods: {
     goMessageCenter() {
+      if (this.$store.name == 'user-news-unread') return
       this.$refs.noticeList.openBox()
     }
   }
@@ -68,7 +63,7 @@ export default {
 .el-badge {
   top: 1px;
 }
-:deep(.el-badge__content) {
+::v-deep .el-badge__content {
   border: none;
   top: 4px;
 }

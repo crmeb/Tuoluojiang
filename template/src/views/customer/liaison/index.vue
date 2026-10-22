@@ -32,8 +32,8 @@
         @getTableData="getTableData"
       >
         <template #options="{ data }">
-          <el-button type="primary" link @click="handleCheck(data)">查看</el-button>
-          <el-button type="primary" link @click="handleDel(data)">删除</el-button>
+          <el-button type="text" @click="handleCheck(data)">查看</el-button>
+          <el-button type="text" @click="handleDel(data)">删除</el-button>
         </template>
       </customizeTable>
     </el-card>
@@ -49,22 +49,20 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { clientExportApi, clientLiaisonDeleteApi, clientLiaisonListApi as liaisonViewApi } from '@/api/client.ts'
-import { DRAWER_SIZE } from '@/constants/popupSize.ts'
-import { roterPre } from '@/settings.ts'
+import { modalSure } from '@/libs/public'
+import { clientExportApi, clientLiaisonDeleteApi, clientLiaisonListApi as liaisonViewApi } from '@/api/client'
+import { DRAWER_SIZE } from '@/constants/popupSize'
+import { roterPre } from '@/settings'
 
-import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'Liaison',
   components: {
-    customizeTable: defineAsyncComponent(() => import('../components/customizeTable')),
-    detailsDrawer: defineAsyncComponent(() => import('../components/details')),
-    dragUpload: defineAsyncComponent(() => import('../components/dragUpload')),
-    importRecords: defineAsyncComponent(() => import('@/views/customer/list/components/importRecords')),
-    liaisonDialog: defineAsyncComponent(() => import('@/views/customer/list/components/liaisonDialog')),
-    oaFromBox
+    customizeTable: () => import('../components/customizeTable'),
+    detailsDrawer: () => import('../components/details'),
+    dragUpload: () => import('../components/dragUpload'),
+    importRecords: () => import('@/views/customer/list/components/importRecords'),
+    liaisonDialog: () => import('@/views/customer/list/components/liaisonDialog'),
+    oaFromBox: () => import('@/components/common/oaFromBox')
   },
 
   data() {

@@ -7,7 +7,7 @@
           <div class="flex-row flex-col">
             <div>
               <div class="submission-tab">
-                <el-tabs v-model="examineActive">
+                <el-tabs v-model="examineActive" @tab-click="handleExamine">
                   <el-tab-pane
                     v-for="(item, index) in examineTabData"
                     :key="item.id"
@@ -30,13 +30,12 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { approveConfigSearchApi } from '@/api/business.ts'
+import { approveConfigSearchApi } from '@/api/business'
 export default {
   name: 'Index',
   components: {
-    examine: defineAsyncComponent(() => import('./components/examine')),
-    editExamine: defineAsyncComponent(() => import('./components/editExamine'))
+    examine: () => import('./components/examine'),
+    editExamine: () => import('./components/editExamine')
   },
   data() {
     return {
@@ -58,6 +57,9 @@ export default {
   created() {
     this.getConfigSearch(1)
   },
+  mounted() {
+    this.getTableInfo('verify_status', 1)
+  },
   methods: {
     async getConfigSearch(id) {
       const result = await approveConfigSearchApi(id)
@@ -65,7 +67,19 @@ export default {
       this.typeData.unshift({ name: '全部', id: '' })
     },
     getTableData() {
-      this.$refs.examine.getTableData()
+      this.$refs.submission.getTableData()
+    },
+
+    handleExamine(e) {
+      this.getTableInfo('verify_status', e.name)
+    },
+
+    getTableInfo(type, val) {
+      setTimeout(() => {
+        this.$refs.examine.where[type] = val
+        this.$refs.examine.where.page = 1
+        this.$refs.examine.getTableData()
+      }, 200)
     },
 
     getContentValue(row, callback) {
@@ -107,7 +121,7 @@ export default {
   margin-bottom: 20px;
 }
 .submission-header {
-  :deep(.el-row) {
+  ::v-deep .el-row {
     .icon-name {
       display: inline-block;
     }
@@ -120,10 +134,10 @@ export default {
   }
 }
 .submission-tab {
-  :deep(.el-tabs__header) {
+  ::v-deep .el-tabs__header {
     margin-bottom: 0;
   }
-  :deep(.el-tabs__nav-wrap::after) {
+  ::v-deep .el-tabs__nav-wrap::after {
     height: 0;
   }
 }

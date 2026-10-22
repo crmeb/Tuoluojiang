@@ -10,7 +10,7 @@
 </template>
 
 <script>
-import { fullscrrenEvent, fullScreen } from "../utils.ts";
+import { fullscrrenEvent, fullScreen } from "../utils";
 
 export default {
   name: 'Fullscreen',

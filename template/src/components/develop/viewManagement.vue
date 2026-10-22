@@ -4,12 +4,12 @@
     <el-dialog
       :close-on-click-modal="false"
       :show-close="false"
-      v-model="show"
+      :visible.sync="show"
       append-to-body
       top="8%"
       width="700px"
     >
-      <template #header>
+      <template #title>
         <div class="header flex-between">
           <span class="title">视图管理</span>
           <span class="el-icon-close" @click="handleClose"></span>
@@ -23,10 +23,11 @@
             clearable
             placeholder="请输入视图名称"
             prefix-icon="el-icon-search"
+            size="small"
             style="width: 300px"
           ></el-input>
         </div>
-        <el-button type="primary" @click="addViewFn">新建视图</el-button>
+        <el-button size="small" type="primary" @click="addViewFn">新建视图</el-button>
       </div>
 
       <!-- 内容 -->
@@ -48,11 +49,9 @@
             handle=".item-drag"
             @end="onEnd"
             @start="onStart"
-            tag="transition-group"
-            item-key="id"
           >
-            <template #item="{ element: item, index }">
-              <li>
+            <transition-group>
+              <li v-for="(item, index) in searchList" :key="item.id">
                 <p><i class="icon iconfont icontuodong item-drag"></i></p>
                 <p class="text">{{ item.senior_title || item.title }}</p>
                 <p v-if="!viewType" class="text">{{ item.senior_type == 0 ? '个人' : '公共' }}</p>
@@ -67,7 +66,7 @@
                   <span class="el-icon-delete" @click.stop="delFn(item, index)" v-if="item.uid == user_id"></span>
                 </p>
               </li>
-            </template>
+            </transition-group>
           </draggable>
         </ul>
       </ul>
@@ -87,15 +86,14 @@
   </div>
 </template>
 <script>
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import defaultPage from '@/components/common/defaultPage'
 import draggable from 'vuedraggable'
 import oaDialog from '@/components/form-common/dialog-form'
-import { saveViewSeachApi, viewSeachSortApi, delViewSeachApi, putViewSeachInfoApi } from '@/api/client.ts'
-import { crudSeniorSaveApi, crudSeniorDelApi, crudSeniorSortApi } from '@/api/develop.ts'
-import { getStorageJson } from '@/utils/storage.ts'
+import { saveViewSeachApi, viewSeachSortApi, delViewSeachApi, putViewSeachInfoApi } from '@/api/client'
+import { crudSeniorSaveApi, crudSeniorDelApi, crudSeniorSortApi } from '@/api/develop'
+import { getStorageJson } from '@/utils/storage'
 export default {
-  emits: ['getViewList'],
   name: '',
   components: {
     oaDialog,
@@ -230,7 +228,7 @@ export default {
             if (res.status == 200) {
               for (let key in viewData) {
                 if (this.category == key) {
-                  delete viewData[this.category]
+                  this.$delete(viewData, this.category)
                 }
               }
               localStorage.setItem('viewData', JSON.stringify(viewData))
@@ -373,8 +371,12 @@ export default {
     display: flex;
     justify-content: flex-end;
   }
-  :deep(.el-dialog) {
+  ::v-deep .el-dialog {
     border-radius: 6px;
+  }
+
+  ::v-deep .el-button--medium {
+    padding: 10px 15px;
   }
 }
 

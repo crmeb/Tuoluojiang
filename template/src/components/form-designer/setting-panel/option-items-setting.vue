@@ -8,28 +8,26 @@
           :list="optionModel.customizeItems"
           v-bind="{ group: 'optionsGroup', ghostClass: 'ghost', handle: '.icontuodong' }"
           @change="emitDefaultValueChange"
-          :item-key="$draggableKey"
         >
-          <template #item="{ element: option, index: idx }">
-            <li>
-              <el-radio :value="option.value">
-                <div class="checkBox">
-                  <el-input
-                    v-model="option.name"
-                    @change="changeCard(option)"
-                    style="width: 160px"
-                  ></el-input>
-                  <el-color-picker v-model="option.color" class="ml5 mr5 color"></el-color-picker>
-                  <span class="iconfont icontuodong iconadd" title="拖拽排序"></span>
-  
-                  <span class="el-icon-delete iconadd" @click.stop="deleteOption(option, idx)"></span>
-                </div>
-              </el-radio>
-            </li>
-          </template>
+          <li v-for="(option, idx) in optionModel.customizeItems" :key="idx">
+            <el-radio :label="option.value">
+              <div class="checkBox">
+                <el-input
+                  v-model="option.name"
+                  size="small"
+                  @change="changeCard(option)"
+                  style="width: 160px"
+                ></el-input>
+                <el-color-picker v-model="option.color" class="ml5 mr5 color"></el-color-picker>
+                <span class="iconfont icontuodong iconadd" title="拖拽排序"></span>
+
+                <span class="el-icon-delete iconadd" @click.stop="deleteOption(option, idx)"></span>
+              </div>
+            </el-radio>
+          </li>
         </draggable>
       </el-radio-group>
-      <el-button type="primary" link class="mt10" @click="addOption">新增选项</el-button>
+      <el-button type="text" class="mt10" @click="addOption">新增选项</el-button>
     </template>
 
     <!-- 支持复选框 下方添加 checkbox -->
@@ -40,39 +38,37 @@
           :list="optionModel.customizeItems"
           v-bind="{ group: 'optionsGroup', ghostClass: 'ghost', handle: '.icontuodong' }"
           @change="emitDefaultValueChange"
-          :item-key="$draggableKey"
         >
-          <template #item="{ element: option, index: idx }">
-            <li>
-              <el-checkbox :value="option.value">
-                <div class="checkBox">
-                  <el-input
-                    v-model="option.name"
-                    @change="changeCard(option)"
-                    style="width: 160px"
-                  ></el-input>
-                  <el-color-picker v-model="option.color" class="ml5 mr5 color"></el-color-picker>
-                  <span class="iconfont icontuodong iconadd" title="拖拽排序"></span>
-  
-                  <span class="el-icon-delete iconadd" @click.stop="deleteOption(option, idx)"></span>
-                </div>
-              </el-checkbox>
-            </li>
-          </template>
+          <li v-for="(option, idx) in optionModel.customizeItems" :key="idx">
+            <el-checkbox :label="option.value">
+              <div class="checkBox">
+                <el-input
+                  v-model="option.name"
+                  size="small"
+                  @change="changeCard(option)"
+                  style="width: 160px"
+                ></el-input>
+                <el-color-picker v-model="option.color" class="ml5 mr5 color"></el-color-picker>
+                <span class="iconfont icontuodong iconadd" title="拖拽排序"></span>
+
+                <span class="el-icon-delete iconadd" @click.stop="deleteOption(option, idx)"></span>
+              </div>
+            </el-checkbox>
+          </li>
         </draggable>
       </el-checkbox-group>
-      <el-button type="primary" link class="mt10" @click="addOption">新增选项</el-button>
+      <el-button type="text" class="mt10" @click="addOption">新增选项</el-button>
     </template>
 
   </div>
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import Draggable from 'vuedraggable'
-import i18n from '@/utils/i18n.ts'
-import { delCrudSaveApi, delCrudSortPutApi } from '@/api/develop.ts'
-import { getDictDataDeleteApi } from '@/api/form.ts'
+import i18n from '@/utils/i18n'
+import { delCrudSaveApi, delCrudSortPutApi } from '@/api/develop'
+import { getDictDataDeleteApi } from '@/api/form'
 import CodeEditor from '@/components/code-editor/index'
 import color from '@/views/business/components/formSetting/components/form-create-designer/src/config/rule/color'
 export default {
@@ -102,7 +98,7 @@ export default {
   watch: {
     'selectedWidget.options': {
       handler(newVal) {
-        this.optionModel = newVal
+        this.$set(this, 'optionModel', newVal)
       },
       immediate: true, // 初始化时立即执行
       deep: true // 深度监听
@@ -169,7 +165,7 @@ export default {
           status: 1
         }
         delCrudSaveApi(obj).then((res) => {
-          this.optionModel.customizeItems = [
+          this.$set(this.optionModel, 'customizeItems', [
             ...this.optionModel.customizeItems,
             {
               value: newValue,
@@ -178,7 +174,7 @@ export default {
               color: '#1890ff',
               status: 1
             }
-          ]
+          ])
         })
       } else {
         this.optionModel.customizeItems = [
@@ -274,14 +270,14 @@ export default {
     margin-bottom: 6px;
   }
 }
-:deep(.el-radio) {
+::v-deep .el-radio {
   margin-right: 5px;
   display: flex;
   height: 32px;
   align-items: center;
 }
 
-:deep(.el-color-picker__trigger) {
+::v-deep .el-color-picker__trigger {
   display: flex;
 }
 
@@ -310,7 +306,7 @@ export default {
   font-size: 12px;
 }
 
-.small-padding-dialog :deep(.el-dialog__body) {
+.small-padding-dialog ::v-deep .el-dialog__body {
   padding: 10px 15px;
 }
 
@@ -318,3 +314,4 @@ export default {
   width: 100px;
 }
 </style>
+@/utils/i18ns

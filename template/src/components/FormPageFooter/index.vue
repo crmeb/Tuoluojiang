@@ -3,14 +3,14 @@
 <template>
   <div class="form-page-footer">
     <slot>
-      <el-button @click="onCancel">取消</el-button>
-      <el-button type="primary" :loading="loading" @click="onSave">保存</el-button>
+      <el-button size="small" @click="onCancel">取消</el-button>
+      <el-button size="small" type="primary" :loading="loading" @click="onSave">保存</el-button>
     </slot>
   </div>
 </template>
 
 <script>
-import { useRouter } from "vue-router";
+import { useRouter } from "vue-router/composables";
 
 export default {
   name: "FormPageFooter",

@@ -1,16 +1,15 @@
 <!-- 查看客户信息侧滑页面 -->
 <template>
   <div class="station">
-    <el-drawer
-      class="customer-signing-check-contract-drawer" :append-to-body="true" :before-close="handleClose" :direction="direction" :show-close="true"
-      size="1000px" :title="formData.title" v-model="drawer">
-      <template #header>
+    <el-drawer :append-to-body="true" :before-close="handleClose" :direction="direction" :show-close="true"
+      size="1000px" :title="formData.title" :visible.sync="drawer">
+      <template #title>
         <div class="invoice-title">
-          <div class="invoice-header">
-            <div class="invoice-left">
+          <el-row class="invoice-header">
+            <el-col class="invoice-left">
               <div class="invoice-logo"><i class="icon iconfont iconhetong"></i></div>
-            </div>
-            <div v-if="drawer" class="invoice-right">
+            </el-col>
+            <el-col v-if="drawer" class="invoice-right">
               <div class="txt1 over-text">
                 {{ dataInfo.doc_name || '--' }}
               </div>
@@ -29,8 +28,8 @@
                 }}</span>
                 <span class="title">合同编号：</span><span class="weight mr20">{{ dataInfo.doc_no || '--' }}</span>
               </div>
-            </div>
-          </div>
+            </el-col>
+          </el-row>
         </div>
       </template>
 
@@ -48,7 +47,7 @@
         <div v-show="tabIndex === '2'">
           <div class="title-box">
             <div class="title-16">关联订单</div>
-            <el-button type="primary" class="mb10 mt10 pointer" @click="openOrderList">关联订单</el-button>
+            <el-button type="primary" size="small" class="mb10 mt10 pointer" @click="openOrderList">关联订单</el-button>
           </div>
           <paymentTable ref="paymentTable" :list="list" :type="`check`" :selectionIsShow="false" @deleteFn="deleteFn">
           </paymentTable>
@@ -64,20 +63,19 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { getColor } from '@/utils/format.ts'
-import { contractDocDetailApi, contractDocOrdersApi,contractLinkOrderApi } from '@/api/contractSign.ts'
+import { getColor } from '@/utils/format'
+import { contractDocDetailApi, contractDocOrdersApi,contractLinkOrderApi } from '@/api/contractSign'
 export default {
   name: 'detailsDrawer',
   components: {
-    uploadFile: defineAsyncComponent(() => import('@/components/form-common/oa-upload')),
-    record: defineAsyncComponent(() => import('@/views/customer/list/components/record')),
-    contract: defineAsyncComponent(() => import('@/views/customer/list/components/contract')),
-    paymentTable: defineAsyncComponent(() => import('./paymentTable.vue')),
-    processFrom: defineAsyncComponent(() => import('@/views/user/examine/components/detailProcecss')),
-    paymentTableDialog: defineAsyncComponent(() => import('./paymentTableDialog.vue')),
-    dynamicRecord: defineAsyncComponent(() => import('@/views/customer/list/components/dynamicRecord')),
-    infoItem: defineAsyncComponent(() => import('@/views/customer/signing/components/infoItem'))
+    uploadFile: () => import('@/components/form-common/oa-upload'),
+    record: () => import('@/views/customer/list/components/record'),
+    contract: () => import('@/views/customer/list/components/contract'),
+    paymentTable: () => import('./paymentTable.vue'),
+    processFrom: () => import('@/views/user/examine/components/detailProcecss'),
+    paymentTableDialog: () => import('./paymentTableDialog.vue'),
+    dynamicRecord: () => import('@/views/customer/list/components/dynamicRecord'),
+    infoItem: () => import('@/views/customer/signing/components/infoItem')
   },
   props: {
     formData: {
@@ -159,8 +157,8 @@ export default {
         data: this.dataInfo,
         link_type: this.dataInfo.link_type
       }
-      this.examineData.users = result.data.approve
-      // this.examineData.rules = result.data.rules
+      this.$set(this.examineData, 'users', result.data.approve)
+      // this.$set(this.examineData, 'rules', result.data.rules)
 
 
     },
@@ -205,7 +203,7 @@ export default {
 
     // 点击tab切换 
     handleClick(event) {
-      this.tabNumber = Number(event.paneName)
+      this.tabNumber = Number(event.name)
       if (this.tabNumber == 2) {
         // 获取关联订单
         this.getOrderList()
@@ -224,7 +222,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-tabs__item.is-active) {
+::v-deep .el-tabs__item.is-active {
   border-right-color: transparent !important;
   border-left-color: transparent !important;
 
@@ -265,20 +263,30 @@ export default {
   color: #303133;
 }
 
-:deep(.el-tabs__item) {
+::v-deep .el-drawer__body {
+  padding-bottom: 50px;
+}
+
+
+::v-deep .el-drawer__header {
+  height: 80px;
+  padding: 14px 18px;
+}
+
+::v-deep .el-tabs__item {
   line-height: 40px !important;
 }
 
-:deep(.el-tabs__header) {
+::v-deep .el-tabs__header {
   background-color: #f7fbff;
   border-bottom: none;
 }
 
-:deep(.el-tabs__nav-wrap::after) {
+::v-deep .el-tabs__nav-wrap::after {
   height: 0;
 }
 
-:deep(.el-tabs__active-bar) {
+::v-deep .el-tabs__active-bar {
   top: 0;
 }
 
@@ -342,16 +350,5 @@ export default {
   height: 100%;
   padding: 0 20px;
   // padding-top: 20px;
-}
-</style>
-
-<style lang="scss">
-// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
-.customer-signing-check-contract-drawer .el-drawer__body {
-  padding-bottom: 50px;
-}
-.customer-signing-check-contract-drawer .el-drawer__header {
-  height: 80px;
-  padding: 14px 18px;
 }
 </style>

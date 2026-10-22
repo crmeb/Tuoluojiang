@@ -2,39 +2,39 @@
 <template>
   <div class="station">
     <el-drawer
-      class="invoice-details-drawer"
       :title="formData.title"
-      v-model="drawer"
+      :visible.sync="drawer"
       :direction="direction"
       :modal="true"
       :show-close="true"
+      :wrapper-closable="true"
       :append-to-body="true"
       :before-close="handleClose"
       :size="formData.width"
     >
-      <template #header>
+      <template #title>
         <div class="invoice-title">
-          <div class="invoice-header">
-            <div class="invoice-left">
+          <el-row class="invoice-header">
+            <el-col class="invoice-left">
               <div class="invoice-logo"><i class="icon iconfont iconfapiao"></i></div>
-            </div>
-            <div v-if="drawer">
+            </el-col>
+            <el-col v-if="drawer">
               <div class="txt1">{{ delData.title }}</div>
               <div class="txt2">
                 <span class="title1">发票状态：</span>
                 <span class="tab-btn" :class="getInvoiceColor(delData.status)">
                   {{ getInvoiceStatus(delData.status) }}
                 </span>
-                <span class="title">开票金额(元)：</span
+                <span class="title">{{ $t('customer.invoicingpay') }}：</span
                 ><span class="info2">{{ delData.amount }}</span>
-                <span class="title">实际开票日期：</span
+                <span class="title">{{ $t('customer.actualdate') }}：</span
                 ><span class="info3">{{ delData.real_date }}</span>
               </div>
-            </div>
-          </div>
+            </el-col>
+          </el-row>
         </div>
       </template>
-      <el-tabs v-model="tabIndex" type="border-card" @tab-change="handleClick" :tab-position="tabPosition">
+      <el-tabs v-model="tabIndex" type="border-card" @tab-click="handleClick" :tab-position="tabPosition">
         <el-tab-pane label="发票信息" name="1"></el-tab-pane>
         <el-tab-pane label="关联付款单" name="2"></el-tab-pane>
         <el-tab-pane label="操作记录" name="3"></el-tab-pane>
@@ -46,7 +46,7 @@
         <!-- 关联付款单 -->
         <div v-if="tabIndex == 2" class="invoice-body mr20">
           <div class="flex-end mb10">
-            <el-button  type="primary" @click="handleOpenPaymentDrawer">关联付款单</el-button>
+            <el-button  type="primary" size="small" @click="handleOpenPaymentDrawer">关联付款单</el-button>
             </div>
           <el-table :data="tableData" style="width: 100%">
             <el-table-column prop="bill_no" label="付款单号" min-width="180"> </el-table-column>
@@ -109,30 +109,29 @@
         class="button from-foot-btn fix btn-shadow"
         v-if="formData.follType && formData.follType === 'fd' && delData.status === 0"
       >
-        <el-button type="primary" @click="handleInvoicing">审核</el-button>
+        <el-button size="small" type="primary" @click="handleInvoicing">审核</el-button>
       </div>
-      <el-image-viewer v-if="isImage" @close="closeImageViewer" :url-list="srcList" />
+      <el-image-viewer v-if="isImage" :on-close="closeImageViewer" :url-list="srcList" />
     </el-drawer>
     <invoicing-dialog ref="invoicingDialog" :config="invoicingDialog" @isOk="isOk" />
 
         <!-- 关联付款侧滑 -->
-    <el-drawer title="关联付款单" class="paymentDrawer" v-model="paymentDrawer" direction="rtl" :append-to-body="true"
+    <el-drawer title="关联付款单" class="paymentDrawer" :visible.sync="paymentDrawer" direction="rtl" :append-to-body="true"
       :before-close="paymentHandleClose" size="60%">
      <div class="paymentTable-box">
-       <paymentTable ref="paymentTable" edit="" :tableData="tableData1" @handleSelectionFn="handleSelectionChange">
+       <paymentTable ref="paymentTable" :edit="''" :tableData="tableData1" @handleSelectionFn="handleSelectionChange">
       </paymentTable>
      </div>
      <div class="button from-foot-btn fix btn-shadow" >
-        <el-button class="el-btn" @click="paymentHandleClose">取消</el-button>
-        <el-button type="primary" @click="submit">确定</el-button>
+        <el-button class="el-btn" size="small" @click="paymentHandleClose">取消</el-button>
+        <el-button size="small" type="primary" @click="submit">确定</el-button>
       </div>
     </el-drawer>
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { paymentRecordApi, operationRecordApi,uninvoicedListApi ,invoiceBillApi} from '@/api/enterprise.ts'
-import { getInvoiceClassName, getInvoiceText, getInvoiceType } from '@/libs/customer.ts'
+import { paymentRecordApi, operationRecordApi,uninvoicedListApi ,invoiceBillApi} from '@/api/enterprise'
+import { getInvoiceClassName, getInvoiceText, getInvoiceType } from '@/libs/customer'
 import EmptyState from '../common/emptyState.vue'
 export default {
   name: 'InvoiceView',
@@ -146,9 +145,10 @@ export default {
   },
   components: {
     EmptyState,
-    paymentTable: defineAsyncComponent(() => import('@/components/invoice/paymentTable')),
-    invoicingDialog: defineAsyncComponent(() => import('@/views/fd/invoice/components/invoicingDialog')),
-    approval: defineAsyncComponent(() => import('./approval'))
+    paymentTable: () => import('@/components/invoice/paymentTable'),
+    ElImageViewer: () => import('element-ui/packages/image/src/image-viewer'),
+    invoicingDialog: () => import('@/views/fd/invoice/components/invoicingDialog'),
+    approval: () => import('./approval')
   },
   data() {
     return {
@@ -285,6 +285,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.station ::v-deep .el-drawer__body {
+  padding: 20px 20px 50px 20px;
+}
 .item-img {
   width: 40px;
   height: 40px;
@@ -292,6 +295,12 @@ export default {
 }
 .paymentTable-box {
   padding: 20px;
+}
+.paymentDrawer {
+   ::v-deep .el-drawer__header {
+    height: 50px !important;
+    padding: 14px 18px;
+   }
 }
 
 .def {
@@ -325,28 +334,28 @@ export default {
   }
 }
 .set {
-  :deep(.el-step__icon.is-text) {
+  ::v-deep .el-step__icon.is-text {
     border: none;
   }
   .iconfapiaoxiangqing-caozuojilu {
     font-size: 13px;
     color: #1890ff;
   }
-  :deep(.el-step__line) {
+  ::v-deep .el-step__line {
     width: 1px;
     background-color: #ebeef4;
   }
-  :deep(.el-step__icon) {
+  ::v-deep .el-step__icon {
     margin-top: 20px;
     height: 12px;
   }
-  :deep(.el-step.is-vertical .el-step__line) {
+  ::v-deep .el-step.is-vertical .el-step__line {
     top: 20px;
     bottom: -18px;
   }
 }
 
-.description :deep(.el-form-item) {
+.description ::v-deep .el-form-item {
   margin-bottom: 0px;
 }
 .removeBorderLine {
@@ -365,12 +374,12 @@ export default {
   color: #303133;
   line-height: 12px;
 }
-:deep(.el-step.is-vertical .el-step__main) {
+::v-deep .el-step.is-vertical .el-step__main {
   width: 800px;
   // margin-bottom: 30px;
 }
 
-:deep(.el-tabs__item.is-active) {
+::v-deep .el-tabs__item.is-active {
   border-right-color: transparent !important;
   border-left-color: transparent !important;
   &::after {
@@ -424,32 +433,36 @@ export default {
   }
   .footer {
     padding: 20px 20px 8px 0px;
-    :deep(.el-form-item) {
+    ::v-deep .el-form-item {
       margin-bottom: 12px;
     }
 
-    :deep(.el-form-item__label) {
+    ::v-deep .el-form-item__label {
       line-height: 18px;
     }
-    :deep(.el-form-item__content) {
+    ::v-deep .el-form-item__content {
       line-height: 18px;
     }
   }
 }
-:deep(.el-tabs__header) {
+::v-deep .el-drawer__header {
+  height: 85px !important;
+  padding: 14px 18px;
+}
+::v-deep .el-tabs__header {
   background-color: #f7fbff;
   border-bottom: none;
 }
-:deep(.el-tabs__item) {
+::v-deep .el-tabs__item {
   line-height: 40px !important;
 }
-:deep(.el-tabs__content) {
+::v-deep .el-tabs__content {
   padding: 0;
 }
-:deep(.el-tabs__nav-wrap::after) {
+::v-deep .el-tabs__nav-wrap::after {
   height: 0;
 }
-:deep(.el-tabs__active-bar) {
+::v-deep .el-tabs__active-bar {
   top: 0;
 }
 .el-tabs--border-card {
@@ -462,23 +475,23 @@ export default {
   border: none;
   box-shadow: none;
 }
-:deep(.el-step.is-vertical .el-step__title) {
+::v-deep .el-step.is-vertical .el-step__title {
   font-size: 14px;
   font-family: PingFangSC-Medium, PingFang SC;
   font-weight: 500;
   color: #303133;
   margin-left: 10px;
 }
-:deep(.el-form--inline .el-form-item) {
+::v-deep .el-form--inline .el-form-item {
   display: flex;
 }
-:deep(.el-input-number) {
+::v-deep .el-input-number--medium {
   width: 100%;
   .el-input__inner {
     text-align: left;
   }
 }
-:deep(.el-date-editor) {
+::v-deep .el-date-editor {
   width: 100%;
 }
 .invoice-body {
@@ -572,7 +585,7 @@ export default {
   .contract-list {
     width: 100%;
     height: 100%;
-    :deep(.el-button) {
+    ::v-deep .el-button--medium {
       font-size: 13px;
     }
     .icon-cover {
@@ -593,16 +606,16 @@ export default {
   justify-content: space-between;
   .form-item {
     width: 49%;
-    :deep(.el-form-item__content) {
+    ::v-deep .el-form-item__content {
       width: calc(100% - 110px);
     }
-    :deep(.el-select) {
+    ::v-deep .el-select--medium {
       width: 100%;
     }
-    :deep(.el-form-item) {
+    ::v-deep .el-form-item {
       margin-bottom: 0;
     }
-    :deep(.el-textarea__inner) {
+    ::v-deep .el-textarea__inner {
       resize: none;
     }
 
@@ -622,7 +635,7 @@ export default {
   div {
     display: inline-block;
   }
-  :deep(.el-upload--picture-card) {
+  ::v-deep .el-upload--picture-card {
     width: 98px;
     height: 98px;
     line-height: 102px;
@@ -630,7 +643,7 @@ export default {
   .upload-icon {
     font-size: 98px;
   }
-  :deep(.el-upload-list--picture-card .el-upload-list__item) {
+  ::v-deep .el-upload-list--picture-card .el-upload-list__item {
     width: 98px;
     height: 98px;
     line-height: 1;
@@ -657,22 +670,10 @@ export default {
   border-top: 1px solid #e6ebf5;
   text-align: right;
 }
-:deep(.el-form-item__label) {
+::v-deep .el-form-item__label {
   font-size: 12px !important;
   font-weight: 400;
   color: #909399 !important;
   margin-left: 0;
-}
-</style>
-
-<style lang="scss">
-// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
-.invoice-details-drawer .el-drawer__header {
-  height: 85px !important;
-  padding: 14px 18px;
-}
-.paymentDrawer .el-drawer__header {
-  height: 50px !important;
-  padding: 14px 18px;
 }
 </style>

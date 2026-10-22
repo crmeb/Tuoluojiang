@@ -34,36 +34,34 @@
         @getTableData="getTableData"
       >
         <template #options="{ data }">
-          <el-button type="primary" link @click="openDetails(data)">查看</el-button>
-          <el-button type="primary" link v-if="keyword == 'clue'" @click="transferCustomers(data)">转客户</el-button>
-          <el-button type="primary" link v-else @click="handleCollection(2, data)">领取</el-button>
+          <el-button type="text" @click="openDetails(data)">查看</el-button>
+          <el-button type="text" v-if="keyword == 'clue'" @click="transferCustomers(data)">转客户</el-button>
+          <el-button type="text" v-else @click="handleCollection(2, data)">领取</el-button>
           <el-dropdown>
-            <el-button type="primary" link class="el-dropdown-link more">
+            <span class="el-dropdown-link el-button--text el-button more">
               更多
               <i class="el-icon-arrow-down" />
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu class="dropdown-menu-left" placement="top-start">
-                <el-dropdown-item v-if="keyword === 'clue_seas'" @click="handleTransfer(2, data)">
-                  分配</el-dropdown-item
-                >
-                <el-dropdown-item v-if="keyword === 'clue_seas'" @click="transferCustomers(data)">
-                  转客户</el-dropdown-item
-                >
-                <el-dropdown-item style="border-bottom: 1px solid #f5f5f5" @click="handleFollowUp(data)">
-                  填写跟进</el-dropdown-item
-                >
-  
-                <el-dropdown-item v-if="keyword === 'clue'" @click="handleTransfer(2, data)">
-                  移交同事</el-dropdown-item
-                >
-                <el-dropdown-item v-if="keyword === 'clue'" @click="handleReturn(2, data)">
-                  退回线索池</el-dropdown-item
-                >
-  
-                <el-dropdown-item @click="handleDelete(data)"> 删除</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
+            </span>
+            <el-dropdown-menu class="dropdown-menu-left" placement="top-start">
+              <el-dropdown-item v-if="keyword === 'clue_seas'" @click.native="handleTransfer(2, data)">
+                分配</el-dropdown-item
+              >
+              <el-dropdown-item v-if="keyword === 'clue_seas'" @click.native="transferCustomers(data)">
+                转客户</el-dropdown-item
+              >
+              <el-dropdown-item style="border-bottom: 1px solid #f5f5f5" @click.native="handleFollowUp(data)">
+                填写跟进</el-dropdown-item
+              >
+
+              <el-dropdown-item v-if="keyword === 'clue'" @click.native="handleTransfer(2, data)">
+                移交同事</el-dropdown-item
+              >
+              <el-dropdown-item v-if="keyword === 'clue'" @click.native="handleReturn(2, data)">
+                退回线索池</el-dropdown-item
+              >
+
+              <el-dropdown-item @click.native="handleDelete(data)"> 删除</el-dropdown-item>
+            </el-dropdown-menu>
           </el-dropdown>
         </template>
       </customizeTable>
@@ -74,7 +72,7 @@
     <addForm ref="addForm" :form-data="formBoxConfig" :keyword="keyword" @getTableData="getTableData"></addForm>
     <dialog-form ref="dialogForm" :form-data="config" @isOkEdit="getTableData()" />
     <!-- 跟进弹窗 -->
-    <el-dialog v-model="dialogShow" class="record" title="添加跟进记录" width="40%">
+    <el-dialog :visible.sync="dialogShow" class="record" title="添加跟进记录" width="40%">
       <recordUpload :form-info="formInfo" @change="recordChange"></recordUpload>
     </el-dialog>
     <!-- 导入线索 -->
@@ -96,12 +94,11 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { getStorageJson } from '@/utils/storage.ts'
+import { modalSure } from '@/libs/public'
+import { getStorageJson } from '@/utils/storage'
 import imageViewer from '@/components/common/imageViewer'
-import { getWorkCorpConfigApi } from '@/api/setting.ts'
-import { cluesViewApi, cluesClaimApi, cluesReturnApi } from '@/api/enterprise.ts'
+import { getWorkCorpConfigApi } from '@/api/setting'
+import { cluesViewApi, cluesClaimApi, cluesReturnApi } from '@/api/enterprise'
 import {
   delcluesApi as cluesdelApi,
   batchDelCluesApi,
@@ -110,24 +107,23 @@ import {
   clientWorkSyncApi,
   clientToCustomerApi,
   clientExportApi
-} from '@/api/client.ts'
-import { DRAWER_SIZE } from '@/constants/popupSize.ts'
-import { roterPre } from '@/settings.ts'
-import oaFromBox from '@/components/common/oaFromBox'
+} from '@/api/client'
+import { DRAWER_SIZE } from '@/constants/popupSize'
+import { roterPre } from '@/settings'
 export default {
   name: 'ClueList',
   components: {
     imageViewer,
-    customizeTable: defineAsyncComponent(() => import('../components/customizeTable')),
-    dragUpload: defineAsyncComponent(() => import('../components/dragUpload')),
-    importRecords: defineAsyncComponent(() => import('@/views/customer/list/components/importRecords')),
-    addForm: defineAsyncComponent(() => import('../components/addForm')),
-    detailsDrawer: defineAsyncComponent(() => import('../components/details')),
-    dialogForm: defineAsyncComponent(() => import('@/views/customer/list/components/index')),
-    recordUpload: defineAsyncComponent(() => import('@/views/customer/list/components/recordUpload')),
-    transferDialog: defineAsyncComponent(() => import('@/views/customer/list/components/transferDialog')),
-    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form')),
-    oaFromBox
+    customizeTable: () => import('../components/customizeTable'),
+    dragUpload: () => import('../components/dragUpload'),
+    importRecords: () => import('@/views/customer/list/components/importRecords'),
+    addForm: () => import('../components/addForm'),
+    detailsDrawer: () => import('../components/details'),
+    dialogForm: () => import('@/views/customer/list/components/index'),
+    recordUpload: () => import('@/views/customer/list/components/recordUpload'),
+    transferDialog: () => import('@/views/customer/list/components/transferDialog'),
+    oaDialog: () => import('@/components/form-common/dialog-form'),
+    oaFromBox: () => import('@/components/common/oaFromBox')
   },
   props: {
     types: {
@@ -396,7 +392,7 @@ export default {
     handleReturn(type, row) {
       if (type === 1) {
         if (this.ids.length <= 0) {
-          return this.$message.error('至少选择一项')
+          return this.$message.error(this.$t('customer.placeholder22'))
         }
       } else {
         this.ids = [row.id]
@@ -481,7 +477,7 @@ export default {
     // 批量删除
     async handleBatchDelete() {
       if (this.ids.length <= 0) {
-        return this.$message.error('至少选择一项')
+        return this.$message.error(this.$t('customer.placeholder22'))
       }
       await modalSure('确定删除选中的线索吗')
       await batchDelCluesApi({ data: this.ids })
@@ -495,7 +491,7 @@ export default {
     // 转移
     handleTransfer(type, row = []) {
       if (this.ids.length <= 0 && type === 1) {
-        this.$message.error('至少选择一项')
+        this.$message.error(this.$t('customer.placeholder22'))
       } else {
         const ids = type === 1 ? this.ids : [row.id]
         this.transferData = {
@@ -510,10 +506,10 @@ export default {
     // 领取
     handleCollection(type, row = []) {
       if (this.ids.length <= 0 && type === 1) {
-        this.$message.error('至少选择一项')
+        this.$message.error(this.$t('customer.placeholder22'))
       } else {
         const ids = type === 1 ? this.ids : [row.id]
-        modalSure('您确定要领取此线索吗').then(async () => {
+        modalSure(this.$t('您确定要领取此线索吗')).then(async () => {
           await cluesClaimApi({ data: ids })
           await this.getTableData()
         })
@@ -565,7 +561,7 @@ export default {
   border: none;
 }
 
-:deep(.el-card__body) {
+::v-deep .el-card__body {
   padding: 0;
 }
 
@@ -585,7 +581,7 @@ export default {
   }
 }
 
-:deep(.el-button--primary.is-plain:hover) {
+::v-deep .el-button--primary.is-plain:hover {
   color: #1890ff;
   background: #e8f4ff;
   border-color: #a3d3ff;
@@ -670,7 +666,7 @@ export default {
   }
 }
 
-:deep(.divBox .el-tag) {
+::v-deep .divBox .el-tag {
   max-width: 91px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -684,12 +680,8 @@ export default {
   cursor: pointer;
   color: #1890ff;
 }
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.record {
-  .el-dialog__body {
+.record {
+  ::v-deep .el-dialog__body {
     padding: 20px 20px 30px 20px;
   }
 }

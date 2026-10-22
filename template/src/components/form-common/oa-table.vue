@@ -9,9 +9,10 @@
       ref="elTable"
       @selection-change="selectionChange"
       v-bind="$attrs"
+      v-on="$listeners"
       :key="tableKey"
     >
-      <template v-for="(col, index) in tableOptions" :key="index">
+      <template v-for="(col, index) in tableOptions">
         <el-table-column v-if="col.type === 'index'" type="index" width="50" label="序号" />
 
         <!-- 自定义插槽 -->
@@ -65,7 +66,6 @@
 
 <script>
 export default {
-  emits: ['selectionChange', 'handleSizeChange', 'handleCurrentChange'],
   name: 'oaTable',
   props: {
     tableData: {

@@ -12,7 +12,7 @@
 <script>
 import plan from './components/plan'
 export default {
-  name: 'MentPlan',
+  name: 'Plan',
   components: {
     plan
   }

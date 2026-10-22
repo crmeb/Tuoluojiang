@@ -3,14 +3,14 @@
     <div class="stock-card has-bg stock-search">
       <oaFromBox :search="searchFields" :rightAreaVisible="false" :isAddBtn="false" :total="total"
       @confirmData="handleSearch" />
-      <el-button class="h32 stock-export" :loading="exportLoading" :disabled="exportLoading"
+      <el-button class="h32 stock-export" size="small" :loading="exportLoading" :disabled="exportLoading"
         @click="handleExport($refs.exportExcel)">导出</el-button>
     </div>
 
     <div class="stock-card stock-body">
       <!-- 库存状态页签：全部商品 / 库存过低 / 库存过高 / 已售罄 -->
       <div class="relative">
-        <el-tabs v-model="activeTab" class="stock-tabs" @tab-change="handleTabChange">
+        <el-tabs v-model="activeTab" class="stock-tabs" @tab-click="handleTabChange">
           <el-tab-pane v-for="tab of STOCK_TABS" :key="tab.name" :name="tab.name"
             :label="`${tab.label}(${tabCounts[tab.countKey] || 0})`" />
         </el-tabs>
@@ -21,12 +21,12 @@
         </div>
       </div>
         
-      <BaseTable :table-columns="tableColumns" :data="tableData" :loading="isLoading" :total="total" v-model:page="page"
-        v-model:page-size="pageSize">
+      <BaseTable :table-columns="tableColumns" :data="tableData" :loading="isLoading" :total="total" :page.sync="page"
+        :page-size.sync="pageSize">
         <!-- 商品信息：缩略图 + 名称 -->
         <template #goods="{ row }">
           <div class="goods-cell flex">
-            <el-image :src="row.sku && row.sku.image" :preview-src-list="row.sku && row.sku.image ? [row.sku.image] : []" preview-teleported
+            <el-image :src="row.sku && row.sku.image" :preview-src-list="row.sku && row.sku.image ? [row.sku.image] : []"
               class="goods-img" />
             <span class="goods-name">{{ getGoodsName(row) }}</span>
           </div>
@@ -52,7 +52,7 @@
 
         <!-- 占用库存：大于 0 时可点击查看占用明细 -->
         <template #occupy_stock="{ row }">
-          <el-button v-if="formatStock(row.occupy_stock) > 0" type="primary" link class="stock-link"
+          <el-button v-if="formatStock(row.occupy_stock) > 0" type="text" class="stock-link"
             @click="handleViewOccupy(row)">
             {{ formatStock(row.occupy_stock) }}{{ getUnit(row) }}
           </el-button>
@@ -61,7 +61,7 @@
 
         <!-- 在途库存：大于 0 时可点击查看在途明细 -->
         <template #transit_stock="{ row }">
-          <el-button v-if="formatStock(row.transit_stock) > 0" type="primary" link class="stock-link"
+          <el-button v-if="formatStock(row.transit_stock) > 0" type="text" class="stock-link"
             @click="handleViewTransit(row)">
             {{ formatStock(row.transit_stock) }}{{ getUnit(row) }}
           </el-button>
@@ -70,7 +70,7 @@
 
         <!-- 操作列 -->
         <template #action="{ row }">
-          <el-button type="primary" link @click="handleViewLedger(row)">库存台账</el-button>
+          <el-button type="text" @click="handleViewLedger(row)">库存台账</el-button>
         </template>
       </BaseTable>
     </div>
@@ -89,9 +89,9 @@ import oaFromBox from "@/components/common/oaFromBox.vue";
 import ExportExcel from "@/components/common/exportExcel.vue";
 import FlowDialog from "./components/FlowDialog.vue";
 import LedgerDrawer from "./components/LedgerDrawer.vue";
-import { useStock } from "./composables/useStock.ts";
-import { STOCK_TABS } from "./constants.ts";
-import { getGoodsName, getSpecName, getProductCode, getBarcode, getUnit, formatStock } from "./utils.ts";
+import { useStock } from "./composables/useStock";
+import { STOCK_TABS } from "./constants";
+import { getGoodsName, getSpecName, getProductCode, getBarcode, getUnit, formatStock } from "./utils";
 
 export default {
   name: "InventoryStock",

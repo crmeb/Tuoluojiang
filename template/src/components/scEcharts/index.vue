@@ -5,11 +5,11 @@
 
 <script>
 import * as echarts from 'echarts'
-import T from './echarts-theme-T.ts'
+import T from './echarts-theme-T.js'
 import 'echarts-liquidfill'
 echarts.registerTheme('T', T)
 const unwarp = (obj) => obj && (obj.__v_raw || obj.valueOf() || obj)
-import { EventBus } from '@/libs/bus.ts'
+import { EventBus } from '@/libs/bus'
 
 export default {
   ...echarts,
@@ -70,7 +70,7 @@ export default {
   deactivated() {
     this.isActivat = false
   },
-  beforeUnmount() {
+  beforeDestroy() {
     if (this.resizeTimer) {
       clearTimeout(this.resizeTimer)
       this.resizeTimer = null

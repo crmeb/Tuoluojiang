@@ -43,21 +43,19 @@
 
           <el-table-column prop="address" label="操作" fixed="right" width="130">
             <template #default="scope">
-              <el-button class="mr10" type="primary" link @click="checkRow(scope.row)">查看</el-button>
+              <el-button class="mr10" type="text" @click="checkRow(scope.row)">查看</el-button>
               <el-dropdown>
-                <el-button type="primary" link class="el-dropdown-link"> 更多 <i class="el-icon-arrow-down" /></el-button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item @click="openShare(scope.row)"> 共享协作 </el-dropdown-item>
-                    <el-dropdown-item v-if="scope.row.is_share" @click="cancelShare(scope.row)">
-                      取消协作
-                    </el-dropdown-item>
-                    <el-dropdown-item @click="handleDropdown('transfer', scope.row)">
-                      移交负责人
-                    </el-dropdown-item>
-                    <el-dropdown-item @click="deleteRow(scope.row)">删除</el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
+                <span class="el-dropdown-link el-button--text el-button"> 更多 <i class="el-icon-arrow-down" /></span>
+                <el-dropdown-menu>
+                  <el-dropdown-item @click.native="openShare(scope.row)"> 共享协作 </el-dropdown-item>
+                  <el-dropdown-item v-if="scope.row.is_share" @click.native="cancelShare(scope.row)">
+                    取消协作
+                  </el-dropdown-item>
+                  <el-dropdown-item @click.native="handleDropdown('transfer', scope.row)">
+                    移交负责人
+                  </el-dropdown-item>
+                  <el-dropdown-item @click.native="deleteRow(scope.row)">删除</el-dropdown-item>
+                </el-dropdown-menu>
               </el-dropdown>
             </template>
           </el-table-column>
@@ -136,10 +134,8 @@
   </div>
 </template>
 <script>
-import { mapStores } from 'pinia'
-import { useConditionDialogStore } from '@/stores/conditionDialog.ts'
-import { modalSure } from '@/libs/public.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { modalSure } from '@/libs/public'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
 import defaultPage from '@/components/common/defaultPage'
 import Commnt from '@/components/develop/commonData'
 import formBox from './components/formBox'
@@ -162,7 +158,7 @@ import {
   moduleTransferApi,
   moduleShareApi,
   delCancelShareApi
-} from '@/api/develop.ts'
+} from '@/api/develop'
 import BatchActionBar from './components/batchActionBar.vue'
 import batchActionHandler from './mixins/batchActionHandler'
 
@@ -182,9 +178,6 @@ export default {
     tableColumn
   },
   mixins: [batchActionHandler],
-  computed: {
-    ...mapStores(useConditionDialogStore)
-  },
   data() {
     return {
       TABLE_HEIGHT,
@@ -240,8 +233,8 @@ export default {
     this.keyName = routeArray[3]
     this.getInfo()
   },
-  unmounted() {
-    this.conditionDialogStore.visible = false
+  destroyed() {
+    this.$store.commit('updateConditionDialog', false)
   },
 
   methods: {
@@ -582,15 +575,19 @@ export default {
 }
 
 .table-box {
-  :deep(.el-table__column-resize-proxy) {
+  ::v-deep .el-table__column-resize-proxy {
     border-left-color: #6fbaff;
   }
 
-  :deep(.el-table--border) {
+  ::v-deep .el-table--border {
     border: none;
     .el-table__cell {
       border-right: none;
     }
+  }
+
+  ::v-deep .el-table__fixed-right .el-table__fixed-body-wrapper {
+    border-right: 1px solid #fff;
   }
 }
 .group-page {

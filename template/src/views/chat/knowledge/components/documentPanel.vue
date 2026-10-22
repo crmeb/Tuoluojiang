@@ -9,16 +9,17 @@
     <div class="panel-toolbar">
       <el-input
         v-model="keyword"
+        size="small"
         clearable
         placeholder="按文档名称搜索"
         class="search-input"
-        @keyup.enter="handleSearchByKeyword"
+        @keyup.enter.native="handleSearchByKeyword"
         @clear="handleSearchByKeyword"
       >
         <template #prefix><i class="el-input__icon el-icon-search" /></template>
       </el-input>
 
-      <el-button type="primary" class="import-btn" @click="importDialogRef.openBox()">
+      <el-button size="small" type="primary" class="import-btn" @click="importDialogRef.openBox()">
         导入文档
       </el-button>
     </div>
@@ -116,19 +117,19 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { ElMessage as Message } from 'element-plus'
-import { formatBytes } from '@/utils/file.ts'
+import { Message } from 'element-ui'
+import { formatBytes } from '@/utils/file'
 import {
   knowledgeDocumentReprocessApi,
   knowledgeDocumentBatchEnabledApi,
   knowledgeDocumentBatchDeleteApi
-} from '@/api/knowledge.ts'
+} from '@/api/knowledge'
 import importDialog from './importDialog.vue'
 import embedDialog from './embedDialog.vue'
-import { useDocumentList } from '../composables/useDocumentList.ts'
-import { BATCH_ACTIONS, DOC_STATUS, DOC_STATUS_TEXT } from '../constants.ts'
-import { getFileIcon } from '../utils/fileIcon.ts'
-import { confirmDelete } from '../utils/confirm.ts'
+import { useDocumentList } from '../composables/useDocumentList'
+import { BATCH_ACTIONS, DOC_STATUS, DOC_STATUS_TEXT } from '../constants'
+import { getFileIcon } from '../utils/fileIcon'
+import { confirmDelete } from '../utils/confirm'
 
 interface DocumentRow {
   id: number

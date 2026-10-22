@@ -11,7 +11,7 @@
               <div v-height>
                 <el-scrollbar style="height: 100%">
                   <ul class="assess-left-ul">
-                    <template v-for="(item, index) in department" :key="index">
+                    <template v-for="(item, index) in department">
                       <li
                         v-if="item.status == 1"
                         :key="index"
@@ -55,7 +55,7 @@
 
             <el-table-column fixed="right" label="操作" width="180">
               <template #default="scope">
-                <el-button type="primary" link @click="handleCheck(scope.row)">晋升标准</el-button>
+                <el-button type="text" @click="handleCheck(scope.row)">晋升标准</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -64,7 +64,7 @@
     </el-card>
 
     <!-- 晋升标准侧滑 -->
-    <el-drawer :before-close="handleClose" v-model="editDrawer" direction="rtl" size="61%" title="晋升标准">
+    <el-drawer :before-close="handleClose" :visible.sync="editDrawer" direction="rtl" size="61%" title="晋升标准">
       <div class="check-box">
         <div class="user-name mb20">
           <span>职位：</span>
@@ -84,12 +84,11 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { promotionDataApi, promotionListApi } from '@/api/config.ts'
+import { promotionDataApi, promotionListApi } from '@/api/config.js'
 export default {
   name: '',
   components: {
-    ueditorFrom: defineAsyncComponent(() => import('@/components/form-common/oa-wangeditor'))
+    ueditorFrom: () => import('@/components/form-common/oa-wangeditor')
   },
   data() {
     return {
@@ -194,7 +193,7 @@ export default {
   height: 100%;
   margin: -15px 0 0px -20px;
   padding: 14px 0 40px 0;
-  :deep(.el-card__header) {
+  ::v-deep .el-card__header {
     border-bottom: none;
     display: flex;
     align-items: center;
@@ -205,7 +204,7 @@ export default {
       justify-content: flex-end;
     }
   }
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
   overflow: auto;
@@ -272,11 +271,11 @@ export default {
 }
 .assess-right {
   padding-left: 14px;
-  :deep(.el-table thead.is-group th) {
+  ::v-deep .el-table thead.is-group th {
     background-color: rgba(247, 251, 255, 1);
     border-color: #fff;
   }
-  :deep(.el-table td) {
+  ::v-deep .el-table td {
     border: none;
   }
   .el-table {
@@ -292,7 +291,7 @@ export default {
   }
 }
 .check-box {
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
   color: #666666;
@@ -300,12 +299,12 @@ export default {
   padding-bottom: 0;
 
   .content {
-    :deep(p) {
+    ::v-deep p {
       text-indent: 2em;
       font-size: 14px;
       line-height: 1.5;
     }
-    :deep(td) {
+    ::v-deep td {
       border: 1px solid;
     }
   }

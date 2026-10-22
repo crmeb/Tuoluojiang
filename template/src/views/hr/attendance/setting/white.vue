@@ -35,7 +35,7 @@
                 <span class="tips">超级管理员支持管理所有考勤组，及全公司所有人的考勤统计数据</span>
               </el-form-item>
               <el-form-item >
-                <el-button :loading="loading" type="primary" @click="submit">保存</el-button>
+                <el-button size="small" :loading="loading" type="primary" @click="submit">保存</el-button>
               </el-form-item>
             </div>
           </div>
@@ -45,11 +45,10 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { putWhitelistApi, getWhitelistApi } from '@/api/config.ts'
+import { putWhitelistApi, getWhitelistApi } from '@/api/config'
 export default {
   name: '',
-  components: { selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')) },
+  components: { selectMember: () => import('@/components/form-common/select-member') },
   props: {},
   data() {
     return {
@@ -152,7 +151,7 @@ export default {
   padding: 20px 0;
   padding-top: 0;
 }
-:deep(.el-alert) {
+::v-deep .el-alert {
   padding-left: 30px;
   border: 1px solid #1890ff;
   color: #1890ff;
@@ -161,12 +160,12 @@ export default {
   line-height: 1;
   margin-bottom: 10px;
 }
-:deep(.el-alert--info .el-alert__description) {
+::v-deep .el-alert--info .el-alert__description {
   color: #303133;
   font-size: 13px;
   font-weight: 500;
 }
-:deep(.el-alert__icon.is-big) {
+::v-deep .el-alert__icon.is-big {
   font-size: 16px;
   width: 15px;
 }

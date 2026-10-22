@@ -1,9 +1,10 @@
 <template>
   <el-form :inline="true" class="from-s">
-    <div class="flex-row">
+    <el-row class="flex-row">
       <el-form-item label="" class="select-bar">
         <el-select
           v-model="tableFrom.types"
+          size="small"
           placeholder="请选择消息类型"
           @change="handleTypes"
           style="width: 220px"
@@ -27,8 +28,9 @@
           v-model="tableFrom.name"
           prefix-icon="el-icon-search"
           clearable
+          size="small"
           @change="handleConfirm"
-          @keyup.stop.prevent.enter="handleConfirm"
+          @keyup.native.stop.prevent.enter="handleConfirm"
           placeholder="请输入标题/内容"
         ></el-input>
       </el-form-item>
@@ -41,17 +43,16 @@
 
       <!-- <el-col :span="8">
           <el-button type="primary" size="small" @click="handleConfirm">搜索</el-button>
-          <el-button size="small" @click="reset">重置</el-button>
+          <el-button size="small" @click="reset">{{ $t('public.reset') }}</el-button>
         </el-col> -->
-    </div>
+    </el-row>
   </el-form>
 </template>
 
 <script>
-import { messageCateApi } from '@/api/setting.ts'
+import { messageCateApi } from '@/api/setting'
 
 export default {
-  emits: ['confirmData'],
   name: 'FormBox',
   data() {
     return {
@@ -101,7 +102,7 @@ export default {
 .from-s {
   display: inline-block;
 }
-:deep(.el-form-item) {
+::v-deep .el-form-item {
   margin-bottom: 0;
 }
 </style>

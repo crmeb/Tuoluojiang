@@ -14,7 +14,7 @@
           :key="index"
           :label="tab.options.label"
           :name="tab.options.name"
-          @click.stop="selectWidget(widget)"
+          @click.native.stop="selectWidget(widget)"
         >
           <draggable
             :list="tab.widgetList"
@@ -23,20 +23,36 @@
             @add="(evt) => onContainerDragAdd(evt, tab.widgetList)"
             @update="onContainerDragUpdate"
             :move="checkContainerMove"
-            tag="div"
-            class="form-widget-list"
-            :item-key="$draggableKey"
           >
-            <template #item="{ element: subWidget, index: swIdx }">
-              <component
-                :is="subWidget.type === 'tab' ? 'form-tab-widget' : subWidget.type + '-widget'"
-                v-bind="subWidget.category === 'container' ? { widget: subWidget } : { field: subWidget, designState: true }"
-                :designer="designer"
-                :parent-list="tab.widgetList"
-                :index-of-parent-list="swIdx"
-                :parent-widget="widget"
-              ></component>
-            </template>
+            <transition-group name="fade" tag="div" class="form-widget-list">
+              <template v-for="(subWidget, swIdx) in tab.widgetList">
+                <template v-if="'container' === subWidget.category">
+                  <component
+                    :is="subWidget.type + '-widget'"
+                    :widget="subWidget"
+                    :designer="designer"
+                    :key="subWidget.id"
+                    :parent-list="tab.widgetList"
+                    :index-of-parent-list="swIdx"
+                    :parent-widget="widget"
+
+                  ></component>
+                </template>
+                <template v-else>
+                  <component
+                    :is="subWidget.type + '-widget'"
+                    :field="subWidget"
+                    :designer="designer"
+                    :key="subWidget.id"
+                    :parent-list="tab.widgetList"
+                    :index-of-parent-list="swIdx"
+                    :parent-widget="widget"
+                    :design-state="true"
+
+                  ></component>
+                </template>
+              </template>
+            </transition-group>
           </draggable>
         </el-tab-pane>
       </el-tabs>
@@ -46,14 +62,15 @@
 
 <script>
 import Draggable from 'vuedraggable'
-import i18n from '@/utils/i18n.ts'
+import i18n from '@/utils/i18n'
 import containerMixin from '@/components/form-designer/form-widget/container-widget/containerMixin'
 import ContainerWrapper from '@/components/form-designer/form-widget/container-widget/container-wrapper'
 import FieldComponents from '@/components/form-designer/form-widget/field-widget/index'
 import refMixinDesign from '@/components/form-designer/refMixinDesign'
 
 export default {
-  name: 'form-tab-widget',
+  name: 'tab-widget',
+  componentName: 'ContainerWidget',
   mixins: [i18n, containerMixin, refMixinDesign],
   inject: ['refList'],
   components: {
@@ -118,4 +135,4 @@ export default {
 .tab-container.selected {
   outline: 2px solid #409eff !important;
 }
-</style>
+</style>@/utils/i18ns

@@ -13,41 +13,41 @@
 
       <!-- 跟进规则 -->
       <followRules
-        v-if="loadedName === 'customer_follow_config'"
+        v-if="activeName === 'customer_follow_config'"
         ref="followDataRef"
         :formData="customer_follow_config"
         @followData="followData"
         @saveEvt="saveEvt"
       ></followRules>
       <returnRule
-        v-if="loadedName === 'customer_sea_config'"
+        v-if="activeName === 'customer_sea_config'"
         ref="returnDataRef"
         :formData="customer_sea_config"
         @returnData="returnData"
         @saveEvt="saveEvt"
       ></returnRule>
       <cluePoolConfig
-        v-if="loadedName === 'clue_pool_config'"
+        v-if="activeName === 'clue_pool_config'"
         ref="approvalDataRef"
         :formData="clue_pool_config"
         @saveEvt="saveEvt"
       ></cluePoolConfig>
 
       <approvalRules
-        v-if="loadedName === 'customer_approve_config'"
+        v-if="activeName === 'customer_approve_config'"
         ref="approvalDataRef"
         :fromData="tabRuleData"
         @approvalData="approvalData"
       ></approvalRules>
 
       <moduleConfig
-        v-if="loadedName === 'customer_module_config'"
+        v-if="activeName === 'customer_module_config'"
         :formData="customer_module_config"
         @saveEvt="saveEvt"
       ></moduleConfig>
 
       <outboundConfig
-        v-if="loadedName === 'customer_outbound_config'"
+        v-if="activeName === 'customer_outbound_config'"
         :formData="customer_outbound_config"
         @saveEvt="saveEvt"
       ></outboundConfig>
@@ -55,19 +55,18 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { configRuleCatApi, saveClientRuleApi, clientRuleInfoApi, configRuleApproveApi } from '@/api/config.ts'
-import { getMenus } from '@/utils/menu.ts'
-import { broadcastMenuInvalidated } from '@/utils/menu-sync.ts'
+import { configRuleCatApi, saveClientRuleApi, clientRuleInfoApi, configRuleApproveApi } from '@/api/config'
+import { getMenus } from '@/utils/menu'
+import { broadcastMenuInvalidated } from '@/utils/menu-sync'
 export default {
   name: 'RuleSettings',
   components: {
-    followRules: defineAsyncComponent(() => import('./components/followRules')),
-    returnRule: defineAsyncComponent(() => import('./components/returnRule')),
-    cluePoolConfig: defineAsyncComponent(() => import('./components/cluePoolConfig')),
-    approvalRules: defineAsyncComponent(() => import('./components/approvalRules')),
-    moduleConfig: defineAsyncComponent(() => import('./components/moduleConfig')),
-    outboundConfig: defineAsyncComponent(() => import('./components/outboundConfig'))
+    followRules: () => import('./components/followRules'),
+    returnRule: () => import('./components/returnRule'),
+    cluePoolConfig: () => import('./components/cluePoolConfig'),
+    approvalRules: () => import('./components/approvalRules'),
+    moduleConfig: () => import('./components/moduleConfig'),
+    outboundConfig: () => import('./components/outboundConfig')
   },
   props: {},
   data() {
@@ -87,7 +86,6 @@ export default {
         xs: 24
       },
       activeName: '',
-      loadedName: '',
       tabData: [],
       tabRuleData: [],
       cate_id: '',
@@ -120,8 +118,8 @@ export default {
   mounted() {},
   methods: {
     handleClick(tab) {
-      this.cate_id = tab.paneName
-      this.activeName = tab.paneName
+      this.cate_id = tab.$attrs.id
+      this.activeName = tab.$attrs.id
       this.getclientRuleInfo(this.cate_id)
     },
     async configRuleApprove() {
@@ -179,13 +177,8 @@ export default {
     },
     async getclientRuleInfo(id) {
       this.cate_id = id ? id : this.cate_id
-      // 数据到达后再渲染对应面板：否则 el-switch 以 undefined 挂载会被 Element Plus 强制改写为 inactive-value；
-      // 请求期间若已切到别的标签，丢弃这次结果，避免写进错误的配置对象
-      const key = this.activeName
       const result = await clientRuleInfoApi(this.cate_id)
-      if (key !== this.activeName) return
-      this[key] = result.data
-      this.loadedName = key
+      this[this.activeName] = result.data
     },
     followData(data) {
       this.followUpConfig = data
@@ -209,10 +202,10 @@ export default {
   // display: flex;
   // justify-content: center;
 }
-:deep(.el-form-item__label) {
+::v-deep .el-form-item__label {
   line-height: 38px;
 }
-:deep(.el-tabs__header) {
+::v-deep .el-tabs__header {
   margin: 0;
   .el-tabs__item {
     height: 60px;

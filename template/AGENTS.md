@@ -4,15 +4,15 @@
 
 ## 技术栈
 
-- Vue 3.5 + Vite 8 + TypeScript 6（TS 与 JS 混编）、Element Plus、Vue Router 5、Pinia、SCSS、pnpm。
+- Vue 2.7 + Vite 7 + TypeScript 6（TS 与 JS 混编）、element-ui 2.15、vue-router 3、vuex 3、SCSS、pnpm。
 - 关键配置：`vite.config.ts`（构建期插件在 `build/plugins/`）、`tsconfig.json`、`eslint.config.ts`、`pnpm-workspace.yaml`。
 - 常用命令：`pnpm dev`（端口 9527）/ `pnpm build` / `pnpm build:demo` / `pnpm analyze` / `pnpm preview` / `pnpm typecheck`。**没有 lint / format / test script，不要凭空调用。**
 
 ## 五条铁律（无条件遵守）
 
-1. **新建 / 重构一律 TypeScript 优先**：新建脚本文件写 `.ts`（不新增 `.js`），新建页面或完全重构组件一律 `<script setup lang="ts">` + Composables；存量 `.js` / Options API 的小改动、bug 修复**就地改，不迁移语法、不改后缀**。→ `.agents/rules/vue3-ts.md`
+1. **新建 / 重构一律 TypeScript 优先**：新建脚本文件写 `.ts`（不新增 `.js`），新建页面或完全重构组件一律 `<script setup lang="ts">` + Composables；存量 `.js` / Options API 的小改动、bug 修复**就地改，不迁移语法、不改后缀**。→ `.agents/rules/vue27-ts.md`
 2. **环境变量只从 `@/config/env` 具名导入**：业务代码禁止出现 `process.env`，也不要直接读 `import.meta.env`（无 define 兼容层，会在浏览器抛 `ReferenceError`）。→ `.agents/rules/toolchain.md`
-3. **提交前遵守 Git 规则**：同一轮工作按统一主题合并为一个 commit，跨模块也不再询问拆分；暂存区已有代码文件时只提交暂存区内文件。→ `.agents/rules/git-workflow.md`
+3. **任何 git 操作前先做拆分判定**：判定为应拆分时暂停所有 git 操作，向用户列出分组 + 每组 message + 执行顺序并等待选择；暂存区已有代码文件时只提交暂存区内文件。→ `.agents/rules/git-workflow.md`
 4. **高频二开场景先读对应 `SKILL.md` 再动手**，不凭印象生成代码；调用外部工具（Apifox / 蓝湖 / MasterGo / Chrome DevTools）前先读只读与输出纪律。→ `.agents/rules/mcp/README.md`
 5. **提示词里出现本地开发地址（`localhost:*` / `127.0.0.1:*` / `192.168.*:*`），或表达了「连接 / 打开 / 看一下 / 调一下」某个本地页面的意思**：把 `mcp__chrome-devtools__list_pages` 作为本次任务的**第一个动作**单独发出，拿到授权后再读代码、改代码、做规划。→ `.agents/rules/mcp/chrome-devtools.md`
 
@@ -20,7 +20,7 @@
 
 | 触发场景 | 读这份 |
 |---|---|
-| 新建任意脚本文件、写 / 改 Vue 组件、写 TS 类型、跑 typecheck | `.agents/rules/vue3-ts.md` |
+| 新建任意脚本文件、写 / 改 Vue 组件、写 TS 类型、跑 typecheck | `.agents/rules/vue27-ts.md` |
 | 改构建配置、加依赖或打补丁、写 scss / JSX、读写环境变量、跑 pnpm 脚本 | `.agents/rules/toolchain.md` |
 | `git add` / `git reset` / `git commit` / `git push` 之前 | `.agents/rules/git-workflow.md` |
 | 执行 shell 命令、写正则、做文件搜索之前（Win11 / pwsh7） | `.agents/rules/platform-powershell.md` |
@@ -37,7 +37,7 @@
 | 加 CRUD 页 / 列表页 / 管理页 | `.agents/skills/create-crud-page/` |
 | 加路由 / 页面入口 / 注册菜单 | `.agents/skills/create-route/` |
 | 加接口 / 对接后端 / 新建 api 文件 | `.agents/skills/create-api-module/` |
-| 加 Pinia store / 全局状态 | `.agents/skills/create-pinia-store/` |
+| 加 vuex 模块 / 全局状态 | `.agents/skills/create-vuex-module/` |
 | 加权限 / 按钮权限 / 菜单权限 | `.agents/skills/register-permission/` |
 | 加弹窗 / 侧滑 / 详情抽屉 | `.agents/skills/create-popup/` |
 | 加图表 / 看板 / 统计页 | `.agents/skills/create-echarts-dashboard/` |

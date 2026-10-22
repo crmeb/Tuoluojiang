@@ -1,0 +1,1 @@
+import{b as e,bt as t,wt as n}from"./chunk-vendor.Di-Ybv3u.js";t();var r=e(`flowDesigner`,()=>({promoterDrawer:n(!1),flowPermission:n({}),approverDrawer:n(!1),approverConfig:n({}),copyerDrawer:n(!1),copyerConfig:n({}),conditionDrawer:n(!1),conditionsConfig:n({conditionNodes:[]}),formSettingProps:n([]),conditionsFields:n([])}));export{r as t};

@@ -3,7 +3,7 @@
   <el-popover
     placement="bottom-start"
     trigger="manual"
-    :visible="showPopover"
+    v-model="showPopover"
     width="266"
     popper-class="popover"
     ref="treePopover"
@@ -12,7 +12,7 @@
       <!-- 人员数据 -->
       <div class="tree-box">
         <div class="input">
-          <el-input prefix-icon="el-icon-search" placeholder="请输入人员搜索" v-model="filterText" />
+          <el-input size="small" prefix-icon="el-icon-search" placeholder="请输入人员搜索" v-model="filterText" />
         </div>
         <el-tree
           highlight-current
@@ -46,67 +46,60 @@
     </isFullScreen>
 
     <!-- 人员数据 -->
-    <!-- 与 element-ui 一致：调用方的 class / style 落在包裹触发元素的 span 上（el-popover 不透传 attrs） -->
     <template #reference>
-      <span v-bind="$attrs">
-        <slot v-if="$slots.custom" name="custom"></slot>
-        <div
-          class="select plan-footer-one mr10"
-          :class="{ 'is-disabled': disabled }"
-          ref="select"
-          v-else
-          @click="handlePopoverShow"
-        >
-          <span class="el-icon-arrow-down" v-if="!userList.length || disabled"></span>
-          <span class="el-icon-circle-close" v-else @click.stop="clearAllUsers"></span>
+      <slot name="custom"></slot>
+      <div
+        class="select plan-footer-one mr10"
+        :class="{ 'is-disabled': disabled }"
+        ref="select"
+        v-if="!hasCustomSlot"
+        @click="handlePopoverShow"
+      >
+        <span class="el-icon-arrow-down" v-if="!userList.length || disabled"></span>
+        <span class="el-icon-circle-close" v-else @click.stop="clearAllUsers"></span>
 
-          <span v-if="!userList.length" class="placeholder">{{ placeholder }}</span>
-          <!-- 正常展示样式 -->
-          <div class="flex-box" v-else-if="!isSearch">
-            <span
-              v-for="(item, index) in userList"
-              :key="item.value"
-              class="el-tag el-tag--small el-tag--info el-tag--light mr10"
-              @click.stop=""
-            >
-              <img v-if="isAvatar" v-default-avatar="item" :src="getAvatarSrc(item)" alt="" class="avatar" /> {{ item.name }}
-              <i v-if="!disabled" class="el-tag__close el-icon-close" @click.stop="removeUser(index, item)" />
-            </span>
-          </div>
-
-          <!-- 筛选条件展示样式 -->
-          <div class="flex-box" v-else>
-            <span
-              v-for="(item, index) in userList.slice(0, 1)"
-              :key="item.value"
-              class="el-tag el-tag--small el-tag--info el-tag--light mr10"
-              @click.stop=""
-            >
-              <img v-if="isAvatar" v-default-avatar="item" :src="getAvatarSrc(item)" alt="" class="avatar" />
-              {{ item.name }}
-              <i v-if="!disabled" class="el-tag__close el-icon-close" @click.stop="removeUser(index, item)" />
-            </span>
-            <el-tag class="el-tag el-tag--small el-tag--info el-tag--light ml10" v-if="userList.length > 1">
-              {{ userList.length - 1 }}</el-tag
-            >
-          </div>
+        <span v-if="!userList.length" class="placeholder">{{ placeholder }}</span>
+        <!-- 正常展示样式 -->
+        <div class="flex-box" v-else-if="!isSearch">
+          <span
+            v-for="(item, index) in userList"
+            :key="item.value"
+            class="el-tag el-tag--small el-tag--info el-tag--light mr10"
+            @click.stop=""
+          >
+            <img v-if="isAvatar" v-default-avatar="item" :src="getAvatarSrc(item)" alt="" class="avatar" /> {{ item.name }}
+            <i v-if="!disabled" class="el-tag__close el-icon-close" @click.stop="removeUser(index, item)" />
+          </span>
         </div>
-      </span>
+
+        <!-- 筛选条件展示样式 -->
+        <div class="flex-box" v-else>
+          <span
+            v-for="(item, index) in userList.slice(0, 1)"
+            :key="item.value"
+            class="el-tag el-tag--small el-tag--info el-tag--light mr10"
+            @click.stop=""
+          >
+            <img v-if="isAvatar" v-default-avatar="item" :src="getAvatarSrc(item)" alt="" class="avatar" />
+            {{ item.name }}
+            <i v-if="!disabled" class="el-tag__close el-icon-close" @click.stop="removeUser(index, item)" />
+          </span>
+          <el-tag class="el-tag el-tag--small el-tag--info el-tag--light ml10" v-if="userList.length > 1">
+            {{ userList.length - 1 }}</el-tag
+          >
+        </div>
+      </div>
     </template>
   </el-popover>
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useOrganizationStore } from '@/stores/organization.ts'
-import { getAvatarSrc } from '@/utils/avatar.ts'
-import { getArrayDifference, isInArray, removeDuplicateObjects } from '@/libs/public.ts'
+import { getAvatarSrc } from '@/utils/avatar'
+import { getArrayDifference, isInArray, removeDuplicateObjects } from '@/libs/public'
 import isFullScreen from '@/components/isFullScreen/index'
 
 export default {
-  inheritAttrs: false,
   name: 'SelectMember',
-  emits: ['getSelectList', 'handlePopoverHide'],
   components: { isFullScreen },
   props: {
     // 选中人员数据
@@ -231,13 +224,19 @@ export default {
         this.selectIds = this.findNodeIdsByIds(this.treeData, this.userIds)
         this.$refs.tree?.setCheckedKeys(this.selectIds)
       })
+    },
+
+    showPopover(value) {
+      value &&
+        this.$nextTick(() => {
+          this.$refs.treePopover?.updatePopper()
+        })
     }
   },
 
   computed: {
-    ...mapStores(useOrganizationStore),
     hasCustomSlot() {
-      return !!this.$slots.custom
+      return !!this.$scopedSlots.custom
     },
 
     // 白名单集合，为 null 表示不限制可选范围
@@ -256,7 +255,7 @@ export default {
     this.getTreeData()
   },
 
-  beforeUnmount() {
+  beforeDestroy() {
     document.removeEventListener('click', this.handleGlobalClick)
   },
 
@@ -372,17 +371,12 @@ export default {
 
       this.$emit('getSelectList', this.userList)
       this.$emit('handlePopoverHide', this.userList)
-      this.$refs.treePopover?.hide()
+      this.$refs.treePopover?.doClose()
     },
 
-    // 点击是否落在触发框或弹层内：Element Plus 的 popover 根节点是片段，$el 不能用来判断
-    isInsidePopover(target) {
-      const popper = this.$refs.treePopover?.popperRef
-      return [popper?.triggerRef, popper?.contentRef].some((el) => el?.contains?.(target))
-    },
     // 处理全局点击
     handleGlobalClick(event) {
-      if (!this.isInsidePopover(event.target)) {
+      if (!this.$refs.treePopover?.$el?.contains(event.target)) {
         this.$emit('handlePopoverHide', this.userList)
         this.showPopover = false
         this.filterText = ''
@@ -405,9 +399,10 @@ export default {
 
     // 获取树数据
     async getTreeData() {
-      // 已有缓存时同步取用，避免多一个微任务导致回显时序变化
-      const cached = this.organizationStore.memberList
-      const treeData = cached.length ? cached : await this.organizationStore.getMember()
+      let treeData = this.$store.state.user.memberList || []
+      if (!treeData.length) {
+        treeData = await this.$store.dispatch('user/getMember')
+      }
       this.rawTreeData = treeData || []
       this.selectIds = this.findNodeIdsByIds(this.treeData, this.userIds)
     },
@@ -589,7 +584,7 @@ export default {
     }
   }
 
-  :deep(.el-tree) {
+  ::v-deep .el-tree {
     margin-top: 12px;
     max-height: 350px;
     overflow-y: auto;
@@ -664,7 +659,7 @@ export default {
   color: #1890ff !important;
 }
 
-:deep(.el-popper) {
+::v-deep .el-popper {
   padding: 0;
   margin-top: 5px;
 }

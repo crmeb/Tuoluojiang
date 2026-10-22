@@ -5,26 +5,26 @@
       <el-form :model="form" label-width="100px" :rules="rules">
         <el-form-item label="按钮位置：">
           <el-radio-group v-model="form.position">
-            <el-radio :value="1">列表中</el-radio>
-            <el-radio :value="2">列表头部</el-radio>
+            <el-radio :label="1">列表中</el-radio>
+            <el-radio :label="2">列表头部</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="启用规则：">
-          <el-button> 设置启用规则 </el-button>
+          <el-button size="small"> 设置启用规则 </el-button>
         </el-form-item>
         <el-form-item label="选择表单：" prop="form">
-          <el-select v-model="form.form" placeholder="请搜索选择表单（单选）" style="width: 100%">
+          <el-select v-model="form.form" placeholder="请搜索选择表单（单选）" size="small" style="width: 100%">
             <el-option label="表单1" value="1"></el-option>
             <el-option label="表单2" value="2"></el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="弹窗标题：" prop="title">
-          <el-input v-model="form.title" placeholder="请输入弹窗标题"></el-input>
+          <el-input v-model="form.title" size="small" placeholder="请输入弹窗标题"></el-input>
         </el-form-item>
         <el-form-item label="执行动作：">
           <el-radio-group v-model="form.action">
-            <el-radio :value="1">新增</el-radio>
-            <el-radio :value="2">编辑</el-radio>
+            <el-radio :label="1">新增</el-radio>
+            <el-radio :label="2">编辑</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="参数设置：">
@@ -39,11 +39,10 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
 export default {
   name: 'buttonDialog',
   components: {
-    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form'))
+    oaDialog: () => import('@/components/form-common/dialog-form')
   },
   props: {
     show: {

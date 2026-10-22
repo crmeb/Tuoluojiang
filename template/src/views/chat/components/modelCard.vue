@@ -34,11 +34,10 @@
 
 <script>
 import { computed } from 'vue'
-import { getChatImg, DEFAULT_MODEL_IMG } from '../utils/chatImg.ts'
-import { getModelTypeLabel } from '../utils/model.ts'
+import { getChatImg, DEFAULT_MODEL_IMG } from '../utils/chatImg'
+import { getModelTypeLabel } from '../utils/model'
 
 export default {
-  emits: ['setting', 'delete'],
   name: 'ModelCard',
   props: {
     // 模型数据，形如 { id, name, provider, model_id, model_type, user, created_at }
@@ -113,7 +112,7 @@ export default {
 }
 
 .label {
-  width: 60px;
+  width: 56px;
   text-align: right;
   font-weight: 400;
   font-size: 14px;

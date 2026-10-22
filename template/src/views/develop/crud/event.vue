@@ -7,9 +7,9 @@
         当前触发器：{{ form.name }}
         <el-popover placement="bottom" ref="popoverRef" width="400" trigger="click">
           <div>
-            <el-input v-model="value" placeholder="请输入触发器名称" style="width: 250px"></el-input>
-            <el-button class="ml14" type="primary" link @click="close">取消</el-button>
-            <el-button type="primary" @click="nameSubmit">确定</el-button>
+            <el-input v-model="value" placeholder="请输入触发器名称" style="width: 250px" size="small"></el-input>
+            <el-button size="small" class="ml14" type="text" @click="close">取消</el-button>
+            <el-button type="primary" size="small" @click="nameSubmit">确定</el-button>
           </div>
           <template #reference>
             <span class="el-icon-edit-outline"></span>
@@ -26,7 +26,7 @@
     <!-- 内容 -->
     <div class="content">
       <el-timeline>
-        <el-timeline-item v-for="(item, index) in activities" :key="index" :icon="$icon(item.icon)" :color="item.color">
+        <el-timeline-item v-for="(item, index) in activities" :key="index" :icon="item.icon" :color="item.color">
           <div class="tips">{{ item.title }}</div>
           <div v-if="item.id === 1" class="phase_1">
             <el-form ref="form" :model="form" label-width="100px">
@@ -36,6 +36,7 @@
                   :options="crudOptions"
                   :show-all-levels="false"
                   filterable
+                  size="small"
                   :disabled="id == 0 ? false : true"
                   :props="props"
                   style="width: 300px"
@@ -64,13 +65,14 @@
                 </el-checkbox-group>
                 <template v-if="action && action.length > 0 && action.includes('timer')">
                   执行周期：
-                  <el-select v-model="form.timer_type" placeholder="请选择">
+                  <el-select v-model="form.timer_type" size="small" placeholder="请选择">
                     <el-option v-for="item in timeOptions" :key="item.value" :label="item.label" :value="item.value">
                     </el-option>
                   </el-select>
                   <el-select
                     v-if="form.timer_type == 5"
                     v-model="form.timer_options.weekday"
+                    size="small"
                     placeholder="请选择"
                   >
                     <el-option v-for="item in weekOptions" :key="item.value" :label="item.label" :value="item.value">
@@ -84,6 +86,7 @@
                     @change="numberChange('month', 12)"
                     style="width: 160px"
                     v-model="form.timer_options.month"
+                    size="small"
                   >
                     <template #suffix>
                       <span class="text-16">月</span>
@@ -97,6 +100,7 @@
                     @change="numberChange('day', 31)"
                     style="width: 160px"
                     v-model="form.timer_options.day"
+                    size="small"
                   >
                     <template #suffix>
                       <span class="text-16">日</span>
@@ -110,6 +114,7 @@
                     @change="numberChange('hour', 59)"
                     style="width: 160px"
                     v-model="form.timer_options.hour"
+                    size="small"
                   >
                     <template #suffix>
                       <span class="text-16">时</span>
@@ -123,6 +128,7 @@
                     @change="numberChange('minute', 59)"
                     style="width: 160px"
                     v-model="form.timer_options.minute"
+                    size="small"
                   >
                     <template #suffix>
                       <span class="text-16">分</span>
@@ -136,6 +142,7 @@
                     @change="numberChange('second', 59)"
                     style="width: 160px"
                     v-model="form.timer_options.second"
+                    size="small"
                   >
                     <template #suffix>
                       <span class="text-16">秒</span>
@@ -283,6 +290,7 @@
                               v-if="scope.row.status !== 'system_status'"
                               v-model="form[scope.row.key]"
                               :placeholder="scope.row.placeholder"
+                              size="small"
                               style="width: 350px"
                             ></el-input>
                           </template>
@@ -297,6 +305,7 @@
                       v-if="['auto_revoke_approve', 'auto_approve'].includes(info.event)"
                     >
                       <el-select
+                        size="small"
                         v-model="form.crud_approve_id"
                         :placeholder="info.event === 'auto_approve' ? '请选择审批流程' : '请搜索选择关联撤销记录'"
                         style="width: 300px"
@@ -323,6 +332,7 @@
                     <template v-if="info.event === 'get_data' || info.event === 'push_data'">
                       <el-form-item label="链接地址">
                         <el-select
+                          size="small"
                           v-model="form.curl_id"
                           filterable
                           placeholder="链接地址"
@@ -336,6 +346,7 @@
                             v-if="info.event == 'get_data'"
                             type="primary"
                             :loading="curlLoading"
+                            size="small"
                             class="mt10"
                             @click="crudSendFn(1)"
                             >测试请求</el-button
@@ -363,6 +374,7 @@
                       "
                     >
                       <el-select
+                        size="small"
                         v-model="form.target_crud_id"
                         filterable
                         placeholder="应用实体名称"
@@ -393,8 +405,8 @@
 
                     <el-form-item label="重复数据处理" class="mt14" v-if="info.event === 'get_data'">
                       <el-radio-group v-model="form.options.is_skip_value">
-                        <el-radio :value="`0`">跳过</el-radio>
-                        <el-radio :value="`1`">更新</el-radio>
+                        <el-radio :label="`0`">跳过</el-radio>
+                        <el-radio :label="`1`">更新</el-radio>
                       </el-radio-group>
                     </el-form-item>
                     <!-- 动态更新渲染组件 -->
@@ -444,7 +456,7 @@
               </el-form-item>
               <!-- 字段更新/聚合 -->
               <el-form-item label="执行优先级">
-                <el-input-number v-model="form.sort" :min="0" style="width: 220px"></el-input-number>
+                <el-input-number v-model="form.sort" :min="0" size="small" style="width: 220px"></el-input-number>
                 <div class="prompt mt14">优先级高（数字大）的会被先执行，优先级相等的先执行创建早的触发器</div>
               </el-form-item>
             </el-form>
@@ -455,7 +467,7 @@
     <!-- 内容 -->
 
     <!-- 测试请求数据回显 -->
-    <el-dialog title="请求数据" v-model="isRequest" width="50%">
+    <el-dialog title="请求数据" :visible.sync="isRequest" width="50%">
       <json-viewer style="height: 600px; width: 100%" :value="jsonData" :expand-depth="8" copyable></json-viewer>
     </el-dialog>
 
@@ -474,24 +486,21 @@
       direction="rtl"
       title="条件设置"
       :append-to-body="true"
-      :close-on-click-modal="false"
+      :wrapperClosable="false"
       class="condition_copyer"
-      v-model="conditionDialogStore.visible"
+      :visible.sync="$store.state.business.conditionDialog"
     >
       <condition-dialog
         :id="String(crud_id)"
         :eventStr="`event`"
         :additionalBoolean="additional_boolean"
-        v-if="conditionDialogStore.visible"
+        v-if="$store.state.business.conditionDialog"
       />
     </el-drawer>
   </div>
 </template>
 <script>
-import { mapStores } from 'pinia'
-import { useConditionDialogStore } from '@/stores/conditionDialog.ts'
-import { defineAsyncComponent } from 'vue'
-import JsonViewer from '@/components/common/jsonViewer.ts'
+import JsonViewer from 'vue-json-viewer'
 import Commnt from './components/commonData'
 
 import {
@@ -506,15 +515,15 @@ import {
   crudModuleInfoApi,
   dataEventSaveApi,
   getDatabaseApi
-} from '@/api/develop.ts'
+} from '@/api/develop'
 import debounce from '@form-create/utils/lib/debounce'
 export default {
   components: {
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
-    conditionDialog: defineAsyncComponent(() => import('@/components/develop/conditionDialog')),
-    checkboxDialog: defineAsyncComponent(() => import('@/components/develop/checkboxDialog')),
-    updateContent: defineAsyncComponent(() => import('@/components/develop/updateContent')),
-    toDoSchedule: defineAsyncComponent(() => import('@/components/develop/toDoSchedule')),
+    selectMember: () => import('@/components/form-common/select-member'),
+    conditionDialog: () => import('@/components/develop/conditionDialog'),
+    checkboxDialog: () => import('@/components/develop/checkboxDialog'),
+    updateContent: () => import('@/components/develop/updateContent'),
+    toDoSchedule: () => import('@/components/develop/toDoSchedule'),
     JsonViewer
   },
   data() {
@@ -591,7 +600,6 @@ export default {
   },
 
   computed: {
-    ...mapStores(useConditionDialogStore),
     // 目标字段
     targetField() {
       if (this.form.target_crud_id && this.targetEntity.length > 0) {
@@ -614,7 +622,6 @@ export default {
           return formData
         }
       }
-      return []
     },
 
     // 分组聚合字段
@@ -627,13 +634,18 @@ export default {
           return []
         }
       }
-      return []
+    },
+
+    actionChange() {
+      if (!this.action.includes('timer')) {
+        this.form.timer = ''
+      }
     },
 
     // 设置条件内容
     additional_search: {
       get() {
-        return this.conditionDialogStore.fieldOptions.list
+        return this.$store.state.business.fieldOptions.list
       },
       set(val) {}
     },
@@ -641,14 +653,14 @@ export default {
     // 设置条件内容
     additional_Type: {
       get() {
-        return this.conditionDialogStore.fieldOptions.type
+        return this.$store.state.business.fieldOptions.type
       },
       set(val) {}
     },
 
     additional_search_boolean: {
       get() {
-        return this.conditionDialogStore.fieldOptions.additional_search_boolean
+        return this.$store.state.business.fieldOptions.additional_search_boolean
       },
       set(val) {}
     }
@@ -707,11 +719,6 @@ export default {
   },
 
   methods: {
-    actionChange() {
-      if (!this.action.includes('timer')) {
-        this.form.timer = ''
-      }
-    },
     getcrudInfo() {
       crudModuleInfoApi(this.keyName, this.crud_id).then((res) => {
         this.crudInfo = res.data
@@ -846,8 +853,8 @@ export default {
         additional_search_boolean: boolean
       }
 
-      this.conditionDialogStore.setFieldOptions(data)
-      this.conditionDialogStore.visible = true
+      this.$store.commit('uadatefieldOptions', data)
+      this.$store.commit('updateConditionDialog', true)
     },
 
     changeTargetCrudId() {
@@ -898,7 +905,7 @@ export default {
         this.form.title = ''
       }
       if (type === 1) {
-        this.form.title = this.form.title + '{' + val.value + '}'
+        this.$set(this.form, 'title', this.form.title + '{' + val.value + '}')
         this.onInput()
       } else {
         this.form.template = this.form.template + '{' + val.value + '}'
@@ -1059,9 +1066,9 @@ export default {
         }
         if (this.info.event === 'data_check') {
           if (this.form.options && this.form.options.search && this.form.options.search.length > 0) {
-            this.form.testOptions = this.form.options.search
+            this.$set(this.form, 'testOptions', this.form.options.search)
           } else {
-            this.form.testOptions = []
+            this.$set(this.form, 'testOptions', [])
           }
         }
 
@@ -1129,7 +1136,7 @@ export default {
     },
 
     close() {
-      this.$refs.popoverRef.hide()
+      this.$refs.popoverRef.doClose()
     },
 
     getLabel(val) {
@@ -1147,8 +1154,6 @@ export default {
 <style scoped lang="scss">
 .bag {
   height: 100vh;
-  display: flex;
-  flex-direction: column;
   background: #fff;
 }
 .ml50 {
@@ -1167,7 +1172,6 @@ export default {
   width: 100%;
   background: #1890ff;
   height: 56px;
-  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1204,20 +1208,12 @@ export default {
   margin-right: 24px;
 }
 .content {
-  flex: 1;
-  min-height: 0;
   margin-top: 20px;
-  padding-top: 4px;
   padding-bottom: 50px;
   padding-left: 150px;
-  overflow-y: auto;
   background: #fff;
 
-  :deep(.el-form-item__content) {
-    display: block;
-  }
-
-  :deep(.el-checkbox__label) {
+  ::v-deep .el-checkbox__label {
     font-size: 13px;
   }
   .tips {
@@ -1228,7 +1224,7 @@ export default {
   .prompt {
     font-size: 13px;
     color: #909399;
-    line-height: 20px;
+    line-height: 10px;
   }
 }
 .box {
@@ -1240,7 +1236,7 @@ export default {
   border-radius: 8px;
 }
 .phase_1 {
-  :deep(.el-form-item) {
+  ::v-deep .el-form-item {
     margin-bottom: 0;
   }
 }
@@ -1255,7 +1251,7 @@ export default {
 .textPosition {
   position: relative;
 }
-:deep(.el-textarea__inner) {
+::v-deep .el-textarea__inner {
   resize: none;
   font-size: 13px;
 }
@@ -1290,13 +1286,13 @@ export default {
   height: 0;
   width: 0;
 }
-:deep(.jv-container .jv-code) {
+::v-deep .jv-container .jv-code {
   max-height: 600px;
 }
-:deep(.el-checkbox) {
+::v-deep .el-checkbox {
   width: 100px;
 }
-:deep(.jv-container .jv-code) {
+::v-deep .jv-container .jv-code {
   overflow-y: scroll;
 }
 </style>

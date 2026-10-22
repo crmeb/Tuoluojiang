@@ -1,7 +1,7 @@
 <template>
-  <el-dialog v-model="visible" :title="isBatch ? '批量设置库存限制' : '设置库存限制'" :width="DIALOG_SIZE.XS"
+  <el-dialog :visible.sync="visible" :title="isBatch ? '批量设置库存限制' : '设置库存限制'" :width="DIALOG_SIZE.XS"
     :close-on-click-modal="false" @close="reset">
-    <el-form ref="formRef" :model="form" label-width="80px" label-suffix="：">
+    <el-form ref="formRef" :model="form" label-width="80px" label-suffix="：" size="small">
       <el-form-item label="库存上限">
         <el-input-number v-model="form.high_limit" :min="0" :controls="false" :precision="0"
           placeholder="请输入库存上限" class="full-input" />
@@ -15,8 +15,8 @@
 
     <template #footer>
       <span>
-        <el-button @click="visible = false">取 消</el-button>
-        <el-button type="primary" :loading="loading" @click="submit">确 定</el-button>
+        <el-button size="small" @click="visible = false">取 消</el-button>
+        <el-button size="small" type="primary" :loading="loading" @click="submit">确 定</el-button>
       </span>
     </template>
   </el-dialog>
@@ -24,10 +24,10 @@
 
 <script>
 import { ref, reactive, computed } from "vue";
-import { DIALOG_SIZE } from "@/constants/popupSize.ts";
-import { stockLimitSetApi, stockLimitBatchSetApi } from "@/api/inventory.ts";
-import { useLoading } from "@/composables/useLoading.ts";
-import Tips from "@/utils/tips.ts";
+import { DIALOG_SIZE } from "@/constants/popupSize";
+import { stockLimitSetApi, stockLimitBatchSetApi } from "@/api/inventory";
+import { useLoading } from "@/composables/useLoading";
+import Tips from "@/utils/tips";
 
 // 提交归一：空 / 非法 -> null，其余转数字
 const toLimit = (val) => {

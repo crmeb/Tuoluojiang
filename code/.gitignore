@@ -7,7 +7,6 @@
 tests/
 docs
 .DS_Store
-/public/admin/
 /public/chat/
 /public/knowledge/
 /public/uploads/
@@ -16,6 +15,7 @@ docs
 database/.DS_Store
 /public/install/install.lock
 .phpstorm.meta.php
+vendor
 pull.sh
 /storage/framework/
 /storage/exports/

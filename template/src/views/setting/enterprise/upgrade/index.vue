@@ -19,12 +19,12 @@
         </div>
       </el-card>
       <el-card class="mt20 employees-card">
-        <el-tabs v-model="activeName" @tab-change="handleClick">
+        <el-tabs v-model="activeName" @tab-click="handleClick">
           <el-tab-pane label="系统升级" name="first">
             <el-timeline class="ml20">
               <el-timeline-item v-for="(item, index) in activities" :key="index" class="time-line mt20">
                 <div class="time">{{ item.release_time }}</div>
-                <el-collapse :model-value="index" @change="handleChange">
+                <el-collapse v-model="index" @change="handleChange">
                   <el-collapse-item :name="0">
                     <template #title>
                       <div :class="index == 0 ? 'active-line' : 'title-line'" @click="judgeActive(index)">
@@ -51,7 +51,7 @@
             <el-timeline class="ml20" v-if="logActivities.length > 0">
               <el-timeline-item v-for="(item, index) in logActivities" :key="index" class="time-line mt20">
                 <div class="time">{{ item.upgrade_time }}</div>
-                <el-collapse :model-value="index" @change="handleChange">
+                <el-collapse v-model="index" @change="handleChange">
                   <el-collapse-item :name="0">
                     <template #title>
                       <div :class="index == 0 ? 'active-line' : 'title-line'" @click="judgeActive(index)">
@@ -79,7 +79,7 @@
       </el-card>
 
       <!-- 免责声明 -->
-      <el-dialog v-model="exoneration" width="672px" :show-close="false" :close-on-click-modal="false">
+      <el-dialog :visible.sync="exoneration" width="672px" :show-close="false" :close-on-click-modal="false">
         <div class="dialog1">
           <div class="exoneration-header">免责声明</div>
           <div class="dialog1-content" v-html="agreemen.content"></div>
@@ -90,7 +90,7 @@
         </div>
       </el-dialog>
       <!-- 在线升级 -->
-      <el-dialog v-model="upgrade" width="380px" :show-close="false" :close-on-click-modal="false">
+      <el-dialog :visible.sync="upgrade" width="380px" :show-close="false" :close-on-click-modal="false">
         <div class="dialog d-upgrade">
           <div class="img">升级至v{{ infoUpgrade }}</div>
           <div v-if="upgradeProgress.speed != '100.0' || this.downloadStatus != '200'">
@@ -114,8 +114,6 @@
   </div>
 </template>
 <script>
-import { mapStores } from 'pinia'
-import { useUserStore } from '@/stores/user.ts'
 import {
   getUpgradeList,
   getUpgradeKey,
@@ -123,15 +121,12 @@ import {
   getUpgradeAgreement,
   getUpgradeStart,
   getUpgradeProgress
-} from '@/api/setting.ts'
-import { logout } from '@/api//user.ts'
-import { version } from '@/api/setting.ts'
+} from '@/api/setting.js'
+import { logout } from '@/api//user.js'
+import { version } from '@/api/setting'
 export default {
   name: '',
 
-  computed: {
-    ...mapStores(useUserStore)
-  },
   data() {
     return {
       activeName: 'first',
@@ -155,6 +150,7 @@ export default {
       one: 0
     }
   },
+  computed: {},
   watch: {
     // 'upgradeProgress.speed': {
     //   handler(newVal, oldVal) {
@@ -175,18 +171,14 @@ export default {
     //   获取在线升级列表
     getUpgradeList() {
       getUpgradeList().then((res) => {
-        this.activities = Array.isArray(res?.data?.list) ? res.data.list : []
-      }).catch(() => {
-        this.activities = []
+        this.activities = res.data.list
       })
     },
 
     // 获取版本号
     getVersion() {
       version().then((res) => {
-        this.version = res?.data?.version || ''
-      }).catch(() => {
-        this.version = ''
+        this.version = res.data.version
       })
     },
 
@@ -201,34 +193,27 @@ export default {
     // 获取在线升级数据
     getUpgradeKey() {
       getUpgradeKey().then((res) => {
-        this.info = res.data || {}
+        this.info = res.data
         this.infoUpgrade = this.info.first_version + '.' + this.info.second_version + '.' + this.info.third_version
         if (res.status == 200) {
           this.status = true
         } else {
           this.status = false
         }
-      }).catch(() => {
-        this.info = {}
-        this.status = false
       })
     },
 
     // 获取升级协议
     getUpgradeAgreement() {
       getUpgradeAgreement().then((res) => {
-        this.agreemen = res.data || {}
-      }).catch(() => {
-        this.agreemen = {}
+        this.agreemen = res.data
       })
     },
 
     // 获取升级日志
     getUpgradeLog() {
       getUpgradeLog().then((res) => {
-        this.logActivities = Array.isArray(res?.data?.list) ? res.data.list : []
-      }).catch(() => {
-        this.logActivities = []
+        this.logActivities = res.data.list
       })
     },
 
@@ -273,7 +258,7 @@ export default {
       logout()
         .then((res) => {
           this.$message.success('您已成功升级，系统将自动退出，请您重新登录')
-          this.userStore.logout()
+          this.$store.dispatch('user/logout')
           this.$router.replace('/admin/login')
           localStorage.clear()
         })
@@ -316,7 +301,7 @@ export default {
       }
     }
   },
-  beforeUnmount() {
+  beforeDestroy() {
     //销毁
     clearInterval(this.timer)
     this.timer = null
@@ -336,25 +321,25 @@ export default {
 .ml20 {
   margin-left: -40px;
 }
-:deep(.el-collapse) {
+::v-deep .el-collapse {
   border: none;
 }
-:deep(.el-collapse-item__wrap) {
+::v-deep .el-collapse-item__wrap {
   border: none;
 }
-:deep(.el-collapse-item__header) {
+::v-deep .el-collapse-item__header {
   border: none;
 }
-:deep(.el-dialog__header) {
+::v-deep .el-dialog__header {
   padding: 0;
 }
-:deep(.el-icon-arrow-right:before) {
+::v-deep .el-icon-arrow-right:before {
   content: '';
 }
-:deep(.el-card__body) {
+::v-deep .el-card__body {
   padding: 10px 20px 0 20px;
 }
-:deep(.active-line) {
+::v-deep .active-line {
   margin-bottom: 28px;
 }
 .defult {
@@ -654,10 +639,10 @@ export default {
   font-size: 14px;
 }
 
-:deep(.el-dialog) {
+::v-deep .el-dialog {
   border-radius: 10px;
 }
-:deep(.el-dialog__body) {
+::v-deep .el-dialog__body {
   padding: 0;
 }
 </style>

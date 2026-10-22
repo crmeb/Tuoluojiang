@@ -13,7 +13,6 @@
 import echarts from 'echarts'
 
 export default {
-  emits: ['pieChange'],
   name: 'Index',
   props: {
     // 图表容器样式配置
@@ -41,7 +40,7 @@ export default {
   computed: {
     // 使用组件实例唯一ID生成容器ID，避免多实例冲突
     echarts() {
-      return 'echarts' + this.$.uid
+      return 'echarts' + this._uid
     }
   },
   watch: {
@@ -61,7 +60,7 @@ export default {
       window.addEventListener('resize', this.wsFunc)
     })
   },
-  beforeUnmount() {
+  beforeDestroy() {
     // 组件销毁前清理资源
     window.removeEventListener('resize', this.wsFunc)
     if (!this.myChart) {

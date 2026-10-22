@@ -25,10 +25,10 @@
               <el-table-column prop="cate_name" label="消息类型" min-width="100" show-overflow-tooltip />
               <el-table-column prop="created_at" label="发送时间" min-width="100" />
 
-              <el-table-column label="操作" width="100" fixed="right">
+              <el-table-column :label="$t('toptable.operation')" width="100" fixed="right">
                 <template #default="scope">
                   <el-button
-                    type="primary" link
+                    type="text"
                     v-for="(item, index) in scope.row.buttons"
                     :key="index"
                     @click="handleDetails(scope.row, item)"
@@ -59,16 +59,14 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { getCompanyMessageApi, messageCateApi } from '@/api/setting.ts'
-import oaFromBox from '@/components/common/oaFromBox'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { getCompanyMessageApi, messageCateApi } from '@/api/setting'
 export default {
   name: 'Apply',
   components: {
-    messageHandlePopup: defineAsyncComponent(() => import('@/components/common/messageHandlePopup')),
-    oaFromBox,
-    tree: defineAsyncComponent(() => import('./components/tree'))
+    messageHandlePopup: () => import('@/components/common/messageHandlePopup'),
+    oaFromBox: () => import('@/components/common/oaFromBox'),
+    tree: () => import('./components/tree')
   },
   data() {
     return {
@@ -124,7 +122,7 @@ export default {
         this.total = res.data.messageNum
         if (this.tableData && this.tableData.length > 0) {
           this.tableData.forEach((value) => {
-            value.message_template?.sort((a, b) => {
+            value.message_template.sort((a, b) => {
               return a.type - b.type
             }) //升序
           })
@@ -180,7 +178,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-table__row) {
+::v-deep .el-table__row {
   height: 56px;
 }
 </style>

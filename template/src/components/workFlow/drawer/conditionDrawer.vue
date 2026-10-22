@@ -2,7 +2,7 @@
   <el-drawer
     :append-to-body="true"
     title="条件设置"
-    v-model="flowDesignerStore.conditionDrawer"
+    :visible.sync="$store.state.business.conditionDrawer"
     direction="rtl"
     class="condition_copyer"
     size="650px"
@@ -91,8 +91,9 @@
                   type="date"
                   placeholder="选择时间"
                   style="width: 100%"
-                  format=" YYYY/MM/DD"
-                  value-format="YYYY/MM/DD"
+                  format=" yyyy/MM/dd"
+                  value-format="yyyy/MM/dd"
+                  size="small"
                 >
                 </el-date-picker>
                 <el-select
@@ -166,12 +167,12 @@
             </el-row>
           </div>
           <div class="conditions">
-            <el-button @click="addCondition" type="primary" link :disabled="conditionButton" icon="el-icon-plus"
+            <el-button @click="addCondition" type="text" :disabled="conditionButton" icon="el-icon-plus"
               >添加条件</el-button
             >
             <div class="el-popover conditions-popover" v-show="conditionsPopover">
               <el-button
-                type="primary" link
+                type="text"
                 v-for="(item, index) in conditions"
                 :key="index"
                 v-show="!item.disabled"
@@ -184,8 +185,8 @@
           </div>
         </div>
         <div class="button from-foot-btn fix btn-shadow">
-          <el-button @click="closeCondition">取消</el-button>
-          <el-button type="primary" @click="saveCondition">确定</el-button>
+          <el-button @click="closeCondition">{{ $t('public.cancel') }}</el-button>
+          <el-button type="primary" @click="saveCondition">{{ $t('public.ok') }}</el-button>
         </div>
       </div>
     </el-form>
@@ -193,14 +194,11 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useFlowDesignerStore } from '@/stores/flowDesigner.ts'
-import { defineAsyncComponent } from 'vue'
-import func from '@/utils/preload.ts'
+import func from '@/utils/preload'
 export default {
   components: {
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
-    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department'))
+    selectMember: () => import('@/components/form-common/select-member'),
+    selectDepartment: () => import('@/components/form-common/select-department')
   },
   data() {
     return {
@@ -225,12 +223,11 @@ export default {
     }
   },
   computed: {
-    ...mapStores(useFlowDesignerStore),
     conditionsConfig1() {
-      return this.flowDesignerStore.conditionsConfig
+      return this.$store.state.business.conditionsConfig
     },
     conditions1() {
-      return this.flowDesignerStore.formSettingProps
+      return this.$store.state.business.formSettingProps
     }
   },
 
@@ -483,7 +480,7 @@ export default {
           }
         }
       }
-      this.flowDesignerStore.conditionDrawer = false
+      this.$store.commit('updateCondition', false)
       var a = this.conditionsConfig.conditionNodes.splice(this.PriorityLevel - 1, 1) // 截取旧下标
       this.conditionsConfig.conditionNodes.splice(this.conditionConfig.priorityLevel - 1, 0, a[0]) // 填充新下标
       this.conditionsConfig.conditionNodes.map((item, index) => {
@@ -495,18 +492,18 @@ export default {
           i != this.conditionsConfig.conditionNodes.length - 1
       }
       this.conditionsPopover = false
-      this.flowDesignerStore.conditionsConfig = {
+      this.$store.commit('updateConditionsConfig', {
         value: this.conditionsConfig,
         flag: true,
-        id: this.flowDesignerStore.conditionsConfig.id
-      }
+        id: this.$store.state.business.conditionsConfig.id
+      })
     },
     closeCondition() {
       this.conditionsPopover = false
       this.conditions.forEach((item) => {
         item.disabled = false
       })
-      this.flowDesignerStore.conditionDrawer = false
+      this.$store.commit('updateCondition', false)
     }
   }
 }
@@ -528,11 +525,11 @@ export default {
   }
   .condition_content {
     padding: 20px 20px 0;
-    :deep(.el-input-number),
-    :deep(.el-select) {
+    ::v-deep .el-input-number--medium,
+    ::v-deep .el-select--medium {
       width: 100%;
     }
-    :deep(.el-input__inner) {
+    ::v-deep .el-input__inner {
       text-align: left;
     }
   }
@@ -551,7 +548,7 @@ export default {
   }
 }
 .drawer-content {
-  :deep(.el-form-item:last-of-type) {
+  ::v-deep .el-form-item:last-of-type {
     margin-bottom: 0;
   }
   .plan-footer-one {
@@ -594,7 +591,7 @@ export default {
     position: absolute;
     left: 0;
     top: 36px;
-    :deep(.el-popover) {
+    ::v-deep .el-popover {
       min-width: 220px;
     }
     button {

@@ -8,12 +8,12 @@
             <el-tab-pane label="业务员目标" name="0" />
           </el-tabs>
           <div>
-            <el-button class="btn-create" type="primary" @click="addFinance">设置目标</el-button>
-            <el-button class="btn-create" v-if="!editShow" @click="editFn"> 编辑 </el-button>
-            <el-button class="btn-create" type="primary" v-if="editShow" @click="saveFinance">
+            <el-button class="btn-create" size="small" type="primary" @click="addFinance">设置目标</el-button>
+            <el-button size="small" class="btn-create" v-if="!editShow" @click="editFn"> 编辑 </el-button>
+            <el-button size="small" class="btn-create" type="primary" v-if="editShow" @click="saveFinance">
               保存
             </el-button>
-            <el-button class="btn-create" v-if="editShow" @click="editShow = false"> 取消 </el-button>
+            <el-button size="small" class="btn-create" v-if="editShow" @click="editShow = false"> 取消 </el-button>
           </div>
         </div>
         <!-- 筛选 -->
@@ -21,8 +21,9 @@
           <el-date-picker
             v-model="where.year"
             type="year"
-            format="YYYY"
-            value-format="YYYY"
+            size="small"
+            format="yyyy"
+            value-format="yyyy"
             placeholder="选择年"
             @change="getTableData"
           >
@@ -71,6 +72,7 @@
           >
             <template #default="scope">
               <el-input-number
+                size="small"
                 v-if="editShow && !disabled.includes(item.prop) && scope.row.type !== 'total'"
                 v-model="scope.row[item.prop]"
                 :controls="false"
@@ -90,7 +92,7 @@
           </el-table-column>
           <el-table-column label="操作" fixed="right" width="80">
             <template #default="scope">
-              <el-button type="primary" link v-if="scope.row.user && typeof scope.row.user === 'object' && scope.row.user.name != '目标合计'" @click="delFn(scope.$index, scope.row)">
+              <el-button type="text" v-if="scope.row.user && typeof scope.row.user === 'object' && scope.row.user.name != '目标合计'" @click="delFn(scope.$index, scope.row)">
                 删除</el-button
               >
             </template>
@@ -103,16 +105,15 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { modalSure } from '@/libs/public.ts'
-import { clientTargetsApi, clientTargetPutApi, clientTargetDelApi } from '@/api/client.ts'
+import moment from 'moment'
+import { modalSure } from '@/libs/public'
+import { clientTargetsApi, clientTargetPutApi, clientTargetDelApi } from '@/api/client'
 export default {
   name: 'kpi',
   components: {
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
-    addKpi: defineAsyncComponent(() => import('./components/addKpi')),
-    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department'))
+    selectMember: () => import('@/components/form-common/select-member'),
+    addKpi: () => import('./components/addKpi'),
+    selectDepartment: () => import('@/components/form-common/select-department')
   },
   data() {
     return {
@@ -222,12 +223,12 @@ export default {
     }
   },
   mounted() {
-    this.where.year = dayjs().format('YYYY')
+    this.where.year = moment().format('YYYY')
     this.getTableData()
   },
   methods: {
     reset() {
-      this.where.year = dayjs().format('YYYY')
+      this.where.year = moment().format('YYYY')
       this.where.frame_id = []
       this.where.user_id = []
       this.userList = []
@@ -288,10 +289,10 @@ export default {
     tableCellStyle({ row, column, rowIndex, columnIndex }) {
       let color = [1, 2, 6, 10, 14]
       if (color.includes(columnIndex)) {
-        return { backgroundColor: '#F7F7F7' }
+        return 'background-color: #F7F7F7;'
       }
       if (rowIndex == this.tableData.length - 1) {
-        return { backgroundColor: '#F7F7F7' }
+        return 'background-color: #F7F7F7;'
       }
     },
 
@@ -372,7 +373,7 @@ export default {
       })
     },
     tapClick(tab, event) {
-      if (tab.paneName == 0) {
+      if (tab.name == 0) {
         this.header[0].label = '业务员名称'
       } else {
         this.header[0].label = '部门名称'
@@ -381,7 +382,7 @@ export default {
       this.where.frame_id = []
       this.where.user_id = []
       this.userList = []
-      this.where.link_type = tab.paneName
+      this.where.link_type = tab.name
       this.getTableData()
     },
     addFinance() {
@@ -418,7 +419,7 @@ export default {
   align-items: center;
   border-bottom: 1px solid #e6ebf5;
 
-  :deep(.el-tabs__header) {
+  ::v-deep .el-tabs__header {
     margin-bottom: 0;
 
     .el-tabs__item {

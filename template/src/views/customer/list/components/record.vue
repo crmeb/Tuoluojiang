@@ -10,8 +10,9 @@
         <el-timeline-item
           v-for="(activity, index) in liaisonData"
           :key="index"
+          :type="activity.type + ''"
           color="#1890FF"
-          :icon="$icon(activity.icon)"
+          :icon="activity.icon"
           :size="activity.size"
         >
           <div v-if="activity.types === 1">
@@ -23,12 +24,10 @@
               </div>
               <el-dropdown class="more">
                 <i class="el-icon-more" />
-                <template #dropdown>
-                  <el-dropdown-menu style="width: 100px; text-align: center">
-                    <el-dropdown-item @click="handleContract(activity)">编辑 </el-dropdown-item>
-                    <el-dropdown-item @click="handleDelete(activity)"> 删除 </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
+                <el-dropdown-menu style="width: 100px; text-align: center">
+                  <el-dropdown-item @click.native="handleContract(activity)">编辑 </el-dropdown-item>
+                  <el-dropdown-item @click.native="handleDelete(activity)"> 删除 </el-dropdown-item>
+                </el-dropdown-menu>
               </el-dropdown>
             </div>
             <div class="record">
@@ -48,12 +47,10 @@
                 </div>
                 <el-dropdown class="more">
                   <i class="el-icon-more" />
-                  <template #dropdown>
-                    <el-dropdown-menu style="width: 100px; text-align: center">
-                      <el-dropdown-item @click="handleEdit(activity, index)"> 编辑 </el-dropdown-item>
-                      <el-dropdown-item @click="handleDelete(activity)"> 删除 </el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
+                  <el-dropdown-menu style="width: 100px; text-align: center">
+                    <el-dropdown-item @click.native="handleEdit(activity, index)"> 编辑 </el-dropdown-item>
+                    <el-dropdown-item @click.native="handleDelete(activity)"> 删除 </el-dropdown-item>
+                  </el-dropdown-menu>
                 </el-dropdown>
               </div>
               <div class="record">
@@ -82,19 +79,17 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { getStorageJson } from '@/utils/storage.ts'
-import { getClientFollowApi, delClientFollowApi } from '@/api/client.ts'
-import { toSrcFn } from '@/utils/format.ts'
-import { fileLinkDownLoad, getFileExtension, getFileType } from '@/utils/file.ts'
-import { filePreview } from '@/utils/filePreview.ts'
+import { modalSure } from '@/libs/public'
+import { getStorageJson } from '@/utils/storage'
+import { getClientFollowApi, delClientFollowApi } from '@/api/client'
+import { toSrcFn } from '@/utils/format'
+import { fileLinkDownLoad, getFileExtension, getFileType } from '@/utils/file'
+import { filePreview } from '@/utils/filePreview'
 export default {
-  emits: ['refresh-detail'],
   name: 'Record',
   components: {
-    recordUpload: defineAsyncComponent(() => import('./recordUpload')),
-    remindDialog: defineAsyncComponent(() => import('./remindDialog'))
+    recordUpload: () => import('./recordUpload'),
+    remindDialog: () => import('./remindDialog')
   },
   props: {
     formInfo: {
@@ -216,7 +211,7 @@ export default {
 
     // 删除
     async handleDelete(row, index) {
-      await modalSure('你确定要删除该数据吗')
+      await modalSure(this.$t('customer.placeholder63'))
       await delClientFollowApi(row.id)
       if (this.liaison.page > 1 && this.liaisonData.length <= 1) {
         this.liaison.page--
@@ -319,6 +314,9 @@ export default {
   padding: 0px;
   margin-right: 16px;
 }
+.el-button--medium {
+  padding: 10px 15px !important;
+}
 .recordContent {
   padding-top: 38px;
 }
@@ -415,29 +413,28 @@ export default {
 .iconfont {
   color: #1890ff;
 }
-:deep(.el-timeline-item__tail) {
+::v-deep .el-timeline-item__tail {
   position: absolute;
   left: 4px;
   height: 100%;
 
   border-left: 1px solid #dfe4ed;
 }
-:deep(.el-timeline-item__node--normal) {
+::v-deep .el-timeline-item__node--normal {
   left: 0px;
   width: 10px;
   height: 10px;
 }
-:deep(.el-timeline-item__wrapper) {
+::v-deep .el-timeline-item__wrapper {
   position: relative;
   top: -12px;
 }
-:deep(.el-textarea__inner) {
+::v-deep .el-textarea__inner {
   min-height: 96px;
   border: none;
-  box-shadow: none;
   font-size: 12px;
 }
-:deep(.icondangqian) {
+::v-deep .icondangqian {
   font-size: 16px;
   color: #1890ff;
   background-color: none;

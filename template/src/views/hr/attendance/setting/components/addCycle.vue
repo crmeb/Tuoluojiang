@@ -2,10 +2,10 @@
   <div>
     <el-drawer
       :title="type == 'add' ? '新增排班周期' : '编辑排班周期'"
-      v-model="drawer"
+      :visible.sync="drawer"
       size="700px"
       :before-close="handleClose"
-      :close-on-click-modal="false"
+      :wrapperClosable="false"
     >
       <el-form ref="ruleForm" label-width="90px" class="demo-ruleForm">
         <div class="from-item-title mb15">
@@ -16,7 +16,7 @@
           <template #label>
             <span><span class="color-tab">* </span>周期名称：</span>
           </template>
-          <el-input v-model="name" clearable placeholder="请输入周期名称" />
+          <el-input v-model="name" size="small" clearable placeholder="请输入周期名称" />
         </el-form-item>
 
         <el-form-item>
@@ -43,17 +43,16 @@
         </el-form-item>
       </el-form>
       <div class="button from-foot-btn fix btn-shadow">
-        <el-button @click="handleClose">取消</el-button>
-        <el-button type="primary" :loading="loading" @click="submitForm">保存</el-button>
+        <el-button @click="handleClose" size="small">取消</el-button>
+        <el-button type="primary" :loading="loading" size="small" @click="submitForm">保存</el-button>
       </div>
     </el-drawer>
   </div>
 </template>
 
 <script>
-import { attendanceShiftSelectApi, saveRosterCycleApi, rosterCycleDetailApi, putCycleListApi } from '@/api/config.ts'
+import { attendanceShiftSelectApi, saveRosterCycleApi, rosterCycleDetailApi, putCycleListApi } from '@/api/config'
 export default {
-  emits: ['cycleList'],
   name: 'CrmebOaEntAddCycle',
   props: {
     group_id: {
@@ -61,16 +60,8 @@ export default {
       default: 0
     }
   },
-  watch: {
-    // prop 由父组件更新时同步到本地副本（组件内部改写的是 group_idLocal）
-    group_id(val) {
-      this.group_idLocal = val
-    }
-  },
   data() {
     return {
-      // Vue 3 的 prop 只读，组件内部需要改写时用本地副本
-      group_idLocal: this.group_id,
       drawer: false,
       name: '',
       cycle: 2,
@@ -99,7 +90,7 @@ export default {
 
       let data = {
         name: this.name,
-        group_id: this.group_idLocal,
+        group_id: this.group_id,
         cycle: this.cycle,
         shifts: this.shifts
       }
@@ -115,12 +106,12 @@ export default {
       }
     },
     async getList() {
-      const result = await attendanceShiftSelectApi({ group_id: this.group_idLocal, id: this.$route.query.id })
+      const result = await attendanceShiftSelectApi({ group_id: this.group_id, id: this.$route.query.id })
       this.shiftList = result.data
     },
     async openBox(data, type) {
       this.type = type
-      this.group_idLocal = data.group_id ? data.group_id : data
+      this.group_id = data.group_id ? data.group_id : data
 
       if (this.type == 'edit') {
         this.shifts = [null]
@@ -137,7 +128,7 @@ export default {
     handleClose() {
       this.drawer = false
       this.name = ''
-      this.group_idLocal = null
+      this.group_id = null
       this.cycle = 2
       this.shifts = []
     }

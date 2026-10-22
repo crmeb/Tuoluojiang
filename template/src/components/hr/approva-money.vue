@@ -13,12 +13,11 @@
 </template>
 
 <script>
-import { intToChinese } from '@/utils/index.ts'
+import { intToChinese } from '@/utils'
 export default {
-  emits: ['update:modelValue'],
   name: 'MoneyFrom',
   props: {
-    modelValue: {
+    value: {
       default: undefined,
       type: [Number, String]
     },
@@ -37,17 +36,13 @@ export default {
   },
   data() {
     return {
-      num: Number(this.modelValue),
+      num: Number(this.value),
       minNum: this.min,
       maxNum: this.max,
       precisionNum: this.precision
     }
   },
   computed: {
-    // Vue 3 的 v-model 走 modelValue，保留 value 供组件内部沿用
-    value() {
-      return this.modelValue
-    },
     numFrom: function () {
       return intToChinese(this.num)
     }
@@ -71,7 +66,7 @@ export default {
   },
   methods: {
     onChange() {
-      this.$emit('update:modelValue', this.num)
+      this.$emit('input', this.num)
     }
   }
 }

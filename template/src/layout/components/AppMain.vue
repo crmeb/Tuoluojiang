@@ -1,26 +1,15 @@
 <template>
   <section class="app-main">
-    <router-view v-slot="{ Component }">
-      <transition name="el-fade-in-linear">
-        <component :is="Component" :key="key" />
-      </transition>
-    </router-view>
-    <div v-if="routeLoading" class="route-loading" role="status" aria-live="polite">
-      <span class="route-loading__spinner" aria-hidden="true"></span>
-      <span>页面加载中…</span>
-    </div>
+    <transition name="el-fade-in-linear">
+      <router-view :key="key" />
+    </transition>
   </section>
 </template>
 
 <script>
-import { routeLoading } from '@/router/loading.ts'
 
 export default {
   name: 'AppMain',
-
-  setup() {
-    return { routeLoading }
-  },
 
   computed: {
     key() {
@@ -38,33 +27,6 @@ export default {
   position: relative;
   flex: 1;
   min-height: 0;
-}
-
-.route-loading {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  min-height: 160px;
-  background: rgba(255, 255, 255, 0.88);
-  color: #606266;
-  font-size: 14px;
-}
-
-.route-loading__spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid #dcdfe6;
-  border-top-color: #409eff;
-  border-radius: 50%;
-  animation: route-loading-spin 0.8s linear infinite;
-}
-
-@keyframes route-loading-spin {
-  to { transform: rotate(360deg); }
 }
 
 .fixed-header + .app-main {

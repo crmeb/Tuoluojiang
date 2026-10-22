@@ -2,7 +2,7 @@
   <div>
     <el-dialog
       :title="repeatData.title"
-      v-model="dialogVisible"
+      :visible.sync="dialogVisible"
       :width="repeatData.width"
       :before-close="handleClose"
     >
@@ -23,27 +23,28 @@
       <template #footer>
         <div class="dialog-footer" v-if="repeatData.data !== undefined">
           <el-button
+            size="small"
             @click="handleEdit"
             v-if="repeatData.data.types === 'personal' || repeatData.data.types === 'report_renew'"
-            >编辑</el-button
+            >{{ $t('public.edit') }}</el-button
           >
           <el-button
+            size="small"
             v-if="(!deleteBtn && repeatData.data.types === 'personal') || repeatData.data.types === 'report_renew'"
             type="primary"
             @click="handleConfirm"
-            >删除</el-button
+            >{{ $t('public.delete') }}</el-button
           >
-          <el-button v-if="deleteBtn" type="primary" @click="handleOk">完成</el-button>
+          <el-button size="small" v-if="deleteBtn" type="primary" @click="handleOk">{{ $t('login.ok') }}</el-button>
         </div>
       </template>
     </el-dialog>
   </div>
 </template>
 <script>
-import { roterPre } from '@/settings.ts'
-import { dealtScheduleDeleteApi, dealtScheduleTypesApi } from '@/api/user.ts'
+import { roterPre } from '@/settings'
+import { dealtScheduleDeleteApi, dealtScheduleTypesApi } from '@/api/user'
 export default {
-  emits: ['handleRepeatData'],
   name: 'CheckDialog',
   props: {
     repeatData: {

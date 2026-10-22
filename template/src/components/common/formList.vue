@@ -7,6 +7,7 @@
         class="search-form search-width"
         clearable
         prefix-icon="el-icon-search"
+        size="small"
         @change="handleEmit()"
       >
       </el-input>
@@ -38,6 +39,7 @@
           class="mr10"
           clearable
           prefix-icon="el-icon-search"
+          size="small"
           :style="{ width: val.width || elementWidth + 'px' }"
           @change="handleEmit(val)"
         >
@@ -54,6 +56,7 @@
           filterable
           :remote="isLargeOptionList(val)"
           :remote-method="(query) => handleSelectFilter(query, val)"
+          size="small"
           :style="{ width: elementWidth + 'px' }"
           v-bind="val.props || {}"
           @change="handleEmit(val)"
@@ -75,6 +78,7 @@
           class="mr10"
           clearable
           filterable
+          size="small"
           :style="{ width: elementWidth + 'px' }"
           @change="handleEmit(val)"
         >
@@ -104,6 +108,7 @@
             clearable
             filterable
             :placeholder="val.placeholder || '请选择实体'"
+            size="small"
             :style="{ width: elementWidth + 'px' }"
             @change="handleEmit(val)"
           >
@@ -121,6 +126,7 @@
           clearable
           collapse-tags
           filterable
+          size="small"
           :style="{ width: elementWidth + 'px' }"
           v-bind="val.props || {}"
           @change="handleEmit(val)"
@@ -144,42 +150,18 @@
           v-model="val.data_dict"
           :clearable="val.data_dict && !val.data_dict.length > 0"
           :end-placeholder="`${val.field_name_end ? val.field_name_end : val.field_name}`"
-          v-bind="$pickerProps(val.pickerOptions || pickerOptions)"
-          range-separator="至"
+          :picker-options="val.pickerOptions || pickerOptions"
+          :range-separator="$t('toptable.to')"
           :start-placeholder="`${val.field_name}`"
           class="time mr10"
-          format="YYYY/MM/DD"
+          format="yyyy/MM/dd"
+          size="small"
           style="width: 235px"
           type="daterange"
           clearable
-          value-format="YYYY/MM/DD"
+          value-format="yyyy/MM/dd"
           @change="onchangeTime($event, val)"
         />
-
-        <!-- 时间类型 + 日期区间组合：前面选时间类型（type_field），后面选时间（field_name_en） -->
-        <div v-else-if="val.form_value === 'date_type_picker'" class="date-type-picker mr10">
-          <el-select
-            v-model="ruleForm[val.type_field]"
-            class="date-type-select"
-            @change="handleEmit(val)"
-          >
-            <el-option v-for="item in val.type_options" :key="item.value" :label="item.name" :value="item.value" />
-          </el-select>
-          <el-date-picker
-            v-model="val.data_dict"
-            :end-placeholder="`${val.field_name_end ? val.field_name_end : val.field_name}`"
-            v-bind="$pickerProps(val.pickerOptions || pickerOptions)"
-            range-separator="至"
-            :start-placeholder="`${val.field_name}`"
-            class="time"
-            clearable
-            format="YYYY/MM/DD"
-            style="width: 235px"
-            type="daterange"
-            value-format="YYYY/MM/DD"
-            @change="onchangeTime($event, val)"
-          />
-        </div>
 
         <!-- 月份选择 -->
         <el-date-picker
@@ -187,9 +169,10 @@
           v-model="val.data_dict"
           :placeholder="val.field_name"
           class="time mr10"
-          format="YYYY-MM"
+          format="yyyy-MM"
+          size="small"
           type="month"
-          value-format="YYYY-MM"
+          value-format="yyyy-MM"
           @change="onchangeTime($event, val)"
         >
         </el-date-picker>
@@ -201,10 +184,11 @@
           :end-placeholder="`${val.field_name}`"
           :start-placeholder="`${val.field_name}`"
           class="time mr10"
-          format="YYYY/MM"
+          format="yyyy/MM"
           range-separator="至"
+          size="small"
           type="monthrange"
-          value-format="YYYY/MM"
+          value-format="yyyy/MM"
           @change="onchangeTime($event, val)"
         >
         </el-date-picker>
@@ -268,7 +252,7 @@
         <div class="mr10" v-else-if="val.form_value === 'warehouse_select'"
           :style="{ width: (val.with_type ? 250 : elementWidth) + 'px' }">
           <WareHouseTypeSelect v-if="val.with_type" v-model="ruleForm[val.field_name_en]"
-            v-model:type="ruleForm[val.type_field || 'warehouse_type']" :multiple="!!val.multiple"
+            :type.sync="ruleForm[val.type_field || 'warehouse_type']" :multiple="!!val.multiple"
             :default-first="!!val.default_first" style="width: 100%" :permission="val.permission"
             @change="handleEmit(val)" @type-change="handleEmit(val)" />
           <WareHouseSelect v-else v-model="ruleForm[val.field_name_en]" :multiple="!!val.multiple"
@@ -286,9 +270,8 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import pickerOptions from '@/libs/pickerOptions.ts'
-import { getDictTreeListApi } from '@/api/form.ts'
+import pickerOptions from '@/libs/pickerOptions'
+import { getDictTreeListApi } from '@/api/form'
 import WareHouseSelect from '@/views/inventory/components/WareHouseSelect.vue'
 import WareHouseTypeSelect from '@/views/inventory/components/WareHouseTypeSelect.vue'
 
@@ -301,19 +284,18 @@ const FORM_TYPE_GROUPS = {
 }
 
 export default {
-  emits: ['handleEmit', 'resetSearch'],
   name: 'FormList',
   components: {
     WareHouseSelect,
     WareHouseTypeSelect,
-    uploadFile: defineAsyncComponent(() => import('@/components/form-common/oa-upload')),
-    ueditorFrom: defineAsyncComponent(() => import('@/components/form-common/oa-wangeditor')),
-    manageRange: defineAsyncComponent(() => import('@/components/form-common/select-manageRange')),
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
-    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department')),
-    selectLabel: defineAsyncComponent(() => import('@/components/form-common/select-label')),
-    selectOne: defineAsyncComponent(() => import('@/components/form-common/select-one')),
-    cascaderConfirm: defineAsyncComponent(() => import('@/components/form-common/cascader-confirm'))
+    uploadFile: () => import('@/components/form-common/oa-upload'),
+    ueditorFrom: () => import('@/components/form-common/oa-wangeditor'),
+    manageRange: () => import('@/components/form-common/select-manageRange'),
+    selectMember: () => import('@/components/form-common/select-member'),
+    selectDepartment: () => import('@/components/form-common/select-department'),
+    selectLabel: () => import('@/components/form-common/select-label'),
+    selectOne: () => import('@/components/form-common/select-one'),
+    cascaderConfirm: () => import('@/components/form-common/cascader-confirm')
   },
   props: {
     list: {
@@ -424,13 +406,9 @@ export default {
     initSearchDefault() {
       this.list.forEach((item) => {
         if (!item || !item.field_name_en) return
-        // 时间类型下拉不可清空，始终回显默认类型
-        if (item.form_value === 'date_type_picker') {
-          this.ruleForm[item.type_field] = item.type_default
-        }
         const defaultValue = item.search_default
         if (defaultValue === undefined || defaultValue === null || defaultValue === '') return
-        this.ruleForm[item.field_name_en] = defaultValue
+        this.$set(this.ruleForm, item.field_name_en, defaultValue)
       })
     },
 
@@ -557,7 +535,7 @@ export default {
     // 下拉框展开/收起时清除搜索过滤
     handleSelectVisibleChange(visible, val) {
       if (visible) {
-        delete this.selectFilterMap[val.field_name_en]
+        this.$delete(this.selectFilterMap, val.field_name_en)
       }
     },
 
@@ -574,7 +552,7 @@ export default {
         const label = (item.name || item.label || '').toLowerCase()
         return label.includes(keyword)
       })
-      this.selectFilterMap[fieldKey] = result
+      this.$set(this.selectFilterMap, fieldKey, result)
     },
 
     // 获取级联选择器选项
@@ -621,7 +599,7 @@ export default {
       this.timeVal = []
       this.list.map((item) => {
         if (Object.hasOwnProperty.call(item, 'value')) {
-          this.ruleForm[item.field_name_en] = item.value
+          this.$set(this.ruleForm, item.field_name_en, item.value)
         }
       })
     },
@@ -629,7 +607,7 @@ export default {
     setValue(key = 'value') {
       this.list.forEach((item, index) => {
         if (item && item[key]) {
-          this.ruleForm[item.field_name_en] = item[key]
+          this.$set(this.ruleForm, item.field_name_en, item[key])
 
           if (item.type === 'date_picker') {
             if (!Array.isArray(item[key]) && item[key].length > 0) {
@@ -651,7 +629,7 @@ export default {
             item.value = item.value || []
           }
         } else {
-          this.ruleForm[item.field_name_en] = ''
+          this.$set(this.ruleForm, item.field_name_en, '')
         }
       })
 
@@ -724,16 +702,13 @@ export default {
       ])
 
       this.list.forEach((item) => {
-        if (item.form_value === 'date_type_picker') {
-          item.data_dict = []
-          this.ruleForm[item.type_field] = item.type_default
-        } else if (arrayTypes.has(item.form_value)) {
+        if (arrayTypes.has(item.form_value)) {
           item.data_dict = []
           item.value = []
           item.option = []
         } else {
           item.value = ''
-          this.ruleForm[item.field_name_en] = ''
+          this.$set(this.ruleForm, item.field_name_en, '')
         }
       })
 
@@ -844,8 +819,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-// 级联选择器等 Element Plus 多根组件不带 scoped 属性，需用 :deep 命中
-.flex :deep(.search-form) {
+.search-form {
   margin-right: 10px;
 }
 .search-width {
@@ -885,30 +859,6 @@ export default {
   display: inline-block;
   // margin-bottom: 10px;
 }
-// 时间类型 + 日期区间拼成一个控件：去掉相接处的圆角与重复边框
-.date-type-picker {
-  display: flex;
-  .date-type-select {
-    width: 100px;
-    :deep(.el-select__wrapper) {
-      border-top-right-radius: 0;
-      border-bottom-right-radius: 0;
-    }
-  }
-  // 日期选择器为多根组件，不带 scoped 属性
-  :deep(.time) {
-    margin-left: -1px;
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-  }
-  .date-type-select:hover,
-  .date-type-select :deep(.is-focused),
-  :deep(.time:hover),
-  :deep(.time.is-active) {
-    position: relative;
-    z-index: 1;
-  }
-}
 .plan-footer-one {
   width: 200px;
   height: 32px;
@@ -927,24 +877,24 @@ export default {
 .mt4 {
   margin-top: 4px;
 }
-:deep(.el-cascader__tags .el-tag:first-child) {
+::v-deep .el-cascader__tags .el-tag:first-child {
   max-width: 70%;
 }
 // 省市区 cascader 同时开启 multiple + filterable 时，内部搜索 input 的上下 margin(各2px)
 // 会把 tags 撑高，导致 updateStyle 把内框算成 34px；去掉其上下 margin 让 tags 高度回落，最终对齐其它项的 32px
-:deep(.address-cascader .el-cascader__search-input) {
+::v-deep .address-cascader .el-cascader__search-input{
   margin-top: 0;
   margin-bottom: 0;
 }
 
-:deep(.el-input__inner.select) {
+::v-deep .el-input__inner.select {
   white-space: nowrap;
   font-size: 0;
 }
-:deep(.el-input__inner.select .el-tag) {
+::v-deep .el-input__inner.select .el-tag {
   vertical-align: middle;
 }
-:deep(.el-input__inner.select .el-tag:first-child) {
+::v-deep .el-input__inner.select .el-tag:first-child {
   max-width: 70%;
   overflow: hidden;
   text-overflow: ellipsis;

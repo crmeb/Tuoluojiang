@@ -1,10 +1,7 @@
 <template>
   <div class="divBox">
     <el-card class="card-box" v-loading="loadingBox">
-      <el-empty v-if="!query.id" description="请先选择一个数据字典">
-        <el-button type="primary" @click="backFn">前往数据字典</el-button>
-      </el-empty>
-      <div v-else>
+      <div>
         <oaFromBox
           v-if="search.length > 0"
           :search="search"
@@ -67,13 +64,17 @@
                 <span>{{ scope.row.created_at || '--' }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="address" label="操作" width="250">
+            <el-table-column prop="address" :label="$t('public.operation')" width="250">
               <template #default="scope">
-                <el-button type="primary" link v-if="scope.row.level < level" @click="childLevel(scope.row)"
+                <el-button type="text" v-if="scope.row.level < level" @click="childLevel(scope.row)"
                   >添加子级</el-button
                 >
-                <el-button type="primary" link @click="editFn(scope.row)" >编辑</el-button>
-                <el-button type="primary" link @click="handleDelete(scope.row)" >删除</el-button>
+                <el-button type="text" @click="editFn(scope.row)" >编辑</el-button>
+                <template>
+                  <el-button type="text" @click="handleDelete(scope.row)" >{{
+                    $t('public.delete')
+                  }}</el-button>
+                </template>
               </template>
             </el-table-column>
           </el-table>
@@ -84,9 +85,9 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import modalForm from '@/libs/modal-form.ts'
-import { roterPre } from '@/settings.ts'
+import { modalSure } from '@/libs/public'
+import modalForm from '@/libs/modal-form'
+import { roterPre } from '@/settings'
 import {
   getDictDataListApi,
   getDictDataCreateApi,
@@ -94,7 +95,7 @@ import {
   getDictDataPutApi,
   getDictDataDeleteApi,
   getDictDatainfoApi
-} from '@/api/form.ts'
+} from '@/api/form'
 import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'CrmebOaEntManagement',
@@ -136,9 +137,7 @@ export default {
 
   mounted() {
     this.query.id = this.$route.query.id
-    if (this.query.id) {
-      this.getInfo(this.query.id)
-    }
+    this.getInfo(this.query.id)
   },
 
   methods: {

@@ -1,9 +1,9 @@
 <template>
-  <el-dialog class="nodeHyperlinkDialog" title="超链接" v-model="dialogVisible" :width="isMobile ? '90%' : '50%'"
+  <el-dialog class="nodeHyperlinkDialog" title="超链接" :visible.sync="dialogVisible" :width="isMobile ? '90%' : '50%'"
     :top="isMobile ? '20px' : '15vh'">
     <div class="item">
       <span class="name">链接</span>
-      <el-input v-model="link" placeholder="请在此输入链接地址" @keyup.stop @keydown.stop
+      <el-input v-model="link" size="mini" placeholder="请在此输入链接地址" @keyup.native.stop @keydown.native.stop
         @blur="handleUrl()">
         <template #prepend>
           <el-select v-model="protocol" style="width: 80px;">
@@ -16,7 +16,7 @@
     </div>
     <div class="item">
       <span class="name">名称</span>
-      <el-input v-model="linkTitle" @keyup.stop @keydown.stop></el-input>
+      <el-input v-model="linkTitle" size="mini" @keyup.native.stop @keydown.native.stop></el-input>
     </div>
     <template #footer>
       <span class="dialog-footer">
@@ -28,9 +28,9 @@
 </template>
 
 <script>
-import { EventBus } from '@/libs/bus.ts'
+import { EventBus } from '@/libs/bus'
 import { isMobile } from 'simple-mind-map/src/utils/index'
-import { NODE_ACTIVE, SHOW_NODE_LINK } from '../event-constant.ts';
+import { NODE_ACTIVE, SHOW_NODE_LINK } from '../event-constant';
 
 
 export default {
@@ -49,7 +49,7 @@ export default {
     EventBus.$on(NODE_ACTIVE, this.handleNodeActive)
     EventBus.$on(SHOW_NODE_LINK, this.handleShowNodeLink)
   },
-  beforeUnmount() {
+  beforeDestroy() {
     EventBus.$off(NODE_ACTIVE, this.handleNodeActive)
     EventBus.$off(SHOW_NODE_LINK, this.handleShowNodeLink)
   },

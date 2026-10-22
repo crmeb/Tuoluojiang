@@ -18,11 +18,12 @@
         <el-input
           v-model="where.name"
           prefix-icon="el-icon-search"
+          size="small"
           placeholder="请输入关键字搜索"
           clearable
           style="width: 250px"
           @change="getList"
-          @keyup.stop.prevent.enter="getList"
+          @keyup.native.stop.prevent.enter="getList"
           class="input"
         ></el-input>
       </div>
@@ -63,8 +64,8 @@
 
         <el-table-column prop="address" label="操作" fixed="right" width="170">
           <template #default="scope">
-            <el-button type="primary" link @click="editFn(scope.row)">编辑</el-button>
-            <el-button type="primary" link @click="deleteFn(scope.row)">删除</el-button>
+            <el-button type="text" @click="editFn(scope.row)">编辑</el-button>
+            <el-button type="text" @click="deleteFn(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -83,7 +84,7 @@
   </div>
 </template>
 <script>
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import oaPopover from '@/components/form-common/oa-popover'
 
 import {
@@ -93,8 +94,8 @@ import {
   dataEventDelApi,
   dataEventStatusApi,
   dataEventActionApi
-} from '@/api/develop.ts'
-import { roterPre } from '@/settings.ts'
+} from '@/api/develop'
+import { roterPre } from '@/settings'
 
 export default {
   name: '',

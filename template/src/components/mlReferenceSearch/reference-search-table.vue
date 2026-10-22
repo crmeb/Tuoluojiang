@@ -6,7 +6,7 @@
         v-model="queryText"
         type="text"
         placeholder="请输入关键词搜索"
-        @keyup.enter="doSearch"
+        @keyup.enter.native="doSearch"
         clearable
         @clear="cancelSearch"
       >
@@ -51,7 +51,6 @@ import SimpleTable from '@/components/simpleTable'
 // import {refFieldQuery} from '@/api/crud'
 
 export default {
-  emits: ['recordSelected'],
   components: {
     SimpleTable
   },

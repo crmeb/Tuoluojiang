@@ -25,7 +25,7 @@
         </div>
       </template>
       <template v-if="!!widget.widgetList && widget.widgetList.length > 0">
-        <template v-for="(subWidget, swIdx) in widget.widgetList" :key="swIdx">
+        <template v-for="(subWidget, swIdx) in widget.widgetList">
           <template v-if="'container' === subWidget.category">
             <component
               :is="getComponentByContainer(subWidget)"
@@ -37,7 +37,7 @@
               :parent-widget="widget"
             >
               <!-- 递归传递插槽！！！ -->
-              <template v-for="slot in Object.keys($slots)" :key="slot" v-slot:[slot]="scope">
+              <template v-for="slot in Object.keys($scopedSlots)" v-slot:[slot]="scope">
                 <slot :name="slot" v-bind="scope" />
               </template>
             </component>
@@ -54,7 +54,7 @@
               :parent-widget="widget"
             >
               <!-- 递归传递插槽！！！ -->
-              <template v-for="slot in Object.keys($slots)" :key="slot" v-slot:[slot]="scope">
+              <template v-for="slot in Object.keys($scopedSlots)" v-slot:[slot]="scope">
                 <slot :name="slot" v-bind="scope" />
               </template>
             </component>
@@ -66,8 +66,8 @@
 </template>
 
 <script>
-import { watchActiveField } from '@/components/form-render/activeField.ts'
-import i18n from '@/utils/i18n.ts'
+import emitter from '@/utils/emitter'
+import i18n from '@/utils/i18n'
 import refMixin from '@/components/form-render/refMixin'
 import ContainerItemWrapper from '@/components/form-render/container-item/container-item-wrapper'
 import containerItemMixin from '@/components/form-render/container-item/containerItemMixin'
@@ -75,7 +75,8 @@ import FieldComponents from '@/components/form-designer/form-widget/field-widget
 
 export default {
   name: 'card-item',
-  mixins: [i18n, refMixin, containerItemMixin],
+  componentName: 'ContainerItem',
+  mixins: [emitter, i18n, refMixin, containerItemMixin],
   components: {
     ContainerItemWrapper,
     ...FieldComponents
@@ -91,16 +92,23 @@ export default {
     }
   },
   created() {
-    watchActiveField((field) => this.fieldShowFn(field))
     this.initRefList()
   },
-  beforeUnmount() {
+  beforeDestroy() {
     this.unregisterFromRefList()
+  },
+  watch: {
+    '$store.state.user.activeField': {
+      deep: true,
+      handler: function (newVal, oldVal) {
+        this.fieldShowFn(newVal)
+      }
+    }
   },
   methods: {
     fieldShowFn(val) {
       this.widget.widgetList.forEach((item) => {
-        item.isShow = item.id == val.id
+        this.$set(item, 'isShow', item.id == val.id)
       })
     },
     toggleCard() {
@@ -111,11 +119,11 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-card__header) {
+::v-deep .el-card__header {
   padding: 10px 12px;
   border: none;
 }
-:deep(.el-card) {
+::v-deep .el-card {
   border: none;
 }
 .title {
@@ -136,7 +144,7 @@ export default {
   margin-top: -7px;
 }
 
-.folded :deep(.el-card__body) {
+.folded ::v-deep .el-card__body {
   display: none;
 }
 

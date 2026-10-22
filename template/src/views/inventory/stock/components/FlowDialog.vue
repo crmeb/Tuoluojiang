@@ -1,15 +1,15 @@
 <template>
   <!-- 详情侧滑与 el-dialog 保持 DOM 平级（Element 不建议弹层嵌套），故用 div 包一层 -->
   <div>
-    <el-dialog v-model="visible" :width="DIALOG_SIZE.XL" class="stock-detail-dialog"
+    <el-dialog :visible.sync="visible" :width="DIALOG_SIZE.XL" custom-class="stock-detail-dialog"
       :close-on-click-modal="false" @close="reset">
       <!-- 弹窗头部：商品缩略图 + 名称 + 规格 + 编码 -->
-      <template #header>
+      <template #title>
         <GoodsBrief :product="row.product" :sku="row.sku" />
       </template>
 
-      <BaseTable :table-columns="tableColumns" :data="tableData" :loading="isLoading" :total="total" v-model:page="page"
-        v-model:page-size="pageSize">
+      <BaseTable :table-columns="tableColumns" :data="tableData" :loading="isLoading" :total="total" :page.sync="page"
+        :page-size.sync="pageSize">
         <!-- 状态：取流水关联单据（入库 / 出库 / 调拨）的状态，文案与样式复用对应业务列表 -->
         <template #status="{ row: item }">
           <InventoryStatusTag v-if="getSourceStatusOptions(item)" :value="item.source_status"
@@ -26,7 +26,7 @@
 
         <!-- 操作：按流水来源单据类型打开对应详情侧滑 -->
         <template #action="{ row: item }">
-          <el-button v-if="hasSourceDetail(item)" type="primary" link @click="handleViewSource(item)">查看详情</el-button>
+          <el-button v-if="hasSourceDetail(item)" type="text" @click="handleViewSource(item)">查看详情</el-button>
           <span v-else>--</span>
         </template>
       </BaseTable>
@@ -41,18 +41,18 @@
 
 <script>
 import { ref, computed } from "vue";
-import { DIALOG_SIZE } from "@/constants/popupSize.ts";
+import { DIALOG_SIZE } from "@/constants/popupSize";
 import BaseTable from "@/components/BaseTable/index.vue";
 import InventoryStatusTag from "../../components/InventoryStatusTag.vue";
 import GoodsBrief from "./GoodsBrief.vue";
 import InboundDetail from "../../inbound/components/detail.vue";
 import OutboundDetail from "../../outbound/components/detail.vue";
 import TransferDetail from "../../transfer/components/detail.vue";
-import { stockLedgerApi } from "@/api/inventory.ts";
-import { FLOW_TYPE, SOURCE_TYPE, SOURCE_STATUS_MAP_BY_TYPE, STOCK_FLOW_DIALOG_CONFIG } from "../constants.ts";
-import { getUnit, formatStock } from "../utils.ts";
-import { useTable } from "@/composables/useTable.ts";
-import { useWarehouseMap } from "../../composables/useWarehouseMap.ts";
+import { stockLedgerApi } from "@/api/inventory";
+import { FLOW_TYPE, SOURCE_TYPE, SOURCE_STATUS_MAP_BY_TYPE, STOCK_FLOW_DIALOG_CONFIG } from "../constants";
+import { getUnit, formatStock } from "../utils";
+import { useTable } from "@/composables/useTable";
+import { useWarehouseMap } from "../../composables/useWarehouseMap";
 
 // 可打开详情侧滑的来源单据类型（占用 / 在途流水的来源实际只有出库单与调拨单，
 const VIEWABLE_SOURCE_TYPES = [SOURCE_TYPE.INBOUND, SOURCE_TYPE.OUTBOUND, SOURCE_TYPE.TRANSFER];

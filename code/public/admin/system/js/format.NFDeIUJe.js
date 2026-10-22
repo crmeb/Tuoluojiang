@@ -1,0 +1,1 @@
+var e=e=>{let t=e||0;return t>=1e3?`${(t/1e3).toFixed(1)}k`:String(t)},t=e=>{let t=document.createElement(`textarea`);return t.innerHTML=e||``,t.value};export{e as n,t};

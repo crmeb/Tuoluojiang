@@ -1,13 +1,12 @@
 <template>
   <div class="box-container">
-    <el-drawer
-      class="notice-list-drawer" v-model="drawer" direction="rtl" :before-close="handleClose" size="75%" :append-to-body="true"
-      :modal="true">
-      <template #header>
+    <el-drawer :visible.sync="drawer" direction="rtl" :before-close="handleClose" size="75%" :append-to-body="true"
+      :modal="true" :wrapper-closable="true">
+      <template #title>
         <slot>
           <div class="tabsEdit">
             <div class="tabs">
-              <el-tabs v-model="tabsName" class="cr-header-tabs" @tab-change="handleClick">
+              <el-tabs v-model="tabsName" class="cr-header-tabs" @tab-click="handleClick">
                 <el-tab-pane label="未读" name="1" />
                 <el-tab-pane label="全部" name="2" />
               </el-tabs>
@@ -32,8 +31,8 @@
         </div>
         <div class="right">
           <div class="mt20">
-            <el-input v-model="where.title" prefix-icon="el-icon-search" clearable @change="getList"
-              @keyup.stop.prevent.enter="getList" placeholder="请输入标题/内容" style="width: 250px"></el-input>
+            <el-input v-model="where.title" prefix-icon="el-icon-search" clearable size="small" @change="getList"
+              @keyup.native.stop.prevent.enter="getList" placeholder="请输入标题/内容" style="width: 250px"></el-input>
           </div>
           <!-- 消息列表 -->
           <div class="mt10">
@@ -49,9 +48,9 @@
               <el-table-column prop="message" label="消息内容" min-width="360" />
               <el-table-column prop="cate_name" label="类型" min-width="80" />
               <el-table-column prop="created_at" label="发送时间" min-width="120"></el-table-column>
-              <el-table-column label="操作" width="100" fixed="right">
+              <el-table-column :label="$t('toptable.operation')" width="100" fixed="right">
                 <template #default="scope">
-                  <el-button type="primary" link v-for="(item, index) in scope.row.buttons" :key="index"
+                  <el-button type="text" v-for="(item, index) in scope.row.buttons" :key="index"
                     :disabled="selectedType.includes(item.action)" @click="handleDetails(scope.row, item)">
                     <span v-if="scope.row.cate_name !== '考勤'"> {{ item.title }}</span>
                   </el-button>
@@ -61,10 +60,10 @@
             <div class="footer">
               <div class="isSelect">
                 <div class="flex" style="display: inline-block">
-                  <el-button @click="handleRead()">全部已读</el-button>
-                  <el-button :disabled="multipleSelection.length == 0"
+                  <el-button size="small" @click="handleRead()">全部已读</el-button>
+                  <el-button size="small" :disabled="multipleSelection.length == 0"
                     @click="handleRead(1)">标记为已读</el-button>
-                  <el-button @click="handleDelete"
+                  <el-button size="small" @click="handleDelete"
                     :disabled="multipleSelection.length == 0">批量删除</el-button>
                 </div>
                 <!-- <span v-if="multipleSelection.length !== 0">已选中{{ multipleSelection.length }} 条</span> -->
@@ -87,14 +86,11 @@
   </div>
 </template>
 <script>
-import { mapStores } from 'pinia'
-import { useUserStore } from '@/stores/user.ts'
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { noticeMessageListApi, noticeMessageDeleteApi, noticeMessageReadApi, scheduleInfoApi } from '@/api/user.ts'
-import { messageCateApi } from '@/api/setting.ts'
-import { messageListApi } from '@/api/public.ts'
-import  { roterPre } from '@/settings.ts'
+import { modalSure } from '@/libs/public'
+import { noticeMessageListApi, noticeMessageDeleteApi, noticeMessageReadApi } from '@/api/user'
+import { messageCateApi } from '@/api/setting'
+import { messageListApi } from '@/api/public'
+import  { roterPre } from '@/settings'
 
 import unreadIcon from '@/assets/images/unread-icon.png';
 import readIcon from '@/assets/images/read-icon.png';
@@ -102,11 +98,8 @@ import readIcon from '@/assets/images/read-icon.png';
 export default {
   name: 'noticeList',
   components: {
-    messageHandlePopup: defineAsyncComponent(() => import('@/components/common/messageHandlePopup')),
-    CalendarDetails: defineAsyncComponent(() => import("@/views/user/calendar/components/calendarDetails.vue"))
-  },
-  computed: {
-    ...mapStores(useUserStore)
+    messageHandlePopup: () => import('@/components/common/messageHandlePopup'),
+    CalendarDetails: () => import("@/views/user/calendar/components/calendarDetails.vue")
   },
   data() {
     return {
@@ -152,7 +145,7 @@ export default {
           }
           this.tableData = res.data.list
           this.total = res.data.messageNum
-          // this.userStore.setMessageCount(this.total)
+          // this.$store.commit('user/SET_MESSAGE', this.total)
         })
         .catch((error) => {
           if (type === 1) {
@@ -231,18 +224,12 @@ export default {
     async handleDetails(row, item) {
       this.detail = row
       await this.$nextTick()
-      const scheduleId = row.other?.id || row.link_id
-      if (row.template_type === 'dealt_person_work' && scheduleId) {
-        let { start_time, end_time } = row.other || {}
-        // 部分历史/非个人类型的待办消息 other 只有 id，按日程详情补齐时间段，避免走模板 url 跳转
-        if (!start_time || !end_time) {
-          const res = await scheduleInfoApi(scheduleId, {}).catch(() => null)
-          start_time = res?.data?.start_time
-          end_time = res?.data?.end_time
-        }
-        if (start_time && end_time) {
-          this.$refs.calendarDetailsRef.openBox({ itemId: scheduleId, start_time, end_time })
-        }
+      if (row.template_type === 'dealt_person_work' && row.other.start_time && row.other.end_time) {
+        this.$refs.calendarDetailsRef.openBox({
+          itemId: row.other.id,
+          start_time: row.other.start_time,
+          end_time: row.other.end_time
+        })
       } else {
         this.$refs.messageHandlePopup.openMessage(item, row)
       }
@@ -270,7 +257,7 @@ export default {
       this.drawer = false
       messageListApi({page:1,limit:1}).then((res) => {
         let count = res.data.messageNum ? res.data.messageNum : 0
-        this.userStore.setMessageCount(count)
+        this.$store.commit('user/SET_MESSAGE', count)
       })
     },
     handleClick() {
@@ -287,13 +274,27 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+::v-deep .el-drawer__body {
+  padding-bottom: 0;
+}
 
-:deep(.el-tabs__item) {
+::v-deep .el-drawer__header {
+  padding: 0;
+  border-bottom: 1px solid #eeeeee;
+  padding-left: 30px;
+}
+
+::v-deep .el-tabs__item {
   height: 56px;
   line-height: 56px;
   font-weight: 500;
   z-index: 9999;
 }
+
+::v-deep .el-drawer__close-btn {
+  width: 50px;
+}
+
 
 .tabsEdit {
   display: flex;
@@ -403,31 +404,16 @@ export default {
   justify-content: flex-end;
 }
 
-:deep(.el-image) {
+::v-deep .el-image {
   width: 23px !important;
   height: 23px !important;
 }
 
-// :deep(.el-table th) {
+// ::v-deep .el-table th {
 //   background-color: #f7fbff;
 // }
 
-:deep(.el-table-column--selection .cell) {
+::v-deep .el-table-column--selection .cell {
   padding: 0 10px;
-}
-</style>
-
-<style lang="scss">
-// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
-.notice-list-drawer .el-drawer__body {
-  padding-bottom: 0;
-}
-.notice-list-drawer .el-drawer__header {
-  padding: 0;
-  border-bottom: 1px solid #eeeeee;
-  padding-left: 30px;
-}
-.notice-list-drawer .el-drawer__close-btn {
-  width: 50px;
 }
 </style>

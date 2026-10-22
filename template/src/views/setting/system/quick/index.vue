@@ -65,11 +65,13 @@
                     />
                   </template>
                 </el-table-column>
-                <el-table-column prop="describe" label="操作" fixed="right" width="120">
+                <el-table-column prop="describe" :label="$t('public.operation')" fixed="right" width="120">
                   <template #default="scope">
-                    <el-button type="primary" link @click="handleEdit(scope.row)" v-hasPermi="['system:quick:edit']">编辑</el-button>
-                    <el-button type="primary" link @click="handleDelete(scope.row.id)" v-hasPermi="['system:quick:delete']">
-                      删除
+                    <el-button type="text" @click="handleEdit(scope.row)" v-hasPermi="['system:quick:edit']">{{
+                      $t('public.edit')
+                    }}</el-button>
+                    <el-button type="text" @click="handleDelete(scope.row.id)" v-hasPermi="['system:quick:delete']">
+                      {{ $t('public.delete') }}
                     </el-button>
                   </template>
                 </el-table-column>
@@ -94,9 +96,9 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import modalForm from '@/libs/modal-form.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { modalSure } from '@/libs/public'
+import modalForm from '@/libs/modal-form'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
 import left from './components/left'
 import {
   configQuickCreateApi,
@@ -104,14 +106,13 @@ import {
   configQuickEditApi,
   configQuickListApi,
   configQuickShowApi
-} from '@/api/setting.ts'
+} from '@/api/setting'
 
-import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'SystemQuick',
   components: {
     left,
-    oaFromBox
+    oaFromBox: () => import('@/components/common/oaFromBox')
   },
   data() {
     return {
@@ -222,15 +223,15 @@ export default {
 .assess-right {
   padding: 14px;
   border-left: 1px solid #eeeeee;
-  :deep(.el-card__header) {
+  ::v-deep .el-card__header {
     border-bottom: none;
     padding: 0;
   }
 }
-:deep(.el-row),
-:deep(.el-card),
-:deep(.el-card__body),
-:deep(.el-col) {
+::v-deep .el-row,
+::v-deep .el-card,
+::v-deep .el-card__body,
+::v-deep .el-col {
   height: 100%;
 }
 .right-con {
@@ -243,7 +244,7 @@ export default {
 }
 .select-bar {
   margin-bottom: 0;
-  :deep(.el-input-group__append) {
+  ::v-deep .el-input-group__append {
     top: 0;
     button {
       color: #fff;

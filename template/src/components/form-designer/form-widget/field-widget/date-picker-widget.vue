@@ -20,11 +20,11 @@
       class="full-width-input"
       :readonly="field.options.readonly"
       :disabled="field.options.disabled"
-      :size="toElSize(field.options.size)"
+      :size="field.options.size"
       :clearable="field.options.clearable"
       :editable="field.options.editable"
-      :format="toDayjsFormat(field.options.format)"
-      :value-format="toDayjsFormat(field.options.valueFormat)"
+      :format="field.options.format"
+      :value-format="field.options.valueFormat"
       :placeholder="field.options.placeholder || i18nt('render.hint.datePlaceholder')"
       @focus="handleFocusCustomEvent"
       @blur="handleBlurCustomEvent"
@@ -38,15 +38,16 @@
 </template>
 
 <script>
-import { toDayjsFormat } from '@/utils/date-format.ts'
-import dayjs from 'dayjs'
+import moment from 'moment'
 import FormItemWrapper from './form-item-wrapper'
-import i18n, { translate } from '@/utils/i18n.ts'
+import emitter from '@/utils/emitter'
+import i18n, { translate } from '@/utils/i18n'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
 
 export default {
   name: 'date-picker-widget',
-  mixins: [fieldMixin, i18n],
+  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
+  mixins: [emitter, fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -115,25 +116,24 @@ export default {
   mounted() {
     this.handleOnMounted()
     if (this.field.options.defaultType == '1') {
-      this.fieldModel = dayjs().format('YYYY-MM-DD')
+      this.fieldModel = moment().format('YYYY-MM-DD')
       this.handleChangeEvent(this.fieldModel)
     }
   },
 
-  beforeUnmount() {
+  beforeDestroy() {
     this.unregisterFromRefList()
   },
 
-  methods: {
-    toDayjsFormat
-  }
+  methods: {}
 }
 </script>
 
 <style lang="scss" scoped>
 @import '../../../../styles/global.scss'; //* form-item-wrapper已引入，还需要重复引入吗？ *//
 
-:deep(.full-width-input) {
+.full-width-input {
   width: 100% !important;
 }
 </style>
+@/utils/i18ns

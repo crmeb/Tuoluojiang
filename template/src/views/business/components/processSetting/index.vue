@@ -15,9 +15,9 @@
             :style="'transform: scale(' + nowVal / 100 + '); transform-origin: 50% 0px 0px;'"
           >
             <nodeWrap
-              v-model:node-config="nodeConfig"
-              v-model:flow-permission="flowPermission"
-              v-model:is-tried="isTried"
+              :node-config.sync="nodeConfig"
+              :flow-permission.sync="flowPermission"
+              :is-tried.sync="isTried"
               :table-id="tableId"
             ></nodeWrap>
             <div class="end-node">
@@ -27,7 +27,7 @@
           </div>
         </section>
       </div>
-      <errorDialog v-model:visible="tipVisible" :list="tipList" />
+      <errorDialog :visible.sync="tipVisible" :list="tipList" />
       <promoter-drawer />
       <approver-drawer :director-max-level="directorMaxLevel" />
       <copyer-drawer :director-max-level="directorMaxLevel" />
@@ -37,16 +37,15 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import func from '@/utils/preload.ts'
+import func from '@/utils/preload'
 export default {
   name: 'ProcessData',
   components: {
-    promoterDrawer: defineAsyncComponent(() => import('@/components/workFlow/drawer/promoterDrawer')),
-    approverDrawer: defineAsyncComponent(() => import('@/components/workFlow/drawer/approverDrawer')),
-    copyerDrawer: defineAsyncComponent(() => import('@/components/workFlow/drawer/copyerDrawer')),
-    conditionDrawer: defineAsyncComponent(() => import('@/components/workFlow/drawer/conditionDrawer')),
-    errorDialog: defineAsyncComponent(() => import('@/components/workFlow/dialog/errorDialog'))
+    promoterDrawer: () => import('@/components/workFlow/drawer/promoterDrawer'),
+    approverDrawer: () => import('@/components/workFlow/drawer/approverDrawer'),
+    copyerDrawer: () => import('@/components/workFlow/drawer/copyerDrawer'),
+    conditionDrawer: () => import('@/components/workFlow/drawer/conditionDrawer'),
+    errorDialog: () => import('@/components/workFlow/dialog/errorDialog')
   },
   props: {
     tabName: {
@@ -185,16 +184,10 @@ export default {
 </script>
 <style src="@/styles/workflow.css"></style>
 <style lang="scss" scoped>
-// 撑满编辑页主体区域（原 calc(100vh - 130px) 比主体高，编辑页出现滚动条）
 .processData {
   height: 100%;
-  :deep(.el-card) {
-    height: 100%;
-  }
-  // 流程图较高时在卡片内滚动
-  :deep(.el-card__body) {
-    height: 100%;
-    box-sizing: border-box;
+  ::v-deep .el-card__body {
+    height: calc(100vh - 130px);
     overflow: auto;
 
     &::-webkit-scrollbar-thumb {

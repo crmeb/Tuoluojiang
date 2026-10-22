@@ -111,59 +111,57 @@
                                 <el-table-column label="操作" width="210" fixed="right">
                                     <template #default="scope">
 
-                                        <el-button type="primary" link @click="handleClick(1, scope.row)">查看</el-button>
+                                        <el-button type="text" size="mini" @click="handleClick(1, scope.row)">查看</el-button>
                                         <template v-if="userId == scope.row.admin.id">
 
 
                                             <!-- 审核中 -->
                                             <template v-if="scope.row.status == 1">
-                                                <el-button type="primary" link @click="handleClick(4, scope.row)">撤销申请</el-button>
-                                                <el-button type="primary" link @click="handleClick(6, scope.row)">关联订单</el-button>
+                                                <el-button type="text" size="mini" @click="handleClick(4, scope.row)">撤销申请</el-button>
+                                                <el-button type="text" size="mini" @click="handleClick(6, scope.row)">关联订单</el-button>
                                             </template>
 
                                             <!-- 待签约 -->
                                             <template v-if="scope.row.status == 2">
-                                                <el-button v-if="scope.row.sign_type == 1" type="primary" link
+                                                <el-button v-if="scope.row.sign_type == 1" type="text" size="mini"
                                                     @click="handleClick(7, scope.row)">签约录入</el-button>
-                                                <el-button v-else type="primary" link
+                                                <el-button v-else type="text" size="mini"
                                                     @click="handleClick(2, scope.row)">电子签</el-button>
                                             </template>
 
                                             <!-- 已签约 -->
                                             <template v-if="scope.row.status == 3">
-                                                <el-button type="primary" link @click="handleClick(6, scope.row)">关联订单</el-button>
-                                                <el-button type="primary" link @click="handleClick(9, scope.row)">删除</el-button>
+                                                <el-button type="text" size="mini" @click="handleClick(6, scope.row)">关联订单</el-button>
+                                                <el-button type="text" size="mini" @click="handleClick(9, scope.row)">删除</el-button>
                                             </template>
-                                            <el-button v-if="scope.row.status >= 4" type="primary" link
+                                            <el-button v-if="scope.row.status >= 4" type="text" size="mini"
                                                 @click="handleClick(3, scope.row)">重新签约</el-button>
                                             <el-dropdown v-if="scope.row.status != 1 && scope.row.status != 3">
-                                                <el-button type="primary" link class="el-dropdown-link more ml10">
+                                                <span class="el-dropdown-link el-button--text el-button more ml10">
                                                     更多
                                                     <i class="el-icon-arrow-down" />
-                                                </el-button>
-                                                <template #dropdown>
-                                                  <el-dropdown-menu class="dropdown-menu-left" placement="top-start">
-                                                      <!-- 待签约 -->
-                                                      <el-dropdown-item
-                                                          v-if="scope.row.status == 2 || scope.row.status == 6 || scope.row.status == 4"
-                                                          @click="handleClick(8, scope.row)">
-                                                          签约变更
-                                                      </el-dropdown-item>
-                                                      <el-dropdown-item v-if="scope.row.status != 6"
-                                                          @click="handleClick(6, scope.row)">
-                                                          关联订单
-                                                      </el-dropdown-item>
-                                                      <el-dropdown-item v-if="![6, 4, -1].includes(scope.row.status)"
-                                                          @click="handleClick(4, scope.row)">
-                                                          撤销签约
-                                                      </el-dropdown-item>
-  
-                                                      <el-dropdown-item @click="handleClick(9, scope.row)">
-                                                          删除
-                                                      </el-dropdown-item>
-  
-                                                  </el-dropdown-menu>
-                                                </template>
+                                                </span>
+                                                <el-dropdown-menu class="dropdown-menu-left" placement="top-start">
+                                                    <!-- 待签约 -->
+                                                    <el-dropdown-item
+                                                        v-if="scope.row.status == 2 || scope.row.status == 6 || scope.row.status == 4"
+                                                        @click.native="handleClick(8, scope.row)">
+                                                        签约变更
+                                                    </el-dropdown-item>
+                                                    <el-dropdown-item v-if="scope.row.status != 6"
+                                                        @click.native="handleClick(6, scope.row)">
+                                                        关联订单
+                                                    </el-dropdown-item>
+                                                    <el-dropdown-item v-if="![6, 4, -1].includes(scope.row.status)"
+                                                        @click.native="handleClick(4, scope.row)">
+                                                        撤销签约
+                                                    </el-dropdown-item>
+
+                                                    <el-dropdown-item @click.native="handleClick(9, scope.row)">
+                                                        删除
+                                                    </el-dropdown-item>
+
+                                                </el-dropdown-menu>
 
                                             </el-dropdown>
                                         </template>
@@ -196,7 +194,7 @@
         <oa-dialog ref="dialogForm" :fromData="fromData" @submit="submit">
             <div class="file-box">
                 <span class="box-label">上传签署后文件：</span>
-                <upload-file class="clip-box" :maxLength="3" @getVal="handleUploadFile" />
+                <upload-file class="clip-box" :maxLength="3" @input="handleUploadFile" />
             </div>
 
         </oa-dialog>
@@ -204,23 +202,21 @@
 
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { getStorageJson } from '@/utils/storage.ts'
-import { getColor } from '@/utils/format.ts'
-import { getContractDocListApi, contractDocDelApi, contractDocCancelApi, contractSignatoryApi, contractDocSignApi } from '@/api/contractSign.ts'
-import oaFromBox from '@/components/common/oaFromBox'
+import { modalSure } from '@/libs/public'
+import { getStorageJson } from '@/utils/storage'
+import { getColor } from '@/utils/format'
+import { getContractDocListApi, contractDocDelApi, contractDocCancelApi, contractSignatoryApi, contractDocSignApi } from '@/api/contractSign'
 export default {
     name: 'contractSigning',
     components: {
-        oaFromBox,
-        addContractSign: defineAsyncComponent(() => import('./components/addContractSign')),
-        checkContract: defineAsyncComponent(() => import('./components/checkContract')),
-        eSignatureDialog: defineAsyncComponent(() => import('./components/eSignatureDialog')),
-        paymentTableDialog: defineAsyncComponent(() => import('./components/paymentTableDialog')),
-        oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form')),
-        uploadFile: defineAsyncComponent(() => import('@/components/form-common/oa-upload')),
-        editCustomer: defineAsyncComponent(() => import('@/views/customer/list/components/editCustomer')),
+        oaFromBox: () => import('@/components/common/oaFromBox'),
+        addContractSign: () => import('./components/addContractSign'),
+        checkContract: () => import('./components/checkContract'),
+        eSignatureDialog: () => import('./components/eSignatureDialog'),
+        paymentTableDialog: () => import('./components/paymentTableDialog'),
+        oaDialog: () => import('@/components/form-common/dialog-form'),
+        uploadFile: () => import('@/components/form-common/oa-upload'),
+        editCustomer: () => import('@/views/customer/list/components/editCustomer'),
     },
     data() {
         return {
@@ -470,7 +466,7 @@ export default {
             item.eid = row.customer.id
             item.cid = 0
             this.fromCustomerData = {
-                title: '编辑客户',
+                title: this.$t('customer.editcustomer'),
                 width: '1100px',
                 data: item,
                 link_type: 'customer',

@@ -1,1 +1,61 @@
+# 操作系统文件
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# 编辑器和IDE
 .idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.project
+.settings/
+.buildpath
+
+# 依赖目录
+node_modules/
+vendor/
+bower_components/
+
+# 日志文件
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 临时文件
+*.tmp
+*.temp
+.cache/
+.temp/
+
+# 环境配置
+.env.local
+.env.*.local
+
+# 编译输出
+dist/
+build/
+*.o
+*.class
+*.jar
+*.war
+
+# PHP相关
+composer.lock
+package-lock.json
+
+# 项目特定配置
+.idea/
+code/.trae/*
+code/.codebuddy/*
+
+code/supervisord.pid
+code/supervisord.log
+code/.env
+code/.constant
+code/.codebuddy/models.json
+
+code/storage/*

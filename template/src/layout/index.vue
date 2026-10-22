@@ -27,17 +27,13 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { AppMain, Navbar, Sidebar } from './components/index.ts'
+import { AppMain, Navbar, Sidebar } from './components'
 import ResizeMixin from './mixin/ResizeHandler'
-import { roterPre } from '@/settings.ts'
-import { mapState } from 'pinia'
-import { useAppStore } from '@/stores/app.ts'
-import { useUserStore } from '@/stores/user.ts'
-import { useConditionDialogStore } from '@/stores/conditionDialog.ts'
-import { EventBus } from '@/libs/bus.ts'
-import { DEMO_SUPPORT } from '@/config/env.ts'
-import { shouldShowSubSidebar } from './utils/menu.ts'
+import { roterPre } from '@/settings'
+import { mapGetters, mapState } from 'vuex'
+import { EventBus } from '@/libs/bus'
+import { DEMO_SUPPORT } from '@/config/env'
+import { shouldShowSubSidebar } from './utils/menu'
 function normalizeSidebarIndex(index) {
   if (typeof index === 'string' && index.length > 13) {
     return index.slice(13)
@@ -50,17 +46,22 @@ export default {
     AppMain,
     Navbar,
     Sidebar,
-    headerToolbar: defineAsyncComponent(() => import('./components/Header/Toolbar')),
-    // breadcrumb: defineAsyncComponent(() => import('./components/Header/breadcrumb')),
-    help: defineAsyncComponent(() => import('./components/Document/help')),
-    messageHandlePopup: defineAsyncComponent(() => import('@/components/common/messageHandlePopup')),
-    demoSupport: defineAsyncComponent(() => import('@/components/demoSupport'))
+    headerToolbar: () => import('./components/Header/Toolbar'),
+    // breadcrumb: () => import('./components/Header/breadcrumb'),
+    help: () => import('./components/Document/help'),
+    messageHandlePopup: () => import('@/components/common/messageHandlePopup'),
+    demoSupport: () => import('@/components/demoSupport')
   },
   mixins: [ResizeMixin],
   computed: {
-    // sidebar / device 同时供 ResizeHandler 混入读取
-    ...mapState(useAppStore, ['sidebar', 'device', 'sidebarParentCur']),
-    ...mapState(useUserStore, ['menuList']),
+    ...mapState({
+      sidebar: (state) => state.app.sidebar,
+      word: (state) => state.app.keyWord,
+      device: (state) => state.app.device,
+      fixedHeader: (state) => state.settings.fixedHeader,
+      sidebarType: (state) => state.app.sidebarType
+    }),
+    ...mapGetters(['menuList', 'sidebarParentCur']),
     // 与 Sidebar 的 isShowMenu 共用同一套判定，避免菜单隐藏了但内容区没跟着左移
     isSidebarShow() {
       const sidebarData = this.menuList && this.menuList[normalizeSidebarIndex(this.sidebarParentCur)]
@@ -77,8 +78,13 @@ export default {
 
   watch: {
     $route(to, from) {
-      // 条件设置弹窗是跨页面共享的，换页时清掉上一页的条件
-      useConditionDialogStore().reset()
+      let data = {
+        list: [],
+        type: '',
+        additional_search_boolean: '1'
+      }
+      this.$store.commit('uadatefieldOptions', data)
+      this.$store.state.business.conditionDialog = false
       if (to.path == `${roterPre}/user/resume` || to.path == `${roterPre}/user/news/subscribe`) {
         this.sideShow = true
         this.helpShow = false
@@ -86,12 +92,33 @@ export default {
         this.sideShow = false
       }
     },
+
+    sidebarType: {
+      handler(nVal, oVal) {
+        if (nVal) {
+          this.widthNum = 'calc(100% - 270px)'
+        } else {
+          this.widthNum = 'calc(100% - 70px)'
+        }
+      },
+      deep: true
+    },
+    word: {
+      handler(nVal, oVal) {
+        if (nVal) {
+          this.keyword = nVal
+        }
+      },
+      deep: true
+    }
   },
   data() {
     return {
+      widthNum: 'calc(100% - 70px)',
       helpShow: false,
       searchShow: false,
       type: 2,
+      keyword: '',
       detail: {},
       sideShow: false,
       isDemoSupport: DEMO_SUPPORT
@@ -108,7 +135,10 @@ export default {
       this.sideShow = false
     }
   },
-  beforeUnmount() {
+  mounted() {
+    this.widthNum = this.sidebarType ? 'calc(100% - 152px)' : 'calc(100% - 70px)'
+  },
+  beforeDestroy() {
     EventBus.$off('messageSuccess', this.handleMessageSuccess)
   },
   methods: {
@@ -116,6 +146,9 @@ export default {
       this.detail = e.detail
       await this.$nextTick()
       this.$refs.messageHandlePopup.openMessage(e.item)
+    },
+    handleClickOutside() {
+      this.$store.dispatch('app/closeSideBar', { withoutAnimation: false })
     },
     openHelp(isshow) {
       this.helpShow = isshow
@@ -202,7 +235,7 @@ export default {
   color: #909399;
 }
 .top {
-  :deep(.el-button.is-link) {
+  ::v-deep .el-button--text {
     color: #909399;
   }
 }

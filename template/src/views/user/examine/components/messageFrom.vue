@@ -23,7 +23,7 @@
               </div>
               <div class="del">
                 <div
-                  v-if="userStore.userInfo.uid === item.card.uid"
+                  v-if="$store.state.user.userInfo.uid === item.card.uid"
                   @click="del(item.id)"
                   class="el-icon-delete mr5 mt10"
                 >
@@ -43,15 +43,11 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useUserStore } from '@/stores/user.ts'
-import { defineAsyncComponent } from 'vue'
-import { approveReplyApi, approveReplyDelApi } from '@/api/business.ts'
+import { approveReplyApi, approveReplyDelApi } from '@/api/business'
 export default {
-  emits: ['upDate'],
   name: 'MessageFrom',
   components: {
-    uploadList: defineAsyncComponent(() => import('@/components/form-common/oa-uploadList'))
+    uploadList: () => import('@/components/form-common/oa-uploadList')
   },
   props: {
     examineData: {
@@ -60,9 +56,6 @@ export default {
         return {}
       }
     }
-  },
-  computed: {
-    ...mapStores(useUserStore)
   },
   data() {
     return {
@@ -128,6 +121,14 @@ export default {
 .acea-row {
   display: flex;
   justify-content: space-between;
+}
+.inpBox {
+  background-color: #f9f9f9;
+  ::v-deep .el-textarea__inner {
+    border: none;
+    resize: none;
+    background-color: #f9f9f9;
+  }
 }
 .pic {
   width: 38px;

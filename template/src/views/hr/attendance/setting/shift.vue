@@ -34,16 +34,16 @@
           <el-table-column prop="updated_at" label="最后更新时间"> </el-table-column>
           <el-table-column label="操作" width="180" fixed="right">
             <template #default="scope">
-              <el-button type="primary" link @click="checkFn(scope.row)" v-hasPermi="['hr:attendance:shift:check']"
+              <el-button type="text" @click="checkFn(scope.row)" v-hasPermi="['hr:attendance:shift:check']"
                 >查看</el-button
               >
 
-              <el-button type="primary" link @click="editFn(scope.row)" v-hasPermi="['hr:attendance:shift:edit']"
+              <el-button type="text" @click="editFn(scope.row)" v-hasPermi="['hr:attendance:shift:edit']"
                 >编辑</el-button
               >
 
               <el-button
-                type="primary" link
+                type="text"
                 v-if="scope.row.id !== 2"
                 @click="deleteFn(scope.row)"
                 v-hasPermi="['hr:attendance:shift:delete']"
@@ -71,13 +71,12 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { attendanceShiftListApi, deleteShiftListApi } from '@/api/config.ts'
+import { modalSure } from '@/libs/public'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { attendanceShiftListApi, deleteShiftListApi } from '@/api/config'
 import oaFromBox from '@/components/common/oaFromBox'
 export default {
-  components: { addShift: defineAsyncComponent(() => import('./components/addShift')), oaFromBox },
+  components: { addShift: () => import('./components/addShift'), oaFromBox },
   data() {
     return {
       TABLE_HEIGHT,

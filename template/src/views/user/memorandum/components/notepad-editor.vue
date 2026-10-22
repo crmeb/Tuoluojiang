@@ -12,8 +12,9 @@
 
     <div class="editor-body">
       <!-- 目录收起后的悬浮入口：紧贴左缘展示 -->
-      <el-tooltip v-if="!catalogVisible" content="展开目录" effect="dark" placement="right" :show-after="300">
+      <el-tooltip content="展开目录" effect="dark" placement="right" :open-delay="300">
         <i
+          v-if="!catalogVisible"
           class="catalog-float-btn el-icon-s-unfold"
           @click="openCatalogPanel"
         />
@@ -26,7 +27,7 @@
         :style="{ height: panelHeight, width: panelWidth + 'px' }"
       >
       <div class="panel-head">
-        <el-tooltip :content="allExpanded ? '全部折叠' : '全部展开'" effect="dark" placement="top" :show-after="300">
+        <el-tooltip :content="allExpanded ? '全部折叠' : '全部展开'" effect="dark" placement="top" :open-delay="300">
           <span class="panel-title" @click="toggleAllCatalog">
             <!-- 图标随目录状态切换（Lucide list-collapse 及其镜像）：全部展开时显示折叠样式，全部折叠时显示展开样式 -->
             <svg
@@ -60,7 +61,7 @@
             目录
           </span>
         </el-tooltip>
-        <el-tooltip content="收起目录" effect="dark" placement="top" :show-after="300">
+        <el-tooltip content="收起目录" effect="dark" placement="top" :open-delay="300">
           <i class="el-icon-s-fold panel-fold" @click="collapseCatalogPanel" />
         </el-tooltip>
       </div>
@@ -80,8 +81,9 @@
             :class="`level-${data.level}`"
             :style="{ paddingLeft: (data.level - 1) * 14 + 12 + 'px' }"
           >
-            <el-tooltip v-if="data.childCount" :content="collapsedKeys.includes(data.key) ? '展开' : '收起'" effect="dark" placement="top" :show-after="300">
+            <el-tooltip :content="collapsedKeys.includes(data.key) ? '展开' : '收起'" effect="dark" placement="top" :open-delay="300">
               <i
+                v-if="data.childCount"
                 class="node-toggle"
                 :class="collapsedKeys.includes(data.key) ? 'el-icon-caret-right' : 'el-icon-caret-bottom'"
                 @click.stop="handleToggleNode(data)"
@@ -101,9 +103,10 @@
     <div ref="editorMainRef" class="editor-main">
       <div class="edit-title">
         <el-input
-          :model-value="title"
+          :value="title"
           :placeholder="titlePlaceholder"
           class="edit-input"
+          size="small"
           @input="handleTitleInput"
           @change="handleTitleChange"
         />
@@ -124,7 +127,7 @@
         class="block-ctl-group"
         :style="{ top: hoverBlock.top + 5 + 'px', left: hoverBlock.level > 0 ? '18px' : '34px' }"
       >
-        <el-tooltip content="点击插入内容" effect="dark" placement="top" :show-after="100">
+        <el-tooltip content="点击插入内容" effect="dark" placement="top" :open-delay="100">
           <i
             class="ctl-btn el-icon-plus"
             :class="{ 'is-active': blockMenuVisible }"
@@ -134,7 +137,7 @@
             @click.stop="toggleBlockMenu"
           />
         </el-tooltip>
-        <el-tooltip content="拖动排序" effect="dark" placement="top" :show-after="100" :disabled="contentDragging">
+        <el-tooltip content="拖动排序" effect="dark" placement="top" :open-delay="100">
           <span
             class="ctl-btn ctl-drag"
             draggable="true"
@@ -156,7 +159,7 @@
         </el-tooltip>
       </div>
       <!-- 标题级别徽标与折叠箭头：位于行内左侧控件区，箭头紧挨标题文字 -->
-      <el-tooltip :content="`H${hoverBlock.level} 级标题`" effect="dark" placement="top" :show-after="100">
+      <el-tooltip :content="`H${hoverBlock.level} 级标题`" effect="dark" placement="top" :open-delay="100">
         <span
           v-show="hoverBlock.visible && hoverBlock.level > 0"
           class="ctl-badge"
@@ -170,7 +173,7 @@
         :content="hoverBlock.collapsed ? '展开' : '收起'"
         effect="dark"
         placement="top"
-        :show-after="100"
+        :open-delay="100"
       >
         <i
           v-show="hoverBlock.visible && hoverBlock.level > 0"
@@ -199,7 +202,7 @@
         @mouseleave="leaveCtl"
       >
         <div v-for="item in blockMenu" :key="item.type" class="block-menu-item-wrap">
-          <el-tooltip :content="blockTip(item)" effect="dark" placement="right" :show-after="200" popper-class="block-menu-tip-popper">
+          <el-tooltip :content="blockTip(item)" effect="dark" placement="right" :open-delay="200" popper-class="block-menu-tip-popper">
             <div class="block-menu-item" @click="insertBlock(item.type)">
               <!-- icon 为本地常量 SVG（wangEditor 官方菜单同款），非用户输入，v-html 安全；标题项用文字徽标 -->
               <span v-if="item.badge" class="block-menu-badge">{{ item.badge }}</span>
@@ -226,9 +229,9 @@ export default defineComponent({ name: 'NotepadEditor' })
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch } from 'vue'
-import { Editor, Toolbar } from '@wangeditor-next/editor-for-vue'
+import { Editor, Toolbar } from '@wangeditor-next/editor-for-vue2'
 import '@wangeditor-next/editor/dist/css/style.css'
-import { uploader } from '@/utils/uploadCloud.ts'
+import { uploader } from '@/utils/uploadCloud'
 
 // 「+ 添加子目录」生成的新标题默认文案
 const NEW_NODE_TEXT = '新建目录'
@@ -645,7 +648,7 @@ function scheduleHide() {
   if (hideTimer) clearTimeout(hideTimer)
   hideTimer = setTimeout(() => {
     // 点击固定（pinned）的行不因鼠标移开而隐藏，直到移到别的行/移出编辑区/内容变化
-    if (pinned.value || dragFromIndex >= 0) return
+    if (pinned.value) return
     hoverBlock.visible = false
     blockMenuVisible.value = false
   }, 200)
@@ -668,7 +671,6 @@ function leaveCtl() {
 
 // 悬浮经过段落时，在其左侧展示「+」（top 相对 editor-main）
 function onEditableMouseOver(e: MouseEvent) {
-  if (dragFromIndex >= 0) return
   // 必须先取消待执行的隐藏定时器：从按钮移回正文时会触发按钮 mouseleave 的延迟隐藏，
   // 否则 200ms 后会把刚显示的悬浮控件再次隐藏
   cancelHide()
@@ -801,12 +803,9 @@ function bindBlockHover() {
   editable.addEventListener('click', onEditableClick)
   editable.addEventListener('paste', onEditablePaste)
   editable.addEventListener('scroll', scheduleHide, true)
-  // 手柄在 editable 左侧，竖直拖动时落在 editor-main 的留白区。
-  // 在整个正文区域接收拖放，并先于编辑器默认处理，避免把块下标插入正文。
-  const dragArea = editorMainRef.value
-  dragArea?.addEventListener('dragover', onEditableDragOver, true)
-  dragArea?.addEventListener('drop', onEditableDrop, true)
-  dragArea?.addEventListener('dragleave', onEditableDragLeave, true)
+  editable.addEventListener('dragover', onEditableDragOver)
+  editable.addEventListener('drop', onEditableDrop)
+  editable.addEventListener('dragleave', onEditableDragLeave)
 }
 
 function unbindBlockHover() {
@@ -816,10 +815,9 @@ function unbindBlockHover() {
   boundEditable.removeEventListener('click', onEditableClick)
   boundEditable.removeEventListener('paste', onEditablePaste)
   boundEditable.removeEventListener('scroll', scheduleHide, true)
-  const dragArea = editorMainRef.value
-  dragArea?.removeEventListener('dragover', onEditableDragOver, true)
-  dragArea?.removeEventListener('drop', onEditableDrop, true)
-  dragArea?.removeEventListener('dragleave', onEditableDragLeave, true)
+  boundEditable.removeEventListener('dragover', onEditableDragOver)
+  boundEditable.removeEventListener('drop', onEditableDrop)
+  boundEditable.removeEventListener('dragleave', onEditableDragLeave)
   boundEditable = null
 }
 
@@ -1021,7 +1019,6 @@ function toggleHeadingCollapse() {
 // ---------------- 正文拖拽排序 ----------------
 
 const dropIndicator = reactive({ visible: false, top: 0 })
-const contentDragging = ref(false)
 let dragFromIndex = -1
 let dropTargetIndex = -1
 let dropBefore = true
@@ -1060,27 +1057,17 @@ function findTopBlockEl(target: Element, editable: HTMLElement): HTMLElement | n
 }
 
 // 兜底：鼠标落在块之间的 margin 间隙时事件目标是根节点，按垂直位置匹配顶层块
-function findBlockByY(editable: HTMLElement, clientY: number, nearest = false): HTMLElement | null {
+function findBlockByY(editable: HTMLElement, clientY: number): HTMLElement | null {
   const children = Array.prototype.slice.call(editable.children) as HTMLElement[]
-  let closest: HTMLElement | null = null
-  let distance = Infinity
   for (const el of children) {
     const rect = el.getBoundingClientRect()
-    if (!rect.height) continue
     if (clientY >= rect.top && clientY <= rect.bottom) return el
-    const gap = Math.min(Math.abs(clientY - rect.top), Math.abs(clientY - rect.bottom))
-    if (nearest && gap < distance) {
-      closest = el
-      distance = gap
-    }
   }
-  return closest
+  return null
 }
 
 function handleContentDragStart(e: DragEvent) {
-  cancelHide()
   dragFromIndex = hoverBlock.index
-  contentDragging.value = true
   if (e.dataTransfer) {
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', String(dragFromIndex))
@@ -1089,7 +1076,6 @@ function handleContentDragStart(e: DragEvent) {
 }
 
 function handleContentDragEnd() {
-  contentDragging.value = false
   // 拖动结束后再隐藏悬浮控件与指示线
   hoverBlock.visible = false
   dragFromIndex = -1
@@ -1099,15 +1085,12 @@ function handleContentDragEnd() {
 
 function onEditableDragOver(e: DragEvent) {
   if (dragFromIndex < 0) return
-  e.preventDefault()
-  e.stopImmediatePropagation()
   const editable = getEditableEl()
   const mainEl = editorMainRef.value
   if (!editable || !mainEl || !(e.target instanceof Element)) return
 
-  const block = findTopBlockEl(e.target, editable) || findBlockByY(editable, e.clientY, true)
+  const block = findTopBlockEl(e.target, editable)
   if (!block) {
-    dropTargetIndex = -1
     dropIndicator.visible = false
     return
   }
@@ -1127,10 +1110,7 @@ function onEditableDragOver(e: DragEvent) {
   e.preventDefault()
 }
 
-function onEditableDragLeave(e: DragEvent) {
-  if (dragFromIndex < 0) return
-  // 从列表文字移到标记或其他子节点仍在编辑区内，保留当前落点。
-  if (e.relatedTarget instanceof Node && editorMainRef.value?.contains(e.relatedTarget)) return
+function onEditableDragLeave() {
   dropTargetIndex = -1
   dropIndicator.visible = false
 }
@@ -1138,7 +1118,6 @@ function onEditableDragLeave(e: DragEvent) {
 function onEditableDrop(e: DragEvent) {
   if (dragFromIndex < 0 || !editor) return
   e.preventDefault()
-  e.stopImmediatePropagation()
 
   const from = dragFromIndex
   const target = dropTargetIndex
@@ -1156,10 +1135,10 @@ function onEditableDrop(e: DragEvent) {
 
   editor.withoutNormalizing(() => {
     if (p > end) {
-      // 向后移：从章节末尾开始移动，保持章节内部顺序。
+      // 向后移：逐块把首块插到目标点；to 为移除后的下标，随插入位置逐次后移
       const to = p - count
-      for (let i = count - 1; i >= 0; i--) {
-        editor.moveNodes({ at: [from + i], to: [to + i] })
+      for (let i = 0; i < count; i++) {
+        editor.moveNodes({ at: [from], to: [to + i] })
       }
     } else {
       // 向前移：块依次前移，落点随已移入的块数顺延
@@ -1711,13 +1690,12 @@ watch(contentVal, (val) => {
 
 /*
   空态占位：与首行文字/光标严格对齐
-  - 水平：占位符的定位基准是 .w-e-text-container（已含 editor-main 的 72px 控件区偏移），
-    正文文字起点 = slate 编辑区 padding-left（0），因此 left 取 0 即与光标同起点
+  - 水平：编辑区固定控件区 72px + 4px，与正文文字同起点
   - 垂直：slate 上内边距 16px + 段落默认外边距 15px = 31px；行高与字号取段落同值，保证行框完全重合
   */
 
 :deep(.w-e-text-placeholder) {
-  left: 0;
+  left: 76px;
   top: 31px;
   font-size: 15px;
   line-height: 2;

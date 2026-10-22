@@ -3,10 +3,10 @@
   <div class="station">
     <el-drawer
       :title="formData.title"
-      v-model="drawer"
+      :visible.sync="drawer"
       :direction="direction"
       :modal="true"
-      :close-on-click-modal="false"
+      :wrapper-closable="false"
       :before-close="handleClose"
       :append-to-body="true"
       :size="formData.width"
@@ -17,6 +17,7 @@
             <el-select
               v-model="index"
               filterable
+              size="small"
               clearable
               placeholder="请选择归还部门/人员"
               @change="handleSearch"
@@ -56,16 +57,16 @@
                 show-word-limit
                 :rows="2"
                 resize="none"
-                placeholder="请填写备注信息"
+                :placeholder="$t('customer.placeholder18')"
               />
             </el-form-item>
           </el-form>
         </div>
         <default-page v-else :min-height="520" :index="14"></default-page>
         <div class="button from-foot-btn fix btn-shadow">
-          <el-button @click="handleClose">取消</el-button>
-          <el-button :loading="loading" type="primary" @click="handleConfirm('ruleForm')">
-            确定
+          <el-button @click="handleClose" size="small">{{ $t('public.cancel') }}</el-button>
+          <el-button :loading="loading" size="small" type="primary" @click="handleConfirm('ruleForm')">
+            {{ $t('public.ok') }}
           </el-button>
         </div>
       </div>
@@ -74,13 +75,11 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { storageListApi, storageRecordUserApi, storageRecordSaveApi } from '@/api/administration.ts'
+import { storageListApi, storageRecordUserApi, storageRecordSaveApi } from '@/api/administration'
 export default {
-  emits: ['isOk'],
   name: 'Return',
   components: {
-    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage'))
+    defaultPage: () => import('@/components/common/defaultPage')
   },
   props: {
     formData: {
@@ -199,6 +198,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.station ::v-deep .el-drawer__body {
+  padding: 20px 20px 50px 20px;
+}
 
 .invoice {
   margin: 20px;
@@ -211,8 +213,8 @@ export default {
 .table-box {
   height: calc(100% - 130px);
 }
-:deep(.el-select),
-:deep(.el-input-number) {
+::v-deep .el-select,
+::v-deep .el-input-number {
   width: 50%;
 }
 .flex-box {

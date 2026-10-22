@@ -3,9 +3,9 @@
     <!-- 未加入此考勤组人员 -->
     <el-drawer
       title="选择加入此考勤组"
-      v-model="drawer"
+      :visible.sync="drawer"
       size="700px"
-      :close-on-click-modal="false"
+      :wrapperClosable="false"
       :before-close="handleClose"
     >
       <div class="box">
@@ -35,18 +35,17 @@
         </el-table>
       </div>
       <div class="button from-foot-btn fix btn-shadow">
-        <el-button @click="handleClose">取消</el-button>
-        <el-button type="primary" @click="submitForm">保存</el-button>
+        <el-button @click="handleClose" size="small">取消</el-button>
+        <el-button type="primary" size="small" @click="submitForm">保存</el-button>
       </div>
     </el-drawer>
   </div>
 </template>
 
 <script>
-import { repeatCheckMemberApi } from '@/api/config.ts'
-import { contractList } from '@/api/enterprise.ts'
+import { repeatCheckMemberApi } from '@/api/config'
+import { contractList } from '@/api/enterprise'
 export default {
-  emits: ['otherFiltersFn'],
   name: 'CrmebOaEntNotJoin',
 
   data() {
@@ -96,6 +95,7 @@ export default {
   .tips {
     font-size: 12px;
     color: #909399;
+    font-size: 400;
   }
 }
 .frame-name {

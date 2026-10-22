@@ -2,11 +2,12 @@
   <div class="tree-box">
     <div class="tree-top">
       <div class="tree-search-row">
-        <div class="tree-search oa-input-borderless">
-          <el-input v-model="searchKey" placeholder="搜索" prefix-icon="el-icon-search" clearable />
+        <div class="tree-search">
+          <el-input v-model="searchKey" placeholder="搜索" size="small" prefix-icon="el-icon-search" clearable />
         </div>
         <el-tooltip content="刷新" effect="dark" placement="bottom">
           <el-button
+            size="small"
             class="action-btn"
             icon="el-icon-refresh"
             @click="handleRefresh"
@@ -15,12 +16,12 @@
       </div>
       <div class="tree-actions">
         <el-dropdown placement="bottom" @command="handleCommand">
-          <el-button type="primary" class="create-btn"> <i class="el-icon-plus"></i> 新 建 </el-button>
+          <el-button type="primary" size="small" class="create-btn"> <i class="el-icon-plus"></i> 新 建 </el-button>
 
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="note" icon="el-icon-circle-plus">新建笔记</el-dropdown-item>
-              <el-dropdown-item command="folder" :icon="$icon('iconfont iconjishiben-xinjianwenjianjia1')"
+              <el-dropdown-item command="folder" icon="iconfont iconjishiben-xinjianwenjianjia1"
                 >新建文件夹</el-dropdown-item
               >
             </el-dropdown-menu>
@@ -196,8 +197,7 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import {
   memorialCateCreateApi,
   memorialCateDeleteApi,
@@ -205,12 +205,11 @@ import {
   memorialCateListApi,
   memorialGroupApi,
   memorialListApi
-} from '@/api/user.ts'
+} from '@/api/user'
 export default {
-  emits: ['onRecently', 'createNote', 'frameId', 'selectNote', 'noteAction'],
   name: 'MenuTree',
   components: {
-    dialogForm: defineAsyncComponent(() => import('./dialog-form'))
+    dialogForm: () => import('./dialog-form')
   },
   props: {},
   data() {
@@ -321,7 +320,7 @@ export default {
     document.addEventListener('click', this.closeContextMenu)
     document.addEventListener('contextmenu', this.closeContextMenu)
   },
-  beforeUnmount() {
+  beforeDestroy() {
     document.removeEventListener('click', this.closeContextMenu)
     document.removeEventListener('contextmenu', this.closeContextMenu)
   },
@@ -338,7 +337,7 @@ export default {
           var data = {
             // 新建笔记默认标题（产品要求固定文案，不走 i18n）
             title: '无标题笔记',
-            content: '笔记内容',
+            content: this.$t('calendar.placeholder04'),
             pid: this.id == '' ? 0 : this.id
           }
 
@@ -556,7 +555,7 @@ export default {
     quickCreate(data) {
       this.$emit('createNote', {
         title: '无标题笔记',
-        content: '笔记内容',
+        content: this.$t('calendar.placeholder04'),
         pid: data.type === 'note' ? data.pid : data.id
       })
     },
@@ -603,7 +602,7 @@ export default {
           const children = node.children || []
           attach(children)
           const notes = ((group[node.id] || [])).map(toNoteNode).sort((a, b) => this.noteSorter(a, b))
-          node.children = [...children, ...notes]
+          this.$set(node, 'children', [...children, ...notes])
         })
       }
       const tree = JSON.parse(JSON.stringify(this.cateTree))
@@ -734,7 +733,7 @@ export default {
     },
     // 删除
     handleDelete(item) {
-      modalSure('你确定要删除分类吗').then(() => {
+      modalSure(this.$t('calendar.placeholder08')).then(() => {
         memorialCateDeleteApi(item.id).then((res) => {
           this.menuList()
         })
@@ -757,13 +756,14 @@ export default {
 
   .tree-search {
     flex: 1;
-    :deep(.el-input__wrapper) {
+    ::v-deep .el-input__inner {
       background-color: #f2f3f5;
+      border: none;
       border-radius: 6px;
     }
   }
 }
-:deep(.action-btn) {
+::v-deep .action-btn {
   width: 34px;
   height: 32px;
   padding: 0;
@@ -938,11 +938,11 @@ export default {
     color: #1890ff;
   }
 }
-:deep(.el-tree-node__content:hover .quick-add) {
+::v-deep .el-tree-node__content:hover .quick-add {
   display: inline-block;
 }
 // 层级引导竖线：浅灰，与父级展开箭头中心对齐（left = (父层级-1)×24 + 12），从箭头正中下垂
-:deep(.el-tree-node__children) {
+::v-deep .el-tree-node__children {
   position: relative;
 
   &::before {
@@ -958,31 +958,52 @@ export default {
   }
 }
 
-:deep(.el-tree > .el-tree-node > .el-tree-node__children::before) {
+::v-deep .el-tree > .el-tree-node > .el-tree-node__children::before {
   left: 12px; // 一级父节点：0×16+12
 }
 
-:deep(.el-tree > .el-tree-node > .el-tree-node__children > .el-tree-node > .el-tree-node__children::before) {
+::v-deep
+  .el-tree
+  > .el-tree-node
+  > .el-tree-node__children
+  > .el-tree-node
+  > .el-tree-node__children::before {
   left: 28px; // 二级父节点：1×16+12
 }
 
-:deep(.el-tree > .el-tree-node > .el-tree-node__children > .el-tree-node > .el-tree-node__children > .el-tree-node > .el-tree-node__children::before) {
+::v-deep
+  .el-tree
+  > .el-tree-node
+  > .el-tree-node__children
+  > .el-tree-node
+  > .el-tree-node__children
+  > .el-tree-node
+  > .el-tree-node__children::before {
   left: 44px; // 三级父节点：2×16+12
 }
 
-:deep(.el-tree > .el-tree-node > .el-tree-node__children > .el-tree-node > .el-tree-node__children > .el-tree-node > .el-tree-node__children > .el-tree-node > .el-tree-node__children::before) {
+::v-deep
+  .el-tree
+  > .el-tree-node
+  > .el-tree-node__children
+  > .el-tree-node
+  > .el-tree-node__children
+  > .el-tree-node
+  > .el-tree-node__children
+  > .el-tree-node
+  > .el-tree-node__children::before {
   left: 60px; // 四级父节点：3×16+12
 }
 // 选中路径高亮：当前选中节点的父级连接线显示为蓝色
-:deep(.el-tree-node:has(> .el-tree-node__children > .el-tree-node.is-current) > .el-tree-node__children::before) {
+::v-deep .el-tree-node:has(> .el-tree-node__children > .el-tree-node.is-current) > .el-tree-node__children::before {
   background: rgba(24, 144, 255, 0.45);
 }
 // 展开箭头：浅灰小三角；叶子节点（笔记）不显示，保持透明占位以对齐文件夹图标
-:deep(.el-tree-node__expand-icon) {
+::v-deep .el-tree-node__expand-icon {
   color: #8a919f;
   font-size: 12px;
 }
-:deep(.el-tree-node__expand-icon.is-leaf) {
+::v-deep .el-tree-node__expand-icon.is-leaf {
   color: transparent;
   // 收窄叶子占位：笔记比文件夹更靠左一点
   display: inline-block;
@@ -990,7 +1011,7 @@ export default {
   padding: 6px 2px;
 }
 // 滑过高亮：浅灰背景（与树底色区分明显）
-:deep(.el-tree-node__content:hover) {
+::v-deep .el-tree-node__content:hover {
   background-color: #e9ebee;
 }
 .main-box:hover {
@@ -1049,10 +1070,10 @@ export default {
   display: inline-block;
   font-size: 17px !important;
 }
-:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
+::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content {
   background: #e8f4ff;
 }
-:deep(.el-tree-node__content) {
+::v-deep .el-tree-node__content {
   position: relative;
   height: 44px;
   padding-right: 15px;
@@ -1063,7 +1084,7 @@ export default {
   color: #303133;
 }
 
-:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node) {
+::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node {
   font-family: PingFang SC, PingFang SC;
   // 选中态：蓝底 + 主色文字加粗
   font-weight: 600;
@@ -1071,7 +1092,7 @@ export default {
   color: #1890ff;
 }
 
-:deep(.el-tree-node > .el-tree-node__children) {
+::v-deep .el-tree-node > .el-tree-node__children {
   overflow: inherit;
 }
 .custom-tree {
@@ -1096,13 +1117,13 @@ export default {
 .tree-box {
   height: 100vh;
   background-color: #f7f8fa;
-  :deep(.el-tree) {
+  ::v-deep .el-tree {
     // 水平不留白：节点行背景与「全部笔记」行、分段条对齐（容器统一控制缩进）
     // 底部 24px：滚动到底时内容与容器底边保持距离
     background: transparent;
     padding: 4px 0 24px;
   }
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
   .flex-box {
@@ -1143,7 +1164,7 @@ export default {
   }
 }
 
-:deep(.scroll-bar .el-scrollbar__view) {
+::v-deep .scroll-bar .el-scrollbar__view {
   padding-inline: 10px;
 }
 </style>

@@ -9,12 +9,12 @@
       <div class="common-card">
         <div class="filter-bar">
           <el-select v-model="channelCodeId" filterable remote reserve-keyword :remote-method="remoteSearchCode"
-            :loading="codeLoading" placeholder="请输入渠道码名称搜索" class="filter-bar__code"
+            :loading="codeLoading" size="small" placeholder="请输入渠道码名称搜索" class="filter-bar__code"
             @change="handleCodeChange">
             <el-option v-for="item in codeOptions" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
-          <el-date-picker v-model="dateRange" type="daterange" value-format="YYYY-MM-DD"
-            range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" v-bind="$pickerProps(rangePickerOptions)"
+          <el-date-picker v-model="dateRange" type="daterange" size="small" value-format="yyyy-MM-dd"
+            range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" :picker-options="rangePickerOptions"
             @change="handleDateChange" class="filter-bar__time" />
           <el-tooltip content="重置搜索条件" effect="dark" placement="top">
             <div class="reset" @click="resetSearch"><i class="iconfont iconqingchu"></i></div>
@@ -57,13 +57,13 @@
 
 <script>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute } from 'vue-router/composables'
 import BaseContainer from '@/components/BaseContainer/index.vue'
 import FormPageHeader from '@/components/FormPageHeader/index.vue'
-import dayjs from 'dayjs'
+import moment from 'moment'
 import echartBox from '@/components/common/echarts.vue'
-import pickerOptions from '@/libs/pickerOptions.ts'
-import { getChannelCodeApi, getChannelCodeStatisticsApi } from '@/api/weCom.ts'
+import pickerOptions from '@/libs/pickerOptions'
+import { getChannelCodeApi, getChannelCodeStatisticsApi } from '@/api/weCom'
 
 // 一年的毫秒数，用于限制日期范围最多可选一年
 const ONE_YEAR = 3600 * 1000 * 24 * 365
@@ -287,10 +287,10 @@ export default {
     // 快捷选项（本年/去年/上月）emit 的是带时分秒的斜杠字符串，value-format 不会对其二次格式化，
     // 会导致 v-model 存入非 yyyy-MM-dd 值而无法回显。这里统一归一化为 yyyy-MM-dd，保证回显与请求一致。
     const handleDateChange = (val) => {
-      // 显式传入可能的来源格式：斜杠字符串不是 ISO 格式，按指定格式解析才可靠
+      // 显式传入可能的来源格式，避免斜杠字符串触发 moment 的非 ISO 弃用告警
       const acceptFormats = ['YYYY-MM-DD', 'YYYY/MM/DD HH:mm:ss', 'YYYY/MM/DD']
       dateRange.value = Array.isArray(val) && val.length === 2
-        ? val.map((d) => dayjs(d, acceptFormats).format('YYYY-MM-DD'))
+        ? val.map((d) => moment(d, acceptFormats).format('YYYY-MM-DD'))
         : []
       getData()
     }
@@ -359,9 +359,7 @@ export default {
     width: 160px;
   }
 
-  // 范围选择器为多根组件，不带 scoped 属性；根节点是 .el-input__wrapper（flex-grow: 1），需禁止拉伸
-  :deep(.filter-bar__time) {
-    flex: none;
+  &__time {
     width: 250px;
   }
 }
@@ -427,12 +425,12 @@ export default {
     flex: 1;
     min-height: 0;
 
-    :deep(> div) {
+    ::v-deep > div {
       height: 100%;
     }
   }
 
-  :deep(.el-empty) {
+  ::v-deep .el-empty {
     padding: 40px 0;
   }
 }

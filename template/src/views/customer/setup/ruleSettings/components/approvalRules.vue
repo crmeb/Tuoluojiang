@@ -21,7 +21,7 @@
   </div>
 </template>
 <script>
-import request from '@/api/request.ts'
+import request from '@/api/request'
 import formCreate from '@form-create/element-ui'
 export default {
   name: 'ApprovalRules',

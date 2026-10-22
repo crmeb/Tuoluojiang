@@ -2,7 +2,7 @@
   <el-drawer
     :append-to-body="true"
     :title="title"
-    v-model="flowDesignerStore.copyerDrawer"
+    :visible.sync="$store.state.business.copyerDrawer"
     direction="rtl"
     class="set_copyer"
     size="550px"
@@ -38,20 +38,17 @@
           <span>允许申请人自选抄送人</span>
         </p>
         <el-checkbox-group v-model="ccSelfSelectFlag" class="mt15" v-if="typeStr !== 'lowCode'">
-          <el-checkbox label="1" value="1">允许申请人自选抄送人</el-checkbox>
+          <el-checkbox label="1">允许申请人自选抄送人</el-checkbox>
         </el-checkbox-group>
       </div>
       <div class="button from-foot-btn fix btn-shadow">
-        <el-button @click="closeDrawer">取消</el-button>
-        <el-button type="primary" @click="saveCopyer">确定</el-button>
+        <el-button size="small" @click="closeDrawer">{{ $t('public.cancel') }}</el-button>
+        <el-button size="small" type="primary" @click="saveCopyer">{{ $t('public.ok') }}</el-button>
       </div>
     </div>
   </el-drawer>
 </template>
 <script>
-import { mapStores } from 'pinia'
-import { useFlowDesignerStore } from '@/stores/flowDesigner.ts'
-import { defineAsyncComponent } from 'vue'
 export default {
   props: {
     directorMaxLevel: {
@@ -65,7 +62,7 @@ export default {
     }
   },
   components: {
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member'))
+    selectMember: () => import('@/components/form-common/select-member')
   },
   data() {
     return {
@@ -77,9 +74,8 @@ export default {
     }
   },
   computed: {
-    ...mapStores(useFlowDesignerStore),
     copyerConfig1() {
-      return this.flowDesignerStore.copyerConfig.value
+      return this.$store.state.business.copyerConfig.value
     }
   },
   watch: {
@@ -101,15 +97,15 @@ export default {
       }
       this.copyerConfig.ccSelfSelectFlag = this.ccSelfSelectFlag.length == 0 ? 0 : '1'
       this.copyerConfig.nodeUserList = this.checkedList
-      this.flowDesignerStore.copyerConfig = {
+      this.$store.commit('updateCopyerConfig', {
         value: this.copyerConfig,
         flag: true,
-        id: this.flowDesignerStore.copyerConfig.id
-      }
+        id: this.$store.state.business.copyerConfig.id
+      })
       this.closeDrawer()
     },
     closeDrawer() {
-      this.flowDesignerStore.copyerDrawer = false
+      this.$store.commit('updateCopyer', false)
     },
     // 选择成员完成回调
     getSelectList(data) {
@@ -132,7 +128,7 @@ export default {
         font-weight: normal;
       }
     }
-    .el-select {
+    .el-select--medium {
       width: 100%;
     }
     .el-button {
@@ -142,7 +138,7 @@ export default {
       margin-bottom: 20px;
     }
   }
-  :deep(.plan-footer-one) {
+  ::v-deep .plan-footer-one {
     height: auto;
   }
 }

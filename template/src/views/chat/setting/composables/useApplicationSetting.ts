@@ -40,7 +40,7 @@ export const provideApplicationSetting = (appId: string): ApplicationSettingCont
 
   const fetchDetail = async () => {
     const res = await getApplicationsInfoApi(appId)
-    const data: ApplicationDetail = res.data && !Array.isArray(res.data) ? res.data : {}
+    const data: ApplicationDetail = res.data || {}
     detail.value = data
     fillApplicationForm(form, data)
     knowledge.value = data.knowledge ? JSON.parse(JSON.stringify(data.knowledge)) : []

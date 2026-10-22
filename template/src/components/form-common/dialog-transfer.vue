@@ -3,7 +3,7 @@
   <div class="delete-info-dialog">
     <el-dialog
       :title="dialogTitle"
-      :model-value="tableItemDialogVisible"
+      :visible.sync="tableItemDialogVisible"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
       width="700px"
@@ -47,7 +47,6 @@
 import Sortable from 'sortablejs'
 import { cloneDeep } from 'lodash-es' //避免修改父组件传过来的数据
 export default {
-  emits: ['handleCloseTableItem', 'handleConfirmVisible'],
   name: 'visible-item-table-dialog',
   props: {
     dialogTitle: {
@@ -119,8 +118,8 @@ export default {
           if (!temp || temp === 'undefined') {
             return
           } // 解决右边最后一项从右边拖左边，有undefined的问题
-          // this.visibleValue[oldIndex] = this.visibleValue[newIndex] //这种赋值方法会导致数据更新视图未更新，排序后顺序展示错乱，强制更新也无效,原博主是这么赋值的，仅供参考
-          // this.visibleValue[newIndex] = temp
+          // this.$set(this.visibleValue, oldIndex, this.visibleValue[newIndex]) //这种赋值方法会导致数据更新视图未更新，排序后顺序展示错乱，强制更新也无效,原博主是这么赋值的，仅供参考
+          // this.$set(this.visibleValue, newIndex, temp)
           let _arr = this.visibleValue.splice(oldIndex, 1)
           this.visibleValue.splice(newIndex, 0, _arr[0])
         }
@@ -231,7 +230,7 @@ export default {
 
 <style lang="scss" scoped>
 .delete-info-dialog {
-  :deep(.el-dialog__body) {
+  ::v-deep .el-dialog__body {
     max-height: 500px;
     overflow-y: auto;
   }
@@ -257,14 +256,18 @@ export default {
   color: #909399;
 }
 
-:deep(.el-transfer) {
-  // 面板总高 400px：头部 40px + 主体 360px（列表高度同样取这个变量）
-  --el-transfer-panel-body-height: 360px;
+::v-deep .el-transfer {
   display: flex;
   align-items: center;
 
   .el-transfer-panel {
     width: 50%; // 设置左右穿梭面板的宽度
+    height: 400px;
+  }
+
+  // 调整穿梭框中列表项的样式
+  .el-transfer-panel__list {
+    height: 350px;
   }
 
   .el-transfer__buttons {
@@ -284,9 +287,12 @@ export default {
   }
 }
 
-:deep(.el-transfer__buttons) {
+::v-deep .el-transfer__buttons {
   width: 100px;
   display: flex;
   flex-direction: column-reverse; // 使按钮垂直反向排列
+}
+.el-transfer-panel__list {
+  height: auto;
 }
 </style>

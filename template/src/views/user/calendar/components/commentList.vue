@@ -50,13 +50,11 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { getStorageJson } from '@/utils/storage.ts'
+import { getStorageJson } from '@/utils/storage'
 export default {
-  emits: ['replyFn', 'commentDel'],
   name: 'CrmebOaEntCommentList',
   components: {
-    uploadList: defineAsyncComponent(() => import('@/components/form-common/oa-uploadList'))
+    uploadList: () => import('@/components/form-common/oa-uploadList')
   },
   props: ['commentList'],
   data() {

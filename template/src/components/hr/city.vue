@@ -18,6 +18,7 @@
         <template v-if="!check">
           <el-cascader
             v-model="timeData.city"
+            size="small"
             :options="cityData"
             style="width: 100%"
             clearable
@@ -32,14 +33,13 @@
 </template>
 
 <script>
-import { getStorageJson } from '@/utils/storage.ts'
-import { getCityListApi } from '@/api/public.ts'
+import { getStorageJson } from '@/utils/storage'
+import { getCityListApi } from '@/api/public'
 export default {
-  emits: ['update:modelValue'],
   name: 'Index',
   props: {
     formCreateInject: Object,
-    modelValue: {
+    value: {
       type: Object,
       default: () => ({})
     },
@@ -61,12 +61,6 @@ export default {
       default: false
     }
   },
-  computed: {
-    // Vue 3 的 v-model 走 modelValue，保留 value 供组件内部沿用
-    value() {
-      return this.modelValue
-    },
-  },
   mounted() {
     if (!localStorage.getItem('city')) {
       this.getCityList()
@@ -77,7 +71,7 @@ export default {
       cityData: getStorageJson('city'),
       title: this.titleIpt,
       timeData: {
-        city: this.modelValue.city
+        city: this.value.city
       }
     }
   },
@@ -94,14 +88,14 @@ export default {
       })
     },
     changeDuration() {
-      this.$emit('update:modelValue', this.timeData)
+      this.$emit('input', this.timeData)
     }
   }
 }
 </script>
 
 <style scoped lang="scss">
-.timeFrom + :deep(.el-form-item__error) {
+.timeFrom + ::v-deep .el-form-item__error {
   margin-left: 120px;
   position: absolute;
   top: 98%;
@@ -110,8 +104,8 @@ export default {
 .el-form--label-top .el-form-item__label {
   position: relative;
   float: none;
-  display: inline-flex;
-  justify-content: flex-start;
+  display: inline-block;
+  text-align: left;
   padding: 0 0 10px 0;
 }
 .timeFrom {
@@ -119,9 +113,9 @@ export default {
   padding-top: 10px;
 }
 .timeFrom {
-  :deep(.el-date-editor),
-  :deep(.el-date-editor--date),
-  :deep(.el-select) {
+  ::v-deep .el-date-editor,
+  ::v-deep .el-date-editor--date,
+  ::v-deep .el-select {
     width: 220px;
   }
 }

@@ -5,7 +5,7 @@
 <template>
   <div>
     <!-- 表单主体 -->
-    <el-form ref="form" :model="ruleForm" :rules="rule" :label-width="formLabelWidth" @submit.prevent>
+    <el-form ref="form" :model="ruleForm" :rules="rule" :label-width="formLabelWidth" @submit.native.prevent size="small">
       <!-- 遍历表单分组 -->
 
       <div v-for="(item, itemIndex) in formInfo" :key="itemIndex" class="p20">
@@ -51,10 +51,11 @@
                     :min="val.min"
                     :placeholder="val.placeholder ? val.placeholder : '请输入' + val.key_name"
                     clearable
+                    size="small"
                     class="clickZone"
                     :ref="`input_${val.key}`"
                     :disabled="isReadonlyField(val) || !!savingKeyMap[val.key]"
-                    @keyup.enter="handlePopoverHide(ruleForm[val.key])"
+                    @keyup.enter.native="handlePopoverHide(ruleForm[val.key])"
                   />
                   <div v-else :class="fieldViewClass(val)">
                     {{ ruleForm[val.key] || '--' }}
@@ -78,6 +79,7 @@
                     :min="val.min"
                     :placeholder="val.placeholder ? val.placeholder : '请选择' + val.key_name"
                     :precision="val.decimal_place"
+                    size="small"
                     style="width: 100%"
                     class="clickZone"
                     :ref="`input_${val.key}`"
@@ -104,6 +106,7 @@
                     :placeholder="val.placeholder ? val.placeholder : '请输入' + val.key_name"
                     clearable
                     show-word-limit
+                    size="small"
                     type="textarea"
                     class="clickZone"
                     style="width: 100%"
@@ -140,10 +143,11 @@
                     clearable
                     collapse-tags
                     filterable
+                    size="small"
                     style="width: 100%"
                     class="clickZone"
                     :disabled="isReadonlyField(val) || !!savingKeyMap[val.key]"
-                    @keyup.enter="handlePopoverHide(ruleForm[val.key])"
+                    @keyup.enter.native="handlePopoverHide(ruleForm[val.key])"
                   />
                   <div v-else :class="fieldViewClass(val)">
                     {{ val.text || '--' }}
@@ -169,12 +173,13 @@
                     :remote-method="(query) => remoteSelectSearch(val, query)"
                     :loading="!!remoteLoadingMap[val.key]"
                     reserve-keyword
+                    size="small"
                     @change="changeValue(val)"
                     @visible-change="(visible) => handleSelectVisibleChange(val, visible)"
                     style="width: 100%"
                     class="clickZone"
                     :ref="`input_${val.key}`"
-                    @keyup.enter="handlePopoverHide(ruleForm[val.key])"
+                    @keyup.enter.native="handlePopoverHide(ruleForm[val.key])"
                   >
                     <el-option
                       v-for="el in getSelectOptions(val)"
@@ -195,7 +200,7 @@
                 </template>
 
                 <!-- 远程搜索 -->
-                <div v-if="val.key === 'clue_id'" class="flex clue-select">
+                <div v-if="val.key === 'clue_id'" class="flex">
                   <el-select
                     v-if="!viewMode || editKey == val.key"
                     v-model="ruleForm[val.key]"
@@ -210,7 +215,7 @@
                     style="width: 100%"
                     class="clickZone"
                     :ref="`input_${val.key}`"
-                    @keyup.enter="handlePopoverHide(ruleForm[val.key])"
+                    @keyup.enter.native="handlePopoverHide(ruleForm[val.key])"
                   >
                     <el-option v-for="item in cluesOption" :key="item.value" :label="item.label" :value="item.value">
                     </el-option>
@@ -229,7 +234,7 @@
                 <template v-if="val.key == 'customer_label'">
                   <div
                     v-if="!viewMode || editKey == val.key"
-                    class="select plan-footer-one clickZone"
+                    class="el-input__inner select plan-footer-one clickZone"
                     :class="{ 'is-saving-disabled': !!savingKeyMap[val.key] }"
                     @click="handleLabel(val)"
                   >
@@ -293,9 +298,9 @@
                     class="clickZone"
                     style="width: 100%"
                     :disabled="isReadonlyField(val) || !!savingKeyMap[val.key]"
-                    @keyup.enter="handlePopoverHide(ruleForm[val.key])"
+                    @keyup.enter.native="handlePopoverHide(ruleForm[val.key])"
                   >
-                    <el-radio v-for="(el, index) in val.options" :key="index" :label="el.value" :value="el.value">
+                    <el-radio v-for="(el, index) in val.options" :key="index" :label="el.value">
                       {{ el.label }}
                     </el-radio>
                   </el-radio-group>
@@ -317,7 +322,7 @@
                     class="clickZone"
                     :disabled="isReadonlyField(val) || !!savingKeyMap[val.key]"
                   >
-                    <el-checkbox v-for="(check, checkIndex) in val.options" :key="checkIndex" :label="check.value" :value="check.value">
+                    <el-checkbox v-for="(check, checkIndex) in val.options" :key="checkIndex" :label="check.value">
                       {{ check.label }}
                     </el-checkbox>
                   </el-checkbox-group>
@@ -337,10 +342,11 @@
                     style="width: 100%"
                     v-if="!viewMode || editKey == val.key"
                     v-model="ruleForm[val.key]"
-                    format="YYYY-MM-DD"
+                    :format="'yyyy-MM-dd'"
                     :placeholder="val.placeholder ? val.placeholder : '请选择' + val.key_name"
-                    value-format="YYYY-MM-DD"
+                    :value-format="'yyyy-MM-dd'"
                     clearable
+                    size="small"
                     type="date"
                     class="clickZone"
                     :ref="`input_${val.key}`"
@@ -361,11 +367,12 @@
                   <el-date-picker
                     v-if="!viewMode || editKey == val.key"
                     v-model="ruleForm[val.key]"
-                    format="YYYY-MM-DD HH:mm:ss"
+                    :format="'yyyy-MM-dd HH:mm:ss'"
                     :placeholder="val.placeholder ? val.placeholder : '请选择' + val.key_name"
-                    value-format="YYYY-MM-DD HH:mm:ss"
-                    :default-time="new Date(2000, 0, 1, 12, 0, 0)"
+                    :value-format="'yyyy-MM-dd HH:mm:ss'"
+                    default-time="12:00:00"
                     clearable
+                    size="small"
                     style="width: 100%"
                     type="datetime"
                     class="clickZone"
@@ -387,7 +394,7 @@
                   <upload-file
                     :maxLength="val.max"
                     :only-image="false"
-                    :model-value="val.files"
+                    :value="val.files"
                     @getVal="getVal($event, val)"
                   />
                 </template>
@@ -396,7 +403,7 @@
                   v-if="val.type === 'images'"
                   :maxLength="val.max"
                   :only-image="true"
-                  :model-value="val.files"
+                  :value="val.files"
                   @getVal="getVal($event, val)"
                 />
 
@@ -411,8 +418,9 @@
                       @input="(value) => ueditorEdit(val, value)"
                     />
                     <div class="mt14" v-if="viewMode">
-                      <el-button :disabled="!!savingKeyMap[val.key]" @click="editKey = ''">取消</el-button>
+                      <el-button size="small" :disabled="!!savingKeyMap[val.key]" @click="editKey = ''">取消</el-button>
                       <el-button
+                        size="small"
                         type="primary"
                         :loading="!!savingKeyMap[val.key]"
                         @click="handlePopoverHide(ruleForm[val.key])"
@@ -440,13 +448,13 @@
 
     <!-- 表单操作按钮 -->
     <div v-if="isShowFooter" class="button from-foot-btn fix btn-shadow">
-      <el-button class="el-btn" @click="resetForm"> 取消 </el-button>
+      <el-button class="el-btn" size="small" @click="resetForm"> 取消 </el-button>
 
-      <el-button v-if="btnShow && types !== 3" :loading="addContractLoading" @click="addContract">
+      <el-button v-if="btnShow && types !== 3" :loading="addContractLoading" size="small" @click="addContract">
         {{ type == 'contract' ? '保存并添加回款' : '保存并添加商机' }}
       </el-button>
 
-      <el-button :loading="saveLoading" type="primary" @click="handleConfirm('ruleForm')">
+      <el-button :loading="saveLoading" size="small" type="primary" @click="handleConfirm('ruleForm')">
         保存
       </el-button>
     </div>
@@ -456,23 +464,22 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { getAvatarSrc } from '@/utils/avatar.ts'
-import { getStorageJson } from '@/utils/storage.ts'
-import { extractArrayIds, modalSure } from '@/libs/public.ts'
+import { getAvatarSrc } from '@/utils/avatar'
+import { getStorageJson } from '@/utils/storage'
+import { extractArrayIds, modalSure } from '@/libs/public'
 import {
   contractCategorySelectApi,
   clientConfigLabelApi,
   chargeEditSubmitApi,
   customerSelectApi
-} from '@/api/enterprise.ts'
+} from '@/api/enterprise'
 import {
   clientCluesSearchApi,
   clientContractEditApi,
   clientLiaisonEditApi,
   savecluesEditApi,
   oddsEditApi
-} from '@/api/client.ts'
+} from '@/api/client'
 
 // 支持远程搜索的下拉字段登记表：字段 key -> 远程配置。
 // 后端表单配置默认只下发 20 条选项，登记后该字段改为输入关键字调接口检索。
@@ -488,13 +495,12 @@ const REMOTE_SELECT_FIELDS = {
 const REMOTE_SELECT_LIMIT = 50
 
 export default {
-  emits: ['fieldSaved', 'getDetails', 'changeValue', 'handleClose', 'submitOk', 'addContinueOk'],
   name: 'OaForm',
   components: {
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
-    uploadFile: defineAsyncComponent(() => import('@/components/form-common/oa-upload')),
-    ueditorFrom: defineAsyncComponent(() => import('@/components/form-common/oa-wangeditor')),
-    labelDialog: defineAsyncComponent(() => import('@/views/customer/list/components/labelDialog'))
+    selectMember: () => import('@/components/form-common/select-member'),
+    uploadFile: () => import('@/components/form-common/oa-upload'),
+    ueditorFrom: () => import('@/components/form-common/oa-wangeditor'),
+    labelDialog: () => import('@/views/customer/list/components/labelDialog')
   },
 
   props: {
@@ -650,7 +656,7 @@ export default {
     })
   },
 
-  beforeUnmount() {
+  beforeDestroy() {
     if (this.viewMode && this.handleDocumentClick) {
       document.removeEventListener('click', this.handleDocumentClick)
     }
@@ -726,9 +732,9 @@ export default {
         // 若仅配 blur，选中后 el-form-item 走 validate('change') 匹配不到规则会直接 return，
         // 不重置 validateState，已有的红字错误提示便一直留在原地。
         if (field.required == 1) {
-          this.rule[field.key] = [
+          this.$set(this.rule, field.key, [
             { required: true, message: `请输入${field.key_name}`, trigger: ['blur', 'change'] }
-          ]
+          ])
         }
 
         // 2.5 表单值智能合并：优先保留用户已填 > 新默认值 > 空数组（多选）
@@ -745,7 +751,7 @@ export default {
               : this.alignSelectValueType(finalValue, field.options)
         }
 
-        this.ruleForm[field.key] = this.cloneValue(finalValue)
+        this.$set(this.ruleForm, field.key, this.cloneValue(finalValue))
       })
 
       // 3. 强制刷新（仅一次）
@@ -789,7 +795,7 @@ export default {
      * @returns {Boolean}
      */
     showGroupHeader(group) {
-      if (this.$slots[this.groupHeaderSlotName(group)]) return true
+      if (this.$scopedSlots[this.groupHeaderSlotName(group)]) return true
       return group.status == 1 && (group.data || []).length > 0
     },
 
@@ -881,7 +887,7 @@ export default {
             }
             const currentApi = apiMap[this.keyWord]
             const fieldKey = this.editKey
-            this.savingKeyMap[fieldKey] = true
+            this.$set(this.savingKeyMap, fieldKey, true)
 
             try {
               await this.handleSubmit(currentApi, this.id, obj)
@@ -912,7 +918,7 @@ export default {
             } catch (error) {
               this.$message.error(error.data?.message || '保存失败')
             } finally {
-              this.savingKeyMap[fieldKey] = false
+              this.$set(this.savingKeyMap, fieldKey, false)
             }
           }
         } else {
@@ -1048,29 +1054,29 @@ export default {
       const keyword = (query || '').trim()
       // 关键字清空时回落到默认选项，避免下拉列表空白
       if (!keyword) {
-        this.remoteOptionsMap[field.key] = null
-        this.remoteLoadingMap[field.key] = false
+        this.$set(this.remoteOptionsMap, field.key, null)
+        this.$set(this.remoteLoadingMap, field.key, false)
         return
       }
 
       const requestId = (this.remoteRequestIdMap[field.key] || 0) + 1
       this.remoteRequestIdMap[field.key] = requestId
-      this.remoteLoadingMap[field.key] = true
+      this.$set(this.remoteLoadingMap, field.key, true)
 
       config
         .api({ name: keyword, page: 1, limit: REMOTE_SELECT_LIMIT })
         .then((res) => {
           // 连续输入时旧请求可能后返回，丢弃过期响应
           if (this.remoteRequestIdMap[field.key] !== requestId) return
-          this.remoteOptionsMap[field.key] = res.data || []
+          this.$set(this.remoteOptionsMap, field.key, res.data || [])
         })
         .catch(() => {
           if (this.remoteRequestIdMap[field.key] !== requestId) return
-          this.remoteOptionsMap[field.key] = []
+          this.$set(this.remoteOptionsMap, field.key, [])
         })
         .finally(() => {
           if (this.remoteRequestIdMap[field.key] !== requestId) return
-          this.remoteLoadingMap[field.key] = false
+          this.$set(this.remoteLoadingMap, field.key, false)
         })
     },
 
@@ -1084,7 +1090,7 @@ export default {
     handleSelectVisibleChange(field, visible) {
       if (visible || !this.isRemoteSelectField(field)) return
       if (this.remoteOptionsMap[field.key]) {
-        this.remoteOptionsMap[field.key] = null
+        this.$set(this.remoteOptionsMap, field.key, null)
       }
     },
 
@@ -1109,7 +1115,7 @@ export default {
           selectedValues.includes(String(opt.value)) && !options.some((item) => String(item.value) === String(opt.value))
       )
       if (appended.length) {
-        field.options = [...options, ...appended]
+        this.$set(field, 'options', [...options, ...appended])
       }
     },
 
@@ -1122,10 +1128,10 @@ export default {
 
       const keys = this.fieldList.map(field => field.key);
       if (keys.includes('liaison_name')) {
-        this.ruleForm.liaison_name = clue.name || ''
+        this.$set(this.ruleForm, 'liaison_name', clue.name || '')
       }
       if (keys.includes('liaison_tel')) {
-        this.ruleForm.liaison_tel = clue.phone || ''
+        this.$set(this.ruleForm, 'liaison_tel', clue.phone || '')
       }
     },
 
@@ -1137,10 +1143,6 @@ export default {
     },
 
     normalizeFieldValue(field, value) {
-      if (field?.type === 'number') {
-        if (value === '' || value === undefined) return null
-        return value === null ? null : Number(value)
-      }
       if (
         !field ||
         field.type !== 'multiple' ||
@@ -1340,7 +1342,7 @@ export default {
         })
       })
 
-      this.labelList = objArr
+      this.$set(this, 'labelList', objArr)
     },
 
     /**
@@ -1449,34 +1451,8 @@ export default {
   margin-right: 4px;
 }
 
-// 原表单为 element-ui small 尺寸，表单项间距 18px（全局默认 16px）
-.el-form-item {
-  margin-bottom: 18px;
-}
-
-// Element Plus 的 el-form-item__content 是 flex 容器，包裹层需要占满
-.clue-select {
-  flex: 1;
-  min-width: 0;
-}
-// 人员/部门等选择框带 mr10，在 flex 内容区里不收缩，与原来溢出的表现一致
-:deep(.el-form-item__content > .plan-footer-one) {
-  flex-shrink: 0;
-}
-
-// 客户标签选择框：与输入框统一 32px 基准高度，标签换行时再自动撑高
+// 客户标签选择框：与 small 输入框统一 32px 基准高度，标签换行时再自动撑高
 .plan-footer-one {
-  width: 100%;
-  box-sizing: border-box;
-  border: 1px solid var(--el-border-color);
-  border-radius: 4px;
-  background-color: #fff;
-  color: #606266;
-  font-size: 13px;
-  transition: border-color 0.2s;
-  &:hover {
-    border-color: var(--el-border-color-hover);
-  }
   display: flex;
   align-items: center;
   height: auto;
@@ -1554,26 +1530,26 @@ export default {
 }
 
 .readonly-mode-field {
-  :deep(p) {
+  ::v-deep p {
     img {
       width: 45px !important;
     }
   }
-  :deep(table) {
+  ::v-deep table {
     width: 100%;
     border: 1px solid #e5e7eb;
     /* 表格字体：继承容器字体，确保一致性 */
     font-size: inherit;
     color: inherit;
   }
-  :deep(th) {
+  ::v-deep th {
     background-color: #f3f4f6;
     text-align: center;
     min-width: 80px;
     border: 1px solid #e5e7eb;
     font-weight: 500;
   }
-  :deep(td) {
+  ::v-deep td {
     text-align: left;
     padding: 10px 12px;
     border: 1px solid #e5e7eb;
@@ -1590,12 +1566,12 @@ export default {
   // margin-bottom: 10px;
 }
 
-:deep(.el-radio) {
+::v-deep .el-radio {
   margin-right: 15px;
   margin-bottom: 0;
 }
 
-:deep(.el-radio-group) {
+::v-deep .el-radio-group {
   display: flex;
   line-height: 0 !important;
   vertical-align: 0;

@@ -12,7 +12,7 @@
 <script>
 import process from './components/process'
 export default {
-  name: 'MentProcess',
+  name: 'Process',
   components: {
     process
   }

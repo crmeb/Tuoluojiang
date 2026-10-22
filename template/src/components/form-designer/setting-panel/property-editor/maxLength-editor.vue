@@ -1,12 +1,12 @@
 <template>
   <el-form-item :label="i18nt('designer.setting.maxLength')">
-    <el-input type="number" @input="inputNumberHandler" class="hide-spin-button"
+    <el-input type="number" @input.native="inputNumberHandler" class="hide-spin-button"
               min="1" v-model="maxLength" style="width: 100%"></el-input>
   </el-form-item>
 </template>
 
 <script>
-  import i18n from "@/utils/i18n.ts"
+  import i18n from "@/utils/i18n"
   import propertyMixin from "@/components/form-designer/setting-panel/property-editor/propertyMixin"
 
   export default {
@@ -38,3 +38,4 @@
 <style scoped>
 
 </style>
+@/utils/i18ns

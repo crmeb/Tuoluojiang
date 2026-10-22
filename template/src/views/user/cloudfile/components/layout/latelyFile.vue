@@ -15,7 +15,7 @@
           class="mt10"
         >
           <!-- 文件名称列 -->
-          <el-table-column prop="name" label="文件名称" min-width="320">
+          <el-table-column prop="name" :label="$t('file.filename')" min-width="320">
             <template #default="scope">
               <div
                 class="file-name-cell"
@@ -40,7 +40,7 @@
           </el-table-column>
 
           <!-- 文件大小列 -->
-          <el-table-column prop="file_size" label="文件大小" min-width="120">
+          <el-table-column prop="file_size" :label="$t('file.filesize')" min-width="120">
             <template #default="scope">
               {{ formatBytesFn(scope.row.file_size) }}
             </template>
@@ -57,7 +57,7 @@
           </el-table-column>
 
           <!-- 更新时间列 -->
-          <el-table-column prop="updated_at" label="更新时间" min-width="180" />
+          <el-table-column prop="updated_at" :label="$t('file.updatetime')" min-width="180" />
 
           <!-- 操作列 -->
           <el-table-column label="操作" width="150">
@@ -80,21 +80,21 @@
                       打开
                     </div>
                     <div v-if="scope.row.type !== 1" class="right-item" @click="fileDownLoad(scope.row)">
-                      下载
+                      {{ $t('public.download') }}
                     </div>
                     <div v-if="scope.row.type !== 1" class="right-item" @click="shareOther(scope.row)">分享</div>
                     <el-divider v-if="scope.row.type !== 1" />
-                    <div class="right-item" @click="getMoveDialog(scope.row, 1)">移动至</div>
+                    <div class="right-item" @click="getMoveDialog(scope.row, 1)">{{ $t('file.moveto') }}</div>
                     <div v-if="scope.row.type === 1" class="right-item" @click="addAuthor(scope.row)">
-                      目录权限
+                      {{ $t('file.directory') }}
                     </div>
                     <div v-if="scope.row.type !== 1" class="right-item" @click="getMoveDialog(scope.row, 2)">
-                      复制到
+                      {{ $t('file.copyto') }}
                     </div>
-                    <!-- <div class="right-item" @click="setRenameItem(scope.row, scope.$index)">重命名</div> -->
+                    <!-- <div class="right-item" @click="setRenameItem(scope.row, scope.$index)">{{ $t('file.rename') }}</div> -->
                     <el-divider />
-                    <div class="right-item" @click="getFolderDelete(scope.row)">删除</div>
-                    <div class="right-item" @click="getFileAttribute(scope.row)">属性</div>
+                    <div class="right-item" @click="getFolderDelete(scope.row)">{{ $t('public.delete') }}</div>
+                    <div class="right-item" @click="getFileAttribute(scope.row)">{{ $t('file.attribute') }}</div>
                   </div>
                   <template #reference>
                     <i class="icon iconfont icongengduo1 pointer" />
@@ -138,7 +138,7 @@
                       <input
                         :id="'input' + index"
                         v-model="item.name"
-                        placeholder="请输入文件名称"
+                        :placeholder="$t('file.placeholder10')"
                         autofocus="autofocus"
                         class="rename-input"
                         maxlength="30"
@@ -166,21 +166,21 @@
                           </div>
 
                           <div v-if="item.type !== 1" class="right-item" @click="fileDownLoad(item)">
-                            下载
+                            {{ $t('public.download') }}
                           </div>
                           <div v-if="item.type !== 1" class="right-item" @click="shareOther(item)">分享</div>
                           <el-divider v-if="item.type !== 1" />
-                          <div class="right-item" @click="getMoveDialog(item, 1)">移动至</div>
+                          <div class="right-item" @click="getMoveDialog(item, 1)">{{ $t('file.moveto') }}</div>
                           <div v-if="item.type === 1" class="right-item" @click="addAuthor(item)">
-                            目录权限
+                            {{ $t('file.directory') }}
                           </div>
                           <div v-if="item.type !== 1" class="right-item" @click="getMoveDialog(item, 2)">
-                            复制到
+                            {{ $t('file.copyto') }}
                           </div>
-                          <!-- <div class="right-item" @click="setRenameItem(item, index)">重命名</div> -->
+                          <!-- <div class="right-item" @click="setRenameItem(item, index)">{{ $t('file.rename') }}</div> -->
                           <el-divider />
-                          <div class="right-item" @click="getFolderDelete(item)">删除</div>
-                          <div class="right-item" @click="getFileAttribute(item)">属性</div>
+                          <div class="right-item" @click="getFolderDelete(item)">{{ $t('public.delete') }}</div>
+                          <div class="right-item" @click="getFileAttribute(item)">{{ $t('file.attribute') }}</div>
                         </div>
                         <template #reference>
                           <i class="icon iconfont icongengduo1" />
@@ -207,7 +207,7 @@
       <default-page v-else v-height :index="7" :min-height="510" />
     </div>
     <!-- 图片查看弹窗 -->
-    <el-image-viewer v-if="isImage" @close="closeImageViewer" :url-list="srcList" />
+    <el-image-viewer v-if="isImage" :on-close="closeImageViewer" :url-list="srcList" />
     <image-viewer ref="imageViewer" :src-list="srcList"></image-viewer>
     <!-- 分享弹窗 -->
     <!--    <share-dialog :id="id" ref="shareDialog" @isOk="isOk" />-->
@@ -223,27 +223,26 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import helper from '@/libs/helper.ts'
+import { modalSure } from '@/libs/public'
+import helper from '@/libs/helper'
 import {
   folderSpaceEntDeleteApi,
   folderSpaceEntRenameApi,
   folderSpaceEntViewApi,
   folderRecentlyListApi
-} from '@/api/cloud.ts'
-import { fileDownLoad, fileIsImage, fileTypeName, formatBytes, getFileTypeIconfont, trim } from '@/utils/file.ts'
+} from '@/api/cloud'
+import { fileDownLoad, fileIsImage, fileTypeName, formatBytes, getFileTypeIconfont, trim } from '@/utils/file'
 export default {
-  emits: ['totalFn', 'shareItemFile', 'openItemFile', 'handlerMyFile'],
   name: 'LatelyFile',
   components: {
-    imageViewer: defineAsyncComponent(() => import('@/components/common/imageViewer')),
-    moveDialog: defineAsyncComponent(() => import('../moveDialog')),
-    fileAttribute: defineAsyncComponent(() => import('../fileAttribute')),
-    rightClick: defineAsyncComponent(() => import('../rightClick')),
-    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage')),
-    authorDialog: defineAsyncComponent(() => import('../authorDialog')),
-    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form'))
+    imageViewer: () => import('@/components/common/imageViewer'),
+    moveDialog: () => import('../moveDialog'),
+    fileAttribute: () => import('../fileAttribute'),
+    ElImageViewer: () => import('element-ui/packages/image/src/image-viewer'),
+    rightClick: () => import('../rightClick'),
+    defaultPage: () => import('@/components/common/defaultPage'),
+    authorDialog: () => import('../authorDialog'),
+    oaDialog: () => import('@/components/form-common/dialog-form')
   },
   props: {
     fileStyle: {
@@ -257,7 +256,7 @@ export default {
       default: 4
     },
     spaceId: {
-      type: [Number, String],
+      type: Number | String,
       default: 0
     },
     pageLimit: {
@@ -265,7 +264,7 @@ export default {
       default: 0
     },
     wps_type: {
-      type: [String, Number],
+      type: String | Number,
       default: '0'
     },
     spaceType: {
@@ -288,7 +287,7 @@ export default {
       },
       total: 0,
       openTypes: helper.openType,
-      breadcrumbArray: [{ name: '全部文件', pid: '' }],
+      breadcrumbArray: [{ name: this.$t('file.allfiles'), pid: '' }],
       id: 0,
       isImage: false,
       srcList: [],
@@ -314,7 +313,15 @@ export default {
     }
   },
   mounted() {},
+  computed: {
+    lang: function () {
+      return this.$store.getters.lang
+    }
+  },
   watch: {
+    lang() {
+      this.setOptions()
+    },
     pageLimit(val) {
       // 只有当limit发生实质性变化且不是布局切换时才重新获取数据
       if (val !== this.where.limit && !this.isLayoutChanging) {
@@ -339,6 +346,9 @@ export default {
     fileDownLoad,
     fileIsImage,
     getFileTypeIconfont,
+    setOptions() {
+      this.breadcrumbArray[0].name = this.$t('file.allfiles')
+    },
     pageChange(page) {
       this.where.page = page
       this.getTreeData()
@@ -476,7 +486,7 @@ export default {
     },
     addAuthor(row) {
       this.fromData = {
-        title: '设置目录权限',
+        title: this.$t('file.setdirectory'),
         fid: this.spaceId,
         id: row.id,
         edit: 1
@@ -540,7 +550,7 @@ export default {
     },
     getFileAttribute(item) {
       this.formBoxConfig = {
-        title: '文件属性',
+        title: this.$t('file.fileattribute'),
         is_file: false,
         fid: item.pid,
         id: item.id,
@@ -569,9 +579,7 @@ export default {
       if (this.rightClickIndex > -1) {
         this.rightClickIndex = -1
       } else {
-        const pop = this.$refs[`pop-${this.activeValue}`]
-        const popover = Array.isArray(pop) ? pop[0] : pop
-        popover?.hide()
+        this.$refs[`pop-${this.activeValue}`][0].doClose()
       }
     },
     rightClick(event, item, index) {
@@ -615,7 +623,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-dialog) {
+::v-deep .el-dialog {
   border-radius: 8px;
 }
 .radio {
@@ -628,12 +636,12 @@ export default {
   }
 }
 .box {
-  :deep(.el-dialog__header) {
+  ::v-deep .el-dialog__header {
     padding: 0 !important;
   }
 }
 
-:deep(.el-dialog__body) {
+::v-deep .el-dialog__body {
   padding-left: 10px;
 }
 .img {
@@ -646,16 +654,16 @@ export default {
 
 .content {
   .header-caption {
-    :deep(.el-breadcrumb__inner) {
+    ::v-deep .el-breadcrumb__inner {
       cursor: pointer;
     }
   }
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
 
   // Element UI Table 样式覆盖
-  :deep(.el-table) {
+  ::v-deep .el-table {
     // 调整行高与原来一致
     th,
     td {
@@ -769,7 +777,7 @@ export default {
       display: flex;
       align-items: center;
     }
-    :deep(.el-checkbox__label) {
+    ::v-deep .el-checkbox__label {
       display: none;
     }
   }
@@ -798,7 +806,7 @@ export default {
         i {
           margin-right: 15px;
         }
-        :deep(.el-checkbox) {
+        ::v-deep .el-checkbox {
           margin-right: 15px;
           display: block !important;
         }
@@ -865,14 +873,14 @@ export default {
       p {
         margin: 0;
       }
-      :deep(.el-checkbox) {
+      ::v-deep .el-checkbox {
         padding-left: 10px;
         display: none;
       }
       .content-left {
         width: 100%;
         text-align: center;
-        :deep(.el-checkbox) {
+        ::v-deep .el-checkbox {
           position: absolute;
           left: 0;
           top: 10px;
@@ -916,7 +924,7 @@ export default {
       }
       &:hover {
         background-color: #f5f5f5;
-        :deep(.el-checkbox) {
+        ::v-deep .el-checkbox {
           display: block !important;
         }
       }

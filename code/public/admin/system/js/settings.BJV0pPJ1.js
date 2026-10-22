@@ -1,0 +1,1 @@
+var e=`/admin`,t=`${e}/user/workbench/index`,n={roterPre:e,WORKBENCH_PATH:t,title:`陀螺匠OA系统`,fixedHeader:!0,sidebarLogo:!0,helpShow:!0,bbsShow:!0,forumShow:!0};export{e as n,n as r,t};

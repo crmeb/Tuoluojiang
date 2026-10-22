@@ -7,6 +7,7 @@
       <div>
         <el-button
           v-if="buildData.contract_renew_switch != 0"
+          size="small"
           @click="handleBuild(0, buildData.contract_renew_switch, 'contract_renew_switch')"
         >
           添加续费
@@ -14,6 +15,7 @@
 
         <el-button
           v-if="buildData.contract_disburse_switch != 0"
+          size="small"
           @click="handleBuild(0, buildData.contract_disburse_switch, 'contract_disburse_switch')"
         >
           添加支出
@@ -21,6 +23,7 @@
 
         <el-button
           v-if="buildData.contract_refund_switch != 0"
+          size="small"
           type="primary"
           @click="handleBuild(0, buildData.contract_refund_switch, 'contract_refund_switch')"
         >
@@ -47,31 +50,31 @@
       <el-table-column prop="bill_no" label="付款单号" min-width="110"> </el-table-column>
       <el-table-column prop="status" label="付款审核状态" min-width="110">
         <template #default="scope">
-          <el-tag size="small" v-if="scope.row.status === 0" type="warning"> 待审核</el-tag>
-          <el-tag size="small" v-if="scope.row.status === 1 && !scope.row.recall" type="info">
-            已通过</el-tag
+          <el-tag v-if="scope.row.status === 0" type="warning" size="mini"> {{ $t('customer.audit') }}</el-tag>
+          <el-tag v-if="scope.row.status === 1 && !scope.row.recall" type="info" size="mini">
+            {{ $t('customer.passed') }}</el-tag
           >
-          <el-tag size="small" v-if="scope.row.status === -1" type="info">已撤销</el-tag>
-          <el-tag size="small" v-if="scope.row.status === 1 && scope.row.recall" type="info">撤销中</el-tag>
+          <el-tag v-if="scope.row.status === -1" type="info" size="mini">已撤销</el-tag>
+          <el-tag v-if="scope.row.status === 1 && scope.row.recall" type="info" size="mini">撤销中</el-tag>
           <el-popover v-if="scope.row.status === 2" trigger="hover" placement="top">
-            <p>原因:</p>
+            <p>{{ $t('customer.reason') }}:</p>
             <p>{{ scope.row.fail_msg }}</p>
             <template #reference>
               <div>
-                <el-tag size="small" type="danger"> 未通过</el-tag>
+                <el-tag type="danger" size="mini"> {{ $t('customer.fail') }}</el-tag>
               </div>
             </template>
           </el-popover>
         </template>
       </el-table-column>
 
-      <el-table-column prop="address" min-width="100" label="操作">
+      <el-table-column prop="address" min-width="100" :label="$t('public.operation')">
         <template #default="scope">
           <div class="flex">
-            <el-button type="primary" link @click="handleCheck(scope.row)">查看</el-button>
+            <el-button type="text" @click="handleCheck(scope.row)">查看</el-button>
             <template v-if="userId == scope.row.card.id">
               <el-button
-                type="primary" link
+                type="text"
                 @click="withdraw(scope.row)"
                 v-if="
                   (scope.row.status === 1 &&
@@ -83,7 +86,7 @@
                 "
                 >撤销</el-button
               >
-              <el-button type="primary" link v-if="scope.row.status == -1" @click="handleDelete(scope.row)">删除</el-button>
+              <el-button type="text" v-if="scope.row.status == -1" @click="handleDelete(scope.row)">删除</el-button>
             </template>
           </div>
         </template>
@@ -135,15 +138,13 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { getStorageJson } from '@/utils/storage.ts'
-import { useUserStore } from '@/stores/user.ts'
-import { clientBillAllListApi, clientBillDeleteApi, getCustomerStatisticsApi } from '@/api/enterprise.ts'
-import { approveApplyRevokeApi } from '@/api/business.ts'
-import { configRuleApproveApi } from '@/api/config.ts'
+import { modalSure } from '@/libs/public'
+import { getStorageJson } from '@/utils/storage'
+import { mapGetters } from 'vuex'
+import { clientBillAllListApi, clientBillDeleteApi, getCustomerStatisticsApi } from '@/api/enterprise'
+import { approveApplyRevokeApi } from '@/api/business'
+import { configRuleApproveApi } from '@/api/config'
 export default {
-  emits: ['refresh-detail'],
   name: 'ContractRecord',
   props: {
     formInfo: {
@@ -154,10 +155,13 @@ export default {
     }
   },
   components: {
-    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form')),
-    applyForPayment: defineAsyncComponent(() => import('./applyForPayment')),
-    editExamine: defineAsyncComponent(() => import('@/views/user/examine/components/editExamine')),
-    detailExamine: defineAsyncComponent(() => import('@/views/user/examine/components/detailExamine'))
+    oaDialog: () => import('@/components/form-common/dialog-form'),
+    applyForPayment: () => import('./applyForPayment'),
+    editExamine: () => import('@/views/user/examine/components/editExamine'),
+    detailExamine: () => import('@/views/user/examine/components/detailExamine')
+  },
+  computed: {
+    ...mapGetters(['userInfo'])
   },
   data() {
     return {
@@ -197,7 +201,7 @@ export default {
         types: '',
         eid: ''
       },
-      userId: useUserStore().userInfo.id,
+      userId: this.$store.state.user.userInfo.id,
       fromData: {},
       total: 0,
       type: 0,
@@ -247,7 +251,7 @@ export default {
     // 查看
     async handleCheck(item) {
       this.fromData = {
-        title: '查看客户',
+        title: this.$t('customer.viewcustomer'),
         width: '500px',
         data: item,
         isClient: false,
@@ -267,7 +271,7 @@ export default {
     withdraw(row) {
       this.rowData = row
       if (row.status === 0) {
-        modalSure('你确定要撤销申请吗').then(() => {
+        modalSure(this.$t('你确定要撤销申请吗')).then(() => {
           this.getApplyRevoke()
         })
       } else {

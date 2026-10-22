@@ -9,12 +9,12 @@
       autocomplete="on"
       class="login-form"
       label-position="left"
-      @keydown.enter="onFormEnter"
+      @keydown.enter.native="onFormEnter"
     >
       <el-form-item prop="phone">
         <el-input
           v-model="form.phone"
-          placeholder="请输入手机号码"
+          :placeholder="$t('login.title1')"
           autocomplete="on"
           name="phone"
           prefix-icon="el-icon-mobile-phone"
@@ -27,7 +27,7 @@
           <div>
             <el-input
               v-model="form.verification_code"
-              placeholder="请输入验证码"
+              :placeholder="$t('login.codetitle')"
               autocomplete="off"
               prefix-icon="el-icon-lock"
               tabindex="2"
@@ -42,7 +42,7 @@
       <el-form-item prop="password">
         <el-input
           v-model="form.password"
-          placeholder="请输入密码"
+          :placeholder="$t('login.title2')"
           :type="passwordVisible ? 'text' : 'password'"
           autocomplete="off"
           name="password"
@@ -58,38 +58,37 @@
         :loading="loading"
         style="width: 100%; margin-bottom: 30px"
         type="primary"
-        @click.prevent="handleSubmit"
+        @click.native.prevent="handleSubmit"
       >
         {{ modeConfig.submitText }}
       </el-button>
     </el-form>
 
     <div class="tips-btn">
-      已有账号,返回
+      {{ $t('login.title3') }}
       <el-link
-        underline="never"
+        :underline="false"
         style="margin-top: -3px; margin-left: 5px"
         type="primary"
         @click="$emit('back-login')"
       >
-        登录
+        {{ $t('login.logIn') }}
       </el-link>
     </div>
   </div>
 </template>
 
 <script>
-import { computed, reactive, ref } from 'vue'
-import { registerUserApi, savePasswordApi } from '@/api/user.ts'
-import helper from '@/libs/helper.ts'
-import { useSmsCode } from '../composables/useSmsCode.ts'
+import { computed, getCurrentInstance, reactive, ref } from 'vue'
+import { registerUserApi, savePasswordApi } from '@/api/user'
+import helper from '@/libs/helper'
+import { useSmsCode } from '../composables/useSmsCode'
 
 /**
  * 手机号 + 短信验证码 + 密码 的通用面板
  * 账号注册与找回密码流程一致，仅文案与提交接口不同
  */
 export default {
-  emits: ['back-login'],
   name: 'PhonePasswordPanel',
   props: {
     mode: {
@@ -99,6 +98,7 @@ export default {
     }
   },
   setup(props, { emit }) {
+    const { proxy } = getCurrentInstance()
     const { codeDisabled, codeText, sendSmsCode } = useSmsCode()
 
     const formRef = ref(null)
@@ -113,24 +113,24 @@ export default {
 
     const modeConfig = computed(() =>
       props.mode === 'register'
-        ? { title: '账号注册', submitText: '注册', submitApi: registerUserApi }
-        : { title: '找回密码', submitText: '完成', submitApi: savePasswordApi }
+        ? { title: proxy.$t('login.zhuce'), submitText: proxy.$t('login.register'), submitApi: registerUserApi }
+        : { title: proxy.$t('login.title4'), submitText: proxy.$t('login.ok'), submitApi: savePasswordApi }
     )
 
     const validatePhone = (rule, value, callback) => {
       if (!value) {
-        return callback(new Error('请输入手机号码'))
+        return callback(new Error(proxy.$t('customer.placeholder09')))
       }
       if (!helper.phoneReg.test(value)) {
-        return callback(new Error('请输入有效的手机号码'))
+        return callback(new Error(proxy.$t('customer.placeholder71')))
       }
       callback()
     }
 
     const rules = {
       phone: [{ required: true, validator: validatePhone, trigger: 'change' }],
-      verification_code: [{ required: true, message: '请输入短信验证码', trigger: 'blur' }],
-      password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+      verification_code: [{ required: true, message: proxy.$t('login.title6'), trigger: 'blur' }],
+      password: [{ required: true, message: proxy.$t('login.title2'), trigger: 'blur' }]
     }
 
     const togglePassword = () => {
@@ -217,10 +217,8 @@ export default {
   overflow: hidden;
 }
 
-// el-form-item__content 在 Element Plus 中是 flex 容器，子元素不再默认撑满整行
 .item-box {
   display: flex;
-  width: 100%;
 
   div {
     position: relative;

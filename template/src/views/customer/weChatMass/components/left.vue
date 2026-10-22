@@ -33,8 +33,8 @@
               @after-enter="handleShow(item.id)"
             >
               <div class="right-item-list">
-                <div class="right-item" @click.stop="addDivsion(item.id)">编辑</div>
-                <div class="right-item" @click.stop="handleDelete(item.id)">删除</div>
+                <div class="right-item" @click.stop="addDivsion(item.id)">{{ $t('public.edit') }}</div>
+                <div class="right-item" @click.stop="handleDelete(item.id)">{{ $t('public.delete') }}</div>
               </div>
               <template #reference>
                 <div
@@ -51,11 +51,10 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import modalForm from '@/libs/modal-form.ts'
-import { workMassTempGroupCreateApi, workMassTempGroupEditApi, workMassTempGroupDelApi } from '@/api/weCom.ts'
+import { modalSure } from '@/libs/public'
+import modalForm from '@/libs/modal-form'
+import { workMassTempGroupCreateApi, workMassTempGroupEditApi, workMassTempGroupDelApi } from '@/api/weCom'
 export default {
-  emits: ['eventOptionData', 'getTargetCate'],
   name: 'DepartmentNot',
   props: {
     leftList: {
@@ -148,7 +147,7 @@ export default {
   margin: -15px 0 -20px -20px;
   padding: 14px 0;
   border-right: 1px solid #eeeeee;
-  :deep(.el-card__header) {
+  ::v-deep .el-card__header {
     border-bottom: none;
     display: flex;
     align-items: center;
@@ -159,7 +158,7 @@ export default {
       justify-content: flex-end;
     }
   }
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
   overflow: auto;

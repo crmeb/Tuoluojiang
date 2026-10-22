@@ -48,15 +48,14 @@
 </template>
 
 <script>
-import { ref, onMounted, defineAsyncComponent } from 'vue'
-import { noticeListApi } from '@/api/administration.ts'
-import { pageJumpTo } from '@/libs/public.ts'
+import { ref, onMounted } from 'vue'
+import { noticeListApi } from '@/api/administration'
+import { pageJumpTo } from '@/libs/public'
 
 export default {
   name: 'EnterpriseNoticeCard',
-  emits: ['news-ready'],
   components: {
-    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage'))
+    defaultPage: () => import('@/components/common/defaultPage')
   },
   setup(_, { emit }) {
     const nweNoticeData = ref([])
@@ -93,7 +92,7 @@ export default {
 
 // 企业动态卡片：内容区自适应撑满卡片剩余高度，避免底部大片留白
 .notice-card {
-  :deep(.el-card__body) {
+  ::v-deep .el-card__body {
     height: 100%;
     display: flex;
     flex-direction: column;

@@ -4,7 +4,7 @@
     <div v-if="checkBtn">
       <el-card class="employees-card-bottom">
         <div class="plan-tabs-content mb20">
-          <el-tabs v-model="tabCur" @tab-change="tapClick">
+          <el-tabs v-model="tabCur" @tab-click="tapClick">
             <el-tab-pane label="待处理" name="6" />
             <el-tab-pane label="考核记录" name="7" />
           </el-tabs>
@@ -27,12 +27,11 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
 export default {
   name: 'DepartmentAssessment',
   components: {
-    merits: defineAsyncComponent(() => import('./components/merits')),
-    auditProcess: defineAsyncComponent(() => import('./components/auditProcess'))
+    merits: () => import('./components/merits'),
+    auditProcess: () => import('./components/auditProcess')
   },
 
   data() {
@@ -85,12 +84,10 @@ export default {
     getList() {
       const tabCur = parseInt(this.tabCur)
       setTimeout(() => {
-        const merits = this.$refs.merits
-        if (!merits) return
         this.handle = tabCur == 6 ? 1 : ''
-        merits.getFormBoxFrame()
+        this.$refs.merits.getFormBoxFrame()
         if (this.checkBtn) {
-          merits.getTableData()
+          this.$refs.merits.getTableData()
         }
       }, 300)
 
@@ -107,7 +104,7 @@ export default {
 </style>
 <style lang="scss" scoped>
 .plan-tabs-content {
-  :deep(.el-tabs__header) {
+  ::v-deep .el-tabs__header {
     margin-bottom: 0;
     .el-tabs__nav-wrap::after {
       height: 1px;

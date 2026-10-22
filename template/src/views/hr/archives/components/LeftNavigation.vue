@@ -47,12 +47,11 @@
 </template>
 
 <script>
-import { putCardApi } from '@/api/enterprise.ts'
-import { getToken } from '@/utils/auth.ts'
-import { uploader } from '@/utils/uploadCloud.ts'
+import { putCardApi } from '@/api/enterprise'
+import { getToken } from '@/utils/auth'
+import { uploader } from '@/utils/uploadCloud'
 
 export default {
-  emits: ['pageJump', 'getImageUrl'],
   name: 'LeftNavigation',
   props: {
     componentStatus: {
@@ -304,7 +303,7 @@ a {
     }
   }
 
-  :deep(.el-card__header) {
+  ::v-deep .el-card__header {
     border-bottom: none;
     display: flex;
     align-items: center;
@@ -317,7 +316,7 @@ a {
     }
   }
 
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
 
@@ -382,17 +381,17 @@ a {
   background: #f0f2f5;
 }
 
-:deep(.avatar-uploader .el-upload:hover) {
+::v-deep .avatar-uploader .el-upload:hover {
   border-color: #409eff;
 }
 
-:deep(.avatar-uploader-icon) {
+::v-deep .avatar-uploader-icon {
   font-size: 28px;
   color: #8c939d;
   text-align: center;
 }
 
-:deep(.el-upload--picture-card) {
+::v-deep .el-upload--picture-card {
   width: 90px;
   height: 100px;
   border: 1px dashed #d9d9d9;

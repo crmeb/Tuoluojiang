@@ -42,15 +42,15 @@
 </template>
 
 <script>
-import { ref, onMounted, getCurrentInstance, defineAsyncComponent } from 'vue'
-import { userWorkMenusApi } from '@/api/user.ts'
-import { pageJumpTo } from '@/libs/public.ts'
+import { ref, onMounted, getCurrentInstance } from 'vue'
+import { userWorkMenusApi } from '@/api/user'
+import { pageJumpTo } from '@/libs/public'
 
 export default {
   name: 'QuickCard',
   components: {
-    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage')),
-    quickManage: defineAsyncComponent(() => import('../quickManage'))
+    defaultPage: () => import('@/components/common/defaultPage'),
+    quickManage: () => import('../quickManage')
   },
   setup() {
     const { proxy } = getCurrentInstance()

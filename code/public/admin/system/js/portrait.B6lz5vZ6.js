@@ -1,0 +1,1 @@
+var e=`/admin/system/img/portrait-D73KnuDF.png`;export{e as t};

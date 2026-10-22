@@ -1,44 +1,44 @@
 <template>
   <el-dialog
-      class="hr-archives-position-dialog"
     :title="config.title"
     :modal="true"
-    v-model="dialogVisible"
+    :visible.sync="dialogVisible"
     :width="config.width"
     :append-to-body="true"
     :before-close="handleClose"
     :close-on-click-modal="false"
   >
     <el-form ref="form" class="mt15" :model="ruleForm" :rules="rules" label-width="90px">
-      <el-form-item :label="'职位名称' + '：'" prop="name">
-        <el-input type="text" v-model="ruleForm.name" placeholder="请填写职位名称"></el-input>
+      <el-form-item :label="$t('hr.jobtitle') + '：'" prop="name">
+        <el-input size="small" type="text" v-model="ruleForm.name" :placeholder="$t('hr.message')"></el-input>
       </el-form-item>
       <el-form-item label="职级类别：" prop="cateId">
-        <el-select v-model="ruleForm.cateId" clearable placeholder="请选择职级类别" @change="handleCate">
+        <el-select v-model="ruleForm.cateId" size="small" clearable placeholder="请选择职级类别" @change="handleCate">
           <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value"></el-option>
         </el-select>
       </el-form-item>
-      <el-form-item :label="'职级' + '：'" prop="rankId">
-        <el-select v-model="ruleForm.rankId" clearable placeholder="请选择职级">
+      <el-form-item :label="$t('hr.rank') + '：'" prop="rankId">
+        <el-select v-model="ruleForm.rankId" size="small" clearable :placeholder="$t('hr.message9')">
           <el-option v-for="item in rankData" :key="item.value" :label="item.label" :value="item.value"></el-option>
         </el-select>
       </el-form-item>
     </el-form>
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleClose">取消</el-button>
-        <el-button class="mr20" :loading="loading" type="primary" @click="handleConfirm">确定</el-button>
+        <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
+        <el-button size="small" class="mr20" :loading="loading" type="primary" @click="handleConfirm">{{
+          $t('public.ok')
+        }}</el-button>
       </div>
     </template>
   </el-dialog>
 </template>
 
 <script>
-import { endJobSaveApi } from '@/api/enterprise.ts'
-import { rankCateListApi, rankListApi } from '@/api/setting.ts'
+import { endJobSaveApi } from '@/api/enterprise'
+import { rankCateListApi, rankListApi } from '@/api/setting'
 
 export default {
-  emits: ['handleConfig'],
   name: 'PositionDialog',
   props: {
     config: {
@@ -57,7 +57,7 @@ export default {
         rankId: ''
       },
       rules: {
-        name: [{ required: true, message: '请填写职位名称', trigger: 'blur' }],
+        name: [{ required: true, message: this.$t('hr.message'), trigger: 'blur' }],
         cateId: [{ required: true, message: '请选择职级类别', trigger: 'change' }],
         rankId: [{ required: true, message: '请选择职级', trigger: 'change' }]
       },
@@ -135,18 +135,14 @@ export default {
 </script>
 
 <style scoped lang="scss">
-:deep(.el-select) {
+::v-deep .el-dialog__footer {
+  padding: 20px 0;
+}
+::v-deep .el-select {
   width: 100%;
 }
 .dialog-footer {
   padding-top: 20px;
   border-top: 1px solid #e6ebf5;
-}
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.hr-archives-position-dialog .el-dialog__footer {
-  padding: 20px 0;
 }
 </style>

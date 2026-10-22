@@ -2,7 +2,7 @@
   <div>
     <el-dialog
       :title="repeatData.title"
-      v-model="dialogVisible"
+      :visible.sync="dialogVisible"
       :width="repeatData.width"
       :before-close="handleClose"
     >
@@ -11,7 +11,7 @@
           <template #label>
             <span v-if="repeatData.title == '添加类目' || repeatData.title == '编辑类目'">类目名称：</span>
             <span v-else
-              >{{ repeatData.label === 1 ? '分类名称' : '标签组名称' }}：</span
+              >{{ repeatData.label === 1 ? $t('customer.typename') : $t('customer.labelename') }}：</span
             >
           </template>
           <el-input
@@ -31,22 +31,24 @@
         </el-form-item>
         <el-form-item>
           <template #label>
-            <span>排序：</span>
+            <span>{{ $t('toptable.sort') }}：</span>
           </template>
           <el-input-number
             :controls="false"
             :min="0"
             :max="999999"
             v-model="rules.sort"
-            placeholder="请输入排序"
+            :placeholder="$t('customer.placeholder04')"
           />
         </el-form-item>
       </el-form>
 
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="handleClose">取消</el-button>
-          <el-button :loading="loading" type="primary" @click="handleConfirm">确定</el-button>
+          <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
+          <el-button size="small" :loading="loading" type="primary" @click="handleConfirm">{{
+            $t('public.ok')
+          }}</el-button>
         </div>
       </template>
     </el-dialog>
@@ -59,11 +61,10 @@ import {
   clientConfigLabelSaveApi,
   invoiceCategory,
   putInvoiceCategory
-} from '@/api/enterprise.ts'
-import { clientConfigSaveApi } from '@/api/client.ts'
+} from '@/api/enterprise'
+import { clientConfigSaveApi } from '@/api/client'
 
 export default {
-  emits: ['handleRepeatData', 'isOk'],
   name: 'AddDialog',
   components: {},
   props: {
@@ -82,7 +83,7 @@ export default {
         sort: 0
       },
       rule: {
-        title: [{ required: true, message: '内容不能为空', trigger: 'blur' }]
+        title: [{ required: true, message: this.$t('customer.message02'), trigger: 'blur' }]
       },
       key: 'cate',
       loading: false
@@ -117,11 +118,11 @@ export default {
     },
     placeholderFn(type) {
       if (type == 1) {
-        return '请输入分类名称'
+        return this.$t('customer.placeholder03')
       } else if (type == 3) {
         return '请输入类目名称'
       } else {
-        return '请输入标签组名称'
+        return this.$t('customer.placeholder05')
       }
     },
 
@@ -229,7 +230,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
-:deep(.el-dialog__footer) {
+::v-deep .el-dialog__footer {
   // border-top: 1px solid #d8d8d8;
 }
 .body {
@@ -237,10 +238,10 @@ export default {
     margin: 0 0 6px 0;
   }
 }
-:deep(.el-dialog__body) {
+::v-deep .el-dialog__body {
   padding-bottom: 0;
 }
-:deep(.el-input-number) {
+::v-deep .el-input-number--medium {
   width: 100%;
   .el-input__inner {
     text-align: left;

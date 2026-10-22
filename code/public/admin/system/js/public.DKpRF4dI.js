@@ -1,0 +1,1 @@
+import{G as e,H as t,Z as n,dt as r,st as i}from"./chunk-vendor.Di-Ybv3u.js";import{t as a}from"./_plugin-vue_export-helper.BDNMzG2s.js";import o from"./list.lJUrFy3n.js";n();var s={name:`public`,components:{index:o}};function c(n,a,o,s,c,l){let u=r(`index`);return i(),t(`div`,null,[e(u,{types:`customer_seas`})])}var l=a(s,[[`render`,c]]);export{l as default};

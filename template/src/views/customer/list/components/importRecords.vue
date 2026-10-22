@@ -1,7 +1,7 @@
 <template>
-  <el-dialog title="导入/导出记录" v-model="dialogVisible" width="1100px" @close="handleClose">
+  <el-dialog title="导入/导出记录" :visible.sync="dialogVisible" width="1100px" @close="handleClose">
     <template v-if="recordList.length>0">
-    <el-table :data="recordList" style="width: 100%;" height="400px" >
+    <el-table :data="recordList" size="small" style="width: 100%;" height="400px" >
       <el-table-column label="文件名称" prop="name" min-width="200">
         <template #default="scope">
           <el-tooltip v-if="scope.row.name" effect="dark" :content="scope.row.name" placement="top-start">
@@ -36,7 +36,7 @@
       </el-table-column>
       <el-table-column label="操作" width="80">
         <template #default="scope">
-          <el-button type="primary" link @click="deleteRecord(scope.row)">
+          <el-button type="text" size="mini" @click="deleteRecord(scope.row)">
             删除
           </el-button>
         </template>
@@ -54,14 +54,13 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { fileLinkDownLoad } from '@/utils/file.ts'
-import { clientExportRecordApi,clientExportRecordDeleteApi } from '@/api/client.ts'
+import { modalSure } from '@/libs/public'
+import { fileLinkDownLoad } from '@/utils/file'
+import { clientExportRecordApi,clientExportRecordDeleteApi } from '@/api/client'
 export default {
   name: 'ImportExportRecord',
 components: {
-    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage'))
+    defaultPage: () => import('@/components/common/defaultPage')
   },
   data() {
     return {

@@ -40,7 +40,7 @@
               <el-table-column prop="num" label="领用数量" min-width="80" />
               <el-table-column prop="updated_at" label="领用时间" min-width="120">
                 <template #default="scope">
-                  {{ dayjs(scope.row.updated_at).format('YYYY-MM-DD') }}
+                  {{ moment(scope.row.updated_at).format('yyyy-MM-DD') }}
                 </template>
               </el-table-column>
             </el-table>
@@ -64,21 +64,19 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import pickerOptions from '@/libs/pickerOptions.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { storageCateApi, storageRecordApi, storageRecordUsersApi } from '@/api/administration.ts'
-import oaFromBox from '@/components/common/oaFromBox'
+import moment from 'moment'
+import pickerOptions from '@/libs/pickerOptions'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { storageCateApi, storageRecordApi, storageRecordUsersApi } from '@/api/administration'
 export default {
   name: 'Consume',
   components: {
-    tree: defineAsyncComponent(() => import('./tree')),
-    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel')),
-    oaFromBox
+    tree: () => import('./tree'),
+    exportExcel: () => import('@/components/common/exportExcel'),
+    oaFromBox: () => import('@/components/common/oaFromBox')
   },
   computed: {
-    dayjs: () => dayjs
+    moment: () => moment
   },
   data() {
     return {
@@ -203,11 +201,11 @@ export default {
       // 先将对象变为字符串，然后再变为json对象，防止对象的指针指向问题，为深拷贝
       let where = JSON.parse(JSON.stringify(this.where))
       where.limit = 0
-      this.saveName = '导出消耗物资记录_' + dayjs(new Date()).format('MM_DD_HH_mm_ss') + '.xlsx'
+      this.saveName = '导出消耗物资记录_' + moment(new Date()).format('MM_DD_HH_mm_ss') + '.xlsx'
       storageRecordApi(where).then((res) => {
         let data = res.data.list
         if (data.length <= 0) {
-          this.$message.error('暂无内容可导出')
+          this.$message.error(this.$t('access.placeholder24'))
         } else {
           const aoaData = [['领取部门/人员', '物资名称', '规格型号', '物资分类', '计量单位', '领用数量', '领用时间']]
 
@@ -227,7 +225,7 @@ export default {
               value.storage.cate.cate_name,
               value.storage.specs,
               value.num,
-              dayjs(value.updated_at).format('YYYY-MM-DD')
+              moment(value.updated_at).format('yyyy-MM-DD')
             ])
           })
           this.exportData.data = aoaData
@@ -271,12 +269,12 @@ export default {
   padding: 0;
   border-bottom: none;
 }
-:deep(.el-form-item) {
+::v-deep .el-form-item {
   margin-bottom: 10px;
   margin-right: 10px;
 }
 .table-box {
-  :deep(.el-table th) {
+  ::v-deep .el-table th {
     background-color: rgba(247, 251, 255, 1);
   }
 }

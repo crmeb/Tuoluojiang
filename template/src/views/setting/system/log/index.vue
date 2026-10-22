@@ -13,12 +13,12 @@
       <div class="table-box mt20">
         <el-table :data="tableData" style="width: 100%" :height="TABLE_HEIGHT">
           <el-table-column prop="id" label="ID" min-width="80" />
-          <el-table-column prop="user_name" label="操作用户" min-width="100" />
-          <!-- <el-table-column prop="event_name" label="行为" min-width="120" /> -->
+          <el-table-column prop="user_name" :label="$t('toptable.operationuser')" min-width="100" />
+          <!-- <el-table-column prop="event_name" :label="$t('toptable.behavior')" min-width="120" /> -->
           <el-table-column prop="event_name" label="操作内容" min-width="195" />
-          <el-table-column prop="terminal" label="登录终端" min-width="100" />
-          <el-table-column prop="last_ip" label="操作IP" min-width="100" />
-          <el-table-column prop="created_at" label="操作时间" min-width="165" />
+          <el-table-column prop="terminal" :label="$t('toptable.loginterminal')" min-width="100" />
+          <el-table-column prop="last_ip" :label="$t('toptable.operationip')" min-width="100" />
+          <el-table-column prop="created_at" :label="$t('toptable.operationtime')" min-width="165" />
         </el-table>
         <div class="page-fixed">
           <el-pagination
@@ -36,10 +36,10 @@
   </div>
 </template>
 <script>
-import dayjs from 'dayjs'
-import pickerOptions from '@/libs/pickerOptions.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { enterpriseLogApi } from '@/api/enterprise.ts'
+import moment from 'moment'
+import pickerOptions from '@/libs/pickerOptions'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { enterpriseLogApi } from '@/api/enterprise'
 import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'SystemLog',
@@ -59,8 +59,8 @@ export default {
         limit: 15
       },
       value1: [
-        dayjs().startOf('month').format('YYYY/MM/DD'),
-        dayjs().endOf('month').format('YYYY/MM/DD')
+        moment().startOf('month').format('YYYY/MM/DD'),
+        moment().endOf('month').format('YYYY/MM/DD')
       ],
       pickerOptions,
       methodOpts: [
@@ -118,13 +118,13 @@ export default {
       this.value1 = ''
       this.formData.event_name = ''
       ;(this.value1 = [
-        dayjs().startOf('month').format('YYYY/MM/DD'),
-        dayjs().endOf('month').format('YYYY/MM/DD')
+        moment().startOf('month').format('YYYY/MM/DD'),
+        moment().endOf('month').format('YYYY/MM/DD')
       ]),
         (this.formData.time =
-          dayjs().startOf('month').format('YYYY/MM/DD') +
+          moment().startOf('month').format('YYYY/MM/DD') +
           '-' +
-          dayjs().endOf('month').format('YYYY/MM/DD'))
+          moment().endOf('month').format('YYYY/MM/DD'))
       this.getList()
     },
     getList() {
@@ -167,13 +167,13 @@ export default {
 .btn-box {
   margin-left: 128px;
 }
-:deep(.el-form-item) {
+::v-deep .el-form-item {
   margin-right: 10px;
 }
 .btn-box button {
   width: 86px;
 }
-:deep(.el-pager li) {
+::v-deep .el-pager li {
   padding: 0;
 }
 </style>

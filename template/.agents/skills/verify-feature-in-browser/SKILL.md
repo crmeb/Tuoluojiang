@@ -55,7 +55,7 @@ description: 在本地开发环境用 Chrome DevTools 联调验证二开功能�
 
 - 列表接口：method、URL、query/body 是否与 `create-api-module` 约定一致
 - 401/403：提示检查登录态或 `v-hasPermi` 权限码
-- 重复请求：是否正常（`request.ts` 默认去重）
+- 重复请求：是否正常（`request.js` 默认去重）
 
 ## 工作流程
 
@@ -70,7 +70,7 @@ description: 在本地开发环境用 Chrome DevTools 联调验证二开功能�
 
 - 不要代替用户登录生产环境
 - 不要在未授权时尝试连接浏览器
-- 涉及纯函数的复杂分支时，浏览器验证之外应按风险补充分支行为测试
+- 不要用浏览器验证替代 [`write-unit-test`](../write-unit-test/SKILL.md) 对纯函数的覆盖
 - 发现问题后不要跳过根因直接改样式
 
 ## 与其他 skill 的配合

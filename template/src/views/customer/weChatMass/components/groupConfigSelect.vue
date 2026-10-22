@@ -1,18 +1,18 @@
 <!-- 加群配置选择弹窗：渠道活码表单中选用已维护好的加群配置（单选） -->
 <template>
-  <el-dialog title="选择加群配置" v-model="visible" :width="DIALOG_SIZE.XL" class="group-config-select-dialog"
+  <el-dialog title="选择加群配置" :visible.sync="visible" :width="DIALOG_SIZE.XL" custom-class="group-config-select-dialog"
     :close-on-click-modal="false">
     <div class="group-config-select">
       <div class="group-config-select__search">
-        <el-input v-model="searchForm.name" placeholder="请输入群聊名称" clearable style="width: 250px"
+        <el-input v-model="searchForm.name" placeholder="请输入群聊名称" size="small" clearable style="width: 250px"
           @change="handleSearch(searchForm)" />
       </div>
 
-      <BaseTable :table-columns="tableColumns" :data="tableData" :loading="isLoading" :total="total" v-model:page="page"
-        v-model:page-size="pageSize">
+      <BaseTable :table-columns="tableColumns" :data="tableData" :loading="isLoading" :total="total" :page.sync="page"
+        :page-size.sync="pageSize">
         <!-- 单选列：以配置 ID 作为选中标识，翻页 / 搜索后仍能保持勾选 -->
         <template #radio="{ row }">
-          <el-radio v-model="selectedId" :label="row.id" :value="row.id" @change="handleSelect(row)">
+          <el-radio v-model="selectedId" :label="row.id" @change="handleSelect(row)">
             <span></span>
           </el-radio>
         </template>
@@ -20,7 +20,7 @@
         <!-- 二维码：点击缩略图调起大图预览，预览层由 el-image 挂到 body，不受弹窗层级影响 -->
         <template #qr_code="{ row }">
           <div class="qr-code-cell">
-            <el-image v-if="row.qr_code" :src="row.qr_code" :preview-src-list="[row.qr_code]" preview-teleported fit="contain"
+            <el-image v-if="row.qr_code" :src="row.qr_code" :preview-src-list="[row.qr_code]" fit="contain"
               class="qr-code-img" />
             <span v-else>--</span>
           </div>
@@ -29,7 +29,7 @@
         <!-- 群聊列表：展示配置下已选群聊的群名，每个群一个标签（与加群配置列表一致） -->
         <template #group_chat="{ row }">
           <div v-if="row.group_chat && row.group_chat.length" class="tag-list">
-            <el-tag v-for="chat in row.group_chat" :key="chat.chat_id">
+            <el-tag v-for="chat in row.group_chat" :key="chat.chat_id" size="small">
               {{ chat.name || '--' }}
             </el-tag>
           </div>
@@ -49,8 +49,8 @@
 
     <template #footer>
       <span>
-        <el-button @click="visible = false">取 消</el-button>
-        <el-button type="primary" @click="handleConfirm">确 定</el-button>
+        <el-button size="small" @click="visible = false">取 消</el-button>
+        <el-button size="small" type="primary" @click="handleConfirm">确 定</el-button>
       </span>
     </template>
   </el-dialog>
@@ -58,10 +58,10 @@
 
 <script>
 import { ref, getCurrentInstance } from 'vue'
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
+import { DIALOG_SIZE } from '@/constants/popupSize'
 import BaseTable from '@/components/BaseTable/index.vue'
-import { useTable } from '@/composables/useTable.ts'
-import { groupInvoteConfigListApi } from '@/api/weCom.ts'
+import { useTable } from '@/composables/useTable'
+import { groupInvoteConfigListApi } from '@/api/weCom'
 
 export default {
   name: 'GroupConfigSelect',

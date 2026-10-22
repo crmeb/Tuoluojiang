@@ -2,7 +2,7 @@
 <template>
   <el-dialog
     :title="config.title"
-    v-model="examineVisible"
+    :visible.sync="examineVisible"
     :width="config.width"
     :append-to-body="true"
     :before-close="handleClose"
@@ -13,8 +13,8 @@
           <span><span class="color-tab">*</span>{{ config.title }}：</span>
         </template>
         <el-radio-group v-model="radio">
-          <el-radio :label="1" :value="1">{{ config.type === 3 ? '已开票' : '已通过' }}</el-radio>
-          <el-radio :label="2" :value="2">{{ config.type === 3 ? '未开票' : '未通过' }}</el-radio>
+          <el-radio :label="1">{{ config.type === 3 ? $t('customer.invoiced') : $t('customer.passed') }}</el-radio>
+          <el-radio :label="2">{{ config.type === 3 ? $t('customer.notinvoiced') : $t('customer.fail') }}</el-radio>
         </el-radio-group>
       </el-form-item>
       <template v-if="config.type === 3 && radio === 1">
@@ -22,7 +22,7 @@
           <template #label>
             <span><span class="color-tab">*</span>发票编号：</span>
           </template>
-          <el-input type="text" v-model="num" placeholder="请输入发票编号" />
+          <el-input type="text" v-model="num" size="small" placeholder="请输入发票编号" />
         </el-form-item>
         <el-form-item>
           <template #label>
@@ -30,8 +30,9 @@
           </template>
           <el-select
             v-model="invoice_type"
+            size="small"
             @change="handleMethod"
-            placeholder="请选择邮寄方式"
+            :placeholder="$t('customer.placeholder54')"
           >
             <el-option v-for="(item, index) in methodOptions" :key="index" :label="item.label" :value="item.value" />
           </el-select>
@@ -45,6 +46,7 @@
           <el-input
             type="text"
             v-model="invoice_address"
+            size="small"
             :placeholder="invoice_type === 'express' ? '请输入收件地址' : '请输入接受邮箱'"
           />
         </el-form-item>
@@ -52,7 +54,7 @@
 
       <el-form-item>
         <template #label>
-          <span><span v-if="radio === 2" class="color-tab">*</span>备注：</span>
+          <span><span v-if="radio === 2" class="color-tab">*</span>{{ $t('public.remarks') }}：</span>
         </template>
         <el-input
           type="textarea"
@@ -61,13 +63,13 @@
           :maxlength="200"
           show-word-limit
           :placeholder="
-            config.type === 3 && radio === 1 ? '用于快递单号/邮箱地址等相关开票信息' : '请填写备注信息'
+            config.type === 3 && radio === 1 ? '用于快递单号/邮箱地址等相关开票信息' : $t('customer.placeholder18')
           "
         />
       </el-form-item>
       <el-form-item v-if="config.type === 3 && radio === 1">
         <template #label>
-          <span>开票凭证:</span>
+          <span>{{ $t('customer.billingdocuments') }}:</span>
         </template>
         <div class="examine-card">
           <ul class="el-upload-list el-upload-list--picture-card">
@@ -102,28 +104,27 @@
               <i class="el-icon-plus"></i>
             </template>
           </el-upload>
-          <el-image-viewer v-if="isImage" @close="closeImageViewer" :url-list="srcList" />
+          <el-image-viewer v-if="isImage" :on-close="closeImageViewer" :url-list="srcList" />
         </div>
       </el-form-item>
     </el-form>
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleClose">取消</el-button>
-        <el-button :loading="loading" type="primary" @click="handleConfirm">确定</el-button>
+        <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
+        <el-button size="small" :loading="loading" type="primary" @click="handleConfirm">{{ $t('public.ok') }}</el-button>
       </div>
     </template>
   </el-dialog>
 </template>
 
 <script>
-import { clientBillStatusApi, clientFileDeleteApi, clientInvoiceStatusApi, putInvalid, clientInvoiceStatus } from '@/api/client.ts'
-import SettingMer from '@/libs/settingMer.ts'
-import { ElImageViewer } from 'element-plus'
-import { getToken } from '@/utils/auth.ts'
-import { fileIsImage } from '@/utils/file.ts'
+import { clientBillStatusApi, clientFileDeleteApi, clientInvoiceStatusApi, putInvalid, clientInvoiceStatus } from '@/api/client'
+import SettingMer from '@/libs/settingMer'
+import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
+import { getToken } from '@/utils/auth'
+import { fileIsImage } from '@/utils/file'
 
 export default {
-  emits: ['isOk'],
   name: 'ExamineDialog',
   props: {
     config: {
@@ -151,8 +152,8 @@ export default {
         authorization: 'Bearer ' + getToken()
       },
       methodOptions: [
-        { value: 'express', label: '快递' },
-        { value: 'mail', label: '邮件' }
+        { value: 'express', label: this.$t('customer.express') },
+        { value: 'mail', label: this.$t('customer.mail') }
       ],
       uploadData: {},
       uploadList: [],
@@ -171,16 +172,16 @@ export default {
     config: {
       handler(nVal) {
         if (nVal.type === 1) {
-          this.title1 = '资金审核'
+          this.title1 = this.$t('customer.fundaudit')
         } else if (nVal.type === 2) {
-          this.title1 = '发票审核'
+          this.title1 = this.$t('customer.invoicereview')
         } else {
           if (nVal.data.num) {
             this.radio = 1
           } else {
             this.radio = 2
           }
-          this.title1 = '开票审核'
+          this.title1 = this.$t('customer.invoicingapproval')
         }
       },
       deep: true
@@ -198,7 +199,7 @@ export default {
     handleConfirm() {
       const file = []
       if (this.radio === 2 && !this.remarks) {
-        this.$message.error('请填写备注信息')
+        this.$message.error(this.$t('customer.placeholder18'))
       } else if (this.config.type === 3 && this.radio === 1 && !this.num) {
         this.$message.error('请输入发票编号')
       } else if (this.config.type === 3 && this.radio === 1 && !this.invoice_address) {
@@ -221,7 +222,7 @@ export default {
             }
           } else {
             if (this.config.data.treaty) {
-              mark = this.config.data.treaty.title + '-' + '订单回款'
+              mark = this.config.data.treaty.title + '-' + this.$t('customer.Contractpayment')
             }
           }
           data.mark = mark
@@ -396,22 +397,22 @@ export default {
 </script>
 
 <style scoped lang="scss">
-:deep(.el-textarea__inner) {
+::v-deep .el-textarea__inner {
   resize: none;
 }
-:deep(.el-select),
-:deep(.el-input-number),
-:deep(.el-date-editor) {
+::v-deep .el-select,
+::v-deep .el-input-number--medium,
+::v-deep .el-date-editor {
   width: 100%;
 }
-:deep(.el-form-item:last-of-type) {
+::v-deep .el-form-item:last-of-type {
   margin-bottom: 0;
 }
 .examine-card {
   div {
     display: inline-block;
   }
-  :deep(.el-upload--picture-card) {
+  ::v-deep .el-upload--picture-card {
     width: 98px;
     height: 98px;
     line-height: 102px;
@@ -419,7 +420,7 @@ export default {
   .upload-icon {
     font-size: 98px;
   }
-  :deep(.el-upload-list--picture-card .el-upload-list__item) {
+  ::v-deep .el-upload-list--picture-card .el-upload-list__item {
     width: 98px;
     height: 98px;
     line-height: 1;

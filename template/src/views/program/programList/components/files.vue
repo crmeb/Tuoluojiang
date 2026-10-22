@@ -10,7 +10,7 @@
           action="##"
           class="mr10 upload-real"
         >
-          <el-button v-if="!percentShow" class="mb14" type="primary">
+          <el-button v-if="!percentShow" class="mb14" size="small" type="primary">
             <i class="el-icon-plus"></i>
             新增
           </el-button>
@@ -27,18 +27,20 @@
         clearable
         placeholder="请输入文件名称"
         prefix-icon="el-icon-search"
+        size="small"
         style="width: 250px"
         @change="getList(1)"
       ></el-input>
       <el-date-picker
         v-model="timeVal"
         end-placeholder="上传时间"
-        format=" YYYY/MM/DD"
+        format=" yyyy/MM/dd"
         range-separator="至"
+        size="small"
         start-placeholder="上传时间"
         style="width: 250px"
         type="daterange"
-        value-format="YYYY/MM/DD"
+        value-format="yyyy/MM/dd"
         @change="timeChange"
       >
       </el-date-picker>
@@ -61,11 +63,11 @@
         </el-table-column>
         <el-table-column label="上传用户" min-width="100" prop="card.name" />
         <el-table-column label="上传时间" min-width="130" prop="created_at"> </el-table-column>
-        <el-table-column label="操作" fixed="right" prop="address" width="180">
+        <el-table-column :label="$t('public.operation')" fixed="right" prop="address" width="180">
           <template #default="scope">
-            <el-button type="primary" link @click="filePreview(scope.row, { list: fileData })"> 预览 </el-button>
-            <el-button type="primary" link @click="handleLabel(scope.row)"> 重命名 </el-button>
-            <el-button type="primary" link @click="handleFileDelete(scope.row, scope.$index)"> 删除</el-button>
+            <el-button type="text" @click="filePreview(scope.row, { list: fileData })"> 预览 </el-button>
+            <el-button type="text" @click="handleLabel(scope.row)"> 重命名 </el-button>
+            <el-button type="text" @click="handleFileDelete(scope.row, scope.$index)"> 删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -83,28 +85,28 @@
     </div>
 
     <!-- 重命名弹窗 -->
-    <el-dialog :append-to-body="true" v-model="dialogFormVisible" title="修改文件名" width="30%">
+    <el-dialog :append-to-body="true" :visible.sync="dialogFormVisible" title="修改文件名" width="30%">
       <el-form>
         <el-form-item label="重命名：" label-width="80px">
-          <el-input v-model="real_name" autocomplete="off"></el-input>
+          <el-input v-model="real_name" autocomplete="off" size="small"></el-input>
         </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="dialogFormVisible = false">取 消</el-button>
-          <el-button type="primary" @click="renameFn">确 定</el-button>
+          <el-button size="small" @click="dialogFormVisible = false">取 消</el-button>
+          <el-button size="small" type="primary" @click="renameFn">确 定</el-button>
         </div>
       </template>
     </el-dialog>
   </div>
 </template>
 <script>
-import { programFileListApi, programrealNameApi, programFileDelApi } from '@/api/program.ts'
-import { uploader } from '@/utils/uploadCloud.ts'
-import { roterPre } from '@/settings.ts'
-import { modalSure } from '@/libs/public.ts'
-import { fileLinkDownLoad, formatBytes, getFileExtension, getFileType } from '@/utils/file.ts'
-import { filePreview } from '@/utils/filePreview.ts'
+import { programFileListApi, programrealNameApi, programFileDelApi } from '@/api/program'
+import { uploader } from '@/utils/uploadCloud'
+import { roterPre } from '@/settings'
+import { modalSure } from '@/libs/public'
+import { fileLinkDownLoad, formatBytes, getFileExtension, getFileType } from '@/utils/file'
+import { filePreview } from '@/utils/filePreview'
 export default {
   name: '',
   props: { programId: { type: Number, default: 0 } },

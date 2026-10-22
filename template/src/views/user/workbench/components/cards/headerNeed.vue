@@ -34,11 +34,11 @@
 </template>
 
 <script>
-import dayjs from 'dayjs'
+import moment from 'moment'
 import { ref, reactive, onMounted } from 'vue'
-import { getWeather, userWorkCountApi } from '@/api/user.ts'
-import { getStorageJson } from '@/utils/storage.ts'
-import { pageJumpTo } from '@/libs/public.ts'
+import { getWeather, userWorkCountApi } from '@/api/user'
+import { getStorageJson } from '@/utils/storage'
+import { pageJumpTo } from '@/libs/public'
 import weatherQing from '@/assets/images/tianqi/qing.png'
 import weatherDuoyun from '@/assets/images/tianqi/duoyun.png'
 import weatherXiaoyu from '@/assets/images/tianqi/xiaoyu.png'
@@ -58,7 +58,7 @@ export default {
       text: ''
     })
     const currentDateStr = ref(
-      dayjs(currentDate).format('YYYY-MM-DD') + ' ' + weekDayNames[currentDate.getDay()]
+      moment(currentDate).format('YYYY-MM-DD') + ' ' + weekDayNames[currentDate.getDay()]
     )
     const needInfo = ref([
       {

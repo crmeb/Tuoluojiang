@@ -5,12 +5,12 @@
       @confirmData="handleSearch" @addDataFn="handleAdd" />
 
     <BaseTable class="mt-10" :table-columns="tableColumns" :data="tableData" :loading="isLoading" :total="total"
-      v-model:page="page" v-model:page-size="pageSize">
+      :page.sync="page" :page-size.sync="pageSize">
 
       <!-- 二维码：点击缩略图调起大图预览 -->
       <template #qr_code="{ row }">
         <div class="qr-code-cell">
-          <el-image v-if="row.qr_code" :src="row.qr_code" :preview-src-list="[row.qr_code]" preview-teleported fit="contain"
+          <el-image v-if="row.qr_code" :src="row.qr_code" :preview-src-list="[row.qr_code]" fit="contain"
             class="qr-code-img" />
           <span v-else>--</span>
         </div>
@@ -19,7 +19,7 @@
       <!-- 群聊列表：展示配置下已选群聊的群名，每个群一个标签 -->
       <template #group_chat="{ row }">
         <div v-if="row.group_chat && row.group_chat.length" class="tag-list">
-          <el-tag v-for="chat in row.group_chat" :key="chat.chat_id">
+          <el-tag v-for="chat in row.group_chat" :key="chat.chat_id" size="small">
             {{ chat.name || '--' }}
           </el-tag>
         </div>
@@ -48,11 +48,11 @@
 
       <!-- 操作列 -->
       <template #action="{ row }">
-        <el-button type="primary" link @click="handlePreviewDownload(row)">二维码下载</el-button>
+        <el-button type="text" @click="handlePreviewDownload(row)">二维码下载</el-button>
         <el-divider direction="vertical" />
-        <el-button type="primary" link @click="handleToEditPage(row)">编辑</el-button>
+        <el-button type="text" @click="handleToEditPage(row)">编辑</el-button>
         <el-divider direction="vertical" />
-        <el-button type="primary" link @click="handleDelete(row)">删除</el-button>
+        <el-button type="text" @click="handleDelete(row)">删除</el-button>
       </template>
     </BaseTable>
 
@@ -62,11 +62,11 @@
 </template>
 
 <script>
-import { ref, defineAsyncComponent } from 'vue'
+import { ref } from 'vue'
 import BaseContainer from '@/components/BaseContainer/index.vue'
 import BaseTable from '@/components/BaseTable/index.vue'
 import oaFromBox from '@/components/common/oaFromBox.vue'
-import { useGroupInvoteConfig } from './composables/useGroupInvoteConfig.ts'
+import { useGroupInvoteConfig } from './composables/useGroupInvoteConfig'
 
 export default {
   name: 'groupInvoteConfig',
@@ -74,7 +74,7 @@ export default {
     BaseContainer,
     BaseTable,
     oaFromBox,
-    channelCodePreview: defineAsyncComponent(() => import('./components/channelCodePreview'))
+    channelCodePreview: () => import('./components/channelCodePreview')
   },
   setup() {
     const groupInvoteConfig = useGroupInvoteConfig()

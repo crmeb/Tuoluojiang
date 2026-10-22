@@ -21,29 +21,29 @@
           :tree-props="{ children: 'children' }"
           style="width: 100%"
         >
-          <el-table-column label="账目分类" min-width="180" prop="name" />
+          <el-table-column :label="$t('finance.accounttabtype')" min-width="180" prop="name" />
 
-          <el-table-column label="账目类型" min-width="100" prop="types">
+          <el-table-column :label="$t('finance.accounttabtitle')" min-width="100" prop="types">
             <template #default="scope">
-              <el-tag v-if="scope.row.types === 0" plain type="warning">支出</el-tag>
-              <el-tag v-else plain type="success">收入</el-tag>
+              <el-tag v-if="scope.row.types === 0" plain size="small" type="warning">{{ $t('finance.pay') }}</el-tag>
+              <el-tag v-else plain size="small" type="success">{{ $t('finance.income') }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="排序" min-width="100" prop="sort" />
+          <el-table-column :label="$t('toptable.sort')" min-width="100" prop="sort" />
 
-          <el-table-column label="操作" fixed="right" prop="address" width="230">
+          <el-table-column :label="$t('public.operation')" fixed="right" prop="address" width="230">
             <template #default="scope">
-              <el-button type="primary" link @click="handleAdd(scope.row)"> 添加子分类 </el-button>
-              <el-button v-hasPermi="['fd:setup:cate:income:edit']" type="primary" link @click="handleEdit(scope.row)">
-                编辑
+              <el-button type="text" @click="handleAdd(scope.row)"> 添加子分类 </el-button>
+              <el-button v-hasPermi="['fd:setup:cate:income:edit']" type="text" @click="handleEdit(scope.row)">
+                {{ $t('public.edit') }}
               </el-button>
               <el-button
                 v-if="!scope.row.children"
                 v-hasPermi="['fd:setup:cate:income:delete']"
-                type="primary" link
+                type="text"
                 @click="handleDelete(scope.row, scope.$index)"
               >
-                删除
+                {{ $t('public.delete') }}
               </el-button>
             </template>
           </el-table-column>
@@ -63,10 +63,10 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import dialogForm from './components/index'
 import oaFromBox from '@/components/common/oaFromBox'
-import { billCateApi, billCateCreateApi, billCateEditApi, billCateDeleteApi } from '@/api/enterprise.ts'
+import { billCateApi, billCateCreateApi, billCateEditApi, billCateDeleteApi } from '@/api/enterprise'
 
 export default {
   name: 'FinanceCate',
@@ -89,7 +89,7 @@ export default {
       drawer: false,
       input: '',
       formBoxConfig: {
-        title: '添加职位',
+        title: this.$t('hr.addposition'),
         width: '500px',
         method: 'post',
         action: 'jobs'
@@ -111,9 +111,9 @@ export default {
       treeData: null,
       companyData: null,
       typeOptions: [
-        { label: '全部', value: '' },
-        { label: '收入', value: '1' },
-        { label: '支出', value: '0' }
+        { label: this.$t('finance.all'), value: '' },
+        { label: this.$t('finance.income'), value: '1' },
+        { label: this.$t('finance.pay'), value: '0' }
       ],
       search: [
         {
@@ -173,7 +173,7 @@ export default {
     async addFinance() {
       billCateCreateApi(0).then((res) => {
         this.formBoxConfig = {
-          title: '新增分类',
+          title: this.$t('finance.addpositionType'),
           width: '500px',
           type: 1,
           method: res.data.method,
@@ -206,7 +206,7 @@ export default {
     },
     // 删除
     async handleDelete(item, index) {
-      await modalSure('你确定要删除账目分类吗')
+      await modalSure(this.$t('finance.message3'))
       await billCateDeleteApi(item.id)
       this.getTableData()
     },
@@ -232,11 +232,11 @@ export default {
   height: calc(100vh - 210px);
   overflow-y: scroll;
 }
-:deep(.el-drawer__body) {
+::v-deep .el-drawer__body {
   height: 100%;
   overflow-y: auto;
 }
-:deep(.el-input-number .el-input__inner) {
+::v-deep .el-input-number .el-input__inner {
   text-align: center;
 }
 </style>

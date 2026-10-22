@@ -3,13 +3,13 @@
   <div class="station">
     <el-drawer
       :title="formData.title"
-      v-model="drawer"
+      :visible.sync="drawer"
       :direction="direction"
       :modal="true"
       :before-close="handleClose"
       :append-to-body="true"
       :size="formData.width"
-      :close-on-click-modal="false"
+      :wrapperClosable="false"
     >
       <div class="invoice">
         <el-form ref="form" :model="rules" label-width="100px" :rules="rule">
@@ -26,6 +26,7 @@
                   v-model="rules.name"
                   v-if="!formData.edit"
                   allow-create
+                  size="small"
                   filterable
                   clearable
                   placeholder="请选择(输入)物资名称"
@@ -39,7 +40,7 @@
                     :value="index"
                   />
                 </el-select>
-                <el-input v-else v-model="rules.name" clearable placeholder="请输入物资名称" />
+                <el-input v-else v-model="rules.name" clearable size="small" placeholder="请输入物资名称" />
               </el-form-item>
             </div>
             <div class="form-item">
@@ -50,6 +51,7 @@
                 <el-cascader
                   v-model="rules.cid"
                   :options="formData.treeData"
+                  size="small"
                   placeholder="请选择物资分类"
                   :props="{ checkStrictly: true }"
                   clearable
@@ -64,6 +66,7 @@
                 <el-input
                   v-model="rules.units"
                   clearable
+                  size="small"
                   :maxlength="20"
                   show-word-limit
                   placeholder="请输入物资型号"
@@ -78,6 +81,7 @@
                 <el-input
                   v-model="rules.specs"
                   clearable
+                  size="small"
                   :maxlength="8"
                   show-word-limit
                   placeholder="请输入计量单位"
@@ -94,6 +98,7 @@
                   :controls="false"
                   :min="0"
                   :precision="2"
+                  size="small"
                   placeholder="请输入单价"
                 ></el-input-number>
               </el-form-item>
@@ -108,6 +113,7 @@
                   :maxlength="50"
                   show-word-limit
                   clearable
+                  size="small"
                   placeholder="请输入生产厂家"
                 />
               </el-form-item>
@@ -115,7 +121,7 @@
             <div class="form-item" style="width: 100%">
               <el-form-item>
                 <template #label>
-                  <span>备注:</span>
+                  <span>{{ $t('public.remarks') }}:</span>
                 </template>
                 <el-input
                   type="textarea"
@@ -123,7 +129,7 @@
                   show-word-limit
                   :rows="3"
                   v-model.trim="rules.mark"
-                  placeholder="请填写备注信息"
+                  :placeholder="$t('customer.placeholder18')"
                 />
               </el-form-item>
             </div>
@@ -145,6 +151,7 @@
                     :min="0"
                     :max="1000"
                     :precision="0"
+                    size="small"
                     placeholder="请输入入库数量"
                   ></el-input-number>
                 </el-form-item>
@@ -159,6 +166,7 @@
                     :controls="false"
                     :min="0"
                     :precision="2"
+                    size="small"
                     placeholder="请输入单价"
                   ></el-input-number>
                 </el-form-item>
@@ -174,7 +182,7 @@
                     show-word-limit
                     :rows="3"
                     v-model.trim="rules.remark"
-                    placeholder="请填写备注信息"
+                    :placeholder="$t('customer.placeholder18')"
                   />
                 </el-form-item>
               </div>
@@ -182,9 +190,9 @@
           </template>
         </el-form>
         <div class="button from-foot-btn fix btn-shadow">
-          <el-button @click="handleClose">取消</el-button>
-          <el-button :loading="loading" type="primary" @click="handleConfirm('ruleForm')">
-            确定
+          <el-button @click="handleClose" size="small">{{ $t('public.cancel') }}</el-button>
+          <el-button :loading="loading" size="small" type="primary" @click="handleConfirm('ruleForm')">
+            {{ $t('public.ok') }}
           </el-button>
         </div>
       </div>
@@ -193,10 +201,9 @@
 </template>
 
 <script>
-import { storageListSaveApi } from '@/api/administration.ts'
+import { storageListSaveApi } from '@/api/administration'
 
 export default {
-  emits: ['isOk'],
   name: 'AddMaterial',
   props: {
     formData: {
@@ -244,6 +251,11 @@ export default {
         number: [{ required: true, validator: checkNumber, trigger: 'blur' }],
         price: [{ required: true, validator: checkPrice, trigger: 'blur' }]
       }
+    }
+  },
+  computed: {
+    lang: function () {
+      return this.$store.getters.lang
     }
   },
   watch: {
@@ -408,7 +420,7 @@ export default {
       return unitsStatus && specsStatus && factoryStatus
     }
   },
-  beforeUnmount() {
+  beforeDestroy() {
     const countriesSelect = document.querySelector('.countries-select input')
     if (countriesSelect && this.handleCountriesInput) {
       countriesSelect.removeEventListener('input', this.handleCountriesInput)
@@ -418,10 +430,13 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-form--inline .el-form-item) {
+.station ::v-deep .el-drawer__body {
+  padding: 20px 20px 50px 20px;
+}
+::v-deep .el-form--inline .el-form-item {
   display: flex;
 }
-:deep(.el-input-number) {
+::v-deep .el-input-number {
   width: 100%;
   .el-input__inner {
     text-align: left;
@@ -429,13 +444,13 @@ export default {
 }
 
 .overflow {
-  :deep(.el-input--suffix .el-input__inner) {
+  ::v-deep .el-input--suffix .el-input__inner {
     padding-right: 62px;
   }
 }
-:deep(.el-date-editor),
-:deep(.el-select),
-:deep(.el-cascader) {
+::v-deep .el-date-editor,
+::v-deep .el-select,
+::v-deep .el-cascader {
   width: 100%;
 }
 .invoice {
@@ -459,13 +474,13 @@ export default {
   justify-content: space-between;
   .form-item {
     width: 49%;
-    :deep(.el-form-item__content) {
+    ::v-deep .el-form-item__content {
       width: calc(100% - 110px);
     }
-    :deep(.el-select) {
+    ::v-deep .el-select--medium {
       width: 100%;
     }
-    :deep(.el-textarea__inner) {
+    ::v-deep .el-textarea__inner {
       resize: none;
     }
   }
@@ -475,7 +490,7 @@ export default {
   border-top: 1px solid #e6ebf5;
   text-align: right;
 }
-:deep(.countries-select .el-input__suffix) {
+::v-deep .countries-select .el-input__suffix {
   position: absolute;
   top: -2px;
 }

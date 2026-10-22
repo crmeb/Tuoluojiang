@@ -5,11 +5,11 @@
 
     <!-- 表单内容（可滚动区域） -->
     <div v-loading="detailLoading" class="stocktaking-create__body">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="112px" class="stocktaking-form"
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="112px" class="stocktaking-form" size="small"
         label-suffix="：">
         <el-form-item label="盘点仓库" prop="warehouse_id">
           <!-- 编辑态仓库不可改（盘点单仓库固定），以只读文本展示 -->
-          <el-input v-if="isEdit" :model-value="warehouseName" disabled class="form-control" />
+          <el-input v-if="isEdit" :value="warehouseName" disabled class="form-control" />
           <WareHouseSelect v-else v-model="form.warehouse_id" placeholder="请输入选择盘点仓库" class="form-control"
             :permission="checkPermission" />
         </el-form-item>
@@ -37,7 +37,7 @@
             <!-- 商品信息：缩略图 + 名称 -->
             <template #goods="{ row }">
               <div class="goods-cell">
-                <el-image :src="row.image" :preview-src-list="[row.image]" preview-teleported class="goods-img" />
+                <el-image :src="row.image" :preview-src-list="[row.image]" class="goods-img" />
                 <span class="goods-name">{{ row.name }}</span>
               </div>
             </template>
@@ -64,7 +64,7 @@
             </template>
 
             <template #real_good_stock="{ row }">
-              <el-input-number v-model="row.real_good_stock" :min="0" :precision="0" :controls="false"
+              <el-input-number v-model="row.real_good_stock" :min="0" :precision="0" :controls="false" size="small"
                 class="cell-control" />
             </template>
 
@@ -79,7 +79,7 @@
             </template>
 
             <template #real_defect_stock="{ row }">
-              <el-input-number v-model="row.real_defect_stock" :min="0" :precision="0" :controls="false"
+              <el-input-number v-model="row.real_defect_stock" :min="0" :precision="0" :controls="false" size="small"
                 class="cell-control" />
             </template>
 
@@ -88,7 +88,7 @@
             </template>
 
             <template #action="{ index }">
-              <el-button type="primary" link @click="removeGoods(index)">删除</el-button>
+              <el-button type="text" @click="removeGoods(index)">删除</el-button>
             </template>
           </BaseTable>
         </el-form-item>
@@ -97,8 +97,8 @@
 
     <!-- 底部操作栏：保存草稿 + 保存（完成盘点） -->
     <FormPageFooter>
-      <el-button :loading="savingDraft" @click="saveDraft(formRef)">保存草稿</el-button>
-      <el-button type="primary" :loading="savingFinish" @click="saveFinish(formRef)">保存</el-button>
+      <el-button size="small" :loading="savingDraft" @click="saveDraft(formRef)">保存草稿</el-button>
+      <el-button size="small" type="primary" :loading="savingFinish" @click="saveFinish(formRef)">保存</el-button>
     </FormPageFooter>
 
     <!-- 选择商品弹窗（复用客户模块规格选择组件），按盘点仓库过滤库存 -->
@@ -111,13 +111,13 @@ import { ref, getCurrentInstance } from "vue";
 import BaseContainer from "@/components/BaseContainer/index.vue";
 import BaseTable from "@/components/BaseTable/index.vue";
 import specifications from "@/views/customer/components/specifications.vue";
-import { useStocktakingCreate } from "./composables/useStocktakingCreate.ts";
+import { useStocktakingCreate } from "./composables/useStocktakingCreate";
 import WareHouseSelect from "../components/WareHouseSelect.vue";
 import BatchEditPopover from "../components/BatchEditPopover.vue";
 import FormPageHeader from "@/components/FormPageHeader/index.vue";
 import FormPageFooter from "@/components/FormPageFooter/index.vue";
-import { WAREHOUSE_PERMISSION } from "../constants.ts";
-import { getSpecName, getProductCode, getBarcode } from "../utils.ts";
+import { WAREHOUSE_PERMISSION } from "../constants";
+import { getSpecName, getProductCode, getBarcode } from "../utils";
 
 export default {
   name: "InventoryStocktakingCreate",
@@ -260,7 +260,7 @@ export default {
   }
 
   // el-input-number 左对齐，去除计数器后还原为普通输入框观感
-  :deep(.el-input-number .el-input__inner) {
+  ::v-deep .el-input-number .el-input__inner {
     text-align: left;
   }
 }

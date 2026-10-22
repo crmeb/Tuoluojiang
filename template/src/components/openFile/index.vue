@@ -3,7 +3,7 @@
   <div class="file-box">
     <div class="header flex-between">
       <div>{{ file.name }}.{{ file.file_ext }}</div>
-      <el-button v-show="editBtn" :loading="loading" type="primary" @click="save">保存</el-button>
+      <el-button v-show="editBtn" :loading="loading" size="small" type="primary" @click="save">保存</el-button>
     </div>
 
     <div class="main">
@@ -23,9 +23,8 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { getFileInfoApi, getAttachInfoApi } from '@/api/cloud.ts'
-import { getFileExtension } from '@/utils/file.ts'
+import { getFileInfoApi, getAttachInfoApi } from '@/api/cloud'
+import { getFileExtension } from '@/utils/file'
 
 // 已注册的预览/编辑组件名，用于兜底不支持的文件类型
 const SUPPORT_TYPES = [
@@ -45,17 +44,17 @@ const SUPPORT_TYPES = [
 export default {
   name: '',
   components: {
-    docx: defineAsyncComponent(() => import('./previewDocx')),
-    md: defineAsyncComponent(() => import('./previewMd')),
-    mp3: defineAsyncComponent(() => import('./previewMp3')),
-    mp4: defineAsyncComponent(() => import('./previewMp4')),
-    pdf: defineAsyncComponent(() => import('./previewPdf')),
-    txt: defineAsyncComponent(() => import('./previewTxt')),
-    office: defineAsyncComponent(() => import('./previewOffice')),
-    docxEdit: defineAsyncComponent(() => import('./editDocx')),
-    xlsxEdit: defineAsyncComponent(() => import('./editXlsx')),
-    xmindEdit: defineAsyncComponent(() => import('./editXmind')),
-    xmindPreview: defineAsyncComponent(() => import('./previewXmind'))
+    docx: () => import('./previewDocx'),
+    md: () => import('./previewMd'),
+    mp3: () => import('./previewMp3'),
+    mp4: () => import('./previewMp4'),
+    pdf: () => import('./previewPdf'),
+    txt: () => import('./previewTxt'),
+    office: () => import('./previewOffice'),
+    docxEdit: () => import('./editDocx'),
+    xlsxEdit: () => import('./editXlsx'),
+    xmindEdit: () => import('./editXmind'),
+    xmindPreview: () => import('./previewXmind')
   },
   data() {
     return {

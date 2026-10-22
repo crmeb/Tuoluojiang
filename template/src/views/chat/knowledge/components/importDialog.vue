@@ -2,7 +2,7 @@
 <template>
   <el-dialog
     title="导入文档"
-    v-model="visible"
+    :visible.sync="visible"
     :width="DIALOG_SIZE.MD"
     :close-on-click-modal="false"
     append-to-body
@@ -51,8 +51,8 @@
       <div class="dialog-footer">
         <span class="upload-title">已上传文档（{{ fileList.length }}/{{ UPLOAD_MAX_COUNT }}）</span>
         <div>
-          <el-button @click="visible = false">取消</el-button>
-          <el-button type="primary" :loading="isSubmitting" @click="handleSubmit">
+          <el-button size="small" @click="visible = false">取消</el-button>
+          <el-button size="small" type="primary" :loading="isSubmitting" @click="handleSubmit">
             确定
           </el-button>
         </div>
@@ -63,13 +63,13 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
-import { ElMessage as Message } from 'element-plus'
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
-import { uploader } from '@/utils/uploadCloud.ts'
-import { getFileExtension, formatBytes } from '@/utils/file.ts'
-import { knowledgeDocumentUploadApi } from '@/api/knowledge.ts'
-import { getFileIcon } from '../utils/fileIcon.ts'
-import { UPLOAD_ACCEPT, UPLOAD_MAX_COUNT, UPLOAD_MAX_SIZE_MB } from '../constants.ts'
+import { Message } from 'element-ui'
+import { DIALOG_SIZE } from '@/constants/popupSize'
+import { uploader } from '@/utils/uploadCloud'
+import { getFileExtension, formatBytes } from '@/utils/file'
+import { knowledgeDocumentUploadApi } from '@/api/knowledge'
+import { getFileIcon } from '../utils/fileIcon'
+import { UPLOAD_ACCEPT, UPLOAD_MAX_COUNT, UPLOAD_MAX_SIZE_MB } from '../constants'
 
 interface UploadedFile {
   id: number
@@ -174,12 +174,12 @@ defineExpose({ openBox })
 
 <style scoped lang="scss">
 .import-upload {
-  :deep(.el-upload),
-  :deep(.el-upload-dragger) {
+  ::v-deep .el-upload,
+  ::v-deep .el-upload-dragger {
     width: 100%;
   }
 
-  :deep(.el-upload-dragger) {
+  ::v-deep .el-upload-dragger {
     height: 180px;
     display: flex;
     align-items: center;

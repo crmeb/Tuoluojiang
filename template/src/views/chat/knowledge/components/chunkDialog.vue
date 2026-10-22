@@ -3,19 +3,19 @@
 <template>
   <el-dialog
     :title="isEdit ? '编辑分段' : '新增分段'"
-    v-model="visible"
+    :visible.sync="visible"
     :width="DIALOG_SIZE.XL"
     :close-on-click-modal="false"
     append-to-body
     @closed="handleClosed"
   >
-    <el-form ref="formRef" :model="form" :rules="rules" label-width="0" label-suffix="：">
+    <el-form ref="formRef" :model="form" :rules="rules" label-width="0" size="small" label-suffix="：">
       <el-form-item label="" prop="content">
         <div v-loading="isUploading" class="editor-box">
           <mavon-editor
             v-if="visible"
             ref="editorRef"
-            :model-value="form.contentHtml"
+            :value="form.contentHtml"
             :toolbars="MARKDOWN_TOOLBARS"
             :subfield="false"
             :box-shadow="false"
@@ -32,8 +32,9 @@
 
     <template #footer>
       <div>
-        <el-button @click="visible = false">取消</el-button>
+        <el-button size="small" @click="visible = false">取消</el-button>
         <el-button
+          size="small"
           type="primary"
           :loading="isSubmitting || isUploading"
           @click="handleSubmit"
@@ -49,11 +50,11 @@
 import { ref, reactive, computed } from 'vue'
 import mavon from 'mavon-editor'
 import 'mavon-editor/dist/css/index.css'
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
-import { knowledgeChunkCreateApi, knowledgeChunkUpdateApi } from '@/api/knowledge.ts'
-import { uploader } from '@/utils/uploadCloud.ts'
-import { CHUNK_CONTENT_MAX, MARKDOWN_TOOLBARS } from '../constants.ts'
-import { decodeHtmlEntities } from '../utils/format.ts'
+import { DIALOG_SIZE } from '@/constants/popupSize'
+import { knowledgeChunkCreateApi, knowledgeChunkUpdateApi } from '@/api/knowledge'
+import { uploader } from '@/utils/uploadCloud'
+import { CHUNK_CONTENT_MAX, MARKDOWN_TOOLBARS } from '../constants'
+import { decodeHtmlEntities } from '../utils/format'
 
 interface FormState {
   id: number
@@ -179,16 +180,12 @@ defineExpose({ openBox })
 
 <style scoped lang="scss">
 .editor-box {
-  // 位于 Element Plus 表单内容区（flex 行布局）中，需占满整行
-  width: 100%;
   border: 1px solid #dcdfe6;
   border-radius: 4px;
   overflow: hidden;
 
-  :deep(.v-note-wrapper) {
+  ::v-deep .v-note-wrapper {
     min-height: 400px;
-    // 编辑器不超出视口，长内容在编辑区内部滚动（扣除弹窗上下边距、标题、底部按钮与字数栏）
-    max-height: calc(100vh - 380px);
     // 弹窗内不需要再叠一层边框，外层 editor-box 已经给了
     border: none;
   }

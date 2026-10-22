@@ -8,17 +8,19 @@
         ></el-tooltip>
       </span>
     </template>
-    <el-input
-      type="text"
-      v-model="optionModel.name"
-      :readonly="widgetNameReadonly"
-      @change="updateWidgetNameAndRef"
-    ></el-input>
+    <template>
+      <el-input
+        type="text"
+        v-model="optionModel.name"
+        :readonly="widgetNameReadonly"
+        @change="updateWidgetNameAndRef"
+      ></el-input>
+    </template>
   </el-form-item>
 </template>
 
 <script>
-import i18n from '@/utils/i18n.ts'
+import i18n from '@/utils/i18n'
 import { isEmptyStr } from '@/utils/util'
 
 export default {
@@ -84,3 +86,4 @@ export default {
 </script>
 
 <style lang="scss" scoped></style>
+@/utils/i18ns

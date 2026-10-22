@@ -2,13 +2,12 @@
 <template>
   <div class="station">
     <el-drawer
-      class="customer-list-liaison-dialog-drawer"
       :title="formData.title"
-      v-model="drawer"
+      :visible.sync="drawer"
       :direction="direction"
       :modal="true"
       :append-to-body="true"
-      :close-on-click-modal="false"
+      :wrapper-closable="false"
       :before-close="handleClose"
       :size="formData.width"
     >
@@ -23,11 +22,9 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { liaisonCreateApi, liaisonEditCreateApi } from '@/api/enterprise.ts'
-import { clientLiaisonSaveApi as liaisonSaveApi, clientLiaisonEditApi as liaisonEditSaveApi } from '@/api/client.ts'
+import { liaisonCreateApi, liaisonEditCreateApi } from '@/api/enterprise'
+import { clientLiaisonSaveApi as liaisonSaveApi, clientLiaisonEditApi as liaisonEditSaveApi } from '@/api/client'
 export default {
-  emits: ['isLiaison'],
   name: 'liaisonDialog',
   props: {
     formData: {
@@ -38,7 +35,7 @@ export default {
     }
   },
   components: {
-    oaForm: defineAsyncComponent(() => import('@/components/customer/oaForm'))
+    oaForm: () => import('@/components/customer/oaForm')
   },
   data() {
     return {
@@ -139,7 +136,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-form--inline .el-form-item) {
+::v-deep .el-drawer__body {
+  padding: 30px 24px 50px 24px;
+}
+::v-deep .el-form--inline .el-form-item {
   display: flex;
 }
 .dialog-footer {
@@ -151,12 +151,5 @@ export default {
   button {
     height: auto;
   }
-}
-</style>
-
-<style lang="scss">
-// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
-.customer-list-liaison-dialog-drawer .el-drawer__body {
-  padding: 30px 24px 50px 24px;
 }
 </style>

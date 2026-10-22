@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     title="编辑标签组"
-    v-model="visible"
+    :visible.sync="visible"
     width="530px"
     :close-on-click-modal="false"
     @close="handleClose"
@@ -14,7 +14,7 @@
 
       <el-form-item label="标签组类型">
         <el-radio-group v-model="form.group.group_type">
-          <el-radio v-for="item in LABEL_GROUP_TYPE_OPTIONS" :key="item.value" :label="item.value" :value="item.value">
+          <el-radio v-for="item in LABEL_GROUP_TYPE_OPTIONS" :key="item.value" :label="item.value">
             {{ item.label }}
           </el-radio>
         </el-radio-group>
@@ -29,29 +29,26 @@
             :list="form.label"
             v-bind="{ group: 'optionsGroup', ghostClass: 'ghost', handle: '.icontuodong' }"
             @change="emitDefaultValueChange"
-            :item-key="$draggableKey"
           >
             <!-- <div class="tag-list"> -->
             <!-- 标签项 -->
-            <template #item="{ element: tag, index }">
-              <div class="tag-item">
-                <el-input
-                  :ref="`input_${index}`"
-                  v-model="tag.name"
-                  placeholder="请输入标签内容"
-                  maxlength="50"
-                ></el-input>
-                <div class="tag-actions">
-                  <span class="iconfont icontuodong" title="拖拽排序"></span>
-                  <span class="el-icon-delete" title="删除" @click.stop="handleDeleteTag(tag, index)"></span>
-                </div>
+            <div class="tag-item" v-for="(tag, index) in form.label" :key="index">
+              <el-input
+                :ref="`input_${index}`"
+                v-model="tag.name"
+                placeholder="请输入标签内容"
+                maxlength="50"
+              ></el-input>
+              <div class="tag-actions">
+                <span class="iconfont icontuodong" title="拖拽排序"></span>
+                <span class="el-icon-delete" title="删除" @click.stop="handleDeleteTag(tag, index)"></span>
               </div>
-            </template>
+            </div>
             <!-- </div> -->
           </draggable>
         </div>
         <!-- 添加标签按钮 -->
-        <el-button type="primary" link class="add-tag-btn" @click="handleAddTag">
+        <el-button type="text" class="add-tag-btn" @click="handleAddTag">
           <i class="el-icon-plus"></i> 添加标签
         </el-button>
       </el-form-item>
@@ -60,10 +57,10 @@
     <!-- 底部按钮 -->
     <template #footer>
       <div class="flex flex-between">
-        <el-button type="primary" link class="delete-group-btn" @click="handleDeleteGroup"> 删除标签组 </el-button>
+        <el-button type="text" class="delete-group-btn" @click="handleDeleteGroup"> 删除标签组 </el-button>
         <div>
-          <el-button @click="visible = false">取消</el-button>
-          <el-button type="primary" @click="handleConfirm">确定</el-button>
+          <el-button size="small" @click="visible = false">取消</el-button>
+          <el-button size="small" type="primary" @click="handleConfirm">确定</el-button>
         </div>
       </div>
     </template>
@@ -72,11 +69,10 @@
 
 <script>
 import Draggable from 'vuedraggable'
-import { clientSaveLabelsApi } from '@/api/client.ts'
-import { clientConfigLabelDeleteApi } from '@/api/enterprise.ts'
-import { LABEL_GROUP_TYPE, LABEL_GROUP_TYPE_OPTIONS } from '@/constants/labelGroupType.ts'
+import { clientSaveLabelsApi } from '@/api/client'
+import { clientConfigLabelDeleteApi } from '@/api/enterprise'
+import { LABEL_GROUP_TYPE, LABEL_GROUP_TYPE_OPTIONS } from '@/constants/labelGroupType'
 export default {
-  emits: ['openLable', 'getTableData'],
   name: 'TagGroupEditor',
   components: {
     Draggable
@@ -110,11 +106,6 @@ export default {
   },
 
   methods: {
-    focusLabelInput(index) {
-      const input = this.$refs[`input_${index}`]
-      const target = Array.isArray(input) ? input[0] : input
-      target?.focus()
-    },
     // 添加标签
     handleAddTag() {
       this.form.label.push({ name: '', id: 0, sort: this.form.label.length + 1 })
@@ -127,7 +118,7 @@ export default {
         })
       })
       setTimeout(() => {
-        this.focusLabelInput(this.form.label.length - 1)
+        this.$refs[`input_${this.form.label.length - 1}`][0].focus()
       }, 200)
     },
     openBox(item) {
@@ -140,7 +131,7 @@ export default {
       if (item.children.length == 0) {
         this.form.label.push({ name: '', id: 0, sort: 0 })
         setTimeout(() => {
-          this.focusLabelInput(this.form.label.length - 1)
+          this.$refs[`input_${this.form.label.length - 1}`][0].focus()
         }, 200)
       }
       this.visible = true
@@ -242,7 +233,7 @@ export default {
   flex: 1;
   margin-right: 10px;
 }
-:deep(.el-dialog__footer) {
+::v-deep .el-dialog__footer {
   padding-top: 0;
 }
 
@@ -264,16 +255,16 @@ export default {
 .delete-group-btn {
   color: #ed4014;
 }
-:deep(.el-dialog__body) {
+::v-deep .el-dialog__body {
   padding: 0 20px;
 }
-:deep(.el-form-item__label) {
+::v-deep .el-form-item__label {
   padding: 0 !important;
 }
-:deep(.el-form-item) {
+::v-deep .el-form-item {
   margin-bottom: 15px;
 }
-:deep(.el-dialog__body) {
+::v-deep .el-dialog__body {
   max-height: 580px;
   overflow-y: scroll;
 }

@@ -19,35 +19,49 @@
         @add="onDragAdd"
         @update="onDragUpdate"
         :move="checkMove"
-        tag="div"
-        class="form-widget-list"
-        :item-key="$draggableKey"
       >
-        <template #item="{ element: widget, index }">
-          <component
-            :is="getWidgetName(widget)"
-            v-bind="widget.category === 'container' ? { widget } : { field: widget, designState: true }"
-            :designer="designer"
-            :parent-list="designer.widgetList"
-            :index-of-parent-list="index"
-            :parent-widget="null"
-          ></component>
-        </template>
+        <transition-group name="fade" tag="div" class="form-widget-list">
+          <template v-for="(widget, index) in designer.widgetList">
+            <template v-if="'container' === widget.category">
+              <component
+                :is="getWidgetName(widget)"
+                :widget="widget"
+                :designer="designer"
+                :key="widget.id"
+                :parent-list="designer.widgetList"
+                :index-of-parent-list="index"
+                :parent-widget="null"
+              ></component>
+            </template>
+            <template v-else>
+              <component
+                :is="getWidgetName(widget)"
+                :field="widget"
+                :designer="designer"
+                :key="widget.id"
+                :parent-list="designer.widgetList"
+                :index-of-parent-list="index"
+                :parent-widget="null"
+                :design-state="true"
+              ></component>
+            </template>
+          </template>
+        </transition-group>
       </draggable>
     </el-form>
   </div>
 </template>
 
 <script>
-import { toElSize } from '@/utils/el-size.ts'
 import Draggable from 'vuedraggable'
 import '@/components/form-designer/form-widget/container-widget/index'
 import FieldComponents from '@/components/form-designer/form-widget/field-widget/index'
-import i18n from '@/utils/i18n.ts'
+import i18n from '@/utils/i18n'
 import { containers } from '@/components/form-designer/widget-panel/widgetsConfig'
 
 export default {
   name: 'VFormWidget',
+  componentName: 'VFormWidget',
   mixins: [i18n],
   components: {
     Draggable,
@@ -98,10 +112,10 @@ export default {
 
     size() {
       if (!!this.designer.formConfig && !!this.designer.formConfig.size) {
-        return toElSize(this.designer.formConfig.size)
+        return this.designer.formConfig.size
       }
 
-      return 'default'
+      return 'medium'
     },
 
     customClass() {
@@ -137,7 +151,7 @@ export default {
   },
   methods: {
     getWidgetName(widget) {
-      return widget.type === 'tab' ? 'form-tab-widget' : widget.type + '-widget'
+      return widget.type + '-widget'
     },
     /* 禁用Firefox默认拖拽搜索功能!! */
     disableFirefoxDefaultDrop() {
@@ -287,8 +301,8 @@ export default {
 
 <style lang="scss" scoped>
 .container-scroll-bar {
-  :deep(.el-scrollbar__wrap),
-  :deep(.el-scrollbar__view) {
+  ::v-deep .el-scrollbar__wrap,
+  ::v-deep .el-scrollbar__view {
     overflow-x: hidden;
   }
 }
@@ -342,7 +356,7 @@ export default {
     box-shadow: 0 0 1px 10px #495060;
   }
 
-  .el-form.widget-form :deep(.el-row) {
+  .el-form.widget-form ::v-deep .el-row {
     padding: 2px;
     border: 1px dashed #dcdfe6;
   }
@@ -358,8 +372,9 @@ export default {
   transition: opacity 0.5s;
 }
 
-.fade-enter-from,
+.fade-enter,
 .fade-leave-to {
   opacity: 0;
 }
 </style>
+@/utils/i18ns

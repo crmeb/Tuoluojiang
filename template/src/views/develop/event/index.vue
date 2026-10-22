@@ -78,8 +78,8 @@
 
             <el-table-column fixed="right" label="操作" prop="address" width="110">
               <template #default="scope">
-                <el-button type="primary" link @click="editFn(scope.row)">编辑</el-button>
-                <el-button type="primary" link @click="deleteFn(scope.row)">删除</el-button>
+                <el-button type="text" @click="editFn(scope.row)">编辑</el-button>
+                <el-button type="text" @click="deleteFn(scope.row)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -101,11 +101,11 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { modalSure } from '@/libs/public'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
 import oaPopover from '@/components/form-common/oa-popover'
 import oaFromBox from '@/components/common/oaFromBox'
-import { roterPre } from '@/settings.ts'
+import { roterPre } from '@/settings'
 import {
   getcrudCateListApi,
   getDatabaseApi,
@@ -114,7 +114,7 @@ import {
   dataEventTypeApi,
   dataEventDelApi,
   dataEventStatusApi
-} from '@/api/develop.ts'
+} from '@/api/develop'
 export default {
   name: 'FinanceList',
   components: {

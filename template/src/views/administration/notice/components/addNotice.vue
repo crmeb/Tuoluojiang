@@ -12,6 +12,7 @@
             <el-input
               style="width: 350px"
               v-model="form.title"
+              size="small"
               maxlength="50"
               clearable
               show-word-limit
@@ -21,6 +22,7 @@
           <el-form-item label="公告分类" prop="categoryId">
             <el-select
               v-model="form.categoryId"
+              size="small"
               clearable
               placeholder="请选择分类"
               style="width: 350px"
@@ -70,9 +72,9 @@
           <el-row class="resource-content">
             <el-col class="resource-left">
               <el-form-item label="发布时间">
-                <el-radio-group v-model="form.resource">
-                  <el-radio :label="0" :value="0" class="resource">立即发布</el-radio>
-                  <el-radio :label="1" :value="1">定时发布</el-radio>
+                <el-radio-group v-model="form.resource" size="small">
+                  <el-radio :label="0" class="resource">立即发布</el-radio>
+                  <el-radio :label="1">定时发布</el-radio>
                 </el-radio-group>
               </el-form-item>
             </el-col>
@@ -81,9 +83,10 @@
               <el-date-picker
                 class="date"
                 v-model="form.date"
+                size="small"
                 prefix-icon="el-icon-date"
                 type="datetime"
-                v-bind="$pickerProps(expireTimeOption)"
+                :picker-options="expireTimeOption"
                 clearable
                 placeholder="选择日期时间"
               ></el-date-picker>
@@ -94,21 +97,20 @@
       </div>
     </el-card>
     <div class="cr-bottom-button">
-      <el-button type="primary" :loading="loading" @click="handleConfirm()">
-        保存
+      <el-button type="primary" size="small" :loading="loading" @click="handleConfirm()">
+        {{ $t('public.save') }}
       </el-button>
     </div>
-    <el-dialog title="选择图片" v-model="dialogVisible" width="850px" :before-close="handleClose">
+    <el-dialog title="选择图片" :visible.sync="dialogVisible" width="850px" :before-close="handleClose">
       <upload-picture ref="uploadPicture" :check-button="true" @getImage="getImage"></upload-picture>
     </el-dialog>
-    <el-image-viewer v-if="isImage" @close="closeImageViewer" :url-list="srcList" />
+    <el-image-viewer v-if="isImage" :on-close="closeImageViewer" :url-list="srcList" />
   </div>
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { noticeEditApi, noticeEditCreateApi, noticeSaveApi } from '@/api/administration.ts'
+import moment from 'moment'
+import { noticeEditApi, noticeEditCreateApi, noticeSaveApi } from '@/api/administration'
 
 // 表单默认值，打开页面时用它重置，避免上一次的内容残留
 function createForm() {
@@ -126,7 +128,6 @@ function createForm() {
 }
 
 export default {
-  emits: ['isNotice'],
   name: 'AddNotice',
   props: {
     // 页面是否处于打开状态，由父级控制，每次打开都会重新初始化表单
@@ -157,8 +158,9 @@ export default {
     }
   },
   components: {
-    ueditorFrom: defineAsyncComponent(() => import('@/components/form-common/oa-wangeditor')),
-    uploadPicture: defineAsyncComponent(() => import('@/components/uploadPicture/index')),
+    ueditorFrom: () => import('@/components/form-common/oa-wangeditor'),
+    uploadPicture: () => import('@/components/uploadPicture/index'),
+    ElImageViewer: () => import('element-ui/packages/image/src/image-viewer')
   },
   data() {
     return {
@@ -255,7 +257,7 @@ export default {
             content: this.form.contents,
             is_top: this.form.delivery ? 1 : 0,
             push_type: this.form.resource,
-            push_time: dayjs(this.form.date).format('YYYY-MM-DD HH:mm:ss')
+            push_time: moment(this.form.date).format('YYYY-MM-DD HH:mm:ss')
           }
           if (this.isEdit) {
             this.getNoticeEdit(this.noticeId, data)
@@ -323,17 +325,17 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-icon-back) {
+::v-deep .el-icon-back {
   display: none;
 }
-:deep(.w-e-text-container p) {
+::v-deep .w-e-text-container p {
   margin: 24px 0;
 }
-:deep(.el-page-header__content) {
+::v-deep .el-page-header__content {
   font-size: 15px;
   font-weight: 600;
 }
-:deep(.el-scrollbar__wrap) {
+::v-deep .el-scrollbar__wrap {
   overflow-x: hidden;
 }
 .card-box {
@@ -358,14 +360,14 @@ export default {
 
 .notice {
   // .input {
-  // :deep(.el-input),
-  // :deep(.el-textarea) {
+  //   ::v-deep .el-input,
+  //   ::v-deep .el-textarea {
   //     width: 50%;
   //   }
   // }
-  // :deep(.el-select) {
+  // ::v-deep .el-select {
   //   width: 50%;
-  // :deep(.el-input--medium) {
+  //   ::v-deep .el-input--medium {
   //     width: 100%;
   //     .el-input__inner {
   //       width: 100%;
@@ -375,20 +377,19 @@ export default {
   .resource-content {
     display: flex;
     align-items: flex-end;
-    :deep(.el-form-item) {
+    ::v-deep .el-form-item {
       margin-bottom: 0px;
     }
     .resource-left {
       width: 130px;
-      :deep(.resource) {
+      ::v-deep .resource {
         display: block;
         margin-bottom: 5px;
       }
     }
     .resource-right {
       width: calc(100% - 130px);
-      // 日期选择器为多根组件，不带 scoped 属性
-      :deep(.date) {
+      .date {
         margin-left: 90px;
         margin-bottom: 6px;
       }

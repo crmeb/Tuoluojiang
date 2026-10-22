@@ -18,7 +18,7 @@
 
     <div class="foot-bar">
       <p>
-        联系电话：{{ siteData.site_tel }} 地址：{{ siteData.site_address }}
+        {{ $t('login.contactnumber') }}：{{ siteData.site_tel }} {{ $t('login.addresss') }}：{{ siteData.site_address }}
       </p>
       <a href="https://beian.miit.gov.cn" target="_blank">{{ siteData.site_record_number }}</a>
     </div>
@@ -29,7 +29,7 @@
 import { computed, getCurrentInstance, onBeforeUnmount, onMounted, ref } from 'vue'
 import accountLoginPanel from './components/accountLoginPanel.vue'
 import phonePasswordPanel from './components/phonePasswordPanel.vue'
-import { useSiteConfig } from './composables/useSiteConfig.ts'
+import { useSiteConfig } from './composables/useSiteConfig'
 
 // 页面模式，与路由 query.loginType 对应
 const LOGIN_MODE = {
@@ -116,20 +116,6 @@ $screen-md: 768px;
   box-sizing: border-box;
   text-align: center;
   border-radius: 0px 6px 6px 0px;
-
-  // 旧版 Element UI 全局 size=medium（控件高 36px、字号 14px），Element Plus 没有这一档，
-  // 默认 32px/13px 会让登录页整体变矮，这里按旧版尺寸还原
-  :deep(.el-input) {
-    --el-input-height: 36px;
-    font-size: 14px;
-  }
-
-  // 「扫码登录」按钮旧版就是 small 档，与 Element Plus 默认尺寸一致，不参与覆盖
-  :deep(.el-button:not(.is-link, .btn-login-code)) {
-    height: 36px;
-    padding: 10px 20px;
-    font-size: 14px;
-  }
 }
 
 .foot-bar {

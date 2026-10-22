@@ -80,7 +80,7 @@
           :zoom-rate="1.2"
           :max-scale="7"
           :min-scale="0.2"
-          :preview-src-list="[formatUrl(previewUrl)]" preview-teleported
+          :preview-src-list="[formatUrl(previewUrl)]"
           :initial-index="4"
           fit="cover"
         />
@@ -91,9 +91,8 @@
 
 <script>
 import zbDialog from '@/components/zbDialog'
-import { BASE_API } from '@/config/env.ts'
+import { BASE_API } from '@/config/env'
 export default {
-  emits: ['openDetailDialog'],
   components: {
     zbDialog
   },

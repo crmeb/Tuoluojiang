@@ -31,12 +31,12 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import fieldLabel from './fieldLabel.vue'
 import addMcp from './addMcp.vue'
-import { FIELD_TIPS } from '../constants.ts'
-import type { McpItem } from '../types.ts'
-import { useApplicationSetting } from '../composables/useApplicationSetting.ts'
+import { FIELD_TIPS } from '../constants'
+import type { McpItem } from '../types'
+import { useApplicationSetting } from '../composables/useApplicationSetting'
 
 const { form, mcpServices } = useApplicationSetting()
 

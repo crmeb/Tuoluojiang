@@ -3,7 +3,7 @@
   <div class="chunk-panel">
     <div class="panel-head">
       <span class="panel-title">分段列表</span>
-      <el-button type="primary" icon="el-icon-plus" :disabled="!docId" @click="handleAdd">
+      <el-button size="small" type="primary" icon="el-icon-plus" :disabled="!docId" @click="handleAdd">
         添加分段
       </el-button>
     </div>
@@ -12,15 +12,16 @@
       <span class="total-tip">共 {{ total }} 项</span>
       <el-input
         v-model="keyword"
+        size="small"
         clearable
         placeholder="请输入分段内容"
         class="search-input"
-        @keyup.enter="handleSearchByKeyword"
+        @keyup.enter.native="handleSearchByKeyword"
         @clear="handleSearchByKeyword"
       >
         <template #prefix><i class="el-input__icon el-icon-search" /></template>
       </el-input>
-      <el-button :icon="$icon('iconfont iconqingchu')" class="refresh-btn" @click="fetchData" />
+      <el-button size="small" icon="iconfont iconqingchu" class="refresh-btn" @click="fetchData" />
     </div>
 
     <div v-loading="isLoading" class="panel-body">
@@ -56,7 +57,7 @@ import { ref, computed, watch } from 'vue'
 import defaultPage from '@/components/common/defaultPage.vue'
 import chunkCard from './chunkCard.vue'
 import chunkDialog from './chunkDialog.vue'
-import { useChunkList } from '../composables/useChunkList.ts'
+import { useChunkList } from '../composables/useChunkList'
 
 interface ChunkRow {
   id: number

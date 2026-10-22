@@ -1,7 +1,7 @@
 <!-- @FileDescription: 审批意见弹窗（拒绝申请时填写审批意见后提交；同意申请为二次确认后直接提交） -->
 <template>
   <el-dialog
-    v-model="visible"
+    :visible.sync="visible"
     title="审批意见"
     :width="DIALOG_SIZE.SM"
     :close-on-click-modal="false"
@@ -22,18 +22,18 @@
     </el-form>
     <template #footer>
       <span>
-        <el-button @click="visible = false">取 消</el-button>
-        <el-button type="primary" :loading="loading" @click="submit">确 定</el-button>
+        <el-button size="small" @click="visible = false">取 消</el-button>
+        <el-button size="small" type="primary" :loading="loading" @click="submit">确 定</el-button>
       </span>
     </template>
   </el-dialog>
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import { ref, reactive, computed } from 'vue'
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
-import { approveVerifyStatusApi } from '@/api/business.ts'
+import { DIALOG_SIZE } from '@/constants/popupSize'
+import { approveVerifyStatusApi } from '@/api/business'
 
 export default {
   name: 'VerifyOpinion',

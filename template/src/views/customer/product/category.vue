@@ -49,9 +49,9 @@
         <el-table-column prop="sort" label="排序" width="180"> </el-table-column>
         <el-table-column prop="address" label="操作" fixed="right" width="220">
           <template #default="scope">
-            <el-button type="primary" link @click="handleAdd(scope.row)" v-if="scope.row.level <= 5">添加子级</el-button>
-            <el-button type="primary" link @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button type="primary" link @click="handleDelete(scope.row, 1)">删除</el-button>
+            <el-button type="text" @click="handleAdd(scope.row)" v-if="scope.row.level <= 5">添加子级</el-button>
+            <el-button type="text" @click="handleEdit(scope.row)">{{ $t('public.edit') }}</el-button>
+            <el-button type="text" @click="handleDelete(scope.row, 1)">{{ $t('public.delete') }}</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -59,15 +59,15 @@
   </div>
 </template>
 <script>
-import { modalSure } from '@/libs/public.ts'
-import modalForm from '@/libs/modal-form.ts'
+import { modalSure } from '@/libs/public'
+import modalForm from '@/libs/modal-form'
 import {
   productCateListApi,
   productCateCreateApi,
   productCateEditApi,
   productCateDelApi,
   productCateApi
-} from '@/api/client.ts'
+} from '@/api/client'
 import oaFromBox from '@/components/common/oaFromBox'
 
 export default {

@@ -2,7 +2,7 @@
 <template>
   <el-dialog
     :title="config.title"
-    v-model="dialogVisible"
+    :visible.sync="dialogVisible"
     :width="config.width"
     :append-to-body="true"
     :show-close="true"
@@ -10,11 +10,11 @@
   >
     <div class="table-box">
       <el-table :data="config.data" :height="420">
-        <el-table-column prop="renew.title" label="续费类型" min-width="110"> </el-table-column>
-        <el-table-column prop="date" label="续费结束日期" min-width="100">
+        <el-table-column prop="renew.title" :label="$t('customer.renewaltype')" min-width="110"> </el-table-column>
+        <el-table-column prop="date" :label="$t('customer.renewaldate')" min-width="100">
           <template #default="scope">
             <span v-if="scope.row.end_date.slice(0, 4) !== '0000'">{{
-              dayjs(scope.row.end_date).format('YYYY-MM-DD')
+              moment(scope.row.end_date).format('YYYY-MM-DD')
             }}</span>
             <span v-else>--</span>
           </template>
@@ -32,7 +32,7 @@
 </template>
 
 <script>
-import dayjs from 'dayjs'
+import moment from 'moment'
 export default {
   name: 'MarkDialog',
   props: {
@@ -44,7 +44,7 @@ export default {
     }
   },
   computed: {
-    dayjs: () => dayjs
+    moment: () => moment
   },
   data() {
     return {
@@ -65,7 +65,7 @@ export default {
   },
   methods: {
     getRenewDays(date) {
-      return dayjs(date).diff(dayjs(new Date()), 'days')
+      return moment(date).diff(moment(new Date()), 'days')
     },
     getRenewName(date, type) {
       let str = ''

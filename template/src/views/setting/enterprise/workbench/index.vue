@@ -16,8 +16,8 @@
 
 <script>
 import formCreate from '@form-create/element-ui'
-import request from '@/api/request.ts'
-import { getConfigWorkbenchApi } from '@/api/setting.ts'
+import request from '@/api/request'
+import { getConfigWorkbenchApi } from '@/api/setting'
 export default {
   name: 'Job',
   components: { formCreate: formCreate.$form() },
@@ -70,7 +70,7 @@ export default {
 .table-box {
   min-height: 620px;
 }
-:deep(.fc-files) {
+::v-deep .fc-files {
   width: 752px;
   height: 90px;
 }

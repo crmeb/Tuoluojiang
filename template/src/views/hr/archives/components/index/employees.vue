@@ -27,44 +27,42 @@
             @pageFn="pageFn"
           >
             <template #options="{ data }">
-              <el-button v-hasPermi="['hr:archives:check']" type="primary" link @click="hanldeOptions(data, 'edit')"
+              <el-button v-hasPermi="['hr:archives:check']" type="text" @click="hanldeOptions(data, 'edit')"
                 >查看
               </el-button>
 
-              <el-button v-if="data.status !== 0 && data.type !== 1" type="primary" link @click="hanldeOptions(data, 'worker')"
+              <el-button v-if="data.status !== 0 && data.type !== 1" type="text" @click="hanldeOptions(data, 'worker')"
                 >转正</el-button
               >
 
               <el-button
                 v-if="data.type !== 2 || data.status !== 0"
-                type="primary" link
-                @click="hanldeOptions(data, 'quit')"
+                type="text"
+                @click.native="hanldeOptions(data, 'quit')"
               >
                 离职
               </el-button>
 
-              <el-button v-if="data.status == 0" type="primary" link @click="hanldeOptions(data, 'inviteToJoin')">
+              <el-button v-if="data.status == 0" type="text" @click.native="hanldeOptions(data, 'inviteToJoin')">
                 邀请完善信息
               </el-button>
 
               <el-dropdown v-if="data.type !== 1 && data.status !== 1">
-                <el-button type="primary" link class="el-dropdown-link">
-                  更多
-                </el-button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item v-if="data.type !== 1" @click="hanldeOptions(data, 'worker')">
-                      转正
-                    </el-dropdown-item>
-                    <el-dropdown-item v-if="data.type !== 1" @click="hanldeOptions(data, 'quit')">
-                      离职
-                    </el-dropdown-item>
-  
-                    <el-dropdown-item v-if="data.status !== 1" @click="hanldeOptions(data, 'delete')"
-                      >删除</el-dropdown-item
-                    >
-                  </el-dropdown-menu>
-                </template>
+                <span class="el-dropdown-link el-button--text el-button">
+                  {{ $t('hr.more') }}
+                </span>
+                <el-dropdown-menu>
+                  <el-dropdown-item v-if="data.type !== 1" @click.native="hanldeOptions(data, 'worker')">
+                    转正
+                  </el-dropdown-item>
+                  <el-dropdown-item v-if="data.type !== 1" @click.native="hanldeOptions(data, 'quit')">
+                    离职
+                  </el-dropdown-item>
+
+                  <el-dropdown-item v-if="data.status !== 1" @click.native="hanldeOptions(data, 'delete')"
+                    >删除</el-dropdown-item
+                  >
+                </el-dropdown-menu>
               </el-dropdown>
             </template>
           </Table>
@@ -75,12 +73,10 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { enterpriseCardApi } from '@/api/enterprise.ts'
+import { enterpriseCardApi } from '@/api/enterprise'
 
 import myMixins from '../../mixins/method.js'
 export default {
-  emits: ['openDrawer', 'invitation', 'onQuit', 'onWorker', 'onDelete'],
   mixins: [myMixins],
   data() {
     return {
@@ -219,8 +215,8 @@ export default {
   },
 
   components: {
-    formBox: defineAsyncComponent(() => import('../formBox.vue')),
-    Table: defineAsyncComponent(() => import('../table.vue'))
+    formBox: () => import('../formBox.vue'),
+    Table: () => import('../table.vue')
   }
 }
 </script>

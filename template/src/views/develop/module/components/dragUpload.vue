@@ -2,7 +2,7 @@
   <div class="oa-dialog">
     <el-dialog
       title="导入数据"
-      v-model="show"
+      :visible.sync="show"
       width="789px"
       :before-close="handleClose"
       :close-on-click-modal="false"
@@ -63,12 +63,12 @@
   </div>
 </template>
 <script>
-import { readFirstSheetRows } from '@/utils/excel/readSheet.ts'
-import { crudImportApi, crudModuleInfoApi } from '@/api/develop.ts'
-import { formatBytes } from '@/utils/file.ts'
+import XLSX from 'xlsx'
+import Papa from 'papaparse'
+import { crudImportApi, crudModuleInfoApi } from '@/api/develop'
+import { formatBytes } from '@/utils/file'
 import exportExcel from '@/components/common/exportExcel'
 export default {
-  emits: ['getList'],
   name: '',
   components: { exportExcel },
   props: {},
@@ -142,16 +142,44 @@ export default {
     },
 
     // 导入
-    async exportDataFn(file) {
+    exportDataFn(file) {
       if (!file.file) {
         return
       }
-      try {
-        const rows = await readFirstSheetRows(file.file)
-        this.importExcelData(rows.slice(1))
-      } catch (error) {
-        this.$message.error('文件解析失败，请检查文件格式')
+      const that = this
+      // 拿取文件对象
+      const f = file.file
+      // 用FileReader来读取
+      const reader = new FileReader()
+      // 重写FileReader上的readAsBinaryString方法
+      FileReader.prototype.readAsBinaryString = function (f) {
+        let binary = ''
+        let wb // 读取完成的数据
+        let outdata // 你需要的数据
+        const reader = new FileReader()
+        reader.onload = function () {
+          // 读取成Uint8Array，再转换为Unicode编码（Unicode占两个字节）
+          const bytes = new Uint8Array(reader.result)
+          const length = bytes.byteLength
+          for (let i = 0; i < length; i++) {
+            binary += String.fromCharCode(bytes[i])
+          }
+          // 接下来就是xlsx了，具体可看api
+          wb = XLSX.read(binary, {
+            type: 'binary',
+            cellDates: true
+          })
+          outdata = XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]])
+          const result = Papa.parse(outdata, {
+            skipEmptyLines: true
+          })
+          const arrData = result.data
+          const arrRes = arrData.slice(1)
+          that.importExcelData(arrRes)
+        }
+        reader.readAsArrayBuffer(f)
       }
+      reader.readAsBinaryString(f)
     },
 
     importExcelData(arrRes) {
@@ -232,12 +260,12 @@ export default {
   .upload-demo {
     width: 100%;
     height: 312px;
-    :deep(.el-upload) {
+    ::v-deep .el-upload {
       width: 100%;
       height: 100%;
       border-color: #dddddd;
     }
-    :deep(.el-upload .el-upload-dragger) {
+    ::v-deep .el-upload .el-upload-dragger {
       width: 100%;
       height: 100%;
       border-color: #dddddd;

@@ -2,62 +2,65 @@
   <div>
     <el-dialog
       :title="repeatData.title"
-      v-model="dialogVisible"
+      :visible.sync="dialogVisible"
       :width="repeatData.width"
       :before-close="handleClose"
     >
       <div class="body mt15">
         <el-form ref="form" :model="rules" :rules="rule" label-width="80px">
-          <el-form-item :label="'重复类型' + ':'">
+          <el-form-item :label="$t('calendar.repetitiontype') + ':'">
             <el-select
               v-model="rules.repeat"
-              placeholder="请选择提醒方式"
+              size="small"
+              :placeholder="$t('calendar.placeholder10')"
               @change="handleRepeat"
             >
               <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
           </el-form-item>
-          <el-form-item prop="rate" :label="'频率' + ':'">
+          <el-form-item prop="rate" :label="$t('calendar.frequency') + ':'">
             <el-input-number
               v-model="rules.rate"
+              size="small"
               :controls="false"
               :min="1"
-              placeholder="请输入提醒频率"
+              :placeholder="$t('calendar.placeholder17')"
             />
             <span class="day-title">{{ dayTitle }}</span>
           </el-form-item>
-          <el-form-item prop="weekDays" v-if="rules.repeat === 1" :label="'每周' + ':'">
-            <el-checkbox-group v-model="rules.weekDays">
-              <el-checkbox-button v-for="item in week" :key="item.value" :label="item.value" :value="item.value">{{
+          <el-form-item prop="weekDays" v-if="rules.repeat === 1" :label="$t('calendar.weekly') + ':'">
+            <el-checkbox-group v-model="rules.weekDays" size="small">
+              <el-checkbox-button v-for="item in week" :key="item.value" :label="item.value">{{
                 item.label
               }}</el-checkbox-button>
             </el-checkbox-group>
           </el-form-item>
-          <el-form-item prop="monthDays" v-if="rules.repeat === 2" :label="'每月' + ':'" class="month">
-            <el-checkbox-group v-model="rules.monthDays">
+          <el-form-item prop="monthDays" v-if="rules.repeat === 2" :label="$t('calendar.monthly') + ':'" class="month">
+            <el-checkbox-group v-model="rules.monthDays" size="small">
               <el-checkbox-button
                 v-for="item in 31"
                 :key="item"
-                :label="item.toString()" :value="item.toString()"
+                :label="item.toString()"
                 >{{ item > 9 ? item : '0' + item }}</el-checkbox-button
               >
             </el-checkbox-group>
           </el-form-item>
-          <el-form-item :label="'结束日期' + ':'">
+          <el-form-item :label="$t('calendar.enddate') + ':'">
             <el-date-picker
               v-model="rules.time"
+              size="small"
               type="datetime"
               prefix-icon="el-icon-date"
               :clearable="true"
-              placeholder="永不结束"
+              :placeholder="$t('calendar.neverend')"
             />
           </el-form-item>
         </el-form>
       </div>
       <template #footer>
         <div class="dialog-footer text-center">
-          <el-button @click="handleClose">取消</el-button>
-          <el-button type="primary" @click="handleConfirm">确定</el-button>
+          <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
+          <el-button size="small" type="primary" @click="handleConfirm">{{ $t('public.ok') }}</el-button>
         </div>
       </template>
     </el-dialog>
@@ -65,9 +68,8 @@
 </template>
 
 <script>
-import dayjs from 'dayjs'
+import moment from 'moment'
 export default {
-  emits: ['handleRepeatData'],
   name: 'RepeatDialog',
   components: {},
   props: {
@@ -81,14 +83,14 @@ export default {
   data() {
     const checkWeek = (rule, value, callback) => {
       if (this.rules.repeat === 1 && value.length <= 0) {
-        return callback(new Error('请选择重复星期'))
+        return callback(new Error(this.$t('calendar.placeholder15')))
       } else {
         return callback()
       }
     }
     const checkMonth = (rule, value, callback) => {
       if (this.rules.repeat === 2 && value.length <= 0) {
-        return callback(new Error('请选择重复天'))
+        return callback(new Error(this.$t('calendar.placeholder16')))
       } else {
         return callback()
       }
@@ -105,30 +107,35 @@ export default {
         time: ''
       },
       rule: {
-        rate: [{ required: true, message: '请输入提醒频率', trigger: 'blur' }],
+        rate: [{ required: true, message: this.$t('calendar.placeholder17'), trigger: 'blur' }],
         weekDays: [{ required: false, validator: checkWeek, trigger: 'change' }],
         monthDays: [{ required: false, validator: checkMonth, trigger: 'change' }]
       },
       options: [
-        { value: 0, label: '按天重复' },
-        { value: 1, label: '按周重复' },
-        { value: 2, label: '按月重复' },
-        { value: 3, label: '按年重复' }
+        { value: 0, label: this.$t('calendar.repeatbyday') },
+        { value: 1, label: this.$t('calendar.repeatweekly') },
+        { value: 2, label: this.$t('calendar.repeatmonthly') },
+        { value: 3, label: this.$t('calendar.repeatyear') }
       ],
       week: [
-        { value: '1', label: '星期一' },
-        { value: '2', label: '星期二' },
-        { value: '3', label: '星期三' },
-        { value: '4', label: '星期四' },
-        { value: '5', label: '星期五' },
-        { value: '6', label: '星期六' },
-        { value: '7', label: '星期天' }
+        { value: '1', label: this.$t('hr.monday') },
+        { value: '2', label: this.$t('hr.tuesday') },
+        { value: '3', label: this.$t('hr.wednesday') },
+        { value: '4', label: this.$t('hr.thursday') },
+        { value: '5', label: this.$t('hr.friday') },
+        { value: '6', label: this.$t('hr.saturday') },
+        { value: '7', label: this.$t('hr.sunday') }
       ],
-      dayTitle: '天',
+      dayTitle: this.$t('access.day'),
       option: [
-        { value: '', label: '永不结束' },
-        { value: 1, label: '选择日期' }
+        { value: '', label: this.$t('calendar.neverend') },
+        { value: 1, label: this.$t('hr.placeholder4') }
       ]
+    }
+  },
+  computed: {
+    lang: function () {
+      return this.$store.getters.lang
     }
   },
   watch: {
@@ -148,8 +155,33 @@ export default {
       },
       deep: true
     },
+    lang() {
+      this.setOptions()
+    }
   },
   methods: {
+    setOptions() {
+      this.options = [
+        { value: 0, label: this.$t('calendar.repeatbyday') },
+        { value: 1, label: this.$t('calendar.repeatweekly') },
+        { value: 2, label: this.$t('calendar.repeatmonthly') },
+        { value: 3, label: this.$t('calendar.repeatyear') }
+      ]
+      this.week = [
+        { value: 1, label: this.$t('hr.monday') },
+        { value: 2, label: this.$t('hr.tuesday') },
+        { value: 3, label: this.$t('hr.wednesday') },
+        { value: 4, label: this.$t('hr.thursday') },
+        { value: 5, label: this.$t('hr.friday') },
+        { value: 6, label: this.$t('hr.saturday') },
+        { value: 7, label: this.$t('hr.sunday') }
+      ]
+      this.dayTitle = this.$t('access.day')
+      this.option = [
+        { value: '', label: this.$t('calendar.neverend') },
+        { value: 1, label: this.$t('hr.placeholder4') }
+      ]
+    },
     handleClose() {
       this.dialogVisible = false
       this.rules.close = true
@@ -160,22 +192,22 @@ export default {
     },
     handleRepeat(e) {
       if (e === 0) {
-        this.dayTitle = '天'
+        this.dayTitle = this.$t('access.day')
       } else if (e === 1) {
-        this.dayTitle = '周'
+        this.dayTitle = this.$t('user.work.week')
       } else if (e === 2) {
-        this.dayTitle = '月'
+        this.dayTitle = this.$t('user.work.month')
       } else if (e === 3) {
-        this.dayTitle = '年'
+        this.dayTitle = this.$t('calendar.year')
       } else {
-        this.dayTitle = '天'
+        this.dayTitle = this.$t('access.day')
       }
     },
     handleConfirm() {
       this.$refs.form.validate((valid) => {
         if (valid) {
           if (this.rules.time) {
-            this.rules.end_time = dayjs(this.rules.time).format('YYYY-MM-DD HH:mm:ss')
+            this.rules.end_time = moment(this.rules.time).format('YYYY-MM-DD HH:mm:ss')
           } else {
             this.rules.end_time = ''
           }
@@ -191,21 +223,21 @@ export default {
 
 <style scoped lang="scss">
 .body {
-  :deep(.el-select),
-  :deep(.el-input) {
+  ::v-deep .el-select--medium,
+  ::v-deep .el-input--medium {
     width: 100%;
   }
-  :deep(.el-input__inner) {
+  ::v-deep .el-input__inner {
     text-align: left;
   }
   .day-title {
     padding-left: 10px;
   }
   .month {
-    :deep(.el-checkbox-button__inner) {
+    ::v-deep .el-checkbox-button__inner {
       padding: 9px 14px;
     }
-    :deep(.el-checkbox-button:nth-of-type(9n + 1) .el-checkbox-button__inner) {
+    ::v-deep .el-checkbox-button:nth-of-type(9n + 1) .el-checkbox-button__inner {
       border-left: 1px solid #dcdfe6;
     }
   }

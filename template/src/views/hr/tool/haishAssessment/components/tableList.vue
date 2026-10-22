@@ -25,11 +25,11 @@
           <el-table-column prop="updated_at" label="更新时间"> </el-table-column>
           <el-table-column label="操作" width="180" fixed="right">
             <template #default="scope">
-              <el-button type="primary" link @click="editFn(scope.row)" v-hasPermi="['hr:training:haishAssessment:edit']"
+              <el-button type="text" @click="editFn(scope.row)" v-hasPermi="['hr:training:haishAssessment:edit']"
                 >编辑</el-button
               >
 
-              <el-button type="primary" link @click="deleteFn(scope.row)" v-hasPermi="['hr:training:haishAssessment:delete']"
+              <el-button type="text" @click="deleteFn(scope.row)" v-hasPermi="['hr:training:haishAssessment:delete']"
                 >删除</el-button
               >
             </template>
@@ -52,12 +52,11 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { getHayGroupListApi, deleteHayGroupApi } from '@/api/config.ts'
+import { modalSure } from '@/libs/public'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { getHayGroupListApi, deleteHayGroupApi } from '@/api/config.js'
 import oaFromBox from '@/components/common/oaFromBox'
 export default {
-  emits: ['addType', 'editType'],
   name: 'CrmebOaEntTabelList',
   components: { oaFromBox },
   data() {

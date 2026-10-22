@@ -2,11 +2,11 @@
   <div>
     <el-drawer
       :title="editType === 0 ? '新增角色' : '编辑角色'"
-      v-model="drawer"
+      :visible.sync="drawer"
       :direction="direction"
       :modal="true"
       :destroy-on-close="false"
-      :close-on-click-modal="false"
+      :wrapperClosable="false"
       :size="`85%`"
       :before-close="handleClose"
     >
@@ -14,7 +14,7 @@
         <div class="form-box">
           <el-form :model="ruleForm" label-width="auto">
             <el-form-item label="角色名称：" prop="name" style="margin-left: 20px">
-              <el-input v-model="ruleForm.role_name" placeholder="请输入管理员名称" style="width: 460px" />
+              <el-input v-model="ruleForm.role_name" placeholder="请输入管理员名称" size="small" style="width: 460px" />
             </el-form-item>
             <el-tabs v-model="tabIndex" type="border-card">
               <el-tab-pane label="权限数据" :name="`1`"></el-tab-pane>
@@ -40,6 +40,7 @@
             <el-input
               style="width: 250px"
               placeholder="请输入实体名称"
+              size="small"
               prefix-icon="el-icon-search"
               class="mr10"
               v-model="searchKey"
@@ -49,6 +50,7 @@
             <el-select
               v-model="cate_id"
               placeholder="请选择关联应用(多选)"
+              size="small"
               style="width: 250px"
               filterable
               multiple
@@ -58,7 +60,7 @@
             </el-select>
             <div style="margin-left: auto; width: 100px">
               <settingsPopover @handClick="rowFn($event, 'reade', 2)">
-                <el-button type="primary">批量设置</el-button>
+                <el-button type="primary" size="small">批量设置</el-button>
               </settingsPopover>
             </div>
           </div>
@@ -81,7 +83,7 @@
               </template>
               <template #default="scope">
                 <div class="flex">
-                  <el-select v-model="scope.row.reade" style="width: 100%" placeholder="请选择">
+                  <el-select v-model="scope.row.reade" style="width: 100%" size="small" placeholder="请选择">
                     <el-option v-for="item in crudList" :key="item.value" :label="item.label" :value="item.value">
                     </el-option>
                   </el-select>
@@ -108,7 +110,7 @@
                 </div>
               </template>
               <template #default="scope">
-                <el-select v-model="scope.row.created" placeholder="请选择">
+                <el-select v-model="scope.row.created" size="small" placeholder="请选择">
                   <el-option v-for="item in allowOptions" :key="item.value" :label="item.label" :value="item.value">
                   </el-option>
                 </el-select>
@@ -122,7 +124,7 @@
               </template>
               <template #default="scope">
                 <div class="flex">
-                  <el-select v-model="scope.row.updated" style="width: 100%" placeholder="请选择">
+                  <el-select v-model="scope.row.updated" size="small" style="width: 100%" placeholder="请选择">
                     <el-option v-for="item in crudList" :key="item.value" :label="item.label" :value="item.value">
                     </el-option>
                   </el-select>
@@ -145,7 +147,7 @@
               </template>
               <template #default="scope">
                 <div class="flex">
-                  <el-select style="width: 100%" v-model="scope.row.deleted" placeholder="请选择">
+                  <el-select style="width: 100%" v-model="scope.row.deleted" size="small" placeholder="请选择">
                     <el-option v-for="item in crudList" :key="item.value" :label="item.label" :value="item.value">
                     </el-option>
                   </el-select>
@@ -168,7 +170,7 @@
               </template>
               <template #default="scope">
                 <div class="flex">
-                  <el-select style="width: 100%" v-model="scope.row.share" placeholder="请选择">
+                  <el-select style="width: 100%" v-model="scope.row.share" size="small" placeholder="请选择">
                     <el-option v-for="item in crudList" :key="item.value" :label="item.label" :value="item.value">
                     </el-option>
                   </el-select>
@@ -191,7 +193,7 @@
               </template>
               <template #default="scope">
                 <div class="flex">
-                  <el-select style="width: 100%" v-model="scope.row.transfer" placeholder="请选择">
+                  <el-select style="width: 100%" v-model="scope.row.transfer" size="small" placeholder="请选择">
                     <el-option v-for="item in crudList" :key="item.value" :label="item.label" :value="item.value">
                     </el-option>
                   </el-select>
@@ -215,25 +217,23 @@
         </div>
       </div>
       <div class="from-foot-btn fix btn-shadow">
-        <el-button @click="close">取消</el-button>
-        <el-button type="primary" :loading="loading" @click="onSubmit">保存</el-button>
+        <el-button size="small" @click="close">{{ $t('public.cancel') }}</el-button>
+        <el-button size="small" type="primary" :loading="loading" @click="onSubmit">{{ $t('public.save') }}</el-button>
       </div>
     </el-drawer>
   </div>
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { systemRoleCreateApi, systemRoleStoreApi, systemRoleUpdateApi } from '@/api/config.ts'
+import { systemRoleCreateApi, systemRoleStoreApi, systemRoleUpdateApi } from '@/api/config'
 import settingsPopover from './settingsPopover'
-import { getcrudCateListApi } from '@/api/develop.ts'
+import { getcrudCateListApi } from '@/api/develop'
 export default {
-  emits: ['adminRole'],
   name: 'AddAdminRole',
   components: {
-    rolesTree: defineAsyncComponent(() => import('@/components/setting/rolesTree')),
-    settingsPopover: defineAsyncComponent(() => import('./settingsPopover')),
-    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department'))
+    rolesTree: () => import('@/components/setting/rolesTree'),
+    settingsPopover: () => import('./settingsPopover'),
+    selectDepartment: () => import('@/components/form-common/select-department')
   },
   props: {
     editType: {
@@ -511,7 +511,7 @@ export default {
     },
     dataLevelFn(e) {
       this.$forceUpdate()
-      this.ruleForm.data_level = e
+      this.$set(this.ruleForm, 'data_level', e)
       if (this.ruleForm.data_level == '4') {
         this.ruleForm.directly = 1
       }
@@ -535,19 +535,19 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-drawer__header) {
+::v-deep .el-drawer__header {
   padding-bottom: 20px;
   margin-bottom: 0;
   color: #1e2128;
   font-weight: 500;
 }
 
-:deep(.label-txt) {
+::v-deep .label-txt {
   /*width: 90px;*/
   margin-left: 20px;
   text-align: right;
 }
-:deep(.el-tabs__item.is-active) {
+::v-deep .el-tabs__item.is-active {
   border-right-color: transparent !important;
   border-left-color: transparent !important;
   &::after {
@@ -560,17 +560,17 @@ export default {
     top: 0;
   }
 }
-:deep(.el-tabs__item) {
+::v-deep .el-tabs__item {
   line-height: 40px !important;
 }
-:deep(.el-tabs__header) {
+::v-deep .el-tabs__header {
   background-color: #f7fbff;
   border-bottom: none;
 }
-:deep(.el-tabs__nav-wrap::after) {
+::v-deep .el-tabs__nav-wrap::after {
   height: 0;
 }
-:deep(.el-tabs__active-bar) {
+::v-deep .el-tabs__active-bar {
   top: 0;
 }
 .el-tabs--border-card {
@@ -582,7 +582,7 @@ export default {
   border: none;
   box-shadow: none;
 }
-:deep(.el-drawer__body) {
+::v-deep .el-drawer__body {
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -600,7 +600,7 @@ export default {
 .form-box {
   flex-shrink: 0;
 }
-:deep(.plan-footer-one) {
+::v-deep .plan-footer-one {
   cursor: pointer;
 
   padding: 0 5px !important;

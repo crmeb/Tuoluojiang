@@ -4,8 +4,8 @@
 
 <script>
 import myEcharts from '@/components/scEcharts/chart-widget.vue'
-import { queryChartData } from '../chartQuery.ts'
-import { EventBus } from '@/libs/bus.ts'
+import { queryChartData } from '@/api/chart'
+import { EventBus } from '@/libs/bus'
 
 export default {
   name: 'barXChart-widget',
@@ -64,7 +64,7 @@ export default {
     this.initOption()
     EventBus.$on('barXChangeValue', this.handleBarXChangeValue)
   },
-  unmounted() {
+  destroyed() {
     EventBus.$off('barXChangeValue', this.handleBarXChangeValue)
   },
   methods: {

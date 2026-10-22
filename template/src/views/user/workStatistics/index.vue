@@ -3,8 +3,8 @@
     <div class="v-height-flag">
       <div class="plan-tabs-content">
         <el-tabs v-model="tabCur" @tab-click="handleClick">
-          <el-tab-pane label="我的考核" name="0" />
-          <el-tab-pane label="我的部门" name="1" />
+          <el-tab-pane :label="$t('access.selfassessment01')" name="0" />
+          <el-tab-pane :label="$t('access.mydepartment')" name="1" />
         </el-tabs>
       </div>
       <div class="mt20">
@@ -15,11 +15,10 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
 export default {
   name: 'WorkStatistics',
   components: {
-    assessStatistics: defineAsyncComponent(() => import('./components/assessStatistics'))
+    assessStatistics: () => import('./components/assessStatistics')
   },
   data() {
     return {
@@ -31,7 +30,7 @@ export default {
   methods: {
     handleClick(number) {
       this.tabCur = number.index
-      this.$refs.assessStatistics.typeLocal = number.paneName
+      this.$refs.assessStatistics.type = number.name
       this.$refs.assessStatistics.getTableData()
     }
   }
@@ -39,19 +38,19 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-tabs__header) {
+::v-deep .el-tabs__header {
   margin-bottom: 0;
 }
-:deep(.el-tabs__nav-wrap::after) {
+::v-deep .el-tabs__nav-wrap::after {
   display: none;
 }
 .plan-tabs-content {
   margin: 0 -20px 14px -20px;
   border-bottom: 2px solid #f0f2f5;
-  :deep(.el-tabs) {
+  ::v-deep .el-tabs {
     padding: 0 20px;
   }
-  :deep(.el-tabs__item) {
+  ::v-deep .el-tabs__item {
     line-height: 26px;
   }
 }

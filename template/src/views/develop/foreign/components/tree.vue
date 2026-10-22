@@ -6,6 +6,7 @@
           v-model="filterText"
           placeholder="请输入应用，实体，接口名称搜索"
           clearable
+          size="small"
           suffix-icon="el-icon-search"
         />
       </div>
@@ -45,7 +46,6 @@
 
 <script>
 export default {
-  emits: ['getJson'],
   name: '',
   components: {},
   props: {
@@ -119,24 +119,24 @@ export default {
   font-size: 15px;
   color: #ffca28;
 }
-.el-card__header :deep(.el-input .el-input__inner) {
+.el-card__header ::v-deep .el-input--small .el-input__inner {
   cursor: pointer;
 }
-:deep(.el-tree) {
+::v-deep .el-tree {
   background-color: transparent;
 }
 
-:deep(.el-scrollbar__wrap) {
+::v-deep .el-scrollbar__wrap {
   overflow-x: hidden;
 }
-:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
+::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content {
   background: rgba(240, 250, 254, 0.6);
   .flex-box {
     color: #1890ff;
     font-weight: 600;
   }
 }
-:deep(.tree-box-con) {
+::v-deep .tree-box-con {
   margin-top: 10px;
   .el-tree-node__content {
     width: 100%;
@@ -144,14 +144,14 @@ export default {
     border-radius: 4px;
   }
 }
-:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node),
+::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node,
 .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .right-icon {
   display: inline-block;
   color: #1890ff;
   font-weight: 600;
 }
 
-:deep(.el-tree-node > .el-tree-node__children) {
+::v-deep .el-tree-node > .el-tree-node__children {
   overflow: inherit;
 }
 

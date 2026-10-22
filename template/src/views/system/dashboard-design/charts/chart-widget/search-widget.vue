@@ -13,8 +13,7 @@
 </template>
 <script>
 import formList from "@/components/common/formList.vue"
-import { getDataList } from '@/api/chart.ts'
-import { queryChartData } from '../chartQuery.ts'
+import { queryChartData, getDataList } from '@/api/chart'
 
 export default {
   name: 'search-widget',

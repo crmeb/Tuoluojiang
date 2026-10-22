@@ -14,7 +14,6 @@
 </template>
 <script>
 export default {
-  emits: ['update'],
   name: 'progress-bar',
 
   props: {
@@ -75,7 +74,7 @@ export default {
     }
   },
 
-  beforeUnmount() {
+  beforeDestroy() {
     clearInterval(this.timer)
   },
 

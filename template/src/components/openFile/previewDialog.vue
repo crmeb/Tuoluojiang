@@ -4,7 +4,7 @@
   <div class="file-preview-host">
     <el-dialog
       :class="['file-preview-dialog', `is-${dialogKind}`]"
-      v-model="dialogVisible"
+      :visible.sync="dialogVisible"
       :width="dialogWidth"
       :top="dialogTop"
       :append-to-body="true"
@@ -12,7 +12,7 @@
       :show-close="dialogKind !== 'video'"
       @closed="handleClosed"
     >
-      <template #header>
+      <template #title>
         <div class="file-preview-title">
           <span class="over-text">{{ displayName }}</span>
           <i v-if="dialogKind === 'video'" class="el-icon-close" @click.stop="close"></i>
@@ -30,8 +30,8 @@
         <i class="el-icon-warning-outline is-error"></i>
         <p class="file-preview-state__text">{{ errorMsg }}</p>
         <div class="file-preview-actions">
-          <el-button v-if="canRetry" @click="handleRetry">重新加载</el-button>
-          <el-button v-if="url" type="primary" @click="handleDownload">直接下载</el-button>
+          <el-button v-if="canRetry" size="small" @click="handleRetry">重新加载</el-button>
+          <el-button v-if="url" size="small" type="primary" @click="handleDownload">直接下载</el-button>
         </div>
       </div>
 
@@ -52,9 +52,9 @@
         <p v-if="sizeText" class="file-preview-unsupported__size">{{ sizeText }}</p>
         <p class="file-preview-unsupported__tip">该文件类型暂不支持在线预览</p>
         <div class="file-preview-actions">
-          <el-button type="primary" :disabled="!url" @click="handleDownload">下载文件</el-button>
-          <el-button :disabled="!url" @click="handleCopyLink">复制链接</el-button>
-          <el-button @click="close">取消</el-button>
+          <el-button size="small" type="primary" :disabled="!url" @click="handleDownload">下载文件</el-button>
+          <el-button size="small" :disabled="!url" @click="handleCopyLink">复制链接</el-button>
+          <el-button size="small" @click="close">取消</el-button>
         </div>
       </div>
     </el-dialog>
@@ -65,9 +65,9 @@
 </template>
 
 <script>
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
-import { FILE_KIND } from '@/constants/fileKind.ts'
-import { fileLinkDownLoad, formatBytes } from '@/utils/file.ts'
+import { DIALOG_SIZE } from '@/constants/popupSize'
+import { FILE_KIND } from '@/constants/fileKind'
+import { fileLinkDownLoad, formatBytes } from '@/utils/file'
 import previewMp3 from './previewMp3'
 import previewMp4 from './previewMp4'
 import previewImage from './previewImage'
@@ -299,19 +299,12 @@ export default {
   }
 }
 
-.file-preview-video {
-  z-index: 120;
-}
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 上，scoped 样式选不到，按 class 定位
-.el-dialog.file-preview-dialog {
+.file-preview-dialog {
   &.is-video {
-    .el-dialog__body {
+    ::v-deep .el-dialog__body {
       padding: 0;
     }
-    .el-dialog__header {
+    ::v-deep .el-dialog__header {
       width: 100%;
       position: absolute;
       top: 0;
@@ -322,9 +315,13 @@ export default {
       color: #fff;
       border: none;
     }
-    .el-dialog__headerbtn .el-dialog__close {
+    ::v-deep .el-dialog__headerbtn .el-dialog__close {
       color: #fff;
     }
   }
+}
+
+.file-preview-video {
+  z-index: 120;
 }
 </style>

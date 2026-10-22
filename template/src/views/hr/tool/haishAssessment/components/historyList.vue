@@ -1,9 +1,8 @@
 <template>
   <div>
     <el-dialog
-      class="hr-tool-haish-assessment-history-list-dialog"
       title="历史记录"
-      v-model="dialogVisible"
+      :visible.sync="dialogVisible"
       width="700px"
       :append-to-body="true"
       :before-close="handleClose"
@@ -15,7 +14,7 @@
         <el-table-column prop="updated_at" label="更新时间" min-width="150"> </el-table-column>
         <el-table-column label="操作" width="120" fixed="right">
           <template #default="scope">
-            <el-button type="primary" link @click="apply(scope.row)">使用</el-button>
+            <el-button type="text" @click="apply(scope.row)">使用</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -34,9 +33,8 @@
 </template>
 
 <script>
-import { putHayHistoryApi } from '@/api/config.ts'
+import { putHayHistoryApi } from '@/api/config.js'
 export default {
-  emits: ['applyFn'],
   name: 'CrmebOaEntHistoryList',
 
   data() {
@@ -87,18 +85,14 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+::v-deep .el-dialog__body {
+  padding-top: 15px;
+  padding-right: 0;
+  border-top: 1px solid #dcdfe6;
+}
 .paginationClass {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
-}
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.hr-tool-haish-assessment-history-list-dialog .el-dialog__body {
-  padding-top: 15px;
-  padding-right: 0;
-  border-top: 1px solid #dcdfe6;
 }
 </style>

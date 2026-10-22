@@ -1,5 +1,5 @@
 <template>
-  <el-dialog class="nodeNoteDialog" title="备注" v-model="dialogVisible" :width="isMobile ? '90%' : '50%'"
+  <el-dialog class="nodeNoteDialog" title="备注" :visible.sync="dialogVisible" :width="isMobile ? '90%' : '50%'"
     :top="isMobile ? '20px' : '15vh'">
     <div class="noteEditor" ref="noteEditor" @keyup.stop @keydown.stop></div>
     <!-- <div class="tip">换行请使用：Enter+Shift</div> -->
@@ -13,11 +13,11 @@
 </template>
 
 <script>
-import { EventBus } from '@/libs/bus.ts'
+import { EventBus } from '@/libs/bus'
 import Editor from '@toast-ui/editor'
 import '@toast-ui/editor/dist/toastui-editor.css'
 import { isMobile } from 'simple-mind-map/src/utils/index'
-import { END_TEXT_EDIT, NODE_ACTIVE, SHOW_NODE_NOTE, START_TEXT_EDIT } from '../event-constant.ts';
+import { END_TEXT_EDIT, NODE_ACTIVE, SHOW_NODE_NOTE, START_TEXT_EDIT } from '../event-constant';
 
 export default {
   name: 'NodeNote',
@@ -41,7 +41,7 @@ export default {
     EventBus.$on(NODE_ACTIVE, this.handleNodeActive)
     EventBus.$on(SHOW_NODE_NOTE, this.handleShowNodeNote)
   },
-  beforeUnmount() {
+  beforeDestroy() {
     EventBus.$off(NODE_ACTIVE, this.handleNodeActive)
     EventBus.$off(SHOW_NODE_NOTE, this.handleShowNodeNote)
   },

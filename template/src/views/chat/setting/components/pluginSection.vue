@@ -3,7 +3,7 @@
     <div class="plugin-switch">
       <span class="plugin-title">{{ label }}：</span>
       <el-switch
-        :model-value="enabled"
+        :value="enabled"
         active-text="开启"
         inactive-text="关闭"
         :active-value="true"

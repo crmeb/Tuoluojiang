@@ -9,13 +9,11 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import submission from './components/mySubmission'
 export default {
   name: 'Index',
   components: {
-    submission,
-    editExamine: defineAsyncComponent(() => import('./components/editExamine'))
+    submission: () => import('./components/mySubmission'),
+    editExamine: () => import('./components/editExamine')
   },
   data() {
     return {
@@ -24,6 +22,9 @@ export default {
       // 由外部入口（如工作台「我申请的」）通过 query.status 指定的默认审批状态筛选值
       defaultStatus: this.getQueryStatus()
     }
+  },
+  mounted() {
+    this.getTableInfo('verify_status', 1)
   },
   methods: {
     /**
@@ -46,6 +47,20 @@ export default {
       this.$refs.submission.getTableData()
     },
    
+    /**
+     * 获取表格信息
+     * @param {string} type - 查询条件的类型
+     * @param {any} val - 查询条件的值
+     * 该方法会在200毫秒后重置表格的页码为1，并设置指定的查询条件，最后调用 submission 组件的 getTableData 方法来获取表格数据
+     */
+    getTableInfo(type, val) {
+      setTimeout(() => {
+        this.$refs.submission.where.page = 1
+        this.$refs.submission.where[type] = val
+        this.$refs.submission.getTableData()
+      }, 200)
+    },
+
     /**
      * 获取内容值
      * @param {object} row - 表格行数据
@@ -91,4 +106,5 @@ export default {
   }
 }
 </script>
+
 

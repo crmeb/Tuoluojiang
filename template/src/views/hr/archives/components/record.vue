@@ -1,16 +1,15 @@
 <template>
   <div class="table-box">
     <el-dialog
-      class="hr-archives-record-dialog"
       :show-close="status == 'add' ? false : true"
-      v-model="dialogVisible"
+      :visible.sync="dialogVisible"
       :width="title == '调薪弹窗' ? '680px' : '470px'"
       append-to-body
     >
-      <template #header>
+      <template #title>
         <div class="header">
           <span>{{ title }}</span>
-          <el-link v-if="status == 'add'" underline="never" icon="el-icon-edit-outline" @click="editFn"
+          <el-link v-if="status == 'add'" :underline="false" icon="el-icon-edit-outline" @click="editFn"
             >编辑字段</el-link
           >
         </div>
@@ -29,7 +28,7 @@
             :rules="[{ type: 'date', required: true, message: '请选择日期', trigger: 'change' }]"
             label="生效时间:"
           >
-            <el-date-picker v-model="take_date" placeholder="选择日期" type="date" value-format="YYYY-MM-DD">
+            <el-date-picker v-model="take_date" placeholder="选择日期" type="date" value-format="yyyy-MM-dd">
             </el-date-picker>
           </el-form-item>
 
@@ -72,7 +71,7 @@
             label="生效时间:"
           >
             <div class="change-item">
-              <el-date-picker v-model="take_date" placeholder="选择日期" type="date" value-format="YYYY-MM-DD">
+              <el-date-picker v-model="take_date" placeholder="选择日期" type="date" value-format="yyyy-MM-dd">
               </el-date-picker>
             </div>
           </el-form-item>
@@ -119,11 +118,9 @@
               group="people"
               @end="onEnd"
               @start="onStart"
-              tag="transition-group"
-              item-key="id"
             >
-              <template #item="{ element: item, index }">
-                <div class="item-list">
+              <transition-group>
+                <div v-for="(item, index) in fromItem" :key="item.id" class="item-list">
                   <i class="icon iconfont icontuodong item-drag"></i>
                   <el-input v-model="item.label" clearable placeholder="请输入表单字段" show-word-limit />
                   <i
@@ -132,9 +129,9 @@
                     @click="handleDelete(index)"
                   ></i>
                 </div>
-              </template>
+              </transition-group>
             </draggable>
-            <el-button class="add-type mt14" type="primary" link @click="handleAddType()">
+            <el-button class="add-type mt14" type="text" @click="handleAddType()">
               <i class="el-icon-plus"></i> 添加</el-button
             >
 
@@ -150,10 +147,9 @@
 </template>
 <script>
 import draggable from 'vuedraggable'
-import { getSalary, getSalaryContent, putSalaryContent, latelySalaryContent } from '@/api/enterprise.ts'
+import { getSalary, getSalaryContent, putSalaryContent, latelySalaryContent } from '@/api/enterprise'
 
 export default {
-  emits: ['getSalaryList'],
   name: '',
   components: {
     draggable
@@ -327,7 +323,7 @@ export default {
           return el.label === ''
         })
         if (status) {
-          this.$message.warning('名称不能为空')
+          this.$message.warning(this.$t('customer.message05'))
         } else {
           this.fromItem.push({
             sort: '',
@@ -383,13 +379,13 @@ export default {
     handleConfirm() {
       const data = []
       if (this.fromItem.length <= 0) {
-        this.$message.warning('名称不能为空')
+        this.$message.warning(this.$t('customer.message05'))
       } else {
         const status = this.fromItem.some((el, index) => {
           return el.label === ''
         })
         if (status) {
-          this.$message.warning('名称不能为空')
+          this.$message.warning(this.$t('customer.message05'))
         } else {
           const len = this.fromItem.length
           this.fromItem.map((value, index) => {
@@ -425,6 +421,14 @@ export default {
 .mt15 {
   margin-top: 15px;
 }
+::v-deep .el-dialog {
+  height: 600px;
+  overflow: auto;
+}
+::v-deep .el-dialog::-webkit-scrollbar {
+  height: 0;
+  width: 0;
+}
 
 .line {
   width: 100%;
@@ -443,7 +447,7 @@ export default {
   .disabled-item {
     width: 50%;
   }
-  :deep(.el-date-editor) {
+  ::v-deep .el-date-editor {
     width: 242px;
   }
   .el-icon-d-arrow-right {
@@ -464,7 +468,7 @@ export default {
     font-weight: 700;
   }
 }
-:deep(.el-scrollbar__wrap) {
+::v-deep .el-scrollbar__wrap {
   margin-right: -17px !important;
   margin-bottom: -17px !important;
   margin-left: 20px;
@@ -475,20 +479,21 @@ export default {
 .item {
   display: flex;
 }
-:deep(.el-input) {
+::v-deep .el-dialog__body {
+  padding: 0px 20px 10px 20px;
+}
+::v-deep .el-input {
   width: 260px;
 }
-:deep(.el-form-item__label) {
+::v-deep .el-form-item__label {
   font-size: 12px !important;
   font-weight: 500;
 }
-:deep(.el-input__wrapper) {
-  min-height: 28px;
-}
-:deep(.el-input__inner) {
+::v-deep .el-input__inner {
+  height: 28px;
   font-size: 13px;
 }
-:deep(.el-form-item) {
+::v-deep .el-form-item {
   margin-bottom: 10px;
 }
 .footer {
@@ -506,20 +511,5 @@ input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
   -webkit-appearance: none !important;
   margin: 0;
-}
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.hr-archives-record-dialog {
-  height: 600px;
-  overflow: auto;
-}
-.el-dialog.hr-archives-record-dialog::-webkit-scrollbar {
-  height: 0;
-  width: 0;
-}
-.el-dialog.hr-archives-record-dialog .el-dialog__body {
-  padding: 0px 20px 10px 20px;
 }
 </style>

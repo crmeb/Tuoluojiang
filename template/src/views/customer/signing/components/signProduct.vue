@@ -90,9 +90,8 @@
   </div>
 </template>
 <script>
-import { getColor } from '@/utils/format.ts'
+import { getColor } from '@/utils/format'
 export default {
-  emits: ['selectionChange'],
   name: 'SignProduct',
   props: {
     list: {

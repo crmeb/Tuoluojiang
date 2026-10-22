@@ -39,10 +39,9 @@
 </template>
 
 <script>
-import { formatBytes, getFileExtension, getFileType } from '@/utils/file.ts'
-import { filePreview } from '@/utils/filePreview.ts'
+import { formatBytes, getFileExtension, getFileType } from '@/utils/file'
+import { filePreview } from '@/utils/filePreview'
 export default {
-  emits: ['fileDelete'],
   name: 'OaUploadList',
   props: {
     fileList: {

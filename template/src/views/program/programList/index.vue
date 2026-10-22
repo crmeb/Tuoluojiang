@@ -67,8 +67,8 @@
     <!-- 新建项目 -->
     <el-drawer
       :before-close="handleClose"
-      v-model="taskDrawer"
-      :close-on-click-modal="false"
+      :visible.sync="taskDrawer"
+      :wrapper-closable="false"
       size="1120px"
       title="新建项目"
     >
@@ -85,23 +85,21 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { getAvatarSrc } from '@/utils/avatar.ts'
-import { getProgramListApi, deleteProgramApi } from '@/api/program.ts'
-import { customerSelectApi } from '@/api/enterprise.ts'
-import { roterPre } from '@/settings.ts'
+import { modalSure } from '@/libs/public'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { getAvatarSrc } from '@/utils/avatar'
+import { getProgramListApi, deleteProgramApi } from '@/api/program'
+import { customerSelectApi } from '@/api/enterprise'
+import { roterPre } from '@/settings'
 
-import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'programList',
   components: {
-    oaFromBox,
-    oaTable: defineAsyncComponent(() => import('@/components/form-common/oa-table')),
-    addProgram: defineAsyncComponent(() => import('./components/addProgram')),
-    taskDrawer: defineAsyncComponent(() => import('../programTask/index')),
-    dynamicsDrawer: defineAsyncComponent(() => import('./dynamics'))
+    oaFromBox: () => import('@/components/common/oaFromBox'),
+    oaTable: () => import('@/components/form-common/oa-table'),
+    addProgram: () => import('./components/addProgram'),
+    taskDrawer: () => import('../programTask/index'),
+    dynamicsDrawer: () => import('./dynamics')
   },
   data() {
     return {
@@ -266,7 +264,7 @@ export default {
       if (total > 0 && incomplete === 0) return { label: '已完成', type: 'success' }
       if (row.end_date && this.nowTime() > row.end_date) return { label: '已延期', type: 'danger' }
       if (row.start_date && this.nowTime() < row.start_date) return { label: '待开始', type: 'success' }
-      return { label: '进行中', type: 'primary' }
+      return { label: '进行中', type: '' }
     },
     // 项目进度 = 已完成任务数 / 总任务数，接口只给未完成数，需先换算
     getProgress({ incomplete = 0, total = 0 } = {}) {
@@ -420,7 +418,7 @@ export default {
   vertical-align: top;
   margin-right: 4px;
 }
-:deep(.el-table .cell) {
+::v-deep .el-table .cell {
   line-height: 26px;
 }
 
@@ -453,7 +451,7 @@ export default {
     font-weight: 400;
   }
 }
-:deep(.el-drawer__header) {
+::v-deep .el-drawer__header {
   padding: 10px 24px 10px 20px;
   font-size: 14px;
 }

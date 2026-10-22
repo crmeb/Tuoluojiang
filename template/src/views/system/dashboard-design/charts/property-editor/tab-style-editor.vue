@@ -1,9 +1,9 @@
 <template>
   <div class="tab-style-editor">
-    <el-radio-group v-model="optionModel.tabStyle">
-      <el-radio value="trapezoid">梯形</el-radio>
-      <el-radio value="rectangle">矩形</el-radio>
-      <el-radio value="linear">线性</el-radio>
+    <el-radio-group v-model="optionModel.tabStyle" size="small">
+      <el-radio label="trapezoid">梯形</el-radio>
+      <el-radio label="rectangle">矩形</el-radio>
+      <el-radio label="linear">线性</el-radio>
     </el-radio-group>
   </div>
 </template>

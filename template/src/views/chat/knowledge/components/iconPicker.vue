@@ -11,7 +11,7 @@
     </div>
 
     <el-color-picker
-      :model-value="color"
+      :value="color"
       :predefine="ICON_COLORS"
       class="color-picker"
       @input="handleColorChange"
@@ -20,7 +20,7 @@
     <!-- 选择图标：复用系统图标库组件 -->
     <el-dialog
       title="选择知识库图标"
-      v-model="showIconDialog"
+      :visible.sync="showIconDialog"
       :width="DIALOG_SIZE.XL"
       append-to-body
     >
@@ -34,9 +34,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import selectIcon from '@/components/form-common/select-icon.vue'
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
-import { ICON_COLORS, DEFAULT_ICON_COLOR } from '../constants.ts'
-import { getIconClass, getIconName } from '../utils/icon.ts'
+import { DIALOG_SIZE } from '@/constants/popupSize'
+import { ICON_COLORS, DEFAULT_ICON_COLOR } from '../constants'
+import { getIconClass, getIconName } from '../utils/icon'
 
 withDefaults(defineProps<{ icon?: string; color?: string }>(), {
   icon: '',
@@ -66,8 +66,6 @@ function handleColorChange(value: string | null) {
   display: flex;
   align-items: center;
   gap: 12px;
-  // 位于 Element Plus 表单内容区（flex 行布局）中，需占满整行
-  width: 100%;
 }
 
 .icon-picker {
@@ -119,12 +117,11 @@ function handleColorChange(value: string | null) {
   color: #c0c4cc;
 }
 
-// el-color-picker 为多根组件，不带 scoped 属性，需从容器用 :deep 命中
-.icon-field :deep(.color-picker) {
+.color-picker {
   flex-shrink: 0;
 
   // el-color-picker 默认 40px，收成与输入框一致的 32px
-  .el-color-picker__trigger {
+  ::v-deep .el-color-picker__trigger {
     width: 32px;
     height: 32px;
     padding: 4px;

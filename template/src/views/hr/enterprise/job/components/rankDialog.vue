@@ -1,8 +1,7 @@
 <template>
   <el-dialog
-      class="hr-enterprise-job-rank-dialog"
     :title="config.title"
-    v-model="dialogVisible"
+    :visible.sync="dialogVisible"
     :width="config.width"
     :append-to-body="true"
     :before-close="handleClose"
@@ -83,17 +82,16 @@
     </el-form>
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleClose">取消</el-button>
-        <el-button type="primary" :loading="loading" @click="handleConfirm">确定</el-button>
+        <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
+        <el-button size="small" type="primary" :loading="loading" @click="handleConfirm">{{ $t('public.ok') }}</el-button>
       </div>
     </template>
   </el-dialog>
 </template>
 <script>
-import { rankLevelBatchApi, rankLevelEditApi, rankLevelSaveApi } from '@/api/setting.ts'
+import { rankLevelBatchApi, rankLevelEditApi, rankLevelSaveApi } from '@/api/setting'
 
 export default {
-  emits: ['isOk'],
   name: 'RankDialog',
   props: {
     config: {
@@ -242,10 +240,10 @@ export default {
 .line {
   padding: 0 8px;
 }
-:deep(.el-input-number) {
+::v-deep .el-input-number--medium {
   width: 100%;
 }
-:deep(.el-input__inner) {
+::v-deep .el-input__inner {
   text-align: left;
 }
 .rank-explain {
@@ -255,15 +253,11 @@ export default {
     color: rgba(0, 0, 0, 0.5);
   }
 }
+::v-deep .el-dialog__footer {
+  padding: 0;
+}
 .dialog-footer {
   padding: 20px;
   border-top: 1px solid #e6ebf5;
-}
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.hr-enterprise-job-rank-dialog .el-dialog__footer {
-  padding: 0;
 }
 </style>

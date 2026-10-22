@@ -9,11 +9,10 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
 export default {
   name: 'ConsumeManage',
   components: {
-    consume: defineAsyncComponent(() => import('../fixed/components/consume'))
+    consume: () => import('../fixed/components/consume')
   }
 }
 </script>
@@ -24,7 +23,7 @@ export default {
 }
 
 .table-box {
-  :deep(.el-table th) {
+  ::v-deep .el-table th {
     background-color: rgba(247, 251, 255, 1);
   }
 }

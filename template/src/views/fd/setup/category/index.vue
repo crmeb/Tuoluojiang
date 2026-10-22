@@ -18,19 +18,23 @@
         style="width: 100%"
       >
         <el-table-column label="类目名称" min-width="220" prop="name"> </el-table-column>
-        <el-table-column label="排序" min-width="100" prop="sort" />
-        <el-table-column label="操作" prop="address" width="200">
+        <el-table-column :label="$t('toptable.sort')" min-width="100" prop="sort" />
+        <el-table-column :label="$t('public.operation')" prop="address" width="200">
           <template #default="scope">
-            <el-button v-hasPermi="['fd:setup:category:edit']" type="primary" link @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button v-hasPermi="['fd:setup:category:delete']" type="primary" link @click="deleteFn(scope.row)">删除</el-button>
+            <el-button v-hasPermi="['fd:setup:category:edit']" type="text" @click="handleEdit(scope.row)">{{
+              $t('public.edit')
+            }}</el-button>
+            <el-button v-hasPermi="['fd:setup:category:delete']" type="text" @click="deleteFn(scope.row)">{{
+              $t('public.delete')
+            }}</el-button>
           </template>
         </el-table-column>
       </el-table>
 
       <div class="paginationClass">
         <el-pagination
-          v-model:current-page="where.page"
-          v-model:page-size="where.limit"
+          :current-page.sync="where.page"
+          :page-size.sync="where.limit"
           :page-sizes="[10, 15, 20]"
           :total="total"
           layout="total, prev, pager, next, jumper"
@@ -44,8 +48,8 @@
   </div>
 </template>
 <script>
-import { modalSure } from '@/libs/public.ts'
-import { invoiceCategoryList, deleteInvoiceCategory } from '@/api/enterprise.ts'
+import { modalSure } from '@/libs/public'
+import { invoiceCategoryList, deleteInvoiceCategory } from '@/api/enterprise'
 import dialogForm from '@/views/customer/setup/type/components/addDialog'
 import oaFromBox from '@/components/common/oaFromBox'
 export default {
@@ -119,7 +123,7 @@ export default {
     },
     // 删除发票分类
     async deleteFn(item) {
-      await modalSure('你确定要删除该分类吗')
+      await modalSure(this.$t('customer.message01'))
       await deleteInvoiceCategory(item.id)
       if (this.tableData.length == 1) {
         this.invoiceCategoryList(1)

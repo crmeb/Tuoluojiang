@@ -1,7 +1,7 @@
 <template>
   <div class="tree-box">
     <div class="el-card__header clearfix">
-      <el-input v-model="filterText" clearable placeholder="搜索部门" prefix-icon="el-icon-search" />
+      <el-input size="small" v-model="filterText" clearable placeholder="搜索部门" prefix-icon="el-icon-search" />
     </div>
     <div v-height>
       <el-scrollbar style="height: 100%" class="reset-scroll-bar">
@@ -34,7 +34,6 @@
 
 <script>
 export default {
-  emits: ['frameId'],
   name: 'MenuTree',
   props: {
     treeData: {
@@ -104,40 +103,40 @@ export default {
 .el-card__header {
   padding: 15px 20px;
 }
-.el-card__header :deep(.el-input .el-input__inner) {
+.el-card__header ::v-deep .el-input--small .el-input__inner {
   cursor: pointer;
 }
-.el-card__header :deep(.el-input__clear) {
+.el-card__header ::v-deep .el-input__clear {
   margin-top: -5px !important;
 }
 
-:deep(.el-scrollbar__wrap) {
+::v-deep .el-scrollbar__wrap {
   overflow-x: hidden;
 }
 
-:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
+::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content {
   background: rgba(24, 144, 255, 0.08);
   .flex-box {
     color: #1890ff !important;
     font-weight: 600;
   }
 }
-:deep(.el-tree-node__content) {
+::v-deep .el-tree-node__content {
   height: 40px;
   border-radius: 4px;
 }
-:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node),
+::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node,
 .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .right-icon {
   display: inline-block;
   color: #1890ff;
   font-weight: 600;
 }
 
-:deep(.el-tree) {
+::v-deep .el-tree {
   // padding: 14px 0;
 }
 
-:deep(.el-tree-node > .el-tree-node__children) {
+::v-deep .el-tree-node > .el-tree-node__children {
   overflow: inherit;
 }
 .custom-tree-node {
@@ -154,7 +153,7 @@ export default {
 
   margin: -20px 0 -20px -20px;
 }
-:deep(.el-tree) {
+::v-deep .el-tree {
   background-color: transparent;
 }
 </style>

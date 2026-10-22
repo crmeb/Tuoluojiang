@@ -1,0 +1,1 @@
+var e=Object.freeze({MANUAL:0,SYSTEM:1}),t=Object.freeze([{value:e.MANUAL,label:`手动标签`,theme:`primary`,variant:`filled`},{value:e.SYSTEM,label:`系统标签`,theme:`warning`,variant:`filled`}]),n=t.reduce((e,t)=>(e[t.value]=t,e),{});export{n,t as r,e as t};

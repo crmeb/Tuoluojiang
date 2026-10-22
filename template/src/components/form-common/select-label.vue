@@ -1,11 +1,11 @@
 <!-- @FileDescription: 下拉选择标签组件 -->
 <template>
   <div class="">
-    <el-popover :placement="placement ? placement : 'bottom-start'" trigger="manual" :visible="showPopover"
+    <el-popover :placement="placement ? placement : 'bottom-start'" trigger="manual" v-model="showPopover"
       popper-class="popover" ref="treePopover">
       <div class="tree-box" id="treePopover">
         <div class="input">
-          <el-input prefix-icon="el-icon-search" placeholder="请输入标签搜索" v-model="filterText">
+          <el-input size="small" prefix-icon="el-icon-search" placeholder="请输入标签搜索" v-model="filterText">
           </el-input>
         </div>
         <el-tree highlight-current :props="props" :indent="4" :data="treeData" ref="tree" node-key="id"
@@ -32,8 +32,8 @@
       </div>
       <!-- 标签数据 -->
       <template #reference>
-        <slot v-if="$slots.custom" name="custom"></slot>
-        <div class="select plan-footer-one mr10" ref="select" v-else-if="!slotType"
+        <slot name="custom"></slot>
+        <div class="select plan-footer-one mr10" ref="select" v-if="!isSlots && !slotType"
           @click.stop="handlePopoverShow">
           <div v-if="selectList && selectList.length == 0" class="placeholder flex-between">
             <span>{{ placeholder }}</span>
@@ -89,17 +89,16 @@
           <span class="el-icon-arrow-down" v-if="selectList.length == 0"></span>
           <span class="el-icon-error" v-else @click.stop="clearSelect"></span>
         </div>
-        <div v-else @click.stop="handlePopoverShow">设置标签</div>
+        <div v-if="slotType == 'customer'" @click.stop="handlePopoverShow">设置标签</div>
       </template>
     </el-popover>
   </div>
 </template>
 <script>
-import { clientConfigLabelApi } from '@/api/enterprise.ts'
-import { extractArrayIds, isInArray, removeDuplicateObjects, getArrayDifference } from '@/libs/public.ts'
+import { clientConfigLabelApi } from '@/api/enterprise'
+import { extractArrayIds, isInArray, removeDuplicateObjects, getArrayDifference } from '@/libs/public'
 export default {
   name: '',
-  emits: ['submit', 'handleLabelConf', 'expand-change'],
   props: {
     // 选中的标签数据
     value: {
@@ -246,7 +245,7 @@ export default {
       this.initTagResizeObserver()
     })
   },
-  beforeUnmount() {
+  beforeDestroy() {
     // 组件销毁时释放监听，避免重复注册和潜在内存泄漏
     window.removeEventListener('resize', this.handleWindowResize)
     if (this.tagResizeObserver) {
@@ -532,7 +531,7 @@ export default {
     getTreeData() {
       if (this.treeData.length > 0) {
         if (this.value.length > 0) {
-          this.selectList = this.findNamesByIds(this.treeData, this.value)
+          this.$set(this, 'selectList', this.findNamesByIds(this.treeData, this.value))
         }
         return false
       }
@@ -609,7 +608,7 @@ export default {
     }
   }
 
-  :deep(.el-tree) {
+  ::v-deep .el-tree {
     max-height: 350px;
     overflow-y: auto;
     scrollbar-width: none;
@@ -629,7 +628,7 @@ export default {
   }
 }
 
-:deep(.el-tree-node__content>.el-tree-node__expand-icon) {
+::v-deep .el-tree-node__content>.el-tree-node__expand-icon {
   padding-left: 0px;
 }
 
@@ -711,7 +710,7 @@ export default {
   right: 10px;
 }
 
-:deep(.el-popper) {
+::v-deep .el-popper {
   margin-top: 5px;
 }
 

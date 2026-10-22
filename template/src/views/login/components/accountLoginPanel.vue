@@ -1,9 +1,9 @@
 <template>
   <div class="account-login-panel">
     <div class="page-account-top page-code-top">
-      <el-tabs v-if="!showQrCode" v-model="activeTab" @tab-change="handleTabChange">
-        <el-tab-pane label="密码登录" name="passwordLogin" />
-        <el-tab-pane label="短信登录" name="cmsLogin" />
+      <el-tabs v-if="!showQrCode" v-model="activeTab" @tab-click="handleTabChange">
+        <el-tab-pane :label="$t('login.passwordlogin')" name="passwordLogin" />
+        <el-tab-pane :label="$t('login.smslogin')" name="cmsLogin" />
       </el-tabs>
     </div>
 
@@ -15,13 +15,13 @@
       autocomplete="on"
       class="login-form"
       label-position="left"
-      @keydown.enter="onFormEnter"
+      @keydown.enter.native="onFormEnter"
     >
       <template v-if="activeTab === 'passwordLogin'">
         <el-form-item prop="account">
           <el-input
             v-model="loginForm.account"
-            placeholder="手机号码"
+            :placeholder="$t('login.phone')"
             autocomplete="on"
             name="username"
             prefix-icon="el-icon-user"
@@ -32,7 +32,7 @@
         <el-form-item prop="password">
           <el-input
             v-model="loginForm.password"
-            placeholder="密码"
+            :placeholder="$t('login.password')"
             autocomplete="on"
             name="password"
             prefix-icon="el-icon-lock"
@@ -40,14 +40,14 @@
             type="password"
           />
           <span class="pwd" @click="$emit('forget-password')">
-            <el-link underline="never" type="primary">忘记密码</el-link>
+            <el-link :underline="false" type="primary">{{ $t('login.forgetpassword') }}</el-link>
           </span>
         </el-form-item>
         <el-form-item class="captcha" prop="captcha">
           <div class="captcha">
             <el-input
               v-model="loginForm.captcha"
-              placeholder="验证码"
+              :placeholder="$t('login.code')"
               autocomplete="off"
               prefix-icon="el-icon-message"
               style="width: 199px"
@@ -65,7 +65,7 @@
         <el-form-item prop="phone">
           <el-input
             v-model="loginForm.phone"
-            placeholder="手机号码"
+            :placeholder="$t('login.phone')"
             autocomplete="on"
             name="phone"
             prefix-icon="el-icon-mobile-phone"
@@ -78,7 +78,7 @@
             <div>
               <el-input
                 v-model="loginForm.verification_code"
-                placeholder="请输入验证码"
+                :placeholder="$t('login.codetitle')"
                 autocomplete="off"
                 prefix-icon="el-icon-lock"
                 tabindex="2"
@@ -96,9 +96,9 @@
         :loading="loading"
         style="width: 100%; margin-bottom: 30px"
         type="primary"
-        @click.prevent="handleLogin"
+        @click.native.prevent="handleLogin"
       >
-        登录
+        {{ $t('login.logIn') }}
       </el-button>
     </el-form>
 
@@ -111,7 +111,7 @@
       </div>
     </template>
 
-    <el-button class="btn-login-code" @click="toggleQrCode">
+    <el-button class="btn-login-code" size="small" @click="toggleQrCode">
       {{ showQrCode ? '账号登录' : '扫码登录' }}
     </el-button>
     <img :src="showQrCode ? loginAccountImg : loginCodeImg" alt="" class="image-login-code" @click="toggleQrCode" />
@@ -123,25 +123,23 @@
 
 <script>
 import { getCurrentInstance, onMounted, reactive, ref } from 'vue'
-import { workAuthLogin } from '@/api/user.ts'
-import { useUserStore } from '@/stores/user.ts'
+import { workAuthLogin } from '@/api/user'
 import authDialog from '@/components/common/authDialog'
-import helper from '@/libs/helper.ts'
+import helper from '@/libs/helper'
 import loginAccountImg from '@/assets/images/login-account.png'
 import loginCodeImg from '@/assets/images/login-code.png'
 import qiweiLogoImg from '@/assets/images/qiweiLogo.png'
 import qrCodePanel from './qrCodePanel.vue'
-import { useCaptcha } from '../composables/useCaptcha.ts'
-import { useLoginSession } from '../composables/useLoginSession.ts'
-import { useSmsCode } from '../composables/useSmsCode.ts'
-import { DEMO_SUPPORT, DEMO_ACCOUNT, DEMO_PASSWORD } from '@/config/env.ts'
+import { useCaptcha } from '../composables/useCaptcha'
+import { useLoginSession } from '../composables/useLoginSession'
+import { useSmsCode } from '../composables/useSmsCode'
+import { DEMO_SUPPORT, DEMO_ACCOUNT, DEMO_PASSWORD } from '@/config/env'
 
 // 演示站构建（VITE_DEMO_SUPPORT）下登录页默认填充演示账号密码，省去访客手动输入。
 // 账号密码由 build:demo 命令行注入，正式包对应环境变量为空串，源码不落任何凭据。
 const isDemoSupport = DEMO_SUPPORT
 
 export default {
-  emits: ['forget-password'],
   name: 'AccountLoginPanel',
   components: { authDialog, qrCodePanel },
   props: {
@@ -158,7 +156,6 @@ export default {
   },
   setup(props) {
     const { proxy } = getCurrentInstance()
-    const userStore = useUserStore()
 
     const { captchaImg, captchaKey, refreshCaptcha } = useCaptcha()
     const { codeDisabled, codeText, sendSmsCode } = useSmsCode()
@@ -181,19 +178,19 @@ export default {
 
     const validatePhone = (rule, value, callback) => {
       if (!value) {
-        return callback(new Error('请输入手机号码'))
+        return callback(new Error(proxy.$t('customer.placeholder09')))
       }
       if (!helper.phoneReg.test(value)) {
-        return callback(new Error('请输入有效的手机号码'))
+        return callback(new Error(proxy.$t('customer.placeholder71')))
       }
       callback()
     }
 
     const loginRules = {
-      account: [{ required: true, message: '手机号码', trigger: 'blur' }],
-      password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-      captcha: [{ required: true, message: '请输入验证码', trigger: 'blur' }],
-      verification_code: [{ required: true, message: '请输入短信验证码', trigger: 'blur' }],
+      account: [{ required: true, message: proxy.$t('login.phone'), trigger: 'blur' }],
+      password: [{ required: true, message: proxy.$t('login.title2'), trigger: 'blur' }],
+      captcha: [{ required: true, message: proxy.$t('login.title5'), trigger: 'blur' }],
+      verification_code: [{ required: true, message: proxy.$t('login.title6'), trigger: 'blur' }],
       phone: [{ required: true, validator: validatePhone, trigger: 'change' }]
     }
 
@@ -242,7 +239,7 @@ export default {
 
       loading.value = true
       try {
-        await userStore.login({
+        await proxy.$store.dispatch('user/login', {
           userInfo: { ...loginForm, key: captchaKey.value },
           activeName: activeTab.value
         })
@@ -275,7 +272,9 @@ export default {
 
     // 企业微信授权登录成功，token 由授权弹窗回传
     const handleWorkLoginOk = async (data) => {
-      userStore.setAuthTokens(data)
+      proxy.$store.commit('user/SET_TOKEN', data.token)
+      proxy.$store.commit('user/SET_REFRESH_TOKEN', data.refresh_token || '')
+      proxy.$store.commit('user/SET_ISLOGIN', true)
       await enterSystem('')
     }
 
@@ -365,10 +364,8 @@ export default {
   transform: translateY(-50%);
 }
 
-// el-form-item__content 在 Element Plus 中是 flex 容器，子元素不再默认撑满整行
 .item-box {
   display: flex;
-  width: 100%;
 
   div {
     position: relative;
@@ -400,11 +397,11 @@ export default {
   }
 }
 
-:deep(.el-tabs__nav-wrap::after) {
+::v-deep .el-tabs__nav-wrap::after {
   display: none;
 }
 
-:deep(.el-tabs__item) {
+::v-deep .el-tabs__item {
   font-size: 18px;
   font-weight: bold;
 }

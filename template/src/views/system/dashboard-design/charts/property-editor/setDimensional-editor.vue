@@ -3,7 +3,7 @@
     <el-form-item class="mb-18" :label="chartType == 'listTable' ? '显示字段' : '维度指标设置'">
       <el-button @click="openDrawer">点击设置</el-button>
     </el-form-item>
-    <el-drawer v-model="drawer" title="维度指标设置" :size="360">
+    <el-drawer :visible.sync="drawer" title="维度指标设置" :size="360">
       <div class="drawer-main">
         <div class="form-box" ref="formBoxRefs">
           <el-form label-width="60">
@@ -45,7 +45,7 @@
                 </div>
               </div>
               <template #reference>
-                <el-button type="primary" link icon="el-icon-circle-plus" v-show="dimension.length < 1">添加维度</el-button>
+                <el-button type="text" icon="el-icon-circle-plus" v-show="dimension.length < 1">添加维度</el-button>
               </template>
             </el-popover>
             <el-form-item label="维度行" v-if="chartType == 'pivotTable'">
@@ -73,7 +73,7 @@
                       </div>
                     </div>
                     <template #reference>
-                      <el-button type="primary" link icon="el-icon-circle-plus">添加维度行</el-button>
+                      <el-button type="text" icon="el-icon-circle-plus">添加维度行</el-button>
                     </template>
                   </el-popover>
                 </el-scrollbar>
@@ -104,7 +104,7 @@
                       </div>
                     </div>
                     <template #reference>
-                      <el-button type="primary" link icon="el-icon-circle-plus">添加维度列</el-button>
+                      <el-button type="text" icon="el-icon-circle-plus">添加维度列</el-button>
                     </template>
                   </el-popover>
                 </el-scrollbar>
@@ -140,7 +140,7 @@
                 </div>
               </div>
               <template #reference>
-                <el-button type="primary" link icon="el-icon-circle-plus">添加指标</el-button>
+                <el-button type="text" icon="el-icon-circle-plus">添加指标</el-button>
               </template>
             </el-popover>
             <!-- 进度条 -->
@@ -186,7 +186,7 @@
                 </div>
               </div>
               <template #reference>
-                <el-button type="primary" link icon="el-icon-circle-plus">添加显示字段</el-button>
+                <el-button type="text" icon="el-icon-circle-plus">添加显示字段</el-button>
               </template>
             </el-popover>
           </el-form>
@@ -202,12 +202,12 @@
   </div>
 </template>
 <script>
+import { mapActions } from 'vuex'
 // import VueDraggableNext from 'vue-draggable-next'
 import DimensionCom from './components/DimensionCom.vue'
-import { dataDatabaseFieldsApi } from '@/api/develop.ts'
+import { dataDatabaseFieldsApi } from '@/api/develop'
 
 export default {
-  emits: ['optionModelChange'],
   name: 'setDimensional-editor',
   components: {
     DimensionCom
@@ -216,6 +216,10 @@ export default {
     designer: Object,
     selectedWidget: Object,
     optionModel: Object
+  },
+  model: {
+    prop: 'optionModel', // 默认是value
+    event: 'optionModel' // 默认是input
   },
   data() {
     return {
@@ -290,6 +294,7 @@ export default {
     this.initDimensional()
   },
   methods: {
+    // ...mapActions(['getEntityFields']),
     initDimensional() {
       this.chartType = this.selectedWidget.type
       this.dimension = this.optionModel.setDimensional.dimension || []
@@ -344,7 +349,7 @@ export default {
     },
     addCom(e, target) {
       if (this.$refs.sortPopoverRefs) {
-        this.$refs.sortPopoverRefs.hide()
+        this.$refs.sortPopoverRefs.doClose()
       }
 
       let i = this.fields.findIndex((el) => el.field_name_en == e)

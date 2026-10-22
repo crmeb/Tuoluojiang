@@ -28,7 +28,7 @@
       </div>
     </el-card>
     <div class="cr-bottom-button">
-      <el-button type="primary" @click="saveEvt">保存</el-button>
+      <el-button type="primary" size="small" @click="saveEvt">保存</el-button>
     </div>
   </div>
 </template>
@@ -196,7 +196,7 @@ $item-gap: 20px;
   }
 }
 
-:deep(.el-card.is-always-shadow) {
+::v-deep .el-card.is-always-shadow {
   border: none;
 }
 </style>

@@ -1,11 +1,12 @@
 <!-- 客户群聊弹窗 -->
 
 <template>
-  <el-dialog title="选择群聊弹窗" v-model="dialogTableVisible" width="760px">
+  <el-dialog title="选择群聊弹窗" :visible.sync="dialogTableVisible" width="760px">
     <el-input
       placeholder="请输入群聊名称"
       v-model="where.name"
       @change="getList"
+      size="small"
       style="width: 250px"
       class="mr10"
     >
@@ -47,14 +48,14 @@
 
     <template #footer>
       <span>
-        <el-button @click="handleClose">取消</el-button>
-        <el-button type="primary" @click="handleConfirm">确定</el-button>
+        <el-button @click="handleClose" size="small">取消</el-button>
+        <el-button type="primary" @click="handleConfirm" size="small">确定</el-button>
       </span>
     </template>
   </el-dialog>
 </template>
 <script>
-import { getWorkMassGroupChat, getGroupChat } from '@/api/weCom.ts'
+import { getWorkMassGroupChat, getGroupChat } from '@/api/weCom'
 
 // type: 1-群聊群发 2-自动拉群
 const GROUP_CHAT_API_MAP = {
@@ -62,7 +63,6 @@ const GROUP_CHAT_API_MAP = {
   2: getGroupChat
 }
 export default {
-  emits: ['selectGroups'],
   name: 'groupChat',
   props: {
     // 最多可选群聊数，0 表示不限制

@@ -1,0 +1,1 @@
+import{t as e}from"./iconfont-icons.QtOgvmtr.js";import"./constants.Cyoc56pA.js";var t={};e.forEach(e=>{t[e.icon]=e.name});var n=`el-icon-`,r=e=>{let t=e||`CRMEB-wendang-xianxing`;return t.startsWith(n)?t:`iconfont ${t}`},i=e=>e?e.startsWith(n)?e.slice(8):t[e]||e:``;export{i as n,r as t};

@@ -2,12 +2,11 @@
   <!--  在线模版选择弹窗-->
   <div>
     <el-dialog
-      class="user-cloudfile-file-temp-dialog"
       :append-to-body="true"
       :before-close="handleClose"
       :fullscreen="true"
       :title="fromData.title"
-      v-model="dialogVisible"
+      :visible.sync="dialogVisible"
       :width="fromData.width"
       top="0"
     >
@@ -17,11 +16,10 @@
 </template>
 
 <script>
-import { tempDownloadApi } from '@/api/enterprise.ts'
-import { getAccount, toSrcFn } from '@/utils/format.ts'
-import { getStorageJson } from '@/utils/storage.ts'
+import { tempDownloadApi } from '@/api/enterprise'
+import { getAccount, toSrcFn } from '@/utils/format'
+import { getStorageJson } from '@/utils/storage'
 export default {
-  emits: ['handleTemplate'],
   name: 'FileTemp',
   components: {},
   props: {
@@ -32,7 +30,7 @@ export default {
       }
     },
     wps_type: {
-      type: [String, Number],
+      type: String | Number,
       default: '0'
     }
   },
@@ -52,7 +50,7 @@ export default {
     this.fileUrl = `https://www.tuoluojiang.com/files?account=${accountNum}&uniqued=${uniquedId}&type=${type}&host=${host}`
     this.getLoad()
   },
-  beforeUnmount() {
+  beforeDestroy() {
     window.removeEventListener('message', this._handleMessage)
   },
   methods: {
@@ -97,12 +95,11 @@ export default {
   height: 100%;
   border: none;
 }
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.user-cloudfile-file-temp-dialog .el-dialog__body {
+::v-deep .el-dialog__body {
   height: calc(100% - 55px);
   padding: 0 !important;
+}
+::v-deep .el-input--small {
+  width: 50%;
 }
 </style>

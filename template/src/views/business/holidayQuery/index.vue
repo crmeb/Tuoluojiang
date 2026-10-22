@@ -72,11 +72,10 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
 export default {
   name: '',
   components: {
-    // formBox: defineAsyncComponent(() => import('../components/formBox'))
+    // formBox: () => import('../components/formBox')
   },
   data() {
     return {
@@ -155,7 +154,7 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-:deep(.el-card__body) {
+::v-deep .el-card__body {
   padding: 0;
 }
 .m14 {
@@ -167,17 +166,17 @@ export default {
 .pr14 {
   padding-right: 14px;
 }
-:deep(.el-tree-node__content:hover) {
+::v-deep .el-tree-node__content:hover {
   background: rgba(240, 250, 254, 0.6);
   border-color: #1890ff;
   color: #1890ff;
 }
-:deep(.el-tree-node__content) {
+::v-deep .el-tree-node__content {
   height: 40px;
   padding-right: 15px;
   border-right: 2px solid transparent;
 }
-:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node),
+::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node,
 .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .right-icon {
   display: inline-block;
   color: #1890ff;

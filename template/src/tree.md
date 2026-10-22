@@ -12,20 +12,21 @@
 ├── config/                   # 项目配置文件
 ├── constants/                # 全局常量（弹窗尺寸、文件类型等）
 ├── directive/                # Vue指令
+├── filters/                  # Vue过滤器
 ├── icons/                    # 图标资源
+├── lang/                     # 多语言配置
 ├── layout/                   # 页面布局组件
 ├── libs/                     # 工具库和辅助函数
 ├── mixins/                   # Vue混入
 ├── router/                   # 路由配置
-├── stores/                   # Pinia 状态管理
+├── store/                    # Vuex状态管理
 ├── styles/                   # 样式文件
-├── types/                    # 全局与接口类型
 ├── utils/                    # 工具函数
-├── views/                    # 页面视图组件
+└── views/                    # 页面视图组件
 ├── App.vue                   # 根组件
-├── main.ts                   # 应用入口文件
-├── permission.ts             # 权限管理
-└── settings.ts               # 项目设置
+├── main.js                   # 应用入口文件
+├── permission.js             # 权限管理
+└── settings.js               # 项目设置
 ```
 
 ## 功能模块说明
@@ -42,9 +43,9 @@
 - 页面级别的组件
 - 对应不同的路由页面
 
-### 状态管理 (stores/)
-- 使用 TypeScript setup store 和 Pinia 管理跨页面共享状态
-- 在 `stores/<name>.ts` 中导出 `use<Name>Store`，由调用方显式导入
+### 状态管理 (store/)
+- 使用Vuex进行全局状态管理
+- 按模块组织状态逻辑
 
 ### 工具类 (utils/)
 - 提供通用工具函数

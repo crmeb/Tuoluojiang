@@ -63,8 +63,8 @@
             <el-table-column label="创建时间" prop="created_at" min-width="110px"> </el-table-column>
             <el-table-column fixed="right" label="操作" min-width="80px">
               <template #default="scope">
-                <el-button type="primary" link @click="editFn(scope.row.id)">编辑</el-button>
-                <el-button type="primary" link @click="deleteFn(scope.row.id)">删除</el-button>
+                <el-button type="text" @click="editFn(scope.row.id)">编辑</el-button>
+                <el-button type="text" @click="deleteFn(scope.row.id)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -85,7 +85,7 @@
     <!-- 新建授权信息 -->
     <addForeign ref="addForeign" @submitOk="getList"></addForeign>
     <!-- 复制密钥 -->
-    <el-dialog title="查看密钥" v-model="dialogVisible" width="30%" :before-close="handleClose">
+    <el-dialog title="查看密钥" :visible.sync="dialogVisible" width="30%" :before-close="handleClose">
       <span>{{ sk || '--' }}</span>
       <template #footer>
         <span class="dialog-footer">
@@ -97,12 +97,11 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { modalSure } from '@/libs/public'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
 import oaFromBox from '@/components/common/oaFromBox'
 import addForeign from './components/addForeign'
-import { deleteOpenKeyApi, getOpenKeyApi, getOpenKeyStatusApi, getFindskApi } from '@/api/develop.ts'
-import { writeClipboard } from '@/utils/clipboard'
+import { deleteOpenKeyApi, getOpenKeyApi, getOpenKeyStatusApi, getFindskApi } from '@/api/develop'
 export default {
   name: 'FinanceList',
   components: {
@@ -167,9 +166,8 @@ export default {
     },
 
     copy(val) {
-      writeClipboard(val).then((isOk) => {
-        isOk ? this.$message.success('复制成功') : this.$message.error('复制失败')
-      })
+      clipboard.writeText(val)
+      this.$message.success('复制成功')
     },
 
     // 修改状态
@@ -234,7 +232,7 @@ export default {
 .w-180 {
   min-width: 180px;
 }
-:deep(el-tag) {
+::v-deep el-tag {
   border: none;
 }
 .iconfuzhi-01 {

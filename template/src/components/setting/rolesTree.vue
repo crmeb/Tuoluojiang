@@ -29,7 +29,7 @@
                 <el-row :gutter="20">
                   <el-col v-for="(item, index) in checkList" :key="index" :lg="24" :xl="8">
                     <el-checkbox
-                      :label="item.value" :value="item.value"
+                      :label="item.value"
                       class="check-item"
                       :disabled="isAdmin"
                       :checked="item.is_default"
@@ -54,7 +54,6 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
 export default {
   name: 'RolesTree',
   props: {
@@ -98,7 +97,7 @@ export default {
     }
   },
   components: {
-    modulePermissions: defineAsyncComponent(() => import('@/components/setting/modulePermissions'))
+    modulePermissions: () => import('@/components/setting/modulePermissions')
   },
   data() {
     return {
@@ -287,11 +286,11 @@ export default {
 .list {
   width: 1px;
 }
-:deep(.el-scrollbar__wrap) {
+::v-deep .el-scrollbar__wrap {
   overflow-y: scroll;
   overflow-x: hidden !important;
 }
-:deep(.el-scrollbar__thumb) {
+::v-deep .el-scrollbar__thumb {
   height: 100px !important;
 }
 .text {
@@ -303,7 +302,7 @@ export default {
   margin-top: 20px;
   margin-bottom: 20px;
 }
-:deep(.el-tree) {
+::v-deep .el-tree {
   .el-tree-node__content {
     padding-right: 0;
     height: 40px;

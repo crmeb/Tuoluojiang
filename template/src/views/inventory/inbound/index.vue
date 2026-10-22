@@ -4,7 +4,7 @@
       @confirmData="handleSearch" btnText="新增入库" @addDataFn="handleAddInbound" />
 
     <BaseTable class="mt-10" :table-columns="tableColumns" :data="tableData" :loading="isLoading" :total="total"
-      v-model:page="page" v-model:page-size="pageSize">
+      :page.sync="page" :page-size.sync="pageSize">
       <!-- 商品信息：缩略图 + 角标数量（入库数量 + 赠送数量），超出显示省略号 -->
       <template #goods="{ row }">
         <GoodsInfoCell :details="row.details" include-gift />
@@ -41,12 +41,12 @@
 
       <!-- 操作列 -->
       <template #action="{ row }">
-        <el-button type="primary" link @click="handleViewDetail(row)">查看详情</el-button>
+        <el-button type="text" @click="handleViewDetail(row)">查看详情</el-button>
         <template v-if="row.status === INBOUND_STATUS.PENDING">
           <el-divider direction="vertical" />
-          <el-button type="primary" link @click="handleInbound(row)">入库</el-button>
+          <el-button type="text" @click="handleInbound(row)">入库</el-button>
           <el-divider direction="vertical" />
-          <el-button type="primary" link class="danger-text" @click="handleCancel(row)">作废</el-button>
+          <el-button type="text" class="danger-text" @click="handleCancel(row)">作废</el-button>
         </template>
       </template>
     </BaseTable>
@@ -62,10 +62,10 @@ import BaseTable from "@/components/BaseTable/index.vue";
 import oaFromBox from "@/components/common/oaFromBox.vue";
 import GoodsInfoCell from "@/components/common/goodsInfoCell.vue";
 import InventoryStatusTag from "../components/InventoryStatusTag.vue";
-import { useInbound } from "./composables/useInbound.ts";
+import { useInbound } from "./composables/useInbound";
 import InboundDetail from "./components/detail.vue";
-import { INBOUND_TYPE_MAP, INBOUND_STATUS_MAP, INBOUND_STATUS } from "./constants.ts";
-import dayjs from "dayjs";
+import { INBOUND_TYPE_MAP, INBOUND_STATUS_MAP, INBOUND_STATUS } from "./constants";
+import moment from "moment";
 
 export default {
   name: "InventoryInbound",
@@ -82,7 +82,7 @@ export default {
     }
 
     const formatTime = time => {
-      return time ? dayjs(time).format("YYYY-MM-DD HH:mm") : "--";
+      return time ? moment(time).format("YYYY-MM-DD HH:mm") : "--";
     }
 
     return {

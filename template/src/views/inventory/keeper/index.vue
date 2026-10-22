@@ -4,7 +4,7 @@
       @addDataFn="handleAdd" :total="total" />
 
     <BaseTable class="mt-10" :table-columns="tableColumns" :data="tableData" :loading="isLoading" :total="total"
-      v-model:page="page" v-model:page-size="pageSize">
+      :page.sync="page" :page-size.sync="pageSize">
 
       <!-- 库管人员 -->
       <template #users="{ row }">
@@ -34,9 +34,9 @@
 
       <!-- 操作列 -->
       <template #action="{ row }">
-        <el-button type="primary" link @click="handleToEditPage(row)">编辑</el-button>
+        <el-button type="text" @click="handleToEditPage(row)">编辑</el-button>
         <el-divider direction="vertical" />
-        <el-button type="primary" link @click="handleDelete(row)">删除</el-button>
+        <el-button type="text" @click="handleDelete(row)">删除</el-button>
       </template>
     </BaseTable>
   </BaseContainer>
@@ -46,8 +46,8 @@
 import BaseContainer from "@/components/BaseContainer/index.vue";
 import BaseTable from "@/components/BaseTable/index.vue";
 import oaFromBox from "@/components/common/oaFromBox.vue";
-import { useKeeper } from "./composables/useKeeper.ts";
-import { MANAGER_TYPES, MANAGER_TYPE } from "./constants.ts";
+import { useKeeper } from "./composables/useKeeper";
+import { MANAGER_TYPES, MANAGER_TYPE } from "./constants.js";
 
 export default {
   name: "InventoryKeeper",

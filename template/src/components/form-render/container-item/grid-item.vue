@@ -8,9 +8,10 @@
       :ref="widget.id"
       v-show="!widget.options.hidden"
     >
-      <template :key="colIdx" v-for="(colWidget, colIdx) in widget.cols">
+      <template v-for="(colWidget, colIdx) in widget.cols">
         <grid-col-item
           :widget="colWidget"
+          :key="colIdx"
           :field="{ ...developData }"
           :developData="developData"
           :parent-list="widget.cols"
@@ -20,7 +21,7 @@
           :col-height="widget.options.colHeight"
         >
           <!-- 递归传递插槽！！！ -->
-          <template v-for="slot in Object.keys($slots)" :key="slot" v-slot:[slot]="scope">
+          <template v-for="slot in Object.keys($scopedSlots)" v-slot:[slot]="scope">
             <slot :name="slot" v-bind="scope" />
           </template>
         </grid-col-item>
@@ -30,7 +31,8 @@
 </template>
 
 <script>
-import i18n from '../../../utils/i18n.ts'
+import emitter from '@/utils/emitter'
+import i18n from '../../../utils/i18n'
 import refMixin from '../../../components/form-render/refMixin'
 import ContainerItemWrapper from './container-item-wrapper'
 import GridColItem from './grid-col-item'
@@ -38,7 +40,8 @@ import containerItemMixin from './containerItemMixin'
 
 export default {
   name: 'vf-grid-item', //grid-item跟VueGridLayout全局注册组件重名，故特殊处理！！
-  mixins: [i18n, refMixin, containerItemMixin],
+  componentName: 'ContainerItem',
+  mixins: [emitter, i18n, refMixin, containerItemMixin],
   components: {
     ContainerItemWrapper,
     GridColItem
@@ -52,13 +55,13 @@ export default {
     this.initRefList()
   },
   mounted() {},
-  beforeUnmount() {
+  beforeDestroy() {
     this.unregisterFromRefList()
   },
   methods: {
     fieldShowFn(val) {
       this.widget.cols.forEach((item) => {
-        item.isShow = item.id == val.id
+        this.$set(item, 'isShow', item.id == val.id)
       })
     }
   }
@@ -66,3 +69,4 @@ export default {
 </script>
 
 <style lang="scss" scoped></style>
+../../../utils/i18ns

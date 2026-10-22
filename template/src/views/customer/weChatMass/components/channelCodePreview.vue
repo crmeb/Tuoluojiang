@@ -1,14 +1,14 @@
 <template>
-  <el-dialog :title="title" v-model="visible" :width="DIALOG_SIZE.XS" append-to-body @closed="handleClosed">
+  <el-dialog :title="title" :visible.sync="visible" :width="DIALOG_SIZE.XS" append-to-body @closed="handleClosed">
     <div class="channel-code-preview">
       <img v-if="qrCode" :src="qrCode" alt="" class="channel-code-preview__img" />
-      <el-button type="primary" class="save-btn" @click="saveQrcode">保存{{ title }}</el-button>
+      <el-button type="primary" size="small" class="save-btn" @click="saveQrcode">保存{{ title }}</el-button>
     </div>
   </el-dialog>
 </template>
 
 <script>
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
+import { DIALOG_SIZE } from '@/constants/popupSize'
 import { saveAs } from "file-saver";
 
 const DEFAULT_TITLE = '渠道活码'

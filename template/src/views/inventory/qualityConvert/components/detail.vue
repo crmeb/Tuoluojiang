@@ -1,5 +1,5 @@
 <template>
-  <el-drawer v-model="isOpen" :size="DRAWER_SIZE.MD" title="转换单详情" class="convert-detail-drawer">
+  <el-drawer :visible.sync="isOpen" :size="DRAWER_SIZE.MD" title="转换单详情" custom-class="convert-detail-drawer">
     <div v-loading="isLoading" class="convert-detail">
       <!-- 基本信息：标题 + 字段网格 -->
       <InfoSelection title="基本信息" :fields="basicFields" />
@@ -16,7 +16,7 @@
           <!-- 商品信息：缩略图 + 名称 -->
           <template #goods="{ row }">
             <div class="goods-cell flex">
-              <el-image :src="row.image" :preview-src-list="[row.image]" preview-teleported class="goods-img" />
+              <el-image :src="row.image" :preview-src-list="[row.image]" class="goods-img" />
               <span class="goods-name">{{ row.name }}</span>
             </div>
           </template>
@@ -33,7 +33,7 @@
           <!-- 凭证图片：仅展示首图 + 张数角标，点击可预览该明细全部图片 -->
           <template #files="{ row }">
             <div v-if="row.files.length" class="goods-files">
-              <el-image :src="row.files[0]" :preview-src-list="row.files" preview-teleported class="goods-files__img" />
+              <el-image :src="row.files[0]" :preview-src-list="row.files" class="goods-files__img" />
               <span v-if="row.files.length > 1" class="goods-files__count">{{ row.files.length }}</span>
             </div>
             <span v-else>--</span>
@@ -47,9 +47,9 @@
 <script>
 import InfoSelection from "../../components/InfoSelection.vue";
 import BaseTable from "@/components/BaseTable/index.vue";
-import { DRAWER_SIZE } from "@/constants/popupSize.ts";
-import { useConvertDetail } from "../composables/useConvertDetail.ts";
-import { getSpecName, getProductCode, getBarcode } from "../../utils.ts";
+import { DRAWER_SIZE } from "@/constants/popupSize";
+import { useConvertDetail } from "../composables/useConvertDetail";
+import { getSpecName, getProductCode, getBarcode } from "../../utils";
 
 export default {
   name: "ConvertDetail",

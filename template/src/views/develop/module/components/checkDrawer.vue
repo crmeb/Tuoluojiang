@@ -1,29 +1,27 @@
 <template>
   <div>
     <el-drawer
-      class="develop-module-check-drawer"
-      v-model="drawer"
+      :visible.sync="drawer"
       direction="rtl"
       :show-close="false"
+      :wrapper-closable="true"
       :append-to-body="true"
-      :close-on-click-modal="type == 'edit' ? false : true"
+      :wrapperClosable="type == 'edit' ? false : true"
       @close="handleClose"
       :size="`55%`"
     >
-      <template #header>
+      <template #title>
         <div class="title flex-between">
           <div class="fz15">{{ name || '查看' }}</div>
           <div class="title-right">
 
             <el-dropdown v-if="tabIndex == 1">
               <div class="close-box mr10"><span class="el-icon-more"></span></div>
-              <template #dropdown>
-                <el-dropdown-menu style="text-align: left">
-  
-                  <el-dropdown-item @click="deleteRow"> 删除 </el-dropdown-item>
-  
-                </el-dropdown-menu>
-              </template>
+              <el-dropdown-menu style="text-align: left">
+
+                <el-dropdown-item @click.native="deleteRow"> 删除 </el-dropdown-item>
+
+              </el-dropdown-menu>
             </el-dropdown>
             <div class="close-box no-border" @click="handleClose"><span class="el-icon-close"></span></div>
           </div>
@@ -31,7 +29,7 @@
       </template>
 
       <div class="titleTab" style="position: relative">
-        <el-tabs v-model="tabIndex" type="border-card" tab-position="top" @tab-change="handleClick">
+        <el-tabs v-model="tabIndex" type="border-card" tab-position="top" @tab-click="handleClick">
           <el-tab-pane label="详情" name="1"></el-tab-pane>
           <el-tab-pane
             v-for="item in tabData"
@@ -45,9 +43,8 @@
       <!-- 详情 -->
       <div class="form-box" ref="formBox">
         <div class="mt50" v-if="tabIndex == 1">
-          <!-- 渲染器只在 created 时按字段列表建立数据模型，需等表单配置加载完成再挂载 -->
           <VFormRender
-            v-if="drawer && formReady"
+            v-if="drawer"
             ref="preForm"
             :form-json="importTemplate"
             :form-data="allocation.module_info"
@@ -59,7 +56,7 @@
        
           <!-- 评论和操作日志 -->
           <div class="comment-tab" :class="info.crudInfo.show_log && info.crudInfo.show_comment ? 'border-top' : ''">
-            <el-tabs v-model="activeName" @tab-change="handleCommentClick">
+            <el-tabs v-model="activeName" @tab-click="handleCommentClick">
               <el-tab-pane
                 :label="`${info.crudInfo.comment_title || '评论'}(${commentCount})`"
                 name="1"
@@ -92,13 +89,14 @@
               <el-input
                 v-model="where.keyword_default"
                 prefix-icon="el-icon-search"
+                size="small"
                 placeholder="请输入关键字"
                 clearable
                 class="input"
                 @change="getList"
               ></el-input>
             </div>
-            <el-button icon="el-icon-plus" type="primary" @click="addData">新建</el-button>
+            <el-button size="small" icon="el-icon-plus" type="primary" @click="addData">新建</el-button>
           </div>
 
           <el-table :data="tableData" style="width: 100%" row-key="id" :key="keyVal" :height="height">
@@ -132,23 +130,26 @@
                     placement="top-start"
                     trigger="hover"
                   >
-                    <div class="flex_box">
-                      <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                        <el-tag>
-                          {{ val }}
-                        </el-tag>
+                    <template>
+                      <div class="flex_box">
+                        <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
+                          <el-tag size="small">
+                            {{ val }}
+                          </el-tag>
+                        </div>
                       </div>
-                    </div>
+                    </template>
                     <template #reference>
                       <div>
                         <div class="flex_box">
                           <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                            <el-tag v-if="index < 2">
+                            <el-tag size="small" v-if="index < 2">
                               {{ val }}
                             </el-tag>
                           </div>
                           <el-tag
                             v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 2"
+                            size="small"
                             >...</el-tag
                           >
                         </div>
@@ -158,12 +159,13 @@
                   <template v-else>
                     <div class="flex_box">
                       <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                        <el-tag v-if="index < 2">
+                        <el-tag size="small" v-if="index < 2">
                           {{ val }}
                         </el-tag>
                       </div>
                       <el-tag
                         v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 2"
+                        size="small"
                         >...</el-tag
                       >
                     </div>
@@ -184,7 +186,6 @@
 
                 <div v-else-if="item.form_value === 'textarea'">
                   <el-popover
-                    v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 11"
                     placement="top-start"
                     width="350"
                     trigger="hover"
@@ -193,6 +194,7 @@
                     <template #reference>
                       <div
                         class="over-text"
+                        v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 11"
                       >
                         {{ scope.row[item.field_name_en] }}
                       </div>
@@ -243,8 +245,8 @@
             </el-table-column>
             <el-table-column prop="address" label="操作" fixed="right" width="130">
               <template #default="scope">
-                <el-button type="primary" link @click="editTabsRow(scope.row)">编辑</el-button>
-                <el-button type="primary" link @click="deleteTabsRow(scope.row)">删除</el-button>
+                <el-button type="text" @click="editTabsRow(scope.row)">编辑</el-button>
+                <el-button type="text" @click="deleteTabsRow(scope.row)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -275,8 +277,8 @@
   </div>
 </template>
 <script>
-import { modalSure } from '@/libs/public.ts'
-import { getColor } from '@/utils/format.ts'
+import { modalSure } from '@/libs/public'
+import { getColor } from '@/utils/format'
 import VFormRender from '@/components/form-render/index'
 import oaLog from '@/components/form-common/oa-log'
 import oaComment from '@/components/form-common/oa-comment'
@@ -296,9 +298,8 @@ import {
   saveModuleCommentApi,
   putModuleCommentApi,
   deleteModuleCommentApi
-} from '@/api/develop.ts'
+} from '@/api/develop'
 export default {
-  emits: ['getList', 'getInfo'],
   components: { VFormRender, checkboxDialog, addDrawer, oaLog, oaComment },
   props: {
     keyName: {
@@ -317,7 +318,6 @@ export default {
   data() {
     return {
       drawer: false,
-      formReady: false,
       tabIndex: '1',
       height: `calc(100vh - 230px)`,
       activeName: '1',
@@ -374,7 +374,7 @@ export default {
   mounted() {
     window.addEventListener('scroll', this.lazyLoading, true)
   },
-  unmounted() {
+  destroyed() {
     window.removeEventListener('scroll', this.lazyLoading, true)
   },
   computed: {
@@ -527,13 +527,14 @@ export default {
         this.$refs.addDrawer.openBox()
       }, 300)
     },
-    handleClick(name) {
-      if (name != 1) {
-        this.tabKey = name
+    handleClick(e) {
+      if (e.index != 0) {
+        let index = e.index - 1
+        this.tabKey = this.tabIndex
         this.getInfo()
         this.getList()
       }
-      if (name == 1) {
+      if (this.tabIndex == 1) {
         this.type = 'add'
         this.$nextTick(() => {
           this.$refs.preForm.setReadMode(true)
@@ -617,7 +618,6 @@ export default {
 
       this.id = row.id
 
-      this.formReady = false
       this.createForm(this.id)
       this.where.crud_value = row.id
       this.crud.crud_value = this.id
@@ -625,6 +625,9 @@ export default {
         this.allocation = data
       }
       this.drawer = true
+      setTimeout(() => {
+        this.setForm()
+      }, 300)
 
       this.getCommentList()
       this.getLogList()
@@ -672,11 +675,9 @@ export default {
 
       this.$nextTick(() => {
         if (res.data.form_info.global_options) {
-          this.importTemplate.formConfig = res.data.form_info.global_options
+          this.$set(this.importTemplate, 'formConfig', res.data.form_info.global_options)
         }
-        this.importTemplate.widgetList = res.data.form_info.options || []
-        this.formReady = true
-        this.$nextTick(() => this.setForm())
+        this.$set(this.importTemplate, 'widgetList', res.data.form_info.options || [])
       })
     },
 
@@ -764,7 +765,7 @@ export default {
 
     setForm() {
       this.type = 'check'
-      this.$refs.preForm?.setReadMode(true)
+      this.$refs.preForm.setReadMode(true)
     }
   }
 }
@@ -799,7 +800,7 @@ export default {
   }
 }
 .titleTab {
-  :deep(.el-tabs__item.is-active) {
+  ::v-deep .el-tabs__item.is-active {
     border-right-color: transparent !important;
     border-left-color: transparent !important;
     &::after {
@@ -812,18 +813,18 @@ export default {
       top: 0;
     }
   }
-  :deep(.el-tabs__item) {
+  ::v-deep .el-tabs__item {
     line-height: 40px !important;
     font-size: 14px;
   }
-  :deep(.el-tabs__header) {
+  ::v-deep .el-tabs__header {
     background-color: #f7fbff;
     border-bottom: none;
   }
-  :deep(.el-tabs__nav-wrap::after) {
+  ::v-deep .el-tabs__nav-wrap::after {
     height: 0;
   }
-  :deep(.el-tabs__active-bar) {
+  ::v-deep .el-tabs__active-bar {
     top: 0;
   }
   .el-tabs--border-card {
@@ -837,12 +838,15 @@ export default {
     box-shadow: none;
   }
 }
+::v-deep .el-drawer__header {
+  border-bottom: none !important;
+}
 .border-top {
   border-top: 1px solid #f2f6fc;
 }
 
 .comment-tab {
-  :deep(.el-tabs__header) {
+  ::v-deep .el-tabs__header {
     height: 54px;
 
     line-height: 54px;
@@ -909,12 +913,5 @@ export default {
   line-height: 24px;
   font-size: 12px;
   border-radius: 3px;
-}
-</style>
-
-<style lang="scss">
-// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
-.develop-module-check-drawer .el-drawer__header {
-  border-bottom: none !important;
 }
 </style>

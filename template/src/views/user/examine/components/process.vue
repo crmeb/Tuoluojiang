@@ -7,8 +7,7 @@
         <i class="tit1" v-if="approverDelete || copyerDelete">（已由管理员预设不可{{ title01.substring(1) }}）</i>
       </span>
     </div>
-    <!-- 节点都按未开始显示（灰色）；Element Plus 默认 active=0 会把第一个节点标成进行中 -->
-    <el-steps direction="vertical" :active="-1">
+    <el-steps direction="vertical">
       <el-step v-for="(item, index) in examineList" :key="index">
         <template #title>
           <div class="caption">
@@ -16,6 +15,7 @@
             <el-tag
               v-if="item.types == 1 && item.settype != 5 && item.examine_mode > 0 && item.users.length > 1"
               effect="plain"
+              size="mini"
             >
               {{ getExamineText(item.examine_mode) }}
             </el-tag>
@@ -49,16 +49,18 @@
                   <i class="el-icon-arrow-right"></i>
                 </div>
               </div>
-              <!-- 不可添加的节点不渲染：否则 popover 的触发插槽为空，Element Plus 会告警 -->
               <select-member
-                v-if="isAllowRender(item)"
-                :ref="(el) => (memberRefs[index] = el)"
+                ref="selectMember"
                 :only-one="item.select_mode == 1 ? true : false"
                 :value="item.users || []"
                 @getSelectList="getSelectList($event, item)"
               >
                 <template v-slot:custom>
-                  <div class="upload" @click="openDepartment(item, index)">
+                  <div
+                    v-if="isAllowRender(item)"
+                    class="upload"
+                    @click="openDepartment(item, index)"
+                  >
                     <i class="el-icon-plus"></i>
                   </div>
                 </template>
@@ -72,12 +74,11 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { getAvatarSrc } from '@/utils/avatar.ts'
+import { getAvatarSrc } from '@/utils/avatar'
 export default {
   name: 'Process',
   components: {
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member'))
+    selectMember: () => import('@/components/form-common/select-member')
   },
   props: {
     examineData: {
@@ -105,10 +106,6 @@ export default {
       memberShow: false
     }
   },
-  created() {
-    // 按流程节点下标记录 select-member 实例，不需要响应式
-    this.memberRefs = []
-  },
   watch: {
     examineData: {
       handler(nVal) {
@@ -128,6 +125,9 @@ export default {
       },
       immediate: true
     },
+    lang() {
+      this.setOptions()
+    }
   },
  
   methods: {
@@ -159,7 +159,7 @@ export default {
     openDepartment(row, index) {
       this.index = index
       setTimeout(() => {
-        this.memberRefs[index].handlePopoverShow()
+        this.$refs.selectMember[index].handlePopoverShow()
       }, 300)
     },
     deleteUsersItem(row, index) {
@@ -250,11 +250,11 @@ export default {
   }
 }
 .stepsBox {
-  :deep(.el-step__description) {
+  ::v-deep .el-step__description {
     margin-top: 17px;
     margin-bottom: 30px;
   }
-  :deep(.el-step__title) {
+  ::v-deep .el-step__title {
     color: #000;
     font-size: 14px;
     font-weight: 600;
@@ -265,12 +265,8 @@ export default {
     color: #999999;
     font-weight: normal;
   }
-  // 自定义 icon 插槽在 EP 下是 is-icon（无圆框），按线上 Element UI 的 is-text 补回
-  :deep(.el-step__icon) {
+  ::v-deep .el-step__icon {
     background: #ccc;
-    border-radius: 50%;
-    border: 2px solid;
-    border-color: inherit;
   }
   .liuchen {
     i {

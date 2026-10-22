@@ -28,10 +28,10 @@
             <el-table-column label="发送时间" prop="send_time"></el-table-column>
             <el-table-column label="任务状态" prop="name">
               <template #default="scope">
-                <el-tag v-if="scope.row.status == 1">定时中</el-tag>
-                <el-tag v-else-if="scope.row.status == 2" type="warning">发送中</el-tag>
-                <el-tag v-else-if="scope.row.status == 0" type="info">已停止</el-tag>
-                <el-tag v-else-if="scope.row.status == 3" type="success">已完成</el-tag>
+                <el-tag size="small" v-if="scope.row.status == 1">定时中</el-tag>
+                <el-tag size="small" v-else-if="scope.row.status == 2" type="warning">发送中</el-tag>
+                <el-tag size="small" v-else-if="scope.row.status == 0" type="info">已停止</el-tag>
+                <el-tag size="small" v-else-if="scope.row.status == 3" type="success">已完成</el-tag>
               </template>
             </el-table-column>
 
@@ -48,16 +48,16 @@
             <el-table-column label="创建时间" prop="updated_at"></el-table-column>
             <el-table-column label="操作" fixed="right" width="190">
               <template #default="scope">
-                <el-button type="primary" link @click="handleCheck(scope.row)">查看</el-button>
+                <el-button type="text" size="mini" @click="handleCheck(scope.row)">查看</el-button>
                 <template v-if="scope.row.status === 1">
-                  <el-button type="primary" link @click="handleEdit(scope.row)">编辑</el-button>
+                  <el-button type="text" size="mini" @click="handleEdit(scope.row)">编辑</el-button>
                 </template>
                 <template v-if="scope.row.status === 2">
-                  <el-button type="primary" link @click="handleRemind(scope.row)">提醒发送</el-button>
-                  <el-button type="primary" link @click="handleStopped(scope.row)">停止发送</el-button>
+                  <el-button type="text" size="mini" @click="handleRemind(scope.row)">提醒发送</el-button>
+                  <el-button type="text" size="mini" @click="handleStopped(scope.row)">停止发送</el-button>
                 </template>
 
-                <el-button v-if="scope.row.status != 2" type="primary" link @click="handleDel(scope.row)"
+                <el-button v-if="scope.row.status != 2" type="text" size="mini" @click="handleDel(scope.row)"
                   >删除</el-button
                 >
               </template>
@@ -87,18 +87,16 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { getMassList, delWorkMass, getWorkMassStatus, getWorkMassRemind } from '@/api/weCom.ts'
-import { roterPre } from '@/settings.ts'
-import oaFromBox from '@/components/common/oaFromBox'
+import { modalSure } from '@/libs/public'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { getMassList, delWorkMass, getWorkMassStatus, getWorkMassRemind } from '@/api/weCom'
+import { roterPre } from '@/settings'
 export default {
   name: '',
   components: {
-    massDetails: defineAsyncComponent(() => import('./components/massDetails')),
-    oaFromBox,
-    addGroupPosting: defineAsyncComponent(() => import('./addGroupPosting'))
+    massDetails: () => import('./components/massDetails'),
+    oaFromBox: () => import('@/components/common/oaFromBox'),
+    addGroupPosting: () => import('./addGroupPosting')
   },
 
   data() {

@@ -10,6 +10,7 @@
             v-if="selectedRows.length > 0"
             class="left-btn"
             type="primary"
+            size="small"
             @click="handleBatchPush"
             >批量设置
           </el-button>
@@ -122,13 +123,13 @@
                   />
                 </template>
               </el-table-column>
-              <el-table-column label="操作" width="190" fixed="right">
+              <el-table-column :label="$t('toptable.operation')" width="190" fixed="right">
                 <template #default="scope">
-                  <el-button type="primary" link @click="handlePush(scope.row)">推送渠道</el-button>
+                  <el-button type="text" @click="handlePush(scope.row)">推送渠道</el-button>
                   <el-button
                     v-hasPermi="['enterprise:news:edit']"
                     v-if="scope.row.template_time === 1"
-                    type="primary" link
+                    type="text"
                     @click="handleTime(scope.row)"
                     >设置时间
                   </el-button>
@@ -161,19 +162,18 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { messageListApi, putStatusMessageApi, messageSubscribeApi, messageSyncApi, messageCateApi } from '@/api/setting.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { messageListApi, putStatusMessageApi, messageSubscribeApi, messageSyncApi, messageCateApi } from '@/api/setting'
+import { status } from 'nprogress'
 
-import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'Apply',
   components: {
-    oaFromBox,
-    messagePush: defineAsyncComponent(() => import('./components/messagePush')),
-    messageType: defineAsyncComponent(() => import('./components/messageType')),
-    tree: defineAsyncComponent(() => import('./components/tree')),
-    messageTimes: defineAsyncComponent(() => import('./components/messageTimes'))
+    oaFromBox: () => import('@/components/common/oaFromBox'),
+    messagePush: () => import('./components/messagePush'),
+    messageType: () => import('./components/messageType'),
+    tree: () => import('./components/tree'),
+    messageTimes: () => import('./components/messageTimes')
   },
   data() {
     return {
@@ -368,7 +368,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-table__row) {
+::v-deep .el-table__row {
   height: 56px;
 }
 .boder-left {

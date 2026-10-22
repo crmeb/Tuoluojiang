@@ -79,9 +79,9 @@
                 </el-table-column>
                 <el-table-column label="申请时间" min-width="140" prop="created_at"> </el-table-column>
 
-                <el-table-column label="操作" fixed="right" prop="address" width="100">
+                <el-table-column :label="$t('public.operation')" fixed="right" prop="address" width="100">
                   <template v-slot:default="scope">
-                    <el-button type="primary" link @click="handleCheck(scope.row)">查看</el-button>
+                    <el-button type="text" @click="handleCheck(scope.row)">查看</el-button>
                   </template>
                 </el-table-column>
               </el-table>
@@ -130,21 +130,19 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { clientBillListApi, getbillCate, getSalesman } from '@/api/enterprise.ts'
+import moment from 'moment'
+import { clientBillListApi, getbillCate, getSalesman } from '@/api/enterprise'
 
-import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'Index',
   components: {
-    detailExamine: defineAsyncComponent(() => import('@/views/user/examine/components/detailExamine')),
-    editCustomer: defineAsyncComponent(() => import('@/views/customer/list/components/editCustomer')),
-    editContract: defineAsyncComponent(() => import('@/views/customer/contract/components/editContract')),
-    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel')),
-    applyForPayment: defineAsyncComponent(() => import('@/views/customer/list/components/applyForPayment')),
-    expendDialog: defineAsyncComponent(() => import('@/views/customer/list/components/expendDialog')),
-    oaFromBox
+    detailExamine: () => import('@/views/user/examine/components/detailExamine'),
+    editCustomer: () => import('@/views/customer/list/components/editCustomer'),
+    editContract: () => import('@/views/customer/contract/components/editContract'),
+    exportExcel: () => import('@/components/common/exportExcel'),
+    applyForPayment: () => import('@/views/customer/list/components/applyForPayment'),
+    expendDialog: () => import('@/views/customer/list/components/expendDialog'),
+    oaFromBox: () => import('@/components/common/oaFromBox')
   },
   props: {
     activeName: {
@@ -177,8 +175,8 @@ export default {
       census: {},
       catePath: [],
       timeValue: [
-        dayjs().startOf('month').format('YYYY/MM/DD'),
-        dayjs().endOf('month').format('YYYY/MM/DD')
+        moment().startOf('month').format('YYYY/MM/DD'),
+        moment().endOf('month').format('YYYY/MM/DD')
       ],
       where: {
         types: '',
@@ -225,19 +223,34 @@ export default {
           data_dict: [
             {
               id: '',
-              name: '全部'
+              name: this.$t('toptable.all')
             },
             {
               id: 0,
-              name: '待审核'
+              name: this.$t('customer.audit')
             },
             {
               id: 1,
-              name: '已通过'
+              name: this.$t('customer.passed')
             },
             {
               id: 2,
-              name: '未通过'
+              name: this.$t('customer.fail')
+            }
+          ]
+        },
+        {
+          field_name: '时间类型',
+          field_name_en: 'time_field',
+          form_value: 'select',
+          data_dict: [
+            {
+              value: 'date',
+              name: '付款日期'
+            },
+            {
+              value: 'time',
+              name: '申请日期'
             }
           ]
         },
@@ -245,16 +258,10 @@ export default {
           field_name: '开始时间',
           field_name_end: '结束时间',
           field_name_en: 'time',
-          form_value: 'date_type_picker',
-          type_field: 'time_field',
-          type_default: 'date',
-          type_options: [
-            { value: 'date', name: '付款日期' },
-            { value: 'time', name: '申请日期' }
-          ],
+          form_value: 'date_picker',
           data_dict: [
-            dayjs().startOf('month').format('YYYY/MM/DD'),
-            dayjs().endOf('month').format('YYYY/MM/DD')
+            moment().startOf('month').format('YYYY/MM/DD'),
+            moment().endOf('month').format('YYYY/MM/DD')
           ]
         },
         {
@@ -287,11 +294,10 @@ export default {
       val.cid = val.cid
       if (val) {
         this.clientFromData = {
-          title: '编辑客户',
+          title: this.$t('customer.editcustomer'),
           width: '1100px',
           data: val,
-          types: this.types,
-          link_type: 'customer'
+          types: this.types
         }
 
         this.$refs.editCustomer.tabIndex = '1'
@@ -344,7 +350,7 @@ export default {
     // 导出
     getExportData() {
       this.$refs.oaFromBox.loading = true
-      this.saveName = '导出付款审核_' + dayjs(new Date()).format('MM_DD_HH_mm_ss') + '.xlsx'
+      this.saveName = '导出付款审核_' + moment(new Date()).format('MM_DD_HH_mm_ss') + '.xlsx'
 
       let where = {
         types: this.where.types,
@@ -548,7 +554,7 @@ export default {
   }
 }
 
-:deep(.el-drawer__body) {
+::v-deep .el-drawer__body {
   height: 100%;
   overflow-y: auto;
 }
@@ -565,16 +571,16 @@ export default {
 }
 
 .dialog {
-  :deep(.el-dialog) {
+  ::v-deep .el-dialog {
     border-radius: 6px;
     height: 249px;
   }
 
-  :deep(.el-dialog__body) {
+  ::v-deep .el-dialog__body {
     padding: 0;
   }
 
-  :deep(.el-textarea__inner) {
+  ::v-deep .el-textarea__inner {
     width: 400px;
     height: 90px;
     font-size: 13px;

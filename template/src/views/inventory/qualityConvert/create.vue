@@ -5,7 +5,7 @@
 
     <!-- 表单内容（可滚动区域） -->
     <div class="convert-create__body">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="112px" class="convert-form"
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="112px" class="convert-form" size="small"
         label-suffix="：">
         <el-form-item label="转换仓库" prop="warehouse_id">
           <WareHouseSelect v-model="form.warehouse_id" placeholder="请输入选择仓库" class="form-control"
@@ -14,7 +14,7 @@
 
         <el-form-item label="转换类型" prop="convert_type">
           <el-radio-group v-model="form.convert_type">
-            <el-radio v-for="item of convertTypes" :key="item.value" :label="item.value" :value="item.value">{{ item.label }}</el-radio>
+            <el-radio v-for="item of convertTypes" :key="item.value" :label="item.value">{{ item.label }}</el-radio>
           </el-radio-group>
           <p class="form-tip">{{ convertTypeDesc }}</p>
         </el-form-item>
@@ -41,7 +41,7 @@
             <!-- 商品信息：缩略图 + 名称 -->
             <template #goods="{ row }">
               <div class="goods-cell">
-                <el-image :src="row.image" :preview-src-list="[row.image]" preview-teleported class="goods-img" />
+                <el-image :src="row.image" :preview-src-list="[row.image]" class="goods-img" />
                 <span class="goods-name">{{ row.name }}</span>
               </div>
             </template>
@@ -61,12 +61,12 @@
             <template #stock="{ row }">{{ getRowStock(row, form.convert_type) }}</template>
 
             <template #quantity="{ row }">
-              <el-input-number v-model="row.quantity" :min="1" :precision="0" :controls="false"
+              <el-input-number v-model="row.quantity" :min="1" :precision="0" :controls="false" size="small"
                 :max="getRowStock(row, form.convert_type) || 1" class="cell-control" />
             </template>
 
             <template #subtotal="{ row }">
-              <el-input :model-value="`¥${getRowSubtotal(row)}`" disabled class="cell-control" />
+              <el-input :value="`¥${getRowSubtotal(row)}`" size="small" disabled class="cell-control" />
             </template>
 
             <template #images="{ row }">
@@ -77,7 +77,7 @@
             </template>
 
             <template #action="{ index }">
-              <el-button type="primary" link @click="removeGoods(index)">删除</el-button>
+              <el-button type="text" @click="removeGoods(index)">删除</el-button>
             </template>
           </BaseTable>
         </el-form-item>
@@ -97,14 +97,14 @@ import { ref, getCurrentInstance } from "vue";
 import BaseContainer from "@/components/BaseContainer/index.vue";
 import BaseTable from "@/components/BaseTable/index.vue";
 import specifications from "@/views/customer/components/specifications.vue";
-import { useConvertCreate } from "./composables/useConvertCreate.ts";
+import { useConvertCreate } from "./composables/useConvertCreate";
 import WareHouseSelect from "../components/WareHouseSelect.vue";
 import FormPageHeader from "@/components/FormPageHeader/index.vue";
 import FormPageFooter from "@/components/FormPageFooter/index.vue";
 import ImageAttachUpload from "./components/ImageAttachUpload.vue";
-import { CONVERT_ATTACH_MAX } from "./constants.ts";
-import { WAREHOUSE_PERMISSION } from "../constants.ts";
-import { getSpecName, getProductCode, getBarcode } from "../utils.ts";
+import { CONVERT_ATTACH_MAX } from "./constants";
+import { WAREHOUSE_PERMISSION } from "../constants";
+import { getSpecName, getProductCode, getBarcode } from "../utils";
 
 export default {
   name: "InventoryQualityConvertCreate",
@@ -231,7 +231,7 @@ export default {
   }
 
   // el-input-number 左对齐，去除计数器后还原为普通输入框观感
-  :deep(.el-input-number .el-input__inner) {
+  ::v-deep .el-input-number .el-input__inner {
     text-align: left;
   }
 }

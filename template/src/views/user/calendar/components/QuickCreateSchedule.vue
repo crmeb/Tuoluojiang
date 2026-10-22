@@ -1,8 +1,8 @@
 <template>
   <div class="quick-create-schedule">
     <el-input ref="titleInputRef" v-model="title" :disabled="loading" maxlength="256" placeholder="添加待办任务..."
- @keydown="handleTitleKeydown">
-      <template v-if="loading" #suffix><i class="el-icon-loading" /></template>
+      size="small" @keydown.native="handleTitleKeydown">
+      <i v-if="loading" slot="suffix" class="el-icon-loading" />
     </el-input>
 
     <div class="quick-create-actions">
@@ -27,12 +27,12 @@
           ref="endTimePickerRef"
           v-model="endTime"
           class="quick-date-picker"
-          placement="bottom-start"
           type="datetime"
-          value-format="YYYY-MM-DD HH:mm:ss"
-          format="YYYY-MM-DD HH:mm"
+          size="mini"
+          value-format="yyyy-MM-dd HH:mm:ss"
+          format="yyyy-MM-dd HH:mm"
           placeholder="截止时间"
-          :default-time="new Date(2000, 0, 1, 12, 0, 0)"
+          default-time="12:00:00"
           :clearable="true"
         />
       </div>
@@ -51,9 +51,9 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
-import { ElMessage as Message } from 'element-plus'
+import { Message } from 'element-ui'
 import SelectMember from '@/components/form-common/select-member.vue'
-import { scheduleQuickCreateApi } from '@/api/user.ts'
+import { scheduleQuickCreateApi } from '@/api/user'
 import QuickDescriptionDialog from './QuickDescriptionDialog.vue'
 
 interface MemberOption {
@@ -193,7 +193,7 @@ defineExpose({ focus })
   background: #f7f8fa;
 }
 
-:deep(.el-input__wrapper) {
+:deep(.el-input__inner) {
   border-radius: 4px;
 }
 
@@ -208,8 +208,7 @@ defineExpose({ focus })
   position: relative;
 }
 
-// el-date-picker 根节点带 Teleport（多根），不会继承 scoped 属性，需用 :deep 命中
-.quick-date-trigger :deep(.quick-date-picker) {
+.quick-date-picker {
   position: absolute;
   bottom: 0;
   left: 0;

@@ -12,7 +12,7 @@
     </oaFromBox>
 
     <BaseTable class="mt-10" :table-columns="tableColumns" :data="tableData" :loading="isLoading" :total="total"
-      v-model:page="page" v-model:page-size="pageSize">
+      :page.sync="page" :page-size.sync="pageSize">
       <!-- 仓库名称 -->
       <template #warehouse="{ row }">
         {{ (row.warehouse && row.warehouse.name) || '--' }}
@@ -60,16 +60,16 @@
       <template #action="{ row }">
         <!-- 盘点中：继续盘点 + 作废 -->
         <template v-if="row.status === CHECK_STATUS.CHECKING">
-          <el-button type="primary" link @click="handleContinue(row)">继续盘点</el-button>
+          <el-button type="text" @click="handleContinue(row)">继续盘点</el-button>
           <el-divider direction="vertical" />
-          <el-button type="primary" link class="danger-text" @click="handleCancel(row)">作废</el-button>
+          <el-button type="text" class="danger-text" @click="handleCancel(row)">作废</el-button>
         </template>
         <!-- 其他状态：查看详情（已完成额外提供备注） -->
         <template v-else>
-          <el-button type="primary" link @click="handleViewDetail(row)">查看详情</el-button>
+          <el-button type="text" @click="handleViewDetail(row)">查看详情</el-button>
           <template v-if="row.status === CHECK_STATUS.COMPLETED">
             <el-divider direction="vertical" />
-            <el-button type="primary" link @click="handleRemark(row)">备注</el-button>
+            <el-button type="text" @click="handleRemark(row)">备注</el-button>
           </template>
         </template>
       </template>
@@ -85,11 +85,11 @@ import BaseContainer from "@/components/BaseContainer/index.vue";
 import BaseTable from "@/components/BaseTable/index.vue";
 import oaFromBox from "@/components/common/oaFromBox.vue";
 import InventoryStatusTag from "../components/InventoryStatusTag.vue";
-import { useStocktaking } from "./composables/useStocktaking.ts";
+import { useStocktaking } from "./composables/useStocktaking";
 import StocktakingDetail from "./components/detail.vue";
 import RemarkDialog from "./components/remarkDialog.vue";
-import { CHECK_STATUS_MAP, CHECK_STATUS } from "./constants.ts";
-import dayjs from "dayjs";
+import { CHECK_STATUS_MAP, CHECK_STATUS } from "./constants";
+import moment from "moment";
 
 export default {
   name: "InventoryStocktaking",
@@ -98,7 +98,7 @@ export default {
     const stocktakingInfo = useStocktaking();
 
     const formatTime = (time) => {
-      return time ? dayjs(time).format("YYYY-MM-DD HH:mm") : "--";
+      return time ? moment(time).format("YYYY-MM-DD HH:mm") : "--";
     };
 
     return {

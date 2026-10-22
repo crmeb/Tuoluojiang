@@ -18,7 +18,7 @@
       v-model="fieldModel"
       :disabled="field.options.disabled"
       :readonly="field.options.readonly"
-      :size="toElSize(field.options.size)"
+      :size="field.options.size"
       :placeholder="field.options.placeholder"
       :rows="field.options.rows"
       :minlength="field.options.minLength"
@@ -38,12 +38,14 @@
 
 <script>
 import FormItemWrapper from './form-item-wrapper'
-import i18n, { translate } from '@/utils/i18n.ts'
+import emitter from '@/utils/emitter'
+import i18n, { translate } from '@/utils/i18n'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
 
 export default {
   name: 'textarea-widget',
-  mixins: [fieldMixin, i18n],
+  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
+  mixins: [emitter, fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -117,7 +119,7 @@ export default {
     this.handleOnMounted()
   },
 
-  beforeUnmount() {
+  beforeDestroy() {
     this.unregisterFromRefList()
   },
 
@@ -128,3 +130,4 @@ export default {
 <style lang="scss" scoped>
 @import '../../../../styles/global.scss'; //* form-item-wrapper已引入，还需要重复引入吗？ *//
 </style>
+@/utils/i18ns

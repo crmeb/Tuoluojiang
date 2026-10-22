@@ -39,16 +39,15 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { userAssessInfo } from '@/api/user.ts'
+import { userAssessInfo } from '@/api/user'
 
 export default {
   name: '',
   components: {
-    current: defineAsyncComponent(() => import('./components/current')),
-    self: defineAsyncComponent(() => import('./components/self')),
-    assessStatistics: defineAsyncComponent(() => import('@/views/user/workStatistics/components/assessStatistics')),
-    auditProcess: defineAsyncComponent(() => import('./components/auditProcess'))
+    current: () => import('./components/current'),
+    self: () => import('./components/self'),
+    assessStatistics: () => import('@/views/user/workStatistics/components/assessStatistics'),
+    auditProcess: () => import('./components/auditProcess')
   },
   props: {},
   data() {
@@ -129,7 +128,7 @@ export default {
           case 2:
             setTimeout(() => {
               if (!this.$refs.assessStatistics) return
-              this.$refs.assessStatistics.typeLocal = 0
+              this.$refs.assessStatistics.type = 0
               this.$refs.assessStatistics.getTableData()
             }, 300)
             break
@@ -147,7 +146,7 @@ export default {
 </style>
 <style scoped lang="scss">
 .plan-tabs-content {
-  :deep(.el-tabs__header) {
+  ::v-deep .el-tabs__header {
     margin-bottom: 0;
     .el-tabs__nav-wrap::after {
       height: 1px;
@@ -162,7 +161,7 @@ export default {
   flex-direction: column;
   overflow: hidden;
 
-  :deep(.el-card__body) {
+  ::v-deep .el-card__body {
     flex: 1;
     height: 100%;
     min-height: 0;

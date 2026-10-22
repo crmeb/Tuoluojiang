@@ -73,33 +73,25 @@
       </el-card>
 
       <div class="cr-bottom-button btn-shadow">
-        <el-button @click="restFn">重置</el-button>
-        <el-button type="primary" @click="submit">保存</el-button>
+        <el-button size="small" @click="restFn">重置</el-button>
+        <el-button type="primary" size="small" @click="submit">保存</el-button>
       </div>
     </div>
   </div>
 </template>
 <script>
-import { mapStores } from 'pinia'
-import { useAppStore } from '@/stores/app.ts'
-import { defineAsyncComponent } from 'vue'
-// mounted 里要通过 ref 调它的 getResume，异步加载会让 ref 在加载完成前为空，故同步引入
-import formItemDataList from '@/views/hr/archives/components/formItemDataList.vue'
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import formOptions from '@/views/hr/archives/mixins/index.js'
-import { getPerfectIndex, putPerfectAgree, putPerfectRefuse } from '@/api/user.ts'
+import { getPerfectIndex, putPerfectAgree, putPerfectRefuse } from '@/api/user'
 
 export default {
   name: 'one',
   components: {
-    LeftNavigation: defineAsyncComponent(() => import('@/views/hr/archives/components/LeftNavigation.vue')),
-    formItemDataList
+    LeftNavigation: () => import('@/views/hr/archives/components/LeftNavigation.vue'),
+    formItemDataList: () => import('@/views/hr/archives/components/formItemDataList.vue')
   },
   props: {},
   mixins: [formOptions],
-  computed: {
-    ...mapStores(useAppStore)
-  },
   data() {
     return {
       initData: { componentName: 'addDrawerIsShow', type: 'add' },
@@ -146,7 +138,7 @@ export default {
       this.loading = false
     },
     getPerfectIndex() {
-      this.appStore.setSidebarParentCur(100)
+      this.$store.commit('app/SET_PARENTCUR', 100)
       let data = {
         status: 0
       }
@@ -254,11 +246,11 @@ export default {
   width: 100%;
 }
 
-:deep(.el-card) {
+::v-deep .el-card {
   border: none;
 }
 
-:deep(.assess-left .head-portrait .avatar) {
+::v-deep .assess-left .head-portrait .avatar {
   margin-top: 0px !important;
 }
 
@@ -322,7 +314,7 @@ export default {
   align-items: center;
 }
 
-:deep(.head-portrait .avatar-uploader-icon) {
+::v-deep .head-portrait .avatar-uploader-icon {
   width: 90px !important;
   height: 110px !important;
   line-height: 110px !important;
@@ -453,11 +445,11 @@ export default {
   }
 }
 
-:deep(.from-foot-btn) {
+::v-deep .from-foot-btn {
   width: calc(100% - 0px);
 }
 
-:deep(.el-card__body) {
+::v-deep .el-card__body {
   padding: 0;
 }
 </style>

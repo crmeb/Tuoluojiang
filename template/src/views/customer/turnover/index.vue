@@ -51,7 +51,7 @@
               <el-card>
                 <div class="item">
                   <div class="item-top">
-                    <div class="tit over-text">新增客户(人)</div>
+                    <div class="tit over-text">{{ $t('customer.newcustomer') }}</div>
                     <el-popover placement="top-start" trigger="hover" width="150">
                       <div class="text-align">
                         环比{{ new_customer.ratio > 0 ? '增加' : '减少' }}
@@ -82,10 +82,10 @@
               <el-card>
                 <div class="item">
                   <div class="item-top">
-                    <el-popover placement="top-start" trigger="hover" width="auto">
+                    <el-popover placement="top-start" trigger="hover">
                       <div class="text-align">按开始日期统计</div>
                       <template #reference>
-                        <div class="tit over-text hand">新增订单(个)</div>
+                        <div class="tit over-text hand">{{ $t('customer.newcontract') }}</div>
                       </template>
                     </el-popover>
                     <el-popover placement="top-start" trigger="hover" width="150">
@@ -118,10 +118,10 @@
               <el-card>
                 <div class="item">
                   <div class="item-top">
-                    <el-popover placement="top-start" trigger="hover" width="auto">
+                    <el-popover placement="top-start" trigger="hover">
                       <div class="text-align">按开始日期统计</div>
                       <template #reference>
-                        <div class="tit hand over-text">新增订单金额(元)</div>
+                        <div class="tit hand over-text">{{ $t('customer.newamount') }}</div>
                       </template>
                     </el-popover>
                     <el-popover placement="top-start" trigger="hover" width="150">
@@ -155,7 +155,7 @@
               <el-card>
                 <div class="item">
                   <div class="item-top">
-                    <div class="tit over-text">订单续费(元)</div>
+                    <div class="tit over-text">{{ $t('customer.contractrenewal') }}</div>
                     <el-popover placement="top-start" trigger="hover" width="150">
                       <div class="text-align">
                         环比{{ renew.ratio > 0 ? '增加' : '减少' }}
@@ -187,7 +187,7 @@
               <el-card>
                 <div class="item">
                   <div class="item-top">
-                    <div class="tit over-text">至今未回款金额(元)</div>
+                    <div class="tit over-text">{{ $t('customer.uncollectedamount') }}</div>
                   </div>
                   <div class="num">
                     {{ uncollected_price.price || 0 }}
@@ -210,7 +210,7 @@
         <el-col :lg="12">
           <el-card class="stat-card">
             <div class="statistics-title">
-              部门业绩统计
+              {{ $t('customer.departmentperformance') }}
             </div>
             <div class="card-body">
               <div v-if="frame_rank.length > 0" class="statistics-department">
@@ -219,7 +219,7 @@
               </div>
               <div v-else class="default">
                 <!-- <img alt="" src="../../../assets/images/def1.png" /> -->
-                <span>{{ '暂无数据' + '~' }}</span>
+                <span>{{ $t('public.message14') + '~' }}</span>
               </div>
               <echartBox v-if="frame_rank.length > 0" :option-data="optionData" :styles="styles1" />
             </div>
@@ -231,11 +231,11 @@
         <el-col v-if="contractCategoryEnabled" :lg="12">
           <el-card class="stat-card">
             <div class="statistics-title">
-              订单分类统计
+              {{ $t('customer.contracttype') }}
             </div>
             <div class="card-body">
               <div v-if="contract_rank.length > 0" class="ml10">
-                <el-breadcrumb separator-icon="el-icon-arrow-right">
+                <el-breadcrumb separator-class="el-icon-arrow-right">
                   <el-breadcrumb-item
                     v-for="(item, index) in breadcrumbList"
                     :key="index"
@@ -250,7 +250,7 @@
               </div>
               <div v-else class="default">
                 <!-- <img alt="" src="../../../assets/images/def1.png" style="width: 200px; height: 150px" /> -->
-                <span>{{ '暂无数据' + '~' }}</span>
+                <span>{{ $t('public.message14') + '~' }}</span>
               </div>
             </div>
           </el-card>
@@ -260,7 +260,7 @@
             <div class="statistics-title">产品分类</div>
             <div class="card-body">
               <div v-if="product_rank.length > 0" class="ml10">
-                <el-breadcrumb separator-icon="el-icon-arrow-right">
+                <el-breadcrumb separator-class="el-icon-arrow-right">
                   <el-breadcrumb-item
                     v-for="(item, index) in productBreadcrumbList"
                     :key="index"
@@ -274,7 +274,7 @@
               </div>
               <div v-else class="default">
                 <!-- <img alt="" src="../../../assets/images/def1.png" style="width: 200px; height: 150px" /> -->
-                <span>{{ '暂无数据' + '~' }}</span>
+                <span>{{ $t('public.message14') + '~' }}</span>
               </div>
             </div>
           </el-card>
@@ -284,18 +284,18 @@
       <el-row :gutter="24" class="equal-height-row row-table">
         <el-col :lg="12">
           <el-card class="stat-card">
-            <el-tabs v-model="activeName" class="rank-tabs" @tab-change="handleClick">
+            <el-tabs v-model="activeName" class="rank-tabs" @tab-click="handleClick">
               <el-tab-pane label="业务员排行榜" name="1" />
               <el-tab-pane label="部门排行榜" name="2" />
             </el-tabs>
             <div class="card-body">
               <div v-loading="rankLoading" class="table-box">
                 <el-table ref="table" :data="tableData" height="340" row-key="id" style="width: 100%" :key="activeName">
-                  <el-table-column type="index" label="排名" width="50" />
+                  <el-table-column type="index" :label="$t('customer.ranking')" width="50" />
                   <el-table-column :label="activeName == 1 ? '姓名' : '部门'" min-width="80" prop="name" />
                   <el-table-column
                     v-if="activeName == 1"
-                    label="部门"
+                    :label="$t('toptable.department')"
                     min-width="90"
                     prop="frame_name"
                   >
@@ -305,12 +305,12 @@
                       </el-tooltip>
                     </template>
                   </el-table-column>
-                  <el-table-column label="完成占比" min-width="160" prop="ratio">
+                  <el-table-column :label="$t('customer.completeproportion')" min-width="160" prop="ratio">
                     <template #default="scope">
                       <el-progress color="#1890ff" :percentage="scope.row.ratio" :show-text="true"></el-progress>
                     </template>
                   </el-table-column>
-                  <el-table-column label="完成金额(元)" min-width="120" prop="price" />
+                  <el-table-column :label="$t('customer.completeamount')" min-width="120" prop="price" />
                   <el-table-column label="支出金额（元）" min-width="120" prop="expend" />
                   <el-table-column label="净额（元）" min-width="120" prop="net_amount" v-if="activeName == 1" />
                 </el-table>
@@ -324,7 +324,7 @@
             <div class="card-body">
               <div class="table-box">
                 <el-table :data="productRankData" height="340" style="width: 100%">
-                  <el-table-column type="index" label="排名" width="50" :index="indexMethod" />
+                  <el-table-column type="index" :label="$t('customer.ranking')" width="50" :index="indexMethod" />
                   <el-table-column label="产品" min-width="180">
                     <template #default="{ row }">
                       <div class="product-cell">
@@ -345,7 +345,7 @@
               <el-pagination
                 v-if="productTotal > 0"
                 class="mt12"
-                size="small"
+                small
                 :current-page="productPage"
                 :page-size="productLimit"
                 :page-sizes="[10, 20, 50, 100]"
@@ -362,8 +362,7 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
+import moment from 'moment'
 import {
   salesmanDataListApi,
   performanceStatisticsApi,
@@ -373,16 +372,14 @@ import {
   frameDataListApi,
   productRankApi,
   productRankListApi
-} from '@/api/enterprise.ts'
-import { numberFormat } from '@/utils/numberFormat.ts'
-import { getDictTreeListApi } from '@/api/form.ts'
+} from '@/api/enterprise'
+import { numberFormat } from '@/utils/numberFormat'
 
-import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'Turnover',
   components: {
-    oaFromBox,
-    echartBox: defineAsyncComponent(() => import('@/components/common/echarts'))
+    oaFromBox: () => import('@/components/common/oaFromBox'),
+    echartBox: () => import('@/components/common/echarts')
   },
   data() {
     return {
@@ -433,7 +430,7 @@ export default {
         page: 1,
         limit: 15,
         scope_frame: 'all',
-        time: dayjs().subtract(1, 'months').format('YYYY/MM/DD') + '-' + dayjs().format('YYYY/MM/DD')
+        time: moment().subtract(1, 'months').format('YYYY/MM/DD') + '-' + moment().format('YYYY/MM/DD')
       },
       activeId: '',
       total: 0,
@@ -455,14 +452,14 @@ export default {
           field_name_en: 'time',
           form_value: 'date_picker',
           data_dict: [
-            dayjs().startOf('months').format('YYYY/MM/DD'),
-            dayjs().endOf('months').format('YYYY/MM/DD')
+            moment().startOf('months').format('YYYY/MM/DD'),
+            moment().endOf('months').format('YYYY/MM/DD')
           ]
         }
       ],
       timeVal: [
-        dayjs().startOf('months').format('YYYY/MM/DD'),
-        dayjs().endOf('months').format('YYYY/MM/DD')
+        moment().startOf('months').format('YYYY/MM/DD'),
+        moment().endOf('months').format('YYYY/MM/DD')
       ],
       time: ''
     }
@@ -510,7 +507,7 @@ export default {
       }
     },
     clearContractCategoryState() {
-      delete this.where.category_id
+      this.$delete(this.where, 'category_id')
       this.contract_rank = []
       this.pieChartData = {}
       this.active = '订单分类'
@@ -537,13 +534,13 @@ export default {
         level: '',
         types: 'contract_type'
       }
-      getDictTreeListApi(data).then((res) => {
+      this.$store.dispatch('user/getDictList', data).then((res) => {
         setTimeout(() => {
-          const list = res.data
-          if (list) {
+          const resultDict = res.find((item) => item.dict_ident == data.types)
+          if (resultDict.list) {
             const categoryIndex = this.search.findIndex((item) => item.field_name_en === 'category_id')
             if (categoryIndex !== -1) {
-              this.search[categoryIndex].data_dict = list
+              this.search[categoryIndex].data_dict = resultDict.list
             }
           }
         }, 300)
@@ -579,7 +576,7 @@ export default {
         this.where = { ...this.where, ...searchData }
       }
       if (!this.contractCategoryEnabled) {
-        delete this.where.category_id
+        this.$delete(this.where, 'category_id')
       }
       this.breadcrumbList = []
       this.productPage = 1
@@ -779,7 +776,7 @@ export default {
         tooltip: {
           trigger: 'axis',
           formatter: (option) => {
-            return `${dayjs(option[0].axisValue).format('YYYY年MM月DD日')}<br/>${option[0].seriesName}：${
+            return `${moment(option[0].axisValue).format('YYYY年MM月DD日')}<br/>${option[0].seriesName}：${
               option[0].value
             }元<br/>${option[1].seriesName}：${option[1].value}元`
           }
@@ -849,7 +846,7 @@ export default {
             data: data.series[1].data
           },
           {
-            name: '总支出',
+            name: this.$t('finance.totalexpenditure'),
             type: 'line',
             symbol: 'circle',
             // symbolSize: 5, // 圆点大小
@@ -883,7 +880,7 @@ export default {
             data: data.series[0].data
           },
           {
-            name: '总支出',
+            name: this.$t('finance.totalexpenditure'),
             type: 'line',
             symbol: 'circle',
             // symbolSize: 5, // 圆点大小
@@ -1273,7 +1270,7 @@ export default {
               }
             },
             right: '40%',
-            name: '订单分类统计',
+            name: this.$t(`customer.contracttype`),
             radius: ['55%', '70%'],
             center: ['40%', '50%']
           }
@@ -1368,7 +1365,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.el-breadcrumb :deep(.el-breadcrumb__inner) {
+.el-breadcrumb ::v-deep .el-breadcrumb__inner {
   color: #1890ff;
   span {
     font-size: 14px;
@@ -1379,7 +1376,7 @@ export default {
   margin: 14px;
   margin-top: 1px;
   box-sizing: border-box;
-  :deep(.divBox) {
+  ::v-deep .divBox {
     // margin: 0;
     padding: 0;
   }
@@ -1393,10 +1390,10 @@ export default {
   font-size: #606266;
   font-size: 13px;
 }
-:deep(.el-tabs__nav-wrap::after) {
+::v-deep .el-tabs__nav-wrap::after {
   height: 0;
 }
-.breadcrumb :deep(.el-breadcrumb__inner) {
+.breadcrumb ::v-deep .el-breadcrumb__inner {
   color: #909399;
   span {
     font-size: 14px;
@@ -1434,7 +1431,7 @@ export default {
     min-height: 440px;
     display: flex;
     flex-direction: column;
-    :deep(.el-card__body) {
+    ::v-deep .el-card__body {
       flex: 1;
       display: flex;
       flex-direction: column;
@@ -1452,7 +1449,7 @@ export default {
     flex: 1;
     min-height: 0;
     overflow: hidden;
-    :deep(.el-table__empty-block) {
+    ::v-deep .el-table__empty-block {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1477,10 +1474,10 @@ export default {
 }
 
 .rank-tabs {
-  :deep(.el-tabs__header) {
+  ::v-deep .el-tabs__header {
     margin-bottom: 12px;
   }
-  :deep(.el-tabs__item) {
+  ::v-deep .el-tabs__item {
     font-weight: 600;
     height: initial;
     padding-bottom: 8px;
@@ -1507,7 +1504,7 @@ export default {
       margin-right: 0;
     }
   }
-  :deep(.el-card) {
+  ::v-deep .el-card {
     min-width: 220px;
   }
 }
@@ -1597,7 +1594,7 @@ export default {
   margin-bottom: 19px;
   border-left: 2px solid #1890ff;
 }
-:deep(.el-progress-bar) {
+::v-deep .el-progress-bar {
   width: 90% !important;
 }
 .statistics-department {
@@ -1633,7 +1630,7 @@ export default {
     height: 150px;
   }
 }
-.from-box :deep(.search) {
+.from-box ::v-deep .search {
   margin-top: 0;
 }
 .product-cell {

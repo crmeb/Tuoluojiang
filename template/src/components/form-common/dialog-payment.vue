@@ -3,14 +3,14 @@
   <div>
     <el-dialog
       :title="fromData.title"
-      v-model="dialogVisible"
+      :visible.sync="dialogVisible"
       :width="fromData.width"
-      class="payment form-common-dialog-payment-dialog"
+      custom-class="payment"
       :show-close="true"
       :append-to-body="true"
       :before-close="handleClose"
     >
-      <template #header>
+      <template #title>
         <el-row class="pay-title">
           <el-col :span="12" class="text-center" v-for="(item, index) in payType" :key="item.id">
             <span @click="tabPay(index)" :class="activeIndex === index ? 'active' : ''">{{ item.name }}</span>
@@ -38,9 +38,8 @@
 
 <script>
 import QRCode from 'qrcodejs2'
-import { orderResultApi } from '@/api/system.ts'
+import { orderResultApi } from '@/api/system'
 export default {
-  emits: ['isOk'],
   name: 'Payment',
   props: {
     fromData: {
@@ -120,28 +119,24 @@ export default {
       })
     }
   },
-  beforeUnmount() {
+  beforeDestroy() {
     this.stopSetInterval()
   }
 }
 </script>
 
 <style scoped lang="scss">
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.form-common-dialog-payment-dialog {
+::v-deep .el-dialog {
   border-radius: 15px;
 }
-.el-dialog.form-common-dialog-payment-dialog .el-dialog__header {
+::v-deep .el-dialog__header {
   border-bottom: 1px solid #eeeeee;
   padding: 0;
   height: 60px;
   line-height: 60px;
 }
-.el-dialog.payment {
-  & {
+.payment {
+  ::v-deep .el-dialog {
     border-radius: 15px;
   }
   .pay-title {

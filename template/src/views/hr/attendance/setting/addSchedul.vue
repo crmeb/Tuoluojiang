@@ -16,6 +16,7 @@
           <el-form-item class="select-bar el-input--small">
             <el-input
               class="mr14"
+              size="small"
               placeholder="请输入员工姓名"
               v-model="where.name"
               clearable
@@ -31,8 +32,9 @@
             <el-date-picker
               v-model="where.date"
               style="width: 150px"
+              size="small"
               type="month"
-              v-bind="$pickerProps(pickerOptions)"
+              :picker-options="pickerOptions"
               placeholder="选择月"
               @change="getList"
             >
@@ -54,24 +56,26 @@
             <span>考勤班次：</span>
           </template>
           <div class="flex-box">
-            <div class="shift-tag">
-              <div v-for="(item, index) in shiftsList" :key="index">
-                <div v-if="item.id !== 0 && item.times.length > 0">
-                  <span class="fang" :style="{ backgroundColor: item.color }"></span>
-                  <span class="mr10">
-                    {{ item.name }}
-                    {{ item.times[0].first_day_after == 0 ? '当日' : '次日' }} {{ item.times[0].work_hours }} -
-                    {{ item.times[0].second_day_after == 0 ? '当日' : '次日' }}{{ item.times[0].off_hours }}
-                    <span v-if="item.times.length > 1"
-                      >、 {{ item.times[1].first_day_after == 0 ? '当日' : '次日' }} {{ item.times[1].work_hours }} -
-                      {{ item.times[1].second_day_after == 0 ? '当日' : '次日' }}{{ item.times[1].off_hours }}
+            <template>
+              <div class="shift-tag">
+                <div v-for="(item, index) in shiftsList" :key="index">
+                  <div v-if="item.id !== 0 && item.times.length > 0">
+                    <span class="fang" :style="{ backgroundColor: item.color }"></span>
+                    <span class="mr10">
+                      {{ item.name }}
+                      {{ item.times[0].first_day_after == 0 ? '当日' : '次日' }} {{ item.times[0].work_hours }} -
+                      {{ item.times[0].second_day_after == 0 ? '当日' : '次日' }}{{ item.times[0].off_hours }}
+                      <span v-if="item.times.length > 1"
+                        >、 {{ item.times[1].first_day_after == 0 ? '当日' : '次日' }} {{ item.times[1].work_hours }} -
+                        {{ item.times[1].second_day_after == 0 ? '当日' : '次日' }}{{ item.times[1].off_hours }}
+                      </span>
                     </span>
-                  </span>
+                  </div>
                 </div>
+                <span class="fang" style="backgroundcolor: #cccccc"></span>
+                <span>休息</span>
               </div>
-              <span class="fang" style="backgroundcolor: #cccccc"></span>
-              <span>休息</span>
-            </div>
+            </template>
           </div>
         </el-form-item>
         <el-form-item>
@@ -80,7 +84,7 @@
           </template>
           <div class="flex">
             <div class="flex-box">
-              <template v-for="(item, index4) in cycleList" :key="index4">
+              <template v-for="(item, index4) in cycleList">
                 <div class="cycle" :key="index4" v-if="item.id !== 0">
                   {{ item.name }}{{ cycleList.length > 2 ? '、' : '' }}
                 </div>
@@ -195,7 +199,7 @@
                     <div @click="clickColumnIndex(index1)" :class="item.is_rest == 1 ? 'addDate' : ''">
                       <el-tooltip class="item" effect="dark" content="点击选中整列" placement="top">
                         <div class="date">
-                          <div class="day">{{ dayjs(item.date).format('D') }}</div>
+                          <div class="day">{{ moment(item.date).format('D') }}</div>
                           <div class="week">{{ getWeek(item.date) }}</div>
                         </div>
                       </el-tooltip>
@@ -248,7 +252,7 @@
 
                     <div
                       class="btn1"
-                      v-else
+                      v-if="scope.row.counts[index1]"
                       :style="{ backgroundColor: scope.row.counts[index1].color }"
                       @click="cellFn(scope, index1)"
                     >
@@ -269,8 +273,8 @@
 
     <!-- 底部按钮 -->
     <FormPageFooter>
-      <el-button @click="backFn">取消</el-button>
-      <el-button type="primary" @click="submit">保存</el-button>
+      <el-button size="small" @click="backFn">取消</el-button>
+      <el-button size="small" type="primary" @click="submit">保存</el-button>
     </FormPageFooter>
     <!-- 添加周期 -->
     <add-cycle ref="addCycle" @cycleList="getCycleList" :group_id="id"></add-cycle>
@@ -279,23 +283,21 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { toGetWeek } from '@/utils/format.ts'
+import moment from 'moment'
+import { toGetWeek } from '@/utils/format'
 import {
   attendanceShiftListApi,
   rosterCycleListApi,
   getAttendanceArrangeApi,
   saveAttendanceArrangeApi
-} from '@/api/config.ts'
+} from '@/api/config'
 import BaseContainer from '@/components/BaseContainer/index.vue'
 import FormPageHeader from '@/components/FormPageHeader/index.vue'
 import FormPageFooter from '@/components/FormPageFooter/index.vue'
 
 export default {
-  emits: ['backFn'],
   name: 'CrmebOaEntAddSchedul',
-  components: { BaseContainer, FormPageHeader, FormPageFooter, addCycle: defineAsyncComponent(() => import('./components/addCycle')) },
+  components: { BaseContainer, FormPageHeader, FormPageFooter, addCycle: () => import('./components/addCycle') },
   props: {
     id: {
       type: Number,
@@ -308,7 +310,7 @@ export default {
   },
 
   computed: {
-    dayjs: () => dayjs
+    moment: () => moment
   },
   data() {
     return {
@@ -343,7 +345,7 @@ export default {
   },
 
   mounted() {
-    this.where.date = dayjs(this.newData.date).format('YYYY-MM')
+    this.where.date = moment(this.newData.date).format('yyyy-MM')
     this.getday()
     this.getDataOptionalList().then(() => {
       this.getList()
@@ -354,7 +356,7 @@ export default {
     getday() {
       let date = new Date()
 
-      if (dayjs(this.where.date).format('YYYY-MM') == dayjs().format('YYYY-MM')) {
+      if (moment(this.where.date).format('YYYY-MM') == moment().format('YYYY-MM')) {
         this.sameDay = date.getDate()
       } else {
         this.sameDay = 0
@@ -388,10 +390,10 @@ export default {
 
     // 点击选中单元格
     clickFn(row, index, data) {
-      this.tableData[row.$index].counts[[index]] = data.id == 0 ? 0 : data
+      this.$set(this.tableData[row.$index].counts, [index], data.id == 0 ? 0 : data)
       // 手动关闭
       let ref = 'pop' + index
-      this.$refs[ref][row.$index].hide()
+      this.$refs[ref][row.$index].doClose()
       this.activeCell = false
     },
 
@@ -400,14 +402,14 @@ export default {
       this.colData.map((item, index) => {
         if (index < this.sameDay) return
         if (data.id == 0) {
-          this.tableData[row.$index].counts[index] = 0
+          this.$set(this.tableData[row.$index].counts, index, 0)
         } else {
-          this.tableData[row.$index].counts[index] = data
+          this.$set(this.tableData[row.$index].counts, index, data)
         }
       })
 
       let ref = 'row' + row.$index
-      this.$refs[ref].hide()
+      this.$refs[ref].doClose()
       this.rowIndex = null
       this.activeRow = false
     },
@@ -416,12 +418,12 @@ export default {
     headerClick(val, data) {
       this.columnIndex = val
       this.tableData.forEach((item, index) => {
-        item.counts[val] = data.id === 0 ? 0 : data
+        this.$set(item.counts, val, data.id === 0 ? 0 : data)
       })
 
       this.columnIndex = -2
       let ref = 'column' + val
-      this.$refs[ref][0].hide()
+      this.$refs[ref][0].doClose()
       this.activeColumn = false
     },
 
@@ -465,30 +467,30 @@ export default {
 
           this.rowIndex = null
           let ref = 'row' + row.$index
-          this.$refs[ref].hide()
+          this.$refs[ref].doClose()
         }
       }
       // 选中整列
       if (type == 2) {
         this.tableData.forEach((item, index) => {
           if (data.id == 0) {
-            item.counts[row] = 0
+            this.$set(item.counts, row, 0)
           } else {
-            item.counts[row] = data.shifts[0]
+            this.$set(item.counts, row, data.shifts[0])
           }
         })
         this.columnIndex = -2
         let ref = 'column' + row
-        this.$refs[ref][0].hide()
+        this.$refs[ref][0].doClose()
       }
       if (type == 3) {
         if (data.id == 0) {
-          this.tableData[row.$index].counts[index] = {}
+          this.$set(this.tableData[row.$index].counts, index, {})
         } else {
-          this.tableData[row.$index].counts[index] = data.shifts[0]
+          this.$set(this.tableData[row.$index].counts, index, data.shifts[0])
         }
         let ref = 'pop' + index
-        this.$refs[ref][row.$index].hide()
+        this.$refs[ref][row.$index].doClose()
       }
     },
 
@@ -587,7 +589,7 @@ export default {
       this.colData = []
       if (!this.where.date) return
       this.loading = true
-      this.where.date = dayjs(this.where.date).format('YYYY-MM')
+      this.where.date = moment(this.where.date).format('yyyy-MM')
       const result = await getAttendanceArrangeApi(this.id, this.where)
       this.tableData = result.data.members.map((per) => {
         return {
@@ -667,7 +669,7 @@ export default {
 
     restFn() {
       this.where.name = ''
-      this.where.date = dayjs(this.newData.date).format('YYYY-MM')
+      this.where.date = moment(this.newData.date).format('yyyy-MM')
     },
 
     getWeek(date) {
@@ -686,7 +688,7 @@ export default {
   padding: 4px 5px;
 }
 .form-box {
-  :deep(.el-form-item) {
+  ::v-deep .el-form-item {
     margin-bottom: 10px;
   }
 }
@@ -710,7 +712,7 @@ export default {
   overflow: hidden;
   text-align: center;
 }
-:deep(.el-table td) {
+::v-deep .el-table--medium td {
   padding: 6px 0;
 }
 
@@ -859,10 +861,10 @@ export default {
   -webkit-background-clip: text;
 }
 
-:deep(.el-table__body tr.hover-row) {
+::v-deep .el-table__body tr.hover-row {
   background-color: transparent !important;
 }
-:deep(.el-tabs__nav-wrap::after) {
+::v-deep .el-tabs__nav-wrap::after {
   height: 1px;
 }
 </style>

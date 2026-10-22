@@ -14,8 +14,8 @@
 </template>
 
 <script>
-import { EventBus } from '@/libs/bus.ts'
-import { DATA_CHANGE, MINI_MAP_VIEW_BOX_POSITION_CHANGE, NODE_TREE_RENDER_END, TOGGLE_MINI_MAP, VIEW_DATA_CHANGE } from '../event-constant.ts';
+import { EventBus } from '@/libs/bus'
+import { DATA_CHANGE, MINI_MAP_VIEW_BOX_POSITION_CHANGE, NODE_TREE_RENDER_END, TOGGLE_MINI_MAP, VIEW_DATA_CHANGE } from '../event-constant';
 
 export default {
   props: {
@@ -63,7 +63,7 @@ export default {
 
     window.addEventListener('mouseup', this.onMouseup)
   },
-  unmounted() {
+  destroyed() {
     window.removeEventListener('resize', this.setSize)
 
     Object.entries(this.listenEventMap)

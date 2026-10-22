@@ -48,20 +48,20 @@
 
 <script setup lang="ts">
 import { ref, onBeforeUnmount } from 'vue'
-import { ElMessage as Message } from 'element-plus'
-import { useUserStore } from '@/stores/user.ts'
-import router from '@/router/index.ts'
-import { AiEmbeddedManager } from '@/libs/ai/index.ts'
+import { Message } from 'element-ui'
+import store from '@/store'
+import router from '@/router'
+import { roterPre } from '@/settings'
+import { AiEmbeddedManager } from '@/libs/ai'
 import oaFromBox from '@/components/common/oaFromBox.vue'
 import defaultPage from '@/components/common/defaultPage.vue'
 import applicationCard from './applicationCard.vue'
 import embedCodeDialog from './embedCodeDialog.vue'
-import { useGridPageSize } from '@/composables/useGridPageSize.ts'
-import { useApplicationList } from '../composables/useApplicationList.ts'
-import type { ApplicationRow } from '../composables/useApplicationList.ts'
-import { copyVisitorLink } from '../utils/share.ts'
-import { APP_TYPE } from '../setting/constants.ts'
-import { getApplicationSettingPath } from '../utils/application'
+import { useGridPageSize } from '@/composables/useGridPageSize'
+import { useApplicationList } from '../composables/useApplicationList'
+import type { ApplicationRow } from '../composables/useApplicationList'
+import { copyVisitorLink } from '../utils/share'
+import { APP_TYPE } from '../setting/constants'
 
 const props = withDefaults(
   defineProps<{
@@ -134,7 +134,7 @@ const hideOthers = (keep: any) => {
 
 const openWorkspaceChat = async (row: ApplicationRow) => {
   if (!workspaceInstance) {
-    workspaceInstance = await AiEmbeddedManager.createTemporary({ token: useUserStore().token })
+    workspaceInstance = await AiEmbeddedManager.createTemporary({ token: store.getters.token })
   }
   hideOthers(workspaceInstance)
   await openInstance(workspaceInstance, row.id)
@@ -166,7 +166,7 @@ const handleUse = (row: ApplicationRow) => {
 }
 
 const handleSetting = (row: ApplicationRow) => {
-  router.push({ path: getApplicationSettingPath(row.app_type), query: { id: String(row.id) } })
+  router.push(`${roterPre}/chat/setting?id=${row.id}`)
 }
 
 const handleAction = (command: string, row: ApplicationRow) => {

@@ -1,11 +1,11 @@
 <template>
   <el-dialog
     :title="title"
-    v-model="show"
+    :visible.sync="show"
     :width="DIALOG_SIZE.LG"
     :close-on-click-modal="false"
     append-to-body
-    class="model-dialog"
+    custom-class="model-dialog"
     @closed="handleClosed"
   >
     <el-form ref="formRef" v-loading="isDetailLoading" :model="form" :rules="rules" label-position="top">
@@ -15,7 +15,7 @@
           <el-radio
             v-for="item in configTypeOptions"
             :key="item.value"
-            :label="item.value" :value="item.value"
+            :label="item.value"
             :disabled="item.disabled"
           >
             {{ item.label }}
@@ -31,6 +31,7 @@
       <el-form-item v-if="isPreset" label="服务商" prop="provider">
         <el-select
           v-model="form.provider"
+          size="small"
           filterable
           placeholder="请选择服务商"
           class="full-width"
@@ -61,6 +62,7 @@
                 v-model="form.is_full_url"
                 :active-value="1"
                 :inactive-value="0"
+                size="mini"
                 class="mini-switch"
                 :disabled="isYihaotongLocked"
                 @change="handleFullUrlChange"
@@ -70,29 +72,20 @@
         </template>
         <el-input
           v-model="form.base_url"
+          size="small"
           autocomplete="off"
           placeholder="请输入请求地址"
           :disabled="isYihaotongLocked"
         />
       </el-form-item>
 
-      <el-form-item
-        v-if="!isYihaotong"
-        prop="api_key"
-        class="api-key-item"
-        :required="isApiKeyRequired"
-      >
-        <template #label>
-          <div class="label-row">
-            <span class="label-text">API密钥</span>
-            <span v-if="canKeepStoredApiKey" class="label-hint">留空则不修改</span>
-          </div>
-        </template>
+      <el-form-item v-if="!isYihaotong" label="API密钥" prop="api_key" class="api-key-item">
         <el-input
           v-model="form.api_key"
           :type="isApiKeyVisible ? 'text' : 'password'"
+          size="small"
           autocomplete="new-password"
-          :placeholder="apiKeyPlaceholder"
+          placeholder="请输入API密钥"
           :disabled="isYihaotongLocked"
           @blur="handleApiKeyBlur"
         >
@@ -109,9 +102,6 @@
             </span>
           </template>
         </el-input>
-        <div v-if="canKeepStoredApiKey && !form.api_key" class="field-tip">
-          密钥已配置且不会明文回显；留空保存表示继续使用原密钥，填写则覆盖为新密钥
-        </div>
       </el-form-item>
 
       <!-- 模型类别：仅前端使用，不参与提交，只决定下方「模型」下拉展示聊天还是向量选项 -->
@@ -121,8 +111,8 @@
           :disabled="isYihaotongLocked"
           @change="handleModelCategoryChange"
         >
-          <el-radio :label="MODEL_CATEGORY.CHAT" :value="MODEL_CATEGORY.CHAT">对话模型</el-radio>
-          <el-radio :label="MODEL_CATEGORY.EMBEDDING" :value="MODEL_CATEGORY.EMBEDDING">向量模型</el-radio>
+          <el-radio :label="MODEL_CATEGORY.CHAT">对话模型</el-radio>
+          <el-radio :label="MODEL_CATEGORY.EMBEDDING">向量模型</el-radio>
         </el-radio-group>
       </el-form-item>
 
@@ -131,6 +121,7 @@
         <div class="field-with-action">
           <el-select
             v-model="form.model_id"
+            size="small"
             filterable
             allow-create
             default-first-option
@@ -156,6 +147,7 @@
       <el-form-item label="模型名称" prop="name">
         <el-input
           v-model="form.name"
+          size="small"
           maxlength="32"
           show-word-limit
           placeholder="请输入模型名称"
@@ -185,6 +177,7 @@
                   <el-input
                     v-model="form.json[row.field]"
                     class="advanced-input token-input"
+                    size="small"
                     :placeholder="row.placeholder"
                     @input="handleNullableNumber(row.field, $event)"
                   >
@@ -212,6 +205,7 @@
               <el-input
                 v-model="form.json.max_tool_rounds"
                 class="advanced-input"
+                size="small"
                 :placeholder="`留空则默认 ${ADVANCED_DEFAULTS.max_tool_rounds}`"
                 @input="handleNullableNumber('max_tool_rounds', $event)"
               />
@@ -231,7 +225,7 @@
                 </span>
               </template>
               <el-radio-group v-model="form.enable_thinking" class="thinking-radios">
-                <el-radio v-for="item in THINKING_MODE_OPTIONS" :key="item.value" :label="item.value" :value="item.value">
+                <el-radio v-for="item in THINKING_MODE_OPTIONS" :key="item.value" :label="item.value">
                   {{ item.label }}
                 </el-radio>
               </el-radio-group>
@@ -256,6 +250,7 @@
                   :key="row.field"
                   v-model="form.json[row.field]"
                   class="advanced-input"
+                  size="small"
                   :placeholder="row.placeholder"
                   @input="handleNullableNumber(row.field, $event)"
                 >
@@ -282,9 +277,10 @@
           连通性测试会发起一次真实请求，会消耗少量模型Token
         </span>
         <span>
-          <el-button :disabled="isSubmitting" @click="handleClose">取消</el-button>
+          <el-button size="small" :disabled="isSubmitting" @click="handleClose">取消</el-button>
           <el-button
             type="primary"
+            size="small"
             :loading="isSubmitting"
             :disabled="isYihaotongLocked"
             @click="handleSubmit"
@@ -299,8 +295,8 @@
 
 <script>
 import { computed, ref, getCurrentInstance } from 'vue'
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
-import { roterPre } from '@/settings.ts'
+import { DIALOG_SIZE } from '@/constants/popupSize'
+import { roterPre } from '@/settings'
 import {
   CONFIG_TYPE,
   MODEL_CATEGORY,
@@ -308,8 +304,8 @@ import {
   INPUT_TOKEN_SHORTCUTS,
   OUTPUT_TOKEN_SHORTCUTS,
   ADVANCED_DEFAULTS
-} from '../utils/model.ts'
-import { useModelForm } from '../composables/useModelForm.ts'
+} from '../utils/model'
+import { useModelForm } from '../composables/useModelForm'
 
 export default {
   name: 'ModelDialog',
@@ -622,7 +618,7 @@ export default {
 }
 
 /* label 改为 flex，必填星号与右侧附加控件（完整URL 开关）能排在同一行 */
-:deep(.el-form-item__label) {
+::v-deep .el-form-item__label {
   display: flex;
   align-items: center;
   width: 100%;
@@ -659,21 +655,8 @@ export default {
   color: #606266;
 }
 
-.label-hint {
-  font-size: 12px;
-  font-weight: 400;
-  color: #909399;
-}
-
-.field-tip {
-  margin-top: 6px;
-  line-height: 18px;
-  font-size: 12px;
-  color: #909399;
-}
-
 /* API 密钥右侧的「显示/隐藏 + 获取密钥」后缀 */
-.api-key-item :deep(.el-input__inner) {
+.api-key-item ::v-deep .el-input__inner {
   padding-right: 108px;
 }
 
@@ -692,8 +675,6 @@ export default {
 /* 「获取模型」浮在下拉框内右侧，箭头相应左移让位 */
 .field-with-action {
   position: relative;
-  // 位于 Element Plus 表单内容区（flex 行布局）中，需占满整行
-  width: 100%;
 
   .field-action {
     position: absolute;
@@ -778,8 +759,6 @@ export default {
     box-sizing: border-box;
     width: 96px;
     padding: 0 9px;
-    // Element Plus 的 prepend 是 inline-flex 且居中，按旧版左对齐
-    justify-content: flex-start;
     white-space: nowrap;
     background: #f5f5f5;
     border-color: #dcdee2;
@@ -880,7 +859,7 @@ export default {
   }
 }
 
-.el-popper.base-url-tip {
+.el-tooltip__popper.base-url-tip {
   max-width: 320px;
   line-height: 20px;
 }

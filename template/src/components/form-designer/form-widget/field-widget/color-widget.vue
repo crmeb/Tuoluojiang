@@ -3,7 +3,7 @@
                      :parent-widget="parentWidget" :parent-list="parentList" :index-of-parent-list="indexOfParentList"
                      :sub-form-row-index="subFormRowIndex" :sub-form-col-index="subFormColIndex" :sub-form-row-id="subFormRowId">
     <el-color-picker ref="fieldEditor" v-model="fieldModel"
-                     :size="toElSize(field.options.size)"
+                     :size="field.options.size"
                      :disabled="field.options.disabled"
                      @change="handleChangeEvent">
     </el-color-picker>
@@ -12,12 +12,14 @@
 
 <script>
   import FormItemWrapper from './form-item-wrapper'
-  import i18n, {translate} from "@/utils/i18n.ts";
+  import emitter from '@/utils/emitter'
+  import i18n, {translate} from "@/utils/i18n";
   import fieldMixin from "@/components/form-designer/form-widget/field-widget/fieldMixin";
 
   export default {
     name: "color-widget",
-    mixins: [fieldMixin, i18n],
+    componentName: 'FieldWidget',  //必须固定为FieldWidget，用于接收父级组件的broadcast事件
+    mixins: [emitter, fieldMixin, i18n],
     props: {
       field: Object,
       parentWidget: Object,
@@ -77,7 +79,7 @@
       this.handleOnMounted()
     },
 
-    beforeUnmount() {
+    beforeDestroy() {
       this.unregisterFromRefList()
     },
 
@@ -95,3 +97,4 @@
   }
 
 </style>
+@/utils/i18ns

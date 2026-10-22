@@ -11,14 +11,14 @@
         :content="content"
       />
       <div class="cr-bottom-button btn-shadow">
-        <el-button :loading="loading" type="primary" @click="handleConfirm()">保存</el-button>
+        <el-button size="small" :loading="loading" type="primary" @click="handleConfirm()">保存</el-button>
       </div>
     </div>
   </div>
 </template>
 <script>
 import ueditorFrom from '@/components/form-common/oa-wangeditor'
-import { employeeTrainApi, getEmployeeTrainApi } from '@/api/config.ts'
+import { employeeTrainApi, getEmployeeTrainApi } from '@/api/config.js'
 export default {
   name: '',
   components: { ueditorFrom },
@@ -79,15 +79,15 @@ export default {
   border-radius: 0 0 8px 8px;
 }
 
-:deep(.w-e-toolbar) {
+::v-deep .w-e-toolbar {
   border-radius: 8px 8px 0 0;
   border-bottom-color: #eee;
   background-color: transparent;
 }
-:deep(.main) {
+::v-deep .main {
   background-color: transparent;
 }
-:deep(.w-e-text-container) {
+::v-deep .w-e-text-container {
   background-color: transparent;
 }
 </style>

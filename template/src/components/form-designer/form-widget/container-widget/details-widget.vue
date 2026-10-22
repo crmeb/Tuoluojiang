@@ -13,7 +13,7 @@
     <el-card
       :key="widget.id"
       class="card-container"
-      @click.stop="selectWidget(widget)"
+      @click.native.stop="selectWidget(widget)"
       :shadow="widget.options.shadow"
       :style="{ width: widget.options.cardWidth + '!important' || '' }"
       :class="[selected ? 'selected' : '', !!widget.options.folded ? 'folded' : '', customClass]"
@@ -24,30 +24,45 @@
         :move="checkBContainerValid"
         handle=".drag-handler"
         @add="(evt) => onContainerDragAdd(evt, widget.widgetList, 'details')"
-        tag="div"
-        class="form-widget-list"
-        :item-key="$draggableKey"
       >
         <!-- @update="onContainerDragUpdate" -->
-        <template #item="{ element: subWidget, index: swIdx }">
-          <component
-            :is="subWidget.type === 'tab' ? 'form-tab-widget' : subWidget.type + '-widget'"
-            v-bind="subWidget.category === 'container' ? { widget: subWidget } : { field: subWidget, designState: true }"
-            :designer="designer"
-            :parent-list="widget.widgetList"
-            :index-of-parent-list="swIdx"
-            :parent-widget="widget"
-            :style="subWidget.category === 'container' ? { flexShrink: 0 } : undefined"
-            @fieldShowFn="fieldShowFn"
-          ></component>
-        </template>
+        <transition-group name="fade" tag="div" class="form-widget-list">
+          <template v-for="(subWidget, swIdx) in widget.widgetList">
+            <template v-if="'container' === subWidget.category">
+              <component
+                :is="subWidget.type + '-widget'"
+                :widget="subWidget"
+                :designer="designer"
+                :key="subWidget.id"
+                :parent-list="widget.widgetList"
+                :index-of-parent-list="swIdx"
+                :parent-widget="widget"
+                @fieldShowFn="fieldShowFn"
+                style="flex-shrink: 0"
+              ></component>
+            </template>
+            <template v-else>
+              <component
+                :is="subWidget.type + '-widget'"
+                :field="subWidget"
+                :designer="designer"
+                :key="subWidget.id"
+                :parentList="widget.widgetList"
+                :index-of-parent-list="swIdx"
+                :parent-widget="widget"
+                :design-state="true"
+                @fieldShowFn="fieldShowFn"
+              ></component>
+            </template>
+          </template>
+        </transition-group>
       </draggable>
     </el-card>
   </container-wrapper>
 </template>
 
 <script>
-import i18n from '@/utils/i18n.ts'
+import i18n from '@/utils/i18n'
 import containerMixin from '@/components/form-designer/form-widget/container-widget/containerMixin'
 import Draggable from 'vuedraggable'
 import ContainerWrapper from '@/components/form-designer/form-widget/container-widget/container-wrapper'
@@ -56,6 +71,7 @@ import refMixinDesign from '@/components/form-designer/refMixinDesign'
 
 export default {
   name: 'details-widget',
+  componentName: 'DetailsWidget',
   mixins: [i18n, containerMixin, refMixinDesign],
   inject: ['refList'],
   components: {
@@ -111,7 +127,7 @@ export default {
   methods: {
     fieldShowFn(val) {
       this.widget.widgetList.forEach((item) => {
-        item.isShow = item.id == val.id
+        this.$set(item, 'isShow', item.id == val.id)
       })
     },
     checkBContainerValid(evt) {
@@ -145,7 +161,7 @@ export default {
   }
 }
 
-:deep(.el-card__body) {
+::v-deep .el-card__body {
   padding-bottom: 0;
 }
 
@@ -163,7 +179,7 @@ export default {
   float: right;
 }
 
-:deep(.el-form-item__label) {
+::v-deep .el-form-item__label {
   display: block !important; /* 强制块级元素，独占一行 */
   vertical-align: baseline !important;
   margin-bottom: 8px !important; /* 与输入框间距 */
@@ -173,13 +189,13 @@ export default {
 }
 
 /* 2. 调整输入框容器的布局（避免受 label 影响） */
-:deep(.el-form-item__content) {
+::v-deep .el-form-item__content {
   width: 200px;
   flex-shrink: 0;
   margin-left: 0 !important; /* 清除默认左外边距（关键） */
   padding-left: 0 !important;
 }
-:deep(.el-form-item) {
+::v-deep .el-form-item {
   display: flex;
   flex-direction: column;
 }

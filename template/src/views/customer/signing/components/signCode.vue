@@ -1,5 +1,5 @@
 <template>
-    <oa-dialog ref="oaDialog" :fromData="fromData" v-model:visible="visible" :isFooter="false" @handleClose="closeDialog" >
+    <oa-dialog ref="oaDialog" :fromData="fromData" :visible.sync="visible" :isFooter="false" @handleClose="closeDialog" >
         <div class="sign-code-container">
            <div ref="qrcode" class="qrcode" />
             <div class="sign-info">
@@ -9,19 +9,18 @@
             <!-- <div class="pc-link-wrapper">
                 <span class="link-label">PC端签约链接：</span>
                 <a href="https://tuoluojiang.com" target="_blank" class="link-url">https://tuoluojiang.com</a>
-                <el-button type="primary" link @click="copyLink" class="copy-btn">复制链接</el-button>
+                <el-button type="text" @click="copyLink" class="copy-btn">复制链接</el-button>
             </div> -->
         </div>
     </oa-dialog>
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
     import QRCode from 'qrcodejs2'
 export default {
     name: 'SignCode',
     components: {
-        oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form')),
+        oaDialog: () => import('@/components/form-common/dialog-form'),
         QRCode
     },
     data() {

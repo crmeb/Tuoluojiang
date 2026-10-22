@@ -41,8 +41,8 @@
           :data="tableData"
           :loading="isLoading"
           :total="total"
-          v-model:page="page"
-          v-model:page-size="pageSize"
+          :page.sync="page"
+          :page-size.sync="pageSize"
           @selection-change="handleSelectionChange"
         >
           <!-- 渠道活码图片，点击预览下载 -->
@@ -70,7 +70,7 @@
             <template v-if="row.tags && row.tags.length">
               <el-tooltip :content="formatAllNames(row.tags)" placement="top" :disabled="row.tags.length <= 3">
                 <div class="tag-list">
-                  <el-tag v-for="item in getDisplayList(row.tags)" :key="item.id">
+                  <el-tag v-for="item in getDisplayList(row.tags)" :key="item.id" size="small">
                     {{ item.name }}
                   </el-tag>
                   <span v-if="row.tags.length > 3" class="tag-more">...</span>
@@ -120,15 +120,15 @@
 
           <!-- 操作列 -->
           <template #action="{ row }">
-            <el-button type="primary" link @click="handleView(row)">查看</el-button>
+            <el-button type="text" size="mini" @click="handleView(row)">查看</el-button>
             <el-divider direction="vertical" />
-            <el-button type="primary" link @click="handleStatistics(row)">统计分析</el-button>
+            <el-button type="text" size="mini" @click="handleStatistics(row)">统计分析</el-button>
             <el-divider direction="vertical" />
-            <el-button type="primary" link @click="handlePreviewDownload(row)">预览下载</el-button>
+            <el-button type="text" size="mini" @click="handlePreviewDownload(row)">预览下载</el-button>
             <el-divider direction="vertical" />
-            <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
+            <el-button type="text" size="mini" @click="handleEdit(row)">编辑</el-button>
             <el-divider v-if="row.status != 2" direction="vertical" />
-            <el-button v-if="row.status != 2" type="primary" link @click="handleDelete(row)">删除</el-button>
+            <el-button v-if="row.status != 2" type="text" size="mini" @click="handleDelete(row)">删除</el-button>
           </template>
         </BaseTable>
       </div>
@@ -144,15 +144,15 @@
 </template>
 
 <script>
-import { ref, getCurrentInstance, defineAsyncComponent } from 'vue'
-import { useRouter } from 'vue-router'
-import { roterPre } from '@/settings.ts'
+import { ref, getCurrentInstance } from 'vue'
+import { useRouter } from 'vue-router/composables'
+import { roterPre } from '@/settings'
 import BaseContainer from '@/components/BaseContainer/index.vue'
 import BaseTable from '@/components/BaseTable/index.vue'
 import oaFromBox from '@/components/common/oaFromBox.vue'
 import channelCodeGroupSide from './components/channelCodeGroupSide.vue'
 import batchMoveGroupDialog from './components/batchMoveGroupDialog.vue'
-import { useChannelCodeList } from './composables/useChannelCodeList.ts'
+import { useChannelCodeList } from './composables/useChannelCodeList'
 
 export default {
   name: 'CreateGroupList',
@@ -162,8 +162,8 @@ export default {
     oaFromBox,
     channelCodeGroupSide,
     batchMoveGroupDialog,
-    channelCodePreview: defineAsyncComponent(() => import('./components/channelCodePreview')),
-    groupDetails: defineAsyncComponent(() => import('./components/groupDetails'))
+    channelCodePreview: () => import('./components/channelCodePreview'),
+    groupDetails: () => import('./components/groupDetails')
   },
   setup() {
     const { proxy } = getCurrentInstance()

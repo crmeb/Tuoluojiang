@@ -3,7 +3,7 @@
   <div class="followUpRecord">
     <div class="mb10 btn-box1">
       <div class="title-16">订单记录</div>
-      <el-button type="primary" @click="addRecord">添加订单记录</el-button>
+      <el-button type="primary" size="small" @click="addRecord">添加订单记录</el-button>
     </div>
     <file-upload :formInfo="formInfo" v-if="addRecordShow" @change="uploadChange"></file-upload>
     <div class="recordContent">
@@ -11,7 +11,8 @@
         <el-timeline-item
           v-for="(activity, index) in liaisonData"
           :key="index"
-          :icon="$icon(activity.icon)"
+          :icon="activity.icon"
+          :type="activity.type"
           color="#1890FF"
           :size="activity.size"
         >
@@ -24,12 +25,10 @@
               </div>
               <el-dropdown class="more">
                 <i class="el-icon-more" />
-                <template #dropdown>
-                  <el-dropdown-menu style="text-align: center; width: 100px">
-                    <el-dropdown-item @click="handleEdit(activity, index)"> 编辑 </el-dropdown-item>
-                    <el-dropdown-item @click="handleDelete(activity)"> 删除 </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
+                <el-dropdown-menu style="text-align: center; width: 100px">
+                  <el-dropdown-item @click.native="handleEdit(activity, index)"> 编辑 </el-dropdown-item>
+                  <el-dropdown-item @click.native="handleDelete(activity)"> 删除 </el-dropdown-item>
+                </el-dropdown-menu>
               </el-dropdown>
             </div>
             <div class="record">
@@ -55,25 +54,23 @@
       </el-timeline>
     </div>
     <div v-if="liaisonData.length == 0" class="default">
-      <EmptyState type="record" :text="'暂无数据' + '~'" />
+      <EmptyState type="record" :text="$t('public.message14') + '~'" />
     </div>
   </div>
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { contracFileListApi, contracFileDeleteApi } from '@/api/client.ts'
-import { toSrcFn } from '@/utils/format.ts'
-import { modalSure } from '@/libs/public.ts'
-import { fileLinkDownLoad, getFileExtension, getFileType } from '@/utils/file.ts'
+import { contracFileListApi, contracFileDeleteApi } from '@/api/client'
+import { toSrcFn } from '@/utils/format'
+import { modalSure } from '@/libs/public'
+import { fileLinkDownLoad, getFileExtension, getFileType } from '@/utils/file'
 import EmptyState from '@/components/common/emptyState.vue'
-import { filePreview } from '@/utils/filePreview.ts'
+import { filePreview } from '@/utils/filePreview'
 export default {
-  emits: ['refresh-detail'],
   name: 'Record',
   components: {
     EmptyState,
-    fileUpload: defineAsyncComponent(() => import('./fileUpload'))
+    fileUpload: () => import('./fileUpload')
   },
   props: {
     formInfo: {
@@ -262,6 +259,9 @@ export default {
   padding: 0px;
   margin-right: 16px;
 }
+.el-button--medium {
+  padding: 10px 15px !important;
+}
 .recordContent {
   padding-top: 38px;
 }
@@ -311,7 +311,7 @@ export default {
   font-weight: 400;
   color: #303133;
 }
-:deep(.el-timeline-item__wrapper) {
+::v-deep .el-timeline-item__wrapper {
   position: relative;
   top: -12px;
 }
@@ -378,26 +378,25 @@ export default {
 .iconfont {
   color: #1890ff;
 }
-:deep(.el-timeline-item__tail) {
+::v-deep .el-timeline-item__tail {
   position: absolute;
   left: 4px;
   height: 100%;
 
   border-left: 1px solid #dfe4ed;
 }
-:deep(.el-timeline-item__node--normal) {
+::v-deep .el-timeline-item__node--normal {
   left: 0px;
   width: 10px;
   height: 10px;
 }
-:deep(.el-textarea__inner) {
+::v-deep .el-textarea__inner {
   min-height: 96px;
   // word-break: break-all;
   border: none;
-  box-shadow: none;
   font-size: 12px;
 }
-:deep(.icondangqian) {
+::v-deep .icondangqian {
   font-size: 16px;
   color: #1890ff;
   background-color: none;

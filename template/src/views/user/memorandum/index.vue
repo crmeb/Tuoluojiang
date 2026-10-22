@@ -118,7 +118,7 @@
                 :content="content"
                 :title="title"
                 height="calc(100vh - 226px)"
-                title-placeholder="填写记事本标题"
+                :title-placeholder="$t('calendar.placeholder02')"
                 @input="handleEditorInput"
                 @update:title="handleTitleInput"
                 @title-change="edit"
@@ -134,9 +134,8 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-  import { memorialListApi, memorialSaveApi, memorialEditApi, memorialDeleteApi, memorialInfoApi } from '@/api/user.ts'
+import { modalSure } from '@/libs/public'
+  import { memorialListApi, memorialSaveApi, memorialEditApi, memorialDeleteApi, memorialInfoApi } from '@/api/user'
   import fSpan from '@/views/business/components/formSetting/components/form-create-designer/src/config/rule/span'
 
   // 本地缓存 key：记录上次关闭时打开的笔记 id，下次进入记事本自动恢复
@@ -159,13 +158,12 @@ const AUTO_SAVE_SECONDS = 60
 const AUTO_SAVE_TIMEOUT = 30000
 
 export default {
-  emits: ['toggleFullscreen', 'handleClose'],
   name: 'Notepad',
   components: {
     fSpan,
-    menuTree: defineAsyncComponent(() => import('./components/menuTree')),
-    notepadEditor: defineAsyncComponent(() => import('./components/notepad-editor')),
-    moveDialog: defineAsyncComponent(() => import('./components/moveDialog'))
+    menuTree: () => import('./components/menuTree'),
+    notepadEditor: () => import('./components/notepad-editor'),
+    moveDialog: () => import('./components/moveDialog')
   },
   props: {
     style1: {
@@ -258,7 +256,7 @@ export default {
     document.addEventListener('compositionstart', this.onCompositionStart, true)
     document.addEventListener('compositionend', this.onCompositionEnd, true)
   },
-  beforeUnmount() {
+  beforeDestroy() {
     this.handleRemove()
     this.stopAutoSave()
     document.removeEventListener('compositionstart', this.onCompositionStart, true)
@@ -657,9 +655,9 @@ export default {
       // 已有保存在途：跳过本次，避免并发请求因乐观锁基准过期被误判为冲突
       if (this.saveLoading) return
       if (this.title == '') {
-        this.$message.error('记事本的标题不能为空')
+        this.$message.error(this.$t('calendar.placeholder05'))
       } else if (this.content == '') {
-        this.$message.error('记事本的内容不能为空')
+        this.$message.error(this.$t('calendar.placeholder06'))
       } else {
         var data = {
           title: this.title,
@@ -770,7 +768,7 @@ export default {
     },
     // 删除笔记（左侧树入口），删的是当前打开的笔记时清空编辑区
     deleteNote(note) {
-      modalSure('你确定要删除这条内容吗').then(async () => {
+      modalSure(this.$t('calendar.placeholder07')).then(async () => {
         await memorialDeleteApi(note.id)
         // 刷新左侧树（最近模式下同步刷新最近列表）
         this.$refs.menuTree.menuList()
@@ -875,7 +873,7 @@ export default {
     transition: none;
   }
 
-  :deep(.tree-box) {
+  ::v-deep .tree-box {
     // 最小内容宽度：拖窄到下限时内部元素仍自适应可用；收起动画时内容保持该宽被裁剪滑出
     min-width: 200px;
   }
@@ -919,11 +917,11 @@ export default {
   // 左侧 210px，剩余空间自适应占满，避免右缘留缝
   flex: 1;
   min-width: 0;
-  :deep(.el-card__body) {
+  ::v-deep .el-card__body {
     padding: 0 !important;
     border: none !important;
   }
-  :deep(.el-card) {
+  ::v-deep .el-card {
     border: none !important;
   }
   // 全屏 / 退出全屏按钮：内容态头部与空状态头部共用同一图标样式
@@ -997,13 +995,13 @@ export default {
         overflow: hidden;
         white-space: nowrap;
 
-        :deep(.el-breadcrumb__inner) {
+        ::v-deep .el-breadcrumb__inner {
           font-size: 13px;
           font-weight: 400;
           color: #909399;
         }
 
-        :deep(.el-breadcrumb__item:last-child .el-breadcrumb__inner) {
+        ::v-deep .el-breadcrumb__item:last-child .el-breadcrumb__inner {
           color: #303133;
           font-weight: 500;
         }
@@ -1073,7 +1071,7 @@ export default {
       }
     }
   }
-  :deep(.w-e-bar-divider) {
+  ::v-deep .w-e-bar-divider {
     width: 0.5px;
     background: #f7f7f7;
   }

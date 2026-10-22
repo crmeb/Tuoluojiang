@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-popover placement="bottom" trigger="manual" :visible="showPopover" popper-class="time-popover">
+    <el-popover placement="bottom" trigger="manual" v-model="showPopover" popper-class="time-popover">
       <div
         v-for="(item, index) in list.length > 0 ? list : crudList"
         :key="index"
@@ -12,7 +12,7 @@
       <template #reference>
         <div @click="showPopover = true">
           <slot>
-            <el-button type="primary" link v-if="!icon">批量设置</el-button>
+            <el-button type="text" size="small" v-if="!icon">批量设置</el-button>
             <span v-else class="iconfont iconxitong-xitongshezhi-cebian"></span>
           </slot>
         </div>
@@ -22,7 +22,6 @@
 </template>
 <script>
 export default {
-  emits: ['handClick'],
   name: '',
   props: {
     icon: {
@@ -67,7 +66,7 @@ export default {
   mounted() {
     window.addEventListener('click', this.handleClosePopover)
   },
-  unmounted() {
+  destroyed() {
     window.removeEventListener('click', this.handleClosePopover)
   },
   methods: {

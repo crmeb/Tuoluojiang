@@ -3,6 +3,7 @@
     <div class="table-box" v-if="tableColumn.length > 0" v-loading="tableLoading">
       <!-- sortable -->
       <el-table
+        size="small"
         :data="tableData"
         :border="true"
         style="width: 100%"
@@ -38,8 +39,8 @@
 
 <script>
 import FormatRow from '@/components/simpleTable/FormatRow.vue'
-import { getDataList } from '@/api/chart.ts'
-import { getStorageJson } from '@/utils/storage.ts'
+import { getDataList } from '@/api/chart'
+import { getStorageJson } from '@/utils/storage'
 
 export default {
   name: 'listTable-widget',
@@ -212,7 +213,7 @@ export default {
             fieldName: 'sumcol'
           })
           this.$nextTick(() => {
-            this.tableData = list
+            this.$set(this, 'tableData', list)
           })
         } else if (showSumcol) {
           return

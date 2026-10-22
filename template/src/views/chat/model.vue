@@ -52,8 +52,8 @@ import oaFromBox from '@/components/common/oaFromBox'
 import defaultPage from '@/components/common/defaultPage'
 import modelDialog from './components/modelDialog'
 import modelCard from './components/modelCard'
-import { useGridPageSize } from '@/composables/useGridPageSize.ts'
-import { useModelList } from './composables/useModelList.ts'
+import { useGridPageSize } from '@/composables/useGridPageSize'
+import { useModelList } from './composables/useModelList'
 
 export default {
   name: 'ChatModel',

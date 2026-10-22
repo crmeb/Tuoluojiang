@@ -1,7 +1,7 @@
 <!-- @FileDescription:  应用举例：低代码新建字段 -->
 <template>
   <div class="popover-box">
-    <el-popover placement="left-end" width="296" trigger="click" v-model:visible="popoverVisible">
+    <el-popover placement="left-end" width="296" trigger="click" v-model="popoverVisible">
       <div class="flex-box">
         <div v-for="item in list" :key="item.value" class="item" @click="handleClick(item)">
           <i class="iconfont" :class="item.icon"></i>
@@ -9,10 +9,10 @@
         </div>
       </div>
       <template #reference>
-        <el-button type="primary" v-if="title">
+        <el-button size="small" type="primary" v-if="title">
           {{ title }}<i class="el-icon-arrow-down">
           </i></el-button>
-        <span v-else title="新建字段" class="el-icon-plus ml10 pointer"></span>
+        <span v-if="!title" title="新建字段" class="el-icon-plus ml10 pointer"></span>
       </template>
     </el-popover>
     <fieldDialog ref="fieldDialog" @submit="submit" :typesObj="typeValue" :rowData="rowData" :dictList="dictList">
@@ -23,11 +23,10 @@
 import {
   dataFieldTypeApi,
   dataFieldSaveApi
-} from '@/api/develop.ts'
+} from '@/api/develop'
 import fieldDialog from './fieldDialog'
-import { getDictListApi } from '@/api/form.ts'
+import { getDictListApi } from '@/api/form'
 export default {
-  emits: ['getInfo'],
   name: '',
   components: { fieldDialog },
   props: {

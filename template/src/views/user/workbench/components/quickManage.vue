@@ -1,11 +1,10 @@
 <template>
   <el-dialog
-      class="user-workbench-quick-manage-dialog"
     :append-to-body="true"
     :before-close="handleClose"
     :close-on-click-modal="false"
     :title="config.title"
-    v-model="dialogVisible"
+    :visible.sync="dialogVisible"
     :width="config.width"
   >
     <div class="quick-content">
@@ -27,26 +26,28 @@
                 group="people"
                 @end="onEnd"
                 @start="onStart"
-                tag="transition-group"
-                item-key="id"
               >
-                <template #item="{ element: item, index }">
-                  <li v-if="config.type == 'statistics'" class="statistics-item">
+                <transition-group v-if="config.type == 'statistics'">
+                  <li v-for="(item, index) in config.data" :key="item.id" class="statistics-item">
                     <div class="name">{{ item.title }}</div>
                     <div class="num">0.00</div>
                     <i class="el-icon-remove quick-icon remove" @click="handleRemove(index)"></i>
                   </li>
-                  <li v-else>
-                    <el-image :src="item.image" class="image"></el-image>
-                    <div class="name">{{ item.name }}</div>
-                    <i class="el-icon-remove quick-icon remove" @click="handleRemove(index)"></i>
+                </transition-group>
+                <transition-group v-else>
+                  <li v-for="(item, index) in config.data" :key="item.id">
+                    <template>
+                      <el-image :src="item.image" class="image"></el-image>
+                      <div class="name">{{ item.name }}</div>
+                      <i class="el-icon-remove quick-icon remove" @click="handleRemove(index)"></i>
+                    </template>
                   </li>
-                </template>
+                </transition-group>
               </draggable>
             </ul>
             <div v-else class="quick-list-empty">陀螺匠会更努力了解你的需求</div>
           </div>
-          <template v-for="(other, index) in fastEntryData" :key="index">
+          <template v-for="(other, index) in fastEntryData">
             <div class="quick-list-item">
               <div class="quick-list-item-name">{{ other.cate_name }}</div>
               <!-- 业绩统计 -->
@@ -82,8 +83,8 @@
     </div>
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleClose">取消</el-button>
-        <el-button :loading="loading" type="primary" @click="handleConfirm">确定</el-button>
+        <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
+        <el-button :loading="loading" size="small" type="primary" @click="handleConfirm">{{ $t('public.ok') }}</el-button>
       </div>
     </template>
   </el-dialog>
@@ -91,9 +92,8 @@
 
 <script>
 import draggable from 'vuedraggable'
-import { userWorkFastMenusApi, putStatisticsApiAll } from '@/api/user.ts'
+import { userWorkFastMenusApi, putStatisticsApiAll } from '@/api/user'
 export default {
-  emits: ['isSuccess'],
   name: 'MarkDialog',
   props: {
     config: {
@@ -219,6 +219,11 @@ export default {
   opacity: 0.1;
   background: #fff;
 }
+::v-deep .el-dialog__body {
+  padding-top: 15px;
+  padding-right: 0;
+  border-top: 1px solid #dcdfe6;
+}
 .statistics {
   padding: 0;
   margin: 0;
@@ -269,7 +274,7 @@ export default {
   width: 100%;
   .quick-list {
     width: 100%;
-    :deep(.el-scrollbar__wrap) {
+    ::v-deep .el-scrollbar__wrap {
       overflow-x: hidden;
     }
     .quick-list-item {
@@ -347,14 +352,5 @@ export default {
       }
     }
   }
-}
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.user-workbench-quick-manage-dialog .el-dialog__body {
-  padding-top: 15px;
-  padding-right: 0;
-  border-top: 1px solid #dcdfe6;
 }
 </style>

@@ -1,0 +1,1 @@
+var e={methods:{handleBottomBatchSelectChange(){this.$refs.table.toggleAllSelection()},handleBatchShareData(){this.handleDropdown(`share`)},handleBatchTransferData(){this.handleDropdown(`transfer`)}}};export{e as t};

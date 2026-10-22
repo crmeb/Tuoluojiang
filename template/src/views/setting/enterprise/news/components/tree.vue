@@ -38,7 +38,6 @@
 
 <script>
 export default {
-  emits: ['getTypesId', 'addType'],
   name: 'TreeVue',
   components: {},
   props: {
@@ -49,7 +48,7 @@ export default {
       }
     },
     type: {
-      type: [Number, String],
+      type: Number | String,
       default: () => {
         return 0
       }
@@ -87,7 +86,7 @@ export default {
     // tree节点点击
     handleClick(node, data) {
       if (this.activeValue) {
-        this.$refs[`pop-${this.activeValue}`].hide()
+        this.$refs[`pop-${this.activeValue}`].doClose()
       }
       this.types = node.value
       this.$emit('getTypesId', node.value)
@@ -101,7 +100,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-scrollbar__wrap) {
+::v-deep .el-scrollbar__wrap {
   overflow-x: hidden;
 }
 .title {
@@ -114,26 +113,26 @@ export default {
     cursor: pointer;
   }
 }
-:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
+::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content {
   background: rgba(240, 250, 254, 0.6);
   .flex-box {
     color: #1890ff;
     font-weight: 600;
   }
 }
-:deep(.tree-box-con .el-tree-node__content) {
+::v-deep .tree-box-con .el-tree-node__content {
   border-radius: 4px;
   width: 100%;
   height: 40px;
 }
-:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node),
+::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node,
 .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .right-icon {
   display: inline-block;
   color: #1890ff;
   font-weight: 600;
 }
 
-:deep(.el-tree-node > .el-tree-node__children) {
+::v-deep .el-tree-node > .el-tree-node__children {
   overflow: inherit;
 }
 
@@ -187,7 +186,7 @@ export default {
 .tree-box-con {
   padding-bottom: 12px;
 }
-:deep(.el-tree) {
+::v-deep .el-tree {
   background-color: transparent;
 }
 

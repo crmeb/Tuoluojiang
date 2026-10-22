@@ -31,8 +31,8 @@
 
 <script>
 
-import { entSiteApi } from '@/api/public.ts'
-import { getStorageJson } from '@/utils/storage.ts'
+import { entSiteApi } from '@/api/public'
+import { getStorageJson } from '@/utils/storage'
 import QRCode from 'qrcodejs2'
 
 export default {

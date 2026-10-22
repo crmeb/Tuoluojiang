@@ -91,9 +91,8 @@
 </template>
 
 <script>
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
 export default {
-  emits: ['limitFn', 'pageFn', 'multipleSelection'],
   name: 'Table',
   props: {
     selectAll: {
@@ -126,10 +125,10 @@ export default {
         limit: 15
       },
       typeMap: {
-        1: { text: '正式', color: 'blue' },
-        2: { text: '试用', color: 'yellow' },
-        3: { text: '实习', color: 'green' },
-        4: { text: '离职', color: 'yellow' },
+        1: { text: this.$t('toptable.formal'), color: 'blue' },
+        2: { text: this.$t('toptable.ontrial'), color: 'yellow' },
+        3: { text: this.$t('toptable.internship'), color: 'green' },
+        4: { text: this.$t('toptable.dimission'), color: 'yellow' },
         0: { text: '未入职', color: 'gray' }
       },
 
@@ -216,7 +215,7 @@ export default {
         emptyUid: { text: '未激活', iconClass: 'bg-danger', class: 'table-txt' },
         status0: { text: '未激活', iconClass: 'bg-danger', class: 'table-txt' },
         status2: { text: '停用', iconClass: 'bg-danger', class: 'table-txt' },
-        status1: { text: '正常', iconClass: 'bg-default', class: 'table-txt' }
+        status1: { text: this.$t('setting.info.normal'), iconClass: 'bg-default', class: 'table-txt' }
       }
 
       if (row.uid === '') {
@@ -235,14 +234,14 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.default-expand-all) {
+::v-deep .default-expand-all {
   color: #909399;
   background-color: pink;
 }
 .iconzhuyaobumen {
   color: #ff9900;
 }
-:deep(.el-table th) {
+::v-deep .el-table th {
   background-color: #f7fbff;
 }
 .bg-default {

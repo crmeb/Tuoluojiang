@@ -1,13 +1,12 @@
 <template>
   <div>
     <el-dialog
-      v-model="dialogFormVisible"
+      :visible.sync="dialogFormVisible"
       :width="formData.width"
       :title="formData.title"
       :modal="true"
       :close-on-click-modal="false"
-      modal-class="workbench-password-overlay"
-      class="person"
+      custom-class="person"
       :show-close="true"
       :before-close="handleClose"
     >
@@ -23,14 +22,16 @@
           <el-form-item label="密码" prop="password">
             <el-input
               v-model="tableFrom.password"
+              size="small"
               type="password"
               auto-complete="on"
-              placeholder="请输入密码"
+              :placeholder="$t('login.title2')"
             />
           </el-form-item>
           <el-form-item label="确认密码" prop="password_confirm">
             <el-input
               v-model="tableFrom.password_confirm"
+              size="small"
               type="password"
               auto-complete="on"
               placeholder="请输入确认密码"
@@ -38,8 +39,8 @@
           </el-form-item>
         </el-form>
         <div class="text-right">
-          <el-button @click="handleClose()">取消</el-button>
-          <el-button type="primary" @click="handleConfirm()">确定</el-button>
+          <el-button size="small" @click="handleClose()">{{ $t('public.cancel') }}</el-button>
+          <el-button type="primary" size="small" @click="handleConfirm()">{{ $t('public.ok') }}</el-button>
         </div>
       </div>
     </el-dialog>
@@ -47,9 +48,7 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useUserStore } from '@/stores/user.ts'
-import { userEntSavePasswordApi } from '@/api/user.ts'
+import { userEntSavePasswordApi } from '@/api/user'
 export default {
   name: 'DialogForm',
   components: {},
@@ -63,9 +62,6 @@ export default {
         }
       }
     }
-  },
-  computed: {
-    ...mapStores(useUserStore)
   },
   data() {
     return {
@@ -87,7 +83,7 @@ export default {
   methods: {
     // 初始密码账号：进入页面后自动弹出修改提示，延迟等首屏渲染完成
     autoOpenOnInitPassword() {
-      const userInfo = this.userStore.userInfo
+      const userInfo = this.$store.state.user.userInfo
       if (!userInfo || userInfo.is_init !== 1) return
       setTimeout(() => {
         this.handleOpen()
@@ -95,9 +91,9 @@ export default {
     },
     handleClose() {
       this.dialogFormVisible = false
-      let userInfo = this.userStore.userInfo
+      let userInfo = this.$store.state.user.userInfo
       userInfo.is_init = 0
-      this.userStore.setUserInfo(userInfo)
+      this.$store.commit('user/SET_USERINFO', userInfo)
     },
     handleOpen() {
       this.dialogFormVisible = true
@@ -106,7 +102,7 @@ export default {
     handleConfirm() {
       this.$refs.form.validate((valid) => {
         if (valid) {
-          this.tableFrom.phone = this.userStore.userInfo.phone
+          this.tableFrom.phone = this.$store.state.user.userInfo.phone
           this.savePassword(this.tableFrom)
         }
       })
@@ -130,14 +126,14 @@ export default {
 
 <style lang="scss" scoped>
 .info {
-  :deep(.el-form-item__content) {
+  ::v-deep .el-form-item__content {
     margin-left: 12px !important;
   }
-  :deep(.el-alert) {
+  ::v-deep .el-alert {
     padding: 6px 20px;
   }
 }
-:global(.workbench-password-overlay) {
+::v-deep .el-dialog__wrapper {
   background-color: rgba(0, 0, 0, 0.6);
 }
 .dialog-footer {

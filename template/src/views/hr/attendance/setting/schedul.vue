@@ -19,7 +19,7 @@
           <el-table :data="tableData" :height="TABLE_HEIGHT" style="width: 100%">
             <el-table-column label="排班月份">
               <template #default="scope">
-                {{ dayjs(scope.row.date).format('YYYY年MM月') }}
+                {{ moment(scope.row.date).format('yyyy年MM月') }}
               </template>
             </el-table-column>
             <el-table-column label="考勤组名称" prop="group.name"> </el-table-column>
@@ -44,16 +44,16 @@
                 <el-button
                   v-if="scope.row.group.is_delete !== 1"
                   v-hasPermi="['hr:attendance:schedul:edit']"
-                  type="primary" link
+                  type="text"
                   @click="editFn(scope.row)"
                   >排班</el-button
                 >
-                <!-- v-if="dayjs(scope.row.date).format('YYYY-MM') >= dayjs().format('YYYY-MM')" -->
-                <el-button v-if="scope.row.group.is_delete == 1" type="primary" link @click="checkFn(scope.row)"
+                <!-- v-if="moment(scope.row.date).format('YYYY-MM') >= moment().format('YYYY-MM')" -->
+                <el-button v-if="scope.row.group.is_delete == 1" type="text" @click="checkFn(scope.row)"
                   >查看</el-button
                 >
 
-                <el-button v-hasPermi="['hr:attendance:schedul:copy']" type="primary" link @click="copyFn(scope.row)"
+                <el-button v-hasPermi="['hr:attendance:schedul:copy']" type="text" @click="copyFn(scope.row)"
                   >复制</el-button
                 >
               </template>
@@ -90,21 +90,20 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { attendanceGroupListApi, attendanceArrangeApi, attendanceArrangeListApi } from '@/api/config.ts'
+import moment from 'moment'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { attendanceGroupListApi, attendanceArrangeApi, attendanceArrangeListApi } from '@/api/config'
 import oaFromBox from '@/components/common/oaFromBox'
 
 export default {
   components: {
-    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form')),
-    addSchedul: defineAsyncComponent(() => import('./addSchedul')),
-    checkSchedul: defineAsyncComponent(() => import('./components/checkSchedul')),
+    oaDialog: () => import('@/components/form-common/dialog-form'),
+    addSchedul: () => import('./addSchedul'),
+    checkSchedul: () => import('./components/checkSchedul'),
     oaFromBox
   },
   computed: {
-    dayjs: () => dayjs
+    moment: () => moment
   },
   data() {
     return {
@@ -197,7 +196,7 @@ export default {
     async getList() {
       if (this.timeVal.length > 0) {
         this.where.time =
-          dayjs(this.timeVal[0]).format('YYYY/MM') + '-' + dayjs(this.timeVal[1]).format('YYYY/MM')
+          moment(this.timeVal[0]).format('YYYY/MM') + '-' + moment(this.timeVal[1]).format('YYYY/MM')
       }
 
       const result = await attendanceArrangeListApi(this.where)
@@ -206,7 +205,7 @@ export default {
     },
 
     async submit(data) {
-      data.date = dayjs(data.date).format('YYYY-MM')
+      data.date = moment(data.date).format('yyyy-MM')
       await attendanceArrangeApi(data)
       await this.$refs.oaDialog.handleClose()
 
@@ -285,7 +284,7 @@ export default {
 
   padding-top: 0;
 }
-:deep(.el-alert) {
+::v-deep .el-alert {
   padding-left: 30px;
   border: 1px solid #1890ff;
   color: #1890ff;
@@ -294,12 +293,12 @@ export default {
   line-height: 1;
   margin-bottom: 14px;
 }
-:deep(.el-alert--info .el-alert__description) {
+::v-deep .el-alert--info .el-alert__description {
   color: #303133;
   font-size: 13px;
   font-weight: 500;
 }
-:deep(.el-alert__icon.is-big) {
+::v-deep .el-alert__icon.is-big {
   font-size: 16px;
   width: 15px;
 }

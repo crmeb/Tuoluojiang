@@ -1,7 +1,7 @@
 <template>
   <div class="divBox" v-loading="loading">
     <el-card class="mb12 box-height">
-      <el-tabs v-model="where.link_type" @tab-change="handleClick">
+      <el-tabs v-model="where.link_type" @tab-click="handleClick">
         <el-tab-pane label="部门目标" name="1" />
         <el-tab-pane label="业务员目标" name="0" />
       </el-tabs>
@@ -10,8 +10,9 @@
         <el-date-picker
           v-model="where.year"
           type="year"
-          format="YYYY"
-          value-format="YYYY"
+          size="small"
+          format="yyyy"
+          value-format="yyyy"
           placeholder="选择年"
           @change="getTableData"
         >
@@ -160,15 +161,14 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { clientTargetRateApi, clientTargetCensusApi } from '@/api/client.ts'
+import moment from 'moment'
+import { clientTargetRateApi, clientTargetCensusApi } from '@/api/client'
 export default {
   name: '',
   components: {
-    echartBox: defineAsyncComponent(() => import('@/components/common/echarts')),
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
-    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department'))
+    echartBox: () => import('@/components/common/echarts'),
+    selectMember: () => import('@/components/form-common/select-member'),
+    selectDepartment: () => import('@/components/form-common/select-department')
   },
   props: {},
   data() {
@@ -188,7 +188,7 @@ export default {
   },
 
   mounted() {
-    this.where.year = dayjs().format('YYYY')
+    this.where.year = moment().format('YYYY')
     this.initChart()
     this.getTableData()
   },
@@ -218,7 +218,7 @@ export default {
     // 设置单元格背景色
     tableCellStyle({ row, column, rowIndex, columnIndex }) {
       if (column.label == '完成') {
-        return { color: '#1980ff' }
+        return 'color: #1980ff;'
       }
     },
     calculateQuarterData(item, months) {
@@ -381,7 +381,7 @@ export default {
       this.getTableData()
     },
     reset() {
-      this.where.year = dayjs().format('YYYY')
+      this.where.year = moment().format('YYYY')
       this.where.frame_id = []
       this.where.user_id = []
       this.userList = []

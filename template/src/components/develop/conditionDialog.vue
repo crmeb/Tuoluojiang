@@ -30,6 +30,7 @@
                 <span class="number">{{ index + 1 }}</span>
                 <el-select
                   v-model="item.field"
+                  size="small"
                   :style="noRule ? 'width: 50%;' : 'width: 100%;'"
                   filterable
                   @change="itemConditions(item.field, index)"
@@ -49,6 +50,7 @@
                   placeholder="选择条件"
                   @change="changeValue(item, index)"
                   style="width: 50%"
+                  size="small"
                   class="ml10"
                 >
                   <el-option
@@ -76,10 +78,10 @@
             </el-row>
           </div>
           <div class="conditions mb20">
-            <el-button @click="addCondition" type="primary" link> <span class="el-icon-circle-plus"></span>添加条件</el-button>
+            <el-button @click="addCondition" type="text"> <span class="el-icon-circle-plus"></span>添加条件</el-button>
             <div class="el-popover conditions-popover" v-show="conditionsPopover">
               <el-button
-                type="primary" link
+                type="text"
                 v-for="(item, index) in conditions"
                 :key="index"
                 v-show="!item.disabled"
@@ -94,19 +96,19 @@
             <el-divider v-if="max !== 9">条件规则设置</el-divider>
             <el-divider v-else></el-divider>
             <el-form-item label="条件规则: ">
-              <el-radio v-model="additional_search_boolean" value="1">符合全部</el-radio>
-              <el-radio v-model="additional_search_boolean" value="0">符合任一</el-radio>
+              <el-radio v-model="additional_search_boolean" label="1">符合全部</el-radio>
+              <el-radio v-model="additional_search_boolean" label="0">符合任一</el-radio>
             </el-form-item>
           </template>
         </div>
         <template v-if="isFooter">
           <div class="button from-foot-btn fix btn-shadow" v-if="max !== 9">
-            <el-button @click="closeCondition">取消</el-button>
-            <el-button type="primary" @click="saveCondition">确定</el-button>
+            <el-button @click="closeCondition">{{ $t('public.cancel') }}</el-button>
+            <el-button type="primary" @click="saveCondition">{{ $t('public.ok') }}</el-button>
           </div>
           <div v-else class="flex-end fix">
-            <el-button @click="close">清空数据</el-button>
-            <el-button type="primary" @click="saveCondition">确定</el-button>
+            <el-button size="small" @click="close">清空数据</el-button>
+            <el-button size="small" type="primary" @click="saveCondition">确定</el-button>
           </div>
         </template>
       </div>
@@ -115,20 +117,15 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useFlowDesignerStore } from '@/stores/flowDesigner.ts'
-import { useConditionDialogStore } from '@/stores/conditionDialog.ts'
-import { defineAsyncComponent } from 'vue'
-import pickerOptions from '@/libs/pickerOptions.ts'
-import func from '@/utils/preload.ts'
-import { frameTreeApi } from '@/api/public.ts'
+import pickerOptions from '@/libs/pickerOptions'
+import func from '@/utils/preload'
+import { frameTreeApi } from '@/api/public'
 import Common from '@/components/develop/commonData'
-import { dataDatabaseFieldsApi } from '@/api/develop.ts'
-import { getDictTreeListApi } from '@/api/form.ts'
+import { dataDatabaseFieldsApi } from '@/api/develop'
+import { getDictTreeListApi } from '@/api/form'
 export default {
-  emits: ['saveCondition', 'updateConditionDialog'],
   components: {
-    fieldComponent: defineAsyncComponent(() => import('@/components/develop/fieldComponent'))
+    fieldComponent: () => import('@/components/develop/fieldComponent')
   },
   props: {
     id: {
@@ -236,8 +233,8 @@ export default {
       this.conditions = formData
     }
 
-    if (this.eventStr === 'event' && this.conditionDialogStore.fieldOptions.list) {
-      this.conditionConfig.conditionList = this.conditionDialogStore.fieldOptions.list
+    if (this.eventStr === 'event' && this.$store.state.business.fieldOptions.list) {
+      this.conditionConfig.conditionList = this.$store.state.business.fieldOptions.list
 
       this.conditionConfig.conditionList.map((item, index) => {
         // 判断是普通筛选就需要处理数据
@@ -249,8 +246,8 @@ export default {
           }
         }
       })
-    } else if (this.eventStr !== 'event' && this.flowDesignerStore.conditionsConfig) {
-      let val = this.flowDesignerStore.conditionsConfig
+    } else if (this.eventStr !== 'event' && this.$store.state.business.conditionsConfig) {
+      let val = this.$store.state.business.conditionsConfig
       this.conditionsConfig = val.value
       this.PriorityLevel = val.priorityLevel || ''
       this.newConfig = val.priorityLevel
@@ -264,7 +261,6 @@ export default {
   },
 
   computed: {
-    ...mapStores(useFlowDesignerStore, useConditionDialogStore),
     listIds() {
       let arr = []
       this.conditionConfig.conditionList.map((item) => {
@@ -274,11 +270,11 @@ export default {
     },
     // 设置条件内容
     additional_search() {
-      return this.conditionDialogStore.fieldOptions.list
+      return this.$store.state.business.fieldOptions.list
     },
     // 设置条件内容
     additional_Type() {
-      return this.conditionDialogStore.fieldOptions.type
+      return this.$store.state.business.fieldOptions.type
     }
   },
 
@@ -394,7 +390,7 @@ export default {
 
     close() {
       let arr = JSON.parse(JSON.stringify(this.conditionConfig.conditionList))
-      this.conditionDialogStore.setFieldOptions({
+      this.$store.commit('uadatefieldOptions', {
         list: [],
         resetList: arr,
         additional_search_boolean: ''
@@ -406,7 +402,7 @@ export default {
           additional_search_boolean: this.additional_search_boolean,
           type: this.additional_Type
         })
-        this.conditionDialogStore.visible = false
+        this.$store.commit('updateConditionDialog', false)
       }
     },
 
@@ -494,7 +490,7 @@ export default {
       }
 
       this.$nextTick(() => {
-        this.conditionConfig.conditionList[index] = data
+        this.$set(this.conditionConfig.conditionList, index, data)
       })
     },
 
@@ -550,7 +546,7 @@ export default {
         }
       }
 
-      this.conditionDialogStore.visible = false
+      this.$store.commit('updateConditionDialog', false)
       if (this.eventStr !== 'event') {
         var a = this.conditionsConfig.conditionNodes.splice(this.PriorityLevel - 1, 1) // 截取旧下标
         this.conditionsConfig.conditionNodes.splice(this.conditionConfig.priorityLevel - 1, 0, a[0]) // 填充新下标
@@ -563,13 +559,13 @@ export default {
             i != this.conditionsConfig.conditionNodes.length - 1
         }
         this.conditionsPopover = false
-        this.flowDesignerStore.conditionsConfig = {
+        this.$store.commit('updateConditionsConfig', {
           value: this.conditionsConfig,
           flag: true,
-          id: this.flowDesignerStore.conditionsConfig.id
-        }
+          id: this.$store.state.business.conditionsConfig.id
+        })
       } else {
-        this.conditionDialogStore.setFieldOptions({
+        this.$store.commit('uadatefieldOptions', {
           list: this.conditionConfig.conditionList,
           additional_search_boolean: this.additional_search_boolean,
           type: this.additional_Type
@@ -589,7 +585,7 @@ export default {
         item.disabled = false
       })
       this.$emit('updateConditionDialog')
-      this.conditionDialogStore.visible = false
+      this.$store.commit('updateConditionDialog', false)
     }
   }
 }
@@ -608,9 +604,14 @@ export default {
 }
 .flex-end {
   padding: 10px 20px 10px 0;
+
   display: flex;
   align-items: flex-end;
   justify-content: flex-end;
+  .el-button {
+    padding: 9px 16px;
+    font-size: 13px;
+  }
 }
 
 .el-icon-circle-plus {
@@ -629,11 +630,11 @@ export default {
 .condition_content {
   padding: 10px 0;
 
-  :deep(.el-input-number),
-  :deep(.el-select) {
+  ::v-deep .el-input-number--medium,
+  ::v-deep .el-select--medium {
     width: 100%;
   }
-  :deep(.el-input__inner) {
+  ::v-deep .el-input__inner {
     text-align: left;
   }
 }
@@ -655,7 +656,7 @@ export default {
   }
 }
 .drawer-content {
-  :deep(.el-form-item:last-of-type) {
+  ::v-deep .el-form-item:last-of-type {
     margin-bottom: 0;
   }
   .plan-footer-one {
@@ -682,12 +683,7 @@ export default {
   .list {
     margin-bottom: 8px;
     display: flex;
-    // el-row 默认换行、el-col 不收缩；各列宽度之和加上 mr10 超过一行，需要不换行并允许收缩
-    flex-wrap: nowrap;
     align-items: center;
-    > .el-col {
-      flex-shrink: 1;
-    }
     &:last-of-type {
       margin-bottom: 0px;
     }
@@ -700,15 +696,13 @@ export default {
 
 .conditions {
   position: relative;
-  // 链接按钮只有 2px 内边距，补足与上方条件行、下方底栏之间的 10px 间距
-  padding: 8px 0;
   .conditions-popover {
     max-height: 350px;
     overflow-y: scroll;
     position: absolute;
     left: 0;
     top: 36px;
-    :deep(.el-popover) {
+    ::v-deep .el-popover {
       min-width: 220px;
     }
     button {
@@ -768,20 +762,20 @@ export default {
   font-size: 16px;
   color: #ccc;
 }
-:deep(.el-divider) {
+::v-deep .el-divider {
   background: hsl(223, 13%, 89%);
 }
-:deep(.el-divider--horizontal) {
+::v-deep .el-divider--horizontal {
   margin: 10px 0 20px 0;
 }
 .p20 {
   padding: 0 20px;
   padding-top: 20px;
 }
-:deep(.el-select .el-tag__close) {
+::v-deep .el-select .el-tag__close.el-icon-close {
   background: #f4f4f5;
 }
-:deep(.el-tag.el-tag--info) {
+::v-deep .el-tag.el-tag--info {
   color: #303133;
   font-size: 13px;
 }

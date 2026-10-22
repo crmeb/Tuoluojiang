@@ -24,7 +24,7 @@
   </div>
 </template>
 <script>
-import { queryChartData } from '../chartQuery.ts'
+import { queryChartData } from '@/api/chart'
 
 export default {
   name: 'statistic-widget',

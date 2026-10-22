@@ -32,37 +32,36 @@
         @getTableData="getTableData"
       >
         <template #options="{ data }">
-          <el-button type="primary" link @click="openDetails(data)">查看</el-button>
+          <el-button type="text" @click="openDetails(data)">查看</el-button>
           <el-button
-            type="primary" link
-            v-if="!data.is_sign && isModuleEnabled(CUSTOMER_MODULE_KEYS.CONTRACT)"
+            type="text"
+            v-if="!data.is_sign"
+            v-customer-module="CUSTOMER_MODULE_KEYS.CONTRACT"
             @click="addSigning(data)"
             >生成合同</el-button
           >
 
           <el-dropdown>
-            <el-button type="primary" link class="el-dropdown-link more ml10">
+            <span class="el-dropdown-link el-button--text el-button more ml10">
               更多
               <i class="el-icon-arrow-down" />
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu style="text-align: center">
-                <el-dropdown-item v-if="isModuleEnabled(CUSTOMER_MODULE_KEYS.ORDER)" @click="addContract(data)">
-                  生成订单
-                </el-dropdown-item>
-                <el-dropdown-item style="border-bottom: 1px solid #f5f5f5" @click="handleFollowUp(data)">
-                  填写跟进
-                </el-dropdown-item>
-                <el-dropdown-item @click="handleTransfer(2, data)"> 移交同事 </el-dropdown-item>
-                <el-dropdown-item v-if="data.status && data.status.value == 1" @click="handleInvalid(data, 4)">
-                  失效
-                </el-dropdown-item>
-                <el-dropdown-item v-if="data.status && data.status.value == 4" @click="handleInvalid(data, 1)">
-                  取消失效
-                </el-dropdown-item>
-                <el-dropdown-item @click="handleDelete(data)"> 删除 </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
+            </span>
+            <el-dropdown-menu style="text-align: center">
+              <el-dropdown-item @click.native="addContract(data)" v-customer-module="CUSTOMER_MODULE_KEYS.ORDER">
+                生成订单
+              </el-dropdown-item>
+              <el-dropdown-item style="border-bottom: 1px solid #f5f5f5" @click.native="handleFollowUp(data)">
+                填写跟进
+              </el-dropdown-item>
+              <el-dropdown-item @click.native="handleTransfer(2, data)"> 移交同事 </el-dropdown-item>
+              <el-dropdown-item v-if="data.status && data.status.value == 1" @click.native="handleInvalid(data, 4)">
+                失效
+              </el-dropdown-item>
+              <el-dropdown-item v-if="data.status && data.status.value == 4" @click.native="handleInvalid(data, 1)">
+                取消失效
+              </el-dropdown-item>
+              <el-dropdown-item @click.native="handleDelete(data)"> 删除 </el-dropdown-item>
+            </el-dropdown-menu>
           </el-dropdown>
         </template>
       </customizeTable>
@@ -75,7 +74,7 @@
     <!-- 详情 -->
     <detailsDrawer ref="details" :formData="detailsFromData" @getTableData="getTableData"></detailsDrawer>
     <!-- 跟进弹窗 -->
-    <el-dialog v-model="dialogShow" class="record" title="添加跟进记录" width="40%">
+    <el-dialog :visible.sync="dialogShow" class="record" title="添加跟进记录" width="40%">
       <recordUpload :form-info="formInfo" @change="recordChange"></recordUpload>
     </el-dialog>
     <add-contract ref="addContract" :form-data="contractFromData"></add-contract>
@@ -89,10 +88,7 @@
   </div>
 </template>
 <script>
-import { mapStores } from 'pinia'
-import { useAppConfigStore } from '@/stores/appConfig.ts'
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import {
   oddsCreateApi,
   oddsCreateEditApi,
@@ -101,30 +97,26 @@ import {
   oddsStatusApi,
   oddsDelApi,
   clientExportApi
-} from '@/api/client.ts'
-import { DRAWER_SIZE } from '@/constants/popupSize.ts'
-import { roterPre } from '@/settings.ts'
-import { CUSTOMER_MODULE_KEYS } from '@/constants/customerModules.ts'
+} from '@/api/client'
+import { DRAWER_SIZE } from '@/constants/popupSize'
+import { roterPre } from '@/settings'
+import { CUSTOMER_MODULE_KEYS } from '@/constants/customerModules'
 
-import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'opportunityManagement',
   components: {
-    customizeTable: defineAsyncComponent(() => import('../components/customizeTable')),
-    detailsDrawer: defineAsyncComponent(() => import('../components/details')),
-    addContractSign: defineAsyncComponent(() => import('@/views/customer/signing/components/addContractSign')),
-    dragUpload: defineAsyncComponent(() => import('../components/dragUpload')),
-    addForm: defineAsyncComponent(() => import('../components/addForm')),
-    importRecords: defineAsyncComponent(() => import('@/views/customer/list/components/importRecords')),
-    recordUpload: defineAsyncComponent(() => import('@/views/customer/list/components/recordUpload')),
-    transferDialog: defineAsyncComponent(() => import('@/views/customer/list/components/transferDialog')),
-    addContract: defineAsyncComponent(() => import('@/views/customer/contract/components/addContract')),
-    oaFromBox
+    customizeTable: () => import('../components/customizeTable'),
+    detailsDrawer: () => import('../components/details'),
+    addContractSign: () => import('@/views/customer/signing/components/addContractSign'),
+    dragUpload: () => import('../components/dragUpload'),
+    addForm: () => import('../components/addForm'),
+    importRecords: () => import('@/views/customer/list/components/importRecords'),
+    recordUpload: () => import('@/views/customer/list/components/recordUpload'),
+    transferDialog: () => import('@/views/customer/list/components/transferDialog'),
+    addContract: () => import('@/views/customer/contract/components/addContract'),
+    oaFromBox: () => import('@/components/common/oaFromBox')
   },
 
-  computed: {
-    ...mapStores(useAppConfigStore)
-  },
   data() {
     return {
       CUSTOMER_MODULE_KEYS,
@@ -199,11 +191,6 @@ export default {
     // this.getTableData()
   },
   methods: {
-    // 客户模块开关用 v-if 判断：原自定义指令直接删 DOM，挂在 el-dropdown-item（非元素根节点）上不生效，
-    // 与 v-if 同用时还会让 Vue 更新到已被移除的节点而报错
-    isModuleEnabled(key) {
-      return this.appConfigStore.isCustomerModuleEnabled(key)
-    },
     getSearch(val) {
       this.search = val.search
       this.viewSearch = val.viewSearch
@@ -235,7 +222,7 @@ export default {
     addContract(data) {
       oddsCreateEditApi(data.id, { eid: data.eid, odds_id: data.id }).then((res) => {
         this.contractFromData = {
-          title: '添加订单',
+          title: this.$t('customer.addcontract'),
           width: '1129px',
           product: res.data.product,
           odds_id: data.id,
@@ -278,7 +265,7 @@ export default {
     }, // 转移
     handleTransfer(type, row = []) {
       if (this.ids.length <= 0 && type === 1) {
-        this.$message.error('至少选择一项')
+        this.$message.error(this.$t('customer.placeholder22'))
       } else {
         const ids = type === 1 ? this.ids : [row.id]
         this.transferData = {
@@ -397,12 +384,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.record {
-  .el-dialog__body {
+.record {
+  ::v-deep .el-dialog__body {
     padding: 20px 20px 30px 20px;
   }
 }

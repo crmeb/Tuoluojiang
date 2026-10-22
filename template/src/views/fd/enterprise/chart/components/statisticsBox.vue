@@ -13,12 +13,11 @@
 </template>
 
 <script>
-import dayjs from 'dayjs'
-import pickerOptions from '@/libs/pickerOptions.ts'
-import { billCateApi } from '@/api/enterprise.ts'
+import moment from 'moment'
+import pickerOptions from '@/libs/pickerOptions'
+import { billCateApi } from '@/api/enterprise'
 import oaFromBox from '@/components/common/oaFromBox'
 export default {
-  emits: ['confirmData'],
   name: 'FormBox',
   components: {
     oaFromBox
@@ -27,19 +26,19 @@ export default {
     return {
       pickerOptions,
       timeVal: [
-        dayjs().startOf('month').format('YYYY/MM/DD'),
-        dayjs().endOf('month').format('YYYY/MM/DD')
+        moment().startOf('month').format('YYYY/MM/DD'),
+        moment().endOf('month').format('YYYY/MM/DD')
       ],
       tableFrom: {
         time: '',
         type: '',
         cate_id: []
       },
-      statusOptions: [{ label: '全部', value: '' }],
+      statusOptions: [{ label: this.$t('toptable.all'), value: '' }],
       sexOptions: [
-        { label: '全部', value: '' },
-        { label: '收入', value: '1' },
-        { label: '支出', value: '0' }
+        { label: this.$t('finance.all'), value: '' },
+        { label: this.$t('finance.income'), value: '1' },
+        { label: this.$t('finance.pay'), value: '0' }
       ],
       search: [
         {
@@ -68,8 +67,8 @@ export default {
           field_name_en: 'time',
           form_value: 'date_picker',
           data_dict: [
-            dayjs().startOf('month').format('YYYY/MM/DD'),
-            dayjs().endOf('month').format('YYYY/MM/DD')
+            moment().startOf('month').format('YYYY/MM/DD'),
+            moment().endOf('month').format('YYYY/MM/DD')
           ]
         },
         {
@@ -113,7 +112,7 @@ export default {
       const data = {
         types: type
       }
-      const list = [{ label: '全部', value: '' }]
+      const list = [{ label: this.$t('toptable.all'), value: '' }]
       billCateApi(data).then((res) => {
         res.data === undefined ? (res.data = []) : res.data
         this.statusOptions = res.data
@@ -125,8 +124,8 @@ export default {
       const isReset = where === 'reset'
       if (isReset) {
         this.timeVal = [
-          dayjs().startOf('month').format('YYYY/MM/DD'),
-          dayjs().endOf('month').format('YYYY/MM/DD')
+          moment().startOf('month').format('YYYY/MM/DD'),
+          moment().endOf('month').format('YYYY/MM/DD')
         ]
         this.setDataDict('time', this.timeVal)
         where = {

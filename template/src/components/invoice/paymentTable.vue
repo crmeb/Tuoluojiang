@@ -4,12 +4,12 @@
     <el-table
       ref="paymentTable"
       :data="table"
-      :key="editLocal"
+      :key="edit"
       row-key="id"
       style="width: 100%"
       @selection-change="handleSelectionChange"
     >
-      <el-table-column type="selection" width="55" v-if="editLocal === ''"> </el-table-column>
+      <el-table-column type="selection" width="55" v-if="edit === ''"> </el-table-column>
       <el-table-column prop="bill_no" label="付款单号" min-width="100"> </el-table-column>
       <el-table-column prop="treaty.contract_name" label="订单名称" min-width="100"> </el-table-column>
 
@@ -39,27 +39,24 @@
       <el-table-column prop="card.name" label="创建人" min-width="90"> </el-table-column>
       <el-table-column prop="created_at" label="创建时间" min-width="150"> </el-table-column>
 
-      <el-table-column fixed="right" label="操作" width="80" v-if="editLocal !== ''">
+      <el-table-column fixed="right" label="操作" width="80" v-if="edit !== ''">
         <template #default="scope">
-          <el-button @click="deleteFn(scope.row)" type="primary" link>移除</el-button>
+          <el-button @click="deleteFn(scope.row)" type="text" size="small">移除</el-button>
         </template>
       </el-table-column>
     </el-table>
-    <el-image-viewer v-if="isImage" @close="closeImageViewer" :url-list="srcList" />
+    <el-image-viewer v-if="isImage" :on-close="closeImageViewer" :url-list="srcList" />
   </div>
 </template>
 <script>
-import { modalSure } from '@/libs/public.ts'
-import { ElImageViewer } from 'element-plus'
+import { modalSure } from '@/libs/public'
+import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 export default {
-  emits: ['handleSelectionFn', 'totalFn'],
   name: '',
   components: { ElImageViewer },
   props: ['tableData', 'edit', 'ids'],
   data() {
     return {
-      // Vue 3 的 prop 只读，组件内部需要改写时用本地副本
-      editLocal: this.edit,
       table: this.tableData,
       isImage: false,
       srcList: [],
@@ -70,10 +67,6 @@ export default {
   },
 
   watch: {
-    // prop 由父组件更新时同步到本地副本（组件内部改写的是 editLocal）
-    edit(val) {
-      this.editLocal = val
-    },
     tableData: {
       handler(nVal) {
         this.table = nVal || []
@@ -102,7 +95,7 @@ export default {
 
       this.$nextTick(() => {
         const tableRef = this.$refs.paymentTable
-        if (!tableRef || this.editLocal !== '') return
+        if (!tableRef || this.edit !== '') return
 
         this.isRestoringSelection = true
         tableRef.clearSelection()

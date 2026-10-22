@@ -8,8 +8,9 @@
         <el-timeline-item
           v-for="(activity, index) in dynamicRecord"
           :key="index"
-          :icon="$icon(activity.icon)"
+          :icon="activity.icon"
           :size="activity.size"
+          :type="String(activity.type)"
           color="#1890FF"
         >
           <div v-if="activity.types === 1">
@@ -70,19 +71,18 @@
     </div>
 
     <div v-if="dynamicRecord.length == 0" class="default">
-      <EmptyState type="record" :text="'暂无数据' + '~'" />
+      <EmptyState type="record" :text="$t('public.message14') + '~'" />
     </div>
     <!-- 查看图片 -->
-    <el-image-viewer v-if="isImage" @close="closeImageViewer" :url-list="srcList" />
+    <el-image-viewer v-if="isImage" :on-close="closeImageViewer" :url-list="srcList" />
     <remind-dialog ref="remindDialog" :config="remindConfig" @change="remindChange"></remind-dialog>
   </div>
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { clientRecordApi } from '@/api/enterprise.ts'
-import { toSrcFn } from '@/utils/format.ts'
-import { fileLinkDownLoad } from '@/utils/file.ts'
+import { clientRecordApi } from '@/api/enterprise'
+import { toSrcFn } from '@/utils/format'
+import { fileLinkDownLoad } from '@/utils/file'
 import EmptyState from '@/components/common/emptyState.vue'
 import RecordUpload from './recordUpload'
 import RemindDialog from './remindDialog'
@@ -91,6 +91,7 @@ export default {
   name: 'dynamicRecord',
   components: {
     EmptyState,
+    ElImageViewer: () => import('element-ui/packages/image/src/image-viewer'),
     recordUpload: RecordUpload,
     remindDialog: RemindDialog,
     oaUploadList: OaUploadList
@@ -312,6 +313,9 @@ export default {
   padding: 0px;
   margin-right: 16px;
 }
+.el-button--medium {
+  padding: 10px 15px !important;
+}
 .recordContent {
   padding-top: 38px;
 }
@@ -418,29 +422,28 @@ export default {
 .iconfont {
   color: #1890ff;
 }
-:deep(.el-timeline-item__tail) {
+::v-deep .el-timeline-item__tail {
   position: absolute;
   left: 4px;
   height: 100%;
 
   border-left: 1px solid #dfe4ed;
 }
-:deep(.el-timeline-item__node--normal) {
+::v-deep .el-timeline-item__node--normal {
   left: 0px;
   width: 10px;
   height: 10px;
 }
-:deep(.el-timeline-item__wrapper) {
+::v-deep .el-timeline-item__wrapper {
   position: relative;
   top: -12px;
 }
-:deep(.el-textarea__inner) {
+::v-deep .el-textarea__inner {
   min-height: 96px;
   border: none;
-  box-shadow: none;
   font-size: 12px;
 }
-:deep(.icondangqian) {
+::v-deep .icondangqian {
   font-size: 16px;
   color: #1890ff;
   background-color: none;

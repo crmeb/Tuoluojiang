@@ -1,7 +1,7 @@
 <template>
   <div class="add-node-btn-box">
     <div class="add-node-btn">
-      <el-popover v-model:visible="visible" placement="right-start" :width="240">
+      <el-popover v-model="visible" placement="right-start">
         <div class="add-node-popover-body">
           <a class="add-node-popover-item approver" @click="addType(1)">
             <div class="item-wrapper">
@@ -32,13 +32,12 @@
   </div>
 </template>
 <script>
-import func from '@/utils/preload.ts';
+import func from '@/utils/preload';
 
 export default {
-  emits: ['update:childNodeP'],
   props: {
     childNodeP: {
-      type: [Object, String],
+      type: Object | String,
       default: '',
     },
   },

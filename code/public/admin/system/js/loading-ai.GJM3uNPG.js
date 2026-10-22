@@ -1,0 +1,1 @@
+var e=`/admin/system/img/loading-ai-DGEo871U.gif`;export{e as t};

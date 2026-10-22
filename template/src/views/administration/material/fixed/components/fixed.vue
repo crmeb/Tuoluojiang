@@ -47,11 +47,11 @@
             </el-table-column>
             <el-table-column pstatus label="状态" min-width="80" show-overflow-tooltip>
               <template #default="scope">
-                <el-tag size="small" v-if="scope.row.status === 0" type="success">未使用</el-tag>
-                <el-tag size="small" v-if="scope.row.status === 1">已领用</el-tag>
-                <el-tag size="small" v-if="scope.row.status === 2" type="success">已归还</el-tag>
-                <el-tag size="small" v-if="scope.row.status === 3" type="warning">维修中</el-tag>
-                <el-tag size="small" v-if="scope.row.status === 4" type="danger">已报废</el-tag>
+                <el-tag v-if="scope.row.status === 0" type="success" size="mini">未使用</el-tag>
+                <el-tag v-if="scope.row.status === 1" size="mini">已领用</el-tag>
+                <el-tag v-if="scope.row.status === 2" type="success" size="mini">已归还</el-tag>
+                <el-tag v-if="scope.row.status === 3" type="warning" size="mini">维修中</el-tag>
+                <el-tag v-if="scope.row.status === 4" type="danger" size="mini">已报废</el-tag>
               </template>
             </el-table-column>
             <el-table-column prop="remark" label="重要信息" min-width="180" show-overflow-tooltip>
@@ -67,43 +67,43 @@
                 <div v-else>{{ scope.row.remark }}</div>
               </template>
             </el-table-column>
-            <el-table-column prop="describe" label="操作" fixed="right" width="200">
+            <el-table-column prop="describe" :label="$t('public.operation')" fixed="right" width="200">
               <template #default="scope">
-                <el-button type="primary" link @click="handleRecord(scope.row)" v-hasPermi="['material:fixed:manage:record']"
+                <el-button type="text" @click="handleRecord(scope.row)" v-hasPermi="['material:fixed:manage:record']"
                   >记录</el-button
                 >
 
-                <el-button type="primary" link @click="handleEdit(scope.row)" v-hasPermi="['material:fixed:manage:edit']">编辑</el-button>
+                <el-button type="text" @click="handleEdit(scope.row)" v-hasPermi="['material:fixed:manage:edit']">{{
+                  $t('public.edit')
+                }}</el-button>
 
                 <el-dropdown class="ml10">
-                  <el-button type="primary" link class="el-dropdown-link">
-                    更多
+                  <span class="el-dropdown-link el-button--text el-button">
+                    {{ $t('hr.more') }}
                     <i class="el-icon-arrow-down el-icon--right" />
-                  </el-button>
-                  <template #dropdown>
-                    <el-dropdown-menu style="text-align: center">
-                      <el-dropdown-item v-if="scope.row.status === 0" @click="handleMaterialData(5, scope.row)"
-                        >领用</el-dropdown-item
-                      >
-                      <el-dropdown-item v-if="scope.row.status === 1" @click="handleMaterialData(6, scope.row)"
-                        >归还</el-dropdown-item
-                      >
-                      <el-dropdown-item v-if="scope.row.status <= 2" @click="handleMaterialData(2, scope.row)"
-                        >维修</el-dropdown-item
-                      >
-                      <el-dropdown-item v-if="scope.row.status === 3" @click="handleMaterialData(3, scope.row)"
-                        >处理</el-dropdown-item
-                      >
-                      <el-dropdown-item v-if="scope.row.status !== 4" @click="handleMaterialData(1, scope.row)"
-                        >报废</el-dropdown-item
-                      >
-                      <el-dropdown-item
-                        v-if="scope.row.status === 0 || scope.row.status === 4"
-                        @click="handleDelete(scope.row.id)"
-                        >删除</el-dropdown-item
-                      >
-                    </el-dropdown-menu>
-                  </template>
+                  </span>
+                  <el-dropdown-menu style="text-align: center">
+                    <el-dropdown-item v-if="scope.row.status === 0" @click.native="handleMaterialData(5, scope.row)"
+                      >领用</el-dropdown-item
+                    >
+                    <el-dropdown-item v-if="scope.row.status === 1" @click.native="handleMaterialData(6, scope.row)"
+                      >归还</el-dropdown-item
+                    >
+                    <el-dropdown-item v-if="scope.row.status <= 2" @click.native="handleMaterialData(2, scope.row)"
+                      >维修</el-dropdown-item
+                    >
+                    <el-dropdown-item v-if="scope.row.status === 3" @click.native="handleMaterialData(3, scope.row)"
+                      >处理</el-dropdown-item
+                    >
+                    <el-dropdown-item v-if="scope.row.status !== 4" @click.native="handleMaterialData(1, scope.row)"
+                      >报废</el-dropdown-item
+                    >
+                    <el-dropdown-item
+                      v-if="scope.row.status === 0 || scope.row.status === 4"
+                      @click.native="handleDelete(scope.row.id)"
+                      >删除</el-dropdown-item
+                    >
+                  </el-dropdown-menu>
                 </el-dropdown>
               </template>
             </el-table-column>
@@ -142,25 +142,23 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { modalSure } from '@/libs/public.ts'
-import pickerOptions from '@/libs/pickerOptions.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { storageCateApi, storageDeleteApi, storageListApi, storageListCateApi } from '@/api/administration.ts'
-import oaFromBox from '@/components/common/oaFromBox'
+import moment from 'moment'
+import { modalSure } from '@/libs/public'
+import pickerOptions from '@/libs/pickerOptions'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { storageCateApi, storageDeleteApi, storageListApi, storageListCateApi } from '@/api/administration'
 export default {
   name: 'Consume',
   components: {
-    tree: defineAsyncComponent(() => import('./tree')),
-    addMaterial: defineAsyncComponent(() => import('./addMaterial')),
-    receive: defineAsyncComponent(() => import('./receive')),
-    record: defineAsyncComponent(() => import('./record')),
-    returnMaterial: defineAsyncComponent(() => import('./return')),
-    materialDialog: defineAsyncComponent(() => import('./materialDialog')),
-    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel')),
-    oaFromBox,
-    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form'))
+    tree: () => import('./tree'),
+    addMaterial: () => import('./addMaterial'),
+    receive: () => import('./receive'),
+    record: () => import('./record'),
+    returnMaterial: () => import('./return'),
+    materialDialog: () => import('./materialDialog'),
+    exportExcel: () => import('@/components/common/exportExcel'),
+    oaFromBox: () => import('@/components/common/oaFromBox'),
+    oaDialog: () => import('@/components/form-common/dialog-form')
   },
   data() {
     return {
@@ -353,12 +351,12 @@ export default {
       // 先将对象变为字符串，然后再变为json对象，防止对象的指针指向问题，为深拷贝
       let where = JSON.parse(JSON.stringify(this.where))
       where.limit = 0
-      this.saveName = '导出固定物资_' + dayjs(new Date()).format('MM_DD_HH_mm_ss') + '.xlsx'
+      this.saveName = '导出固定物资_' + moment(new Date()).format('MM_DD_HH_mm_ss') + '.xlsx'
       storageListApi(where)
         .then((res) => {
           let data = res.data.list
           if (data.length <= 0) {
-            this.$message.error('暂无内容可导出')
+            this.$message.error(this.$t('access.placeholder24'))
           } else {
             const aoaData = [
               [
@@ -561,12 +559,12 @@ export default {
   margin-top: -2px;
   margin-right: 5px;
 }
-:deep(.el-form-item) {
+::v-deep .el-form-item {
   margin-right: 10px;
 }
 
 .table-box {
-  :deep(.el-table th) {
+  ::v-deep .el-table th {
     background-color: rgba(247, 251, 255, 1);
   }
 }

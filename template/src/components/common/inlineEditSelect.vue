@@ -7,6 +7,7 @@
       v-else
       ref="selectRef"
       v-model="currentValue"
+      size="small"
       automatic-dropdown
       :placeholder="placeholder"
       @change="handleChange"
@@ -32,7 +33,6 @@ import { ref, nextTick } from 'vue'
  */
 export default {
   name: 'inlineEditSelect',
-  emits: ['disabled-click', 'open', 'change'],
   props: {
     // 当前选中值，进入编辑态时用于下拉回显定位（注意与 options 的 value 类型保持一致）
     value: {

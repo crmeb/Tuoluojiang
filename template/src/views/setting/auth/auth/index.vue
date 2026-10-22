@@ -29,20 +29,22 @@
           </div>
         </div>
         <div>
-          <el-button @click="toCrmeb()">进入官网</el-button>
-          <el-button type="primary" @click="payment('oa')">申请授权 </el-button>
+          <template>
+            <el-button @click="toCrmeb()">进入官网</el-button>
+            <el-button type="primary" @click="payment('oa')">申请授权 </el-button>
+          </template>
         </div>
       </div>
     </el-card>
     <!-- 商业授权 -->
-    <el-dialog v-model="isTemplate" :z-index="1" center title="商业授权" @on-cancel="cancel">
+    <el-dialog :visible.sync="isTemplate" :z-index="1" center title="商业授权" @on-cancel="cancel">
       <iframe :src="iframeUrl" frameborder="0" height="550" width="100%"></iframe>
     </el-dialog>
   </div>
 </template>
 <script>
-import { auth, version } from '@/api/setting.ts'
-import { getStorageJson } from '@/utils/storage.ts'
+import { auth, version } from '@/api/setting'
+import { getStorageJson } from '@/utils/storage'
 export default {
   data() {
     return {
@@ -119,7 +121,7 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-:deep(.el-dialog) {
+::v-deep .el-dialog {
   border-radius: 6px;
   width: 447px;
 }

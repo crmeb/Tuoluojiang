@@ -38,12 +38,11 @@
     </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
 export default {
     name: 'eSignatureDialog',
     components: {
-        oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form')),
-        signCode: defineAsyncComponent(() => import('./signCode.vue')),
+        oaDialog: () => import('@/components/form-common/dialog-form'),
+        signCode: () => import('./signCode.vue'),
     },
     data() {
         return {

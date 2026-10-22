@@ -1,0 +1,1 @@
+const e={NORMAL:0,LOW:1,HIGH:2,SOLD_OUT:3},O=[{value:e.NORMAL,label:"正常",theme:"success",variant:"filled"},{value:e.LOW,label:"偏低",theme:"warning",variant:"filled"},{value:e.HIGH,label:"偏高",theme:"primary",variant:"filled"},{value:e.SOLD_OUT,label:"已售罄",theme:"pink",variant:"filled"}];O.reduce((a,l)=>(a[l.value]=l,a),{});export{e as S,O as a};

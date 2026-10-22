@@ -1,58 +1,26 @@
 /**
- * Element Plus 主题定制：覆盖 SCSS 变量后整体编译 theme-chalk。
- * 原 element-ui 版本的主色偏浅，这里沿用之前调整过的配色。
- **/
-@forward 'element-plus/theme-chalk/src/common/var.scss' with (
-  $colors: (
-    'primary': ('base': #1890ff),
-    'success': ('base': #19be6b),
-    'warning': ('base': #ff9900),
-    'danger': ('base': #ed4014),
-    'error': ('base': #ed4014),
-  ),
-  $border-color: (
-    'light': #dfe4ed,
-    'lighter': #e6ebf5,
-  ),
-  $text-color: (
-    'placeholder': #c0c4cc,
-  ),
-  $button: (
-    'font-weight': 400,
-  ),
-  // 业务页面的按钮、输入框、下拉统一为 13px
-  $button-font-size: (
-    'default': 13px,
-  ),
-  $input-font-size: (
-    'default': 13px,
-  ),
-  $select: (
-    'input-font-size': 13px,
-  ),
-  $table: (
-    'border': 1px solid #dfe6ec,
-  ),
-  // 旧版全局 size 为 medium：单元格上下 10px、cell 左右 10px
-  $table-padding: (
-    'default': 10px 0,
-  ),
-  $table-cell-padding: (
-    'default': 0 10px,
-  )
-);
+* I think element-ui's default theme color is too light for long-term use.
+* So I modified the default color and you can modify it to your liking.
+**/
 
-@use 'element-plus/theme-chalk/src/index.scss' as *;
+/* theme color */
+$--color-primary: #1890ff;
+$--color-success: #19be6b;
+$--color-warning: #ff9900;
+$--color-danger: #ed4014;
+// $--color-info: #1E1E1E;
 
-// .el-input / .el-textarea 本身的字号取自 --el-font-size-base，只在组件范围内改为 13px，
-// 不影响表单标签、单选、复选等其余用到基础字号的组件
-.el-input,
-.el-textarea {
-  --el-font-size-base: 13px;
-}
+$--button-font-weight: 400;
 
-// Element Plus 未设置 size 的表格不带 --default 修饰类，.cell 用的是写死的 0 12px，
-// $table-cell-padding 覆盖不到，这里按旧版 medium 补上；:where 保持与原规则同等优先级
-.el-table:where(:not(.el-table--small, .el-table--large)) .cell {
-  padding: 0 10px;
-}
+// $--color-text-regular: #1f2d3d;
+
+$--border-color-light: #dfe4ed;
+$--border-color-lighter: #e6ebf5;
+
+$--table-border: 1px solid #dfe6ec;
+
+/* icon font path, required */
+$--font-path: '~element-ui/lib/theme-chalk/fonts';
+
+@import '~element-ui/packages/theme-chalk/src/index';
+

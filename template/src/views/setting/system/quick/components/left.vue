@@ -25,8 +25,8 @@
               @hide="handleHide"
             >
               <div class="right-item-list">
-                <div class="right-item" @click.stop="addDivsion(item.id)">编辑</div>
-                <div class="right-item" @click.stop="handleDelete(item.id)">删除</div>
+                <div class="right-item" @click.stop="addDivsion(item.id)">{{ $t('public.edit') }}</div>
+                <div class="right-item" @click.stop="handleDelete(item.id)">{{ $t('public.delete') }}</div>
               </div>
               <template #reference>
                 <i class="icon iconfont icongengduo pointer rank-icon" @click.stop></i>
@@ -40,17 +40,16 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import modalForm from '@/libs/modal-form.ts'
+import { modalSure } from '@/libs/public'
+import modalForm from '@/libs/modal-form'
 import {
   configQuickCateApi,
   configQuickCateDeleteApi,
   configQuickCateEditApi,
   configQuickCateCreateApi
-} from '@/api/setting.ts'
+} from '@/api/setting'
 
 export default {
-  emits: ['eventOptionData'],
   name: 'DepartmentNot',
   data() {
     return {
@@ -122,7 +121,7 @@ export default {
 }
 .assess-left {
   height: calc(100vh - 95px);
-  :deep(.el-card__header) {
+  ::v-deep .el-card__header {
     border-bottom: none;
     display: flex;
     align-items: center;
@@ -135,7 +134,7 @@ export default {
   .assess-left-con {
     height: calc(100% - 50px);
   }
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
   overflow: auto;

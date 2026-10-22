@@ -2,7 +2,7 @@
   <div>
     <el-dialog
       title="AI生成字段"
-      v-model="dialogVisible"
+      :visible.sync="dialogVisible"
       :close-on-click-modal="false"
       width="1000px"
       @close="handleClose"
@@ -19,27 +19,30 @@
             <el-table-column prop="field_name" label="字段名称">
               <template #default="scope">
                 <el-input
+                  size="small"
                   v-model="scope.row.field_name"
                   @change="handleFieldNameChange(scope.row)"
                   placeholder="字段名称"
                 />
               </template>
             </el-table-column>
-            <el-table-column prop="form_value" label="字段类型">
+            <el-table-column prop="form_value" label="字段类型" size="small">
               <template #default="scope">
                 <div class="flex">
                   <el-select
                     v-model="scope.row.value"
                     placeholder="请选择"
                     @change="handleTypeChange(scope.row)"
+                    size="small"
                   >
                     <el-option v-for="item in typeOptions" :key="item.value" :label="item.label" :value="item.value" />
                   </el-select>
                   <el-button
                     v-if="!dictTypes.includes(scope.row.value) && scope.row.value !== 'input_select'"
-                    type="primary" link
+                    type="text"
                     icon="el-icon-delete"
                     class="ml10"
+                    size="small"
                     @click="handleDelete(scope.$index)"
                   />
                 </div>
@@ -52,6 +55,7 @@
                     v-if="dictTypes.includes(scope.row.value)"
                     v-model="scope.row.data_dict_id"
                     placeholder="关联字典"
+                    size="small"
                     @change="selectChange(scope.row)"
                   >
                     <el-option v-for="item in dictList" :key="item.id" :label="item.name" :value="item.id" />
@@ -76,7 +80,7 @@
                   </div>
                   <el-button
                     v-if="dictTypes.includes(scope.row.value) || scope.row.value == 'input_select'"
-                    type="primary" link
+                    type="text"
                     icon="el-icon-delete"
                     class="ml10"
                     @click="handleDelete(scope.$index)"
@@ -86,11 +90,11 @@
             </el-table-column>
           </el-table>
 
-          <el-button class="add-text" type="primary" link icon="el-icon-plus" @click="handleAddField"> 添加字段 </el-button>
+          <el-button class="add-text" type="text" icon="el-icon-plus" @click="handleAddField"> 添加字段 </el-button>
 
           <div class="footer-buttons">
-            <el-button @click="dialogVisible = false">取消</el-button>
-            <el-button :loading="loading" type="primary" @click="handleConfirm">确定</el-button>
+            <el-button size="small" @click="dialogVisible = false">取消</el-button>
+            <el-button size="small" :loading="loading" type="primary" @click="handleConfirm">确定</el-button>
           </div>
         </div>
       </div>
@@ -103,12 +107,11 @@
 <script>
 import { pinyin } from 'pinyin-pro'
 import Mobile from './mobile.vue'
-import { getDictListApi } from '@/api/form.ts'
-import { dataFieldTypeApi, chatHistoryApi, batchFieldSaveApi } from '@/api/develop.ts'
+import { getDictListApi } from '@/api/form'
+import { dataFieldTypeApi, chatHistoryApi, batchFieldSaveApi } from '@/api/develop'
 import checkboxDialog from '@/components/develop/checkboxDialog'
 
 export default {
-  emits: ['getList'],
   name: 'FormDialog',
   components: {
     Mobile,
@@ -257,9 +260,9 @@ export default {
     // 一对一字段处理
     getDataFn(val) {
       this.$nextTick(() => {
-        this.fields[this.index].association_crud_id = val.id
-        this.fields[this.index].association_field_names = []
-        this.fields[this.index].association_field_names_list = []
+        this.$set(this.fields[this.index], 'association_crud_id', val.id)
+        this.$set(this.fields[this.index], 'association_field_names', [])
+        this.$set(this.fields[this.index], 'association_field_names_list', [])
         val.selectList.map((item) => {
           this.fields[this.index].association_field_names.push(item.field_name_en)
           this.fields[this.index].association_field_names_list.push(item)

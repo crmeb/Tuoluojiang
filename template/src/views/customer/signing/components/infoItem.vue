@@ -141,7 +141,6 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
 export default {
   props: {
     dataInfo: {
@@ -150,8 +149,8 @@ export default {
     }
   },
   components: {
-    oaUploadList: defineAsyncComponent(() => import('@/components/form-common/oa-uploadList.vue')),
-    productList: defineAsyncComponent(() => import('@/views/customer/components/productList.vue'))
+    oaUploadList: () => import('@/components/form-common/oa-uploadList.vue'),
+    productList: () => import('@/views/customer/components/productList.vue')
   },
   methods: {
     handleClick(url) {
@@ -175,12 +174,12 @@ export default {
       padding-left: 10px;
     }
   }
-  :deep(.el-form-item__label) {
+  ::v-deep .el-form-item__label {
     font-weight: 400;
     font-size: 13px;
     color: #606266;
   }
-  :deep(.el-form-item) {
+  ::v-deep .el-form-item {
     margin-bottom: 10px;
   }
 

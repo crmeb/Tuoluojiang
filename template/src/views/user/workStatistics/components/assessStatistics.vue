@@ -18,18 +18,16 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import pickerOptions from '@/libs/pickerOptions.ts'
-import { assessCensusLineApi } from '@/api/enterprise.ts'
-import Commnt from '@/components/user/accessCommon.ts'
+import moment from 'moment'
+import pickerOptions from '@/libs/pickerOptions'
+import { assessCensusLineApi } from '@/api/enterprise'
+import Commnt from '@/components/user/accessCommon'
 import echarts from 'echarts'
-import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'AssessStatistics',
   components: {
-    manageRange: defineAsyncComponent(() => import('@/components/form-common/select-manageRange')),
-    oaFromBox
+    manageRange: () => import('@/components/form-common/select-manageRange'),
+    oaFromBox: () => import('@/components/common/oaFromBox')
   },
   props: {
     searchBtn: {
@@ -51,10 +49,6 @@ export default {
   },
   data() {
     return {
-      // Vue 3 的 prop 只读，组件内部需要改写时用本地副本
-      typeLocal: this.type,
-      // Vue 3 的 prop 只读，组件内部需要改写时用本地副本
-      planIdLocal: this.planId,
       colorList: [
         '#679AFA',
         '#6FE9EA',
@@ -68,17 +62,17 @@ export default {
         '#F0F8FF'
       ],
       periodOptions: Commnt.periodOptions,
-      frameArray: [{ label: '选择部门', value: '' }],
-      userArray: [{ label: '选择人员', value: '' }],
+      frameArray: [{ label: this.$t('setting.selectdepartment'), value: '' }],
+      userArray: [{ label: this.$t('access.selectpersonnel'), value: '' }],
       tableData: [],
       frame: [],
       period: 2,
-      time: [dayjs().subtract(1, 'years').format('YYYY-MM-DD'), dayjs(new Date()).format('YYYY-MM-DD')],
+      time: [moment().subtract(1, 'years').format('YYYY-MM-DD'), moment(new Date()).format('YYYY-MM-DD')],
       frame_id: 0,
       scope_frame: 'all',
       test_uid: '',
-      start: dayjs().subtract(1, 'years').format('YYYY-MM-DD'),
-      end: dayjs(new Date()).format('YYYY-MM-DD'),
+      start: moment().subtract(1, 'years').format('YYYY-MM-DD'),
+      end: moment(new Date()).format('YYYY-MM-DD'),
       total: 0,
       height: 420,
       styles1: {
@@ -101,7 +95,7 @@ export default {
           field_name_en: 'time',
           form_value: 'date_picker',
           pickerOptions: this.getOnlyRangePickerOption(),
-          data_dict: [dayjs().subtract(1, 'year').format('YYYY/MM/DD'), dayjs().format('YYYY/MM/DD')]
+          data_dict: [moment().subtract(1, 'year').format('YYYY/MM/DD'), moment().format('YYYY/MM/DD')]
         }
       ],
       search2: [
@@ -115,14 +109,9 @@ export default {
     }
   },
   watch: {
-    // prop 由父组件更新时同步到本地副本（组件内部改写的是 typeLocal）
-    type(val) {
-      this.typeLocal = val
-    },
-    // prop 由父组件更新时同步到本地副本（组件内部改写的是 planIdLocal）
-    planId(val) {
-      this.planIdLocal = val
-    },
+    lang() {
+      this.setOptions()
+    }
   },
   methods: {
     getOnlyRangePickerOption() {
@@ -135,11 +124,11 @@ export default {
       if (data == 'reset') {
         this.scope_frame = 'all'
         this.period = 2
-        this.start = dayjs().subtract(1, 'years').format('YYYY-MM-DD')
-        this.end = dayjs(new Date()).format('YYYY-MM-DD')
+        this.start = moment().subtract(1, 'years').format('YYYY-MM-DD')
+        this.end = moment(new Date()).format('YYYY-MM-DD')
         this.time = [
-          dayjs().subtract(1, 'years').format('YYYY-MM-DD'),
-          dayjs(new Date()).format('YYYY-MM-DD')
+          moment().subtract(1, 'years').format('YYYY-MM-DD'),
+          moment(new Date()).format('YYYY-MM-DD')
         ]
         this.frame_id = 0
         this.test_uid = ''
@@ -150,18 +139,22 @@ export default {
       }
       this.getTableData()
     },
+    setOptions() {
+      this.frameArray[0].label = this.$t('setting.selectdepartment')
+      this.userArray[0].label = this.$t('access.selectpersonnel')
+    },
     reset() {
       this.period = 2
-      this.start = dayjs().subtract(1, 'years').format('YYYY-MM-DD')
-      this.end = dayjs(new Date()).format('YYYY-MM-DD')
+      this.start = moment().subtract(1, 'years').format('YYYY-MM-DD')
+      this.end = moment(new Date()).format('YYYY-MM-DD')
       this.time = [
-        dayjs().subtract(1, 'years').format('YYYY-MM-DD'),
-        dayjs(new Date()).format('YYYY-MM-DD')
+        moment().subtract(1, 'years').format('YYYY-MM-DD'),
+        moment(new Date()).format('YYYY-MM-DD')
       ]
       this.frame_id = 0
       this.scope_frame = 'all'
       this.$refs.manageRange.reset()
-      this.planIdLocal = ''
+      this.planId = ''
 
       this.getTableData()
     },
@@ -173,8 +166,8 @@ export default {
         time: this.time,
         frame_id: this.frame_id ? this.frame_id : '',
         test_uid: this.test_uid,
-        number: this.planIdLocal,
-        types: this.typeLocal,
+        number: this.planId,
+        types: this.type,
         scope_frame: this.scope_frame
       }
       assessCensusLineApi(data).then((res) => {
@@ -320,7 +313,7 @@ export default {
     handleFrame(num) {
       this.frame_id = num
       this.test_uid = ''
-      this.userArray = [{ label: '选择人员', value: '' }]
+      this.userArray = [{ label: this.$t('access.selectpersonnel'), value: '' }]
       if (num != '') {
         const index = this.getFindIndex(this.frame, 'id', num)
         this.frame[index].user.forEach((value) => {
@@ -409,13 +402,13 @@ body .el-month-table td.start-date .cell,
     }
   }
 }
-:deep(.from-s .flex-row .el-form-item) {
+::v-deep .from-s .flex-row .el-form-item {
   margin-right: 10px;
   margin-left: 0;
 }
 // 考核统计 tooltip 滚动条美化（细、半透明、悬浮）
 // echarts 4.2.1 的 tooltip.className 不生效，改用结构选择器命中 #statistics-con 内的 tooltip dom
-:deep(#statistics-con > div) {
+::v-deep #statistics-con > div {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
   &::-webkit-scrollbar {

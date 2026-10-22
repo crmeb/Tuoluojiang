@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-card :body-style="{ padding: '10px 20px 0 20px' }" class="mb14">
-      <el-tabs v-model="activeName" class="cr-header-tabs" @tab-change="handleClick">
+      <el-tabs v-model="activeName" class="cr-header-tabs" @tab-click="handleClick">
         <el-tab-pane label="未读" name="1"></el-tab-pane>
         <el-tab-pane label="全部" name="2"></el-tab-pane>
       </el-tabs>
@@ -11,8 +11,8 @@
       <div class="mb14">
         <form-box ref="formBox" @confirmData="confirmData" />
         <div class="mb20">
-          <el-button v-if="activeName == 1" type="primary" @click="handleIsRead">标记为已读</el-button>
-          <el-button @click="handleDelete">批量删除</el-button>
+          <el-button v-if="activeName == 1" type="primary" @click="handleIsRead" size="small">标记为已读</el-button>
+          <el-button size="small" @click="handleDelete">批量删除</el-button>
         </div>
       </div>
       <div>
@@ -29,7 +29,7 @@
           <el-table-column prop="created_at" label="发送时间" min-width="120"></el-table-column>
           <el-table-column label="操作" width="100" fixed="right">
             <template #default="scope">
-              <el-button type="primary" link @click="handleDetails(scope.row)">查看详情</el-button>
+              <el-button type="text" @click="handleDetails(scope.row)">查看详情</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -54,12 +54,9 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useUserStore } from '@/stores/user.ts'
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { noticeMessageListApi, noticeMessageReadApi, noticeMessageDeleteApi } from '@/api/user.ts'
-import { messageListApi } from '@/api/public.ts'
+import { modalSure } from '@/libs/public'
+import { noticeMessageListApi, noticeMessageReadApi, noticeMessageDeleteApi } from '@/api/user'
+import { messageListApi } from '@/api/public'
 
 import unreadIcon from '@/assets/images/unread-icon.png';
 import readIcon from '@/assets/images/read-icon.png';
@@ -67,12 +64,9 @@ import readIcon from '@/assets/images/read-icon.png';
 export default {
   name: 'Apply',
   components: {
-    dialogForm: defineAsyncComponent(() => import('./components/index')),
-    formBox: defineAsyncComponent(() => import('./components/formBox')),
-    messageDetails: defineAsyncComponent(() => import('./components/messageDetails'))
-  },
-  computed: {
-    ...mapStores(useUserStore)
+    dialogForm: () => import('./components/index'),
+    formBox: () => import('./components/formBox'),
+    messageDetails: () => import('./components/messageDetails')
   },
   data() {
     return {
@@ -120,7 +114,7 @@ export default {
           this.tableData = res.data.list
           this.total = res.data.messageNum
           if (this.activeName === '1') {
-            this.userStore.setMessageCount(this.total)
+            this.$store.commit('user/SET_MESSAGE', this.total)
           }
         })
         .catch(() => {
@@ -202,7 +196,7 @@ export default {
     getMessage() {
       messageListApi({ page: 1, limit: 5 }).then((res) => {
         const num = res.data.messageNum ? res.data.messageNum : 0
-        this.userStore.setMessageCount(num)
+        this.$store.commit('user/SET_MESSAGE', num)
       })
     }
   }
@@ -212,18 +206,18 @@ export default {
 <style lang="scss" scoped>
 .content {
   height: calc(100% - 65px);
-  :deep(.el-card__body) {
+  ::v-deep .el-card__body {
     height: 100%;
   }
   .table-box {
     height: calc(100% - 144px) !important;
   }
-  :deep(.el-image) {
+  ::v-deep .el-image {
     width: 23px !important;
     height: 23px !important;
   }
 }
-:deep(.el-table th) {
+::v-deep .el-table th {
   background-color: #f7fbff;
 }
 .pagination {

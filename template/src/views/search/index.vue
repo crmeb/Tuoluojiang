@@ -85,9 +85,10 @@
 </template>
 
 <script>
-import { helpCenterApi, templatePayCode, templateViewApi, templateExportApi } from '@/api/user.ts'
-import { fileLinkDownLoad } from '@/utils/file.ts'
-import { roterPre } from '@/settings.ts'
+import { mapMutations } from 'vuex'
+import { helpCenterApi, templatePayCode, templateViewApi, templateExportApi } from '@/api/user'
+import { fileLinkDownLoad } from '@/utils/file'
+import { roterPre } from '@/settings'
 import payment from '@/components/form-common/dialog-payment'
 export default {
   name: 'CrmebOaEntIndex',
@@ -136,7 +137,7 @@ export default {
     this.getList()
     window.addEventListener('scroll', this.lazyLoading)
   },
-  unmounted() {
+  destroyed() {
     window.removeEventListener('scroll', this.lazyLoading)
   },
 
@@ -150,10 +151,12 @@ export default {
 
   methods: {
     handleClick(e) {
-      this.labelText = e.props.label
+      this.labelText = e.label
 
       this.getList()
     },
+    ...mapMutations('user', ['SET_MENU_LIST']),
+
     // 滚动加载
     lazyLoading(e) {
       let scrollTop = document.documentElement.scrollTop || document.body.scrollTop
@@ -207,6 +210,7 @@ export default {
       })
     },
     getList(val) {
+      this.$store.commit('app/SET_CLICK_KEY', this.keyword)
       this.loading = true
       if (this.activeName == 'all') {
         this.activeName = ''
@@ -247,7 +251,10 @@ export default {
     .main {
       max-width: 800px;
       margin: 0 auto;
-      :deep(.el-input-group__append) {
+      ::v-deep .el-input--medium .el-input__icon {
+        line-height: 42px;
+      }
+      ::v-deep .el-input-group__append {
         top: 0;
         background-color: #1890ff;
         font-size: 14px;
@@ -262,7 +269,7 @@ export default {
         cursor: pointer;
         padding: 25px 0;
         border-bottom: 1px solid #eeeeee;
-        :deep(.highlight) {
+        ::v-deep .highlight {
           background-color: #fff310 !important;
         }
 
@@ -279,7 +286,7 @@ export default {
               font-size: 14px;
               color: #ff9843;
             }
-            :deep(.highlight) {
+            ::v-deep .highlight {
               background-color: #fff310 !important;
             }
             .iconwendang {
@@ -358,11 +365,11 @@ export default {
   align-items: center;
 }
 
-:deep(.el-tabs__nav-wrap::after) {
+::v-deep .el-tabs__nav-wrap::after {
   height: 1px;
   background: #eeeeee;
 }
-:deep(.el-tabs__header) {
+::v-deep .el-tabs__header {
   margin: 0;
 }
 .default {
@@ -384,19 +391,22 @@ export default {
   }
 }
 
-:deep(.el-input__suffix) {
+::v-deep .el-input__suffix {
   position: absolute;
   right: 0;
 }
 
-:deep(.el-button) {
+::v-deep .el-button--medium {
   height: 42px;
 
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
 }
-:deep(.el-input) {
-  --el-input-height: 42px;
+::v-deep .el-input--medium .el-input__inner {
+  height: 42px;
+  line-height: 42px;
+}
+::v-deep .el-input {
   padding-right: 50px;
 }
 .color1 {

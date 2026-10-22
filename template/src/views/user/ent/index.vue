@@ -23,9 +23,10 @@
                     clearable
                     placeholder="请输入姓名/手机号码"
                     prefix-icon="el-icon-search"
+                    size="small"
                     style="width: 210px"
                     @change="getUserAddBookeList(1)"
-                    @keyup.stop.prevent.enter="getUserAddBookeList(1)"
+                    @keyup.native.stop.prevent.enter="getUserAddBookeList(1)"
                   >
                   </el-input>
                 </div>
@@ -68,8 +69,8 @@
 
 <script>
 // 引入用户通讯录树和列表的API
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { userAddBookTree, userAddBookeList } from '@/api/user.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { userAddBookTree, userAddBookeList } from '@/api/user'
 // 引入菜单树组件
 import menuTree from './components/menuTree'
 // 引入默认页面组件
@@ -198,9 +199,16 @@ export default {
     margin-right: 15px;
   }
 }
+::v-deep .el-input__inner {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-end;
+  line-height: 32px;
+}
+
 .table-container {
   padding-top: 20px;
-  :deep(.el-form-item) {
+  ::v-deep .el-form-item {
     margin-bottom: 0;
   }
 }
@@ -225,13 +233,13 @@ export default {
   border-radius: 50%;
   background-color: #ff9900;
 }
-:deep(.seach-box .el-input__clear) {
+::v-deep .seach-box .el-input__clear {
   position: absolute;
   height: 100%;
   right: 0;
   top: -4px;
 }
-:deep(.el-input__suffix) {
+::v-deep .el-input__suffix {
   position: absolute;
   top: 5px;
 }

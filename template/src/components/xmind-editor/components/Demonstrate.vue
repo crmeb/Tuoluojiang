@@ -23,8 +23,8 @@
 </template>
 
 <script>
-import { EventBus } from '@/libs/bus.ts'
-import { DEMONSTRATE_JUMP, EXIT_DEMONSTRATE } from '../event-constant.ts';
+import { EventBus } from '@/libs/bus'
+import { DEMONSTRATE_JUMP, EXIT_DEMONSTRATE } from '../event-constant';
 
 export default {
   props: {
@@ -44,7 +44,7 @@ export default {
     EventBus.$on(DEMONSTRATE_JUMP, this.onJump)
     EventBus.$on(EXIT_DEMONSTRATE, this.onExit)
   },
-  unmounted() {
+  destroyed() {
     EventBus.$off(DEMONSTRATE_JUMP, this.onJump)
     EventBus.$off(EXIT_DEMONSTRATE, this.onExit)
   },

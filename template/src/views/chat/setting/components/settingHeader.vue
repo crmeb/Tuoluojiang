@@ -15,8 +15,8 @@
     </div>
 
     <div class="header-actions">
-      <el-button plain :loading="saving" @click="emit('save')">保存</el-button>
-      <el-button type="primary" :loading="saving" @click="emit('publish')">发布</el-button>
+      <el-button plain size="small" :loading="saving" @click="emit('save')">保存</el-button>
+      <el-button type="primary" size="small" :loading="saving" @click="emit('publish')">发布</el-button>
     </div>
   </div>
 </template>

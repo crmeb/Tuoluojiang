@@ -2,7 +2,7 @@
   <div>
     <el-dialog
       title="选择产品弹窗"
-      v-model="dialogTableVisible"
+      :visible.sync="dialogTableVisible"
       :before-close="handleClose"
       :append-to-body="true"
       :width="DIALOG_SIZE.XL"
@@ -14,6 +14,7 @@
           @change="getList(1)"
           @keydown="getList(1)"
           :props="{ label: 'name', value: 'id', emitPath: false }"
+          size="small"
           class="mr10"
           placeholder="产品分类"
           style="width: 200px"
@@ -22,6 +23,7 @@
         <el-input
           placeholder="请输入名称"
           v-model="where.name"
+          size="small"
           style="width: 200px"
           class="mr10"
           @change="getList(1)"
@@ -33,6 +35,7 @@
           v-model="where.attr"
           @change="getList(1)"
           @keydown="getList(1)"
+          size="small"
           style="width: 200px"
           clearable
         ></el-input>
@@ -44,7 +47,7 @@
         row-key="unique"
         ref="multipleTable"
         class="select-table"
-        :tree-props="{ children: 'children' }"
+        :tree-props="{ children: 'attr_value', hasChildren: 'hasChildren' }"
         @row-click="handleRowClick"
       >
         <el-table-column property="date" label="产品信息">
@@ -106,8 +109,7 @@
             {{ getStock(scope.row) }}
           </template>
         </el-table-column>
-        <!-- 不设 prop：多规格父行插槽为空时，Element Plus 会回退显示 prop 字段 -->
-        <el-table-column label="产品售价" width="120">
+        <el-table-column property="name" label="产品售价" width="120">
           <template #default="scope">
             <div v-if="scope.row.attr_value && scope.row.attr_value.length == 1" class="ml10">
               {{ scope.row.attr_value[0].price || '0.00' }}
@@ -137,10 +139,9 @@
   </div>
 </template>
 <script>
-import { getProductsAttrsApi, productCateListApi } from '@/api/client.ts'
-import { DIALOG_SIZE } from '@/constants/popupSize.ts';
+import { getProductsAttrsApi, productCateListApi } from '@/api/client'
+import { DIALOG_SIZE } from '@/constants/popupSize';
 export default {
-  emits: ['getselectList'],
   props: {
     // 仓库 id：出入库等场景传入，随列表接口透传，按仓库维度过滤库存
     warehouseId: {
@@ -169,12 +170,8 @@ export default {
     }
   },
   watch: {
-    // deep: 1 对齐 Vue 2 语义：push 等原地修改也要触发，以便重算多规格父行的勾选
-    selectedList: {
-      handler(val) {
-        this.setChecked(val)
-      },
-      deep: 1
+    selectedList: function (val) {
+      this.setChecked(val)
     },
     // 仓库变化后商品库存随之变化，重置到第一页重新请求
     warehouseId() {
@@ -202,9 +199,8 @@ export default {
         this.gridData = res.data.list
         this.gridData.forEach((item) => {
           item.unique = item.id + ''
-          // 仅多规格商品作为树节点展开；element-ui 靠 hasChildren 隐藏单规格箭头，Element Plus 非 lazy 时不认该字段
-          if (item.attr_value.length > 1) {
-            item.children = item.attr_value
+          if (item.attr_value.length <= 1) {
+            item.hasChildren = true
           }
           // 将父级商品名 / 单位挂到每个规格项上，方便选中后回填展示（增量字段，不影响原有消费方）
           ;(item.attr_value || []).forEach((el) => {
@@ -410,24 +406,16 @@ $expand-icon-space: 23px;
 // 下方的 `td div { display: flex }` 顺带把 .cell 也变成了 flex 容器，第一列内容
 // 溢出时展开箭头会被 flex-shrink 压窄（20px → 12px），多规格父行的勾选框随之左移 8px。
 // 出库 / 盘点 / 调拨等页比入库页多一列「剩余库存」，第一列更窄，正是触发条件。
-:deep(.el-table__expand-icon) {
+::v-deep .el-table__expand-icon {
   flex: none;
-  // element-ui 箭头自带 3px 右边距，Element Plus 没有
-  margin-right: 3px;
   // 箭头自身保持默认指针，避免整行 pointer 时误以为点箭头也是选中
   cursor: pointer;
 }
-// Element Plus 给顶层叶子行（单规格）也加了 20px 占位，element-ui 没有，勾选框缩进由 .ml40 负责
-// 子规格行前面有 el-table__indent，占位不是首个子元素，不受影响
-.select-table :deep(.cell > .el-table__placeholder:first-child) {
-  display: none;
-}
 // 整行可点选：行内容给出可点击态，展开箭头列不参与选中
-.select-table :deep(.el-table__body tr) {
+.select-table ::v-deep .el-table__body tr {
   cursor: pointer;
 }
-// 弹框挂到 body，:deep 前缀需落在 el-table 根节点上才能命中
-.select-table :deep(td.el-table__cell div) {
+::v-deep .el-table td.el-table__cell div {
   display: flex;
   align-items: center;
 }

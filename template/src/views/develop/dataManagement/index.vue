@@ -20,15 +20,15 @@
             <el-table-column label="请求方式" prop="method"> </el-table-column>
             <el-table-column label="请求类型" prop="is_pre">
               <template #default="scope">
-                <el-tag type="warning" v-if="scope.row.is_pre == 0">直接请求</el-tag>
-                <el-tag type="success" v-if="scope.row.is_pre == 1">授权请求</el-tag>
+                <el-tag type="warning" size="small" v-if="scope.row.is_pre == 0">直接请求</el-tag>
+                <el-tag type="success" size="small" v-if="scope.row.is_pre == 1">授权请求</el-tag>
               </template>
             </el-table-column>
             <el-table-column label="创建时间" min-width="140" prop="created_at"> </el-table-column>
             <el-table-column fixed="right" label="操作" prop="address" width="110">
               <template #default="scope">
-                <el-button type="primary" link @click="editFn(scope.row.id)">编辑</el-button>
-                <el-button type="primary" link @click="deleteFn(scope.row.id)">删除</el-button>
+                <el-button type="text" @click="editFn(scope.row.id)">编辑</el-button>
+                <el-button type="text" @click="deleteFn(scope.row.id)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -52,11 +52,11 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { modalSure } from '@/libs/public'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
 import oaFromBox from '@/components/common/oaFromBox'
 import addData from './components/addData.vue'
-import { crudGetCurlListApi, crudDeleteCurlApi } from '@/api/develop.ts'
+import { crudGetCurlListApi, crudDeleteCurlApi } from '@/api/develop'
 export default {
   name: 'FinanceList',
   components: {
@@ -148,7 +148,7 @@ export default {
   font-size: 16px;
   font-weight: 500;
 }
-:deep(el-tag) {
+::v-deep el-tag {
   border: none;
 }
 </style>

@@ -25,7 +25,7 @@
                 <el-input
                   v-model="where.name"
                   size="small"
-                  @keyup.stop.prevent.enter="getUserWorkList"
+                  @keyup.native.stop.prevent.enter="getUserWorkList"
                   clearable
                   style="width: 250px"
                   @change="getList(true)"
@@ -84,11 +84,11 @@
                 <span>{{ scope.row.created_at || '--' }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="address" label="操作" width="250">
+            <el-table-column prop="address" :label="$t('public.operation')" width="250">
               <template #default="scope">
-                <el-button type="primary" link v-if="scope.row.is_default !== 1" @click="editFn(scope.row.id)">编辑</el-button>
-                <el-button type="primary" link @click="dataFn(scope.row)">数据管理</el-button>
-                <el-button type="primary" link v-if="scope.row.is_default !== 1" @click="handleDelete(scope.row)"
+                <el-button type="text" v-if="scope.row.is_default !== 1" @click="editFn(scope.row.id)">编辑</el-button>
+                <el-button type="text" @click="dataFn(scope.row)">数据管理</el-button>
+                <el-button type="text" v-if="scope.row.is_default !== 1" @click="handleDelete(scope.row)"
                   >删除</el-button
                 >
               </template>
@@ -113,16 +113,15 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import modalForm from '@/libs/modal-form.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { roterPre } from '@/settings.ts'
-import { getDictListApi, getDictCreateApi, getDictEditApi, getDictPutShowApi, getDictDeleteShowApi } from '@/api/form.ts'
-import oaFromBox from '@/components/common/oaFromBox'
+import { modalSure } from '@/libs/public'
+import modalForm from '@/libs/modal-form'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { roterPre } from '@/settings'
+import { getDictListApi, getDictCreateApi, getDictEditApi, getDictPutShowApi, getDictDeleteShowApi } from '@/api/form'
 export default {
   name: 'FinanceList',
   components: {
-    oaFromBox
+    oaFromBox: () => import('@/components/common/oaFromBox')
   },
   data() {
     return {

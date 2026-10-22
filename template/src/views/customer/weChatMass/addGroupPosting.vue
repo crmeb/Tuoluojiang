@@ -24,9 +24,9 @@
               </el-form-item>
               <el-form-item :label="formData.types == 1 ? '客户群范围：' : '客户范围：'" prop="is_all">
                 <el-radio-group v-model="formData.is_all" @change="radioChange">
-                  <el-radio :label="1" :value="1">{{ formData.types == 1 ? '全部群聊' : '全部客户' }}</el-radio>
-                  <el-radio v-if="formData.types == 0" :label="2" :value="2">企微客户</el-radio>
-                  <el-radio :label="0" :value="0"> {{ formData.types == 1 ? '筛选群聊' : '筛选客户' }}</el-radio>
+                  <el-radio :label="1">{{ formData.types == 1 ? '全部群聊' : '全部客户' }}</el-radio>
+                  <el-radio v-if="formData.types == 0" :label="2">企微客户</el-radio>
+                  <el-radio :label="0"> {{ formData.types == 1 ? '筛选群聊' : '筛选客户' }}</el-radio>
                 </el-radio-group>
                 <div class="tips mb10">用于设置此消息需要群发给哪些客户，筛选客户可以将此消息发送给符合条件的客户</div>
                 <template v-if="formData.types == '0' && (formData.is_all == 0 || formData.is_all == 2)">
@@ -87,8 +87,8 @@
 
               <el-form-item :label="formData.types == 1 ? '群主调整发送范围：' : '成员调整发送范围：'" prop="is_modify">
                 <el-radio-group v-model="formData.is_modify">
-                  <el-radio :label="0" :value="0">不允许</el-radio>
-                  <el-radio :label="1" :value="1">允许</el-radio>
+                  <el-radio :label="0">不允许</el-radio>
+                  <el-radio :label="1">允许</el-radio>
                 </el-radio-group>
                 <div class="tips">
                   {{
@@ -102,7 +102,7 @@
               <!-- 群发内容区域 -->
               <div class="flex flex-between lh-center">
                 <div class="title">群发内容</div>
-                <el-button type="primary" link @click="openLibrary">从素材库中选择</el-button>
+                <el-button type="text" @click="openLibrary">从素材库中选择</el-button>
               </div>
               <el-form-item prop="temp_id">
                 <template #label>
@@ -122,17 +122,18 @@
               <!-- 群发时间设置 -->
               <el-form-item label="群发时间：" prop="is_timed">
                 <el-radio-group v-model="formData.is_timed" @change="handleTimeChange">
-                  <el-radio :label="0" :value="0">立即发送</el-radio>
-                  <el-radio :label="1" :value="1">定时发送</el-radio>
+                  <el-radio :label="0">立即发送</el-radio>
+                  <el-radio :label="1">定时发送</el-radio>
                 </el-radio-group>
                 <div class="tips">用于设置此群发消息，什么时候通知员工进行发送</div>
 
                 <el-date-picker
                   v-if="formData.is_timed == 1"
                   v-model="formData.send_time"
+                  size="small"
                   type="datetime"
                   placeholder="选择日期时间"
-                  value-format="YYYY-MM-DD HH:mm:ss"
+                  value-format="yyyy-MM-dd HH:mm:ss"
                   style="width: 200px; margin-top: 10px"
                 >
                 </el-date-picker>
@@ -141,7 +142,7 @@
                   注意，客户每个自然月最多接收来自同一群主的30条群发消息，每位客户每日可收到1次群发内容。
                 </div>
 
-                <el-button type="primary" @click="submitFn" class="mt20"> 通知群成员群发 </el-button>
+                <el-button type="primary" size="small" @click="submitFn" class="mt20"> 通知群成员群发 </el-button>
               </el-form-item>
             </el-form>
           </div>
@@ -202,24 +203,20 @@
   </div>
 </template>
 <script>
-import { mapStores } from 'pinia'
-import { useConditionDialogStore } from '@/stores/conditionDialog.ts'
-import { defineAsyncComponent } from 'vue'
-import { workMassTempApi, workMassSave, getWorkMassEdit, getWorkMassCustomerCount, putWorkMassEdit } from '@/api/weCom.ts'
-import { salesmanCustomApi } from '@/api/client.ts'
-import { formatBytes } from '@/utils/file.ts'
-import { roterPre } from '@/settings.ts'
-import { getStorageJson } from '@/utils/storage.ts'
+import { workMassTempApi, workMassSave, getWorkMassEdit, getWorkMassCustomerCount, putWorkMassEdit } from '@/api/weCom'
+import { salesmanCustomApi } from '@/api/client'
+import { formatBytes } from '@/utils/file'
+import { roterPre } from '@/settings'
+import { getStorageJson } from '@/utils/storage'
 export default {
-  emits: ['backFn'],
   name: 'AddGroupPosting', // 组件名规范（ PascalCase ）
   components: {
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
-    materialContent: defineAsyncComponent(() => import('./components/materialContent')),
-    materialLibrary: defineAsyncComponent(() => import('./components/materialLibrary')),
-    conditionDialog: defineAsyncComponent(() => import('@/components/develop/conditionDialog')),
-    labelDialog: defineAsyncComponent(() => import('@/views/customer/list/components/labelDialog')),
-    groupChat: defineAsyncComponent(() => import('./components/groupChat'))
+    selectMember: () => import('@/components/form-common/select-member'),
+    materialContent: () => import('./components/materialContent'),
+    materialLibrary: () => import('./components/materialLibrary'),
+    conditionDialog: () => import('@/components/develop/conditionDialog'),
+    labelDialog: () => import('@/views/customer/list/components/labelDialog'),
+    groupChat: () => import('./components/groupChat')
   },
   props: {
     types: {
@@ -230,9 +227,6 @@ export default {
       type: [String, Number],
       default: 0
     }
-  },
-  computed: {
-    ...mapStores(useConditionDialogStore)
   },
   data() {
     return {
@@ -546,7 +540,7 @@ export default {
             }
           })
           this.conditionList = res.data.search
-          this.conditionDialogStore.setFieldOptions({ list: this.conditionList })
+          this.$store.commit('uadatefieldOptions', { list: this.conditionList })
         }
       })
     },
@@ -647,10 +641,6 @@ export default {
 </script>
 
 <style scoped lang="scss">
-// 本页按 element-ui 的块布局编写：控件占满整行、说明文字位于控件下方
-.p20 :deep(.el-form-item__content) {
-  display: block;
-}
 .header {
   font-family: PingFang SC, sans-serif;
   font-weight: 500;
@@ -854,7 +844,7 @@ export default {
   }
 }
 
-:deep(.el-radio) {
+::v-deep .el-radio {
   // input[aria-hidden='true'] {
   //   display: block !important; // 还原原生input，避免焦点隐藏
   //   opacity: 0; // 视觉隐藏但保留焦点功能
@@ -867,7 +857,7 @@ export default {
   // }
 }
 
-:deep(.el-radio:focus:not(.is-focus):not(:active):not(.is-disabled) .el-radio__inner) {
+::v-deep .el-radio:focus:not(.is-focus):not(:active):not(.is-disabled) .el-radio__inner {
   box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2); // 保留焦点样式，提升可访问性
 }
 
@@ -895,7 +885,7 @@ export default {
   border-radius: 4px 4px 4px 4px;
   padding-bottom: 10px;
 }
-:deep(.conditions) {
+::v-deep .conditions {
   margin-bottom: 6px !important;
 }
 </style>

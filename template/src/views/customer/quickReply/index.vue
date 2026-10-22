@@ -76,12 +76,12 @@
                     <el-table-column prop="created_at" label="创建时间" min-width="120" />
                     <el-table-column prop="creator.name" label="创建人" min-width="80" />
 
-                    <el-table-column prop="describe" label="操作" fixed="right" width="120">
+                    <el-table-column prop="describe" :label="$t('public.operation')" fixed="right" width="120">
                       <template #default="scope">
-                        <el-button type="primary" link @click="handleEdit(scope.row)">编辑</el-button>
+                        <el-button type="text" @click="handleEdit(scope.row)">{{ $t('public.edit') }}</el-button>
 
-                        <el-button type="primary" link @click="handleDelete(scope.row)">
-                          删除
+                        <el-button type="text" @click="handleDelete(scope.row)">
+                          {{ $t('public.delete') }}
                         </el-button>
                       </template>
                     </el-table-column>
@@ -118,17 +118,16 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { fileLinkDownLoad, getFileTypeIconfont } from '@/utils/file.ts'
+import { modalSure } from '@/libs/public'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { fileLinkDownLoad, getFileTypeIconfont } from '@/utils/file'
 import {
   getWorkReplyListApi,
   workReplyDelApi,
   getWorkReplyGroupApi,
   getWorkReplyImportApi,
   workReplyImportApi
-} from '@/api/weCom.ts'
+} from '@/api/weCom'
 
 // 动态加载 fileIcon 目录下的所有图片
 const fileIconContext = import.meta.glob('@/assets/images/fileIcon/*.png', {
@@ -142,14 +141,13 @@ Object.keys(fileIconContext).forEach(key => {
   fileIconModules[name] = fileIconContext[key];
 });
 
-import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'IndexVue',
   components: {
-    left: defineAsyncComponent(() => import('./components/left')),
-    addReply: defineAsyncComponent(() => import('./components/addReply')),
-    oaFromBox,
-    importExcel: defineAsyncComponent(() => import('@/components/common/importExcel'))
+    left: () => import('./components/left'),
+    addReply: () => import('./components/addReply'),
+    oaFromBox: () => import('@/components/common/oaFromBox'),
+    importExcel: () => import('@/components/common/importExcel')
   },
   data() {
     return {
@@ -372,7 +370,7 @@ export default {
   height: calc(100vh - 77px);
 }
 .assess-right {
-  :deep(.el-card__header) {
+  ::v-deep .el-card__header {
     border-bottom: none;
     padding: 0;
   }
@@ -408,7 +406,7 @@ export default {
 }
 .select-bar {
   margin-bottom: 0;
-  :deep(.el-input-group__append) {
+  ::v-deep .el-input-group__append {
     top: 0;
     button {
       color: #fff;
@@ -418,14 +416,14 @@ export default {
     }
   }
 }
-:deep(.el-textarea__inner),
+::v-deep .el-textarea__inner,
 .el-input__inner {
   font-size: 13px !important;
 }
-:deep(.el-input__inner) {
+::v-deep .el-input__inner {
   font-size: 13px !important;
 }
-:deep(.is-top .el-switch__core) {
+::v-deep .is-top .el-switch__core {
   width: 69px !important;
 }
 </style>

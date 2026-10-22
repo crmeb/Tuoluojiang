@@ -3,7 +3,7 @@
   <div class="station odds-station">
     <div class="btn-box1 mb10">
       <div class="title-16">商机列表</div>
-      <el-button @click="addLiaison()" type="primary">添加商机</el-button>
+      <el-button @click="addLiaison()" size="small" type="primary">添加商机</el-button>
     </div>
     <customizeTable
       flexLayout
@@ -15,9 +15,9 @@
       @getTableData="getTableData"
     >
       <template #options="{ data }">
-        <el-button type="primary" link @click="openDetails(data)">查看</el-button>
-        <el-button type="primary" link v-if="!data.is_sign" @click="createContract(data)">生成合同</el-button>
-        <el-button type="primary" link @click="createOrder(data)">生成订单</el-button>
+        <el-button type="text" @click="openDetails(data)">查看</el-button>
+        <el-button type="text" v-if="!data.is_sign" @click="createContract(data)">生成合同</el-button>
+        <el-button type="text" @click="createOrder(data)">生成订单</el-button>
       </template>
     </customizeTable>
     <div>
@@ -41,10 +41,8 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { oddsCreateApi, oddsCreateEditApi, oddsListApi } from '@/api/client.ts'
+import { oddsCreateApi, oddsCreateEditApi, oddsListApi } from '@/api/client'
 export default {
-  emits: ['refresh-detail'],
   name: 'Liaison',
   props: {
     formInfo: {
@@ -66,11 +64,11 @@ export default {
     }
   },
   components: {
-    addForm: defineAsyncComponent(() => import('@/views/customer/components/addForm')),
-     addContract: defineAsyncComponent(() => import('@/views/customer/contract/components/addContract')),
-     addContractSign: defineAsyncComponent(() => import('@/views/customer/signing/components/addContractSign')),
-    detailsDrawer: defineAsyncComponent(() => import('@/views/customer/components/details')),
-    customizeTable: defineAsyncComponent(() => import('@/views/customer/components/customizeTable'))
+    addForm: () => import('@/views/customer/components/addForm'),
+     addContract: () => import('@/views/customer/contract/components/addContract'),
+     addContractSign: () => import('@/views/customer/signing/components/addContractSign'),
+    detailsDrawer: () => import('@/views/customer/components/details'),
+    customizeTable: () => import('@/views/customer/components/customizeTable')
   },
   data() {
     return {
@@ -217,7 +215,7 @@ export default {
 .hand {
   cursor: pointer;
 }
-:deep(.el-input__inner) {
+::v-deep .el-input__inner {
   text-align: left;
 }
 .from-item-title {

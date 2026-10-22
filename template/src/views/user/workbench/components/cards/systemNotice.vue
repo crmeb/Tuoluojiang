@@ -32,7 +32,7 @@
             <span class="label">【{{ item.title }}】</span>
             <span>{{ item.message }}</span>
           </div>
-          <div class="time">{{ dayjs(item.created_at).format('MM-DD HH:mm') }}</div>
+          <div class="time">{{ moment(item.created_at).format('MM-DD HH:mm') }}</div>
         </div>
       </div>
     </div>
@@ -44,16 +44,16 @@
 </template>
 
 <script>
-import dayjs from 'dayjs'
-import { ref, onMounted, getCurrentInstance, defineAsyncComponent } from 'vue'
-import { noticeMessageListApi } from '@/api/user.ts'
+import moment from 'moment'
+import { ref, onMounted, getCurrentInstance } from 'vue'
+import { noticeMessageListApi } from '@/api/user'
 
 export default {
   name: 'SystemNoticeCard',
   components: {
-    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage')),
-    messageDetails: defineAsyncComponent(() => import('@/views/user/news/components/messageDetails')),
-    noticeList: defineAsyncComponent(() => import('@/layout/components/Notice/noticeList'))
+    defaultPage: () => import('@/components/common/defaultPage'),
+    messageDetails: () => import('@/views/user/news/components/messageDetails'),
+    noticeList: () => import('@/layout/components/Notice/noticeList')
   },
   setup() {
     const { proxy } = getCurrentInstance()
@@ -91,7 +91,7 @@ export default {
       getNewListData()
     })
 
-    return { dayjs, noticeListVisible, systemNote, messageData, loading, getNewListData, handleDetails, handleNewMore }
+    return { moment, noticeListVisible, systemNote, messageData, loading, getNewListData, handleDetails, handleNewMore }
   }
 }
 </script>
@@ -111,7 +111,7 @@ export default {
 }
 
 .table-box {
-  :deep(.table-box-title) {
+  ::v-deep .table-box-title {
     padding-left: 21px;
     height: 58px;
     border-bottom: 0;

@@ -45,24 +45,22 @@
       <el-table-column prop="date" label="操作" width="100">
         <template #default="scope">
           <el-dropdown>
-            <el-button type="primary" link class="el-dropdown-link more">
+            <span class="el-dropdown-link el-button--text el-button more">
               <i class="iconfont icongengduo1" />
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu style="text-align: center">
-                <el-dropdown-item v-if="userInfo.id == scope.row.master_uid" @click="deleteFn(scope.row.id)">
-                  彻底删除
-                </el-dropdown-item>
-                <el-dropdown-item
-                  v-if="
-                    scope.row.del_user && (userInfo.id == scope.row.master_uid || userInfo.id == scope.row.del_user.id)
-                  "
-                  @click="recoveryFn(scope.row.id)"
-                >
-                  恢复文件
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
+            </span>
+            <el-dropdown-menu style="text-align: center">
+              <el-dropdown-item v-if="userInfo.id == scope.row.master_uid" @click.native="deleteFn(scope.row.id)">
+                彻底删除
+              </el-dropdown-item>
+              <el-dropdown-item
+                v-if="
+                  scope.row.del_user && (userInfo.id == scope.row.master_uid || userInfo.id == scope.row.del_user.id)
+                "
+                @click.native="recoveryFn(scope.row.id)"
+              >
+                恢复文件
+              </el-dropdown-item>
+            </el-dropdown-menu>
           </el-dropdown>
         </template>
       </el-table-column>
@@ -84,21 +82,20 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { getFileTypeIconfont } from '@/utils/file.ts'
+import { modalSure } from '@/libs/public'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { getFileTypeIconfont } from '@/utils/file'
 import {
   folderForceDeleteApi,
   folderForceDeletesApi,
   folderSpaceEntRecoverApi,
   folderSpaceEntRecycleApi,
   folderSpaceEntAllRecoverApi
-} from '@/api/cloud.ts'
+} from '@/api/cloud'
 import defaultPage from '@/components/common/defaultPage'
-import { getStorageJson } from '@/utils/storage.ts'
+import { getStorageJson } from '@/utils/storage'
 import oaFromBox from '@/components/common/oaFromBox'
 export default {
-  emits: ['backFn'],
   name: 'RecoveryFile',
   components: {
     defaultPage,

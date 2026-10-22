@@ -3,8 +3,8 @@
   <div class="header" draggable="false" ref="showboxRef">
     <div>
       <div v-if="switchIndex == 2" class="header-left">
-        <el-button @click="allMove">移动至</el-button>
-        <el-button @click="allDelete(1)">删除</el-button>
+        <el-button size="small" @click="allMove">移动至</el-button>
+        <el-button size="small" @click="allDelete(1)">删除</el-button>
       </div>
       <div v-if="switchIndex == 3" class="header-left">
         <el-tabs v-model="type" class="tab-share" @tab-click="handleClick">
@@ -14,7 +14,7 @@
       </div>
       <div v-if="switchIndex == 4 || switchIndex == 5" class="header-left">
         <el-dropdown v-if="switchIndex == 4" trigger="click" @command="handleScreen">
-          <el-button type="primary" icon="el-icon-plus">新建</el-button>
+          <el-button type="primary" icon="el-icon-plus" size="small">{{ $t('file.newlybuild') }}</el-button>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item
@@ -42,20 +42,20 @@
           :before-upload="handleUpload"
           multiple
         >
-          <el-button plain class="ml10 mr10">上传</el-button>
+          <el-button plain size="small" class="ml10 mr10">{{ $t('file.upload') }}</el-button>
         </el-upload>
-        <el-button plain @click="allMove">移动至</el-button>
-        <el-button plain @click="allDelete(1)">删除</el-button>
+        <el-button plain size="small" @click="allMove">{{ $t('file.moveto') }}</el-button>
+        <el-button plain size="small" @click="allDelete(1)">{{ $t('public.delete') }}</el-button>
       </div>
 
       <div v-if="switchIndex == 6 || switchIndex == 1" class="header-16 mt20">
         <div class="title-16">
           <div v-if="breadcrumbArray.length == 0">最近打开</div>
-          <el-breadcrumb separator-icon="el-icon-arrow-right" v-else>
+          <el-breadcrumb separator-class="el-icon-arrow-right" v-else>
             <el-breadcrumb-item
               v-for="(item, indexJ) in breadcrumbArray"
               :key="indexJ"
-              @click="getBreadcrumb(item.pid, indexJ)"
+              @click.native="getBreadcrumb(item.pid, indexJ)"
             >
               <span class="breadcrumb-item" :style="{ color: indexJ == breadcrumbArray.length - 1 ? '#303133' : '' }">
                 {{ item ? item.name : '--' }}
@@ -67,7 +67,7 @@
         <div class="flex" v-if="spaceId && breadcrumbArray.length != 0">
           <!-- 新建 -->
           <el-dropdown trigger="click" @command="handleScreen" class="mr10 ml14">
-            <el-button type="primary" icon="el-icon-plus">新建</el-button>
+            <el-button type="primary" icon="el-icon-plus" size="small">{{ $t('file.newlybuild') }}</el-button>
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item
@@ -109,9 +109,9 @@
             </span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item @click="allMove">移动至</el-dropdown-item>
-                <!-- <el-dropdown-item @click="recoveryBtn">回收站</el-dropdown-item> -->
-                <el-dropdown-item @click="allDelete(3)">删除</el-dropdown-item>
+                <el-dropdown-item @click.native="allMove">移动至</el-dropdown-item>
+                <!-- <el-dropdown-item @click.native="recoveryBtn">回收站</el-dropdown-item> -->
+                <el-dropdown-item @click.native="allDelete(3)">删除</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -119,10 +119,10 @@
       </div>
 
       <div v-if="switchIndex == 7" class="header-left mt20">
-        <el-button plain @click="allDestroy">恢复文件</el-button>
-        <el-button plain @click="allDelete(2)">彻底删除</el-button>
-        <el-button v-if="entButton" plain @click="returnSpace">
-          返回企业空间
+        <el-button plain size="small" @click="allDestroy">{{ $t('file.restorefile') }}</el-button>
+        <el-button plain size="small" @click="allDelete(2)">{{ $t('file.completelydelete') }}</el-button>
+        <el-button v-if="entButton" plain size="small" @click="returnSpace">
+          {{ $t('file.returnspace') }}
         </el-button>
       </div>
     </div>
@@ -134,6 +134,7 @@
             placeholder="搜索文件名称"
             style="width: 250px"
             prefix-icon="el-icon-search"
+            size="small"
             clearable
             v-model="fileStyle.keyword"
             @change="getStyle()"
@@ -223,11 +224,10 @@
   </div>
 </template>
 <script>
-import helper from '@/libs/helper.ts'
-import SettingMer from '@/libs/settingMer.ts'
-import { getToken } from '@/utils/auth.ts'
+import helper from '@/libs/helper'
+import SettingMer from '@/libs/settingMer'
+import { getToken } from '@/utils/auth'
 export default {
-  emits: ['formBoxClick', 'uploadServerLog', 'handleSort', 'handleCommand', 'uploadFile'],
   name: '',
   components: {},
   props: {
@@ -271,31 +271,31 @@ export default {
         sortBy: 6
       },
       fileSortData: [
-        { name: '文件名称', id: 1 },
-        { name: '创建时间', id: 2 },
-        { name: '更新时间', id: 3 },
-        { name: '文件大小', id: 4 },
-        { name: '删除时间', id: 5 }
+        { name: this.$t('file.filename'), id: 1 },
+        { name: this.$t('file.creationtime'), id: 2 },
+        { name: this.$t('file.updatetime'), id: 3 },
+        { name: this.$t('file.filesize'), id: 4 },
+        { name: this.$t('file.deletetime'), id: 5 }
       ],
       fileSort: [
-        { name: '升序', id: 6 },
-        { name: '降序', id: 7 }
+        { name: this.$t('file.order'), id: 6 },
+        { name: this.$t('file.desc'), id: 7 }
       ],
       fileScreenData: [
-        { name: '类型', id: 1 },
-        { name: '文档', id: 2 },
-        { name: '幻灯片', id: 3 },
-        { name: '图片', id: 4 },
-        { name: '表格', id: 5 }
+        { name: this.$t('file.type'), id: 1 },
+        { name: this.$t('file.document'), id: 2 },
+        { name: this.$t('file.ppt'), id: 3 },
+        { name: this.$t('file.picture'), id: 4 },
+        { name: this.$t('file.table'), id: 5 }
       ],
       newlyBuildData: [
         { name: '使用模版', id: 7, icon: 'iconshiyongmoban color-doc' },
         { name: '上传文件', id: 6, icon: ' iconwenjianshangchuan color-file', divided: true },
-        { name: '新建文档', id: 1, icon: 'iconwendang1 color-doc', divided: false },
-        { name: '新建表格', id: 2, icon: 'iconbiaoge color-excel', divided: false },
-        { name: '新建思维导图', id: 9, icon: 'iconxmind color-mindmap', divided: false },
-        // { name: '新建幻灯片', id: 3, icon: 'iconppt color-ppt', divided: false },
-        { name: '新建文件夹', id: 5, icon: 'iconwenjianjia color-file', divided: true }
+        { name: this.$t('file.newdocument'), id: 1, icon: 'iconwendang1 color-doc', divided: false },
+        { name: this.$t('file.newtable'), id: 2, icon: 'iconbiaoge color-excel', divided: false },
+        { name: this.$t('file.newmindmap'), id: 9, icon: 'iconxmind color-mindmap', divided: false },
+        // { name: this.$t('file.newslide'), id: 3, icon: 'iconppt color-ppt', divided: false },
+        { name: this.$t('file.newfolder'), id: 5, icon: 'iconwenjianjia color-file', divided: true }
       ],
       screenIndex: 1,
       screenName: '',
@@ -326,7 +326,7 @@ export default {
 
     document.addEventListener('click', this.handleGlobalClick)
   },
-  unmounted() {
+  destroyed() {
     document.removeEventListener('click', this.handleGlobalClick)
   },
   methods: {
@@ -444,7 +444,7 @@ export default {
     display: inline-block;
     width: 15px;
   }
-  :deep(.el-dropdown-menu__item) {
+  ::v-deep .el-dropdown-menu__item {
     display: flex;
     align-items: center;
   }
@@ -471,7 +471,7 @@ export default {
       // text-align: right;
       flex-wrap: wrap;
 
-      :deep(.el-dropdown-selfdefine) {
+      ::v-deep .el-dropdown-selfdefine {
         display: flex;
         align-items: center;
         i {
@@ -500,7 +500,7 @@ export default {
         list-style: none;
         margin-bottom: 0;
       }
-      :deep(.el-dropdown-menu) {
+      ::v-deep .el-dropdown-menu {
         position: static;
         margin: 0;
       }
@@ -517,7 +517,7 @@ export default {
 .icongengduo2 {
   font-size: 32px !important;
 }
-:deep(.el-pagination) {
+::v-deep .el-pagination {
   padding-bottom: 0;
 }
 .iconshaixuan {

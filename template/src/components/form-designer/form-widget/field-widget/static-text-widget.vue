@@ -9,12 +9,14 @@
 
 <script>
   import StaticContentWrapper from './static-content-wrapper'
-  import i18n, {translate} from "@/utils/i18n.ts";
+  import emitter from '@/utils/emitter'
+  import i18n, {translate} from "@/utils/i18n";
   import fieldMixin from "@/components/form-designer/form-widget/field-widget/fieldMixin";
 
   export default {
     name: "static-text-widget",
-    mixins: [fieldMixin, i18n],
+    componentName: 'FieldWidget',  //必须固定为FieldWidget，用于接收父级组件的broadcast事件
+    mixins: [emitter, fieldMixin, i18n],
     props: {
       field: Object,
       parentWidget: Object,
@@ -64,7 +66,7 @@
       this.handleOnMounted()
     },
 
-    beforeUnmount() {
+    beforeDestroy() {
       this.unregisterFromRefList()
     },
 
@@ -79,3 +81,4 @@
   @import "../../../../styles/global.scss"; //* static-content-wrapper已引入，还需要重复引入吗？ *//
 
 </style>
+@/utils/i18ns

@@ -12,8 +12,8 @@
           <el-col :span="14">
             <el-form-item label="编辑类型：" prop="wps_type">
               <el-radio-group v-model="form.wps_type">
-                <el-radio :label="0" :value="0">WPS</el-radio>
-                <el-radio :label="1" :value="1">系统自带</el-radio>
+                <el-radio :label="0">WPS</el-radio>
+                <el-radio :label="1">系统自带</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -22,11 +22,11 @@
           <el-row>
             <el-col :span="14">
               <el-form-item label="APPID：" prop="wps_appid">
-                <el-input v-model="form.wps_appid" placeholder="请输入APPID（从WPS平台申请）"></el-input>
+                <el-input v-model="form.wps_appid" placeholder="请输入APPID（从WPS平台申请）" size="small"></el-input>
               </el-form-item>
             </el-col>
             <el-col :span="8">
-              <el-button class="ml14 copy-data" type="primary" link
+              <el-button class="ml14 copy-data" type="text"
                 ><a href="https://developer.kdocs.cn/" target="_blank">进入WPS平台 </a></el-button
               >
             </el-col>
@@ -34,18 +34,18 @@
           <el-row>
             <el-col :span="14">
               <el-form-item label="APPKEY：" prop="wps_appkey">
-                <el-input v-model="form.wps_appkey" placeholder="请输入APPKEY（从WPS平台申请）"></el-input>
+                <el-input v-model="form.wps_appkey" placeholder="请输入APPKEY（从WPS平台申请）" size="small"></el-input>
               </el-form-item>
             </el-col>
           </el-row>
           <el-row class="form-item">
             <el-col :span="14">
               <el-form-item label="应用地址：" prop="address">
-                <el-input v-model="form.address" :disabled="true" placeholder="请输入网站地址"></el-input>
+                <el-input v-model="form.address" :disabled="true" placeholder="请输入网站地址" size="small"></el-input>
               </el-form-item>
             </el-col>
             <el-col :span="8">
-              <el-button :data-clipboard-text="form.address" class="ml14 copy-data" type="primary" link @click="copy"
+              <el-button :data-clipboard-text="form.address" class="ml14 copy-data" type="text" @click="copy"
                 >复制地址</el-button
               >
             </el-col>
@@ -56,7 +56,7 @@
           </el-form-item>
         </template>
         <el-form-item>
-          <el-button :loading="loading" type="primary" @click="submitForm()">立即提交</el-button>
+          <el-button :loading="loading" size="small" type="primary" @click="submitForm()">立即提交</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -64,11 +64,9 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useAppConfigStore } from '@/stores/appConfig.ts'
 import ClipboardJS from 'clipboard'
-import { cloudFileSetupApi } from '@/api/config.ts'
-import { configUpdateDataApi } from '@/api/setting.ts'
+import { cloudFileSetupApi } from '@/api/config'
+import { configUpdateDataApi } from '@/api/setting'
 
 export default {
   name: 'CloudFile',
@@ -80,9 +78,6 @@ export default {
         ;[]
       }
     }
-  },
-  computed: {
-    ...mapStores(useAppConfigStore)
   },
   data() {
     return {
@@ -139,7 +134,7 @@ export default {
       this.$nextTick(() => {
         const clipboard = new ClipboardJS('.copy-data')
         clipboard.on('success', () => {
-          this.$message.success('复制成功')
+          this.$message.success(this.$t('setting.copytitle'))
           clipboard.destroy()
         })
       })
@@ -164,7 +159,7 @@ export default {
         })
     },
     getConfig() {
-      this.appConfigStore.fetchConfig(true)
+      this.$store.dispatch('appConfig/fetchConfig', true)
     }
   }
 }
@@ -172,7 +167,7 @@ export default {
 
 <style lang="scss" scoped>
 .form-item {
-  :deep(.el-form-item) {
+  ::v-deep .el-form-item {
     margin-bottom: 5px;
   }
 }

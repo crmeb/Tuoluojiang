@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     :title="isEdit ? '知识库设置' : '创建知识库'"
-    v-model="visible"
+    :visible.sync="visible"
     :width="DIALOG_SIZE.MD"
     :close-on-click-modal="false"
     append-to-body
@@ -13,6 +13,7 @@
       :model="form"
       :rules="rules"
       label-width="100px"
+      size="small"
       label-suffix="："
     >
       <el-form-item label="知识库图标" prop="icon">
@@ -41,8 +42,8 @@
 
     <template #footer>
       <div>
-        <el-button @click="visible = false">取消</el-button>
-        <el-button type="primary" :loading="isSubmitting" @click="handleSubmit">
+        <el-button size="small" @click="visible = false">取消</el-button>
+        <el-button size="small" type="primary" :loading="isSubmitting" @click="handleSubmit">
           {{ isEdit ? '确定' : '创建' }}
         </el-button>
       </div>
@@ -52,11 +53,11 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
-import { knowledgeBaseDetailApi } from '@/api/knowledge.ts'
+import { DIALOG_SIZE } from '@/constants/popupSize'
+import { knowledgeBaseDetailApi } from '@/api/knowledge'
 import iconPicker from './iconPicker.vue'
 import embeddingModelSelect from './embeddingModelSelect.vue'
-import { useKnowledgeForm } from '../composables/useKnowledgeForm.ts'
+import { useKnowledgeForm } from '../composables/useKnowledgeForm'
 
 const emit = defineEmits<{ (e: 'isOk'): void }>()
 

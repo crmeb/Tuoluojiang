@@ -2,7 +2,7 @@
   <div>
     <el-dialog
       title="选择数据库"
-      v-model="show"
+      :visible.sync="show"
       width="650px"
       :close-on-click-modal="false"
       :before-close="handleClose"
@@ -15,6 +15,7 @@
           placeholder="按数据库表名称搜索"
           prefix-icon="el-icon-search"
           style="width: 250px"
+          size="small"
           class="ml10"
           clearable
           @change="getList"
@@ -47,18 +48,17 @@
 
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="handleClose">取消</el-button>
-          <el-button type="primary" @click="submitFn">确定</el-button>
+          <el-button @click="handleClose" size="small">取消</el-button>
+          <el-button type="primary" @click="submitFn" size="small">确定</el-button>
         </span>
       </template>
     </el-dialog>
   </div>
 </template>
 <script>
-import { getDatabesListApi } from '@/api/chatAi.ts'
+import { getDatabesListApi } from '@/api/chatAi'
 export default {
   name: '',
-  emits: ['submit'],
   props: {
     list: {
       type: Array,
@@ -145,16 +145,16 @@ export default {
   font-size: 12px;
   color: #909399;
 }
-:deep(.el-pagination) {
+::v-deep .el-pagination {
   margin-top: 20px;
 }
-:deep(.el-table-column--selection .cell) {
+::v-deep .el-table-column--selection .cell {
   padding-left: 10px;
 }
-:deep(.el-dialog__footer) {
+::v-deep .el-dialog__footer {
   padding-top: 6px;
 }
-:deep(.el-table__header-wrapper .el-checkbox) {
+::v-deep .el-table__header-wrapper .el-checkbox {
   display: none;
 }
 </style>

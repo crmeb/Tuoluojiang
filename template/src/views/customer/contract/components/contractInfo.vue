@@ -3,7 +3,7 @@
   <div class="station">
     <el-form ref="form" label-width="100px" :model="rules" :rules="rule">
       <div v-if="!formInfo.edit" class="from-item-title mb15">
-        <span>基本信息</span>
+        <span>{{ $t('setting.info.essentialinformation') }}</span>
       </div>
       <div class="form-box">
         <div class="form-item">
@@ -12,6 +12,7 @@
               <span>订单分类:</span>
             </template>
             <el-cascader
+              size="small"
               v-model="rules.category_id"
               :options="options"
               ref="myCascader"
@@ -24,22 +25,23 @@
         <div class="form-item">
           <el-form-item prop="title">
             <template #label>
-              <span>订单名称:</span>
+              <span>{{ $t('customer.contractname') }}:</span>
             </template>
-            <el-input v-model.trim="rules.title" clearable placeholder="请输入订单名称" />
+            <el-input v-model.trim="rules.title" size="small" clearable :placeholder="$t('customer.placeholder26')" />
           </el-form-item>
         </div>
         <div class="form-item">
           <el-form-item prop="price">
             <template #label>
-              <span>订单金额(元):</span>
+              <span>{{ $t('customer.contractpay') }}:</span>
             </template>
             <el-input-number
               v-model.trim="rules.price"
               :controls="false"
+              size="small"
               :min="0"
               :precision="2"
-              placeholder="请输入订单金额"
+              :placeholder="$t('customer.placeholder28')"
             ></el-input-number>
           </el-form-item>
         </div>
@@ -48,7 +50,7 @@
             <template #label>
               <span>客户名称:</span>
             </template>
-            <el-select v-model="rules.eid" :filterable="true" @change="categoryName">
+            <el-select v-model="rules.eid" :filterable="true" size="small" @change="categoryName">
               <el-option
                 :disabled="formInfo.edit ? true : false"
                 v-for="item in nameList"
@@ -63,29 +65,31 @@
         <div class="form-item">
           <el-form-item prop="startTime">
             <template #label>
-              <span>开始时间:</span>
+              <span>{{ $t('toptable.startdate') }}:</span>
             </template>
             <el-date-picker
               v-model="rules.startTime"
-              v-bind="$pickerProps(startDatePicker)"
+              size="small"
+              :picker-options="startDatePicker"
               type="date"
               clearable
-              format="YYYY/MM/DD"
-              placeholder="请选择开始时间"
+              format="yyyy/MM/dd"
+              :placeholder="$t('customer.placeholder29')"
             ></el-date-picker>
           </el-form-item>
         </div>
         <div class="form-item">
           <el-form-item>
             <template #label>
-              <span>结束时间:</span>
+              <span>{{ $t('toptable.endingdate') }}:</span>
             </template>
             <el-date-picker
               v-model="rules.endTime"
+              size="small"
               type="date"
-              format="YYYY/MM/DD"
+              format="yyyy/MM/dd"
               clearable
-              placeholder="请选择结束时间"
+              :placeholder="$t('customer.placeholder30')"
             ></el-date-picker>
           </el-form-item>
         </div>
@@ -96,10 +100,10 @@
               <span>签约状态:</span>
             </template>
             <el-radio-group v-model="rules.sign_status">
-              <el-radio :label="0" :value="0">未签约</el-radio>
-              <el-radio :label="1" :value="1">已签约</el-radio>
+              <el-radio :label="0">未签约</el-radio>
+              <el-radio :label="1">已签约</el-radio>
 
-              <el-radio :label="2" :value="2">作废</el-radio>
+              <el-radio :label="2">作废</el-radio>
             </el-radio-group>
           </el-form-item>
         </div>
@@ -109,7 +113,7 @@
             <template #label>
               <span> 订单编号: </span>
             </template>
-            <el-input v-model="rules.contract_no" placeholder="系统自动生成" disabled />
+            <el-input v-model="rules.contract_no" size="small" placeholder="系统自动生成" disabled />
           </el-form-item>
         </div>
 
@@ -136,7 +140,7 @@
         <div class="form-item width100">
           <el-form-item>
             <template #label>
-              <span>备注:</span>
+              <span>{{ $t('public.remarks') }}:</span>
             </template>
             <el-input
               v-model="rules.mark"
@@ -144,7 +148,7 @@
               maxlength="255"
               show-word-limit
               :autosize="autosize"
-              placeholder="请填写备注信息"
+              :placeholder="$t('customer.placeholder18')"
             />
           </el-form-item>
         </div>
@@ -154,12 +158,11 @@
 </template>
 
 <script>
-import dayjs from 'dayjs'
-import { contractList } from '@/api/enterprise.ts'
-import { clientContractEditApi, clientContractSaveApi, clientNameApi } from '@/api/client.ts'
+import moment from 'moment'
+import { contractList } from '@/api/enterprise'
+import { clientContractEditApi, clientContractSaveApi, clientNameApi } from '@/api/client'
 
 export default {
-  emits: ['handleContract'],
   name: 'ContractInfo',
   props: {
     formInfo: {
@@ -192,21 +195,21 @@ export default {
         title: [
           {
             required: true,
-            message: '请输入订单名称',
+            message: this.$t('customer.placeholder26'),
             trigger: 'blur'
           }
         ],
         price: [
           {
             required: true,
-            message: '请输入订单金额',
+            message: this.$t('customer.placeholder28'),
             trigger: 'blur'
           }
         ],
         startTime: [
           {
             required: true,
-            message: '请选择开始时间',
+            message: this.$t('customer.placeholder29'),
             trigger: 'blur'
           }
         ],
@@ -215,7 +218,7 @@ export default {
         endTime: [
           {
             required: true,
-            message: '请选择结束时间',
+            message: this.$t('customer.placeholder30'),
             trigger: 'blur'
           }
         ],
@@ -311,8 +314,8 @@ export default {
               title: this.rules.title,
               category_id: this.rules.category_id,
               price: this.rules.price,
-              start_date: dayjs(this.rules.startTime).format('YYYY-MM-DD'),
-              end_date: this.rules.endTime ? dayjs(this.rules.endTime).format('YYYY-MM-DD') : '',
+              start_date: moment(this.rules.startTime).format('YYYY-MM-DD'),
+              end_date: this.rules.endTime ? moment(this.rules.endTime).format('YYYY-MM-DD') : '',
               is_abnormal: this.rules.is_abnormal,
               mark: this.rules.mark,
               sign_status: this.rules.sign_status
@@ -334,17 +337,21 @@ export default {
         .then((res) => {
           this.handleData.loading = false
           this.handleData.success = 1
-          this.handleData.title = this.rules.title
-          this.handleData.price = this.rules.price
-          this.handleData.eid = this.rules.eid
-          this.handleData.id = res.data.id
-          this.handleData.category_id = this.rules.category_id.pop()
-          this.handleData.start_date = dayjs(this.rules.startTime).format('YYYY-MM-DD')
-          this.handleData.end_date = this.rules.endTime ? dayjs(this.rules.endTime).format('YYYY-MM-DD') : ''
-          this.handleData.contract_no = this.rules.contract_no
-          this.handleData.sign_status = this.rules.sign_status
-          this.handleData.mark = this.rules.mark
-          this.handleData.name = this.formInfo.name
+          this.$set(this.handleData, 'title', this.rules.title)
+          this.$set(this.handleData, 'price', this.rules.price)
+          this.$set(this.handleData, 'eid', this.rules.eid)
+          this.$set(this.handleData, 'id', res.data.id)
+          this.$set(this.handleData, 'category_id', this.rules.category_id.pop())
+          this.$set(this.handleData, 'start_date', moment(this.rules.startTime).format('YYYY-MM-DD'))
+          this.$set(
+            this.handleData,
+            'end_date',
+            this.rules.endTime ? moment(this.rules.endTime).format('YYYY-MM-DD') : ''
+          )
+          this.$set(this.handleData, 'contract_no', this.rules.contract_no)
+          this.$set(this.handleData, 'sign_status', this.rules.sign_status)
+          this.$set(this.handleData, 'mark', this.rules.mark)
+          this.$set(this.handleData, 'name', this.formInfo.name)
           this.handleEmit()
 
           this.reset()
@@ -403,7 +410,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.station :deep(.el-drawer__body) {
+.station ::v-deep .el-drawer__body {
   padding: 20px 20px 50px 20px;
 }
 .add-color {
@@ -416,18 +423,18 @@ export default {
   margin-bottom: 30px;
   margin-top: 10px;
 }
-:deep(.el-form--inline .el-form-item) {
+::v-deep .el-form--inline .el-form-item {
   display: flex;
 }
-:deep(.el-input__inner) {
+::v-deep .el-input__inner {
   text-align: left;
 }
-:deep(.el-date-editor),
-:deep(.el-input-number),
-:deep(.el-cascader) {
+::v-deep .el-date-editor,
+::v-deep .el-input-number,
+::v-deep .el-cascader {
   width: 100%;
 }
-:deep(.el-select) {
+::v-deep .el-select {
   width: 100%;
 }
 .from-item-title {
@@ -445,13 +452,13 @@ export default {
   justify-content: space-between;
   .form-item {
     width: 48%;
-    :deep(.el-form-item__content) {
+    ::v-deep .el-form-item__content {
       width: calc(100% - 90px);
     }
-    :deep(.el-select) {
+    ::v-deep .el-select--medium {
       width: 100%;
     }
-    :deep(.el-textarea__inner) {
+    ::v-deep .el-textarea__inner {
       resize: none;
     }
   }

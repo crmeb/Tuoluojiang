@@ -1,8 +1,8 @@
 <template>
   <!-- 查看账目详情侧滑弹窗 -->
   <div>
-    <el-drawer :before-close="handleClose" v-model="drawer" direction="rtl" size="450px" title="查看账目详情">
-      <el-tabs v-model="tabIndex" tab-position="top" type="border-card" @tab-change="handleClick">
+    <el-drawer :before-close="handleClose" :visible.sync="drawer" direction="rtl" size="450px" title="查看账目详情">
+      <el-tabs v-model="tabIndex" tab-position="top" type="border-card" @tab-click="handleClick">
         <el-tab-pane label="账目信息" name="1" />
         <el-tab-pane label="操作记录" name="2" />
 
@@ -99,7 +99,7 @@
                       v-if="delData.attachs && delData.attachs.length > 0"
                       :only-image="false"
                       :onlyRead="true"
-                      :model-value="delData.attachs"
+                      :value="delData.attachs"
                     ></upload-file>
                     <!-- <div v-if="imageUrl">
                       <img :src="imageUrl" alt="" class="attachsImg" @click="handlePictureCardPreview(imageUrl)" />
@@ -178,12 +178,12 @@
         </div>
       </el-tabs>
     </el-drawer>
-    <el-image-viewer v-if="isImage" @close="closeImageViewer" :url-list="srcList" />
+    <el-image-viewer v-if="isImage" :on-close="closeImageViewer" :url-list="srcList" />
   </div>
 </template>
 <script>
-import { billRecordApi } from '@/api/enterprise.ts'
-import { ElImageViewer } from 'element-plus'
+import { billRecordApi } from '@/api/enterprise'
+import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import uploadFile from '@/components/form-common/oa-upload'
 
 export default {
@@ -289,32 +289,32 @@ export default {
   overflow-y: auto;
 }
 
-.description :deep(.el-form-item) {
+.description ::v-deep .el-form-item {
   margin-bottom: 10px;
 }
 
-:deep(.el-form-item__label) {
+::v-deep .el-form-item__label {
   font-size: 13px !important;
   font-weight: 400;
   color: #909399 !important;
 }
 .set {
-  :deep(.el-step__icon.is-text) {
+  ::v-deep .el-step__icon.is-text {
     border: none;
   }
   .iconfapiaoxiangqing-caozuojilu {
     font-size: 13px;
     color: #1890ff;
   }
-  :deep(.el-step__line) {
+  ::v-deep .el-step__line {
     width: 1px;
     background-color: #ebeef4;
   }
-  :deep(.el-step__icon) {
+  ::v-deep .el-step__icon {
     margin-top: 20px;
     height: 12px;
   }
-  :deep(.el-step.is-vertical .el-step__line) {
+  ::v-deep .el-step.is-vertical .el-step__line {
     top: 20px;
     bottom: -18px;
   }
@@ -351,13 +351,13 @@ export default {
   }
   .footer {
     padding: 20px 20px 20px 0px;
-    :deep(.el-form-item) {
+    ::v-deep .el-form-item {
       // margin-bottom: 12px;
     }
-    :deep(.el-form-item__label) {
+    ::v-deep .el-form-item__label {
       line-height: 18px;
     }
-    :deep(.el-form-item__content) {
+    ::v-deep .el-form-item__content {
       line-height: 18px;
     }
   }
@@ -398,17 +398,17 @@ export default {
   flex-wrap: wrap;
   justify-content: space-between;
   .form-item {
-    :deep(.el-form-item__content) {
+    ::v-deep .el-form-item__content {
       width: calc(100% - 110px);
       font-size: 13px !important;
     }
-    :deep(.el-select) {
+    ::v-deep .el-select--medium {
       width: 100%;
     }
-    :deep(.el-form-item) {
+    ::v-deep .el-form-item {
       margin-bottom: 0;
     }
-    :deep(.el-textarea__inner) {
+    ::v-deep .el-textarea__inner {
       resize: none;
     }
 
@@ -421,7 +421,7 @@ export default {
     }
   }
 }
-:deep(.el-tabs__item.is-active) {
+::v-deep .el-tabs__item.is-active {
   border-right-color: transparent !important;
   border-left-color: transparent !important;
   &::after {
@@ -434,17 +434,17 @@ export default {
     top: 0;
   }
 }
-:deep(.el-tabs__header) {
+::v-deep .el-tabs__header {
   background-color: #f7fbff;
   border-bottom: none;
 }
-:deep(.el-tabs__content) {
+::v-deep .el-tabs__content {
   padding: 0;
 }
-:deep(.el-tabs__nav-wrap::after) {
+::v-deep .el-tabs__nav-wrap::after {
   height: 0;
 }
-:deep(.el-tabs__active-bar) {
+::v-deep .el-tabs__active-bar {
   top: 0;
 }
 .el-tabs--border-card {
@@ -455,10 +455,10 @@ export default {
   border: none;
   box-shadow: none;
 }
-:deep(.el-drawer__header) {
+::v-deep .el-drawer__header {
   border-bottom: 0;
 }
-:deep(.el-tabs__header .el-tabs__item) {
+::v-deep .el-tabs__header .el-tabs__item {
   line-height: 40px;
 }
 </style>

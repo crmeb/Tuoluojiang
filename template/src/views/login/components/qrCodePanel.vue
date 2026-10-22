@@ -6,7 +6,7 @@
         <img :src="siteLogo || codeLogoImg" alt="" class="image-code-logo" />
         <div v-if="expired" class="code-model">
           <div class="text">二维码失效</div>
-          <el-button round type="primary" @click="refreshQrCode">刷新二维码</el-button>
+          <el-button round size="mini" type="primary" @click="refreshQrCode">刷新二维码</el-button>
         </div>
       </div>
       <div class="code-tip">请使用陀螺匠App扫码</div>
@@ -23,8 +23,7 @@
 <script>
 import { getCurrentInstance, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import QRCode from 'qrcodejs2'
-import { userScanKeyApi } from '@/api/user.ts'
-import { useUserStore } from '@/stores/user.ts'
+import { userScanKeyApi } from '@/api/user'
 import codeLogoImg from '@/assets/images/code-logo.png'
 
 // 扫码状态轮询间隔
@@ -43,7 +42,6 @@ export default {
   },
   setup(props, { emit }) {
     const { proxy } = getCurrentInstance()
-    const userStore = useUserStore()
 
     const qrCodeRef = ref(null)
     const qrLoading = ref(false)
@@ -63,7 +61,7 @@ export default {
     // 轮询扫码状态：-1 二维码失效，1 已扫码待确认，无 status 表示确认登录且 token 已写入
     const checkScanStatus = async () => {
       try {
-        const data = await userStore.scanLogin({ key: qrCodeKey })
+        const data = await proxy.$store.dispatch('user/scanLogin', { key: qrCodeKey })
         if (data.status === -1) {
           stopPolling()
           expired.value = true

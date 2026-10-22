@@ -1,0 +1,1 @@
+function e(e,t){var n=null;return function(...r){n!==null&&clearTimeout(n),n=setTimeout(()=>e.call(this,...r),t)}}export{e as t};

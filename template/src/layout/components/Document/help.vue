@@ -14,15 +14,13 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { getStorageJson } from '@/utils/storage.ts'
-import { getAccount } from '@/utils/format.ts'
+import { getStorageJson } from '@/utils/storage'
+import { getAccount } from '@/utils/format'
 export default {
-  emits: ['closeHelp'],
   name: 'CrmebOaEntHelp',
   components: {
-    payment: defineAsyncComponent(() => import('@/components/form-common/dialog-payment')),
-    fileTemp: defineAsyncComponent(() => import('@/views/user/cloudfile/components/fileTemp'))
+    payment: () => import('@/components/form-common/dialog-payment'),
+    fileTemp: () => import('@/views/user/cloudfile/components/fileTemp')
   },
   props: ['helpShow'],
 
@@ -82,7 +80,7 @@ export default {
   height: 100vh;
   border: none;
 
-  :deep(.help-box) {
+  ::v-deep .help-box {
     min-width: none;
   }
 }

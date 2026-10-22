@@ -1,0 +1,1 @@
+var e={GOOD_TO_DEFECT:1,DEFECT_TO_GOOD:2},t=[{value:e.GOOD_TO_DEFECT,label:`良品转残次`,stockLabel:`良品剩余库存`,theme:`primary`,variant:`filled`},{value:e.DEFECT_TO_GOOD,label:`残次转良品`,stockLabel:`残次剩余库存`,theme:`success`,variant:`filled`}],n=t.reduce((e,t)=>(e[t.value]=t,e),{}),r=`良品转残次，该商品良品剩余库存对应减少，残次品剩余库存对应增加；反之残次转良品，则良品增加，残次品减少`;export{t as i,r as n,n as r,e as t};

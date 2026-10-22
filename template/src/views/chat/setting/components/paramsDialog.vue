@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     title="参数设置"
-    v-model="visible"
+    :visible.sync="visible"
     :width="DIALOG_SIZE.XL"
     :close-on-click-modal="false"
     @close="reset"
@@ -9,27 +9,27 @@
     <el-table :data="rows" style="width: 100%">
       <el-table-column label="参数名称" width="180">
         <template #default="scope">
-          <el-input v-model="scope.row.name" placeholder="请输入参数名称" />
+          <el-input v-model="scope.row.name" size="small" placeholder="请输入参数名称" />
         </template>
       </el-table-column>
       <el-table-column label="参数标识" width="180">
         <template #default="scope">
-          <el-input v-model="scope.row.filed" placeholder="请输入参数标识" />
+          <el-input v-model="scope.row.filed" size="small" placeholder="请输入参数标识" />
         </template>
       </el-table-column>
       <el-table-column label="默认值" width="180">
         <template #default="scope">
-          <el-input v-model="scope.row.value" placeholder="请输入默认值" />
+          <el-input v-model="scope.row.value" size="small" placeholder="请输入默认值" />
         </template>
       </el-table-column>
       <el-table-column label="提示">
         <template #default="scope">
-          <el-input v-model="scope.row.message" placeholder="请输入提示" />
+          <el-input v-model="scope.row.message" size="small" placeholder="请输入提示" />
         </template>
       </el-table-column>
       <el-table-column label="操作" width="90">
         <template #default="scope">
-          <el-button type="primary" link @click="handleRemove(scope.$index)">删除</el-button>
+          <el-button type="text" @click="handleRemove(scope.$index)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -38,8 +38,8 @@
 
     <template #footer>
       <span class="dialog-footer">
-        <el-button @click="visible = false">取消</el-button>
-        <el-button type="primary" @click="submit">确定</el-button>
+        <el-button size="small" @click="visible = false">取消</el-button>
+        <el-button size="small" type="primary" @click="submit">确定</el-button>
       </span>
     </template>
   </el-dialog>
@@ -47,10 +47,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ElMessage as Message } from 'element-plus'
-import { modalSure } from '@/libs/public.ts'
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
-import type { ParamItem } from '../types.ts'
+import { Message } from 'element-ui'
+import { modalSure } from '@/libs/public'
+import { DIALOG_SIZE } from '@/constants/popupSize'
+import type { ParamItem } from '../types'
 
 const emit = defineEmits<{ (e: 'submit', rows: ParamItem[]): void }>()
 

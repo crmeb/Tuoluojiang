@@ -1,6 +1,6 @@
 <template>
   <!-- Element UI 的 Dialog 弹窗组件 -->
-  <el-dialog :title="tabCur == 1 ? '设置部门目标' : '设置业务员目标'" v-model="dialogVisible" width="660px">
+  <el-dialog :title="tabCur == 1 ? '设置部门目标' : '设置业务员目标'" :visible.sync="dialogVisible" width="660px">
     <div class="flex" style="display: flex; gap: 10px" v-if="dialogVisible">
       <select-department
         :onlyOne="false"
@@ -21,13 +21,14 @@
       <el-date-picker
         v-model="form.year"
         type="year"
-        format="YYYY"
-        value-format="YYYY"
+        size="small"
+        format="yyyy"
+        value-format="yyyy"
         placeholder="选择年"
       >
       </el-date-picker>
-      <el-input v-model="monthData.annual" style="width: 250px" placeholder="请输入年度目标" suffix="元" />
-      <el-button type="primary" @click="averageAllocateToMonthly"> 目标平均分配到每月 </el-button>
+      <el-input v-model="monthData.annual" size="small" style="width: 250px" placeholder="请输入年度目标" suffix="元" />
+      <el-button type="primary" size="small" @click="averageAllocateToMonthly"> 目标平均分配到每月 </el-button>
     </div>
     <!-- 季度、月度目标输入区域 -->
     <el-row :gutter="10" class="mt20">
@@ -43,6 +44,7 @@
               :min="0"
               @change="handleChange($event, month)"
               :disabled="!month.title"
+              size="small"
               class="input"
             >
             </el-input-number>
@@ -63,15 +65,13 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { clientTargetPutApi } from '@/api/client.ts'
+import moment from 'moment'
+import { clientTargetPutApi } from '@/api/client'
 export default {
-  emits: ['getTableData'],
   name: 'addKpi',
   components: {
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
-    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department'))
+    selectMember: () => import('@/components/form-common/select-member'),
+    selectDepartment: () => import('@/components/form-common/select-department')
   },
   data() {
     return {
@@ -79,7 +79,7 @@ export default {
       dialogVisible: false,
       form: {
         link_id: '',
-        year: dayjs().format('YYYY'),
+        year: moment().format('YYYY'),
         link_type: ''
       },
       listData: [],
@@ -232,18 +232,16 @@ export default {
         q4: ['month10', 'month11', 'month12']
       }
 
-      // 浮点累加会产生误差（如 21340645.330000002），统一保留两位小数
-      const round2 = (num) => Math.round(num * 100) / 100
-
       // 计算每个季度的目标值
       for (const [quarter, months] of Object.entries(quarterMap)) {
-        this.monthData[quarter] = round2(months.reduce((sum, monthKey) => sum + Number(this.monthData[monthKey] || 0), 0))
+        this.monthData[quarter] = months.reduce((sum, monthKey) => sum + this.monthData[monthKey], 0)
       }
 
       // 计算年度目标值
-      this.monthData.annual = round2(
-        Object.keys(quarterMap).reduce((sum, quarterKey) => sum + Number(this.monthData[quarterKey] || 0), 0)
-      )
+      this.monthData.annual = Object.values(quarterMap).reduce((sum, _, index) => {
+        const quarterKey = `q${index + 1}`
+        return sum + this.monthData[quarterKey]
+      }, 0)
     },
     reset() {
       this.form = {
@@ -335,7 +333,7 @@ export default {
   margin: 0 10px 10px 10px;
 }
 
-:deep(.el-divider--horizontal) {
+::v-deep .el-divider--horizontal {
   margin: 10px 0;
 }
 

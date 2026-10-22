@@ -3,10 +3,10 @@
     <div class="box-height">
       <el-card class="employees-card-bottom">
         <!-- 头部 -->
-        <el-form :inline="true" class="from-s" @submit.prevent>
+        <el-form :inline="true" class="from-s" @submit.native.prevent>
           <div class="flex-row flex-col">
             <div>
-              <el-tabs v-model="activeVal" class="tabs" @tab-change="activeClick">
+              <el-tabs v-model="activeVal" class="tabs" @tab-click="activeClick">
                 <el-tab-pane label="我的岗位职责" name="1" />
                 <el-tab-pane label="下级岗位职责" name="2" />
               </el-tabs>
@@ -34,8 +34,9 @@
               clearable
               placeholder="请输入姓名搜索"
               prefix-icon="el-icon-search"
+              size="small"
               @change="getList(1)"
-              @keyup.stop.prevent.enter="getList(1)"
+              @keyup.native.stop.prevent.enter="getList(1)"
             ></el-input>
           </div>
 
@@ -63,14 +64,14 @@
             </template>
 
             <template #options="{ row }">
-              <el-button type="primary" link @click="onCheck(row)">查看</el-button>
-              <el-button v-if="row.operate" type="primary" link @click="onEdit(row)">编辑</el-button>
+              <el-button size="small" type="text" @click="onCheck(row)">查看</el-button>
+              <el-button v-if="row.operate" size="small" type="text" @click="onEdit(row)">编辑</el-button>
             </template>
           </oa-table>
         </div>
       </el-card>
       <!-- 查看 -->
-      <el-drawer :before-close="handleClose" v-model="checkDrawer" direction="rtl" size="60%" title="岗位职责表">
+      <el-drawer :before-close="handleClose" :visible.sync="checkDrawer" direction="rtl" size="60%" title="岗位职责表">
         <div v-if="detailDataInfo" class="check-box">
           <div class="content mt14" v-html="detailDataInfo" @click="replayImgShow($event)" />
         </div>
@@ -81,8 +82,8 @@
       <!-- 编辑 -->
       <el-drawer
         :before-close="handleClose"
-        v-model="editDrawer"
-        :close-on-click-modal="false"
+        :visible.sync="editDrawer"
+        :wrapperClosable="false"
         direction="rtl"
         size="60%"
         title="编辑岗位职责表"
@@ -104,8 +105,8 @@
           </div>
         </div>
         <div class="button from-foot-btn fix btn-shadow">
-          <el-button @click="editDrawer = false">取消</el-button>
-          <el-button :loading="loading" type="primary" @click="handleConfirm">保存</el-button>
+          <el-button size="small" @click="editDrawer = false">{{ $t('public.cancel') }}</el-button>
+          <el-button :loading="loading" size="small" type="primary" @click="handleConfirm">保存</el-button>
         </div>
       </el-drawer>
       <image-viewer ref="imageViewer" :srcList="srcList"></image-viewer>
@@ -114,22 +115,17 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useUserStore } from '@/stores/user.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
 import ueditorFrom from '@/components/form-common/oa-wangeditor'
 import oaTable from '@/components/form-common/oa-table'
 import defaultPage from '@/components/common/defaultPage'
 import imageViewer from '@/components/common/imageViewer'
-import { endJobInfoApi } from '@/api/enterprise.ts'
-import { subordinateApi, mineAnalysis, subordinateInfoApi, putSubordinateApi } from '@/api/user.ts'
+import { endJobInfoApi } from '@/api/enterprise'
+import { subordinateApi, mineAnalysis, subordinateInfoApi, putSubordinateApi } from '@/api/user'
 
 export default {
   name: 'Duty',
   components: { defaultPage, ueditorFrom, imageViewer, oaTable },
-  computed: {
-    ...mapStores(useUserStore)
-  },
   data() {
     return {
       TABLE_HEIGHT,
@@ -190,7 +186,7 @@ export default {
   },
   methods: {
     async userEntInfo() {
-      const jobId = this.userStore.userInfo.job.id
+      const jobId = this.$store.state.user.userInfo.job.id
 
       if (jobId) {
         this.handleDetail(jobId)
@@ -307,7 +303,7 @@ export default {
   margin: 0 auto;
 }
 .detail-box {
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
   color: #666666;
@@ -321,23 +317,23 @@ export default {
   }
   .content {
     margin-top: 30px;
-    :deep(p) {
+    ::v-deep p {
       text-indent: 2em;
       font-size: 14px;
       line-height: 1.5;
     }
-    :deep(img) {
+    ::v-deep img {
       cursor: pointer;
     }
 
-    :deep(table) {
+    ::v-deep table {
       border: 1px solid #ccc;
     }
 
-    :deep(table th) {
+    ::v-deep table th {
       border: 1px solid #ccc;
     }
-    :deep(table td) {
+    ::v-deep table td {
       padding: 10px 5px;
       border: 1px solid #ccc;
     }
@@ -356,26 +352,26 @@ export default {
   }
 }
 .check-box {
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
   color: #666666;
   padding: 0px 20px 0 24px;
 
   .content {
-    :deep(p) {
+    ::v-deep p {
       text-indent: 2em;
       font-size: 14px;
       line-height: 1.5;
     }
-    :deep(table) {
+    ::v-deep table {
       border: 1px solid #ccc;
     }
 
-    :deep(table th) {
+    ::v-deep table th {
       border: 1px solid #ccc;
     }
-    :deep(table td) {
+    ::v-deep table td {
       padding: 10px 5px;
       border: 1px solid #ccc;
     }
@@ -394,11 +390,11 @@ export default {
   font-size: 13px;
   color: #303133;
 }
-:deep(.el-form-item) {
+::v-deep .el-form-item {
   padding-bottom: 0;
 }
 
-:deep(.el-tabs__nav-wrap::after) {
+::v-deep .el-tabs__nav-wrap::after {
   content: '';
   position: absolute;
   left: 0;
@@ -406,7 +402,7 @@ export default {
   width: 100%;
   height: 0;
 }
-:deep(.el-select) {
+::v-deep .el-select {
   width: 100%;
 }
 .flex {

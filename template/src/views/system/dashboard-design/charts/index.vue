@@ -28,11 +28,11 @@
 <script>
 import { dashboard_container_schema } from '@/views/system/dashboard-design/charts/charts-schema'
 import { deepClone } from '@/utils/formDesignerUtils'
-import { getDashboardDesign, changeDashboardDesign } from '@/api/chart.ts'
+import { getDashboardDesign, changeDashboardDesign } from '@/api/chart'
 import { getDefaultFormConfig, generateId } from '@/utils/formDesignerUtils'
 import VFormDesigner from './components/VFormDesigner.vue'
 import SvgIcon from '@/components/svg-icon-nc'
-import { getDatabaseApi } from '@/api/develop.ts'
+import { getDatabaseApi } from '@/api/develop'
 
 export default {
   components: {
@@ -64,7 +64,7 @@ export default {
   created() {
     // iconfont Symbol 图标库（约 1.37MB，677 个 symbol）体积较大，
     // 且只有本页及其子组件的 SvgIcon(@/components/svg-icon-nc) 通过 <use xlink:href="#iconXxx"> 引用它，
-    // 因此只在进入本页时按需拉取。
+    // 因此不在 @/bootstrap/dynamic-imports 中全局预加载，改为进入本页时按需拉取。
     // 注意：满地的 <i class="iconfont iconXxx"> 走的是 @/assets/iconfont/*.css 的字体方案，与此无关。
     import('@/icons/iconfont/icon')
   },
@@ -209,7 +209,7 @@ export default {
       })
     }
   },
-  beforeUnmount() {
+  beforeDestroy() {
     this.clearCanvas()
   }
 }

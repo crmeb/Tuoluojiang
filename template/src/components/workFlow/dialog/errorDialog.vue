@@ -1,5 +1,5 @@
 <template>
-  <el-dialog title="提示" v-model="visibleDialog">
+  <el-dialog title="提示" :visible.sync="visibleDialog">
     <div class="ant-confirm-body">
       <i class="anticon anticon-close-circle" style="color: #f00"></i>
       <span class="ant-confirm-title">当前无法发布</span>
@@ -28,7 +28,6 @@
 
 <script>
 export default {
-  emits: ['update:visible'],
   name: 'TipError',
   props: {
     list: {

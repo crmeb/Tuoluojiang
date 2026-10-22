@@ -2,7 +2,7 @@
   <div>
     <oaFromBox
       v-if="search.length > 0"
-      btnText="导出"
+      :btnText="'导出'"
       :dropdownList="dropdownList"
       :isAddBtn="false"
       :search="search"
@@ -20,21 +20,22 @@
     <!-- 导入组件 -->
     <import-excel v-show="false" ref="importExcel" @importExcelData="importExcelData"></import-excel>
     <!-- 企微同步 -->
-    <el-dialog title="企微同步" v-model="dialogFormVisible" width="500px">
+    <el-dialog title="企微同步" :visible.sync="dialogFormVisible" width="500px">
       <el-form>
         <el-form-item label-width="90px">
           <template #label>
             <span><span class="color-pdf">*</span> 打卡时间：</span>
           </template>
           <el-date-picker
+            size="small"
             v-model="clockInTime"
             type="daterange"
             range-separator="至"
             start-placeholder="开始日期"
             end-placeholder="结束日期"
-            format="YYYY/MM/DD"
-            value-format="YYYY/MM/DD"
-            v-bind="$pickerProps(pickerOptions)"
+            format="yyyy/MM/dd"
+            value-format="yyyy/MM/dd"
+            :picker-options="pickerOptions"
             @change="handleDateChange"
           >
           </el-date-picker>
@@ -43,25 +44,25 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="dialogFormVisible = false">取 消</el-button>
-          <el-button type="primary" @click="qiweiAsync">确 定</el-button>
+          <el-button size="small" @click="dialogFormVisible = false">取 消</el-button>
+          <el-button size="small" type="primary" @click="qiweiAsync">确 定</el-button>
         </div>
       </template>
     </el-dialog>
   </div>
 </template>
 <script>
-import dayjs from 'dayjs'
+import moment from 'moment'
 import oaFromBox from '@/components/common/oaFromBox'
-import SettingMer from '@/libs/settingMer.ts'
-import helper from '@/libs/helper.ts'
-import { getToken } from '@/utils/auth.ts'
+import SettingMer from '@/libs/settingMer'
+import helper from '@/libs/helper'
+import { getToken } from '@/utils/auth'
+import 'animate.css'
 import importExcel from '@/components/common/importExcel'
 import ExportExcel from '@/components/common/exportExcel'
-import { attendanceGroupSelectApi } from '@/api/config.ts'
-import { attendanceImport, attendanceImportFile, attendanceWorkClockRecord } from '@/api/enterprise.ts'
+import { attendanceGroupSelectApi } from '@/api/config'
+import { attendanceImport, attendanceImportFile, attendanceWorkClockRecord } from '@/api/enterprise'
 export default {
-  emits: ['confirmData'],
   name: 'CrmebOaEntFormBox',
   components: { importExcel, oaFromBox, ExportExcel },
   props: ['type', 'total'],
@@ -102,7 +103,7 @@ export default {
       pickerOptions: {
         disabledDate: (time) => {
           if (this.startDate) {
-            const start = dayjs(this.startDate)
+            const start = moment(this.startDate)
             const end = start.clone().add(30, 'days')
             return time.getTime() < start.valueOf() || time.getTime() > end.valueOf()
           }
@@ -156,10 +157,10 @@ export default {
 
   mounted() {
     if (this.type !== 'month') {
-      this.timeValue = [dayjs(new Date()).format('YYYY/MM/DD'), dayjs(new Date()).format('YYYY/MM/DD')]
+      this.timeValue = [moment(new Date()).format('YYYY/MM/DD'), moment(new Date()).format('YYYY/MM/DD')]
       this.where.time = this.timeValue[0] + '-' + this.timeValue[1]
     } else {
-      this.timeValue = dayjs(new Date()).format('YYYY-MM')
+      this.timeValue = moment(new Date()).format('YYYY-MM')
       this.where.time = this.timeValue
     }
 
@@ -183,8 +184,8 @@ export default {
       if (!val || val.length < 2) return
 
       const [start, end] = val
-      const startDay = dayjs(start)
-      const endDay = dayjs(end)
+      const startDay = moment(start)
+      const endDay = moment(end)
       const diffDays = endDay.diff(startDay, 'days')
 
       if (diffDays > 30) {
@@ -201,8 +202,8 @@ export default {
         return this.$message.error('请选择时间！')
       }
       const [start, end] = this.clockInTime
-      const startDay = dayjs(start)
-      const endDay = dayjs(end)
+      const startDay = moment(start)
+      const endDay = moment(end)
       const diffDays = endDay.diff(startDay, 'days')
       if (diffDays > 30) {
         this.$message.error('日期跨度不能超过30天，请重新选择！')
@@ -363,10 +364,10 @@ export default {
       this.where = {}
 
       if (this.type !== 'month') {
-        this.timeValue = [dayjs(new Date()).format('YYYY/MM/DD'), dayjs(new Date()).format('YYYY/MM/DD')]
+        this.timeValue = [moment(new Date()).format('YYYY/MM/DD'), moment(new Date()).format('YYYY/MM/DD')]
         this.where.time = this.timeValue[0] + '-' + this.timeValue[1]
       } else {
-        this.timeValue = dayjs(new Date()).format('YYYY-MM')
+        this.timeValue = moment(new Date()).format('YYYY-MM')
         this.where.time = this.timeValue
       }
       this.search[0].data_dict = this.timeValue
@@ -407,7 +408,7 @@ export default {
     },
     // 导出模版
     async exportTemplate() {
-      this.saveName = '打卡记录模板(' + dayjs(new Date()).format('MMDDHHmmss') + ').xlsx'
+      this.saveName = '打卡记录模板(' + moment(new Date()).format('MMDDHHmmss') + ').xlsx'
       this.exportData.data = [
         ['时间', '姓名', '第一次上班', '第一次下班', '第二次上班', '第二次下班'],
         ['2024/06/20 星期三', '张三', '2024/06/12 06:30', '2024/06/12 18:30', '2024/06/12 06:30', '2024/06/12 18:30']

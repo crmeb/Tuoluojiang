@@ -47,15 +47,15 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ElMessage as Message } from 'element-plus'
-import { useRouter } from 'vue-router'
-import { roterPre } from '@/settings.ts'
+import { Message } from 'element-ui'
+import { useRouter } from 'vue-router/composables'
+import { roterPre } from '@/settings'
 import oaFromBox from '@/components/common/oaFromBox.vue'
 import defaultPage from '@/components/common/defaultPage.vue'
 import knowledgeCard from './components/knowledgeCard.vue'
 import knowledgeDialog from './components/knowledgeDialog.vue'
-import { useGridPageSize } from '@/composables/useGridPageSize.ts'
-import { useKnowledgeList } from './composables/useKnowledgeList.ts'
+import { useGridPageSize } from '@/composables/useGridPageSize'
+import { useKnowledgeList } from './composables/useKnowledgeList'
 
 interface KnowledgeRow {
   id: number

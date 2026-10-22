@@ -1,0 +1,1 @@
+var e=`/admin/system/img/record-BZMKL-it.png`;export{e as t};

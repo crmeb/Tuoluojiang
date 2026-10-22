@@ -7,7 +7,7 @@
     :is-static="true"
     :auto-size="true"
   >
-    <template v-for="(item, index) in widget.widgetList" :key="index" #[item.id]>
+    <template v-for="(item, index) in widget.widgetList" #[item.id]>
       <smart-widget
         :class="{ 'dashboard-first-chart': isFirstChart(item) }"
         :simple="!item.options.showHeader"
@@ -93,7 +93,7 @@ export default {
       return !!chartId && item.id === chartId
     },
     onRefresh(item) {
-      item.options.isRefresh = !item.options.isRefresh
+      this.$set(item.options, 'isRefresh', !item.options.isRefresh)
     }
   }
 }

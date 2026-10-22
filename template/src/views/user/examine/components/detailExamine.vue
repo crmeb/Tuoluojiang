@@ -2,14 +2,13 @@
 <template>
   <div>
     <el-drawer
-      class="user-examine-detail-examine-drawer"
       size="628px"
-      v-model="drawer"
+      :visible.sync="drawer"
       :direction="direction"
       :append-to-body="true"
       :before-close="handleClose"
     >
-      <template #header>
+      <template #title>
         <div>
           <div v-if="examineData.card" class="headerBox acea-row row-middle row-between">
             <div class="acea-row row-middle">
@@ -32,41 +31,41 @@
 
               <el-button
                 v-if="isRevokeFn(examineData) && userId == examineData.card.id"
+                size="small"
                 class="ml10"
                 @click="handleRefuse()"
                 >撤销</el-button
               >
-              <el-button v-if="examineData.verify_status === 0" type="danger" @click="onAgree(0)"
+              <el-button v-if="examineData.verify_status === 0" type="danger" size="small" @click="onAgree(0)"
                 >拒绝</el-button
               >
-              <el-button v-if="examineData.verify_status === 0" type="primary" @click="onAgree(1)"
+              <el-button v-if="examineData.verify_status === 0" type="primary" size="small" @click="onAgree(1)"
                 >同意</el-button
               >
 
-              <el-button v-if="examineData.verify_status !== 0" class="ml10" @click="handlePrint()"
+              <el-button v-if="examineData.verify_status !== 0" size="small" class="ml10" @click="handlePrint()"
                 >打印</el-button
               >
               <el-dropdown v-if="moreActions.length">
                 <span class="iconfont icongengduo2 pointer ml10"></span>
-                <template #dropdown>
-                  <el-dropdown-menu style="text-align: left">
-                    <el-dropdown-item v-if="moreActions.includes('sign')" @click="dropdownSearch(0)"
-                      >加签
-                    </el-dropdown-item>
-                    <el-dropdown-item v-if="moreActions.includes('transfer')" @click="dropdownSearch(1)"
-                      >转审
-                    </el-dropdown-item>
-                    <el-dropdown-item v-if="moreActions.includes('print')" @click="handlePrint"
-                      >打印
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
+                <el-dropdown-menu style="text-align: left">
+                  <el-dropdown-item v-if="moreActions.includes('sign')" @click.native="dropdownSearch(0)"
+                    >加签
+                  </el-dropdown-item>
+                  <el-dropdown-item v-if="moreActions.includes('transfer')" @click.native="dropdownSearch(1)"
+                    >转审
+                  </el-dropdown-item>
+                  <el-dropdown-item v-if="moreActions.includes('print')" @click.native="handlePrint"
+                    >打印
+                  </el-dropdown-item>
+                </el-dropdown-menu>
               </el-dropdown>
               <!-- </template> -->
 
               <el-button
                 type="primary"
                 v-if="examineData.status == 0 && examineData.verify_status !== 0"
+                size="small"
                 @click="urgentProcessing()"
                 >催办</el-button
               >
@@ -95,7 +94,7 @@
               <el-form-item v-for="(item, index) in form.rule" :key="index">
                 <!-- 审批单组件：明细数据渲染 -->
                 <div v-if="item.type == 'approvalBill'">
-                  <template v-for="(group, gIdx) in item.value" :key="gIdx">
+                  <template v-for="(group, gIdx) in item.value">
                     <div class="bill-title">{{ item.label }}{{ gIdx + 1 }}</div>
                     <div v-for="(field, fIdx) in group" :key="`g${gIdx}-f${fIdx}`" class="label">
                       <span class="rule-label" v-if="field.type !== 'timeFrom'">{{ field.label }}：</span>
@@ -163,7 +162,7 @@
                       v-model="textarea"
                       placeholder="添加留言"
                       type="textarea"
-                      class="replyText oa-input-borderless"
+                      class="replyText"
                       :rows="3"
                       @input="autoResize"
                     />
@@ -216,8 +215,8 @@
                     </el-upload>
 
                     <div>
-                      <el-button @click="cancel">取消</el-button>
-                      <el-button type="primary" @click="submitReply">提交</el-button>
+                      <el-button size="small" @click="cancel">{{ $t('public.cancel') }}</el-button>
+                      <el-button size="small" type="primary" @click="submitReply">提交</el-button>
                     </div>
                   </div>
                 </div>
@@ -253,13 +252,11 @@
 </template>
 
 <script>
-import { useUserStore } from '@/stores/user.ts'
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import func from '@/utils/preload.ts'
-import { toSrcFn } from '@/utils/format.ts'
-import { getStorageJson } from '@/utils/storage.ts'
-import { uploader } from '@/utils/uploadCloud.ts'
+import { modalSure } from '@/libs/public'
+import func from '@/utils/preload'
+import { toSrcFn } from '@/utils/format'
+import { getStorageJson } from '@/utils/storage'
+import { uploader } from '@/utils/uploadCloud'
 import {
   approveApplyEditApi,
   approveApplyUrgeApi,
@@ -267,10 +264,9 @@ import {
   approveSignApi,
   approveTransferApi,
   approveApplyRevokeApi
-} from '@/api/business.ts'
+} from '@/api/business'
 
 export default {
-  emits: ['getList'],
   name: 'DetailExamine',
   props: {
     // type=1 我审批的
@@ -281,14 +277,14 @@ export default {
     }
   },
   components: {
-    printPreview: defineAsyncComponent(() => import('@/views/business/record/components/printPreview.vue')),
-    detailProcecss: defineAsyncComponent(() => import('./detailProcecss')),
-    messageFrom: defineAsyncComponent(() => import('./messageFrom')),
-    addSignature: defineAsyncComponent(() => import('./addSignature')),
-    uploadList: defineAsyncComponent(() => import('@/components/form-common/oa-uploadList')),
-    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form')),
-    verifyOpinion: defineAsyncComponent(() => import('./verifyOpinion')),
-    city: defineAsyncComponent(() => import('@/components/hr/city'))
+    printPreview: () => import('@/views/business/record/components/printPreview.vue'),
+    detailProcecss: () => import('./detailProcecss'),
+    messageFrom: () => import('./messageFrom'),
+    addSignature: () => import('./addSignature'),
+    uploadList: () => import('@/components/form-common/oa-uploadList'),
+    oaDialog: () => import('@/components/form-common/dialog-form'),
+    verifyOpinion: () => import('./verifyOpinion'),
+    city: () => import('@/components/hr/city')
   },
   computed: {
     func: () => func,
@@ -338,8 +334,8 @@ export default {
       apply_id: 0, //查看撤销关联id
       oldApprovalId: 0, // 返回上一个审批
       rules: [],
-      avatar: useUserStore().userInfo.avatar,
-      userId: useUserStore().userInfo.id,
+      avatar: this.$store.state.user.userInfo.avatar,
+      userId: this.$store.state.user.userInfo.id,
       form: {
         rule: [],
         formData: {},
@@ -446,7 +442,7 @@ export default {
     // 撤销
     handleRefuse() {
       if (this.examineData.status === 0) {
-        modalSure('你确定要撤销申请吗').then(() => {
+        modalSure(this.$t('你确定要撤销申请吗')).then(() => {
           this.getApplyRevoke()
           this.close()
         })
@@ -599,6 +595,9 @@ export default {
 }
 </script>
 <style scoped lang="scss">
+::v-deep .el-drawer__header {
+  height: 80px;
+}
 
 .bill-title {
   width: 100%;
@@ -696,11 +695,15 @@ export default {
   font-size: 32px !important;
 }
 
+::v-deep .el-drawer__body {
+  padding-bottom: 0;
+}
+
 .rich-box {
   padding: 6px;
   background: #f5f6f9;
 
-  :deep(p) {
+  ::v-deep p {
     img {
       width: 80%;
     }
@@ -720,31 +723,31 @@ export default {
     padding-bottom: 50px;
   }
 
-  :deep(.select-item) {
+  ::v-deep .select-item {
     margin-top: 0 !important;
   }
 
-  :deep(.el-divider--horizontal) {
+  ::v-deep .el-divider--horizontal {
     margin-top: 0;
     margin-bottom: 30px;
   }
 
-  :deep(.el-form-item__label) {
+  ::v-deep .el-form-item__label {
     font-size: 13px;
     color: #999999;
     font-weight: normal;
   }
 
-  :deep(.el-form-item) {
+  ::v-deep .el-form-item {
     margin-bottom: 8px;
   }
 
-  :deep(.el-form-item__content) {
+  ::v-deep .el-form-item__content {
     font-size: 13px;
     color: #000000;
   }
 
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
 
@@ -888,18 +891,19 @@ export default {
   }
 
   .replyText {
-    :deep(.el-textarea__inner) {
+    ::v-deep .el-textarea__inner {
+      border: 0;
       padding: 0 10px;
     }
 
-    :deep(textarea) {
+    ::v-deep textarea {
       overflow: hidden;
       resize: none;
       /* 禁止手动拖拽改变大小 */
     }
   }
 
-  // :deep(.el-textarea__inner) {
+  // ::v-deep .el-textarea__inner {
   //   height: auto !important; /* 取消固定高度，由内容撑开 */
   //   min-height: 200px !important; /* 可选：设置最小高度，避免初始状态过矮 */
   //   max-height: none !important; /* 取消内部输入框的最大高度限制 */
@@ -915,15 +919,5 @@ export default {
 
 .from-foot-btn {
   height: max-content;
-}
-</style>
-
-<style lang="scss">
-// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
-.user-examine-detail-examine-drawer .el-drawer__header {
-  height: 80px;
-}
-.user-examine-detail-examine-drawer .el-drawer__body {
-  padding-bottom: 0;
 }
 </style>

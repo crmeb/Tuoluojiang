@@ -4,8 +4,8 @@
     <div class="title flex-between" v-if="id > 0">
       <div class="ml30">基本信息</div>
       <div v-if="drawerType !== 'info'">
-        <el-button @click="drawerEdit('info')">取消</el-button>
-        <el-button type="primary" @click="handleConfirm('ruleForm')">确定</el-button>
+        <el-button size="small" @click="drawerEdit('info')">{{ $t('public.cancel') }}</el-button>
+        <el-button size="small" type="primary" @click="handleConfirm('ruleForm')">{{ $t('public.ok') }}</el-button>
       </div>
       <div class="editText" @click="drawerEdit('edit')" v-if="drawerType == 'info' && formInfo.operate">
         <i class="el-icon-edit"></i>编辑
@@ -18,10 +18,10 @@
         :model="formData"
         label-width="110px"
         :rules="rule"
-        @submit.prevent
+        @submit.native.prevent
       >
         <el-form-item label="项目名称：" prop="name">
-          <el-input v-model="formData.name" class="input-item" placeholder="请输入项目名称" />
+          <el-input v-model="formData.name" size="small" class="input-item" placeholder="请输入项目名称" />
         </el-form-item>
 
         <el-form-item label="负责人：" prop="uid" class="select-bar">
@@ -49,10 +49,11 @@
         <el-form-item label="计划开始：" class="select-bar" prop="start_date">
           <el-date-picker
             v-model="formData.start_date"
+            size="small"
             type="date"
             clearable
-            format="YYYY-MM-DD"
-            value-format="YYYY-MM-DD"
+            :format="'yyyy-MM-dd'"
+            :value-format="'yyyy-MM-dd'"
             placeholder="请选择项目计划开始日期"
           ></el-date-picker>
         </el-form-item>
@@ -60,10 +61,11 @@
         <el-form-item label="计划结束：" class="select-bar" prop="end_date">
           <el-date-picker
             v-model="formData.end_date"
+            size="small"
             type="date"
             clearable
-            format="YYYY-MM-DD"
-            value-format="YYYY-MM-DD"
+            :format="'yyyy-MM-dd'"
+            :value-format="'yyyy-MM-dd'"
             placeholder="请选择项目计划结束日期"
           ></el-date-picker>
         </el-form-item>
@@ -71,6 +73,7 @@
         <el-form-item label="关联客户：" prop="eid">
           <el-select
             v-model="formData.eid"
+            size="small"
             clearable
             filterable
             placeholder="请选择关联客户"
@@ -84,6 +87,7 @@
           <el-select
             class="custom-select"
             v-model="formData.cid"
+            size="small"
             clearable
             filterable
             placeholder="请选择关联订单"
@@ -94,9 +98,9 @@
 
         <el-form-item label="项目状态：" prop="status">
           <el-radio-group v-model="formData.status">
-            <el-radio :label="0" :value="0">正常</el-radio>
-            <el-radio :label="1" :value="1">暂停</el-radio>
-            <el-radio :label="2" :value="2">关闭</el-radio>
+            <el-radio :label="0">正常</el-radio>
+            <el-radio :label="1">暂停</el-radio>
+            <el-radio :label="2">关闭</el-radio>
           </el-radio-group>
         </el-form-item>
 
@@ -113,30 +117,30 @@
       </el-form>
     </div>
     <div v-if="id == 0" class="button from-foot-btn fix btn-shadow">
-      <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" :loading="loading" @click="handleConfirm('ruleForm')">确定</el-button>
+      <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
+      <el-button size="small" type="primary" :loading="loading" @click="handleConfirm('ruleForm')">{{
+        $t('public.ok')
+      }}</el-button>
     </div>
     <details-program v-if="drawerType == 'info'" ref="detailsProgram" :formData="formData" />
     <div class="delText mb20" v-if="id > 0 && formInfo.operate">
-      <el-button plain class="delBtn ml30" @click="handleDelete">删除项目</el-button
+      <el-button plain class="delBtn ml30" size="small" @click="handleDelete">删除项目</el-button
       >删除项目后将删除所有工作项，且数据无法找回，请谨慎操作
     </div>
   </div>
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { saveProgramApi, putProgramApi, getProgramInfoApi } from '@/api/program.ts'
+import { modalSure } from '@/libs/public'
+import { saveProgramApi, putProgramApi, getProgramInfoApi } from '@/api/program'
 import debounce from '@form-create/utils/lib/debounce'
-import { customerSelectApi, selectContractListApi } from '@/api/enterprise.ts'
-import { deleteProgramApi } from '@/api/program.ts'
+import { customerSelectApi, selectContractListApi } from '@/api/enterprise'
+import { deleteProgramApi } from '@/api/program'
 export default {
-  emits: ['goBack', 'getContractList', 'handleClose', 'getTableData', 'handleDelete'],
   name: 'addProgram',
   components: {
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
-    detailsProgram: defineAsyncComponent(() => import('../components/detailsProgram'))
+    selectMember: () => import('@/components/form-common/select-member'),
+    detailsProgram: () => import('../components/detailsProgram')
   },
   props: {
     type: {
@@ -398,7 +402,7 @@ export default {
   margin-top: 30px;
   padding-bottom: 20px;
 }
-.stationBox :deep(.edui-editor-iframeholder) {
+.stationBox ::v-deep .edui-editor-iframeholder {
   height: 300px !important;
 }
 .mb-10 {
@@ -410,17 +414,20 @@ export default {
 .ml30 {
   margin-left: 30px;
 }
+.el-tag--small {
+  line-height: 24px;
+}
 .delText {
   font-family: PingFang SC, PingFang SC;
   font-weight: 400;
   font-size: 12px;
   color: #909399;
 
-  :deep(.el-button) {
+  ::v-deep .el-button--small {
     color: #ed4014;
   }
 
-  :deep(.el-button) {
+  ::v-deep .el-button {
     border-color: #ed4014;
   }
 }
@@ -466,11 +473,11 @@ export default {
 }
 .delBtn {
   margin-right: 12px;
-  :deep(.el-button) {
+  ::v-deep .el-button--small {
     color: #ed4014;
   }
 
-  :deep(.el-button) {
+  ::v-deep .el-button {
     border-color: #ed4014;
   }
 }
@@ -482,12 +489,17 @@ export default {
   color: #303133;
   margin-bottom: 20px;
 }
-:deep(.el-cascader),
-:deep(.el-input-number),
-:deep(.el-select),
-:deep(.el-date-editor) {
+::v-deep .el-cascader,
+::v-deep .el-input-number,
+::v-deep .el-select,
+::v-deep .el-date-editor {
   width: 100%;
 }
+::v-deep .el-input__inner {
+  height: 32px;
+  line-height: 32px;
+}
+
 .fz30 {
   font-size: 30px;
   margin-left: 10px;
@@ -501,7 +513,7 @@ export default {
     margin: 0 10px;
   }
 }
-:deep(.custom-select .el-icon-circle-close) {
+::v-deep .custom-select .el-icon-circle-close {
   transform: translateY(0);
 }
 .flex-between {

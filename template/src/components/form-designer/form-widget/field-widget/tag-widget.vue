@@ -27,7 +27,7 @@
           v-model="fieldModel"
           class="full-width-input"
           popper-class="popper-class"
-          :size="toElSize(field.options.size)"
+          :size="field.options.size"
           :default-first-option="allowDefaultFirstOption"
           :multiple="true"
           :placeholder="field.options.placeholder || i18nt('render.hint.selectPlaceholder')"
@@ -52,16 +52,17 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
 import FormItemWrapper from './form-item-wrapper'
-import i18n, { translate } from '@/utils/i18n.ts'
+import emitter from '@/utils/emitter'
+import i18n, { translate } from '@/utils/i18n'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
-import { clientConfigLabelApi } from '@/api/enterprise.ts'
+import { clientConfigLabelApi } from '@/api/enterprise'
 import { deepClone } from '@/utils/util'
 
 export default {
   name: 'tag-widget',
-  mixins: [fieldMixin, i18n],
+  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
+  mixins: [emitter, fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -89,7 +90,7 @@ export default {
   },
   components: {
     FormItemWrapper,
-    selectLabel: defineAsyncComponent(() => import('@/components/form-common/select-label'))
+    selectLabel: () => import('@/components/form-common/select-label')
   },
   inject: ['refList', 'formConfig', 'globalOptionData', 'globalModel'],
   data() {
@@ -201,7 +202,7 @@ export default {
     this.handleOnMounted()
   },
 
-  beforeUnmount() {
+  beforeDestroy() {
     this.unregisterFromRefList()
   },
 
@@ -230,7 +231,7 @@ export default {
       // this.oldFieldValue = deepClone(this.fieldModel) /* oldFieldValue需要在initFieldModel()方法中赋初值!! */
 
       /* 主动触发表单的单个字段校验，用于清除字段可能存在的校验错误提示 */
-      this.formRenderHub?.emit('fieldValidation', this.getPropName())
+      this.dispatch('VFormRender', 'fieldValidation', [this.getPropName()])
     },
     // 列表
     getTableData() {
@@ -280,7 +281,8 @@ export default {
 .full-width-input {
   width: 100% !important;
 }
-:deep(.el-input__suffix) {
+::v-deep .el-input__suffix {
   display: none;
 }
 </style>
+@/utils/i18ns

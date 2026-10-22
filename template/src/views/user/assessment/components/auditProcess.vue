@@ -19,15 +19,15 @@
               </span>
               <div class="process-left-list">
                 <div v-for="(item, index) in tableData" :key="index" class="process-list">
-                  <span class="text" :class="index == processIndexLocal ? 'active' : ''" round>{{ item.name }}</span>
+                  <span class="text" :class="index == processIndex ? 'active' : ''" round>{{ item.name }}</span>
                   <i v-if="index != tableData.length - 1" class="el-icon-arrow-right" />
                 </div>
               </div>
             </div>
           </div>
           <div class="process-right">
-            <el-button v-if="isShow && strType !== 'check'" @click="onlySaveSubmit">仅保存</el-button>
-            <el-button v-if="isShow && strType !== 'check'" type="primary" @click="addSaveSubmit">{{
+            <el-button v-if="isShow && strType !== 'check'" size="small" @click="onlySaveSubmit">仅保存</el-button>
+            <el-button v-if="isShow && strType !== 'check'" type="primary" size="small" @click="addSaveSubmit">{{
               isShowButton
             }}</el-button>
           </div>
@@ -36,7 +36,7 @@
       <el-card class="content-card" :body-style="{ padding: '0 20px 20px 20px' }">
         <div v-if="localTips" class="tips-wrap">
           <div
-            v-if="processIndexLocal == 3"
+            v-if="processIndex == 3"
             v-show="appeal.user_id != undefined && assessInfo.verify && assessInfo.verify.id == userId"
             class="tips-box mb15 tActive"
           >
@@ -53,7 +53,7 @@
         </div>
 
         <goalSetting
-          v-if="processIndexLocal == 0 || processIndexLocal == 5"
+          v-if="processIndex == 0 || processIndex == 5"
           :id="id"
           ref="goalSetting"
           :rowData="localRowData"
@@ -65,13 +65,13 @@
 
         <!-- 上级评价 -->
         <execution
-          v-if="[1, 2, 3, 4].includes(processIndexLocal)"
+          v-if="[1, 2, 3, 4].includes(processIndex)"
           :id="id"
           ref="execution"
           :strType="strType"
           :reply="reply"
           :isShow="isShowProps"
-          :processIndex="processIndexLocal"
+          :processIndex="processIndex"
           :appeal="appeal"
           :marks="mark"
           @saveOk="saveOk"
@@ -83,25 +83,21 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useUserStore } from '@/stores/user.ts'
-import { defineAsyncComponent } from 'vue'
-import { userAssessExplain, userAssessInfo } from '@/api/user.ts'
-import { getStorageJson } from '@/utils/storage.ts'
+import { userAssessExplain, userAssessInfo } from '@/api/user'
+import { getStorageJson } from '@/utils/storage'
 export default {
-  emits: ['auditProcess', 'saveOk'],
   name: 'AuditProcess',
   components: {
-    goalSetting: defineAsyncComponent(() => import('./goalSetting')),
-    execution: defineAsyncComponent(() => import('./execution'))
+    goalSetting: () => import('./goalSetting'),
+    execution: () => import('./execution')
   },
   props: {
     processIndex: {
-      type: [Number, String],
+      type: Number | String,
       default: 0
     },
     id: {
-      type: [Number, String],
+      type: Number | String,
       default: 0
     },
     strType: {
@@ -109,7 +105,7 @@ export default {
       default: ''
     },
     isShowProps: {
-      type: [Number, String, Boolean],
+      type: Number | String | Boolean,
       default: false
     },
     isTips: {
@@ -134,23 +130,18 @@ export default {
       default: null
     }
   },
-  computed: {
-    ...mapStores(useUserStore)
-  },
   data() {
     return {
-      // Vue 3 的 prop 只读，组件内部需要改写时用本地副本
-      processIndexLocal: this.processIndex,
       // prop 的本地副本，接口返回的详情只写入副本，避免直接修改 props
       localRowData: this.rowData,
       localTips: this.isTips,
       presetConsumed: false,
       tableData: [
-        { id: 1, name: '目标制定' },
-        { id: 2, name: '执行期' },
-        { id: 3, name: '上级评价' },
-        { id: 4, name: '绩效审核' },
-        { id: 5, name: '结束' }
+        { id: 1, name: this.$t('access.goalsetting') },
+        { id: 2, name: this.$t('access.executionphase') },
+        { id: 3, name: this.$t('access.higherevaluation') },
+        { id: 4, name: this.$t('access.performancereview') },
+        { id: 5, name: this.$t('access.end') }
       ],
       from: {
         return: 0
@@ -167,10 +158,14 @@ export default {
       isShowButton: ''
     }
   },
+  computed: {
+    lang: function () {
+      return this.$store.getters.lang
+    }
+  },
   watch: {
-    // prop 由父组件更新时同步到本地副本（组件内部改写的是 processIndexLocal）
-    processIndex(val) {
-      this.processIndexLocal = val
+    lang() {
+      this.setOptions()
     },
     rowData(val) {
       this.localRowData = val
@@ -193,7 +188,7 @@ export default {
       }
     },
     // 父级用 v-show 复用本组件时，阶段切换后必须重算，否则上一条记录的按钮状态会残留
-    processIndexLocal() {
+    processIndex() {
       this.showSaveSubmit()
     }
   },
@@ -212,6 +207,15 @@ export default {
     // 返回
     goBack() {
       this.$router.go(-1)
+    },
+    setOptions() {
+      this.tableData = [
+        { id: 1, name: this.$t('access.goalsetting') },
+        { id: 2, name: this.$t('access.executionphase') },
+        { id: 3, name: this.$t('access.higherevaluation') },
+        { id: 4, name: this.$t('access.performancereview') },
+        { id: 5, name: this.$t('access.end') }
+      ]
     },
 
     getJobName() {
@@ -239,7 +243,7 @@ export default {
     handleExecution() {
       // 自评提交成功后
       this.clickReturn()
-      // this.processIndexLocal = 2
+      // this.processIndex = 2
       this.getAssessExplain()
     },
     // 首次加载优先消费父级预取的详情，其余情况仍走接口
@@ -260,7 +264,7 @@ export default {
       this.resultData = result
       this.assessInfo = result.data.assessInfo
       this.showSaveSubmit()
-      this.userStore.userInfo.uid === this.assessInfo.check.uid
+      this.$store.state.user.userInfo.uid === this.assessInfo.check.uid
         ? (this.testAccess = false)
         : (this.testAccess = true)
     },
@@ -277,7 +281,7 @@ export default {
       this.getAssessExplain()
     },
     onlySaveSubmit() {
-      if (this.processIndexLocal === 0) {
+      if (this.processIndex === 0) {
         // 目标制定
         if (this.addButton) {
           this.$refs.goalSetting.addPreserve(1, 'only')
@@ -289,7 +293,7 @@ export default {
       }
     },
     addSaveSubmit() {
-      if (this.processIndexLocal === 0) {
+      if (this.processIndex === 0) {
         // 目标制定
         if (this.addButton) {
           this.$refs.goalSetting.addPreserve(1)
@@ -302,29 +306,29 @@ export default {
     },
     showSaveSubmit() {
       this.isShowButton = '保存提交'
-      if (this.processIndexLocal === 0) {
+      if (this.processIndex === 0) {
         if (this.addButton) {
-          this.isShowButton = '启用'
+          this.isShowButton = this.$t('public.enable')
           this.isShow = false
         } else {
           if (this.assessInfo.is_show !== 1) {
-            this.isShowButton = '启用'
+            this.isShowButton = this.$t('public.enable')
             this.isShow = false
           } else {
             this.isShow = false
           }
         }
-      } else if (this.processIndexLocal === 1) {
+      } else if (this.processIndex === 1) {
         this.isShow = true
-      } else if (this.processIndexLocal === 2) {
+      } else if (this.processIndex === 2) {
         this.isShow = true
-      } else if (this.processIndexLocal === 3) {
+      } else if (this.processIndex === 3) {
         this.isShow = true
-      } else if (this.processIndexLocal === 4) {
+      } else if (this.processIndex === 4) {
         this.isShow = true
       } else {
         this.isShow = false
-        this.isShowButton = '启用'
+        this.isShowButton = this.$t('public.enable')
       }
     }
   }
@@ -365,7 +369,7 @@ export default {
     display: flex;
     flex-direction: column;
 
-    :deep(.el-card__body) {
+    ::v-deep .el-card__body {
       flex: 1;
       min-height: 0;
       display: flex;
@@ -428,26 +432,26 @@ export default {
       text-transform: none;
     }
     .tab {
-      :deep(.el-tabs__nav-wrap::after) {
+      ::v-deep .el-tabs__nav-wrap::after {
         height: 0;
       }
-      :deep(.el-tabs__item) {
+      ::v-deep .el-tabs__item {
         line-height: 37px;
         font-family: PingFang SC, PingFang SC;
         font-weight: 400;
         font-size: 13px;
         color: #606266;
       }
-      :deep(.el-tabs__item.is-active) {
+      ::v-deep .el-tabs__item.is-active {
         color: #1890ff;
       }
     }
   }
 }
-:deep(.el-tabs__header) {
+::v-deep .el-tabs__header {
   margin-bottom: 0;
 }
-:deep(.el-tabs__nav-wrap::after) {
+::v-deep .el-tabs__nav-wrap::after {
   display: none;
 }
 .right-box {
@@ -496,7 +500,7 @@ export default {
     display: flex;
     align-items: center;
     flex-wrap: nowrap;
-    :deep(.el-button) {
+    ::v-deep .el-button {
       cursor: default;
     }
   }
@@ -511,7 +515,7 @@ export default {
     color: #1890ff;
     font-weight: 500;
   }
-  .el-button {
+  .el-button--medium {
     padding: 8px 0;
     width: 100px;
     font-size: 13px;
@@ -529,7 +533,7 @@ export default {
   width: 20%;
   text-align: right;
 }
-.v-height-flag .mb14 :deep(.el-card__body) {
+.v-height-flag .mb14 ::v-deep .el-card__body {
   padding: 0px;
 }
 </style>

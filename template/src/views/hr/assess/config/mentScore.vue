@@ -12,7 +12,7 @@
 <script>
 import explain from './components/explain'
 export default {
-  name: 'MentScore',
+  name: 'Explain',
   components: {
     explain
   }

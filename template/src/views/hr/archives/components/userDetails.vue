@@ -4,11 +4,11 @@
     <el-drawer
       :direction="direction"
       :title="initData.type !== 'edit' ? '个人档案' : ''"
-      v-model="drawerIsShow"
+      :visible.sync="drawerIsShow"
       size="65%"
       @close="handleClose"
     >
-      <template #header>
+      <template #title>
         <slot>
           <div v-if="initData.type === 'add'" class="tabsEdit">
             <div class="tabs">员工档案</div>
@@ -25,7 +25,7 @@
               </div>
 
               <div v-if="tabtypes == 1 && userInfo.uid !== ''" class="invitationUrl" @click="perfectFn">
-                <el-link underline="never"> <i class="iconfont icongerenjianli-yaoqing"></i> 邀请完善档案</el-link>
+                <el-link :underline="false"> <i class="iconfont icongerenjianli-yaoqing"></i> 邀请完善档案</el-link>
               </div>
             </div>
           </template>
@@ -57,8 +57,8 @@
 
         <!-- 底部保存 -->
         <div class="button from-foot-btn fix btn-shadow">
-          <el-button @click="cancel">取消</el-button>
-          <el-button type="primary" @click="protect">保存</el-button>
+          <el-button size="small" @click="cancel">取消</el-button>
+          <el-button size="small" type="primary" @click="protect">保存</el-button>
         </div>
       </div>
 
@@ -91,8 +91,8 @@
 
           <!-- 编辑底部保存按钮 -->
           <div v-if="actionType" class="button from-foot-btn fix btn-shadow">
-            <el-button @click="cancel">取消</el-button>
-            <el-button :loading="isLoading" type="primary" @click="inDuction(actionType)">{{
+            <el-button size="small" @click="cancel">取消</el-button>
+            <el-button :loading="isLoading" size="small" type="primary" @click="inDuction(actionType)">{{
               actionType == '入职' ? '入职' : '重新入职'
             }}</el-button>
           </div>
@@ -130,12 +130,10 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { getSalaryList, deleteSalaryList, changeCard, entryCard, perfectCard } from '@/api/enterprise.ts'
+import { modalSure } from '@/libs/public'
+import { getSalaryList, deleteSalaryList, changeCard, entryCard, perfectCard } from '@/api/enterprise'
 import formOptions from '../mixins/index.js'
 export default {
-  emits: ['getList'],
   name: 'userDetails',
   mixins: [formOptions],
   props: {
@@ -214,11 +212,11 @@ export default {
 
     // 编辑：切换Tabs
     handleClick(tab) {
-      if (tab.props.label == '个人经历') {
+      if (tab.label == '个人经历') {
         this.getlist()
-      } else if (tab.props.label == '调薪记录') {
+      } else if (tab.label == '调薪记录') {
         this.getSalaryList()
-      } else if (tab.props.label == '人事异动') {
+      } else if (tab.label == '人事异动') {
         this.changeCard()
       } else {
         setTimeout(() => {
@@ -366,17 +364,17 @@ export default {
 
   components: {
     // 左边菜单
-    LeftNavigation: defineAsyncComponent(() => import('./LeftNavigation.vue')),
+    LeftNavigation: () => import('./LeftNavigation.vue'),
     // 工作经历/教育经历
-    tableBox: defineAsyncComponent(() => import('./tableBox.vue')),
+    tableBox: () => import('./tableBox.vue'),
     // 上传图片
-    UploadImage: defineAsyncComponent(() => import('../components/UploadImage.vue')),
+    UploadImage: () => import('../components/UploadImage.vue'),
     // 右边表单
-    formItemDataList: defineAsyncComponent(() => import('./formItemDataList.vue')),
+    formItemDataList: () => import('./formItemDataList.vue'),
     // 人事异动
-    personnelChange: defineAsyncComponent(() => import('./personnelChange.vue')),
+    personnelChange: () => import('./personnelChange.vue'),
     // 调薪记录
-    salaryAdjustmentRecord: defineAsyncComponent(() => import('./record.vue'))
+    salaryAdjustmentRecord: () => import('./record.vue')
   }
 }
 </script>
@@ -400,20 +398,20 @@ export default {
   width: 0;
 }
 
-:deep(.el-drawer__body) {
+::v-deep .el-drawer__body {
   overflow-y: hidden;
 }
-// :deep(.el-drawer) {
+// ::v-deep .el-drawer {
 //   padding: 0px 0px 20px 0;
 // }
 
-:deep(.el-drawer__header) {
+::v-deep .el-drawer__header {
   height: 56px;
   line-height: 56px;
 
   // padding: 0 20px;
 }
-:deep(.el-tabs__item) {
+::v-deep .el-tabs__item {
   font-weight: 700;
   z-index: 9999;
 }
@@ -491,44 +489,44 @@ export default {
   .form-item {
     width: 48%;
 
-    :deep(.el-form-item__content) {
+    ::v-deep .el-form-item__content {
       width: calc(100% - 90px);
     }
 
-    :deep(.el-input) {
+    ::v-deep .el-input {
       width: 95%;
     }
 
-    :deep(.el-select) {
+    ::v-deep .el-select {
       width: 100%;
     }
 
-    :deep(.el-form-item) {
+    ::v-deep .el-form-item {
       margin-bottom: 24px;
     }
 
-    :deep(.el-textarea__inner) {
+    ::v-deep .el-textarea__inner {
       resize: none;
     }
   }
 }
 
-:deep(.head-portrait .avatar-uploader-icon) {
+::v-deep .head-portrait .avatar-uploader-icon {
   width: 90px !important;
   height: 110px !important;
   line-height: 110px !important;
 }
-:deep(.avatar-uploader .el-upload:hover) {
+::v-deep .avatar-uploader .el-upload:hover {
   border-color: #409eff;
 }
 
-:deep(.avatar-uploader-icon) {
+::v-deep .avatar-uploader-icon {
   font-size: 28px;
   color: #8c939d;
   text-align: center;
 }
 
-:deep(.el-upload--picture-card) {
+::v-deep .el-upload--picture-card {
   width: 160px;
   height: 100px;
   border: 1px dashed #d9d9d9;
@@ -559,7 +557,7 @@ export default {
   color: gray;
 }
 
-:deep(.avatar) {
+::v-deep .avatar {
   width: 160px;
   height: 100px;
   display: block;
@@ -572,7 +570,7 @@ export default {
     height: 56px;
   }
 }
-:deep(.el-drawer__close-btn) {
+::v-deep .el-drawer__close-btn {
   display: flex;
   justify-content: space-between;
   color: #c0c4cc;

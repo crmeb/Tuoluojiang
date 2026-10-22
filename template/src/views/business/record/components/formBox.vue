@@ -2,7 +2,7 @@
   <div class="box">
     <oaFromBox
       v-if="search.length > 0"
-      btnText="导出"
+      :btnText="'导出'"
       :isAddBtn="true"
       :search="search"
       :title="`审批记录`"
@@ -17,10 +17,10 @@
 
 <script>
 import oaFromBox from '@/components/common/oaFromBox'
-import { approveConfigSearchApi } from '@/api/business.ts'
+import { approveConfigSearchApi } from '@/api/business'
+import 'animate.css'
 
 export default {
-  emits: ['getExportData', 'confirmData'],
   name: 'FormBox',
   components: {
     oaFromBox
@@ -52,7 +52,7 @@ export default {
           title: '审批状态',
           type: 'select',
           options: [
-            { name: '全部', value: '' },
+            { name: this.$t('toptable.all'), value: '' },
             { name: '待审核', value: 0 },
             { name: '已通过', value: 1 },
             { name: '已拒绝', value: 2 },
@@ -68,6 +68,11 @@ export default {
       ],
       identityOptions: [],
       departmentList: []
+    }
+  },
+  computed: {
+    lang: function () {
+      return this.$store.getters.lang
     }
   },
   mounted() {

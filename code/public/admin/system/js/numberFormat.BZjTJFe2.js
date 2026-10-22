@@ -1,0 +1,1 @@
+function e(e){if(!e&&e!==0)return`-`;var t=(Number(e)|0).toString().replace(/(\d)(?=(?:\d{3})+$)/g,`$1,`),n=`.00`,r=e.toString().split(`.`);return r.length==2?(n=r[1].toString(),n.length==1?t+`.`+n+`0`:t+`.`+n):t+n}export{e as t};

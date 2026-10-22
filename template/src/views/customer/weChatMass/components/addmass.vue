@@ -1,9 +1,9 @@
 <template>
   <div>
-    <el-dialog :title="this.id ? '编辑素材' : '新增素材'" v-model="visible" width="650px" @close="handleClose">
+    <el-dialog :title="this.id ? '编辑素材' : '新增素材'" :visible.sync="visible" width="650px" @close="handleClose">
       <el-form :model="form" label-width="auto" ref="form" :rules="rules">
         <el-form-item label="素材分类：" prop="group_id">
-          <el-select v-model="form.group_id" placeholder="请输入选择素材分类（单选）" style="width: 100%">
+          <el-select v-model="form.group_id" placeholder="请输入选择素材分类（单选）" size="small" style="width: 100%">
             <el-option v-for="item in leftList" :key="item.id" :label="item.name" :value="item.id"></el-option>
           </el-select>
         </el-form-item>
@@ -13,21 +13,19 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="handleClose">取 消</el-button>
-          <el-button type="primary" @click="handleConfirm">确 定</el-button>
+          <el-button @click="handleClose" size="small">取 消</el-button>
+          <el-button type="primary" @click="handleConfirm" size="small">确 定</el-button>
         </div>
       </template>
     </el-dialog>
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { workMassTempSaveApi, workMassTempEditApi, workMassTempApi } from '@/api/weCom.ts'
+import { workMassTempSaveApi, workMassTempEditApi, workMassTempApi } from '@/api/weCom'
 export default {
-  emits: ['getTableData'],
   name: '',
   components: {
-    materialContent: defineAsyncComponent(() => import('./materialContent'))
+    materialContent: () => import('./materialContent')
   },
   props: {
     leftList: {

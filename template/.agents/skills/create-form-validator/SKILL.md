@@ -1,11 +1,11 @@
 ---
 name: create-form-validator
-description: 为 el-form 编写校验规则，复用项目既有正则（utils/validators.ts 的 getRegExp）与 utils/validate.ts 的 valid* 函数，沉淀手机号/邮箱/金额/正整数/中文/URL/身份证等通用业务校验，统一 required/message/trigger 风格。当用户说"加表单校验/这个字段要校验/手机号/金额校验规则/必填校验"时触发。
+description: 为 el-form 编写校验规则，复用项目既有正则（utils/validators.js 的 getRegExp）与 utils/validate.js 的 valid* 函数，沉淀手机号/邮箱/金额/正整数/中文/URL/身份证等通用业务校验，统一 required/message/trigger 风格。当用户说"加表单校验/这个字段要校验/手机号/金额校验规则/必填校验"时触发。
 ---
 
 # create-form-validator
 
-为本项目（Vue 3 + Element Plus）的 `el-form` 生成校验规则，统一风格、复用既有正则，避免每个表单重复手写。
+为本项目（Vue 2.7 + Element UI）的 `el-form` 生成校验规则，统一风格、复用既有正则，避免每个表单重复手写。
 
 ## 先分清两条路（别用错）
 
@@ -16,8 +16,8 @@ description: 为 el-form 编写校验规则，复用项目既有正则（utils/v
 
 ## 可复用的既有资产（优先复用，不要重造正则）
 
-- 正则来源 `src/utils/validators.ts` 的 `getRegExp(name)`：`number / letter / letterAndNumber / mobilePhone / email / url / chinese / noChinese / letterStartNumberIncluded`。
-- 校验函数 `src/utils/validate.ts`：`validEmail / validURL / validUsername / validUpperCase / validLowerCase / validAlphabets / isExternal` 等。
+- 正则来源 `src/utils/validators.js` 的 `getRegExp(name)`：`number / letter / letterAndNumber / mobilePhone / email / url / chinese / noChinese / letterStartNumberIncluded`。
+- 校验函数 `src/utils/validate.js`：`validEmail / validURL / validUsername / validUpperCase / validLowerCase / validAlphabets / isExternal` 等。
 - 手机号正则（项目口径）：`/^[1][3-9][0-9]{9}$/`；邮箱、URL 同 `getRegExp`。
 
 ## 基础规则写法
@@ -103,6 +103,6 @@ formRef.value.clearValidate()
 
 - 不要把表单设计器的 `FormValidators`（`@/utils/validators`）硬塞进手写 `el-form` 的 `rules`，它依赖 `rule.label` 等字段。
 - 不要在多个页面重复粘贴同一段 `validator`，抽到 `src/utils/formRules.js` 复用。
-- 不要新造一套手机号/邮箱正则，复用 `getRegExp` 与 `validate.ts` 的既有口径。
+- 不要新造一套手机号/邮箱正则，复用 `getRegExp` 与 `validate.js` 的既有口径。
 - 不要用 `type: 'number'` 校验字符串型 `v-model`（Element 会判失败），数字校验优先自定义 `validator`。
 - 校验只挡格式，必填/唯一性等业务约束以后端返回为准，不在前端臆造"已通过"。

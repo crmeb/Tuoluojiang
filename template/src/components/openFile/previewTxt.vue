@@ -15,10 +15,9 @@
 </template>
 
 <script>
-import { fileUpload } from '@/api/public.ts'
-import { processResourceUrl } from '@/utils/resourceUtil.ts'
+import { fileUpload } from '@/api/public'
+import { processResourceUrl } from '@/utils/resourceUtil'
 export default {
-  emits: ['closeLoading'],
   name: '',
   props: {
     url: {
@@ -60,7 +59,7 @@ export default {
       }
       fileUpload(this.fid, this.file.id, data).then((res) => {
         if (res.status === 200) {
-          let path = this.$route.path
+          let path = this.$router.history.current.path
           this.$router.push({ path, query: { ...this.$route.query, word_url: res.data.file_url } })
         }
         this.$emit('closeLoading')
@@ -75,7 +74,7 @@ export default {
   margin: 0 auto;
   min-height: calc(100vh - 60px);
   padding-top: 30px;
-  :deep(.el-textarea__inner) {
+  ::v-deep .el-textarea__inner {
     padding: 30px;
     height: calc(100vh - 95px);
     font-size: 14px;

@@ -46,15 +46,15 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router/composables'
 import BaseContainer from '@/components/BaseContainer/index.vue'
-import { knowledgeBaseDetailApi } from '@/api/knowledge.ts'
+import { knowledgeBaseDetailApi } from '@/api/knowledge'
 import documentPanel from './components/documentPanel.vue'
 import chunkPanel from './components/chunkPanel.vue'
 import settingPanel from './components/settingPanel.vue'
 import applicationList from '../components/applicationList.vue'
-import { EDIT_TABS, DEFAULT_ICON_COLOR } from './constants.ts'
-import { getIconClass } from './utils/icon.ts'
+import { EDIT_TABS, DEFAULT_ICON_COLOR } from './constants'
+import { getIconClass } from './utils/icon'
 
 /** 关联应用页签是只读视图，设置与删除留在应用列表页 */
 const APPLICATION_ACTIONS = ['use', 'copy']

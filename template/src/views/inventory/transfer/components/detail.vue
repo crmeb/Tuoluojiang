@@ -1,10 +1,10 @@
 <template>
-  <el-drawer v-model="isOpen" :size="DRAWER_SIZE.MD" title="调拨单详情" class="transfer-detail-drawer">
+  <el-drawer :visible.sync="isOpen" :size="DRAWER_SIZE.MD" title="调拨单详情" custom-class="transfer-detail-drawer">
     <!-- 头部操作按钮组：绝对定位到标题栏右侧、关闭按钮左侧。
       待出库可出库、待入库可入库（与调拨列表操作列同一状态判断） -->
     <div v-if="detail" class="header-actions">
-      <el-button v-if="detail.status === TRANSFER_STATUS.PENDING_OUT" type="primary" @click="handleOut">出库</el-button>
-      <el-button v-else-if="detail.status === TRANSFER_STATUS.PENDING_IN" type="primary" @click="handleIn">入库</el-button>
+      <el-button v-if="detail.status === TRANSFER_STATUS.PENDING_OUT" type="primary" size="small" @click="handleOut">出库</el-button>
+      <el-button v-else-if="detail.status === TRANSFER_STATUS.PENDING_IN" type="primary" size="small" @click="handleIn">入库</el-button>
     </div>
 
     <div v-loading="isLoading" class="transfer-detail">
@@ -23,7 +23,7 @@
           <!-- 商品信息：缩略图 + 名称 -->
           <template #goods="{ row }">
             <div class="goods-cell flex">
-              <el-image :src="row.image" :preview-src-list="[row.image]" preview-teleported class="goods-img" />
+              <el-image :src="row.image" :preview-src-list="[row.image]" class="goods-img" />
               <span class="goods-name">{{ row.name }}</span>
             </div>
           </template>
@@ -43,14 +43,14 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import InfoSelection from "../../components/InfoSelection.vue";
 import BaseTable from "@/components/BaseTable/index.vue";
-import { DRAWER_SIZE } from "@/constants/popupSize.ts";
-import { transferOutApi, transferInApi } from "@/api/inventory.ts";
-import { TRANSFER_STATUS } from "../constants.ts";
-import { useTransferDetail } from "../composables/useTransferDetail.ts";
-import { getSpecName, getProductCode, getBarcode } from "../../utils.ts";
+import { DRAWER_SIZE } from "@/constants/popupSize";
+import { transferOutApi, transferInApi } from "@/api/inventory";
+import { TRANSFER_STATUS } from "../constants";
+import { useTransferDetail } from "../composables/useTransferDetail";
+import { getSpecName, getProductCode, getBarcode } from "../../utils";
 
 export default {
   name: "TransferDetail",

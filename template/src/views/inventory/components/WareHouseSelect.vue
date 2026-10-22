@@ -1,7 +1,7 @@
 <template>
-  <el-select v-bind="$attrs" :model-value="innerValue" :multiple="multiple" :collapse-tags="multiple" :loading="isLoading"
+  <el-select v-bind="$attrs" :value="innerValue" :multiple="multiple" :collapse-tags="multiple" :loading="isLoading"
     filterable :clearable="clearable" :placeholder="placeholder" @change="handleChange"
-    @visible-change="handleVisibleChange">
+    @visible-change="handleVisibleChange" size="small">
     <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value"
       :disabled="disabledIds.includes(item.value)" />
   </el-select>
@@ -9,17 +9,20 @@
 
 <script>
 import { computed, watch } from "vue";
-import { useWarehouse } from "../composables/useWarehouse.ts";
-import { WAREHOUSE_SCOPE } from "../constants.ts";
+import { useWarehouse } from "../composables/useWarehouse";
+import { WAREHOUSE_SCOPE } from "../constants";
 
 export default {
   name: 'WareHouseSelect',
   inheritAttrs: false,
-  emits: ['update:modelValue', 'change', 'select'],
+  model: {
+    prop: 'value',
+    event: 'change'
+  },
   props: {
     // 单选时为单个仓库 ID；多选时为仓库 ID 数组（如 [3, 4]），
     // 兼容接收逗号分隔字符串（如 "3,4"）作为回显值
-    modelValue: {
+    value: {
       type: [String, Number, Array],
       default: ''
     },
@@ -81,7 +84,7 @@ export default {
     };
 
     // el-select 绑定值：多选时用数字数组，单选时原样透传
-    const innerValue = computed(() => (props.multiple ? toIdArray(props.modelValue) : props.modelValue));
+    const innerValue = computed(() => (props.multiple ? toIdArray(props.value) : props.value));
 
     const isEmptyValue = (val) => {
       return Array.isArray(val) ? !val.length : val === "" || val === null || val === undefined;
@@ -91,11 +94,9 @@ export default {
       if (props.multiple) {
         const arr = Array.isArray(val) ? val : [];
         // 多选回传 ID 数组，作为 warehouse_ids 直接透传给接口（序列化为 warehouse_ids[]）
-        emit('update:modelValue', arr)
         emit('change', arr)
         emit('select', options.value.filter((item) => arr.includes(item.value)))
       } else {
-        emit('update:modelValue', val)
         emit('change', val)
         // 同步回传选中的完整选项，便于父级取仓库名称等字段
         emit('select', options.value.find((item) => item.value === val) || null)
@@ -121,7 +122,7 @@ export default {
     // defaultFirst：选项就绪且当前无选中值时自动选中第一个仓库，
     // 走 handleChange 让父级拿到与手动选择一致的 change/select 事件；
     // 同时监听 value，重置搜索清空后也会重新选中首仓
-    watch([options, () => props.modelValue], ([opts, val]) => {
+    watch([options, () => props.value], ([opts, val]) => {
       if (!props.defaultFirst || !opts.length) return;
       if (!isEmptyValue(val)) return;
       emitChange(props.multiple ? [opts[0].value] : opts[0].value);
@@ -139,21 +140,37 @@ export default {
 </script>
 
 <style scoped lang="scss">
-// 多选标签保持单行，超出宽度时由选中项自身省略。
-:deep(.el-select__selection) {
+// 多选（collapse-tags）时 tag 恒定单行。
+// .el-select__tags 是绝对定位在输入框上的 flex 浮层，宽度被组件锁死为「输入框宽 - 32px」，
+// 内容一旦超宽就会换行，把选择器整体撑高
+:deep(.el-select__tags) {
   flex-wrap: nowrap;
-}
-
-:deep(.el-select__wrapper) {
+  // tags 浮层贴着输入框左边框，左间距只能靠 tag 自身的 margin-left(6px) 撑出，
+  // 与 el-input__inner 的 15px 内边距对不齐；改由容器统一给出起始间距
   padding-left: 15px;
 }
 
-:deep(.el-select__collapse-item) {
+:deep(.el-select__tags .el-tag) {
+  // 左外边距一并清零、间隔改用 margin-right，避免首尾各多算一次间距把内容顶出容器
+  margin-left: 0;
+  margin-right: 6px;
+  // 「+N」聚合 tag 必须完整可见，不参与收缩
   flex-shrink: 0;
+
+  .el-tag__close {
+    flex-shrink: 0;
+  }
 }
 
-:deep(.el-select__selected-item:first-child) {
+// 由首个 tag 独自承担收缩：宽度够时完整展示仓库名，不够时省略（省略样式 element 自带），
+// 而不是换行。相比写死 max-width，能自适应输入框宽度，窄容器下也不会被顶到第二行
+:deep(.el-select__tags .el-tag:first-child) {
   flex-shrink: 1;
   min-width: 0;
+}
+
+// filterable 的搜索输入框自带 15px 左外边距，跟在 tag 之后会额外占宽并触发上述换行
+:deep(.el-select__input) {
+  margin-left: 0;
 }
 </style>

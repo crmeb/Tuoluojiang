@@ -17,7 +17,7 @@
           </el-table-column>
           <el-table-column prop="date" label="日期">
             <template #default="{ row }">
-              {{ dayjs(row.created_at).format('YYYY-MM-DD') }}
+              {{ moment(row.created_at).format('YYYY-MM-DD') }}
             </template>
           </el-table-column>
           <el-table-column prop="date" label="星期">
@@ -28,7 +28,7 @@
           <el-table-column prop="created_at" label="打卡时间"> </el-table-column>
           <el-table-column prop="date" label="操作">
             <template #default="{ row }">
-              <el-button type="primary" link @click="openDetails(row)">查看</el-button>
+              <el-button type="text" @click="openDetails(row)">查看</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -53,21 +53,20 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { clockRecordList } from '@/api/config.ts'
-import { toGetWeek } from '@/utils/format.ts'
+import moment from 'moment'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { clockRecordList } from '@/api/config'
+import { toGetWeek } from '@/utils/format'
 export default {
   name: 'CrmebOaEntDaily',
   components: {
-    formBox: defineAsyncComponent(() => import('./components/formBox')),
-    detailsDrawer: defineAsyncComponent(() => import('./components/detailsDrawer')),
-    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel'))
+    formBox: () => import('./components/formBox'),
+    detailsDrawer: () => import('./components/detailsDrawer'),
+    exportExcel: () => import('@/components/common/exportExcel')
   },
 
   computed: {
-    dayjs: () => dayjs
+    moment: () => moment
   },
   data() {
     return {
@@ -82,7 +81,7 @@ export default {
         frame_id: '',
         group_id: '',
         user_id: [],
-        time: `${dayjs().format('YYYY/MM/DD')}-${dayjs().format('YYYY/MM/DD')}`
+        time: `${moment().format('YYYY/MM/DD')}-${moment().format('YYYY/MM/DD')}`
       },
       exportData: {
         data: [],
@@ -136,7 +135,7 @@ export default {
           item.card.name,
           item.frame.name,
           item.group,
-          dayjs(item.created_at).format('YYYY-MM-DD'),
+          moment(item.created_at).format('YYYY-MM-DD'),
           this.getWeek(item.created_at),
           item.created_at
         ])
@@ -161,11 +160,11 @@ export default {
 .mb50 {
   margin-bottom: 50px;
 }
-:deep(.el-table thead.is-group th) {
+::v-deep .el-table thead.is-group th {
   background-color: rgba(247, 251, 255, 1);
   border-color: #f5f5f5;
 }
-:deep(.el-table) {
+::v-deep .el-table {
   border: none;
 }
 .box {

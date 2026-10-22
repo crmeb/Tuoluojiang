@@ -5,6 +5,7 @@ import {
   basicFields,
   customFields
 } from '@/components/form-designer/widget-panel/widgetsConfig.js'
+import { del } from 'vue'
 
 export function createDesigner(vueInstance) {
   let defaultFormConfig = deepClone(getDefaultFormConfig())
@@ -890,16 +891,13 @@ export function createDesigner(vueInstance) {
     },
 
     emitEvent(evtName, evtData) {
-      //用于兄弟组件发射事件（Vue 3 实例不再支持 $on，改用设计器自带的监听表）
-      const handlers = (this.eventHandlers && this.eventHandlers[evtName]) || []
-      handlers.slice().forEach((callback) => callback(evtData))
+      //用于兄弟组件发射事件
       this.vueInstance.$emit(evtName, evtData)
     },
 
     handleEvent(evtName, callback) {
       //用于兄弟组件接收事件
-      this.eventHandlers = this.eventHandlers || {}
-      ;(this.eventHandlers[evtName] = this.eventHandlers[evtName] || []).push(callback)
+      this.vueInstance.$on(evtName, (data) => callback(data))
     },
 
     setCssClassList(cssClassList) {

@@ -4,9 +4,9 @@
 
 <script>
 import myEcharts from '@/components/scEcharts/chart-widget.vue'
-import { queryChartData } from '../chartQuery.ts'
+import { queryChartData } from '@/api/chart'
 import { getPreviewNum } from '@/utils/util'
-import { EventBus } from '@/libs/bus.ts'
+import { EventBus } from '@/libs/bus'
 
 export default {
   name: 'pieChart-widget',
@@ -72,7 +72,7 @@ export default {
     this.initOption()
     EventBus.$on('pieChangeValue', this.handlePieChangeValue)
   },
-  unmounted() {
+  destroyed() {
     EventBus.$off('pieChangeValue', this.handlePieChangeValue)
   },
   methods: {

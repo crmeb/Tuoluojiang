@@ -8,7 +8,7 @@
   </div>
 </template>
 <script>
-import { getEmployeeTrainApi } from '@/api/config.ts'
+import { getEmployeeTrainApi } from '@/api/config.js'
 import imageViewer from '@/components/common/imageViewer'
 export default {
   components: { imageViewer },
@@ -58,23 +58,23 @@ export default {
     color: rgba(0, 0, 0, 0.85);
     margin-bottom: 16px;
   }
-  :deep(table) {
+  ::v-deep table {
     border: 1px solid #ccc;
   }
 
-  :deep(table th) {
+  ::v-deep table th {
     border: 1px solid #ccc;
   }
-  :deep(table td) {
+  ::v-deep table td {
     padding: 10px 5px;
     border: 1px solid #ccc;
   }
 
-  :deep(p img) {
+  ::v-deep p img {
     max-width: 800px;
   }
 }
-:deep(.wang-editor.w-e-toolbar) {
+::v-deep .wang-editor.w-e-toolbar {
   display: none !important;
 }
 </style>

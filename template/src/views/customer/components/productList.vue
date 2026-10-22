@@ -57,14 +57,14 @@
         <template #default="scope">
           <span v-if="type === 'edit'">{{ scope.row.count }}</span>
           <el-input-number v-else v-model="scope.row.count" :min="0" :max="getCountMax(scope.row)" :precision="0"
- class="priceBox" @change="handleCount(scope.row)" controls-position="right"></el-input-number>
+            size="small" class="priceBox" @change="handleCount(scope.row)" controls-position="right"></el-input-number>
         </template>
       </el-table-column>
       <!-- 折扣列 -->
       <el-table-column prop="discount" label="折扣(%)" width="120">
         <template #default="scope">
           <span v-if="type === 'edit'">{{ scope.row.discount }}</span>
-          <el-input-number v-else v-model="scope.row.discount" :min="0" :max="100" :precision="0"
+          <el-input-number v-else v-model="scope.row.discount" :min="0" :max="100" :precision="0" size="small"
             :controls="false" class="priceBox" @change="handleDiscountChange(scope.row)"
             controls-position="right"></el-input-number>
         </template>
@@ -73,7 +73,7 @@
       <el-table-column prop="price" label="成交单价" width="120">
         <template #default="scope">
           <span v-if="type === 'edit'">{{ scope.row.price }}</span>
-          <el-input-number v-else v-model="scope.row.price" :min="0" :precision="2" :controls="false"
+          <el-input-number v-else v-model="scope.row.price" :min="0" :precision="2" size="small" :controls="false"
             class="priceBox" controls-position="right" @change="handlePrice(scope.row)"></el-input-number>
         </template>
       </el-table-column>
@@ -82,14 +82,14 @@
         <template #default="scope">
           <span v-if="type === 'edit'">{{ scope.row.total_price }}</span>
           <el-input-number v-else :controls="false" v-model="scope.row.total_price" :min="0" :precision="2"
-            controls-position="right" class="priceBox"
+            controls-position="right" size="small" class="priceBox"
             @change="handleTotalPrice(scope.row)"></el-input-number>
         </template>
       </el-table-column>
       <el-table-column prop="remark" label="备注" :fixed="remarkFixed ? 'right' : false" :width="remarkFixed ? 200 : undefined">
         <template #default="scope">
           <span v-if="type === 'edit'">{{ scope.row.remark || '--' }}</span>
-          <el-input v-else v-model="scope.row.remark" placeholder="请输入备注"></el-input>
+          <el-input v-else v-model="scope.row.remark" size="small" placeholder="请输入备注"></el-input>
         </template>
       </el-table-column>
     </el-table>
@@ -100,16 +100,15 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
 import Sortable from 'sortablejs'
-import { getProductsAttrsApi } from '@/api/client.ts'
-import { generateEmptyProduct } from "./helper.ts";
+import { getProductsAttrsApi } from '@/api/client'
+import { generateEmptyProduct } from "./helper";
 
 export default {
   name: 'ProductList',
   components: {
-    imageViewer: defineAsyncComponent(() => import('@/components/common/imageViewer')),
-    specifications: defineAsyncComponent(() => import('./specifications'))
+    imageViewer: () => import('@/components/common/imageViewer'),
+    specifications: () => import('./specifications')
   },
   props: {
     // 父组件传递的参数
@@ -145,7 +144,6 @@ export default {
       default: ''
     }
   },
-  emits: ['productChange', 'getProductList'],
   data() {
     return {
       tableData: this.product,
@@ -307,7 +305,7 @@ export default {
         this.stockReqId++
         this.stockMap = {}
         this.stockKeysLoaded = null
-        rows.forEach((row) => delete row.good_stock)
+        rows.forEach((row) => this.$delete(row, 'good_stock'))
         return
       }
       // 无产品时库存视为「未知」（非无货），不做夹断，避免过早清空商机带入的数量
@@ -363,7 +361,7 @@ export default {
     // 回填剩余良品，并在开启限制且可编辑时把超过库存的成交数量夹到库存值（含 0）
     applyStock(row, stock) {
       const validStock = Number(stock) || 0
-      row.good_stock = validStock
+      this.$set(row, 'good_stock', validStock)
       // 查看态（type==='edit'）成交数量为只读展示，不做夹断，避免篡改历史合同数据
       if (this.stockLimitEnabled && this.type !== 'edit') {
         if (Number(row.count) > validStock) {
@@ -443,7 +441,7 @@ export default {
 
     // 表格拖拽排序
     rowDrop() {
-      const tbody = this.$refs.table.$el.querySelectorAll('.el-table__body-wrapper tbody')[0]
+      const tbody = this.$refs.table.$el.querySelectorAll('.el-table__body-wrapper > table > tbody')[0]
 
       Sortable.create(tbody, {
         animation: 200,
@@ -537,7 +535,7 @@ export default {
   color: #f56c6c;
 }
 
-:deep(.has-gutter) {
+::v-deep .has-gutter {
   background: #fff;
 }
 

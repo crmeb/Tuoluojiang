@@ -13,13 +13,13 @@
   >
 
     <el-cascader
-      v-if="!getReadMode() || field.isShow"
+      v-show="!getReadMode() || field.isShow"
       ref="fieldEditor"
       :options="optionItems"
       v-model="fieldModel"
       class="full-width-input"
       :disabled="field.options.disabled"
-      :size="toElSize(field.options.size)"
+      :size="field.options.size"
       :clearable="field.options.clearable"
       :filterable="field.options.filterable"
       :show-all-levels="showFullPath"
@@ -47,12 +47,14 @@
 
 <script>
 import FormItemWrapper from './form-item-wrapper'
-import i18n, { translate } from '@/utils/i18n.ts'
+import emitter from '@/utils/emitter'
+import i18n, { translate } from '@/utils/i18n'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
 
 export default {
   name: 'cascader-widget',
-  mixins: [fieldMixin, i18n],
+  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
+  mixins: [emitter, fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -157,7 +159,7 @@ export default {
     this.handleOnMounted()
   },
 
-  beforeUnmount() {
+  beforeDestroy() {
     this.unregisterFromRefList()
   },
 
@@ -167,7 +169,7 @@ export default {
       setTimeout(() => {
         document.querySelectorAll('.el-cascader-panel .el-radio').forEach((el) => {
           el.onclick = () => {
-            this.$refs.fieldEditor?.togglePopperVisible(false) //单选框部分点击隐藏下拉框
+            this.$refs.fieldEditor.dropDownVisible = false //单选框部分点击隐藏下拉框
           }
         })
       }, 100)
@@ -179,7 +181,8 @@ export default {
 <style lang="scss" scoped>
 @import '../../../../styles/global.scss'; //* form-item-wrapper已引入，还需要重复引入吗？ *//
 
-:deep(.full-width-input) {
+.full-width-input {
   width: 100% !important;
 }
 </style>
+@/utils/i18ns

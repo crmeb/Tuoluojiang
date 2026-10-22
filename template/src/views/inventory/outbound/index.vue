@@ -4,7 +4,7 @@
       @confirmData="handleSearch" btnText="新增出库" @addDataFn="handleAddOutbound" />
 
     <BaseTable class="mt-10" :table-columns="tableColumns" :data="tableData" :loading="isLoading" :total="total"
-      v-model:page="page" v-model:page-size="pageSize">
+      :page.sync="page" :page-size.sync="pageSize">
       <!-- 商品信息：缩略图 + 角标数量，超出显示省略号 -->
       <template #goods="{ row }">
         <GoodsInfoCell :details="row.details" />
@@ -50,12 +50,12 @@
 
       <!-- 操作列 -->
       <template #action="{ row }">
-        <el-button type="primary" link @click="handleViewDetail(row)">查看详情</el-button>
+        <el-button type="text" @click="handleViewDetail(row)">查看详情</el-button>
         <template v-if="row.status === OUTBOUND_STATUS.PENDING">
           <el-divider direction="vertical" />
-          <el-button type="primary" link @click="handlePick(row)">拣货出库</el-button>
+          <el-button type="text" @click="handlePick(row)">拣货出库</el-button>
           <el-divider direction="vertical" />
-          <el-button type="primary" link class="danger-text" @click="handleCancel(row)">作废</el-button>
+          <el-button type="text" class="danger-text" @click="handleCancel(row)">作废</el-button>
         </template>
       </template>
     </BaseTable>
@@ -71,12 +71,12 @@ import BaseTable from "@/components/BaseTable/index.vue";
 import oaFromBox from "@/components/common/oaFromBox.vue";
 import GoodsInfoCell from "@/components/common/goodsInfoCell.vue";
 import InventoryStatusTag from "../components/InventoryStatusTag.vue";
-import { useOutbound } from "./composables/useOutbound.ts";
+import { useOutbound } from "./composables/useOutbound";
 import OutboundDetail from "./components/detail.vue";
-import { OUTBOUND_TYPE_MAP, OUTBOUND_STATUS_MAP, OUTBOUND_STATUS } from "./constants.ts";
-import { PAYMENT_STATUS_MAP } from "../constants.ts";
-import dayjs from "dayjs";
-import { getTotalAmount } from "./helper.ts";
+import { OUTBOUND_TYPE_MAP, OUTBOUND_STATUS_MAP, OUTBOUND_STATUS } from "./constants";
+import { PAYMENT_STATUS_MAP } from "../constants";
+import moment from "moment";
+import { getTotalAmount } from "./helper";
 
 export default {
   name: "InventoryOutbound",
@@ -89,7 +89,7 @@ export default {
     }
 
     const formatTime = time => {
-      return time ? dayjs(time).format("YYYY-MM-DD HH:mm") : "--";
+      return time ? moment(time).format("YYYY-MM-DD HH:mm") : "--";
     }
 
     return {

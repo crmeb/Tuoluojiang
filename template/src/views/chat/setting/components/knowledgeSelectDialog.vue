@@ -2,7 +2,7 @@
   <el-dialog
     class="knowledge-select-dialog"
     title="选择知识库"
-    v-model="visible"
+    :visible.sync="visible"
     :width="DIALOG_SIZE.XL"
     :close-on-click-modal="false"
     @close="reset"
@@ -12,10 +12,11 @@
       <el-input
         v-model="keyword"
         class="search-input"
+        size="small"
         placeholder="请输入知识库名称"
         prefix-icon="el-icon-search"
         clearable
-        @keyup.enter="handleKeyword"
+        @keyup.enter.native="handleKeyword"
         @clear="handleKeyword"
       />
       <div class="reset-btn" title="重置" @click="handleReset">
@@ -33,7 +34,7 @@
           :class="{ 'is-checked': isChecked(item.id) }"
           @click="toggle(item)"
         >
-          <el-checkbox :value="isChecked(item.id)" class="item-check" @click.stop @change="toggle(item)" />
+          <el-checkbox :value="isChecked(item.id)" class="item-check" @click.native.stop @change="toggle(item)" />
           <div class="item-icon" :style="{ backgroundColor: item.color || DEFAULT_ICON_COLOR }">
             <i :class="getIconClass(item.icon)" />
           </div>
@@ -57,8 +58,8 @@
 
     <template #footer>
       <span class="dialog-footer">
-        <el-button @click="visible = false">取消</el-button>
-        <el-button type="primary" @click="submit">确定</el-button>
+        <el-button size="small" @click="visible = false">取消</el-button>
+        <el-button size="small" type="primary" @click="submit">确定</el-button>
       </span>
     </template>
   </el-dialog>
@@ -66,13 +67,13 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
+import { DIALOG_SIZE } from '@/constants/popupSize'
 import defaultPage from '@/components/common/defaultPage.vue'
-import { useKnowledgeList } from '../../knowledge/composables/useKnowledgeList.ts'
-import { DEFAULT_ICON_COLOR } from '../../knowledge/constants.ts'
-import { getIconClass } from '../../knowledge/utils/icon.ts'
-import { KNOWLEDGE_PAGE_SIZE } from '../constants.ts'
-import type { KnowledgeItem } from '../types.ts'
+import { useKnowledgeList } from '../../knowledge/composables/useKnowledgeList'
+import { DEFAULT_ICON_COLOR } from '../../knowledge/constants'
+import { getIconClass } from '../../knowledge/utils/icon'
+import { KNOWLEDGE_PAGE_SIZE } from '../constants'
+import type { KnowledgeItem } from '../types'
 
 const emit = defineEmits<{ (e: 'submit', list: KnowledgeItem[]): void }>()
 

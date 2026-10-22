@@ -8,6 +8,7 @@
             <div class="clearfix el-card__header">
               <el-input
                 v-model="filterText"
+                size="small"
                 prefix-icon="el-icon-search"
                 clearable
                 placeholder="搜索部门"
@@ -59,8 +60,8 @@
                 style="width: 100%"
               >
                 <el-table-column type="index" width="50"> </el-table-column>
-                <el-table-column prop="name" label="姓名" min-width="100" />
-                <el-table-column prop="job.name" label="职位" min-width="120" />
+                <el-table-column prop="name" :label="$t('toptable.name')" min-width="100" />
+                <el-table-column prop="job.name" :label="$t('toptable.post')" min-width="120" />
                 <el-table-column prop="frame.name" label="部门" min-width="160" show-overflow-tooltip>
                   <template #default="scope">
                     <div v-for="(item, index) in scope.row.frames" :key="index">
@@ -72,24 +73,24 @@
                   </template>
                 </el-table-column>
 
-                <el-table-column prop="phone" label="手机号码" min-width="110" show-overflow-tooltip />
-                <el-table-column prop="join_time" label="加入时间" min-width="100" />
-                <el-table-column label="操作" width="180">
+                <el-table-column prop="phone" :label="$t('toptable.phone')" min-width="110" show-overflow-tooltip />
+                <el-table-column prop="join_time" :label="$t('toptable.jointime')" min-width="100" />
+                <el-table-column :label="$t('public.operation')" width="180">
                   <template #default="scope">
-                    <el-button type="primary" link @click="onPassword(scope.row)" v-hasPermi="['auth:group:password']">
+                    <el-button type="text" @click="onPassword(scope.row)" v-hasPermi="['auth:group:password']">
                       修改密码
                     </el-button>
 
-                    <el-button type="primary" link @click="onEdit(scope.row.id)" v-hasPermi="['auth:group:edit']">
-                      编辑
+                    <el-button type="text" @click="onEdit(scope.row.id)" v-hasPermi="['auth:group:edit']">
+                      {{ $t('public.edit') }}
                     </el-button>
 
                     <el-button
-                      type="primary" link
+                      type="text"
                       @click="onDelete(scope.row.id, scope.$index)"
                       v-hasPermi="['auth:group:delete']"
                     >
-                      删除
+                      {{ $t('public.delete') }}
                     </el-button>
                   </template>
                 </el-table-column>
@@ -112,7 +113,7 @@
     </el-card>
 
     <!--  编辑用户  -->
-    <editUser ref="editUser" :user-id="userId" @closed="userId = ''" @saved="getList" />
+    <editUser ref="editUser" :user-id="userId" />
     <!-- 修改密码 -->
     <oa-dialog
       ref="oaDialog"
@@ -126,22 +127,20 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { configFrameApi } from '@/api/setting.ts'
-import { loginRegex } from '@/utils/format.ts'
-import { userListApi } from '@/api/user.ts'
-import { enterpriseCardDeleteApi, userPwdPut } from '@/api/enterprise.ts'
-import { getStorageJson } from '@/utils/storage.ts'
+import { modalSure } from '@/libs/public'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { configFrameApi } from '@/api/setting'
+import { loginRegex } from '@/utils/format'
+import { userListApi } from '@/api/user'
+import { enterpriseCardDeleteApi, userPwdPut } from '@/api/enterprise'
+import { getStorageJson } from '@/utils/storage'
 
-import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'Index',
   components: {
-    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form')),
-    editUser: defineAsyncComponent(() => import('./components/editUser')),
-    oaFromBox
+    oaDialog: () => import('@/components/form-common/dialog-form'),
+    editUser: () => import('./components/editUser'),
+    oaFromBox: () => import('@/components/common/oaFromBox')
   },
   data() {
     const sitedata = getStorageJson('sitedata', {})
@@ -336,7 +335,7 @@ export default {
 
     //  删除人员
     async onDelete(id, index) {
-      await modalSure('确定删除该人员吗')
+      await modalSure(this.$t('setting.group.deletitle'))
       await enterpriseCardDeleteApi(id)
       this.tableData.splice(index, 1)
     },
@@ -362,7 +361,7 @@ export default {
 .divBox {
   height: 100%;
 }
-:deep(.el-card__body) {
+::v-deep .el-card__body {
   padding: 0;
 }
 .icon-h {
@@ -371,7 +370,7 @@ export default {
     color: #1890ff;
   }
 }
-:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
+::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content {
   background: rgba(240, 250, 254, 0.6);
   .flex-box {
     color: #1890ff;
@@ -379,17 +378,17 @@ export default {
   }
 }
 
-:deep(.el-tree-node__content) {
+::v-deep .el-tree-node__content {
   height: 40px;
   border-radius: 4px;
 }
-:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node),
+::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node,
 .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .right-icon {
   display: inline-block;
   color: #1890ff;
   font-weight: 600;
 }
-:deep(.el-tree-node > .el-tree-node__children) {
+::v-deep .el-tree-node > .el-tree-node__children {
   overflow: inherit;
 }
 .right {
@@ -407,7 +406,7 @@ export default {
 .tree-box {
   width: 100%;
 }
-:deep(.el-tree) {
+::v-deep .el-tree {
   background-color: transparent;
 }
 .tree-icon {
@@ -418,10 +417,10 @@ export default {
 .iconzhuyaobumen {
   color: #ff9900;
 }
-:deep(.el-tag.el-tag--info) {
+::v-deep .el-tag.el-tag--info {
   margin-top: 3px;
 }
-.department :deep(.el-input__inner) {
+.department ::v-deep .el-input__inner {
   color: #c0c4cc;
 }
 
@@ -447,7 +446,7 @@ export default {
   color: #303133;
 }
 .right-btn {
-  :deep(.el-input-group__append) {
+  ::v-deep .el-input-group__append {
     top: 0;
     button {
       color: #fff;

@@ -1,9 +1,8 @@
 <template>
   <div>
-    <el-drawer
-      class="user-daily-add-box-drawer" :append-to-body="true" :before-close="handleClose" :modal="true" :title="newTitle" v-model="drawer"
-      :close-on-click-modal="editType == 'check' ? true : false" direction="rtl" size="920px">
-      <template #header>
+    <el-drawer :append-to-body="true" :before-close="handleClose" :modal="true" :title="newTitle" :visible.sync="drawer"
+      :wrapper-closable="true" :wrapperClosable="editType == 'check' ? true : false" direction="rtl" size="920px">
+      <template #title>
         <div class="invoice-title">
           <span>{{ newTitle }}</span>
           <span class="sub-title" v-if="subTitle">{{ subTitle }}</span>
@@ -38,7 +37,7 @@
             <el-col :span="report_show ? 24 : 12">
               <div :class="!disabled ? 'border' : ''" class="today-work">
                 <el-form-item v-if="needList.length > 0 && editType !== 'check'" :label="todayLable"
-                  class="item-bar today-bar-list oa-input-borderless" prop="finish">
+                  class="item-bar today-bar-list" prop="finish">
                   <el-input ref="finish" v-model="ruleForm.finish" :disabled="disabled" :maxlength="2000" autosize
                     resize="none" show-word-limit type="textarea" @change="changeSize" @input="changeSize" />
                   <div class="todo">
@@ -56,7 +55,7 @@
                     </div>
                   </div>
                 </el-form-item>
-                <el-form-item v-else :label="todayLable" class="item-bar today-bar oa-input-borderless" prop="finish">
+                <el-form-item v-else :label="todayLable" class="item-bar today-bar" prop="finish">
                   <el-input ref="finish" v-model="ruleForm.finish" :disabled="disabled" :maxlength="2000" autosize
                     resize="none" show-word-limit type="textarea" @change="changeSize" @input="changeSize" />
                 </el-form-item>
@@ -64,7 +63,7 @@
             </el-col>
             <el-col v-if="!report_show" :span="12">
               <div :class="!disabled ? 'border' : ''" class="item-bar-box">
-                <el-form-item :label="planLable" class="item-bar oa-input-borderless" prop="plan">
+                <el-form-item :label="planLable" class="item-bar" prop="plan">
                   <el-input ref="plan" v-model="ruleForm.plan" :disabled="disabled" :maxlength="2000" autosize
                     resize="none" show-word-limit type="textarea" @change="changeSize" @input="changeSize" />
                 </el-form-item>
@@ -72,14 +71,14 @@
             </el-col>
           </el-row>
           <!-- 备注 -->
-          <el-form-item label="备注" class="m-b-30 m-t-20">
+          <el-form-item :label="$t('public.remarks')" class="m-b-30 m-t-20">
             <el-input v-model="ruleForm.mark" :disabled="disabled" :rows="4" resize="none" type="textarea"
               @change="updateValue" />
           </el-form-item>
           <el-form-item :label="attachList.length || !attachList.length ? '附件' : ''" class="m-b-30">
             <!-- 附件上传-->
             <upload-file v-model="attachList" :maxLength="9" :disabled="editType == 'check' ? true : false"
-              :options="fileParams" :only-image="false"></upload-file>
+              :options="fileParams" :only-image="false" :value="attachList"></upload-file>
           </el-form-item>
         </el-form>
         <div v-if="replyList.length > 0" class="list">
@@ -92,7 +91,7 @@
                 <div v-if="item.paent_user">
                   {{ item.card.name }}<span class="created-at">{{ item.created_at }}</span>
                   <div class="acea-row reply">
-                    <span class="keyword">回复{{ item.paent_user.card.name }}:</span>
+                    <span class="keyword">{{ $t('public.reply') }}{{ item.paent_user.card.name }}:</span>
                     <span class="reply-text">{{ item.content }}</span>
                   </div>
                 </div>
@@ -103,9 +102,9 @@
               <div class="text acea-row between-box">
                 <div v-if="!item.paent_user" class="textCon">{{ item.content }}</div>
                 <div v-if="item.card.uid === uid" class="reply" @click="deleteReply(item.id, item.daily_id, index)">
-                  删除
+                  {{ $t('public.delete') }}
                 </div>
-                <div v-else class="reply" @click="replyBnt(item)">回复</div>
+                <div v-else class="reply" @click="replyBnt(item)">{{ $t('public.reply') }}</div>
               </div>
             </div>
           </div>
@@ -118,22 +117,22 @@
           
           <div class="replyCon">
             
-            <el-input ref="replyInput" v-model="reply.content" :placeholder="textPla" class="replyText oa-input-borderless" resize="none"
+            <el-input ref="replyInput" v-model="reply.content" :placeholder="textPla" class="replyText" resize="none"
               type="textarea" />
             <div class="bnt">
-              <el-button @click="cancel">取消</el-button>
-              <el-button type="primary" @click="submitReply">提交</el-button>
+              <el-button size="small" @click="cancel">{{ $t('public.cancel') }}</el-button>
+              <el-button size="small" type="primary" @click="submitReply">提交</el-button>
             </div>
           </div>
         </div>
         <template v-else>
-          <el-button v-if="!disabled" @click="closeBtn">取消</el-button>
+          <el-button v-if="!disabled" size="small" @click="closeBtn">{{ $t('public.cancel') }}</el-button>
           <div v-if="editId && disabled" class="flex" @click="evaluate">
             <img :src="avatar" alt="" class="avatar" />
             <div class="replyCon-no">添加评论</div>
           </div>
-          <el-button v-else :loading="saveLoading" type="primary" @click="submitForm('ruleForm')">
-            保存
+          <el-button v-else :loading="saveLoading" size="small" type="primary" @click="submitForm('ruleForm')">
+            {{ $t('public.save') }}
           </el-button>
         </template>
       </div>
@@ -141,12 +140,10 @@
   </div>
 </template>
 <script>
-import { useUserStore } from '@/stores/user.ts'
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { enterpriseDaily, getEnterpriseEdit, dailyReply, dailydel, getDailyEdit, getCompleted } from '@/api/enterprise.ts'
-import { dailyReportMemberApi } from '@/api/business.ts'
-import { scheduleStatusApi } from '@/api/user.ts'
+import { modalSure } from '@/libs/public'
+import { enterpriseDaily, getEnterpriseEdit, dailyReply, dailydel, getDailyEdit, getCompleted } from '@/api/enterprise'
+import { dailyReportMemberApi } from '@/api/business'
+import { scheduleStatusApi } from '@/api/user'
 
 const SUB_TITLE_MAP = {
   0: "日报填写仅支持当天编辑",
@@ -155,7 +152,6 @@ const SUB_TITLE_MAP = {
 };
 
 export default {
-  emits: ['updateValue', 'getDailyTodoInfo', 'tableList'],
   props: {
     editData: {
       type: Object,
@@ -176,14 +172,14 @@ export default {
     }
   },
   components: {
-    uploadFile: defineAsyncComponent(() => import('@/components/form-common/oa-upload')),
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member'))
+    uploadFile: () => import('@/components/form-common/oa-upload'),
+    selectMember: () => import('@/components/form-common/select-member')
   },
 
   data() {
     const checkFinish = (rule, value, callback) => {
       if (!value && this.dailyId === 1) {
-        return callback(new Error('请填写今日工作'))
+        return callback(new Error(this.$t('user.work.title')))
       } else if (!value && this.dailyId === 2) {
         return callback(new Error('请填写本周工作'))
       } else if (!value && this.dailyId === 3) {
@@ -194,7 +190,7 @@ export default {
     }
     const checkPlan = (rule, value, callback) => {
       if (!value && this.dailyId === 1) {
-        return callback(new Error('请填写明日计划'))
+        return callback(new Error(this.$t('user.work.tilte1')))
       } else if (!value && this.dailyId === 2) {
         return callback(new Error('请填写下周计划'))
       } else if (!value && this.dailyId === 3) {
@@ -227,13 +223,13 @@ export default {
       memberLoaded: false, // 人员配置是否已拉取，保证只请求一次
       isShow: false,
       replyList: [],
-      uid: useUserStore().userInfo.uid,
-      avatar: useUserStore().userInfo.avatar,
+      uid: this.$store.state.user.userInfo.uid,
+      avatar: this.$store.state.user.userInfo.avatar,
       id: 0,
       ids: [],
       rollHeight: '',
       editType: 'add', // 是否可以编辑
-      textPla: '请填写内容',
+      textPla: this.$t('user.work.title2'),
       disabled: false,
       minHeight: 420,
       loading: false,
@@ -436,17 +432,17 @@ export default {
       let pH = this.$refs.plan.$el.clientHeight
       if (fH > this.minHeight || pH > this.minHeight) {
         if (fH > pH) {
-          this.$refs.plan.textarea.style.height = fH + 'px'
-          this.$refs.finish.textarea.style.height = fH + 'px'
+          this.$refs.plan.$el.firstChild.style.height = fH + 'px'
+          this.$refs.finish.$el.firstChild.style.height = fH + 'px'
         }
         if (fH < pH) {
-          this.$refs.finish.textarea.style.height = pH + 'px'
-          this.$refs.plan.textarea.style.height = pH + 'px'
+          this.$refs.finish.$el.firstChild.style.height = pH + 'px'
+          this.$refs.plan.$el.firstChild.style.height = pH + 'px'
         }
       }
     },
     deleteReply(id, dailyId, index) {
-      modalSure('删除该条评论').then(() => {
+      modalSure(this.$t('user.work.title4')).then(() => {
         dailydel(id, dailyId).then((res) => {
           this.replyList.splice(index, 1)
         })
@@ -455,7 +451,7 @@ export default {
 
     // 评论
     replyBnt(item) {  
-      this.textPla = '回复' + ': ' + `${item.card.name}`
+      this.textPla = this.$t('public.reply') + ': ' + `${item.card.name}`
       this.reply.content = ''
       this.id = item.id
       this.isShow = true
@@ -468,7 +464,7 @@ export default {
       this.reply.content = ''
       this.id = 0
       this.isShow = true
-      this.textPla = '填写评论'
+      this.textPla = this.$t('user.work.writecomment')
       this.$nextTick(() => {
         this.$refs.rollBottom.scroll(0, this.rollHeight)
       })
@@ -480,7 +476,7 @@ export default {
     cancel() {
       this.isShow = false
       this.report_show = false
-      this.textPla = '填写日报'
+      this.textPla = this.$t('user.work.writedaily')
     },
 
     handleClose() {
@@ -564,7 +560,7 @@ export default {
     },
     resetForm() {
       this.isShow = false
-      this.textPla = '填写日报'
+      this.textPla = this.$t('user.work.writedaily')
       this.ruleForm = {
         finish: '',
         plan: '',
@@ -639,11 +635,16 @@ export default {
   transform: translateX(25px);
 }
 
-:deep(.el-avatar>img) {
+::v-deep .el-avatar>img {
   width: 100%;
 }
 
-:deep(.el-form-item) {
+::v-deep .el-drawer__body {
+  overflow: inherit !important;
+  padding-bottom: 0;
+}
+
+::v-deep .el-form-item {
   margin-bottom: 0;
 }
 
@@ -652,41 +653,44 @@ export default {
 }
 
 .item-bar {
-  :deep(.el-form-item__label) {
+  ::v-deep .el-form-item__label {
     background: #eaf5ff;
     border-bottom: none;
     padding-left: 20px;
     border-radius: 4px 4px 0 0;
   }
 
-  :deep(.el-textarea__inner) {
+  ::v-deep .el-textarea__inner {
     padding-top: 14px;
     min-height: 420px !important;
+    border: none;
     padding-bottom: 36px;
     border-radius: 0 0 4px 4px;
   }
 }
 
 .today-bar-list {
-  :deep(.el-textarea__inner) {
+  ::v-deep .el-textarea__inner {
     min-height: 245px !important;
-  }
-
-  :deep(.el-form-item__label) {
     border: none;
   }
 
-  :deep(.el-form-item__error) {
+  ::v-deep .el-form-item__label {
+    border: none;
+  }
+
+  ::v-deep .el-form-item__error {
     // top: 121% !important;
   }
 }
 
 .today-bar {
-  :deep(.el-textarea__inner) {
+  ::v-deep .el-textarea__inner {
     min-height: 420px !important;
+    border: none;
   }
 
-  :deep(.el-form-item__label) {
+  ::v-deep .el-form-item__label {
     border: none;
   }
 }
@@ -696,7 +700,7 @@ export default {
   position: relative;
   border-radius: 4px;
 
-  :deep(.el-form-item__error) {
+  ::v-deep .el-form-item__error {
     top: 100%;
   }
 }
@@ -830,12 +834,13 @@ export default {
   }
 
   .replyText {
-    :deep(.el-textarea__inner) {
+    ::v-deep .el-textarea__inner {
+      border: 0;
       padding: 0 10px;
     }
   }
 
-  :deep(.el-textarea__inner) {
+  ::v-deep .el-textarea__inner {
     height: 55px;
   }
 }
@@ -929,23 +934,25 @@ export default {
     }
   }
 
-  :deep(.el-form-item__label) {
-    justify-content: flex-start;
+  ::v-deep .el-form-item__label {
+    float: right;
+    text-align: left;
     width: 100% !important;
     font-weight: 400 !important;
   }
 
-  :deep(.el-form-item__content) {
+  ::v-deep .el-form-item__content {
     margin-left: 0 !important;
   }
 
-  :deep(.el-textarea.is-disabled .el-textarea__inner) {
+  ::v-deep .el-textarea.is-disabled .el-textarea__inner {
+    border: 0;
     background-color: #f7f7f7;
     color: #606266;
   }
 }
 
-:deep(.el-form .el-textarea__inner) {
+::v-deep .el-form .el-textarea__inner {
   width: 100%;
 }
 
@@ -1042,13 +1049,5 @@ export default {
 
 .pb-120 {
   padding-bottom: 120px;
-}
-</style>
-
-<style lang="scss">
-// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
-.user-daily-add-box-drawer .el-drawer__body {
-  overflow: inherit !important;
-  padding-bottom: 0;
 }
 </style>

@@ -30,11 +30,11 @@
         </el-col>
         <el-col :span="20" class="right">
           <div class="btn-box">
-            <el-button type="primary" :loading="loadding" @click="saveCurrent">保存</el-button>
+            <el-button type="primary" :loading="loadding" size="small" @click="saveCurrent">保存</el-button>
           </div>
-          <div class="mt20">
+          <el-row class="mt20">
             <ueditorFrom :border="true" :height="height" type="notepad" :content="content" ref="ueditorFrom" />
-          </div>
+          </el-row>
         </el-col>
       </el-row>
     </el-card>
@@ -42,7 +42,7 @@
 </template>
 
 <script>
-import { agreementListApi, agreementInfoApi, agreementUpdateApi } from '@/api/setting.ts'
+import { agreementListApi, agreementInfoApi, agreementUpdateApi } from '@/api/setting'
 import ueditorFrom from '@/components/form-common/oa-wangeditor'
 
 export default {
@@ -126,7 +126,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-card__body) {
+::v-deep .el-card__body {
   padding: 0;
 }
 .right {
@@ -137,7 +137,7 @@ export default {
 .tree-left {
   min-height: calc(100vh - 95px);
   border-right: 1px solid #eee;
-  :deep(.el-card__body) {
+  ::v-deep .el-card__body {
     padding: 0;
   }
   .tree-box-content {
@@ -151,7 +151,7 @@ export default {
       color: #303133;
     }
   }
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
 }
@@ -166,7 +166,7 @@ export default {
     background: rgba(24, 144, 255, 0.06);
   }
 }
-:deep(.el-card__header) {
+::v-deep .el-card__header {
   border: none;
   padding-bottom: 0;
   .info {
@@ -174,13 +174,13 @@ export default {
     cursor: default;
   }
 }
-:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
+::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content {
   background: #edf6ff !important;
 }
-:deep(.el-tree-node__content:hover) {
+::v-deep .el-tree-node__content:hover {
   background: #f3f5f9 !important;
 }
-:deep(.blue-theme) {
+::v-deep .blue-theme {
   padding-inline: 10px;
   .el-tree-node__content {
     height: 40px;
@@ -208,13 +208,13 @@ export default {
     transform: rotate(-90deg);
   }
 }
-:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node),
+::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node,
 .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .right-icon {
   display: inline-block;
   color: #1890ff;
 }
 
-:deep(.el-form-item__content) {
+::v-deep .el-form-item__content {
   position: relative;
 }
 .keyword {
@@ -235,7 +235,7 @@ export default {
   display: flex;
   justify-content: flex-end;
 }
-:deep(.el-tree) {
+::v-deep .el-tree {
   background-color: transparent;
 }
 </style>

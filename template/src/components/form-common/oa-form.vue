@@ -1,41 +1,41 @@
 <!-- @FileDescription: 动态表单页面 -->
 <template>
   <div>
-    <el-form ref="form" :model="form" :rules="formRules" label-width="auto" @submit.prevent>
-      <template v-for="(item, key, index) in formConfig" :key="key">
+    <el-form ref="form" :model="form" :rules="formRules" label-width="auto" @submit.native.prevent>
+      <template v-for="(item, key, index) in formConfig">
         <el-form-item :key="key" :label="item.label" :prop="item.key"
           v-if="item.isShow === 'data_type' ? form[item.isShow] != 1 : form[item.isShow] != 0">
         <!-- 单选 -->
         <template v-if="item.type == 'radio'">
           <el-radio-group v-model="form[item.key]" class="vertical">
-            <el-radio v-for="(itemOption, index) in item.options" :key="index" :label="itemOption.label" :value="itemOption.label">{{
+            <el-radio v-for="(itemOption, index) in item.options" :key="index" :label="itemOption.label">{{
               itemOption.value
             }}</el-radio>
           </el-radio-group>
         </template>
 
         <!-- 选择日期 -->
-        <el-date-picker v-if="item.type == 'date'" v-model="form[item.key]" :placeholder="item.placeholder"
+        <el-date-picker v-if="item.type == 'date'" size="small" v-model="form[item.key]" :placeholder="item.placeholder"
           type="date" :format="item.format" :value-format="item.format" style="width: 100%">
         </el-date-picker>
         <!-- 输入框 -->
         <el-input v-if="item.type == 'input'" v-model="form[item.key]" :placeholder="item.placeholder"
-          :maxlength="item.maxlength" style="width: 100%" :disabled="item.disabled"
+          :maxlength="item.maxlength" size="small" style="width: 100%" :disabled="item.disabled"
           :show-word-limit="item.showWordLimit"></el-input>
         <!-- 刷新生成英文输入框 -->
         <el-input v-if="item.type == 'inputEn'" :disabled="fromData.type == 'edit' ? true : false"
-          v-model="form[item.key]" :placeholder="item.placeholder" class="refresh-input"
+          v-model="form[item.key]" :placeholder="item.placeholder" size="small" class="refresh-input"
           @focus="refreshFn(item.refresh, item.key)">
           <template #suffix>
             <el-button type="primary" class="refresh" :disabled="fromData.type == 'edit' ? true : false"
- @click.stop="refreshFn(item.refresh, item.key)">
+              size="small" @click.stop="refreshFn(item.refresh, item.key)">
               刷新生成</el-button>
           </template>
         </el-input>
         <!-- 文本域 -->
         <el-input class="textarea" v-if="item.type == 'textarea'" type="textarea" placeholder="请输入内容"
           :maxlength="item.maxlength" v-model="form[item.key]" style=" height:70px "
-          :placeholder="item.placeholder" :show-word-limit="item.showWordLimit">
+          :placeholder="item.placeholder" :show-word-limit="item.showWordLimit" size="small">
         </el-input>
 
         <!-- 富文本 -->
@@ -44,34 +44,34 @@
         </ueditor-from>
         <!-- 密码输入框 -->
         <el-input type="password" v-if="item.type == 'password'" prefix-icon="el-icon-lock" v-model="form[item.key]"
-          :placeholder="item.placeholder" show-password style="width: 100%"></el-input>
+          :placeholder="item.placeholder" show-password style="width: 100%" size="small"></el-input>
         <!-- 计数器输入框 -->
         <div v-if="item.type == 'number'">
-          <el-input-number style="width: 100%" v-model="form[item.key]" :min="item.min"
+          <el-input-number style="width: 100%" size="small" v-model="form[item.key]" :min="item.min"
             :max="item.max"></el-input-number>
         </div>
         <!-- 数字输入框 -->
-        <el-input v-if="item.type == 'inputNumber'" type="number" v-model="form[item.key]"
+        <el-input v-if="item.type == 'inputNumber'" type="number" size="small" v-model="form[item.key]"
           :placeholder="item.placeholder"></el-input>
         <!-- 开关组件 -->
-        <el-switch v-if="item.type == 'switch'" v-model="form[item.key]" :active-value="item.activeValue"
+        <el-switch v-if="item.type == 'switch'" v-model="form[item.key]" size="small" :active-value="item.activeValue"
           :inactive-value="item.inactiveValue" :active-text="item.activeText" :inactive-text="item.inactiveText">
         </el-switch>
         <!-- 选择时间（月） -->
         <el-date-picker v-if="item.type == 'month'" style="width: 100%" v-model="form[item.key]" type="month"
- v-bind="$pickerProps(pickerOptions)" placeholder="选择月">
+          size="small" :picker-options="pickerOptions" placeholder="选择月">
         </el-date-picker>
         <!-- 选择（单选） -->
         <div v-if="item.type == 'select'">
           <div class="flex">
-            <el-select style="width: 100%" v-model="form[item.key]" :disabled="item.disabled" filterable
+            <el-select style="width: 100%" v-model="form[item.key]" :disabled="item.disabled" filterable size="small"
               @change="selectChange" :placeholder="item.placeholder">
               <el-option v-for="(v, index) in item.options" :key="v.id" :label="v.label || v.name || v.table_name"
                 :value="v.id || v.value">
               </el-option>
             </el-select>
             <div v-if="item.sign == 'dict'" class="fang">
-              <el-button @click="goDict(item)">添加</el-button>
+              <el-button size="small" @click="goDict(item)">添加</el-button>
             </div>
           </div>
         </div>
@@ -96,21 +96,21 @@
 
         <!-- 选择（多选） -->
         <el-select style="width: 100%" v-if="item.type == 'multipleSelect'" v-model="form[item.key]"
-          :disabled="fromData.type == 'edit'" multiple filterable
+          :disabled="fromData.type == 'edit'" multiple size="small" filterable
           :placeholder="item.placeholder ? item.placeholder : '请选择'">
           <el-option v-for="(v, index) in item.options" :key="v.id" :label="v.name" :value="v.id"> </el-option>
         </el-select>
 
         <!--低代码选择应用-实体 -->
         <div v-if="item.type == 'cascaderSelect'">
-          <el-cascader v-model="form[item.key]" :options="item.options" :show-all-levels="false" filterable
+          <el-cascader v-model="form[item.key]" :options="item.options" :show-all-levels="false" filterable size="small"
             style="width: 100%" clearable :placeholder="item.placeholder ? item.placeholder : '请选择'">
           </el-cascader>
         </div>
 
         <!-- 级联选择器(自定义) -->
         <div v-if="item.type == 'cascader'">
-          <el-cascader v-model="form[item.key]" :options="item.options" filterable style="width: 100%"
+          <el-cascader v-model="form[item.key]" :options="item.options" filterable size="small" style="width: 100%"
             :show-all-levels="false" :props="item.props" clearable
             :placeholder="item.placeholder ? item.placeholder : '请选择'">
             <template #default="{ node, data }">
@@ -126,7 +126,7 @@
             filterable style="width: 100%"></el-cascader>
         </template>
         <template v-if="item.type == 'icon'">
-          <el-input placeholder="请选择图标" v-model="form[item.key]" readonly @click="showIconDialog = true"
+          <el-input placeholder="请选择图标" v-model="form[item.key]" readonly @click.native="showIconDialog = true"
             clearable>
             <template #suffix>
               <i v-if="!form[item.key]" class="el-icon-circle-plus-outline" style="cursor: pointer;"></i>
@@ -147,7 +147,7 @@
 
     </el-form>
     <!-- 选择图标 -->
-    <el-dialog title="选择菜单图标" v-model="showIconDialog" :append-to-body="true" width="50%">
+    <el-dialog title="选择菜单图标" :visible.sync="showIconDialog" :append-to-body="true" width="50%">
       <div class="icon-box">
         <select-icon ref="selectIconRef" :isEmit="true" @select="handleSelectIcon"></select-icon>
       </div>
@@ -157,8 +157,8 @@
   </div>
 </template>
 <script>
-import modalForm from '@/libs/modal-form.ts'
-import { getDictCreateApi, getDictListApi } from '@/api/form.ts'
+import modalForm from '@/libs/modal-form'
+import { getDictCreateApi, getDictListApi } from '@/api/form'
 import { pinyin } from 'pinyin-pro'
 import checkboxDialog from '@/components/develop/checkboxDialog'
 import selectMember from '@/components/form-common/select-member'
@@ -168,7 +168,6 @@ import oaSystemImage from '@/components/form-common/oa-systemImage'
 
 export default {
   name: '',
-  emits: ['submit', 'selectChange'],
   components: { checkboxDialog, selectMember, ueditorFrom, selectIcon,oaSystemImage },
   props: {
     // 弹窗样式
@@ -242,7 +241,7 @@ export default {
       this.showIconDialog = false
     },
     handleClearIcon() {
-      this.form.icon = ''
+      this.$set(this.form, 'icon', '')
     },
     submit() {
       if (this.fromData.type == 'slot') {
@@ -350,7 +349,7 @@ export default {
 </script>
 <style scoped lang="scss">
 .refresh-input {
-  :deep(.el-input__suffix) {
+  ::v-deep .el-input__suffix {
     position: absolute;
     right: 0;
   }
@@ -374,20 +373,20 @@ export default {
   color: #909399;
 }
 
-:deep(.textarea .el-textarea__inner) {
+::v-deep .textarea .el-textarea__inner {
   // font-size: 12px;
   height: 70px;
 }
 
-:deep(.invite .el-button) {
+::v-deep .invite .el-button--small {
   border-radius: 0 3px 3px 0;
 }
 
-:deep(.el-textarea__inner) {
+::v-deep .el-textarea__inner {
   resize: none;
 }
 
-:deep(.el-form-item) {
+::v-deep .el-form-item {
   margin-bottom: 20px;
 }
 </style>

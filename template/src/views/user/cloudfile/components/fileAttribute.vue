@@ -7,7 +7,8 @@
       :modal="true"
       :size="formData.width"
       :title="formData.title"
-      v-model="drawer"
+      :visible.sync="drawer"
+      :wrapper-closable="true"
     >
       <div v-if="fileData.id !== undefined" class="content">
         <div class="logo">
@@ -22,14 +23,14 @@
             alt=""
             style="width: 80px; height: 80px"
           />
-          <p>详细信息</p>
+          <p>{{ $t('file.detailedinformation') }}</p>
         </div>
         <el-row :gutter="20" class="content-list mt15">
           <el-col class="content-left"><i class="icon iconfont iconwenjianleixing" /></el-col>
           <el-col class="content-right">
-            <div>文件类型</div>
+            <div>{{ $t('file.filetype') }}</div>
             <div v-if="fileData.type !== 1">{{ fileData.file_ext }}</div>
-            <div v-else>文件夹</div>
+            <div v-else>{{ $t('file.folder') }}</div>
           </el-col>
         </el-row>
         <el-row :gutter="20" class="content-list mt15" v-if="fileData.type !== 1">
@@ -42,13 +43,13 @@
         <el-row :gutter="20" class="content-list">
           <el-col class="content-left"><i class="icon iconfont iconwenjianweizhi" /></el-col>
           <el-col class="content-right">
-            <div>文件位置</div>
+            <div>{{ $t('file.filelocation') }}</div>
             <div v-if="fileData.path.length > 0">
-              全部位置
+              {{ $t('file.allpositions') }}
               <span>/ {{ fileData.path }}</span>
             </div>
             <div v-else>
-              全部位置
+              {{ $t('file.allpositions') }}
             </div>
           </el-col>
         </el-row>
@@ -56,21 +57,21 @@
         <el-row :gutter="20" class="content-list">
           <el-col class="content-left"><i class="icon iconfont iconchuangjianren" /></el-col>
           <el-col class="content-right">
-            <div>创建人</div>
+            <div>{{ $t('hr.founder') }}</div>
             <div>{{ fileData.user.name || '--' }}</div>
           </el-col>
         </el-row>
         <el-row :gutter="20" class="content-list">
           <el-col class="content-left"><i class="icon iconfont iconchuangjianshijian" /></el-col>
           <el-col class="content-right">
-            <div>创建时间</div>
+            <div>{{ $t('file.creationtime') }}</div>
             <div>{{ fileData.created_at }}</div>
           </el-col>
         </el-row>
         <el-row :gutter="20" class="content-list">
           <el-col class="content-left"><i class="icon iconfont iconxiugaishijian" /></el-col>
           <el-col class="content-right">
-            <div>更新时间</div>
+            <div>{{ $t('file.updatetime') }}</div>
             <div>{{ fileData.updated_at }}</div>
           </el-col>
         </el-row>
@@ -80,8 +81,8 @@
 </template>
 
 <script>
-import { formatBytes, getFileType, getFileTypeIconfont } from '@/utils/file.ts'
-import { folderDetailApi, folderSpaceEntDetailApi } from '@/api/cloud.ts'
+import { formatBytes, getFileType, getFileTypeIconfont } from '@/utils/file'
+import { folderDetailApi, folderSpaceEntDetailApi } from '@/api/cloud'
 export default {
   name: 'FileAttribute',
   props: {

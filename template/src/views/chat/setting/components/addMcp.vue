@@ -1,7 +1,7 @@
 <template>
   <div>
-    <el-dialog v-model="show" :width="DIALOG_SIZE.XL" :show-close="false">
-      <template #header>
+    <el-dialog :visible.sync="show" :width="DIALOG_SIZE.XL" :show-close="false">
+      <template #title>
         <div class="flex-between">
           <span>选择MCP</span>
           <span class="el-icon-close" @click="handleClose"></span>
@@ -12,13 +12,14 @@
           <span class="shrink mr10">共{{ total }}项</span>
           <el-input
             v-model="where.name"
+            size="small"
             placeholder="请输入MCP名称"
             prefix-icon="el-icon-search"
             @change="handleSearch"
           />
           <div class="reset ml10 shrink" @click="resetSearch()"><i class="iconfont iconqingchu"></i></div>
         </div>
-        <el-button @click="handleCustom" type="primary" icon="el-icon-plus">自定义创建</el-button>
+        <el-button @click="handleCustom" type="primary" icon="el-icon-plus" size="small">自定义创建</el-button>
       </div>
       <div class="box-content">
         <div class="box-list">
@@ -71,8 +72,8 @@
       </div>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="handleClose">取消</el-button>
-          <el-button type="primary" @click="submitFn">确定</el-button>
+          <el-button @click="handleClose" size="small">取消</el-button>
+          <el-button type="primary" @click="submitFn" size="small">确定</el-button>
         </span>
       </template>
     </el-dialog>
@@ -81,7 +82,7 @@
     <oa-dialog :fromData="fromData" ref="oaDialog" @submit="submit">
       <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-position="top" class="demo-ruleForm">
         <el-form-item label="JSON配置" prop="config_json">
-          <code-editor mode="json" :readonly="false" v-model="ruleForm.config_json"></code-editor>
+          <code-editor :mode="'json'" :readonly="false" v-model="ruleForm.config_json"></code-editor>
           <div class="form-tip">
             <i class="el-icon-info"></i>
             采用标准 MCP 协议格式，名称与简介自动从 server 节点的 name / description 字段提取
@@ -92,15 +93,14 @@
   </div>
 </template>
 <script>
-import { modalSure } from '@/libs/public.ts'
-import { getMcpListApi, saveMcpServiceApi, getMcpServiceApi, putMcpServiceApi, delMcpServiceApi } from '@/api/chatAi.ts'
+import { modalSure } from '@/libs/public'
+import { getMcpListApi, saveMcpServiceApi, getMcpServiceApi, putMcpServiceApi, delMcpServiceApi } from '@/api/chatAi'
 import oaDialog from '@/components/form-common/dialog-form'
 import CodeEditor from '@/components/code-editor/index'
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
-import { APP_TYPE } from '../constants.ts'
+import { DIALOG_SIZE } from '@/constants/popupSize'
+import { APP_TYPE } from '../constants'
 
 export default {
-  emits: ['mcpSubmit'],
   name: 'AddMcp',
   components: {
     oaDialog,
@@ -245,7 +245,7 @@ export default {
       this.ruleForm.status = data.status
       this.ruleForm.sort = data.sort
       let json = JSON.stringify(data.config_json, null, 2)
-      this.ruleForm.config_json = json
+      this.$set(this.ruleForm, 'config_json', json)
       this.id = data.id
       this.$refs.oaDialog.openBox()
     },
@@ -280,7 +280,7 @@ export default {
         null,
         2
       )
-      this.ruleForm.config_json = json
+      this.$set(this.ruleForm, 'config_json', json)
       this.ruleForm.status = 1
       this.ruleForm.sort = 0
       this.id = ''
@@ -390,7 +390,7 @@ export default {
 }
 
 /* JSON 编辑器：加边框圆角与背景区隔，压缩多余留白 */
-:deep(.ace-container) {
+::v-deep .ace-container {
   border: 1px solid #dcdfe6;
   border-radius: 4px;
   overflow: hidden;

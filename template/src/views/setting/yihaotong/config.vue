@@ -11,6 +11,7 @@
                     v-model="form.yihaotong_appid"
                     placeholder="请输入APPID（从一号通平台申请）"
                     show-password
+                    size="small"
                   ></el-input>
                 </el-form-item>
               </el-col>
@@ -22,13 +23,14 @@
                     v-model="form.yihaotong_appsecret"
                     placeholder="请输入APPKEY（从一号通平台申请）"
                     show-password
+                    size="small"
                   ></el-input>
                 </el-form-item>
               </el-col>
             </el-row>
             <el-form-item>
-              <el-button :loading="loading" type="primary" @click="submitForm">立即提交</el-button>
-              <el-button @click="dialogVisible = true">一号通登录</el-button>
+              <el-button :loading="loading" size="small" type="primary" @click="submitForm">立即提交</el-button>
+              <el-button size="small" @click="dialogVisible = true">一号通登录</el-button>
               <span class="login-tip">登录一号通平台后，凭证将自动写入并回填</span>
             </el-form-item>
           </el-form>
@@ -36,7 +38,7 @@
       </el-card>
       <el-dialog
         title="一号通登录"
-        v-model="dialogVisible"
+        :visible.sync="dialogVisible"
         :width="DIALOG_SIZE.XL"
         append-to-body
         :close-on-click-modal="false"
@@ -50,10 +52,10 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { ElMessage as Message } from 'element-plus'
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
-import { cloudFileSetupApi } from '@/api/config.ts'
-import { configUpdateDataApi } from '@/api/setting.ts'
+import { Message } from 'element-ui'
+import { DIALOG_SIZE } from '@/constants/popupSize'
+import { cloudFileSetupApi } from '@/api/config'
+import { configUpdateDataApi } from '@/api/setting'
 
 /** 基础设置接口返回的单条配置项 */
 interface ConfigRule {

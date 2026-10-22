@@ -15,7 +15,7 @@
         <!-- 表格数据 -->
         <div class="table-box mt10" v-loading="loading">
           <el-table row-key="id" :height="TABLE_HEIGHT" :data="tableData" style="width: 100%">
-            <el-table-column prop="name" label="审批类型" min-width="150">
+            <el-table-column prop="name" :label="$t('business.businessType')" min-width="150">
               <template #default="{ row }">
                 <div class="flex" @click="editFn(row)">
                   <div class="selIcon" :style="{ backgroundColor: row.color }">
@@ -51,8 +51,8 @@
               <template #default="scope">
                 <el-switch
                   v-model="scope.row.status"
-                  active-text="开启"
-                  inactive-text="关闭"
+                  :active-text="$t('hr.open')"
+                  :inactive-text="$t('hr.close')"
                   :active-value="1"
                   :inactive-value="0"
                   :width="50"
@@ -63,8 +63,8 @@
 
             <el-table-column prop="address" label="操作" fixed="right" width="110">
               <template #default="scope">
-                <el-button type="primary" link @click="editFn(scope.row)">编辑</el-button>
-                <el-button type="primary" link @click="deleteFn(scope.row)">删除</el-button>
+                <el-button type="text" @click="editFn(scope.row)">编辑</el-button>
+                <el-button type="text" @click="deleteFn(scope.row)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -86,10 +86,10 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { modalSure } from '@/libs/public'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
 import oaFromBox from '@/components/common/oaFromBox'
-import { roterPre } from '@/settings.ts'
+import { roterPre } from '@/settings'
 import {
   getcrudCateListApi,
   databaseListApi,
@@ -97,7 +97,7 @@ import {
   dataApproveListApi,
   dataApproveStatusApi,
   dataApproveDeleteApi
-} from '@/api/develop.ts'
+} from '@/api/develop'
 
 export default {
   components: {

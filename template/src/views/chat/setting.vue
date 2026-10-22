@@ -42,18 +42,18 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import router from '@/router/index.ts'
-import { roterPre } from '@/settings.ts'
-import { AiEmbeddedManager } from '@/libs/ai/index.ts'
+import router from '@/router'
+import { roterPre } from '@/settings'
+import { AiEmbeddedManager } from '@/libs/ai'
 import settingHeader from './setting/components/settingHeader.vue'
 import applicationPanel from './setting/components/applicationPanel.vue'
 import modelPanel from './setting/components/modelPanel.vue'
 import previewPanel from './setting/components/previewPanel.vue'
-import { provideApplicationSetting } from './setting/composables/useApplicationSetting.ts'
-import { APP_TYPE } from './setting/constants.ts'
-import type { PreviewState } from './setting/types.ts'
+import { provideApplicationSetting } from './setting/composables/useApplicationSetting'
+import { APP_TYPE } from './setting/constants'
+import type { PreviewState } from './setting/types'
 
-const appId = String(router.currentRoute.value.query.id || '')
+const appId = String(router.currentRoute.query.id || '')
 
 // 表单状态由 provide 下发，三块面板各自 inject，避免逐层透传几十个字段
 const { detail, form, isSaving, fetchDetail, save, publish } = provideApplicationSetting(appId)
@@ -77,9 +77,7 @@ const previewIdentity = computed(() =>
 const isPreviewReady = computed(() => !!detail.value.id)
 
 const goBack = () => {
-  router.push({
-    path: `${roterPre}/chat/${form.app_type === APP_TYPE.EXTERNAL ? 'customerService' : 'index'}`
-  })
+  router.push({ path: `${roterPre}/chat/index` })
 }
 
 const handlePreview = (state: PreviewState) => {

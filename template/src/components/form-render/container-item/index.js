@@ -1,4 +1,4 @@
-import { registerGlobalComponent } from '@/app-context'
+import Vue from "vue"
 
 const requireComponent = import.meta.glob('./*.vue', { eager: true })
 
@@ -20,5 +20,5 @@ end */
 /* 全局注册！！ */
 Object.keys(requireComponent).forEach(fileName => {
   let comp = requireComponent[fileName].default;
-  registerGlobalComponent(comp.name, comp)
+  Vue.component(comp.name, comp)
 })

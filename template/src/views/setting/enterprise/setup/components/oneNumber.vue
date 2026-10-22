@@ -4,7 +4,7 @@
       <el-row>
         <el-col :span="14">
           <el-form-item label="一号通AppId：" prop="appId">
-            <el-input v-model="form.yihaotong_appid" placeholder="请输入APPID（从一号通平台申请）"></el-input>
+            <el-input v-model="form.yihaotong_appid" placeholder="请输入APPID（从一号通平台申请）" size="small"></el-input>
           </el-form-item>
         </el-col>
       </el-row>
@@ -14,6 +14,7 @@
             <el-input
               v-model="form.yihaotong_appsecret"
               placeholder="请输入APPKEY（从一号通平台申请）"
+              size="small"
             ></el-input>
           </el-form-item>
         </el-col>
@@ -27,13 +28,13 @@
         </div>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" plain @click="openPlatform">点击登录一号通</el-button>
-        <el-button :loading="loading" type="primary" @click="submitForm()">立即提交</el-button>
+        <el-button size="small" type="primary" plain @click="openPlatform">点击登录一号通</el-button>
+        <el-button :loading="loading" size="small" type="primary" @click="submitForm()">立即提交</el-button>
       </el-form-item>
     </el-form>
     <el-dialog
       title="一号通平台"
-      v-model="platformVisible"
+      :visible.sync="platformVisible"
       :width="DIALOG_SIZE.XL"
       top="5vh"
       append-to-body
@@ -49,8 +50,8 @@
 </template>
 
 <script>
-import { cloudFileSetupApi } from '@/api/config.ts'
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
+import { cloudFileSetupApi } from '@/api/config'
+import { DIALOG_SIZE } from '@/constants/popupSize'
 
 // 一号通平台地址与来源（postMessage origin 校验用）；带固定 token 参数平台才进入 iframe 集成模式，登录后回传配置
 const PLATFORM_URL = 'https://api.crmeb.com?token=AF37D4579721672220B08CA872586943'
@@ -91,7 +92,7 @@ export default {
       immediate: true
     }
   },
-  beforeUnmount() {
+  beforeDestroy() {
     window.removeEventListener('message', this.handlePlatformMessage)
   },
 

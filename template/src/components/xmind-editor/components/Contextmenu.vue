@@ -133,7 +133,7 @@
 </template>
 
 <script>
-import { EventBus } from '@/libs/bus.ts'
+import { EventBus } from '@/libs/bus'
 import { getTextFromHtml, imgToDataUrl } from 'simple-mind-map/src/utils'
 import { transformToMarkdown } from 'simple-mind-map/src/parse/toMarkdown'
 import { transformToTxt } from 'simple-mind-map/src/parse/toTxt'
@@ -148,9 +148,9 @@ import {
   SVG_MOUSEDOWN,
   TOGGLE_ZEN_MODE,
   TRANSLATE
-} from '../event-constant.ts'
+} from '../event-constant'
 
-import { copy, setDataToClipboard, setImgToClipboard } from '../utils.ts'
+import { copy, setDataToClipboard, setImgToClipboard } from '../utils'
 
 export default {
   name: 'Contextmenu',
@@ -254,7 +254,7 @@ export default {
       EventBus.$on(eventName, handler)
     })
   },
-  beforeUnmount() {
+  beforeDestroy() {
     Object.entries(this.listenEventMap).forEach(([eventName, handler]) => {
       EventBus.$off(eventName, handler)
     })

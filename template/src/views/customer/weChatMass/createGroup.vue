@@ -11,13 +11,14 @@
           <div class="section-title">基本信息</div>
 
           <el-form-item label="扫码名称：" prop="name">
-            <el-input v-model="formData.name" placeholder="请输入渠道活码名称" />
+            <el-input v-model="formData.name" size="small" placeholder="请输入渠道活码名称" />
             <div class="tips mt10">管理端管理此渠道活码的名称，例如：SVIP会员群</div>
           </el-form-item>
 
           <el-form-item label="选择分组：" prop="group_id">
             <el-select
               v-model="formData.group_id"
+              size="small"
               filterable
               placeholder="请选择分组（单选）"
               class="w-full"
@@ -29,8 +30,8 @@
 
           <el-form-item label="添加验证：" prop="skip_verify">
             <el-radio-group v-model="formData.skip_verify">
-              <el-radio :label="1" :value="1">直接通过</el-radio>
-              <el-radio :label="0" :value="0">需验证</el-radio>
+              <el-radio :label="1">直接通过</el-radio>
+              <el-radio :label="0">需验证</el-radio>
             </el-radio-group>
             <div class="tips mb10">
               需验证指的是客户扫码之后，需要客服审核同意才能添加成功；直接通过指的是客户扫码之后，直接添加成功
@@ -62,7 +63,7 @@
           <!-- 新客户欢迎语 -->
           <el-form-item label="新客户欢迎语：" prop="welcome.content" class="welcome-form-item">
             <div class="welcome-btn">
-              <el-button type="primary" link @click="openLibrary">从素材库中选择</el-button>
+              <el-button type="text" size="small" @click="openLibrary">从素材库中选择</el-button>
             </div>
 
             <materialContent
@@ -93,7 +94,7 @@
           <!-- 加群配置：群聊与自动建群规则已拆分为独立模块，此处只做选择 -->
           <el-form-item v-if="formData.invite_group == 1" label="加群配置：" prop="code_id">
             <div class="flex lh-center">
-              <el-button @click="openGroupConfig">
+              <el-button size="small" @click="openGroupConfig">
                 {{ groupConfig ? '重新选择' : '选择加群配置' }}
               </el-button>
               <!-- 展示名：该配置下所有群聊名称的顿号拼接（编辑态取详情的 group_names，选择弹窗取行内 group_chat） -->
@@ -162,14 +163,14 @@
 </template>
 
 <script>
-import { ref, onMounted, getCurrentInstance, defineAsyncComponent } from 'vue'
+import { ref, onMounted, getCurrentInstance } from 'vue'
 import BaseContainer from '@/components/BaseContainer/index.vue'
 import FormPageHeader from '@/components/FormPageHeader/index.vue'
 import FormPageFooter from '@/components/FormPageFooter/index.vue'
-import { workMassTempApi } from '@/api/weCom.ts'
-import { formatBytes } from '@/utils/file.ts'
-import { getStorageJson } from '@/utils/storage.ts'
-import { useChannelCodeForm } from './composables/useChannelCodeForm.ts'
+import { workMassTempApi } from '@/api/weCom'
+import { formatBytes } from '@/utils/file'
+import { getStorageJson } from '@/utils/storage'
+import { useChannelCodeForm } from './composables/useChannelCodeForm'
 
 export default {
   name: 'CreateGroup',
@@ -177,11 +178,11 @@ export default {
     BaseContainer,
     FormPageHeader,
     FormPageFooter,
-    materialContent: defineAsyncComponent(() => import('./components/materialContent')),
-    materialLibrary: defineAsyncComponent(() => import('./components/materialLibrary')),
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
-    labelDialog: defineAsyncComponent(() => import('@/views/customer/list/components/labelDialog')),
-    groupConfigSelect: defineAsyncComponent(() => import('./components/groupConfigSelect'))
+    materialContent: () => import('./components/materialContent'),
+    materialLibrary: () => import('./components/materialLibrary'),
+    selectMember: () => import('@/components/form-common/select-member'),
+    labelDialog: () => import('@/views/customer/list/components/labelDialog'),
+    groupConfigSelect: () => import('./components/groupConfigSelect')
   },
   setup() {
     const { proxy } = getCurrentInstance()
@@ -353,11 +354,6 @@ export default {
     overflow-y: auto;
     height: 100%;
     scrollbar-width: none;
-
-    // 按 element-ui 的块布局：控件占满整行、说明文字位于控件下方
-    :deep(.el-form-item__content) {
-      display: block;
-    }
   }
 
   &__preview {
@@ -551,7 +547,7 @@ export default {
   }
 }
 
-:deep(.el-radio:focus:not(.is-focus):not(:active):not(.is-disabled) .el-radio__inner) {
+::v-deep .el-radio:focus:not(.is-focus):not(:active):not(.is-disabled) .el-radio__inner {
   box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2); // 保留焦点样式，提升可访问性
 }
 
@@ -575,8 +571,6 @@ export default {
 
 .welcome-btn {
   position: absolute;
-  // 豁免全局表单内容区 div 占满整行的规则，保持按内容宽度靠右
-  width: auto;
   right: 0;
   top: -36px;
 }

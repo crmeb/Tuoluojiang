@@ -14,31 +14,34 @@
     <uploadFile
       ref="fieldEditor"
       :only-image="false"
+      :value="fieldModel"
       v-model="fieldModel"
       :max-length="Number(field.options.fileMaxSize)"
       :max-size="Number(field.options.fileMaxSize)"
       :fileTypes="field.options.fileTypes"
       url=""
-      @update:modelValue="handleSuccess"
+      @input="handleSuccess"
     ></uploadFile>
   </form-item-wrapper>
 </template>
 
 <script>
 import FormItemWrapper from './form-item-wrapper'
-import i18n from '@/utils/i18n.ts'
+import emitter from '@/utils/emitter'
+import i18n from '@/utils/i18n'
 import { deepClone } from '@/utils/util'
 import { evalFn } from '@/utils/formDesignerUtils'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
-import SettingMer from '@/libs/settingMer.ts'
-import { getToken } from '@/utils/auth.ts'
+import SettingMer from '@/libs/settingMer'
+import { getToken } from '@/utils/auth'
 import uploadFile from '@/components/form-common/oa-upload'
 
 let selectFileText = '选择文本'
 
 export default {
   name: 'file-widget',
-  mixins: [fieldMixin, i18n],
+  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
+  mixins: [emitter, fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -127,7 +130,7 @@ export default {
     }
   },
 
-  beforeUnmount() {
+  beforeDestroy() {
     this.unregisterFromRefList()
   },
 
@@ -289,7 +292,7 @@ export default {
   width: 100% !important;
 }
 
-.dynamicPseudoAfter :deep(.el-upload.el-upload--text) {
+.dynamicPseudoAfter ::v-deep .el-upload.el-upload--text {
   color: #409eff;
   font-size: 12px;
   .el-icon-plus:after {
@@ -298,17 +301,17 @@ export default {
 }
 
 .hideUploadDiv {
-  :deep(div.el-upload--picture-card) {
+  ::v-deep div.el-upload--picture-card {
     /* 隐藏最后的图片上传按钮 */
     display: none;
   }
 
-  :deep(div.el-upload--text) {
+  ::v-deep div.el-upload--text {
     /* 隐藏最后的文件上传按钮 */
     display: none;
   }
 
-  :deep(div.el-upload__tip) {
+  ::v-deep div.el-upload__tip {
     /* 隐藏最后的文件上传按钮 */
     display: none;
   }
@@ -325,3 +328,4 @@ export default {
   }
 }
 </style>
+@/utils/i18ns

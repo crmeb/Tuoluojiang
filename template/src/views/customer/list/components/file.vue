@@ -10,7 +10,7 @@
         action="##"
         class="mr10 upload-real"
       >
-        <el-button v-if="!percentShow" type="primary">
+        <el-button v-if="!percentShow" size="small" type="primary">
           <i class="el-icon-plus"></i>
           添加文件
         </el-button>
@@ -20,7 +20,7 @@
       </el-upload>
     </div>
     <el-table :data="fileData">
-      <el-table-column label="文件封面" prop="name" width="80">
+      <el-table-column :label="$t('hr.documentcover')" prop="name" width="80">
         <template #default="scope">
           <span class="file" v-if="toSrcIcon(scope.row.name) !== 'img'">
             {{ getFileTypeFn(scope.row.name) }}
@@ -29,7 +29,7 @@
           <img v-else :src="scope.row.att_dir" alt="" class="img" @click="filePreview(scope.row, { list: fileData })" />
         </template>
       </el-table-column>
-      <el-table-column label="文件名称" min-width="180" prop="real_name">
+      <el-table-column :label="$t('customer.filename')" min-width="180" prop="real_name">
         <template #default="scope">
           <span class="over-text">{{ scope.row.real_name }}</span>
         </template>
@@ -39,35 +39,33 @@
           <span class="over-text">{{ formatBytesFn(scope.row.att_size) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="上传用户" min-width="100" prop="card.name" />
-      <el-table-column label="上传时间" min-width="130" prop="created_at">
+      <el-table-column :label="$t('customer.uploaduser')" min-width="100" prop="card.name" />
+      <el-table-column :label="$t('customer.uploaddate')" min-width="130" prop="created_at">
         <template #default="scope">
-          <span class="over-text">{{ dayjs(scope.row.created_at).format('YYYY-MM-DD') }}</span>
+          <span class="over-text">{{ moment(scope.row.created_at).format('YYYY-MM-DD') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" fixed="right" prop="address" width="180">
+      <el-table-column :label="$t('public.operation')" fixed="right" prop="address" width="180">
         <template #default="scope">
-          <el-button type="primary" link @click="filePreview(scope.row, { list: fileData })">
-            查看
+          <el-button type="text" @click="filePreview(scope.row, { list: fileData })">
+            {{ $t('public.check') }}
           </el-button>
 
-          <el-button type="primary" link @click="getFileLinkDownLoad(scope.row.att_dir, scope.row.name)">
-            下载
+          <el-button type="text" @click="getFileLinkDownLoad(scope.row.att_dir, scope.row.name)">
+            {{ $t('public.download') }}
           </el-button>
 
           <el-dropdown>
-            <el-button type="primary" link class="el-dropdown-link ml10">
-              更多
+            <span class="el-dropdown-link el-button--text el-button ml10">
+              {{ $t('hr.more') }}
               <i class="el-icon-arrow-down" />
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu style="text-align: center">
-                <el-dropdown-item @click="handleLabel(scope.row)"> 重命名 </el-dropdown-item>
-                <el-dropdown-item @click="handleFileDelete(scope.row, scope.$index)">
-                  删除</el-dropdown-item
-                >
-              </el-dropdown-menu>
-            </template>
+            </span>
+            <el-dropdown-menu style="text-align: center">
+              <el-dropdown-item @click.native="handleLabel(scope.row)"> 重命名 </el-dropdown-item>
+              <el-dropdown-item @click.native="handleFileDelete(scope.row, scope.$index)">
+                {{ $t('public.delete') }}</el-dropdown-item
+              >
+            </el-dropdown-menu>
           </el-dropdown>
         </template>
       </el-table-column>
@@ -84,7 +82,7 @@
     </div>
 
     <!-- 重命名弹窗 -->
-    <el-dialog :append-to-body="true" v-model="dialogFormVisible" title="修改文件名" width="40%">
+    <el-dialog :append-to-body="true" :visible.sync="dialogFormVisible" title="修改文件名" width="40%">
       <el-form>
         <el-form-item label="重命名：" label-width="100px">
           <el-input v-model="real_name" autocomplete="off"></el-input>
@@ -101,15 +99,14 @@
 </template>
 
 <script>
-import dayjs from 'dayjs'
-import { getStorageJson } from '@/utils/storage.ts'
-import { uploader } from '@/utils/uploadCloud.ts'
-import { fileIsImage, fileLinkDownLoad, formatBytes, getFileExtension, getFileType } from '@/utils/file.ts'
-import { clientFileDeleteApi, clientFileListApi, putRealName } from '@/api/client.ts'
-import { modalSure } from '@/libs/public.ts'
-import { filePreview } from '@/utils/filePreview.ts'
+import moment from 'moment'
+import { getStorageJson } from '@/utils/storage'
+import { uploader } from '@/utils/uploadCloud'
+import { fileIsImage, fileLinkDownLoad, formatBytes, getFileExtension, getFileType } from '@/utils/file'
+import { clientFileDeleteApi, clientFileListApi, putRealName } from '@/api/client'
+import { modalSure } from '@/libs/public'
+import { filePreview } from '@/utils/filePreview'
 export default {
-  emits: ['refresh-detail'],
   name: 'File',
   props: {
     formInfo: {
@@ -120,7 +117,7 @@ export default {
     }
   },
   computed: {
-    dayjs: () => dayjs
+    moment: () => moment
   },
   data() {
     return {
@@ -272,7 +269,7 @@ export default {
   width: 30px;
   height: 30px;
 }
-:deep(.el-input__inner) {
+::v-deep .el-input__inner {
   text-align: left;
 }
 .icon-cover {
@@ -291,7 +288,7 @@ export default {
 .ml10 {
   margin-left: 10px;
 }
-:deep(.el-dropdown-menu__item) {
+::v-deep .el-dropdown-menu__item {
   font-size: 13px !important;
 }
 </style>

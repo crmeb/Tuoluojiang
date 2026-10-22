@@ -1,12 +1,12 @@
 <template>
-  <!-- Vue 3 不再从 v-bind 对象里读取 is，需单独绑定 -->
-  <component :is="linkTag(to)" v-bind="linkProps(to)">
+  <!-- eslint-disable vue/require-component-is -->
+  <component v-bind="linkProps(to)">
     <slot />
   </component>
 </template>
 
 <script>
-import { isExternal } from '@/utils/validate.ts'
+import { isExternal } from '@/utils/validate'
 export default {
   props: {
     to: {
@@ -15,18 +15,17 @@ export default {
     }
   },
   methods: {
-    linkTag(url) {
-      return isExternal(url) ? 'a' : 'router-link'
-    },
     linkProps(url) {
       if (isExternal(url)) {
         return {
+          is: 'a',
           href: url,
           target: '_blank',
           rel: 'noopener'
         }
       }
       return {
+        is: 'router-link',
         to: url
       }
     }

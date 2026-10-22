@@ -1,0 +1,1 @@
+import{b as e,bt as t,wt as n}from"./chunk-vendor.Di-Ybv3u.js";t();var r=e(`conditionDialog`,()=>{let e=n(!1),t=n({});function r(e){t.value=e}function i(){e.value=!1,t.value={list:[],type:``,additional_search_boolean:`1`}}return{visible:e,fieldOptions:t,setFieldOptions:r,reset:i}});export{r as t};

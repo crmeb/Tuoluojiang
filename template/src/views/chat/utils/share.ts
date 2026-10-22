@@ -1,6 +1,5 @@
-import { ElMessage as Message } from 'element-plus'
+import { Message } from 'element-ui'
 import { getAiUrl, getAiBaseUrl } from '@/libs/ai'
-import { writeClipboard } from '@/utils/clipboard'
 
 /**
  * 外部应用的访客端链接
@@ -10,6 +9,24 @@ import { writeClipboard } from '@/utils/clipboard'
  */
 export const getVisitorLink = (shareKey: string) =>
   getAiUrl({ identity: 'visitor', shareKey })
+
+/** 写剪贴板，非安全上下文（http 局域网）下 navigator.clipboard 不可用，退化为 execCommand */
+const writeClipboard = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch (error) {
+    const input = document.createElement('textarea')
+    input.value = text
+    input.style.position = 'fixed'
+    input.style.opacity = '0'
+    document.body.appendChild(input)
+    input.select()
+    const isOk = document.execCommand('copy')
+    document.body.removeChild(input)
+    return isOk
+  }
+}
 
 /** 嵌入代码里的 SDK 脚本地址，与 SDK 加载器同源（AI_BASE_URL → httpUrl → 当前 origin） */
 export const getSdkUrl = () => new URL('/chat/sdk/index.js', getAiBaseUrl()).href

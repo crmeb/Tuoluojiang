@@ -2,6 +2,7 @@
 <template>
   <el-cascader
     style="width: 200px"
+    size="small"
     v-model="frame_id"
     :options="frameTreeData"
     :props="{ checkStrictly: true, value: 'id', label: 'label' }"
@@ -13,11 +14,10 @@
 </template>
 
 <script>
-import { frameTreeApi } from '@/api/public.ts'
+import { frameTreeApi } from '@/api/public'
 
 export default {
   name: 'manageRange',
-  emits: ['change'],
   props: {
     all: {
       type: String,
@@ -64,7 +64,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.tips) {
+::v-deep .tips {
   font-size: 13px;
   color: #999;
   margin-bottom: 20px;
@@ -75,7 +75,7 @@ export default {
   border-top: 1px solid #e6ebf5;
   text-align: right;
 }
-:deep(.el-cascader) {
+::v-deep .el-cascader {
   width: 100%;
 }
 </style>

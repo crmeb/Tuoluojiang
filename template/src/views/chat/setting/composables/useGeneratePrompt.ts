@@ -1,6 +1,6 @@
 import { onScopeDispose, ref } from 'vue'
-import { ElMessage as Message } from 'element-plus'
-import { useUserStore } from '@/stores/user'
+import { Message } from 'element-ui'
+import store from '@/store'
 import SettingMer from '@/libs/settingMer'
 import { openSseStream } from '../../utils/sseStream'
 
@@ -68,9 +68,9 @@ export const useGeneratePrompt = () => {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       Accept: 'text/event-stream',
-      laravel_lang: 'zh-cn'
+      laravel_lang: store.getters.lang || 'zh-cn'
     }
-    const token = useUserStore().token
+    const token = store.getters.token
     if (token) headers.Authorization = `Bearer ${token}`
 
     return new Promise<void>((resolve) => {

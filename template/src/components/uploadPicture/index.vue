@@ -49,6 +49,7 @@
             <el-button
               v-if="isShow !== 0"
               :disabled="checkPicList.length === 0"
+              size="small"
               type="primary"
               @click="checkPics"
               >使用选中图片</el-button
@@ -66,11 +67,13 @@
               :show-file-list="false"
               class="upload-demo mr10 mb12 upload-btn"
             >
-              <el-button type="primary">上传图片</el-button>
+              <el-button size="small" type="primary">上传图片</el-button>
             </el-upload>
             <el-button
               :disabled="!checkPicList.length && !ids.length"
               class="mr10"
+              size="small"
+              type="error"
               @click.stop="editPicList()"
               >删除图片</el-button
             >
@@ -81,6 +84,7 @@
               class="treeSel"
               clearable
               placeholder="图片移动至"
+              size="small"
               style="width: 150px"
               @visible-change="moveImg"
             ></el-cascader>
@@ -90,17 +94,18 @@
               v-model="fileData.real_name"
               class="mr10"
               placeholder="请输入图片名"
+              size="small"
               style="width: 150px"
             >
               <template #suffix>
                 <i class="el-icon-search el-input__icon" @click="getFileList"></i>
               </template>
             </el-input>
-            <el-radio-group v-model="lietStyle" @change="radioChange">
-              <el-radio-button label="list" value="list">
+            <el-radio-group v-model="lietStyle" size="small" @input="radioChange">
+              <el-radio-button label="list">
                 <i class="el-icon-menu"></i>
               </el-radio-button>
-              <el-radio-button label="table" value="table">
+              <el-radio-button label="table">
                 <!-- <i class="el-icon-files"></i> -->
                 <span class="iconfont iconliebiao"></span>
               </el-radio-button>
@@ -135,7 +140,7 @@
                   <p v-if="!item.isEdit">
                     {{ item.editName }}
                   </p>
-                  <el-input v-else v-model="item.real_name" type="text" @blur="bindTxt(item)" />
+                  <el-input v-else v-model="item.real_name" size="small" type="text" @blur="bindTxt(item)" />
                   <div class="operate-height">
                     <span v-if="item.isShowEdit" class="operate mr10" @click="editPicList(item.id)">删除</span>
                     <span v-if="item.isShowEdit" class="operate mr10" @click="item.isEdit = !item.isEdit">改名</span>
@@ -160,13 +165,14 @@
             <el-table-column label="图片名称" min-width="190">
               <template #default="scope">
                 <div class="df-aic">
-                  <div class="tabBox_img mr10" @click="handlePictureCardPreview(scope.row)">
+                  <div v-viewer class="tabBox_img mr10">
                     <img v-lazy="scope.row.att_dir" />
                   </div>
                   <span v-if="!scope.row.isEdit" class="line2 real-name">{{ scope.row.real_name }}</span>
                   <el-input
                     v-else
                     v-model="scope.row.real_name"
+                    size="small"
                     style="width: 90%"
                     type="text"
                     @blur="bindTxt(scope.row)"
@@ -203,14 +209,13 @@
         </div>
       </div>
     </div>
-    <el-image-viewer v-if="isImage" :initialIndex="imgIndex" @close="closeImageViewer" :url-list="imgList" />
+    <el-image-viewer v-if="isImage" :initialIndex="imgIndex" :on-close="closeImageViewer" :url-list="imgList" />
   </div>
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import modalForm from '@/libs/modal-form.ts'
+import { modalSure } from '@/libs/public'
+import modalForm from '@/libs/modal-form'
 import {
   formatLstApi,
   attachmentCreateApi,
@@ -220,14 +225,18 @@ import {
   attachmentListApi,
   picDeleteApi,
   categoryApi
-} from '@/api/system.ts'
-import { getToken } from '@/utils/auth.ts'
-import SettingMer from '@/libs/settingMer.ts'
-import Tips from '@/utils/tips.ts'
-import compressImg from '@/utils/compressImg.ts'
+} from '@/api/system'
+import { VueTreeList } from 'vue-tree-list'
+import { getToken } from '@/utils/auth'
+import SettingMer from '@/libs/settingMer'
+import Tips from '@/utils/tips'
+import compressImg from '@/utils/compressImg'
 export default {
-  emits: ['changeCancel', 'getImage'],
   name: 'uploadPictures',
+  components: {
+    VueTreeList,
+    ElImageViewer: () => import('element-ui/packages/image/src/image-viewer')
+  },
   props: {
     isChoice: {
       type: String,
@@ -525,8 +534,8 @@ export default {
     },
     addFlag(treedata) {
       treedata.map((item) => {
-        item.flag = false
-        item.flag2 = false
+        this.$set(item, 'flag', false)
+        this.$set(item, 'flag2', false)
         item.children && this.addFlag(item.children)
       })
     },
@@ -563,7 +572,9 @@ export default {
       })
     },
     handlePictureCardPreview(item) {
-      this.imgIndex = this.pictrueList.findIndex((e) => e.att_dir === item.att_dir)
+      this.$nextTick(() => {
+        this.imgIndex = this.pictrueList.findIndex((e) => e.att_dir === item.att_dir)
+      })
       this.isImage = true
     },
     closeImageViewer() {
@@ -808,7 +819,7 @@ export default {
     right: 0;
     top: 0;
   }
-  :deep(.el-badge__content.is-fixed) {
+  ::v-deep .el-badge__content.is-fixed {
     top: 13px;
     right: 25px;
   }
@@ -834,7 +845,7 @@ export default {
     .isTree {
       min-height: 374px;
       max-height: 550px;
-      :deep(.file-name) {
+      ::v-deep .file-name {
         display: flex;
         align-items: center;
         .name {
@@ -846,17 +857,17 @@ export default {
           margin-right: 8px;
         }
       }
-      :deep(.el-tree-node) {
+      ::v-deep .el-tree-node {
         margin-right: 16px;
       }
-      :deep(.el-tree-node__children .el-tree-node) {
+      ::v-deep .el-tree-node__children .el-tree-node {
         margin-right: 0;
       }
-      :deep(.el-tree-node__content) {
+      ::v-deep .el-tree-node__content {
         width: 100%;
         height: 36px;
       }
-      :deep(.custom-tree-node) {
+      ::v-deep .custom-tree-node {
         flex: 1;
         display: flex;
         align-items: center;
@@ -867,11 +878,11 @@ export default {
         color: rgba(0, 0, 0, 0.6);
         line-height: 13px;
       }
-      :deep(.is-current) {
+      ::v-deep .is-current {
         background: #f1f9ff !important;
         color: var(--prev-color-primary) !important;
       }
-      :deep(.is-current .custom-tree-node) {
+      ::v-deep .is-current .custom-tree-node {
         color: var(--prev-color-primary) !important;
       }
     }
@@ -882,7 +893,7 @@ export default {
   }
 }
 
-.treeSel :deep(.ivu-select-dropdown-list) {
+.treeSel ::v-deep .ivu-select-dropdown-list {
   padding: 0 5px !important;
   box-sizing: border-box;
   width: 200px;
@@ -984,7 +995,7 @@ export default {
   display: inline-block;
 }
 
-.bnt :deep(.ivu-tree-children) {
+.bnt ::v-deep .ivu-tree-children {
   padding: 5px 0;
 }
 

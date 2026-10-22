@@ -1,0 +1,9 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["system/js/xmind.Dh-KKsaQ.js","system/js/rolldown-runtime.C0FnF6B9.js","system/js/jszip.min.Cwylt6Nq.js","system/js/__vite-browser-external.DHm0Qnzu.js"])))=>i.map(i=>d[i]);
+import{t as e}from"./preload-helper.TU8g2_D0.js";var t=e=>{let t=document.createElement(`textarea`);t.innerHTML=e,document.body.appendChild(t),t.select(),document.execCommand(`copy`),document.body.removeChild(t)},n=e=>{navigator.clipboard&&navigator.clipboard.writeText(e)},r=e=>{if(navigator.clipboard){let t=[new ClipboardItem({"image/png":e})];navigator.clipboard.write(t)}},i=(()=>{let e=document.documentElement;if(e.requestFullScreen)return`onfullscreenchange`;if(e.webkitRequestFullScreen)return`onwebkitfullscreenchange`;if(e.mozRequestFullScreen)return`onmozfullscreenchange`;if(e.msRequestFullscreen)return`onmsfullscreenchange`})(),a=e=>{e.requestFullScreen?e.requestFullScreen():e.webkitRequestFullScreen?e.webkitRequestFullScreen():e.mozRequestFullScreen&&e.mozRequestFullScreen()},o=async t=>{let{default:n}=await e(async()=>{let{default:e}=await import(`./xmind.Dh-KKsaQ.js`);return{default:e}},__vite__mapDeps([0,1,2,3])),r=await n.transformToXmind({data:{text:`<p><span style="
+      color: #fff;
+      font-family: 微软雅黑, Microsoft YaHei;
+      font-size: 16px;
+      font-weight: bold;
+      font-style: normal;
+      text-decoration: none
+    ">中心主题</span></p>`,generalization:[],expand:!0,richText:!0,isActive:!1,uid:`35b082b5-6ec8-4377-bf62-3fb34421e3ff`},children:[]},t);return new File([r],t,{type:`application/x-xmind`})};export{n as a,o as i,a as n,r as o,i as r,t};

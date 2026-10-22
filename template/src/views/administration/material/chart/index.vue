@@ -20,7 +20,7 @@
                   <el-row>
                     <el-col :span="16">采购数量</el-col>
                     <el-col :span="8" class="text-right">
-                      <el-button circle type="primary">
+                      <el-button circle size="small" type="primary">
                         <count-to :duration="1000" :end-val="Number(storageCount.put_count)" :start-val="0" />
                       </el-button>
                     </el-col>
@@ -30,7 +30,7 @@
                   <el-row>
                     <el-col :span="16">固定物资领取数量</el-col>
                     <el-col :span="8" class="text-right">
-                      <el-button circle type="success">
+                      <el-button circle size="small" type="success">
                         <count-to :duration="1000" :end-val="storageCount.fixed_count" :start-val="0" />
                       </el-button>
                     </el-col>
@@ -40,7 +40,7 @@
                   <el-row>
                     <el-col :span="16">消耗物资领取数量</el-col>
                     <el-col :span="8" class="text-right">
-                      <el-button circle type="warning">
+                      <el-button circle size="small" type="warning">
                         <count-to :duration="1000" :end-val="storageCount.temp_count" :start-val="0" />
                       </el-button>
                     </el-col>
@@ -50,7 +50,7 @@
                   <el-row>
                     <el-col :span="16">报废数量</el-col>
                     <el-col :span="8" class="text-right">
-                      <el-button circle type="info">
+                      <el-button circle size="small" type="info">
                         <count-to :duration="1000" :end-val="storageCount.scrap_count" :start-val="0" />
                       </el-button>
                     </el-col>
@@ -60,7 +60,7 @@
                   <el-row>
                     <el-col :span="16">维修数量</el-col>
                     <el-col :span="8" class="text-right">
-                      <el-button circle type="info">
+                      <el-button circle size="small" type="info">
                         <count-to :duration="1000" :end-val="storageCount.repair_count" :start-val="0" />
                       </el-button>
                     </el-col>
@@ -82,9 +82,9 @@
                   <el-table-column label="规格型号" min-width="100" prop="units" />
                   <el-table-column label="物资分类" min-width="100" prop="cate.cate_name" />
                   <el-table-column label="当前库存" min-width="100" prop="stock" />
-                  <el-table-column label="操作" fixed="right" prop="describe" width="80">
+                  <el-table-column :label="$t('public.operation')" fixed="right" prop="describe" width="80">
                     <template #default="scope">
-                      <el-button type="primary" link @click="handleManage(scope.row)">补货</el-button>
+                      <el-button type="text" @click="handleManage(scope.row)">补货</el-button>
                     </template>
                   </el-table-column>
                 </el-table>
@@ -144,7 +144,7 @@
                   </el-table-column>
                   <el-table-column label="变动时间" min-width="100" prop="storage.units" show-overflow-tooltip>
                     <template #default="scope">
-                      {{ dayjs(scope.row.created_at).format('YYYY-MM-DD') }}
+                      {{ moment(scope.row.created_at).format('yyyy-MM-DD') }}
                     </template>
                   </el-table-column>
                   <el-table-column :show-overflow-tooltip="true" label="操作人" prop="creater.name" width="80">
@@ -179,25 +179,24 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { storageListApi, storageRecordApi, storageRecordCensusApi } from '@/api/administration.ts'
+import moment from 'moment'
+import { storageListApi, storageRecordApi, storageRecordCensusApi } from '@/api/administration'
 export default {
   name: 'FinanceChart',
   components: {
-    statisticsBox: defineAsyncComponent(() => import('./components/statisticsBox')),
-    echartBox: defineAsyncComponent(() => import('@/components/common/echarts')),
-    materialDialog: defineAsyncComponent(() => import('@/views/administration/material/fixed/components/materialDialog')),
-    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage')),
-    countTo: defineAsyncComponent(() => import('vue3-count-to').then((m) => m.CountTo))
+    statisticsBox: () => import('./components/statisticsBox'),
+    echartBox: () => import('@/components/common/echarts'),
+    materialDialog: () => import('@/views/administration/material/fixed/components/materialDialog'),
+    defaultPage: () => import('@/components/common/defaultPage'),
+    countTo: () => import('vue-count-to')
   },
   computed: {
-    dayjs: () => dayjs
+    moment: () => moment
   },
   data() {
     return {
       time:
-        dayjs().subtract(30, 'days').format('YYYY/MM/DD') + '-' + dayjs(new Date()).format('YYYY/MM/DD'),
+        moment().subtract(30, 'days').format('YYYY/MM/DD') + '-' + moment(new Date()).format('YYYY/MM/DD'),
       optionData: {},
       styles1: {
         height: 'calc(50vh - 158px)',
@@ -438,10 +437,10 @@ export default {
   height: calc(50vh - 158px);
   padding-top: 5px;
   border-top: 1px solid #dfe6ec;
-  :deep(.el-table td) {
+  ::v-deep .el-table td {
     padding: 7px 0;
   }
-  :deep(.el-pagination) {
+  ::v-deep .el-pagination {
     margin-top: 20px;
   }
   .none-button {
@@ -460,19 +459,19 @@ export default {
       &:last-of-type {
         border: none;
       }
-      :deep(.el-row) {
+      ::v-deep .el-row {
         display: flex;
         align-items: center;
       }
     }
   }
 }
-:deep(.el-button.is-circle) {
+::v-deep .el-button--small.is-circle {
   padding: 0;
   width: 36px;
   height: 36px;
 }
-:deep(.el-drawer__body) {
+::v-deep .el-drawer__body {
   height: 100%;
   overflow-y: auto;
 }

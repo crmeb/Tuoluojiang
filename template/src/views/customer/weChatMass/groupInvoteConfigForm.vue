@@ -6,13 +6,13 @@
 
     <!-- 表单内容（可滚动区域） -->
     <div class="group-invote-config-form__body" v-loading="detailLoading">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="140px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="140px" size="small">
         <div class="section-title">邀请加群设置</div>
 
         <!-- 邀请加入的群聊：表格随表单域正文排布，左侧与其他表单项内容对齐 -->
         <el-form-item label="邀请加入的群聊：" prop="chat_ids">
           <div class="group-chat-actions">
-            <el-button type="primary" @click="openGroupChat">选择已有群聊</el-button>
+            <el-button type="primary" size="small" @click="openGroupChat">选择已有群聊</el-button>
           </div>
           <el-table :data="groupList" style="width: 100%">
             <el-table-column label="群聊名称" prop="name" min-width="120" :show-overflow-tooltip="true">
@@ -30,7 +30,7 @@
             <el-table-column label="创建时间" prop="group_create_time" min-width="160" />
             <el-table-column label="操作" fixed="right" width="80">
               <template #default="scope">
-                <el-button type="primary" link @click="removeGroup(scope.$index)">删除</el-button>
+                <el-button type="text" size="mini" @click="removeGroup(scope.$index)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -38,7 +38,7 @@
         </el-form-item>
 
         <el-form-item label="入群设置：">
-          <el-checkbox v-model="form.auto_create_room" :true-value="1" :false-value="0">
+          <el-checkbox v-model="form.auto_create_room" :true-label="1" :false-label="0">
             群人数达上限时，自动创建新群
           </el-checkbox>
           <div class="tips">选择群聊群人数达到上限后，将以原群主身份自动创建新群</div>
@@ -53,7 +53,7 @@
 
           <el-form-item label="群聊序号：">
             <div class="flex lh-center">
-              <el-checkbox v-model="form.room_base_id" :true-value="1" :false-value="0">群序号</el-checkbox>
+              <el-checkbox v-model="form.room_base_id" :true-label="1" :false-label="0">群序号</el-checkbox>
               <div class="ml14" v-if="form.room_base_id >= 1">
                 将从序号
                 <el-input style="width: 100px" type="number" :min="1" v-model="form.room_base_id" />
@@ -80,7 +80,7 @@ import BaseContainer from '@/components/BaseContainer/index.vue'
 import FormPageHeader from '@/components/FormPageHeader/index.vue'
 import FormPageFooter from '@/components/FormPageFooter/index.vue'
 import groupChat from './components/groupChat.vue'
-import { useGroupInvoteConfigForm, MAX_GROUP_CHAT } from './composables/useGroupInvoteConfigForm.ts'
+import { useGroupInvoteConfigForm, MAX_GROUP_CHAT } from './composables/useGroupInvoteConfigForm'
 
 export default {
   name: 'GroupInvoteConfigForm',
@@ -120,10 +120,6 @@ export default {
     flex: 1;
     overflow-y: auto;
     padding: 24px 20px;
-    // 按 element-ui 的块布局：说明文字位于控件下方
-    :deep(.el-form-item__content) {
-      display: block;
-    }
   }
 }
 

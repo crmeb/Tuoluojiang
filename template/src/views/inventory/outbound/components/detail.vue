@@ -1,9 +1,9 @@
 <template>
-  <el-drawer v-model="isOpen" :size="DRAWER_SIZE.MD" title="出库单详情" class="outbound-detail-drawer" append-to-body>
+  <el-drawer :visible.sync="isOpen" :size="DRAWER_SIZE.MD" title="出库单详情" custom-class="outbound-detail-drawer" append-to-body>
     <!-- 头部操作按钮组：绝对定位到标题栏右侧、关闭按钮左侧。
       仅待出库单据可拣货出库（与出库列表操作列同一状态判断） -->
     <div v-if="detail && detail.status === OUTBOUND_STATUS.PENDING" class="header-actions">
-      <el-button type="primary" @click="handlePick">拣货出库</el-button>
+      <el-button type="primary" size="small" @click="handlePick">拣货出库</el-button>
     </div>
 
     <div v-loading="isLoading" class="outbound-detail">
@@ -22,7 +22,7 @@
           <!-- 商品信息：缩略图 + 名称 -->
           <template #goods="{ row }">
             <div class="goods-cell flex">
-              <el-image :src="row.image" :preview-src-list="[row.image]" preview-teleported class="goods-img" />
+              <el-image :src="row.image" :preview-src-list="[row.image]" class="goods-img" />
               <span class="goods-name">{{ row.name }}</span>
             </div>
           </template>
@@ -42,16 +42,16 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import { getCurrentInstance } from "vue";
 import InfoSelection from "../../components/InfoSelection.vue";
 import BaseTable from "@/components/BaseTable/index.vue";
-import { DRAWER_SIZE } from "@/constants/popupSize.ts";
-import { outboundPickApi } from "@/api/inventory.ts";
-import { OUTBOUND_STATUS } from "../constants.ts";
-import { PAYMENT_STATUS } from "../../constants.ts";
-import { useOutboundDetail } from "../composables/useOutboundDetail.ts";
-import { getSpecName, getProductCode, getBarcode } from "../../utils.ts";
+import { DRAWER_SIZE } from "@/constants/popupSize";
+import { outboundPickApi } from "@/api/inventory";
+import { OUTBOUND_STATUS } from "../constants";
+import { PAYMENT_STATUS } from "../../constants";
+import { useOutboundDetail } from "../composables/useOutboundDetail";
+import { getSpecName, getProductCode, getBarcode } from "../../utils";
 
 export default {
   name: "OutboundDetail",

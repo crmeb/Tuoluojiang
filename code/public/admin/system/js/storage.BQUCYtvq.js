@@ -1,0 +1,1 @@
+import{n as e}from"./resourceUtil.BaRQTBQD.js";function t(t,n=null){try{let r=localStorage.getItem(t);return r?e(JSON.parse(r)):n}catch(e){return console.warn(`[getStorageJson] 解析 "${t}" 失败:`,e),n}}function n(t,n){try{localStorage.setItem(t,JSON.stringify(e(n)))}catch(e){console.warn(`[setStorageJson] 写入 "${t}" 失败:`,e)}}export{n,t};

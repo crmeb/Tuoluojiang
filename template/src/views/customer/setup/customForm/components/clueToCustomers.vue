@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="dialogTableVisible" title="线索转客户字段设置">
+  <el-dialog :visible.sync="dialogTableVisible" title="线索转客户字段设置">
     <div class="tips">将线索转换为客户，请选择线索要转换到的客户字段</div>
     <el-table :data="gridData" :height="450">
       <el-table-column label="线索字段" property="name">
@@ -35,16 +35,15 @@
     </el-table>
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="dialogTableVisible = false">取消</el-button>
-        <el-button type="primary" @click="submit">确定</el-button>
+        <el-button size="small" @click="dialogTableVisible = false">取消</el-button>
+        <el-button size="small" type="primary" @click="submit">确定</el-button>
       </div>
     </template>
   </el-dialog>
 </template>
 <script>
-import { getFormListApi } from '@/api/form.ts'
+import { getFormListApi } from '@/api/form'
 export default {
-  emits: ['gridData'],
   props: {
     clueList: {
       type: Array,
@@ -122,7 +121,7 @@ export default {
   font-size: 16px;
   color: #1890ff;
 }
-:deep(.el-select .el-tag__close) {
+::v-deep .el-select .el-tag__close.el-icon-close {
   background: #f4f4f5;
   font-size: 14px;
 }

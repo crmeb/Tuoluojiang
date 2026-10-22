@@ -90,9 +90,9 @@
 </template>
 
 <script>
-import { EventBus } from '@/libs/bus.ts'
-import { fontFamilyList, fontSizeList } from '../config.ts'
-import { RICH_TEXT_SELECTION_CHANGE } from '../event-constant.ts';
+import { EventBus } from '@/libs/bus'
+import { fontFamilyList, fontSizeList } from '../config'
+import { RICH_TEXT_SELECTION_CHANGE } from '../event-constant';
 import Color from './Color.vue'
 
 export default {
@@ -125,7 +125,7 @@ export default {
   mounted() {
     document.body.append(this.$refs.richTextToolbar)
   },
-  beforeUnmount() {
+  beforeDestroy() {
     EventBus.$off(RICH_TEXT_SELECTION_CHANGE, this.onRichTextSelectionChange)
   },
   methods: {

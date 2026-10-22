@@ -13,7 +13,7 @@
 </template>
 
 <script>
-import i18n from '@/utils/i18n.ts'
+import i18n from '@/utils/i18n'
 
 export default {
   name: 'type-editor',
@@ -36,3 +36,4 @@ export default {
 
 <style lang="scss" scoped>
 </style>
+@/utils/i18ns

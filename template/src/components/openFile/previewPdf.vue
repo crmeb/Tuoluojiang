@@ -10,7 +10,7 @@
       <div v-else-if="viewStatus === 'error'" class="pdf-viewer__tip is-error">
         <i class="el-icon-warning-outline" />
         <span>{{ errorMsg }}</span>
-        <el-button plain @click="load">重新加载</el-button>
+        <el-button size="mini" plain @click="load">重新加载</el-button>
       </div>
 
       <div v-else class="pdf-viewer__pages">
@@ -101,7 +101,7 @@ import * as PDFJS from 'pdfjs-dist'
 // 写成 new URL('pdfjs-dist/build/...', import.meta.url) 是 webpack 习惯，
 // 裸包名不会被 Vite 重写，运行时会解析成组件目录下的相对路径而 404
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
-import { BASE_URL } from '@/config/env.ts'
+import { BASE_URL } from '@/config/env'
 
 type ViewStatus = 'loading' | 'ready' | 'error'
 type PageStatus = 'idle' | 'rendering' | 'done'
@@ -655,9 +655,9 @@ defineExpose({ reload: load, goToPage })
   --scale-round-y: 1px;
 }
 
-.pdf-page__text {
-  :deep(span),
-  :deep(br) {
+.pdf-page__text ::v-deep {
+  span,
+  br {
     position: absolute;
     color: transparent;
     white-space: pre;
@@ -666,8 +666,8 @@ defineExpose({ reload: load, goToPage })
     user-select: text;
   }
 
-  :deep(> :not(.markedContent)),
-  :deep(.markedContent span:not(.markedContent)) {
+  > :not(.markedContent),
+  .markedContent span:not(.markedContent) {
     z-index: 1;
     --font-height: 0;
     --scale-x: 1;
@@ -676,11 +676,11 @@ defineExpose({ reload: load, goToPage })
     transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
   }
 
-  :deep(.markedContent) {
+  .markedContent {
     display: contents;
   }
 
-  :deep(span::selection) {
+  span::selection {
     background: rgba(64, 158, 255, 0.35);
   }
 }

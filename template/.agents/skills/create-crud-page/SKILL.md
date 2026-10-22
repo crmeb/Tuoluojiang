@@ -1,11 +1,11 @@
 ---
 name: create-crud-page
-description: 在 src/views/业务目录/ 下生成标准 CRUD 列表页（查询头 + 表格 + 新增/编辑弹窗 + 删除确认 + 详情抽屉），完全套用本项目 oaFromBox + customizeTable 模式。当用户说"加一个列表页/CRUD 页/管理页"、"做一个增删改查页面"时触发。
+description: 在 src/views/<scope>/ 下生成标准 CRUD 列表页（查询头 + 表格 + 新增/编辑弹窗 + 删除确认 + 详情抽屉），完全套用本项目 oaFromBox + customizeTable 模式。当用户说"加一个列表页/CRUD 页/管理页"、"做一个增删改查页面"时触发。
 ---
 
 # create-crud-page
 
-为本项目（Vue 3 + Element Plus）生成一个标准的业务 CRUD 列表页，复用项目内已封装的 `oaFromBox`（搜索/标题/操作按钮）+ `customizeTable`（可定制列、跨页选中、表头拖拽）的统一壳子。
+为本项目（Vue 2.7 + Element UI）生成一个标准的业务 CRUD 列表页，复用项目内已封装的 `oaFromBox`（搜索/标题/操作按钮）+ `customizeTable`（可定制列、跨页选中、表头拖拽）的统一壳子。
 
 ## 必须遵循的项目约定
 
@@ -33,8 +33,8 @@ description: 在 src/views/业务目录/ 下生成标准 CRUD 列表页（查询
    - 操作列用具名插槽 `<template #options="{ data }">`
 6. **权限**：操作按钮用 `v-hasPermi="['<scope>:<feature>:<action>']"` 指令控制（指令已全局注册）。
 7. **删除确认**：`await proxy.$modalSure('xxx 提示文案')`，`proxy` 取自 `getCurrentInstance()`。**不要**改写成裸函数调用——`modalSure` 内部用 `this.$t` 取文案，脱离实例上下文会抛错。
-8. **轻提示**：成功提示由 `request.ts` 根据接口返回 `tips/message` 自动弹出，**业务代码不要再** `$message.success`。
-9. **跳转**：`import { roterPre } from '@/settings'` + `import router from '@/router'`，然后 `router.push({ path: `${roterPre}/...` })`。本项目使用 Vue Router 5；新组件可用 `useRouter` / `useRoute`，复用存量代码时也可沿用路由单例。
+8. **轻提示**：成功提示由 `request.js` 根据接口返回 `tips/message` 自动弹出，**业务代码不要再** `$message.success`。
+9. **跳转**：`import { roterPre } from '@/settings'` + `import router from '@/router'`，然后 `router.push({ path: `${roterPre}/...` })`。本项目 vue-router 3 **没有** `useRouter` / `useRoute`，直接用单例；模板里的 `$route` 仍可用（模板作用域挂在实例上）。
 10. **API 调用**：`import { xxxListApi, xxxDeleteApi, xxxExportApi } from '@/api/<scope>'`（参考 `create-api-module` skill 的命名）。
 11. **弹窗/侧滑尺寸**：生成新增/编辑弹窗、详情抽屉前必须读取 `docs/ai-ui-popup-guidelines.md`，并从 `@/constants/popupSize` 引入 `DIALOG_SIZE` / `DRAWER_SIZE`，禁止新增散落的魔法尺寸。
 
@@ -81,9 +81,9 @@ description: 在 src/views/业务目录/ 下生成标准 CRUD 列表页（查询
            @getTableData="getTableData"
          >
            <template #options="{ data }">
-             <el-button v-hasPermi="['<scope>:<feature>:view']" type="primary" link @click="handleView(data)">查看</el-button>
-             <el-button v-hasPermi="['<scope>:<feature>:edit']" type="primary" link @click="handleEdit(data)">编辑</el-button>
-             <el-button v-hasPermi="['<scope>:<feature>:delete']" type="primary" link @click="handleDelete(data)">删除</el-button>
+             <el-button v-hasPermi="['<scope>:<feature>:view']" type="text" @click="handleView(data)">查看</el-button>
+             <el-button v-hasPermi="['<scope>:<feature>:edit']" type="text" @click="handleEdit(data)">编辑</el-button>
+             <el-button v-hasPermi="['<scope>:<feature>:delete']" type="text" @click="handleDelete(data)">删除</el-button>
            </template>
          </customizeTable>
        </el-card>
@@ -109,7 +109,7 @@ description: 在 src/views/业务目录/ 下生成标准 CRUD 列表页（查询
      name: string
    }
 
-   // $modalSure 挂在 app.config.globalProperties 上，且内部依赖 this.$t，只能经 proxy 调用
+   // $modalSure 挂在 Vue.prototype 上，且内部依赖 this.$t，只能经 proxy 调用
    const { proxy } = getCurrentInstance()!
 
    const keyword = '<scope>_<feature>'      // 业务标识（决定字典/表头命名空间）
@@ -201,14 +201,14 @@ description: 在 src/views/业务目录/ 下生成标准 CRUD 列表页（查询
    </script>
    ```
 
-   > 三点与旧写法的差异：①组件不再进 `components` 选项，`import` 进来即可直接在模板用；②模板 ref 名与变量名对齐（`ref="editDialogRef"` / `ref="tableRef"` / `ref="fromBoxRef"`），且**不需要 `return`**；③需要组件名时可使用 `defineOptions({ name: ... })`。
+   > 三点与旧写法的差异：①组件不再进 `components` 选项，`import` 进来即可直接在模板用；②模板 ref 名与变量名对齐（`ref="editDialogRef"` / `ref="tableRef"` / `ref="fromBoxRef"`），且**不需要 `return`**；③`name` 挪进了伴生 `<script lang="ts">` 块。
 
 3. **生成 `components/editDialog.vue`**（若需要新增/编辑）骨架：
 
    ```vue
    <template>
      <el-dialog
-       v-model="visible"
+       :visible.sync="visible"
        :title="form.id ? '编辑' : '新增'"
        :width="DIALOG_SIZE.SM"
        :close-on-click-modal="false"
@@ -284,7 +284,7 @@ description: 在 src/views/业务目录/ 下生成标准 CRUD 列表页（查询
 
    ```vue
    <template>
-     <el-drawer v-model="visible" title="详情" :size="DRAWER_SIZE.SM" :close-on-click-modal="false">
+     <el-drawer :visible.sync="visible" title="详情" :size="DRAWER_SIZE.SM" :wrapper-closable="false">
        <div v-loading="loading" class="p20">
          <el-descriptions :column="1" border>
            <el-descriptions-item label="名称">{{ data.name || '--' }}</el-descriptions-item>
@@ -333,7 +333,7 @@ description: 在 src/views/业务目录/ 下生成标准 CRUD 列表页（查询
 ## 不要做的事
 
 - 不要在列表页里直接 `axios.get`，必须用 `@/api/...`
-- Vue 3 可使用 `defineOptions`、`defineModel` 和外部导入的 props 类型；按组件需要选择
+- 不要在 `<script setup>` 里写 `defineOptions`（Vue 2.7 没有）、`defineModel`（同上），也不要给 `defineProps<T>()` 传从别处 `import` 进来的类型（Vue 2.7 解析不了跨文件类型）
 - 不要漏掉弹窗 / 抽屉里的 `defineExpose`，否则父组件 `ref` 拿到的是空壳
 - 不要重新实现搜索头/表格容器，**复用** `oaFromBox` + `customizeTable`
 - 不要在成功后再写 `$message.success`，request 拦截器已统一处理

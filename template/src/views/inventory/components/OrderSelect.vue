@@ -1,5 +1,5 @@
 <template>
-  <el-select v-bind="$attrs" :model-value="modelValue" :loading="isLoading" filterable remote clearable
+  <el-select v-bind="$attrs" :value="value" :loading="isLoading" filterable remote clearable
     :remote-method="remoteSearch" :placeholder="placeholder" @change="handleChange"
     @visible-change="handleVisibleChange">
     <el-option v-for="item in options" :key="item.id" :label="item.contract_no" :value="item.id" />
@@ -8,15 +8,18 @@
 
 <script>
 import { ref } from 'vue'
-import { clientContractListApi } from '@/api/enterprise.ts'
-import { useLoading } from '@/composables/useLoading.ts'
+import { clientContractListApi } from '@/api/enterprise'
+import { useLoading } from '@/composables/useLoading'
 
 export default {
   name: 'OrderSelect',
   inheritAttrs: false,
-  emits: ['update:modelValue', 'change', 'select'],
+  model: {
+    prop: 'value',
+    event: 'change'
+  },
   props: {
-    modelValue: {
+    value: {
       type: [String, Number],
       default: ''
     },
@@ -54,7 +57,6 @@ export default {
     }
 
     const handleChange = (val) => {
-      emit('update:modelValue', val)
       emit('change', val)
       // 同步回传选中订单项，便于父级取订单编号（contract_no）等字段
       emit('select', options.value.find((item) => item.id === val) || null)
@@ -80,3 +82,23 @@ export default {
   }
 }
 </script>
+
+<style scoped lang="scss">
+:deep(.el-input) {
+  --rotate: 180deg;
+
+  &.is-focus {
+    --rotate: 0deg;
+  }
+
+  // 仅改写下拉箭头字形；clearable 的清空图标与箭头共用 .el-select__caret.el-input__icon，
+  // 需排除，否则清空按钮会被画成箭头，用户以为在展开下拉实则触发清空
+  .el-select__caret.el-input__icon:not(.el-icon-circle-close) {
+    transition: transform 0.3s;
+    rotate: var(--rotate);
+    &::before {
+      content: '\e6df';
+    }
+  }
+}
+</style>

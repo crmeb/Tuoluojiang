@@ -1,9 +1,9 @@
 <template>
-  <el-drawer v-model="isOpen" :size="DRAWER_SIZE.MD" title="入库单详情" class="inbound-detail-drawer" append-to-body>
+  <el-drawer :visible.sync="isOpen" :size="DRAWER_SIZE.MD" title="入库单详情" custom-class="inbound-detail-drawer" append-to-body>
     <!-- 头部操作按钮组：绝对定位到标题栏右侧、关闭按钮左侧。
       仅待入库单据可入库（与入库列表操作列同一状态判断） -->
     <div v-if="detail && detail.status === INBOUND_STATUS.PENDING" class="header-actions">
-      <el-button type="primary" @click="handleInbound">入库</el-button>
+      <el-button type="primary" size="small" @click="handleInbound">入库</el-button>
     </div>
 
     <div v-loading="isLoading" class="inbound-detail">
@@ -22,7 +22,7 @@
           <!-- 商品信息：缩略图 + 名称 -->
           <template #goods="{ row }">
             <div class="goods-cell flex">
-              <el-image :src="row.image" :preview-src-list="[row.image]" preview-teleported class="goods-img" />
+              <el-image :src="row.image" :preview-src-list="[row.image]" class="goods-img" />
               <span class="goods-name">{{ row.name }}</span>
             </div>
           </template>
@@ -51,14 +51,14 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import InfoSelection from "../../components/InfoSelection.vue";
 import BaseTable from "@/components/BaseTable/index.vue";
-import { DRAWER_SIZE } from "@/constants/popupSize.ts";
-import { inboundDoApi } from "@/api/inventory.ts";
-import { INBOUND_STATUS } from "../constants.ts";
-import { useInboundDetail } from "../composables/useInboundDetail.ts";
-import { getSpecName, getProductCode, getBarcode } from "../../utils.ts";
+import { DRAWER_SIZE } from "@/constants/popupSize";
+import { inboundDoApi } from "@/api/inventory";
+import { INBOUND_STATUS } from "../constants";
+import { useInboundDetail } from "../composables/useInboundDetail";
+import { getSpecName, getProductCode, getBarcode } from "../../utils";
 
 export default {
   name: "InboundDetail",
@@ -158,7 +158,7 @@ export default {
 }
 
 // 明细备注气泡：允许换行，避免长备注拉成一条超宽气泡。
-// 宽度不在此声明——styles/element-ui.scss 已给 tooltip 统一限宽，直接沿用
+// 宽度不在此声明——styles/element-ui.scss 已给 .el-tooltip__popper 统一限宽，直接沿用
 .goods-remark-tooltip {
   white-space: normal;
   word-break: break-all;

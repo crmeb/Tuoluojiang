@@ -15,6 +15,7 @@
               :placeholder="item.placeholder || `请输入${item.title}`"
               :maxlength="item.maxlength"
               :disabled="item.disabled"
+              size="small"
             />
             <!-- 密码输入 -->
             <el-input
@@ -24,6 +25,7 @@
               :disabled="item.disabled"
               type="password"
               show-password
+              size="small"
             />
             <!-- 数字输入 -->
             <el-input-number
@@ -34,6 +36,7 @@
               :max="item.max"
               :precision="item.precision"
               :disabled="item.disabled"
+              size="small"
               style="width: 100%"
             />
             <!-- 文本域 -->
@@ -45,6 +48,7 @@
               :rows="item.rows || 3"
               :maxlength="item.maxlength"
               :disabled="item.disabled"
+              size="small"
             />
             <!-- 开关 -->
             <el-switch
@@ -65,7 +69,7 @@
               <el-radio
                 v-for="opt in item.options"
                 :key="opt.value"
-                :label="opt.value" :value="opt.value"
+                :label="opt.value"
               >
                 {{ opt.label }}
               </el-radio>
@@ -79,7 +83,7 @@
               <el-checkbox
                 v-for="opt in item.options"
                 :key="opt.value"
-                :label="opt.value" :value="opt.value"
+                :label="opt.value"
               >
                 {{ opt.label }}
               </el-checkbox>
@@ -92,6 +96,7 @@
               :disabled="item.disabled"
               :multiple="item.multiple"
               filterable
+              size="small"
               clearable
               style="width: 100%"
             >
@@ -109,8 +114,9 @@
               :placeholder="item.placeholder || `请选择${item.title}`"
               :disabled="item.disabled"
               type="date"
+              size="small"
               style="width: 100%"
-              value-format="YYYY-MM-DD"
+              value-format="yyyy-MM-dd"
             />
             <!-- 时间选择 -->
             <el-time-picker
@@ -118,6 +124,7 @@
               v-model="form[item.field]"
               :placeholder="item.placeholder || `请选择${item.title}`"
               :disabled="item.disabled"
+              size="small"
               style="width: 100%"
             />
             <!-- 图片/附件选择 (frame/upload 类型) -->
@@ -136,6 +143,7 @@
               v-model="form[item.field]"
               :placeholder="item.placeholder || `请输入${item.title}`"
               :disabled="item.disabled"
+              size="small"
             />
             <!-- 说明文字 (info) -->
             <div v-if="item.info" class="form-item-info">
@@ -146,14 +154,14 @@
       </el-row>
 
       <el-form-item>
-        <el-button :loading="loading" type="primary" @click="submitForm">立即提交</el-button>
+        <el-button :loading="loading" size="small" type="primary" @click="submitForm">立即提交</el-button>
       </el-form-item>
     </el-form>
 
     <!-- 图片选择对话框 -->
     <el-dialog
       title="选择图片"
-      v-model="imageDialogVisible"
+      :visible.sync="imageDialogVisible"
       width="850px"
       append-to-body
     >
@@ -168,15 +176,12 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useAppConfigStore } from '@/stores/appConfig.ts'
-import { cloudFileSetupApi } from '@/api/config.ts'
+import { cloudFileSetupApi } from '@/api/config'
 import uploadPicture from '@/components/uploadPicture/index'
-import request from '@/api/request.ts'
+import request from '@/api/request'
 
 export default {
   name: 'ConfigForm',
-  emits: ['submit'],
   components: {
     uploadPicture
   },
@@ -196,9 +201,6 @@ export default {
       type: Object,
       default: () => null
     }
-  },
-  computed: {
-    ...mapStores(useAppConfigStore)
   },
   data() {
     return {
@@ -351,7 +353,7 @@ export default {
     handleImageSelected(data) {
       if (this.currentField) {
         const url = data.att_dir || (Array.isArray(data) && data[0] && data[0].att_dir) || data
-        this.form[this.currentField] = url
+        this.$set(this.form, this.currentField, url)
         this.currentField = ''
       }
       this.imageDialogVisible = false
@@ -407,7 +409,7 @@ export default {
      */
     async getConfig() {
       try {
-        await this.appConfigStore.fetchConfig(true)
+        await this.$store.dispatch('appConfig/fetchConfig', true)
       } catch (error) {
         console.error('获取配置失败:', error)
       }
@@ -419,8 +421,6 @@ export default {
 <style lang="scss" scoped>
 .picBox {
   display: inline-block;
-  // 豁免全局表单内容区 div 占满整行的规则，点击区域只覆盖图片
-  width: auto;
   cursor: pointer;
 
   .pictrue {

@@ -3,9 +3,9 @@
   <div>
     <el-dialog
       :title="fromData.title"
-      v-model="dialogVisible"
+      :visible.sync="dialogVisible"
       :width="fromData.width"
-      :close-on-click-modal="false"
+      :wrapper-closable="false"
       :before-close="handleClose"
     >
       <div class="body">
@@ -38,9 +38,9 @@
             </template>
             <template v-if="fromData.type === 5 || fromData.type == 7">
               <el-form-item label="选择方式：" prop="other" class="m0">
-                <el-radio-group v-model="type" class="flex">
-                  <el-radio label="0" value="0">按人员</el-radio>
-                  <el-radio label="1" value="1">按部门</el-radio>
+                <el-radio-group size="small" v-model="type" class="flex">
+                  <el-radio label="0">按人员</el-radio>
+                  <el-radio label="1">按部门</el-radio>
                 </el-radio-group>
               </el-form-item>
               <el-form-item label="领用对象：" prop="price">
@@ -75,6 +75,7 @@
                         v-model="num"
                         controls-position="right"
                         :precision="0"
+                        size="small"
                         :min="1"
                         :max="scope.row.stock"
                         ></el-input-number>
@@ -89,8 +90,8 @@
               <el-form-item style="margin-bottom: 10px" label="维修原因：">{{ markDefault.mark }}</el-form-item>
               <el-form-item label="维修处置：" prop="other">
                 <el-radio-group v-model="form.other">
-                  <el-radio :label="0" :value="0">入库 <span>(入库之后该物资进入仓库，状态为未使用，可重新领用)</span></el-radio>
-                  <el-radio :label="4" :value="4">报废 <span>(报废之后该物资状态为已报废，不可进行领用)</span></el-radio>
+                  <el-radio :label="0">入库 <span>(入库之后该物资进入仓库，状态为未使用，可重新领用)</span></el-radio>
+                  <el-radio :label="4">报废 <span>(报废之后该物资状态为已报废，不可进行领用)</span></el-radio>
                 </el-radio-group>
               </el-form-item>
               <el-form-item label="花费(元)：" prop="price">
@@ -98,6 +99,7 @@
                   v-model="form.price"
                   :precision="2"
                   controls-position="right"
+                  size="small"
                   :min="0"
                 ></el-input-number>
               </el-form-item>
@@ -109,6 +111,7 @@
                   :controls="false"
                   :min="0"
                   :precision="0"
+                  size="small"
                   placeholder="请输入入库数量"
                 ></el-input-number>
               </el-form-item>
@@ -118,6 +121,7 @@
                   :controls="false"
                   :min="0"
                   :precision="2"
+                  size="small"
                   placeholder="请输入单价"
                 ></el-input-number>
               </el-form-item>
@@ -139,8 +143,8 @@
       </div>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="handleClose">取消</el-button>
-          <el-button :loading="loading" type="primary" @click="handleAdd">确定</el-button>
+          <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
+          <el-button size="small" :loading="loading" type="primary" @click="handleAdd">{{ $t('public.ok') }}</el-button>
         </div>
       </template>
     </el-dialog>
@@ -148,15 +152,13 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { storageRecordRepairApi, storageRecordSaveApi } from '@/api/administration.ts'
+import { storageRecordRepairApi, storageRecordSaveApi } from '@/api/administration'
 
 export default {
-  emits: ['isOk'],
   name: 'MaterialDialog',
   components: {
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
-    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department'))
+    selectMember: () => import('@/components/form-common/select-member'),
+    selectDepartment: () => import('@/components/form-common/select-department')
   },
   props: {
     fromData: {
@@ -347,19 +349,19 @@ export default {
 </script>
 
 <style scoped lang="scss">
-:deep(.el-input-number) {
+::v-deep .el-input-number--medium {
   width: 100%;
   .el-input__inner {
     text-align: left;
   }
 }
 .el-row {
-  :deep(.el-form-item) {
+  ::v-deep .el-form-item {
     margin-bottom: 0;
   }
 }
 
-:deep(.el-radio) {
+::v-deep .el-radio {
   display: block;
   // margin-bottom: 14px;
   &:last-of-type {
@@ -372,7 +374,7 @@ export default {
     }
   }
 }
-:deep(.el-input-number) {
+::v-deep .el-input-number {
   width: 100%;
   .el-input__inner {
     text-align: left;
@@ -383,7 +385,7 @@ export default {
   // border-top: 1px solid #d8d8d8;
   padding: 0px 20px 0 20px;
 }
-:deep(.el-dialog__header) {
+::v-deep .el-dialog__header {
   height: 46px;
   display: flex;
   align-items: center;
@@ -392,7 +394,7 @@ export default {
     top: 16px;
   }
 }
-:deep(.el-dialog__body) {
+::v-deep .el-dialog__body {
   padding-top: 0;
 }
 </style>

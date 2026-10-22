@@ -42,20 +42,18 @@
   </div>
 </template>
 <script>
-import { defineComponent } from 'vue'
+import Vue from 'vue'
 import '@wangeditor-next/editor/dist/css/style.css'
-import { uploader } from '@/utils/uploadCloud.ts'
-import { Editor, Toolbar } from '@wangeditor-next/editor-for-vue'
-import { normalizePastedTableHtml } from '@/utils/wangeditor/tablePaste.ts'
-import { TOOLBAR_CONFIG } from './oa-wangeditor-config.ts'
+import { uploader } from '@/utils/uploadCloud'
+import { Editor, Toolbar } from '@wangeditor-next/editor-for-vue2'
+import { normalizePastedTableHtml } from '@/utils/wangeditor/tablePaste'
+import { TOOLBAR_CONFIG } from './oa-wangeditor-config'
 
-export default defineComponent({
+export default Vue.extend({
   components: {
     Editor,
     Toolbar
   },
-  // 声明后 @input 不会再透传到根节点、被编辑区的原生 input 事件误触发
-  emits: ['input'],
   props: {
     content: {
       type: String,
@@ -326,7 +324,7 @@ export default defineComponent({
     }
   },
 
-  beforeUnmount() {
+  beforeDestroy() {
     const editor = this.editor
     if (editor == null) return
     // 组件销毁时，及时销毁编辑器
@@ -357,11 +355,11 @@ export default defineComponent({
 })
 </script>
 <style lang="scss" scoped>
-:deep(.w-e-toolbar) {
+::v-deep .w-e-toolbar {
   border: 1px solid #eee;
   border-bottom: none;
 }
-:deep(.w-e-text-container) {
+::v-deep .w-e-text-container {
   /* 使用最小高度避免裁剪底部表格操作条 */
   height: var(--height);
   border-top: none;
@@ -373,10 +371,10 @@ export default defineComponent({
   }
 }
 
-:deep(.w-e-text-placeholder) {
+::v-deep .w-e-text-placeholder {
   padding: 12px;
 }
-:deep(.w-e-scroll) {
+::v-deep .w-e-scroll {
   overflow-y: auto;
   scrollbar-width: none; /* firefox */
   -ms-overflow-style: none; /* IE 10+ */

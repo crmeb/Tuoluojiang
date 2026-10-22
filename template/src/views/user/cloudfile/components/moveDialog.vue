@@ -1,12 +1,12 @@
 <template>
   <div>
     <!-- 移动弹窗 -->
-    <el-dialog v-model="dialogVisible" width="480px" :before-close="handleClose">
-      <template #header>
+    <el-dialog :visible.sync="dialogVisible" width="480px" :before-close="handleClose">
+      <template #title>
         <div>
-          <el-tabs v-model="name" class="tab-move" @tab-change="handleTabClick">
-            <!--<el-tab-pane label="我的文件" name="1" />-->
-            <el-tab-pane label="企业空间" name="2" />
+          <el-tabs v-model="name" class="tab-move" @tab-click="handleTabClick">
+            <!--<el-tab-pane :label="$t('file.myfiles')" name="1" />-->
+            <el-tab-pane :label="$t('file.enterprisespace')" name="2" />
           </el-tabs>
         </div>
       </template>
@@ -36,8 +36,8 @@
       </div>
       <template #footer>
         <div class="dialog-footer text-right">
-          <el-button @click="handleClose">取消</el-button>
-          <el-button type="primary" @click="handleSave">确定</el-button>
+          <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
+          <el-button size="small" type="primary" @click="handleSave">{{ $t('public.ok') }}</el-button>
         </div>
       </template>
     </el-dialog>
@@ -55,10 +55,9 @@ import {
   folderSpaceEntDirApi,
   folderSpaceEntMoveApi,
   folderSpaceListApi
-} from '@/api/cloud.ts'
+} from '@/api/cloud'
 
 export default {
-  emits: ['handlerMove'],
   name: 'MoveDialog',
   props: {
     moveData: {
@@ -121,13 +120,15 @@ export default {
     handleClick(node, data) {
       this.fileId = node.id
     },
-    handleTabClick(name) {
-      if (name == 1) {
-        this.getFolderDirList()
-      } else {
-        this.getFolderSpaceEntDir()
+    handleTabClick(e) {
+      if (this.activeIndex !== this.name) {
+        if (this.name == 1) {
+          this.getFolderDirList()
+        } else {
+          this.getFolderSpaceEntDir()
+        }
       }
-      this.activeIndex = name
+      this.activeIndex = e.name
     },
 
     handlerEmit() {
@@ -219,28 +220,28 @@ export default {
 
 <style scoped lang="scss">
 .tab-move {
-  :deep(.el-tabs__nav-wrap::after) {
+  ::v-deep .el-tabs__nav-wrap::after {
     height: 0;
   }
-  :deep(.el-tabs__header) {
+  ::v-deep .el-tabs__header {
     margin: 0;
   }
-  :deep(.el-tabs__active-bar) {
+  ::v-deep .el-tabs__active-bar {
     height: 0;
   }
-  :deep(.el-tabs__item) {
+  ::v-deep .el-tabs__item {
     padding-bottom: 15px;
     height: 0;
     line-height: 0;
   }
 }
-:deep(.el-tabs__item.is-active) {
+::v-deep .el-tabs__item.is-active {
   color: #303133;
   font-weight: 600;
 }
 .tree-box {
   height: 340px;
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
 }

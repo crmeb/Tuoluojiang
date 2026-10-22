@@ -2,7 +2,7 @@
 <template>
   <el-dialog
     :title="config.title"
-    v-model="dialogVisible"
+    :visible.sync="dialogVisible"
     width="540px"
     :append-to-body="true"
     :before-close="handleClose"
@@ -26,7 +26,7 @@
         <template #label>
           <span>选择订单： </span>
         </template>
-        <el-select v-model="rules.cid" placeholder="请选择订单">
+        <el-select size="small" v-model="rules.cid" placeholder="请选择订单">
           <el-option v-for="item in contractData" :key="item.id" :label="item.title" :value="item.id" />
         </el-select>
       </el-form-item>
@@ -48,6 +48,7 @@
           <span>支出金额(元)：</span>
         </template>
         <el-input-number
+          size="small"
           v-model="rules.num"
           :controls="false"
           :min="0"
@@ -61,7 +62,7 @@
         <template #label>
           <span>支付方式：</span>
         </template>
-        <el-select v-model="rules.type_id" placeholder="请选择支付方式">
+        <el-select size="small" v-model="rules.type_id" placeholder="请选择支付方式">
           <el-option v-for="item in paymentOptions" :key="item.id" :label="item.name" :value="item.id" />
         </el-select>
       </el-form-item>
@@ -71,7 +72,7 @@
         <template #label>
           <span>支出时间：</span>
         </template>
-        <el-date-picker v-model="rules.date" type="datetime">
+        <el-date-picker v-model="rules.date" size="small" picker-options="expireTimeOption" type="datetime">
         </el-date-picker>
       </el-form-item>
 
@@ -111,15 +112,15 @@
     </el-form>
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleClose">取消</el-button>
-        <el-button :loading="loading" type="primary" @click="handleConfirm">确定</el-button>
+        <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
+        <el-button size="small" :loading="loading" type="primary" @click="handleConfirm">{{ $t('public.ok') }}</el-button>
       </div>
     </template>
   </el-dialog>
 </template>
 
 <script>
-import dayjs from 'dayjs'
+import moment from 'moment'
 import {
   selectContractListApi,
   enterprisePayTypeApi,
@@ -127,13 +128,12 @@ import {
   billCateApi,
   clientBillEditApi,
   billFinanceApi
-} from '@/api/enterprise.ts'
-import { clientBillStatusApi } from '@/api/client.ts'
-import { getToken } from '@/utils/auth.ts'
-import { uploader } from '@/utils/uploadCloud.ts'
+} from '@/api/enterprise'
+import { clientBillStatusApi } from '@/api/client'
+import { getToken } from '@/utils/auth'
+import { uploader } from '@/utils/uploadCloud'
 
 export default {
-  emits: ['isOk'],
   name: 'ContractDialog',
   props: {
     config: {
@@ -224,7 +224,7 @@ export default {
 
     // 获取当前时间
     getTime() {
-      this.rules.date = dayjs().format('YYYY-MM-DD HH:mm:ss')
+      this.rules.date = moment().format('YYYY-MM-DD HH:mm:ss')
     },
 
     // 获取支出分类
@@ -381,7 +381,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
-:deep(.el-alert) {
+::v-deep .el-alert {
   padding-left: 30px;
   border: 1px solid #1890ff;
   color: #1890ff;
@@ -390,12 +390,12 @@ export default {
   line-height: 1;
   margin-bottom: 20px;
 }
-:deep(.el-alert--info .el-alert__description) {
+::v-deep .el-alert--info .el-alert__description {
   color: #303133;
   font-size: 13px;
   font-weight: 500;
 }
-:deep(.el-alert__icon.is-big) {
+::v-deep .el-alert__icon.is-big {
   font-size: 16px;
   width: 15px;
 }
@@ -428,19 +428,19 @@ export default {
   text-align: center;
   cursor: pointer;
 }
-:deep(.el-date-editor) {
+::v-deep .el-date-editor {
   width: 100%;
 }
-:deep(.el-textarea__inner) {
+::v-deep .el-textarea__inner {
   resize: none;
 }
-:deep(.el-input-number) {
+::v-deep .el-input-number {
   width: 100%;
 }
-:deep(.el-select) {
+::v-deep .el-select {
   width: 100%;
 }
-:deep(.el-form-item:last-of-type) {
+::v-deep .el-form-item:last-of-type {
   margin-bottom: 0;
 }
 .dialog-footer {

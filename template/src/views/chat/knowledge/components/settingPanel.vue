@@ -13,7 +13,8 @@
           ref="formRef"
           :model="form"
           :rules="rules"
-          label-width="100px"
+          label-width="95px"
+          size="small"
           label-suffix="："
           class="setting-form"
         >
@@ -50,7 +51,7 @@
 
     <!-- 设计稿底部只有「保存」，用插槽覆盖组件默认的「取消 + 保存」 -->
     <FormPageFooter>
-      <el-button type="primary" :loading="isSubmitting" @click="handleSave">
+      <el-button size="small" type="primary" :loading="isSubmitting" @click="handleSave">
         保存
       </el-button>
     </FormPageFooter>
@@ -59,11 +60,11 @@
 
 <script setup lang="ts">
 import { watch } from 'vue'
-import { ElMessage as Message } from 'element-plus'
+import { Message } from 'element-ui'
 import FormPageFooter from '@/components/FormPageFooter/index.vue'
 import iconPicker from './iconPicker.vue'
 import embeddingModelSelect from './embeddingModelSelect.vue'
-import { useKnowledgeForm } from '../composables/useKnowledgeForm.ts'
+import { useKnowledgeForm } from '../composables/useKnowledgeForm'
 
 const props = defineProps<{ detail: any }>()
 

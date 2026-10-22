@@ -2,50 +2,50 @@
   <div>
     <!-- 被邀请人列表弹窗  -->
     <el-dialog
-      title="被邀请人员列表"
-      v-model="dialogFormVisible"
+      :title="$t('public.list')"
+      :visible.sync="dialogFormVisible"
       width="920px"
       :modal="true"
       :close-on-click-modal="true"
-      class="person"
+      custom-class="person"
     >
-      <el-table :data="dataTable" style="width: 100%" :max-height="500">
-        <el-table-column label="头像" min-width="100" align="center">
+      <el-table :data="dataTable" style="width: 100%">
+        <el-table-column :label="$t('setting.headportrait')" min-width="100" align="center">
           <template #default="scope">
             <img class="avatar" :src="scope.row.user.avatar" alt="" />
           </template>
         </el-table-column>
-        <el-table-column prop="user.real_name" label="姓名" min-width="100" />
-        <el-table-column prop="user.phone" label="手机号码" min-width="120" />
-        <el-table-column prop="created_at" label="邀请时间" min-width="150" />
+        <el-table-column prop="user.real_name" :label="$t('toptable.name')" min-width="100" />
+        <el-table-column prop="user.phone" :label="$t('toptable.phone')" min-width="120" />
+        <el-table-column prop="created_at" :label="$t('toptable.invitationtime')" min-width="150" />
         <el-table-column prop="user.phone" label="用户状态" min-width="100">
           <template #default="scope">
-            <el-tag size="small" v-if="scope.row.status === -1" type="warning"> 待处理 </el-tag>
-            <el-tag size="small" v-if="scope.row.status === 0" type="danger"> 已拒绝 </el-tag>
-            <el-tag size="small" v-if="scope.row.status === 1" type="info"> 已同意 </el-tag>
+            <el-tag v-if="scope.row.status === -1" type="warning" size="mini"> 待处理 </el-tag>
+            <el-tag v-if="scope.row.status === 0" type="danger" size="mini"> 已拒绝 </el-tag>
+            <el-tag v-if="scope.row.status === 1" type="info" size="mini"> 已同意 </el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="user.phone" label="审核状态" min-width="100">
           <template #default="scope">
             <template v-if="scope.row.status === 1">
-              <el-tag size="small" v-if="scope.row.verify === -1" type="danger"> 已拒绝 </el-tag>
-              <el-tag size="small" v-if="scope.row.verify === 0" type="danger"> 待审核 </el-tag>
-              <el-tag size="small" v-if="scope.row.verify === 1" type="info"> 已同意 </el-tag>
+              <el-tag v-if="scope.row.verify === -1" type="danger" size="mini"> 已拒绝 </el-tag>
+              <el-tag v-if="scope.row.verify === 0" type="danger" size="mini"> 待审核 </el-tag>
+              <el-tag v-if="scope.row.verify === 1" type="info" size="mini"> 已同意 </el-tag>
             </template>
           </template>
         </el-table-column>
-        <el-table-column width="160" label="操作">
+        <el-table-column width="160" :label="$t('toptable.operation')">
           <template #default="scope">
-            <el-button type="primary" link @click="handleDelete(scope.row.id, scope.$index)">
-              删除
+            <el-button type="text" size="small" @click="handleDelete(scope.row.id, scope.$index)">
+              {{ $t('public.delete') }}
             </el-button>
             <template v-if="scope.row.status == 1 && scope.row.verify == 0">
-              <el-button type="primary" link @click="handleAgree(scope.row.id)">
-                同意
+              <el-button type="text" size="small" @click="handleAgree(scope.row.id)">
+                {{ $t('toptable.agree') }}
               </el-button>
 
-              <el-button type="primary" link @click="handleRefuse(scope.row.id)">
-                拒绝
+              <el-button type="text" size="small" @click="handleRefuse(scope.row.id)">
+                {{ $t('toptable.refuse') }}
               </el-button>
             </template>
           </template>
@@ -63,10 +63,9 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import { getApplyApi, applyDeleteApi, applyAgreeApi, applyRefuseApi } from '@/api/user.ts'
+import { modalSure } from '@/libs/public'
+import { getApplyApi, applyDeleteApi, applyAgreeApi, applyRefuseApi } from '@/api/user'
 export default {
-  emits: ['getQuantity', 'handleInvitees'],
   name: 'InviteesTable',
   data() {
     return {
@@ -92,7 +91,7 @@ export default {
     },
     // 删除申请人
     handleDelete(id, index) {
-      modalSure('删除该申请人吗').then(() => {
+      modalSure(this.$t('setting.group.deleapply')).then(() => {
         applyDeleteApi(id).then((res) => {
           this.dataTable.splice(index, 1)
           this.getList()
@@ -125,6 +124,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+::v-deep .el-table__body-wrapper {
+  height: 500px;
+  overflow-y: auto;
+}
 ::-webkit-scrollbar-thumb {
   -webkit-box-shadow: inset 0 0 6px #ccc;
 }

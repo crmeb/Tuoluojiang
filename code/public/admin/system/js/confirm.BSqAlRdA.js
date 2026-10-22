@@ -1,0 +1,1 @@
+import{o as e}from"./chunk-vendor.Di-Ybv3u.js";var t=async(t,n,r=`删除`)=>{try{return await e.confirm(n,t,{confirmButtonText:r,cancelButtonText:`取消`,customClass:`knowledge-delete-confirm`}),!0}catch{return!1}};export{t};

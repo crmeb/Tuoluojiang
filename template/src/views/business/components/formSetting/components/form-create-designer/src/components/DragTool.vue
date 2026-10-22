@@ -2,20 +2,20 @@
   <div class="drag-tool" @click.stop="active" :class="{ active: state.active === id }">
     <!-- 编辑字段页面 -->
     <div class="drag-l">
-      <el-tooltip v-if="state.active === id && dragBtn !== false" effect="dark" content="拖拽" placement="top">
-        <div class="drag-btn _fc-drag-btn" style="cursor: move">
+      <el-tooltip effect="dark" content="拖拽" placement="top">
+        <div class="drag-btn _fc-drag-btn" v-if="state.active === id && dragBtn !== false" style="cursor: move">
           <i class="iconfont icontuozhuai"></i>
         </div>
       </el-tooltip>
     </div>
     <div class="drag-r">
-      <el-tooltip v-if="typeList.indexOf(type) == -1" effect="dark" content="添加" placement="top">
-        <div class="drag-btn" @click="$emit('add')">
+      <el-tooltip effect="dark" content="添加" placement="top">
+        <div class="drag-btn" @click="$emit('add')" v-if="typeList.indexOf(type) == -1">
           <i class="iconfont icontianjia1"></i>
         </div>
       </el-tooltip>
-      <el-tooltip v-if="typeList.indexOf(type) == -1" effect="dark" content="复制" placement="top">
-        <div class="drag-btn" @click="$emit('copy')">
+      <el-tooltip effect="dark" content="复制" placement="top">
+        <div class="drag-btn" @click="$emit('copy')" v-if="typeList.indexOf(type) == -1">
           <i class="iconfont iconfuzhi1"></i>
         </div>
       </el-tooltip>
@@ -39,7 +39,6 @@ export default {
   name: 'DragTool',
   inject: ['fcx'],
   props: ['dragBtn', 'children', 'unique', 'type'],
-  emits: ['active', 'add', 'copy', 'addChild', 'delete'],
   data() {
     return {
       typeList: [
@@ -66,7 +65,7 @@ export default {
       this.$emit('active')
     }
   },
-  beforeUnmount() {
+  beforeDestroy() {
     this.state = {}
   }
 }

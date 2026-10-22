@@ -2,22 +2,22 @@
 <template>
   <div class="station">
     <el-drawer
-      class="administration-material-fixed-record-drawer"
       :title="formData.title"
-      v-model="drawer"
+      :visible.sync="drawer"
       :direction="direction"
       :modal="true"
+      :wrapper-closable="true"
       :before-close="handleClose"
       :append-to-body="true"
       :size="formData.width"
     >
-      <template #header>
+      <template #title>
         <div class="invoice-title">
-          <div class="invoice-header">
-            <div class="invoice-left">
+          <el-row class="invoice-header">
+            <el-col class="invoice-left">
               <div class="invoice-logo"><i class="icon iconfont iconhetong"></i></div>
-            </div>
-            <div v-if="drawer" class="invoice-right">
+            </el-col>
+            <el-col v-if="drawer" class="invoice-right">
               <div class="txt1 over-text">
                 {{ formData.title }}
               </div>
@@ -29,8 +29,8 @@
                 <span class="title">物资分类：</span><span>{{ formData.data.cate.cate_name || '--' }}</span>
                 <span class="title">计量单位：</span><span>{{ formData.data.specs || '--' }}</span>
               </div>
-            </div>
-          </div>
+            </el-col>
+          </el-row>
         </div>
       </template>
 
@@ -39,7 +39,7 @@
           <el-row :gutter="14">
             <el-col :span="9">
               <el-form-item label="业务类型：">
-                <el-select v-model="where.types" @change="getSearch" clearable placeholder="业务类型">
+                <el-select v-model="where.types" @change="getSearch" size="small" clearable placeholder="业务类型">
                   <el-option v-for="(item, index) in option" :key="index" :label="item.label" :value="item.value" />
                 </el-select>
               </el-form-item>
@@ -49,6 +49,7 @@
                 <el-select
                   v-model="index"
                   filterable
+                  size="small"
                   clearable
                   placeholder="请选择部门/人员"
                   @change="getSearch"
@@ -110,7 +111,7 @@
 </template>
 
 <script>
-import { storageRecordApi, storageRecordUsersApi } from '@/api/administration.ts'
+import { storageRecordApi, storageRecordUsersApi } from '@/api/administration'
 
 export default {
   name: 'Record',
@@ -242,6 +243,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.station ::v-deep .el-drawer__body {
+  padding: 20px 20px 50px 20px;
+}
 .btn {
   width: 54px;
   height: 32px;
@@ -260,7 +264,7 @@ export default {
     margin: 0 -20px;
     padding-bottom: 14px;
     border-bottom: 1px solid rgba(216, 216, 216, 0.3);
-    :deep(.el-row) {
+    ::v-deep .el-row {
       padding: 0 20px;
       font-size: 13px;
       font-weight: 600;
@@ -270,14 +274,23 @@ export default {
 .table-box {
   height: calc(100% - 130px);
 }
-:deep(.el-select),
-:deep(.el-input-number) {
+::v-deep .el-select,
+::v-deep .el-input-number {
   width: 100%;
 }
-:deep(.el-form-item) {
+::v-deep .el-form-item {
   margin-bottom: 14px;
 }
-:deep(.el-pagination) {
+::v-deep .el-drawer__header {
+  border-bottom: none;
+  padding-bottom: 10px;
+  padding-top: 10px;
+  border-bottom: 1px solid #dcdfe6;
+}
+::v-deep .el-drawer__body {
+  padding-bottom: 20px;
+}
+::v-deep .el-pagination {
   display: flex;
   flex-pack: end;
   justify-content: flex-end;
@@ -338,20 +351,7 @@ export default {
     }
   }
 }
-</style>
-
-<style lang="scss">
-// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
-.administration-material-fixed-record-drawer .el-drawer__header {
-  border-bottom: none;
-  padding-bottom: 10px;
-  padding-top: 10px;
-  border-bottom: 1px solid #dcdfe6;
-}
-.administration-material-fixed-record-drawer .el-drawer__body {
-  padding-bottom: 20px;
-}
-.administration-material-fixed-record-drawer .el-drawer__header {
+::v-deep .el-drawer__header {
   height: 80px !important;
   line-height: none !important;
 }

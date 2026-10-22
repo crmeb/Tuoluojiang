@@ -10,6 +10,19 @@
   color: #303133;
   display: flex;
   align-items: center;
+  ::v-deep .el-input--suffix .el-input__inner {
+    border: none;
+    font-size: 12px;
+    font-family: PingFang SC-Regular, PingFang SC;
+    font-weight: 400;
+    color: #1890ff;
+    margin-left: 15px;
+  }
+  ::v-deep .el-input .el-select__caret {
+    font-size: 12px;
+    margin-top: 1px;
+    color: #606266;
+  }
 }
 
 // 卡片标题行容器
@@ -53,6 +66,6 @@
 }
 
 // 页面卡片统一圆角
-:deep(.el-card) {
+::v-deep .el-card {
   border-radius: 6px !important;
 }

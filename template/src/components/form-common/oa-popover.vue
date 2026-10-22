@@ -6,6 +6,7 @@
         v-if="searchShow"
         v-model="search"
         prefix-icon="el-icon-search"
+        size="small"
         placeholder="请输入关键字"
         clearable
         style="width: 100%"
@@ -27,14 +28,13 @@
         </div>
       </el-scrollbar>
       <template #reference>
-        <el-button type="primary">{{ title }}<i class="el-icon-arrow-down"></i></el-button>
+        <el-button size="small" type="primary">{{ title }}<i class="el-icon-arrow-down"></i></el-button>
       </template>
     </el-popover>
   </div>
 </template>
 <script>
 export default {
-  emits: ['handleClick'],
   name: '',
   components: {},
   props: {
@@ -127,7 +127,7 @@ export default {
   font-size: 13px;
 }
 
-:deep(.el-scrollbar__wrap) {
+::v-deep .el-scrollbar__wrap {
   overflow-x: hidden;
 }
 </style>

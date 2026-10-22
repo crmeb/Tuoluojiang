@@ -8,7 +8,7 @@
         </div>
         <div class="right">
           <span class="title">{{ info.name || '--' }}</span>
-          <el-tabs v-model="activeName" class="tab" @tab-change="tabChange">
+          <el-tabs v-model="activeName" class="tab" @tab-click="tabChange">
             <el-tab-pane label="任务详情" name="1" />
             <el-tab-pane label="项目资料" name="2" />
             <el-tab-pane label="项目动态" name="3" />
@@ -38,16 +38,15 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { roterPre } from '@/settings.ts'
-import { getProgramInfoApi } from '@/api/program.ts'
+import { roterPre } from '@/settings'
+import { getProgramInfoApi } from '@/api/program'
 export default {
   name: '',
   components: {
-    task: defineAsyncComponent(() => import('../programTask/index')),
-    dynamics: defineAsyncComponent(() => import('./dynamics')),
-    files: defineAsyncComponent(() => import('./components/files')),
-    addProgram: defineAsyncComponent(() => import('./components/addProgram'))
+    task: () => import('../programTask/index'),
+    dynamics: () => import('./dynamics'),
+    files: () => import('./components/files'),
+    addProgram: () => import('./components/addProgram')
   },
 
   data() {
@@ -124,7 +123,7 @@ export default {
     .right {
       padding: 11px 0 11px 0px;
       margin-left: 13px;
-      :deep(.el-tabs__active-bar) {
+      ::v-deep .el-tabs__active-bar {
         position: absolute;
         bottom: 2px;
       }
@@ -138,17 +137,17 @@ export default {
         text-transform: none;
       }
       .tab {
-        :deep(.el-tabs__nav-wrap::after) {
+        ::v-deep .el-tabs__nav-wrap::after {
           height: 0;
         }
-        :deep(.el-tabs__item) {
+        ::v-deep .el-tabs__item {
           line-height: 37px;
           font-family: PingFang SC, PingFang SC;
           font-weight: 400;
           font-size: 13px;
           color: #606266;
         }
-        :deep(.el-tabs__item.is-active) {
+        ::v-deep .el-tabs__item.is-active {
           color: #1890ff;
         }
       }

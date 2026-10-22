@@ -2,7 +2,7 @@
   <div>
     <el-dialog
       title="选择数据库"
-      v-model="show"
+      :visible.sync="show"
       :width="DIALOG_SIZE.XL"
       :close-on-click-modal="false"
       :before-close="handleClose"
@@ -30,8 +30,8 @@
 
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="handleClose">取消</el-button>
-          <el-button type="primary" @click="submitFn">确定</el-button>
+          <el-button @click="handleClose" size="small">取消</el-button>
+          <el-button type="primary" @click="submitFn" size="small">确定</el-button>
         </span>
       </template>
     </el-dialog>
@@ -41,15 +41,14 @@
 <script>
 import popover from '../../components/popover.vue'
 import databaseTable from './databaseTable.vue'
-import mavon from 'mavon-editor'
+import { mavonEditor } from 'mavon-editor'
 import 'mavon-editor/dist/css/index.css'
-import { getApplicationstoolTipApi } from '@/api/chatAi.ts'
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
+import { getApplicationstoolTipApi } from '@/api/chatAi'
+import { DIALOG_SIZE } from '@/constants/popupSize'
 
 export default {
   name: '',
-  emits: ['submit'],
-  components: { mavonEditor: mavon.mavonEditor, popover, databaseTable },
+  components: { mavonEditor, popover, databaseTable },
   props: {
     content: {
       type: String,
@@ -125,10 +124,10 @@ export default {
   font-size: 13px;
   color: #303133;
 }
-:deep(.v-note-op) {
+::v-deep .v-note-op {
   display: none !important;
 }
-:deep(.content-input-wrapper) {
+::v-deep .content-input-wrapper {
   max-height: 640px !important;
   min-height: 300px !important;
   overflow-y: auto;
@@ -136,7 +135,7 @@ export default {
   border-radius: 8px 8px 8px 8px !important;
   color: #ffffff !important;
 }
-:deep(.auto-textarea-input) {
+::v-deep .auto-textarea-input {
   // overflow: visible !important;
 
   background-color: #131418 !important;

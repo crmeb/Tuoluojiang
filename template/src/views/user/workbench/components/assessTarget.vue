@@ -1,8 +1,7 @@
 <template>
   <el-dialog
-      class="user-workbench-assess-target-dialog"
     :title="config.title"
-    v-model="dialogVisible"
+    :visible.sync="dialogVisible"
     :width="config.width"
     :append-to-body="true"
     :before-close="handleClose"
@@ -38,6 +37,7 @@
           :placeholder="config.types == 1 ? '0～' + config.data.ratio : '0～100'"
           :controls="false"
           :min="0"
+          size="small"
           :precision="0"
           :max="config.types == 1 ? config.data.ratio : 100"
         />
@@ -46,17 +46,16 @@
     </el-form>
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleClose">取消</el-button>
-        <el-button :loading="loading" type="primary" @click="handleConfirm">确定</el-button>
+        <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
+        <el-button size="small" :loading="loading" type="primary" @click="handleConfirm">{{ $t('public.ok') }}</el-button>
       </div>
     </template>
   </el-dialog>
 </template>
 
 <script>
-import { userAssessEvalApi } from '@/api/user.ts'
+import { userAssessEvalApi } from '@/api/user'
 export default {
-  emits: ['isMark'],
   name: 'MarkDialog',
   props: {
     config: {
@@ -125,28 +124,24 @@ export default {
 </script>
 
 <style scoped lang="scss">
-.assess-item {
-  margin-bottom: 0;
-}
-:deep(.el-input-number) {
-  width: 120px;
-}
-.ml8 {
-  display: inline-block;
-  margin-left: 8px;
-}
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.user-workbench-assess-target-dialog .el-dialog__header {
+::v-deep .el-dialog__header {
   padding: 11px 20px;
 
   .el-dialog__headerbtn {
     top: 15px;
   }
 }
-.el-dialog.user-workbench-assess-target-dialog .el-dialog__body {
+::v-deep .el-dialog__body {
   padding-top: 15px;
+}
+.assess-item {
+  margin-bottom: 0;
+}
+::v-deep .el-input-number {
+  width: 120px;
+}
+.ml8 {
+  display: inline-block;
+  margin-left: 8px;
 }
 </style>

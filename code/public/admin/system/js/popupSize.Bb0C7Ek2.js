@@ -1,0 +1,1 @@
+var e=Object.freeze({XS:`470px`,SM:`540px`,MD:`650px`,LG:`800px`,XL:`1000px`}),t=Object.freeze({SM:`600px`,MD:`800px`,LG:`1000px`,XL:`1200px`});export{t as n,e as t};

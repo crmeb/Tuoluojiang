@@ -6,7 +6,7 @@
           <div class="page-title">角色权限</div>
           <div class="page-desc">维护角色成员、启用状态与权限配置</div>
         </div>
-        <el-button type="primary" icon="el-icon-plus" @click="addAdminRole">新增</el-button>
+        <el-button type="primary" size="small" icon="el-icon-plus" @click="addAdminRole">新增</el-button>
       </div>
       <div v-if="roleList.length" class="role-layout">
         <div class="role-sidebar">
@@ -17,6 +17,7 @@
           <div class="role-search">
             <el-input
               v-model="roleKeyword"
+              size="small"
               prefix-icon="el-icon-search"
               clearable
               placeholder="搜索角色"
@@ -43,7 +44,7 @@
               </div>
               <div class="role-actions-more" @click.stop>
                 <el-dropdown trigger="click" @command="handleRoleCommand($event, item)">
-                  <el-button type="primary" link icon="el-icon-more" class="role-more-button"></el-button>
+                  <el-button type="text" icon="el-icon-more" class="role-more-button"></el-button>
                   <template #dropdown>
                     <el-dropdown-menu>
                       <el-dropdown-item command="status">{{
@@ -109,7 +110,7 @@
 
                   <div class="readonly-module-permission">
                     <div class="detail-column-title">数据权限</div>
-                    <el-table :data="modulePermissionRows">
+                    <el-table :data="modulePermissionRows" size="small">
                       <el-table-column label="模块" min-width="140">
                         <template #default="{ row }">
                           {{ row.module_name || row.name || row.key || '--' }}
@@ -129,11 +130,12 @@
                             effect="dark"
                           >
                             <div class="frame-select-preview">
-                              <el-tag size="small" type="info" class="frame-select-tag">
+                              <el-tag size="mini" type="info" class="frame-select-tag">
                                 {{ getFrameNameList(row)[0] }}
                               </el-tag>
                               <el-tag
                                 v-if="getFrameNameList(row).length > 1"
+                                size="mini"
                                 type="info"
                                 class="frame-select-count"
                               >
@@ -150,7 +152,7 @@
               </el-tab-pane>
               <el-tab-pane label="低代码应用" name="2">
                 <div class="readonly-crud-pane">
-                  <el-table :data="crudList" class="readonly-crud-table">
+                  <el-table :data="crudList" size="small" class="readonly-crud-table">
                     <el-table-column label="实体名称" min-width="160" prop="table_name" show-overflow-tooltip />
                     <el-table-column label="查看权限" min-width="120">
                       <template #default="{ row }">{{ getCrudDataLevelText(row.reade) }}</template>
@@ -182,17 +184,17 @@
       <!-- 管理人员弹窗 -->
       <el-drawer
         :before-close="handleClose"
-        v-model="drawer"
-        :close-on-click-modal="false"
+        :visible.sync="drawer"
+        :wrapperClosable="false"
         size="700px"
         title="管理人员"
       >
-        <template #header>
+        <template #title>
           <div class="drawer-title">
             <span>管理人员</span>
             <select-member ref="selectMember" :value="tableList || []" @getSelectList="getSelectList">
               <template v-slot:custom>
-                <el-button type="primary" @click="openDepartment">选择成员</el-button>
+                <el-button size="small" type="primary" @click="openDepartment">选择成员</el-button>
               </template>
             </select-member>
           </div>
@@ -206,9 +208,9 @@
               <template #default="scope">
                 <el-switch
                   v-model="scope.row.status"
-                  active-text="启用"
+                  :active-text="$t('public.enable')"
                   :active-value="1"
-                  inactive-text="禁用"
+                  :inactive-text="$t('public.disabled')"
                   :inactive-value="0"
                   @change="handleChange($event, scope.row)"
                 >
@@ -217,7 +219,7 @@
             </el-table-column>
             <el-table-column label="操作" prop="position" width="80px">
               <template #default="scope">
-                <el-button type="primary" link @click="handleDeleteUser(scope.row.id, scope.$index)">删除</el-button>
+                <el-button type="text" @click="handleDeleteUser(scope.row.id, scope.$index)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -230,8 +232,7 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import {
   systemRoleStatusApi,
   systemRoleListApi,
@@ -241,13 +242,13 @@ import {
   systemRoleEditApi,
   systemRoleDeleteUserApi,
   systemRoleShowUserApi
-} from '@/api/config.ts'
+} from '@/api/config'
 
 export default {
   name: 'EnterpriseAdmin',
   components: {
-    addAdminRole: defineAsyncComponent(() => import('@/views/setting/enterprise/components/addAdminRole')),
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member'))
+    addAdminRole: () => import('@/views/setting/enterprise/components/addAdminRole'),
+    selectMember: () => import('@/components/form-common/select-member')
   },
   data() {
     return {
@@ -455,7 +456,7 @@ export default {
     // 删除权限
     async handleDeleteRole(row, index) {
       if (!row) return
-      await modalSure('删除管理员身份')
+      await modalSure(this.$t('setting.admin.deletetitle'))
       await systemRoleDeleteApi(row.id)
       await this.getList()
     },
@@ -495,7 +496,7 @@ export default {
     },
     // 删除成员
     async handleDeleteUser(id, index) {
-      await modalSure('删除该成员')
+      await modalSure(this.$t('setting.admin.deletetitle2'))
       await systemRoleDeleteUserApi({
         uid: id,
         role_id: this.roleId
@@ -605,7 +606,7 @@ export default {
   min-height: 0;
   overflow: hidden;
 
-  :deep(.el-card__body) {
+  ::v-deep .el-card__body {
     height: 100%;
     padding: 20px;
     box-sizing: border-box;
@@ -874,7 +875,7 @@ export default {
 .frame-select-empty {
   color: #c0c4cc;
 }
-:deep(.role-detail-tabs) {
+::v-deep .role-detail-tabs {
   .el-tabs__header {
     flex-shrink: 0;
     margin: 0;
@@ -907,7 +908,7 @@ export default {
     height: 100%;
   }
 }
-:deep(.readonly-tree) {
+::v-deep .readonly-tree {
   .el-tree-node__content {
     min-width: 0;
     height: 38px;

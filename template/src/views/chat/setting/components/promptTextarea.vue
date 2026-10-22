@@ -2,7 +2,7 @@
   <div class="prompt-textarea" :style="{ '--textarea-height': height + 'px' }">
     <el-input
       type="textarea"
-      :model-value="value"
+      :value="value"
       :placeholder="placeholder"
       :maxlength="maxlength"
       :readonly="readonly"
@@ -70,8 +70,6 @@ const openDialog = () => {
 <style scoped lang="scss">
 .prompt-textarea {
   position: relative;
-  // 位于 Element Plus 表单内容区（flex 行布局）中，需占满整行
-  width: 100%;
 
   :deep(.el-textarea__inner) {
     height: var(--textarea-height);

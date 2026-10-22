@@ -11,6 +11,7 @@
           <div class="flex">
             <el-select
               v-model="scope.row.data_level"
+              size="small"
               @change="dataLevelFn($event, scope.row)"
               placeholder="请选择"
             >
@@ -30,10 +31,9 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
 export default {
   components: {
-    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department'))
+    selectDepartment: () => import('@/components/form-common/select-department')
   },
   props: {
     treeData: {

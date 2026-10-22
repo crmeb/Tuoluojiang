@@ -2,16 +2,17 @@
 
 <template>
   <el-container class="panel-container">
-    <el-tabs v-model="activeTab" style="height: 100%; overflow: hidden">
+    <el-tabs :active-name="activeTab" style="height: 100%; overflow: hidden">
       <el-tab-pane :label="i18nt('designer.hint.widgetSetting')" name="1">
         <el-scrollbar class="setting-scrollbar" :style="{ height: scrollerHeight }">
           <template v-if="!!designer.selectedWidget && !designer.selectedWidget.category">
             <el-form
               :model="optionModel"
+              size="mini"
               label-position="left"
               label-width="120px"
               class="setting-form"
-              @submit.prevent
+              @submit.native.prevent
             >
               <el-collapse v-model="widgetActiveCollapseNames" class="setting-collapse">
                 <el-collapse-item
@@ -19,7 +20,7 @@
                   v-if="showCollapse(commonProps)"
                   :title="i18nt('designer.setting.commonSetting')"
                 >
-                  <template v-for="(editorName, propName) in commonProps" :key="propName">
+                  <template v-for="(editorName, propName) in commonProps">
                     <component
                       v-if="hasPropEditor(propName, editorName)"
                       :is="getPropEditor(propName, editorName)"
@@ -35,7 +36,7 @@
                   v-if="showCollapse(advProps)"
                   :title="i18nt('designer.setting.advancedSetting')"
                 >
-                  <template v-for="(editorName, propName) in advProps" :key="propName">
+                  <template v-for="(editorName, propName) in advProps">
                     <component
                       v-if="hasPropEditor(propName, editorName)"
                       :is="getPropEditor(propName, editorName)"
@@ -57,10 +58,11 @@
           <template v-if="!!designer.selectedWidget && !!designer.selectedWidget.category">
             <el-form
               :model="optionModel"
+              size="mini"
               label-position="left"
               label-width="120px"
               class="setting-form"
-              @submit.prevent
+              @submit.native.prevent
             >
               <el-collapse v-model="widgetActiveCollapseNames" class="setting-collapse">
                 <el-collapse-item
@@ -68,7 +70,7 @@
                   v-if="showCollapse(commonProps)"
                   :title="i18nt('designer.setting.commonSetting')"
                 >
-                  <template v-for="(editorName, propName) in commonProps" :key="propName">
+                  <template v-for="(editorName, propName) in commonProps">
                     <component
                       v-if="hasPropEditor(propName, editorName)"
                       :is="getPropEditor(propName, editorName)"
@@ -84,7 +86,7 @@
                   v-if="showCollapse(advProps)"
                   :title="i18nt('designer.setting.advancedSetting')"
                 >
-                  <template v-for="(editorName, propName) in advProps" :key="propName">
+                  <template v-for="(editorName, propName) in advProps">
                     <component
                       v-if="hasPropEditor(propName, editorName)"
                       :is="getPropEditor(propName, editorName)"
@@ -109,12 +111,12 @@
 
     <el-dialog
       :title="i18nt('designer.setting.editWidgetEventHandler')"
-      v-model="showWidgetEventDialogFlag"
+      :visible.sync="showWidgetEventDialogFlag"
       v-if="showWidgetEventDialogFlag"
       :show-close="true"
       class="small-padding-dialog"
       append-to-body
-      draggable
+      v-dialog-drag
       :close-on-click-modal="false"
       :close-on-press-escape="false"
       :destroy-on-close="true"
@@ -136,15 +138,14 @@ import PropertyEditors from './property-editor/index'
 import FormSetting from './form-setting'
 import WidgetProperties from './propertyRegister'
 import { addWindowResizeHandler } from '@/utils/formDesignerUtils'
-import i18n from '@/utils/i18n.ts'
-import { createEventHub, SETTING_PANEL_HUB } from '@/utils/eventHub.ts'
-import { getAppContext } from '@/app-context.ts'
+import i18n from '@/utils/i18n'
 import { propertyRegistered } from '@/components/form-designer/setting-panel/propertyRegister'
 
 const { COMMON_PROPERTIES, ADVANCED_PROPERTIES, EVENT_PROPERTIES } = WidgetProperties
 
 export default {
   name: 'SettingPanel',
+  componentName: 'SettingPanel',
   mixins: [i18n],
   components: {
     FormSetting,
@@ -161,8 +162,6 @@ export default {
   },
   provide() {
     return {
-      // 属性编辑器（eventMixin）通过它请求打开事件编辑弹窗
-      [SETTING_PANEL_HUB]: this.panelHub,
       isSubFormChildWidget: () => this.subFormChildWidgetFlag
     }
   },
@@ -224,11 +223,8 @@ export default {
       }
     }
   },
-  beforeCreate() {
-    this.panelHub = createEventHub()
-  },
   created() {
-    this.panelHub.on('editEventHandler', (eventName, eventParams) => {
+    this.$on('editEventHandler', function (eventName, eventParams) {
       this.editEventHandler(eventName, eventParams)
     })
 
@@ -281,7 +277,7 @@ export default {
         return ownPropEditorName
       }
 
-      return getAppContext()?.components?.[ownPropEditorName] ? ownPropEditorName : editorName
+      return !!this.$root.$options.components[ownPropEditorName] ? ownPropEditorName : editorName //全局注册的属性编辑器组件
     },
 
     showCollapse(propsObj) {
@@ -345,54 +341,59 @@ export default {
 
 .setting-scrollbar {
   padding-right: 11px;
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden; /* IE浏览器隐藏水平滚动条箭头！！ */
     overflow-y: auto;
   }
 }
 .setting-collapse {
-  :deep(.el-collapse-item__content) {
+  ::v-deep .el-collapse-item__content {
     padding-bottom: 6px;
   }
 
-  :deep(.el-collapse-item__header) {
+  ::v-deep .el-collapse-item__header {
     font-weight: bold;
   }
 }
 
 .setting-form {
-  :deep(.el-form-item__label) {
+  ::v-deep .el-form-item__label {
     font-size: 13px;
     //text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
   }
 
-  :deep(.el-form-item) {
+  ::v-deep .el-form-item--mini.el-form-item {
     margin-bottom: 14px;
   }
 }
 
 /* 隐藏Chrome浏览器中el-input数字输入框右侧的上下调整小箭头 */
-:deep(.hide-spin-button input::-webkit-outer-spin-button),
-:deep(.hide-spin-button input::-webkit-inner-spin-button) {
+::v-deep .hide-spin-button input::-webkit-outer-spin-button,
+::v-deep .hide-spin-button input::-webkit-inner-spin-button {
   -webkit-appearance: none !important;
 }
 
 /* 隐藏Firefox浏览器中el-input数字输入框右侧的上下调整小箭头 */
-:deep(.hide-spin-button input[type='number']) {
+::v-deep .hide-spin-button input[type='number'] {
   -moz-appearance: textfield;
 }
 
-:deep(.custom-divider.el-divider--horizontal) {
+::v-deep .custom-divider.el-divider--horizontal {
   margin: 10px 0;
 }
 
-:deep(.custom-divider-margin-top.el-divider--horizontal) {
+::v-deep .custom-divider-margin-top.el-divider--horizontal {
   margin: 20px 0;
 }
-:deep(.el-tabs) {
+::v-deep .el-tabs {
   width: 100% !important;
+}
+.small-padding-dialog {
+  ::v-deep .el-dialog__body {
+    padding: 6px 15px 12px 15px;
+  }
 }
 .no-widget-selected {
   width: 100%;
@@ -409,12 +410,4 @@ export default {
   }
 }
 </style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.small-padding-dialog {
-  .el-dialog__body {
-    padding: 6px 15px 12px 15px;
-  }
-}
-</style>
+@/utils/i18ns

@@ -1,0 +1,1 @@
+import{H as e,Z as t,et as n,st as r,ut as i}from"./chunk-vendor.Di-Ybv3u.js";import{t as a}from"./_plugin-vue_export-helper.BDNMzG2s.js";t();var o={};function s(t,a){return r(),e(`div`,n({class:`base-container flex flex-column`},t.$attrs),[i(t.$slots,`default`,{},void 0,!0)],16)}var c=a(o,[[`render`,s],[`__scopeId`,`data-v-a65c3863`]]);export{c as t};

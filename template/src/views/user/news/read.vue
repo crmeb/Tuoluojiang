@@ -25,10 +25,10 @@
           <el-table-column prop="message" label="消息内容" min-width="360" />
           <el-table-column prop="cate_name" label="类型" min-width="80" />
           <el-table-column prop="created_at" label="发送时间" min-width="120"></el-table-column>
-          <el-table-column label="操作" width="100" fixed="right">
+          <el-table-column :label="$t('toptable.operation')" width="100" fixed="right">
             <template #default="scope">
               <el-button
-                type="primary" link
+                type="text"
                 v-for="(item, index) in scope.row.buttons"
                 :key="index"
                 :disabled="selectedType.includes(item.action)"
@@ -43,7 +43,7 @@
       <div class="footer">
         <div class="isSelect">
           <div class="flex" style="display: inline-block">
-            <el-button @click="handleDelete" :disabled="multipleSelection.length == 0">批量删除</el-button>
+            <el-button size="small" @click="handleDelete" :disabled="multipleSelection.length == 0">批量删除</el-button>
           </div>
           <span v-if="multipleSelection.length !== 0">已选中{{ multipleSelection.length }} 条</span>
         </div>
@@ -68,13 +68,10 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useUserStore } from '@/stores/user.ts'
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { noticeMessageListApi, noticeMessageReadApi, noticeMessageDeleteApi } from '@/api/user.ts'
-import { messageListApi } from '@/api/public.ts'
+import { modalSure } from '@/libs/public'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { noticeMessageListApi, noticeMessageReadApi, noticeMessageDeleteApi } from '@/api/user'
+import { messageListApi } from '@/api/public'
 
 import unreadIcon from '@/assets/images/unread-icon.png';
 import readIcon from '@/assets/images/read-icon.png';
@@ -82,13 +79,10 @@ import readIcon from '@/assets/images/read-icon.png';
 export default {
   name: 'Apply',
   components: {
-    dialogForm: defineAsyncComponent(() => import('./components/index')),
-    formBox: defineAsyncComponent(() => import('./components/formBox')),
-    messageDetails: defineAsyncComponent(() => import('./components/messageDetails')),
-    messageHandlePopup: defineAsyncComponent(() => import('@/components/common/messageHandlePopup'))
-  },
-  computed: {
-    ...mapStores(useUserStore)
+    dialogForm: () => import('./components/index'),
+    formBox: () => import('./components/formBox'),
+    messageDetails: () => import('./components/messageDetails'),
+    messageHandlePopup: () => import('@/components/common/messageHandlePopup')
   },
   data() {
     return {
@@ -227,7 +221,7 @@ export default {
     getMessage() {
       messageListApi().then((res) => {
         const num = res.data.messageNum ? res.data.messageNum : 0
-        this.userStore.setMessageCount(num)
+        this.$store.commit('user/SET_MESSAGE', num)
       })
     }
   }
@@ -258,21 +252,21 @@ export default {
   justify-content: flex-end;
 }
 .content {
-  :deep(.el-card__body) {
+  ::v-deep .el-card__body {
     height: 100%;
   }
   .el-table {
     height: calc(100vh - 184px) !important;
   }
-  :deep(.el-image) {
+  ::v-deep .el-image {
     width: 23px !important;
     height: 23px !important;
   }
 }
-:deep(.el-table th) {
+::v-deep .el-table th {
   background-color: #f7fbff;
 }
-:deep(.el-table-column--selection .cell) {
+::v-deep .el-table-column--selection .cell {
   padding: 0 10px;
 }
 </style>

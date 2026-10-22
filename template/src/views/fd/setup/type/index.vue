@@ -26,17 +26,17 @@
             </template>
           </el-table-column>
           <el-table-column prop="sort" label="排序" min-width="140" />
-          <el-table-column prop="info" label="操作" fixed="right" width="120">
+          <el-table-column prop="info" :label="$t('public.operation')" fixed="right" width="120">
             <template #default="scope">
-              <el-button type="primary" link @click="handleEdit(scope.row)" v-hasPermi="['fd:setup:type:edit']">
-                编辑
+              <el-button type="text" @click="handleEdit(scope.row)" v-hasPermi="['fd:setup:type:edit']">
+                {{ $t('public.edit') }}
               </el-button>
               <el-button
-                type="primary" link
+                type="text"
                 @click="handleDelete(scope.row, scope.$index)"
                 v-hasPermi="['fd:setup:type:delete']"
               >
-                删除
+                {{ $t('public.delete') }}
               </el-button>
             </template>
           </el-table-column>
@@ -58,16 +58,16 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import modalForm from '@/libs/modal-form.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { modalSure } from '@/libs/public'
+import modalForm from '@/libs/modal-form'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
 import {
   enterprisePayTypeApi,
   enterprisePayTypeCreateApi,
   enterprisePayTypeDeleteApi,
   enterprisePayTypeEditApi,
   enterprisePayTypeStatusApi
-} from '@/api/enterprise.ts'
+} from '@/api/enterprise'
 import oaFromBox from '@/components/common/oaFromBox'
 
 export default {

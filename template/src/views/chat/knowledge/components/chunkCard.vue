@@ -19,8 +19,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { CHUNK_SOURCE_TEXT, CHUNK_STATUS } from '../constants.ts'
-import { formatCount } from '../utils/format.ts'
+import { CHUNK_SOURCE_TEXT, CHUNK_STATUS } from '../constants'
+import { formatCount } from '../utils/format'
 
 interface ChunkRow {
   id: number

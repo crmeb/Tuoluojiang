@@ -3,29 +3,28 @@
       :style="{width: widget.options.cellWidth + '!important' || '', height: widget.options.cellHeight + '!important' || '', 'word-break': !!widget.options.wordBreak ? 'break-all' : 'normal'}"
       :colspan="widget.options.colspan || 1" :rowspan="widget.options.rowspan || 1"
       @click.stop="selectWidget(widget)">
-    <draggable :list="widget.widgetList" class="draggable-div form-widget-list" v-bind="{group:'dragGroup', ghostClass: 'ghost',animation: 200}"
+    <draggable :list="widget.widgetList" class="draggable-div" v-bind="{group:'dragGroup', ghostClass: 'ghost',animation: 200}"
                handle=".drag-handler" @end="(evt) => onTableDragEnd(evt, widget.widgetList)"
                @add="(evt) => onTableDragAdd(evt, widget.widgetList)"
-               @update="onTableDragUpdate" :move="checkContainerMove"
-               tag="div"
-               :item-key="$draggableKey"
-             >
-      <template #item="{ element: subWidget, index: swIdx }">
-        <component
-          :is="subWidget.type === 'tab' ? 'form-tab-widget' : subWidget.type + '-widget'"
-          v-bind="subWidget.category === 'container' ? { widget: subWidget } : { field: subWidget, designState: true }"
-          :designer="designer"
-          :parent-list="widget.widgetList"
-          :index-of-parent-list="swIdx"
-          :parent-widget="widget"
-        ></component>
-      </template>
+               @update="onTableDragUpdate" :move="checkContainerMove">
+      <transition-group name="fade" tag="div" class="form-widget-list">
+        <template v-for="(subWidget, swIdx) in widget.widgetList">
+          <template v-if="'container' === subWidget.category">
+            <component :is="subWidget.type + '-widget'" :widget="subWidget" :designer="designer" :key="subWidget.id" :parent-list="widget.widgetList"
+                              :index-of-parent-list="swIdx" :parent-widget="widget"></component>
+          </template>
+          <template v-else>
+            <component :is="subWidget.type + '-widget'" :field="subWidget" :designer="designer" :key="subWidget.id" :parent-list="widget.widgetList"
+                          :index-of-parent-list="swIdx" :parent-widget="widget" :design-state="true"></component>
+          </template>
+        </template>
+      </transition-group>
     </draggable>
 
     <div class="table-cell-action" v-if="designer.selectedId === widget.id && widget.type === 'table-cell'">
       <i class="el-icon-back" :title="i18nt('designer.hint.selectParentWidget')"
          @click.stop="selectParentWidget()"></i>
-      <el-dropdown trigger="click" @command="handleTableCellCommand">
+      <el-dropdown trigger="click" @command="handleTableCellCommand" size="small">
         <i class="el-icon-menu" :title="i18nt('designer.hint.cellSetting')"></i>
         <template #dropdown>
           <el-dropdown-menu>
@@ -56,12 +55,13 @@
 
 <script>
   import Draggable from 'vuedraggable'
-  import i18n from "@/utils/i18n.ts"
+  import i18n from "@/utils/i18n"
   import FieldComponents from '@/components/form-designer/form-widget/field-widget/index'
   import refMixinDesign from "@/components/form-designer/refMixinDesign"
 
   export default {
     name: "TableCellWidget",
+    componentName: "TableCellWidget",
     mixins: [i18n, refMixinDesign],
     inject: ['refList'],
     components: {
@@ -346,4 +346,4 @@
   .table-cell.selected {
     outline: 2px solid #409EFF !important;
   }
-</style>
+</style>@/utils/i18ns

@@ -61,11 +61,11 @@
                 />
               </template>
             </el-table-column>
-            <el-table-column prop="address" label="操作" width="200">
+            <el-table-column prop="address" :label="$t('public.operation')" width="200">
               <template #default="scope">
-                <el-button type="primary" link v-if="scope.row.is_default !== 1" @click="editFn(scope.row.id)">编辑</el-button>
-                <el-button type="primary" link @click="dataFn(scope.row)">数据管理</el-button>
-                <el-button type="primary" link v-if="scope.row.is_default !== 1" @click="handleDelete(scope.row)"
+                <el-button type="text" v-if="scope.row.is_default !== 1" @click="editFn(scope.row.id)">编辑</el-button>
+                <el-button type="text" @click="dataFn(scope.row)">数据管理</el-button>
+                <el-button type="text" v-if="scope.row.is_default !== 1" @click="handleDelete(scope.row)"
                   >删除</el-button
                 >
               </template>
@@ -89,13 +89,13 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import modalForm from '@/libs/modal-form.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { roterPre } from '@/settings.ts'
+import { modalSure } from '@/libs/public'
+import modalForm from '@/libs/modal-form'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { roterPre } from '@/settings'
 import oaFromBox from '@/components/common/oaFromBox'
-import { getcrudCateListApi, getDatabaseApi } from '@/api/develop.ts'
-import { getDictListApi, getDictCreateApi, getDictEditApi, getDictPutShowApi, getDictDeleteShowApi } from '@/api/form.ts'
+import { getcrudCateListApi, getDatabaseApi } from '@/api/develop'
+import { getDictListApi, getDictCreateApi, getDictEditApi, getDictPutShowApi, getDictDeleteShowApi } from '@/api/form'
 export default {
   components: { oaFromBox },
   name: 'FinanceList',

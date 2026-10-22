@@ -4,7 +4,7 @@
 
 <script>
 import { XMindEmbedViewer } from "xmind-embed-viewer";
-import { processResourceUrl } from '@/utils/resourceUtil.ts'
+import { processResourceUrl } from '@/utils/resourceUtil'
 
 export default {
   name: 'previewXmind',

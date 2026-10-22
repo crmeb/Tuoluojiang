@@ -2,7 +2,7 @@
   <div>
     <el-drawer
       :title="isBatch ? '批量设置推送渠道' : '推送渠道设置'"
-      v-model="drawer"
+      :visible.sync="drawer"
       direction="rtl"
       size="600px"
       :before-close="handleClose"
@@ -22,20 +22,20 @@
               </el-switch>
             </el-form-item>
             <el-form-item :label="item.keyName" v-if="item.keyName">
-              <el-input v-model="ruleForm[item.key]" :placeholder="item.placeholder"></el-input>
+              <el-input v-model="ruleForm[item.key]" :placeholder="item.placeholder" size="small"></el-input>
             </el-form-item>
           </div>
         </el-form>
         <div class="button from-foot-btn fix btn-shadow">
-          <el-button class="el-btn" @click="handleClose">取消</el-button>
-          <el-button :loading="saveLoading" type="primary" @click="handleConfirm()">保存</el-button>
+          <el-button class="el-btn" size="small" @click="handleClose">取消</el-button>
+          <el-button :loading="saveLoading" size="small" type="primary" @click="handleConfirm()">保存</el-button>
         </div>
       </div>
     </el-drawer>
   </div>
 </template>
 <script>
-import { getMessageDetailsApi, upDateMessageApi, batchUpdateMessageApi } from '@/api/setting.ts'
+import { getMessageDetailsApi, upDateMessageApi, batchUpdateMessageApi } from '@/api/setting'
 
 const defaultForm = () => ({
   status: '0',
@@ -51,7 +51,6 @@ const defaultForm = () => ({
 })
 
 export default {
-  emits: ['isOk'],
   name: '',
   components: {},
   props: {},
@@ -115,26 +114,26 @@ export default {
     getData(id) {
       getMessageDetailsApi(id).then((res) => {
         if (res.data.system_template.status) {
-          this.ruleForm.status = res.data.system_template.status.toString()
+          this.$set(this.ruleForm, 'status', res.data.system_template.status.toString())
         }
         if (res.data.sms_template) {
-          this.ruleForm.sms_status = res.data.sms_template.status.toString()
-          this.ruleForm.template_id = res.data.sms_template.template_id
+          this.$set(this.ruleForm, 'sms_status', res.data.sms_template.status.toString())
+          this.$set(this.ruleForm, 'template_id', res.data.sms_template.template_id)
         }
         if (res.data.wework_template) {
-          this.ruleForm.wework_status = res.data.wework_template.status.toString()
+          this.$set(this.ruleForm, 'wework_status', res.data.wework_template.status.toString())
         }
         if (res.data.work_template) {
-          this.ruleForm.work_status = res.data.work_template.status.toString()
-          this.ruleForm.work_webhook_url = res.data.work_template.webhook_url
+          this.$set(this.ruleForm, 'work_status', res.data.work_template.status.toString())
+          this.$set(this.ruleForm, 'work_webhook_url', res.data.work_template.webhook_url)
         }
         if (res.data.ding_template) {
-          this.ruleForm.ding_status = res.data.ding_template.status.toString()
-          this.ruleForm.ding_webhook_url = res.data.ding_template.webhook_url
+          this.$set(this.ruleForm, 'ding_status', res.data.ding_template.status.toString())
+          this.$set(this.ruleForm, 'ding_webhook_url', res.data.ding_template.webhook_url)
         }
         if (res.data.other_template) {
-          this.ruleForm.other_status = res.data.other_template.status.toString()
-          this.ruleForm.other_webhook_url = res.data.other_template.webhook_url
+          this.$set(this.ruleForm, 'other_status', res.data.other_template.status.toString())
+          this.$set(this.ruleForm, 'other_webhook_url', res.data.other_template.webhook_url)
         }
       })
     },
@@ -200,7 +199,7 @@ export default {
     margin-bottom: 50px;
   }
 
-  :deep(.el-form-item__label) {
+  ::v-deep .el-form-item__label {
     font-size: 13px;
     color: #606266;
   }

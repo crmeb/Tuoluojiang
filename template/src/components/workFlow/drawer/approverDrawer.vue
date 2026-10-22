@@ -2,7 +2,7 @@
   <el-drawer
     :append-to-body="true"
     title="审批人设置"
-    v-model="flowDesignerStore.approverDrawer"
+    :visible.sync="$store.state.business.approverDrawer"
     direction="rtl"
     class="set_promoter"
     size="550px"
@@ -12,11 +12,11 @@
       <div class="drawer_content">
         <div class="approver_content">
           <el-radio-group v-model="approverConfig.settype" class="clear" @change="changeType">
-            <el-radio label="1" value="1">指定成员</el-radio>
-            <el-radio label="2" value="2">指定上级</el-radio>
-            <el-radio label="7" value="7">连续多级上级</el-radio>
-            <el-radio label="5" value="5">申请人本人</el-radio>
-            <el-radio label="4" value="4" v-if="typeStr !== 'lowCode'">申请人自选</el-radio>
+            <el-radio label="1">指定成员</el-radio>
+            <el-radio label="2">指定上级</el-radio>
+            <el-radio label="7">连续多级上级</el-radio>
+            <el-radio label="5">申请人本人</el-radio>
+            <el-radio label="4" v-if="typeStr !== 'lowCode'">申请人自选</el-radio>
           </el-radio-group>
         </div>
         <div class="approver_node_user" v-if="approverConfig.settype == 1">
@@ -33,9 +33,9 @@
           <div v-if="approverConfig.nodeUserList.length > 1">
             <p class="title mt15">多人审批方式</p>
             <el-radio-group v-model="approverConfig.examineMode" class="more-content" style="width: 100%">
-              <el-radio label="1" value="1">或签（ 一名成员同意即可 ）</el-radio>
-              <el-radio label="2" value="2">会签（ 须所有成员同意 ）</el-radio>
-              <el-radio label="3" value="3">依次审批（按顺序依次审批）</el-radio>
+              <el-radio label="1">或签（ 一名成员同意即可 ）</el-radio>
+              <el-radio label="2">会签（ 须所有成员同意 ）</el-radio>
+              <el-radio label="3">依次审批（按顺序依次审批）</el-radio>
             </el-radio-group>
             <div v-if="approverConfig.examineMode === '1'">
               <p class="title mt15">
@@ -108,8 +108,8 @@
         <div class="approver_self_select" v-show="approverConfig.settype == 4">
           <h3>可选范围</h3>
           <el-radio-group v-model="approverConfig.selectRange" style="width: 100%" @change="changeRange">
-            <el-radio label="1" value="1">不限范围</el-radio>
-            <el-radio label="2" value="2">指定成员</el-radio>
+            <el-radio label="1">不限范围</el-radio>
+            <el-radio label="2">指定成员</el-radio>
           </el-radio-group>
           <select-member
             v-if="approverConfig.selectRange == 2"
@@ -120,15 +120,15 @@
 
           <h3>选人方式</h3>
           <el-radio-group v-model="approverConfig.selectMode" style="width: 100%">
-            <el-radio label="1" value="1">单选</el-radio>
-            <el-radio label="2" value="2">多选</el-radio>
+            <el-radio label="1">单选</el-radio>
+            <el-radio label="2">多选</el-radio>
           </el-radio-group>
           <div v-if="approverConfig.selectMode == 2">
             <h3>多人审批方式</h3>
             <el-radio-group v-model="approverConfig.examineMode" class="more-content" style="width: 100%">
-              <el-radio label="1" value="1">或签（ 一名成员同意即可 ）</el-radio>
-              <el-radio label="2" value="2">会签（ 须所有成员同意 ）</el-radio>
-              <el-radio label="3" value="3">依次审批（按顺序依次审批）</el-radio>
+              <el-radio label="1">或签（ 一名成员同意即可 ）</el-radio>
+              <el-radio label="2">会签（ 须所有成员同意 ）</el-radio>
+              <el-radio label="3">依次审批（按顺序依次审批）</el-radio>
             </el-radio-group>
             <div v-if="approverConfig.examineMode === '1'">
               <p class="title mt15">
@@ -153,25 +153,21 @@
         <div class="approver_some" v-if="approverConfig.settype == 2 || approverConfig.settype == 7">
           <p class="title">当前层级无部门负责人时</p>
           <el-radio-group class="person" v-model="approverConfig.noHanderAction">
-            <el-radio label="1" value="1">由上一级部门负责人审批</el-radio>
-            <el-radio label="2" value="2">此审批节点为空时直接跳过，不视为异常</el-radio>
+            <el-radio label="1">由上一级部门负责人审批</el-radio>
+            <el-radio label="2">此审批节点为空时直接跳过，不视为异常</el-radio>
           </el-radio-group>
         </div>
       </div>
       <div class="button from-foot-btn fix btn-shadow">
-        <el-button @click="closeDrawer">取消</el-button>
-        <el-button type="primary" @click="saveApprover">确定</el-button>
+        <el-button size="small" @click="closeDrawer">{{ $t('public.cancel') }}</el-button>
+        <el-button size="small" type="primary" @click="saveApprover">{{ $t('public.ok') }}</el-button>
       </div>
     </div>
   </el-drawer>
 </template>
 <script>
-import { mapStores } from 'pinia'
-import { useFlowDesignerStore } from '@/stores/flowDesigner.ts'
-import { defineAsyncComponent } from 'vue'
-import func from '@/utils/preload.ts'
+import func from '@/utils/preload'
 export default {
-  emits: ['update:nodeConfig'],
   props: {
     directorMaxLevel: {
       type: Number,
@@ -184,7 +180,7 @@ export default {
     }
   },
   components: {
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member'))
+    selectMember: () => import('@/components/form-common/select-member')
   },
   data() {
     return {
@@ -194,9 +190,8 @@ export default {
     }
   },
   computed: {
-    ...mapStores(useFlowDesignerStore),
     approverConfig1() {
-      return this.flowDesignerStore.approverConfig.value
+      return this.$store.state.business.approverConfig.value
     }
   },
   watch: {
@@ -234,16 +229,16 @@ export default {
         }
       }
       this.approverConfig.error = !func.setApproverStr(this.approverConfig)
-      this.flowDesignerStore.approverConfig = {
+      this.$store.commit('updateApproverConfig', {
         value: this.approverConfig,
         flag: true,
-        id: this.flowDesignerStore.approverConfig.id
-      }
+        id: this.$store.state.business.approverConfig.id
+      })
       this.$emit('update:nodeConfig', this.approverConfig)
       this.closeDrawer()
     },
     closeDrawer() {
-      this.flowDesignerStore.approverDrawer = false
+      this.$store.commit('updateApprover', false)
     },
     // 选择成员完成回调
     getSelectList(data) {

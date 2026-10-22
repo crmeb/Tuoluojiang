@@ -1,6 +1,6 @@
 <template>
   <el-dialog
-    v-model="visible"
+    :visible.sync="visible"
     title="描述"
     :width="DIALOG_SIZE.MD"
     :close-on-click-modal="false"
@@ -22,8 +22,8 @@
 
     <template #footer>
       <span>
-        <el-button @click="visible = false">取消</el-button>
-        <el-button type="primary" @click="submit">确定</el-button>
+        <el-button size="small" @click="visible = false">取消</el-button>
+        <el-button size="small" type="primary" @click="submit">确定</el-button>
       </span>
     </template>
   </el-dialog>
@@ -31,7 +31,7 @@
 
 <script setup lang="ts">
 import { nextTick, reactive, ref } from 'vue'
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
+import { DIALOG_SIZE } from '@/constants/popupSize'
 
 interface DescriptionForm {
   content: string
@@ -78,20 +78,16 @@ defineExpose({ openBox })
 </script>
 
 <style lang="scss" scoped>
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.quick-description-dialog {
-  .el-dialog__body {
+.quick-description-dialog {
+  :deep(.el-dialog__body) {
     padding: 24px 20px 16px;
   }
 
-  .el-form-item {
+  :deep(.el-form-item) {
     margin-bottom: 0;
   }
 
-  .el-textarea__inner {
+  :deep(.el-textarea__inner) {
     min-height: 108px !important;
     resize: none;
   }

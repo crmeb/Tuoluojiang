@@ -1,6 +1,6 @@
 <template>
 
-  <el-dialog title="打印预览" top="8vh" v-model="visible" :append-to-body="true" width="800px">
+  <el-dialog title="打印预览" top="8vh" :visible.sync="visible" :append-to-body="true" width="800px">
     <div class="print-preview">
       <div class="print-content" ref="printContent">
         <div class="print-inner">
@@ -14,20 +14,18 @@
           </div>
           <div class="info-table">
             <table>
-              <tbody>
-                <tr>
-                  <td class="label">申请人</td>
-                  <td class="value">{{ printData.card ? printData.card.name : '--' }}</td>
-                  <td class="label">申请人部门</td>
-                  <td class="value">{{ printData.frame ? printData.frame.name : '--' }}</td>
-                </tr>
-                <tr>
-                  <td class="label">提交时间</td>
-                  <td class="value">{{ printData.created_at ? formatDate(printData.created_at) : '--' }}</td>
-                  <td class="label">当前审批状态</td>
-                  <td class="value">{{ getStatusText(printData.status) }}</td>
-                </tr>
-              </tbody>
+              <tr>
+                <td class="label">申请人</td>
+                <td class="value">{{ printData.card ? printData.card.name : '--' }}</td>
+                <td class="label">申请人部门</td>
+                <td class="value">{{ printData.frame ? printData.frame.name : '--' }}</td>
+              </tr>
+              <tr>
+                <td class="label">提交时间</td>
+                <td class="value">{{ printData.created_at ? formatDate(printData.created_at) : '--' }}</td>
+                <td class="label">当前审批状态</td>
+                <td class="value">{{ getStatusText(printData.status) }}</td>
+              </tr>
             </table>
           </div>
 
@@ -35,50 +33,48 @@
             <div class="section-title">申请内容</div>
             <div class="content-table">
               <table>
-                <tbody>
-                  <tr v-for="i in Math.ceil(printData.content.length / 2)" :key="i">
-                    <!-- 第一列 -->
-                    <td class="label" v-if="printData.content[(i - 1) * 2]">{{ printData.content[(i - 1) * 2].label }}</td>
-                    <td class="value" v-if="printData.content[(i - 1) * 2]">
-                      <div v-if="printData.content[(i - 1) * 2].type === 'approvalBill'">
-                        <div v-for="(subItem, subIndex) in printData.content[(i - 1) * 2].children" :key="subIndex"
-                          class="approval-bill-item">
-                          <span class="sub-label">{{ subItem.label }}:</span>
-                          <span class="sub-value">{{ subItem.value || '--' }}</span>
-                        </div>
+                <tr v-for="i in Math.ceil(printData.content.length / 2)" :key="i">
+                  <!-- 第一列 -->
+                  <td class="label" v-if="printData.content[(i - 1) * 2]">{{ printData.content[(i - 1) * 2].label }}</td>
+                  <td class="value" v-if="printData.content[(i - 1) * 2]">
+                    <div v-if="printData.content[(i - 1) * 2].type === 'approvalBill'">
+                      <div v-for="(subItem, subIndex) in printData.content[(i - 1) * 2].children" :key="subIndex"
+                        class="approval-bill-item">
+                        <span class="sub-label">{{ subItem.label }}:</span>
+                        <span class="sub-value">{{ subItem.value || '--' }}</span>
                       </div>
-                      <div v-else-if="Array.isArray(printData.content[(i - 1) * 2].value)">
-                        <div v-for="(file, fileIndex) in printData.content[(i - 1) * 2].value" :key="fileIndex"
-                          class="file-item">
-                          {{ file.name || file.url }}
-                        </div>
+                    </div>
+                    <div v-else-if="Array.isArray(printData.content[(i - 1) * 2].value)">
+                      <div v-for="(file, fileIndex) in printData.content[(i - 1) * 2].value" :key="fileIndex"
+                        class="file-item">
+                        {{ file.name || file.url }}
                       </div>
-                      <div v-else-if="printData.content[(i - 1) * 2].type === 'rich_text'" class="rich-text"
-                        v-html="printData.content[(i - 1) * 2].value"></div>
-                      <span v-else>{{ printData.content[(i - 1) * 2].value || '--' }}</span>
-                    </td>
-                    <!-- 第二列 -->
-                    <td class="label" v-if="printData.content[(i - 1) * 2 + 1]">{{ printData.content[(i - 1) * 2 + 1].label }}</td>
-                    <td class="value" v-if="printData.content[(i - 1) * 2 + 1]">
-                      <div v-if="printData.content[(i - 1) * 2 + 1].type === 'approvalBill'">
-                        <div v-for="(subItem, subIndex) in printData.content[(i - 1) * 2 + 1].children" :key="subIndex"
-                          class="approval-bill-item">
-                          <span class="sub-label">{{ subItem.label }}:</span>
-                          <span class="sub-value">{{ subItem.value || '--' }}</span>
-                        </div>
+                    </div>
+                    <div v-else-if="printData.content[(i - 1) * 2].type === 'rich_text'" class="rich-text"
+                      v-html="printData.content[(i - 1) * 2].value"></div>
+                    <span v-else>{{ printData.content[(i - 1) * 2].value || '--' }}</span>
+                  </td>
+                  <!-- 第二列 -->
+                  <td class="label" v-if="printData.content[(i - 1) * 2 + 1]">{{ printData.content[(i - 1) * 2 + 1].label }}</td>
+                  <td class="value" v-if="printData.content[(i - 1) * 2 + 1]">
+                    <div v-if="printData.content[(i - 1) * 2 + 1].type === 'approvalBill'">
+                      <div v-for="(subItem, subIndex) in printData.content[(i - 1) * 2 + 1].children" :key="subIndex"
+                        class="approval-bill-item">
+                        <span class="sub-label">{{ subItem.label }}:</span>
+                        <span class="sub-value">{{ subItem.value || '--' }}</span>
                       </div>
-                      <div v-else-if="Array.isArray(printData.content[(i - 1) * 2 + 1].value)">
-                        <div v-for="(file, fileIndex) in printData.content[(i - 1) * 2 + 1].value" :key="fileIndex"
-                          class="file-item">
-                          {{ file.name || file.url }}
-                        </div>
+                    </div>
+                    <div v-else-if="Array.isArray(printData.content[(i - 1) * 2 + 1].value)">
+                      <div v-for="(file, fileIndex) in printData.content[(i - 1) * 2 + 1].value" :key="fileIndex"
+                        class="file-item">
+                        {{ file.name || file.url }}
                       </div>
-                      <div v-else-if="printData.content[(i - 1) * 2 + 1].type === 'rich_text'" class="rich-text"
-                        v-html="printData.content[(i - 1) * 2 + 1].value"></div>
-                      <span v-else>{{ printData.content[(i - 1) * 2 + 1].value || '--' }}</span>
-                    </td>
-                  </tr>
-                </tbody>
+                    </div>
+                    <div v-else-if="printData.content[(i - 1) * 2 + 1].type === 'rich_text'" class="rich-text"
+                      v-html="printData.content[(i - 1) * 2 + 1].value"></div>
+                    <span v-else>{{ printData.content[(i - 1) * 2 + 1].value || '--' }}</span>
+                  </td>
+                </tr>
               </table>
             </div>
           </div>
@@ -139,7 +135,7 @@
 </template>
 
 <script>
-import { getStorageJson } from '@/utils/storage.ts'
+import { getStorageJson } from '@/utils/storage'
 
 export default {
   name: 'PrintPreview',

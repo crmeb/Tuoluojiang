@@ -1,0 +1,1 @@
+import{bt as e,wt as t}from"./chunk-vendor.Di-Ybv3u.js";import{t as n}from"./useLoading.Cdf7jZ3Q.js";e();var r=e=>{let{isLoading:r,startLoading:i,stopLoading:a}=n(),o=t(!1),s=t(null);return{isOpen:o,isLoading:r,detail:s,open:async t=>{o.value=!0,s.value=null,i();try{let n=await e(t);s.value=n.data}catch{}finally{a()}},close:()=>{o.value=!1}}};export{r as t};

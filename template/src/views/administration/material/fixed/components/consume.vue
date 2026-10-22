@@ -36,26 +36,24 @@
             <el-table-column prop="specs" label="计量单位" min-width="80" />
             <el-table-column prop="stock" label="库存数量" min-width="80" />
             <el-table-column prop="used" label="领用数量" min-width="80" />
-            <el-table-column prop="describe" label="操作" fixed="right" width="200">
+            <el-table-column prop="describe" :label="$t('public.operation')" fixed="right" width="200">
               <template #default="scope">
-                <el-button type="primary" link @click="handleRecord(scope.row)">记录</el-button>
+                <el-button type="text" @click="handleRecord(scope.row)">记录</el-button>
 
-                <el-button type="primary" link @click="handleStock(scope.row)">补货</el-button>
+                <el-button type="text" @click="handleStock(scope.row)">补货</el-button>
 
                 <el-dropdown class="ml10">
-                  <el-button type="primary" link class="el-dropdown-link">
-                    更多
+                  <span class="el-dropdown-link el-button--text el-button">
+                    {{ $t('hr.more') }}
                     <i class="el-icon-arrow-down el-icon--right" />
-                  </el-button>
-                  <template #dropdown>
-                    <el-dropdown-menu style="text-align: center">
-                      <el-dropdown-item @click="handleCollection(scope.row)"> 领用 </el-dropdown-item>
-                      <el-dropdown-item @click="handleEdit(scope.row)">
-                        编辑
-                      </el-dropdown-item>
-                      <el-dropdown-item @click="handleDelete(scope.row.id)">删除</el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
+                  </span>
+                  <el-dropdown-menu style="text-align: center">
+                    <el-dropdown-item @click.native="handleCollection(scope.row)"> 领用 </el-dropdown-item>
+                    <el-dropdown-item @click.native="handleEdit(scope.row)">
+                      {{ $t('public.edit') }}
+                    </el-dropdown-item>
+                    <el-dropdown-item @click.native="handleDelete(scope.row.id)">删除</el-dropdown-item>
+                  </el-dropdown-menu>
                 </el-dropdown>
               </template>
             </el-table-column>
@@ -92,17 +90,16 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { modalSure } from '@/libs/public'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
 import tree from './tree'
 import addMaterial from './addMaterial'
 import receive from './receive'
 import record from './record'
 import materialDialog from './materialDialog'
 import oaFromBox from '@/components/common/oaFromBox'
-import { storageCateApi, storageDeleteApi, storageListApi, storageListCateApi } from '@/api/administration.ts'
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
+import { storageCateApi, storageDeleteApi, storageListApi, storageListCateApi } from '@/api/administration'
+import { DIALOG_SIZE } from '@/constants/popupSize'
 export default {
   name: 'Consume',
   components: {
@@ -112,7 +109,7 @@ export default {
     record,
     materialDialog,
     oaFromBox,
-    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form'))
+    oaDialog: () => import('@/components/form-common/dialog-form')
   },
   data() {
     return {
@@ -377,7 +374,7 @@ export default {
 
 <style lang="scss" scoped>
 .table-box {
-  :deep(.el-table th) {
+  ::v-deep .el-table th {
     background-color: rgba(247, 251, 255, 1);
   }
 }

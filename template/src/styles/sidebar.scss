@@ -67,7 +67,7 @@
       z-index: 1;
     }
     .el-menu {
-      .el-sub-menu__title {
+      .el-submenu__title {
         font-family: PingFang SC, PingFang SC;
         font-weight: 400;
         font-size: 13px;
@@ -99,7 +99,7 @@
       }
       .nest-menu {
         .el-menu-item,
-        .el-sub-menu__title {
+        .el-submenu__title {
           padding-left: 30px !important;
           & > span {
             margin-left: 3px;
@@ -109,7 +109,7 @@
 
       .nest-menu .nest-menu {
         .el-menu-item,
-        .el-sub-menu__title {
+        .el-submenu__title {
           padding-left: 50px !important;
 
           & > span {
@@ -119,7 +119,7 @@
       }
       .nest-menu .nest-menu .nest-menu {
         .el-menu-item,
-        .el-sub-menu__title {
+        .el-submenu__title {
           padding-left: 60px !important;
           & > span {
             margin-left: 3px;
@@ -129,14 +129,14 @@
     }
   }
 
-  .el-sub-menu.is-active > .el-sub-menu__title > span {
+  .el-submenu.is-active > .el-submenu__title > span {
     color: #1890ff !important;
   }
-  .el-sub-menu.is-active > .el-sub-menu__title > i {
+  .el-submenu.is-active > .el-submenu__title > i {
     color: #1890ff !important;
   }
 
-  .el-sub-menu.is-active > .el-sub-menu__title {
+  .el-submenu.is-active > .el-submenu__title {
     // background-color: #e6f0ff !important;
     border-radius: 8px;
   }
@@ -151,21 +151,19 @@
       position: relative;
       margin-right: 1px;
 
-      .el-tooltip,
-      .el-menu-tooltip__trigger {
+      .el-tooltip {
         padding: 0 !important;
         text-align: center !important;
-        justify-content: center;
         .svg-icon {
           margin-left: 20px;
         }
       }
     }
-    .el-sub-menu {
+    .el-submenu {
       overflow: hidden;
       margin-right: 1px;
 
-      & > .el-sub-menu__title {
+      & > .el-submenu__title {
         text-align: center !important;
         // & > i {
         //   width: 16px !important;
@@ -173,15 +171,15 @@
         .svg-icon {
           margin-left: 20px;
         }
-        .el-sub-menu__icon-arrow {
+        .el-submenu__icon-arrow {
           display: none;
         }
       }
     }
 
     .el-menu--collapse {
-      .el-sub-menu {
-        & > .el-sub-menu__title {
+      .el-submenu {
+        & > .el-submenu__title {
           & > span {
             height: 0;
             width: 0;
@@ -193,11 +191,11 @@
       }
     }
 
-    .el-sub-menu__title {
+    .el-submenu__title {
       justify-content: center;
     }
 
-    .el-sub-menu,
+    .el-submenu,
     .el-menu-item {
       padding-right: 0px !important;
       margin-right: 10px !important;
@@ -209,7 +207,7 @@
     border-radius: 8px;
   }
 
-  .el-menu--collapse .el-menu .el-sub-menu {
+  .el-menu--collapse .el-menu .el-submenu {
     min-width: $sideBarWidth !important;
   }
 
@@ -225,17 +223,20 @@
   }
 }
 
-// Element Plus 会把 popper-class 同时加在外层弹层和内层菜单容器上，
-// 滚动与边框只给外层，内边距只给内层，避免重复占宽和双层滚动。
-.sidebar-menu-popper.el-popper {
+// 侧边栏收起后悬浮菜单弹窗
+.sidebar-menu-popper {
+  // popper.js 把弹窗贴到菜单项右侧（菜单项距二级菜单容器右边还有 12px 间隙），
+  // 这里补 22px 让弹窗与收起的二级菜单保持 10px 间距
+  margin-left: 22px;
   width: 208px;
   box-sizing: border-box;
+  padding: 12px;
   background-color: #fff !important;
   border: 0.5px solid #dcdfe6 !important;
   border-radius: 6px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-  max-height: calc(100vh - 80px);
-  overflow-x: hidden;
+  // 滚动放在外层容器上，避免菜单列表自身出现滚动条占位、挤窄菜单项
+  max-height: 100vh;
   overflow-y: auto;
 
   &::-webkit-scrollbar-track-piece {
@@ -250,16 +251,7 @@
     background: #99a9bf;
     border-radius: 20px;
   }
-}
 
-.sidebar-menu-popper.el-menu--popup-container {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 12px;
-  background-color: #fff;
-}
-
-.sidebar-menu-popper.el-popper {
   .el-menu--popup {
     width: 100%;
     min-width: 0;
@@ -273,18 +265,14 @@
     flex-direction: column;
     box-shadow: none;
     gap: 1px;
-    > * {
-      min-width: 0;
-    }
     // element 的 clearfix 伪元素会变成 flex item，额外撑出 2px
     &::before,
     &::after {
       display: none;
     }
 
-    .el-sub-menu__title,
+    .el-submenu__title,
     .el-menu-item {
-      min-width: 0;
       padding: 0 10px !important;
       font-size: 13px;
       text-align: left;
@@ -293,9 +281,6 @@
       border-radius: 8px;
       color: #303133 !important;
       background-color: #fff !important;
-      .overText {
-        min-width: 0;
-      }
       &:hover {
         background-color: #f3f5f9 !important;
       }

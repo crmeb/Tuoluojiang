@@ -2,22 +2,21 @@
 <template>
   <div class="station">
     <el-drawer
-      class="customer-details-drawer"
       :append-to-body="true"
       :before-close="handleClose"
       :direction="direction"
       :show-close="true"
       :size="formData.width"
       :title="formData.title"
-      v-model="drawer"
+      :visible.sync="drawer"
     >
-      <template #header>
+      <template #title>
         <div class="invoice-title">
-          <div class="invoice-header">
-            <div class="invoice-left">
+          <el-row class="invoice-header">
+            <el-col class="invoice-left">
               <div class="invoice-logo"><i class="icon iconfont iconhetong"></i></div>
-            </div>
-            <div v-if="drawer" class="invoice-right">
+            </el-col>
+            <el-col v-if="drawer" class="invoice-right">
               <div class="txt1 over-text" v-if="types === 'odds'">
                 {{ dataInfo.data ? dataInfo.data.odds_no : '--' }}
               </div>
@@ -41,11 +40,11 @@
                     dataInfo.data && dataInfo.data.customer_name ? dataInfo.data.customer_name : '--'
                   }}</span></span
                 >
-                <span class="title">业务员：</span
+                <span class="title">{{ $t('customer.salesman') }}：</span
                 ><span class="weight">{{ dataInfo.data ? dataInfo.data.salesman : '--' }}</span>
               </div>
-            </div>
-          </div>
+            </el-col>
+          </el-row>
         </div>
       </template>
 
@@ -100,8 +99,8 @@
                 :product="dataInfo.product"
               ></productList>
               <div v-if="slotProps.type == 'add'" class="flex-end">
-                <el-button @click="productFn(1)">取消</el-button>
-                <el-button type="primary" @click="productFn(2)">确定</el-button>
+                <el-button size="small" @click="productFn(1)">取消</el-button>
+                <el-button size="small" type="primary" @click="productFn(2)">确定</el-button>
               </div>
             </template>
           </oaForm>
@@ -117,7 +116,7 @@
           <process-from v-if="signDataInfo.length != 0" :examine-data="examineData"></process-from>
           <template v-else>
             <default-page :textShow="false" :index="17" imgWidth="128px">
-              <el-button class="btn-primary" type="primary" link @click="openContract"
+              <el-button class="btn-primary" type="text" size="small" @click="openContract"
                 >生成合同 <span class="el-icon-arrow-right"
               /></el-button>
             </default-page>
@@ -143,28 +142,24 @@
   </div>
 </template>
 <script>
-import { mapStores } from 'pinia'
-import { useAppConfigStore } from '@/stores/appConfig.ts'
-import { defineAsyncComponent } from 'vue'
-import { contractDocDetailApi } from '@/api/contractSign.ts'
-import { getCluesEditApi, oddsCreateEditApi } from '@/api/client.ts'
-import { liaisonEditCreateApi } from '@/api/enterprise.ts'
-import { CUSTOMER_MODULE_KEYS } from '@/constants/customerModules.ts'
+import { contractDocDetailApi } from '@/api/contractSign'
+import { getCluesEditApi, oddsCreateEditApi } from '@/api/client'
+import { liaisonEditCreateApi } from '@/api/enterprise'
+import { CUSTOMER_MODULE_KEYS } from '@/constants/customerModules'
 import dynamicRecord from '@/views/customer/list/components/dynamicRecord'
 
 export default {
-  emits: ['getTableData'],
   name: 'detailsDrawer',
   components: {
-    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage')),
-    addContractSign: defineAsyncComponent(() => import('@/views/customer/signing/components/addContractSign')),
-    infoItem: defineAsyncComponent(() => import('@/views/customer/signing/components/infoItem')),
-    processFrom: defineAsyncComponent(() => import('@/views/user/examine/components/detailProcecss')),
-    uploadFile: defineAsyncComponent(() => import('@/components/form-common/oa-upload')),
-    record: defineAsyncComponent(() => import('@/views/customer/list/components/record')),
-    contract: defineAsyncComponent(() => import('@/views/customer/list/components/contract')),
-    productList: defineAsyncComponent(() => import('./productList')),
-    oaForm: defineAsyncComponent(() => import('@/components/customer/oaForm')),
+    defaultPage: () => import('@/components/common/defaultPage'),
+    addContractSign: () => import('@/views/customer/signing/components/addContractSign'),
+    infoItem: () => import('@/views/customer/signing/components/infoItem'),
+    processFrom: () => import('@/views/user/examine/components/detailProcecss'),
+    uploadFile: () => import('@/components/form-common/oa-upload'),
+    record: () => import('@/views/customer/list/components/record'),
+    contract: () => import('@/views/customer/list/components/contract'),
+    productList: () => import('./productList'),
+    oaForm: () => import('@/components/customer/oaForm'),
     dynamicRecord
   },
   props: {
@@ -192,7 +187,6 @@ export default {
     }
   },
   computed: {
-    ...mapStores(useAppConfigStore),
     tabData() {
       const TAB_DATA = [
         {
@@ -225,7 +219,7 @@ export default {
         }
       ]
 
-      const isCustomerModuleEnabled = this.appConfigStore.isCustomerModuleEnabled
+      const isCustomerModuleEnabled = this.$store.getters['appConfig/isCustomerModuleEnabled']
       const currentType = this.types
       return TAB_DATA.filter((item) => {
         if ('moduleKey' in item && !isCustomerModuleEnabled(item.moduleKey)) {
@@ -326,7 +320,7 @@ export default {
           : this.signDataInfo.attach
           ? [this.signDataInfo.attach]
           : []
-        this.examineData.users = res.data.approve
+        this.$set(this.examineData, 'users', res.data.approve)
       })
     },
 
@@ -355,7 +349,7 @@ export default {
 
     // 点击tab切换
     handleClick(event) {
-      this.tabNumber = Number(event.paneName)
+      this.tabNumber = Number(event.name)
       if (this.tabNumber == 2) {
         setTimeout(() => {
           this.$refs.record.getTableData()
@@ -376,7 +370,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-tabs__item.is-active) {
+::v-deep .el-tabs__item.is-active {
   border-right-color: transparent !important;
   border-left-color: transparent !important;
 
@@ -407,24 +401,34 @@ export default {
   font-size: 13px;
   margin-left: 10px;
 }
-:deep(.el-date-editor.el-input) {
+::v-deep .el-date-editor.el-input {
   width: 100%;
 }
 
-.addBox :deep(.el-dialog__body) {
+.addBox ::v-deep .el-dialog__body {
   padding: 0;
 }
 
-.addBox :deep(.el-dialog) {
+.addBox ::v-deep .el-dialog {
   border-radius: 6px;
   height: 300px;
 }
 
-:deep(.el-form--inline .el-form-item) {
+::v-deep .el-form--inline .el-form-item {
   display: flex;
 }
 
-:deep(.el-tabs__item) {
+::v-deep .el-drawer__body {
+  padding-bottom: 50px;
+}
+
+::v-deep .el-drawer__header {
+  height: 80px !important;
+  border: none;
+  padding: 14px 18px;
+}
+
+::v-deep .el-tabs__item {
   line-height: 40px !important;
   .tab-label-wrap {
     position: relative;
@@ -439,16 +443,16 @@ export default {
   }
 }
 
-:deep(.el-tabs__header) {
+::v-deep .el-tabs__header {
   background-color: #f7fbff;
   border-bottom: none;
 }
 
-:deep(.el-tabs__nav-wrap::after) {
+::v-deep .el-tabs__nav-wrap::after {
   height: 0;
 }
 
-:deep(.el-tabs__active-bar) {
+::v-deep .el-tabs__active-bar {
   top: 0;
 }
 
@@ -469,7 +473,7 @@ export default {
     align-items: center;
 
     .invoice-left {
-      flex: 0 0 48px;
+      width: 48px;
       margin-right: 10px;
 
       .invoice-logo {
@@ -490,8 +494,7 @@ export default {
     }
 
     .invoice-right {
-      flex: 1;
-      min-width: 0;
+      width: calc(100% - 55px);
     }
 
     .txt1 {
@@ -553,7 +556,7 @@ export default {
     width: 100%;
     height: calc(100% - 44px);
 
-    :deep(.el-button) {
+    ::v-deep .el-button--medium {
       font-size: 13px;
     }
   }
@@ -565,17 +568,5 @@ export default {
 
 .oneline {
   width: 100% !important;
-}
-</style>
-
-<style lang="scss">
-// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
-.customer-details-drawer .el-drawer__body {
-  padding-bottom: 50px;
-}
-.customer-details-drawer .el-drawer__header {
-  height: 80px;
-  border: none;
-  padding: 14px 18px;
 }
 </style>

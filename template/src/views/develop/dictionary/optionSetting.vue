@@ -20,26 +20,22 @@
             <template v-if="activeVal.level == 1">
               <draggable tag="div" :list="customizeItems"
                 v-bind="{ group: 'optionsGroup', ghostClass: 'ghost', handle: '.icontuodong' }"
-                @change="emitDefaultValueChange"
-                :item-key="$draggableKey"
-              >
-                <template #item="{ element: option, index: idx }">
-                  <div class="mb14">
-                    <div class="checkBox">
-                      <el-input v-model="option.name" style="width: 300px">
-                        <template #suffix>
-                          <span>
-                            <el-color-picker v-model="option.color"></el-color-picker>
-                          </span>
-                        </template>
-                      </el-input>
-  
-                      <span class="iconfont icontuodong iconadd" title="拖拽排序"></span>
-  
-                      <span class="el-icon-delete iconadd" @click.stop="deleteOption(option, idx)"></span>
-                    </div>
+                @change="emitDefaultValueChange">
+                <div v-for="(option, idx) in customizeItems" :key="idx" class="mb14">
+                  <div class="checkBox">
+                    <el-input v-model="option.name" size="small" style="width: 300px">
+                      <template #suffix>
+                        <span>
+                          <el-color-picker size="small" v-model="option.color"></el-color-picker>
+                        </span>
+                      </template>
+                    </el-input>
+
+                    <span class="iconfont icontuodong iconadd" title="拖拽排序"></span>
+
+                    <span class="el-icon-delete iconadd" @click.stop="deleteOption(option, idx)"></span>
                   </div>
-                </template>
+                </div>
               </draggable>
               <div class="add-text" @click="addOption">+ 添加</div>
             </template>
@@ -48,10 +44,12 @@
             <el-tree :data="customizeItems" node-key="value" default-expand-all v-else>
               <template #default="{ node, data }">
                 <div class="custom-tree-node">
-                  <el-input v-model="data.name" placeholder="数据值" style="width: 300px;" />
-                  <span class="iconfont icontianjia1 iconadd" @click="addFn(node, data)" />
-                  <span class="iconfont icona-ziji1x iconadd" title="添加子项" @click="addChildFn(node, data)" />
-                  <span class="el-icon-delete iconadd" title="删除" @click="deleteFn(node, data)" />
+                  <el-input v-model="data.name" placeholder="数据值" size="small" style="width: 300px;" />
+                  <template>
+                    <span class="iconfont icontianjia1 iconadd" @click="addFn(node, data)" />
+                    <span class="iconfont icona-ziji1x iconadd" title="添加子项" @click="addChildFn(node, data)" />
+                    <span class="el-icon-delete iconadd" title="删除" @click="deleteFn(node, data)" />
+                  </template>
                 </div>
               </template>
             </el-tree>
@@ -66,23 +64,22 @@
       </div>
     </el-card>
     <div class="cr-bottom-button">
-      <el-button @click="goBack">取消</el-button>
-      <el-button type="primary" @click="saveEvt" :loading="submitLoading">保存</el-button>
+      <el-button @click="goBack" size="small">取消</el-button>
+      <el-button type="primary" @click="saveEvt" size="small" :loading="submitLoading">保存</el-button>
     </div>
   </div>
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { crudDictListApi, crudDictBatchApi } from '@/api/develop.ts'
-import { getDictDataListApi, getDictDataDeleteApi, getDictTreeListApi } from '@/api/form.ts'
+import { modalSure } from '@/libs/public'
+import { crudDictListApi, crudDictBatchApi } from '@/api/develop'
+import { getDictDataListApi, getDictDataDeleteApi, getDictTreeListApi } from '@/api/form'
 import Draggable from 'vuedraggable'
-import { roterPre } from '@/settings.ts'
+import { roterPre } from '@/settings'
 export default {
   components: {
     Draggable,
-    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage'))
+    defaultPage: () => import('@/components/common/defaultPage')
   },
   data() {
     return {
@@ -147,7 +144,7 @@ export default {
     },
     addChildFn(node, data) {
       if (!data.children) {
-        data.children = []
+        this.$set(data, 'children', [])
       }
       this.appendNode(data.children, data.id);
     },
@@ -286,7 +283,7 @@ export default {
   background: #fff;
 }
 
-:deep(.el-card__body) {
+::v-deep .el-card__body {
   padding: 0;
 }
 
@@ -298,14 +295,14 @@ export default {
   width: calc(100% + 220px);
 }
 
-:deep(.el-tree-node__content) {
+::v-deep .el-tree-node__content {
   height: 32px;
   margin-bottom: 14px;
 }
-:deep(.el-tree-node  :hover) {
+::v-deep .el-tree-node  :hover {
 background: transparent;
 }
-:deep(.el-tree-node__expand-icon.is-leaf) {
+::v-deep .el-tree-node__expand-icon.is-leaf {
   display: none;
 }
 
@@ -353,7 +350,7 @@ background: transparent;
     padding: 0 20px;
     padding-top: 12px;
 
-    :deep(.el-color-picker__color) {
+    ::v-deep .el-color-picker__color {
       border-color: #dddddd;
     }
 
@@ -380,14 +377,14 @@ background: transparent;
   }
 }
 
-:deep(.el-radio) {
+::v-deep .el-radio {
   margin-right: 5px;
   display: flex;
   height: 32px;
   align-items: center;
 }
 
-:deep(.el-color-picker__trigger) {
+::v-deep .el-color-picker__trigger {
   display: flex;
 }
 
@@ -418,7 +415,7 @@ background: transparent;
   margin-left: 6px;
 }
 
-:deep(.el-color-picker__trigger) {
+::v-deep .el-color-picker__trigger {
   border: none;
   margin-bottom: 2px;
 }

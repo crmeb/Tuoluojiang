@@ -1,0 +1,1 @@
+const l=Object.freeze({MANUAL:0,SYSTEM:1}),r=Object.freeze([{value:l.MANUAL,label:"手动标签",theme:"primary",variant:"filled"},{value:l.SYSTEM,label:"系统标签",theme:"warning",variant:"filled"}]),t=r.reduce((e,a)=>(e[a.value]=a,e),{});export{r as L,l as a,t as b};

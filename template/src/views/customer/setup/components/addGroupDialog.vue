@@ -2,7 +2,7 @@
 <template>
   <el-dialog
     title="添加标签组"
-    v-model="visible"
+    :visible.sync="visible"
     :width="DIALOG_SIZE.SM"
     :close-on-click-modal="false"
     @close="handleClose"
@@ -14,7 +14,7 @@
 
       <el-form-item label="标签组类型：" prop="group_type">
         <el-radio-group v-model="form.group_type">
-          <el-radio v-for="item in LABEL_GROUP_TYPE_OPTIONS" :key="item.value" :label="item.value" :value="item.value">
+          <el-radio v-for="item in LABEL_GROUP_TYPE_OPTIONS" :key="item.value" :label="item.value">
             {{ item.label }}
           </el-radio>
         </el-radio-group>
@@ -27,8 +27,8 @@
 
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleClose">取消</el-button>
-        <el-button :loading="loading" type="primary" @click="handleConfirm">确定</el-button>
+        <el-button size="small" @click="handleClose">取消</el-button>
+        <el-button size="small" :loading="loading" type="primary" @click="handleConfirm">确定</el-button>
       </div>
     </template>
   </el-dialog>
@@ -36,9 +36,9 @@
 
 <script>
 import { ref, reactive } from 'vue'
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
-import { LABEL_GROUP_TYPE, LABEL_GROUP_TYPE_OPTIONS } from '@/constants/labelGroupType.ts'
-import { clientConfigLabelSaveApi } from '@/api/enterprise.ts'
+import { DIALOG_SIZE } from '@/constants/popupSize'
+import { LABEL_GROUP_TYPE, LABEL_GROUP_TYPE_OPTIONS } from '@/constants/labelGroupType'
+import { clientConfigLabelSaveApi } from '@/api/enterprise'
 
 // 表单初始值：标签组默认手动标签，排序默认 0
 const createForm = () => ({
@@ -118,10 +118,10 @@ export default {
 </script>
 
 <style scoped lang="scss">
-:deep(.el-dialog__body) {
+::v-deep .el-dialog__body {
   padding-bottom: 0;
 }
-:deep(.el-input-number) {
+::v-deep .el-input-number--medium {
   width: 100%;
   .el-input__inner {
     text-align: left;

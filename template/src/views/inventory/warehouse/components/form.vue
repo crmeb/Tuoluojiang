@@ -1,6 +1,6 @@
 <template>
-  <el-dialog v-model="visible" :title="form.id ? '编辑仓库' : '新增仓库'" :width="DIALOG_SIZE.MD"
-    :close-on-click-modal="false" class="warehouse-form-dialog" @close="reset">
+  <el-dialog :visible.sync="visible" :title="form.id ? '编辑仓库' : '新增仓库'" :width="DIALOG_SIZE.MD"
+    :close-on-click-modal="false" custom-class="warehouse-form-dialog" @close="reset">
     <el-form ref="formRef" v-loading="detailLoading" :model="form" :rules="rules" label-width="90px" label-suffix="：">
       <el-form-item label="仓库名称" prop="name">
         <el-input v-model="form.name" placeholder="请输入仓库名称" maxlength="50" show-word-limit />
@@ -37,8 +37,8 @@
 
     <template #footer>
       <span>
-        <el-button @click="visible = false">取 消</el-button>
-        <el-button type="primary" :loading="loading" @click="submit">确 定</el-button>
+        <el-button size="small" @click="visible = false">取 消</el-button>
+        <el-button size="small" type="primary" :loading="loading" @click="submit">确 定</el-button>
       </span>
     </template>
   </el-dialog>
@@ -46,9 +46,9 @@
 
 <script>
 import { ref, reactive } from "vue";
-import { DIALOG_SIZE } from "@/constants/popupSize.ts";
-import { warehouseCreateApi, warehouseUpdateApi, warehouseDetailApi } from "@/api/inventory.ts";
-import { useLoading } from "@/composables/useLoading.ts";
+import { DIALOG_SIZE } from "@/constants/popupSize";
+import { warehouseCreateApi, warehouseUpdateApi, warehouseDetailApi } from "@/api/inventory";
+import { useLoading } from "@/composables/useLoading";
 
 export default {
   name: "WarehouseForm",

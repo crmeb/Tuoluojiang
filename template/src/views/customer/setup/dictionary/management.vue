@@ -21,8 +21,8 @@
           <div class="felx-row flex-col">
             <div>
               <el-form-item v-if="is_Show !== 1">
-                <el-button type="primary" @click="addFinance">新增数据</el-button>
-                <el-button @click="batchDelete">批量删除</el-button>
+                <el-button type="primary" size="small" @click="addFinance">新增数据</el-button>
+                <el-button size="small" @click="batchDelete">批量删除</el-button>
               </el-form-item>
             </div>
           </div>
@@ -66,11 +66,15 @@
             <span>{{ scope.row.created_at || '--' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="address" label="操作" width="250">
+        <el-table-column prop="address" :label="$t('public.operation')" width="250">
           <template #default="scope">
-            <el-button type="primary" link v-if="scope.row.level < level" @click="childLevel(scope.row)">添加子级</el-button>
-            <el-button type="primary" link @click="editFn(scope.row)" v-if="scope.row.is_default !== 1">编辑</el-button>
-            <el-button type="primary" link @click="handleDelete(scope.row)" v-if="scope.row.is_default !== 1">删除</el-button>
+            <el-button type="text" v-if="scope.row.level < level" @click="childLevel(scope.row)">添加子级</el-button>
+            <el-button type="text" @click="editFn(scope.row)" v-if="scope.row.is_default !== 1">编辑</el-button>
+            <template>
+              <el-button type="text" @click="handleDelete(scope.row)" v-if="scope.row.is_default !== 1">{{
+                $t('public.delete')
+              }}</el-button>
+            </template>
           </template>
         </el-table-column>
       </el-table>
@@ -79,9 +83,9 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import modalForm from '@/libs/modal-form.ts'
-import { roterPre } from '@/settings.ts'
+import { modalSure } from '@/libs/public'
+import modalForm from '@/libs/modal-form'
+import { roterPre } from '@/settings'
 import {
   getDictDataListApi,
   getDictDataCreateApi,
@@ -89,7 +93,7 @@ import {
   getDictDataPutApi,
   getDictDataDeleteApi,
   getDictDatainfoApi
-} from '@/api/form.ts'
+} from '@/api/form'
 export default {
   name: 'CrmebOaEntManagement',
   data() {
@@ -234,7 +238,7 @@ export default {
 .card-box {
   min-height: calc(100vh - 215px);
 }
-:deep(.el-icon-back) {
+::v-deep .el-icon-back {
   display: none;
 }
 .title-box {
@@ -250,10 +254,10 @@ export default {
     margin: 0;
   }
 }
-:deep(.el-page-header__left::after) {
+::v-deep .el-page-header__left::after {
   display: none;
 }
-:deep(.el-page-header__title) {
+::v-deep .el-page-header__title {
   font-weight: 500;
   font-size: 17px;
   color: #303133;

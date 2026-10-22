@@ -3,13 +3,13 @@
   <div>
     <el-dialog
       :title="title"
-      v-model="dialogFormVisible"
+      :visible.sync="dialogFormVisible"
       :modal="true"
       width="846px"
       :before-close="closeDialog"
       :show-close="true"
     >
-      <template #header>
+      <template #title>
         <div class="dialog-title">
           <div class="dialog-title-title">{{ title }}</div>
         </div>
@@ -35,6 +35,7 @@
             <div v-loading="isListLoading" class="content-temp">
               <el-input
                 v-model="searchForm.name"
+                size="small"
                 placeholder="请输入模板名称"
                 class="input-with-select"
                 @change="handleSearch"
@@ -104,8 +105,8 @@
       </el-row>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="closeDialog">取消</el-button>
-          <el-button type="primary" :loading="isPreviewLoading" @click="handleConfirm">确定</el-button>
+          <el-button size="small" @click="closeDialog">取消</el-button>
+          <el-button size="small" type="primary" :loading="isPreviewLoading" @click="handleConfirm">确定</el-button>
         </div>
       </template>
     </el-dialog>
@@ -114,19 +115,19 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import { getCurrentInstance, reactive, ref, defineAsyncComponent } from 'vue'
-import { useUserStore } from '@/stores/user.ts'
+import { modalSure } from '@/libs/public'
+import { getCurrentInstance, reactive, ref } from 'vue'
+import store from '@/store'
 import defaultCover from '@/assets/images/default.jpg'
 import {
   assessTemplateCollectApi,
   assessTemplateEditApi,
   assessTemplateListApi,
   templateDeleteApi
-} from '@/api/enterprise.ts'
-import { useAssessCate } from '@/composables/useAssessCate.ts'
-import { useLoading } from '@/composables/useLoading.ts'
-import { usePage } from '@/composables/usePage.ts'
+} from '@/api/enterprise'
+import { useAssessCate } from '@/composables/useAssessCate'
+import { useLoading } from '@/composables/useLoading'
+import { usePage } from '@/composables/usePage'
 
 // 分类类型：1 = 考核模板（0 为指标）
 const CATE_TYPE = 1
@@ -145,7 +146,7 @@ const CONFIG_EDIT = { USE: 1, EDIT: 2 }
 export default {
   name: 'SelectTemplate',
   components: {
-    preview: defineAsyncComponent(() => import('@/views/hr/assess/check/components/preview'))
+    preview: () => import('@/views/hr/assess/check/components/preview')
   },
   props: {
     title: {
@@ -160,7 +161,6 @@ export default {
   },
   emits: ['templateChange'],
   setup(props, { emit, expose }) {
-    const userStore = useUserStore()
     const { proxy } = getCurrentInstance()
 
     const dialogFormVisible = ref(false)
@@ -269,7 +269,7 @@ export default {
     // 「我的收藏」分类下的模板必然已收藏，无需再比对 collects
     const isCollected = (item) => cateId.value === COLLECT_CATE_ID || collects.value.includes(item.id)
 
-    const isOwner = (item) => item.user !== undefined && userStore.userInfo.uid === item.user.uid
+    const isOwner = (item) => item.user !== undefined && store.state.user.userInfo.uid === item.user.uid
 
     const handleCollect = async (item) => {
       try {
@@ -387,7 +387,7 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-:deep(.el-dialog__body) {
+::v-deep .el-dialog__body {
   padding: 10px !important;
 }
 .assess-left {
@@ -463,7 +463,7 @@ export default {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-:deep(.el-dialog) {
+::v-deep .el-dialog {
   border-radius: 10px;
 }
 .dialog-title {

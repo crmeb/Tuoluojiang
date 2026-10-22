@@ -49,27 +49,24 @@
                   ghostClass: 'dict-option-setting__ghost',
                   handle: '.dict-option-setting__drag-handle'
                 }"
-                :item-key="$draggableKey"
               >
-                <template #item="{ element: option, index: idx }">
-                  <div class="dict-option-setting__option-row">
-                    <!-- 选项名称输入框，右侧带颜色选择器 -->
-                    <el-input v-model="option.name" class="dict-option-setting__option-input">
-                      <template #suffix>
-                        <span>
-                          <el-color-picker v-model="option.color" />
-                        </span>
-                      </template>
-                    </el-input>
-                    <!-- 拖拽排序手柄 -->
-                    <span class="iconfont icontuodong dict-option-setting__drag-handle" title="拖拽排序" />
-                    <!-- 删除按钮 -->
-                    <span
-                      class="el-icon-delete dict-option-setting__action-icon"
-                      @click.stop="handleDeleteFlatItem(option, idx)"
-                    />
-                  </div>
-                </template>
+                <div v-for="(option, idx) in optionItems" :key="idx" class="dict-option-setting__option-row">
+                  <!-- 选项名称输入框，右侧带颜色选择器 -->
+                  <el-input v-model="option.name" size="small" class="dict-option-setting__option-input">
+                    <template #suffix>
+                      <span>
+                        <el-color-picker v-model="option.color" size="small" />
+                      </span>
+                    </template>
+                  </el-input>
+                  <!-- 拖拽排序手柄 -->
+                  <span class="iconfont icontuodong dict-option-setting__drag-handle" title="拖拽排序" />
+                  <!-- 删除按钮 -->
+                  <span
+                    class="el-icon-delete dict-option-setting__action-icon"
+                    @click.stop="handleDeleteFlatItem(option, idx)"
+                  />
+                </div>
               </draggable>
               <!-- 添加新选项按钮 -->
               <div class="dict-option-setting__add-btn" @click="handleAddFlatItem">+ 添加</div>
@@ -83,6 +80,7 @@
                   <el-input
                     v-model="data.name"
                     placeholder="数据值"
+                    size="small"
                     class="dict-option-setting__tree-input"
                   />
                   <!-- 添加同级节点 -->
@@ -118,14 +116,14 @@
 
     <!-- 底部固定操作栏：取消 / 保存 -->
     <div class="dict-option-setting__footer">
-      <el-button @click="handleBack">取消</el-button>
-      <el-button type="primary" :loading="saving" @click="handleSave"> 保存 </el-button>
+      <el-button size="small" @click="handleBack">取消</el-button>
+      <el-button type="primary" size="small" :loading="saving" @click="handleSave"> 保存 </el-button>
     </div>
   </div>
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 /**
  * @description 字典选项设置基础组件
  * 使用 Vue 2.7 Composition API (setup) 编写
@@ -133,9 +131,9 @@ import { modalSure } from '@/libs/public.ts'
  */
 import { ref, onMounted, getCurrentInstance, defineAsyncComponent } from 'vue'
 import Draggable from 'vuedraggable'
-import { salesmanCustomApi } from '@/api/client.ts'
-import { crudDictBatchApi } from '@/api/develop.ts'
-import { getDictTreeListApi, getDictDataDeleteApi } from '@/api/form.ts'
+import { salesmanCustomApi } from '@/api/client'
+import { crudDictBatchApi } from '@/api/develop'
+import { getDictTreeListApi, getDictDataDeleteApi } from '@/api/form'
 
 const DefaultPage = defineAsyncComponent(() => import('@/components/common/defaultPage'))
 
@@ -373,7 +371,7 @@ export default {
      */
     const handleAddTreeChild = (node, data) => {
       if (!data.children) {
-        data.children = []
+        proxy.$set(data, 'children', [])
       }
       appendNewNode(data.children, data.id)
     }
@@ -616,36 +614,36 @@ export default {
 }
 
 /* 覆盖 el-tree 默认样式 */
-:deep(.el-tree-node__content) {
+::v-deep .el-tree-node__content {
   height: 32px;
   margin-bottom: 14px;
 }
 
-:deep(.el-tree-node__content > .el-tree-node__expand-icon) {
+::v-deep .el-tree-node__content > .el-tree-node__expand-icon {
   padding-left: 0;
 }
 
-:deep(.el-tree-node__indent) {
+::v-deep .el-tree-node__indent {
   width: 10px;
 }
 
-:deep(.el-tree-node:hover) {
+::v-deep .el-tree-node:hover {
   background: transparent;
 }
 
 /* 隐藏叶子节点的展开图标 */
-:deep(.el-tree-node__expand-icon.is-leaf) {
+::v-deep .el-tree-node__expand-icon.is-leaf {
   display: none;
 }
 
 /* 颜色选择器边框优化 */
-:deep(.el-color-picker__trigger) {
+::v-deep .el-color-picker__trigger {
   display: flex;
   border: none;
   margin-bottom: 2px;
 }
 
-:deep(.el-color-picker__color) {
+::v-deep .el-color-picker__color {
   border-color: #ddd;
 }
 </style>

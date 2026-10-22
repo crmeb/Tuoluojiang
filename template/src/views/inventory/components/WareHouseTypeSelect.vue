@@ -1,11 +1,11 @@
 <template>
   <div class="warehouse-type-select">
     <!-- 左侧仓库类型：调出 / 调入，值对齐接口 warehouse_type（out / in） -->
-    <el-select :model-value="innerType" class="warehouse-type-select__type" @change="handleTypeChange">
+    <el-select :value="innerType" class="warehouse-type-select__type" size="small" @change="handleTypeChange">
       <el-option v-for="item in typeOptions" :key="item.value" :label="item.label" :value="item.value" />
     </el-select>
     <!-- 右侧仓库选择：完整透传 WareHouseSelect 的 props（multiple / defaultFirst / permission 等） -->
-    <WareHouseSelect class="warehouse-type-select__warehouse" :model-value="modelValue" :placeholder="placeholder"
+    <WareHouseSelect class="warehouse-type-select__warehouse" :value="value" :placeholder="placeholder"
       v-bind="$attrs" @change="handleChange" @select="handleSelect" />
   </div>
 </template>
@@ -13,7 +13,7 @@
 <script>
 import { ref, watch } from "vue";
 import WareHouseSelect from "./WareHouseSelect.vue";
-import { WAREHOUSE_TYPE, WAREHOUSE_TYPE_OPTIONS } from "../constants.ts";
+import { WAREHOUSE_TYPE, WAREHOUSE_TYPE_OPTIONS } from "../constants";
 
 // WareHouseSelect 的高阶组件：左侧内嵌「调出仓库 / 调入仓库」类型下拉，
 // 用于按仓库维度筛选调拨类单据（类型值通过 :type.sync 回传，随查询参数透传接口）
@@ -21,14 +21,17 @@ export default {
   name: "WareHouseTypeSelect",
   components: { WareHouseSelect },
   inheritAttrs: false,
-  emits: ['update:modelValue', 'change', 'select', 'update:type', 'type-change'],
+  model: {
+    prop: "value",
+    event: "change"
+  },
   props: {
     // 仓库选中值，含义与 WareHouseSelect 的 value 一致（多选时为 ID 数组）
-    modelValue: {
+    value: {
       type: [String, Number, Array],
       default: ""
     },
-    // 仓库类型（WAREHOUSE_TYPE：out=调出仓库 in=调入仓库），支持 v-model:type；
+    // 仓库类型（WAREHOUSE_TYPE：out=调出仓库 in=调入仓库），支持 :type.sync；
     // 为空时自动回填默认值「调出仓库」，保证查询参数始终携带有效类型
     type: {
       type: String,
@@ -60,10 +63,7 @@ export default {
     };
 
     // 仓库值 / 选中项原样向上透传，保持与直接使用 WareHouseSelect 一致的事件契约
-    const handleChange = (val) => {
-      emit("update:modelValue", val);
-      emit("change", val);
-    };
+    const handleChange = (val) => emit("change", val);
     const handleSelect = (val) => emit("select", val);
 
     return {
@@ -87,7 +87,7 @@ export default {
     width: 100px;
     flex-shrink: 0;
 
-    :deep(.el-select__wrapper) {
+    :deep(.el-input__inner) {
       position: relative;
       padding-left: 10px;
       padding-right: 26px;
@@ -97,7 +97,7 @@ export default {
 
     // 聚焦时抬升层级，避免高亮右边框被右侧仓库输入框压住。
     // 仅左侧需要：右侧输入框天然绘制在上层，且多选 tags 浮层会被抬升的输入框背景盖住
-    :deep(.el-select__wrapper.is-focused) {
+    :deep(.el-input.is-focus .el-input__inner) {
       z-index: 1;
     }
   }
@@ -107,7 +107,7 @@ export default {
     min-width: 0;
     margin-left: -1px;
 
-    :deep(.el-select__wrapper) {
+    :deep(.el-input__inner) {
       position: relative;
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;

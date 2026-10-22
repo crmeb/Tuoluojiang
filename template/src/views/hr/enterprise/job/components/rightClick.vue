@@ -19,10 +19,9 @@
 </template>
 
 <script>
-import { rankLevelRelationApi, rankLevelRelationDeleteApi } from '@/api/setting.ts';
+import { rankLevelRelationApi, rankLevelRelationDeleteApi } from '@/api/setting';
 
 export default {
-  emits: ['handleRightClick'],
   name: 'RightClick',
   props: {
     configData: {
@@ -39,7 +38,7 @@ export default {
       clickData: {},
     };
   },
-  beforeUnmount() {
+  beforeDestroy() {
     document.removeEventListener('click', this.foo);
   },
   methods: {

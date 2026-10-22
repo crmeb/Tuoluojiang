@@ -106,7 +106,7 @@
                 <oaUploadList :fileList="scope.row.before_value"></oaUploadList>
               </div>
               <div v-else-if="scope.row.form_value === 'tag'">
-                <el-tag class="mb5" v-for="(val, index) in scope.row.before_value" :key="index">
+                <el-tag size="small" class="mb5" v-for="(val, index) in scope.row.before_value" :key="index">
                   {{ val }}
                 </el-tag>
               </div>
@@ -134,7 +134,7 @@
                 <oaUploadList :fileList="scope.row.after_value"></oaUploadList>
               </div>
               <div v-else-if="scope.row.form_value === 'tag'">
-                <el-tag class="mb5" v-for="(val, index) in scope.row.after_value" :key="index">
+                <el-tag size="small" class="mb5" v-for="(val, index) in scope.row.after_value" :key="index">
                   {{ val }}
                 </el-tag>
               </div>
@@ -148,7 +148,7 @@
 </template>
 <script>
 import oaUploadList from '@/components/form-common/oa-uploadList'
-import { filePreview } from '@/utils/filePreview.ts'
+import { filePreview } from '@/utils/filePreview'
 export default {
   name: '',
   components: { oaUploadList },
@@ -225,10 +225,10 @@ export default {
 }
 </script>
 <style scoped lang="scss">
-:deep(.icon-no .el-table__expand-icon) {
+::v-deep .icon-no .el-table__expand-icon {
   display: none;
 }
-:deep(.el-table__header-wrapper) {
+::v-deep .el-table__header-wrapper {
   display: none;
 }
 .align-center {
@@ -271,20 +271,20 @@ export default {
   .expand-left {
     width: 50%;
     align-items: flex-start;
-    :deep(table) {
+    ::v-deep table {
       border: 1px solid #ccc;
     }
 
-    :deep(table th) {
+    ::v-deep table th {
       border: 1px solid #ccc;
     }
-    :deep(table td) {
+    ::v-deep table td {
       padding: 10px 5px;
       border: 1px solid #ccc;
     }
   }
   .rich_text {
-    :deep(p) {
+    ::v-deep p {
       img {
         width: 90%;
       }
@@ -294,14 +294,14 @@ export default {
     width: 50%;
     margin-left: 20px;
     align-items: flex-start;
-    :deep(table) {
+    ::v-deep table {
       border: 1px solid #ccc;
     }
 
-    :deep(table th) {
+    ::v-deep table th {
       border: 1px solid #ccc;
     }
-    :deep(table td) {
+    ::v-deep table td {
       padding: 10px 5px;
       border: 1px solid #ccc;
     }
@@ -316,7 +316,7 @@ export default {
     line-height: 16px;
     margin-right: 36px;
     margin-bottom: 0;
-    :deep(p) {
+    ::v-deep p {
       font-size: 14px;
       margin: 0;
     }
@@ -340,7 +340,7 @@ export default {
   margin-right: 6px;
 }
 .tableBox {
-  :deep(.el-table td.el-table__cell div) {
+  ::v-deep .el-table td.el-table__cell div {
     display: flex;
     align-items: center;
   }

@@ -1,6 +1,6 @@
 <!-- 配置app二维码组件 -->
 <template>
-  <el-popover v-if="userInfo" ref="popoverUser" placement="bottom" popper-class="user-popper" trigger="click">
+  <el-popover ref="popoverUser" placement="bottom" popper-class="user-popper" trigger="click">
     <div class="popover-user">
       <div class="drop-head">
         <div class="flex">
@@ -36,11 +36,11 @@
         <i class="iconfont iconjianli"></i>
         个人简历
       </div>
-      <!-- <div class="drop-item" @click="toCommunity" v-if="forumShow">
+      <!-- <div class="drop-item" @click="toCommunity" v-if="this.$store.state.settings.forumShow">
         <i class="iconfont icongudingwuzi"></i>
         知识社区
       </div> -->
-      <div class="drop-item drop-body" @click="toForum" v-if="bbsShow">
+      <div class="drop-item drop-body" @click="toForum" v-if="this.$store.state.settings.bbsShow">
         <i class="iconfont iconcebianlan-luntanzhongxin"></i>
         论坛中心
       </div>
@@ -51,7 +51,7 @@
       </div>
     </div>
     <template #reference>
-      <div class="user-info">
+      <div v-if="userInfo" class="user-info">
         <img v-default-avatar="userInfo" :src="getAvatarSrc(userInfo)" alt="" class="img" />
         <span>{{ userInfo.account }}</span>
       </div>
@@ -63,28 +63,24 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { getAvatarSrc } from '@/utils/avatar.ts'
-import { mapState } from 'pinia'
-import { useUserStore } from '@/stores/user.ts'
-import { bbsShow, roterPre } from '@/settings.ts'
-import { loginRouteWithRedirect } from '@/utils/login-redirect'
+import { modalSure } from '@/libs/public'
+import { getAvatarSrc } from '@/utils/avatar'
+import { mapGetters } from 'vuex'
+import defaultSettings, { roterPre } from '@/settings'
 
 export default {
   name: 'configapp',
   components: {
-    personalCenter: defineAsyncComponent(() => import('./personalCenter')),
+    personalCenter: () => import('./personalCenter'),
   },
   props: ['helpShow'],
 
   data() {
     return {
-      bbsShow
     }
   },
   computed: {
-    ...mapState(useUserStore, ['userInfo']),
+    ...mapGetters(['userInfo']),
     frameName() {
       if (this.userInfo.frames && this.userInfo.frames[0] && this.userInfo.frames[0].frame) {
         return this.userInfo.frames[0].frame.name
@@ -104,17 +100,17 @@ export default {
     },
     // 去订阅消息
     toSubscribe() {
-      this.$refs.popoverUser.hide()
+      this.$refs.popoverUser.doClose()
       this.$router.push(`${roterPre}/user/news/subscribe`)
     },
     // 去个人简历
     toResume() {
-      this.$refs.popoverUser.hide()
+      this.$refs.popoverUser.doClose()
       this.$router.push(`${roterPre}/user/resume`)
     },
     // 去知识社区
     toCommunity() {
-      this.$refs.popoverUser.hide()
+      this.$refs.popoverUser.doClose()
       this.$router.push(`${roterPre}/user/forum/index`)
     },
     // 去个人中心
@@ -125,13 +121,13 @@ export default {
     // 退出登录
     loginOut() {
       modalSure('确定退出登录吗').then(async () => {
-        await useUserStore().logout()
-        this.$router.push(loginRouteWithRedirect(this.$route.fullPath))
+        await this.$store.dispatch('user/logout')
+        this.$router.push(`${roterPre}/login?redirect=${this.$route.fullPath}`)
       })
     },
     // 关闭popper
     closePopoverUser() {
-      this.$refs.popoverUser.hide()
+      this.$refs.popoverUser.doClose()
     }
   }
 }

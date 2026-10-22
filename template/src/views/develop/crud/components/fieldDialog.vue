@@ -1,23 +1,23 @@
 <template>
     <div>
         <oa-dialog :fromData="fromData" ref="oaDialog" @submit="submit">
-            <el-form ref="form" :model="form" :rules="rules" label-width="auto" @submit.prevent>
+            <el-form ref="form" :model="form" :rules="rules" label-width="auto" @submit.native.prevent>
                 <el-form-item label="显示名称：" prop="field_name">
                     <el-input v-model="form.field_name" placeholder="请输入显示名称" />
                 </el-form-item>
                 <el-form-item label="实体名称：" prop="field_name_en">
                     <el-input :disabled="fromData.type == 'edit' ? true : false" v-model="form.field_name_en"
-                        placeholder="英文小写字母开头，不可包含中文，空格，中间可输入下划线" class="refresh-input"
+                        placeholder="英文小写字母开头，不可包含中文，空格，中间可输入下划线" size="small" class="refresh-input"
                         @focus="refreshFn()">
                         <template #suffix>
                           <el-button type="primary" class="refresh" :disabled="fromData.type == 'edit' ? true : false"
- @click.stop="refreshFn()">
+   size="small" @click.stop="refreshFn()">
                               刷新生成</el-button>
                         </template>
                     </el-input>
                 </el-form-item>
                 <el-form-item label="选项类型：" prop="value">
-                    <el-select v-model="form.value" placeholder="请选择选项类型" style="width: 100%;">
+                    <el-select v-model="form.value" placeholder="请选择选项类型" size="small" style="width: 100%;">
                         <el-option v-for="item in textTypes" :key="item.value" :label="item.label"
                             :value="item.value" />
                     </el-select>
@@ -30,7 +30,7 @@
                 </el-form-item> -->
 
                 <el-form-item label="关联字典：" prop="data_dict_id" v-if="form.data_type == '0'">
-                    <el-select v-model="form.data_dict_id" placeholder="请搜索选择数据字典" style="width: 100%;">
+                    <el-select v-model="form.data_dict_id" placeholder="请搜索选择数据字典" size="small" style="width: 100%;">
                         <el-option v-for="item in dictListData" :key="item.id" :label="item.name" :value="item.id" />
                     </el-select>
                 </el-form-item>
@@ -48,20 +48,20 @@
                     </div>
                 </el-form-item>
                 <el-form-item label="字段唯一：" prop="is_uniqid" v-if="form.value == 'input'">
-                    <el-switch v-model="form.is_uniqid" active-value="1" inactive-value="0"
+                    <el-switch v-model="form.is_uniqid" size="small" active-value="1" inactive-value="0"
                         active-text="开启" inactive-text="关闭">
                     </el-switch>
                 </el-form-item>
                 <el-form-item label="新增时：" prop="create_modify">
                     <el-radio-group v-model="form.create_modify" class="vertical">
-                        <el-radio v-for="(itemOption, index) in options" :key="index" :value="itemOption.label">{{
+                        <el-radio v-for="(itemOption, index) in options" :key="index" :label="itemOption.label">{{
                             itemOption.value
                         }}</el-radio>
                     </el-radio-group>
                 </el-form-item>
                 <el-form-item label="编辑时：" prop="update_modify">
                     <el-radio-group v-model="form.update_modify" class="vertical">
-                        <el-radio v-for="(itemOption, index) in options" :key="index" :value="itemOption.label">{{
+                        <el-radio v-for="(itemOption, index) in options" :key="index" :label="itemOption.label">{{
                             itemOption.value
                         }}</el-radio>
                     </el-radio-group>
@@ -78,7 +78,6 @@ import oaDialog from '@/components/form-common/dialog-form.vue'
 import checkboxDialog from '@/components/develop/checkboxDialog'
 export default {
     name: "FieldDialig",
-    emits: ["submit"],
     components: {
         oaDialog,
         checkboxDialog

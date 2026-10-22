@@ -3,10 +3,10 @@
   <div class="station">
     <el-drawer
       :title="formData.title"
-      v-model="drawer"
+      :visible.sync="drawer"
       :direction="direction"
       :modal="true"
-      :close-on-click-modal="false"
+      :wrapper-closable="false"
       :before-close="handleClose"
       :append-to-body="true"
       :size="formData.width"
@@ -14,9 +14,9 @@
       <div class="invoice">
         <el-form ref="form" label-width="80px">
           <el-form-item label="选择方式：">
-            <el-radio-group v-model="type">
-              <el-radio label="0" value="0">按人员</el-radio>
-              <el-radio label="1" value="1">按部门</el-radio>
+            <el-radio-group size="small" v-model="type">
+              <el-radio label="0">按人员</el-radio>
+              <el-radio label="1">按部门</el-radio>
             </el-radio-group>
           </el-form-item>
           <el-form-item label="领用对象：" class="el-input--small">
@@ -46,6 +46,7 @@
               <template #default="scope">
                 <el-select
                   v-model="scope.row.name"
+                  size="small"
                   filterable
                   placeholder="请选择物资"
                   @change="handleName($event, scope.$index)"
@@ -73,6 +74,7 @@
                   v-model="scope.row.sNumber"
                   controls-position="right"
                   :precision="0"
+                  size="small"
                   :min="1"
                   :max="scope.row.stock"
                 ></el-input-number>
@@ -86,7 +88,7 @@
           </el-table>
         </div>
         <div class="mt14">
-          <el-button type="primary" link icon="el-icon-plus" @click="addRow()">添加行</el-button>
+          <el-button type="text" icon="el-icon-plus" @click="addRow()">添加行</el-button>
         </div>
         <el-form ref="form" label-width="80px">
           <el-form-item label="备 注：" class="el-input--small">
@@ -97,14 +99,14 @@
               show-word-limit
               :rows="2"
               resize="none"
-              placeholder="请填写备注信息"
+              :placeholder="$t('customer.placeholder18')"
             />
           </el-form-item>
         </el-form>
         <div class="button from-foot-btn fix btn-shadow">
-          <el-button @click="handleClose">取消</el-button>
-          <el-button :loading="loading" type="primary" @click="handleConfirm()">
-            确定
+          <el-button @click="handleClose" size="small">{{ $t('public.cancel') }}</el-button>
+          <el-button :loading="loading" size="small" type="primary" @click="handleConfirm()">
+            {{ $t('public.ok') }}
           </el-button>
         </div>
       </div>
@@ -113,15 +115,13 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { storageRecordSaveApi } from '@/api/administration.ts'
+import { storageRecordSaveApi } from '@/api/administration'
 
 export default {
-  emits: ['isOk'],
   name: 'Receive',
   components: {
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
-    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department'))
+    selectMember: () => import('@/components/form-common/select-member'),
+    selectDepartment: () => import('@/components/form-common/select-department')
   },
   props: {
     formData: {
@@ -238,7 +238,7 @@ export default {
     handleName(e, index) {
       const data = JSON.parse(JSON.stringify(this.formData.selectData[e]))
       data.sNumber = 0
-      this.tableData[[index]] = data
+      this.$set(this.tableData, [index], data)
       this.getSelectChange()
     },
     getSelectChange() {
@@ -269,6 +269,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.station ::v-deep .el-drawer__body {
+  padding: 20px 20px 50px 20px;
+}
 
 .invoice {
   margin: 20px;
@@ -281,8 +284,8 @@ export default {
 .table-box {
   // height: calc(100% - 130px);
 }
-:deep(.el-select),
-:deep(.el-input-number) {
+::v-deep .el-select,
+::v-deep .el-input-number {
   width: 100%;
 }
 .flex-box {
@@ -298,7 +301,7 @@ export default {
   border-top: 1px solid #e6ebf5;
   text-align: right;
 }
-:deep(.el-radio-group) {
+::v-deep .el-radio-group {
   // margin-top: 10px;
 }
 </style>

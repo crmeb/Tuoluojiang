@@ -118,18 +118,17 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 // 导入辅助工具库
-import helper from '@/libs/helper.ts'
+import helper from '@/libs/helper'
 // 导入云存储上传工具
-import { uploader } from '@/utils/uploadCloud.ts'
+import { uploader } from '@/utils/uploadCloud'
 // 导入获取令牌的工具
-import { getToken } from '@/utils/auth.ts'
+import { getToken } from '@/utils/auth'
 // 导入设置信息
-import SettingMer from '@/libs/settingMer.ts'
+import SettingMer from '@/libs/settingMer'
 // 导入分片上传工具
-import { uploadByPieces } from '@/utils/uploadChunk.ts'
+import { uploadByPieces } from '@/utils/uploadChunk'
 // 导入云盘相关API
 import {
   folderAllDeleteApi,
@@ -138,27 +137,27 @@ import {
   folderSpaceEntAllDeleteApi,
   folderSpaceEntAllDestroyApi,
   folderSpaceEntAllRecoverApi
-} from '@/api/cloud.ts'
+} from '@/api/cloud'
 // 导入获取上传密钥的API
-import { getUploadKeysApi } from '@/api/public.ts'
+import { getUploadKeysApi } from '@/api/public'
 // 导入生成XMind文件的工具
-import { generateXmindFile } from '@/components/xmind-editor/utils.ts'
-import { getStorageJson } from '@/utils/storage.ts'
+import { generateXmindFile } from '@/components/xmind-editor/utils'
+import { getStorageJson } from '@/utils/storage'
 // 导入文件预览服务
-import { filePreview } from '@/utils/filePreview.ts'
+import { filePreview } from '@/utils/filePreview'
 
 export default {
   name: 'CloudFile',
   components: {
-    cloudfileLeft: defineAsyncComponent(() => import('./components/layout/cloudfileLeft')), // 左侧导航
-    formBox: defineAsyncComponent(() => import('./components/layout/formBox')), // 顶部操作
-    latelyFile: defineAsyncComponent(() => import('./components/layout/latelyFile')), // 最近的文件
-    recoveryFile: defineAsyncComponent(() => import('./components/layout/recoveryFile')), // 回收站的文件
-    spaceFile: defineAsyncComponent(() => import('./components/layout/spaceFile')), // 企业空间文件
-    newFileDialog: defineAsyncComponent(() => import('./components/newFileDialog')), // 新建文件弹窗
-    moveDialog: defineAsyncComponent(() => import('./components/moveDialog')), // 移动文件弹窗
-    fileTemp: defineAsyncComponent(() => import('./components/fileTemp')), // 文件模板弹窗
-    uploadProgress: defineAsyncComponent(() => import('./components/uploadProgress')) // 文件上传进度
+    cloudfileLeft: () => import('./components/layout/cloudfileLeft'), // 左侧导航
+    formBox: () => import('./components/layout/formBox'), // 顶部操作
+    latelyFile: () => import('./components/layout/latelyFile'), // 最近的文件
+    recoveryFile: () => import('./components/layout/recoveryFile'), // 回收站的文件
+    spaceFile: () => import('./components/layout/spaceFile'), // 企业空间文件
+    newFileDialog: () => import('./components/newFileDialog'), // 新建文件弹窗
+    moveDialog: () => import('./components/moveDialog'), // 移动文件弹窗
+    fileTemp: () => import('./components/fileTemp'), // 文件模板弹窗
+    uploadProgress: () => import('./components/uploadProgress') // 文件上传进度
   },
   data() {
     return {
@@ -209,7 +208,7 @@ export default {
       fileData: {},
       fileTemp: {
         type: 1,
-        title: '选择模板',
+        title: this.$t('file.selecttemplate'),
         width: '820px'
       },
       isSortShow: false,
@@ -222,12 +221,7 @@ export default {
   },
 
   mounted() {
-    // 整页 el-upload 只承接拖拽上传，点击页面任意位置都不应唤起文件选择框。
-    // Element Plus 会把 disabled 响应式绑定到 input 上，switchIndex 一变就覆盖手动设置的 disabled，
-    // 所以改为拦截 input 的 click 默认行为
-    this.$refs.uploadServer.$el
-      .querySelector('.el-upload__input')
-      .addEventListener('click', (e) => e.preventDefault())
+    this.$refs.uploadServer.$el.querySelector('.el-upload__input').disabled = true
     this.$nextTick(() => {
       let height = document.documentElement.clientHeight - 290
       this.pageLimit = Math.floor(height / 58) // 假设每行高度为 50px
@@ -239,7 +233,7 @@ export default {
     // 获取上传参数
     this.getUploadParams()
   },
-  beforeUnmount() {
+  beforeDestroy() {
     document.removeEventListener('dragenter', this.handleDragEnter)
     document.removeEventListener('dragleave', this.handleDrop)
   },
@@ -578,7 +572,7 @@ export default {
           this.entButton = true
           setTimeout(() => {
             this.$refs.spaceFile.where.pid = ''
-            this.$refs.spaceFile.breadcrumbArray = [{ name: '全部文件', pid: '' }]
+            this.$refs.spaceFile.breadcrumbArray = [{ name: this.$t('file.allfiles'), pid: '' }]
             this.$refs.spaceFile.checked = false
             this.$refs.spaceFile.menuIds = []
             this.$refs.spaceFile.where.page = 1
@@ -626,7 +620,7 @@ export default {
     handleScreen(command) {
       if (command == 5) {
         this.configMyFile = {
-          title: '新建文件夹',
+          title: this.$t('file.newfolder'),
           pid: this.pid,
           command: command,
           switch: this.switchIndex,
@@ -640,16 +634,16 @@ export default {
         var title = ''
         var type = ''
         if (command == 1) {
-          title = '新建文档'
+          title = this.$t('file.newdocument')
           type = 'word'
         } else if (command == 2) {
-          title = '新建表格'
+          title = this.$t('file.newtable')
           type = 'excel'
         } else if (command == 9) {
-          title = '新建思维导图'
+          title = this.$t('file.newmindmap')
           type = 'mindmap'
         } else {
-          title = '新建幻灯片'
+          title = this.$t('file.newslide')
           type = 'ppt'
         }
         this.configMyFile = {
@@ -710,7 +704,7 @@ export default {
 
     allDelete(type) {
       if (this.ids.length <= 0) {
-        this.$message.error('请选择要删除的内容')
+        this.$message.error(this.$t('file.placeholder05'))
       } else {
         const uids = this.ids
         if (uids.length > 0 && uids[0] === 0) {
@@ -739,7 +733,7 @@ export default {
 
     allDestroy() {
       if (this.ids.length <= 0) {
-        this.$message.error('请选择要恢复的内容')
+        this.$message.error(this.$t('file.placeholder06'))
       } else {
         const uids = this.ids
         if (uids.length > 0 && uids[0] === 0) {
@@ -756,7 +750,7 @@ export default {
 
     allMove() {
       if (this.ids.length <= 0) {
-        this.$message.error('请选择要移动的内容')
+        this.$message.error(this.$t('file.placeholder07'))
       } else {
         const uids = this.ids
         if (uids.length > 0 && uids[0] === 0) {
@@ -820,6 +814,9 @@ export default {
   },
 
   watch: {
+    lang() {
+      this.setOptions()
+    },
     switchIndex: {
       handler(nVal, oVal) {
         if (nVal == 6 || nVal == 1) {
@@ -864,7 +861,7 @@ export default {
   display: inline-block;
 }
 
-:deep(.card-box > .el-loading-mask > .el-loading-spinner) {
+::v-deep .card-box > .el-loading-mask > .el-loading-spinner {
   /* 图片替换为你自定义的即可 */
   background: url('../../../assets/images/loading-img.png') no-repeat;
 
@@ -879,7 +876,7 @@ export default {
     display: none;
   }
 }
-:deep(.el-loading-text) {
+::v-deep .el-loading-text {
   position: relative;
   top: 50%;
   left: 50%;
@@ -905,12 +902,6 @@ export default {
 .cloudfile-right {
   padding: 0 20px;
   cursor: default;
-
-  // Element Plus 的 el-row 是 flex 容器，文件列表会按内容收缩；恢复旧版块级布局以撑满宽度，
-  // 用 flow-root 代替旧版 clearfix 伪元素，避免表格 margin-top 向外折叠
-  > .el-row {
-    display: flow-root;
-  }
 
   .header-16 {
     display: flex;
@@ -954,7 +945,7 @@ export default {
       // text-align: right;
       flex-wrap: wrap;
 
-      :deep(.el-dropdown-selfdefine) {
+      ::v-deep .el-dropdown-selfdefine {
         display: flex;
         align-items: center;
         i {
@@ -983,7 +974,7 @@ export default {
         list-style: none;
         margin-bottom: 0;
       }
-      :deep(.el-dropdown-menu) {
+      ::v-deep .el-dropdown-menu {
         position: static;
         margin: 0;
       }
@@ -997,7 +988,7 @@ export default {
     }
   }
 }
-:deep(.el-upload) {
+::v-deep .el-upload {
   width: 100%;
   height: 100%;
   border: none;
@@ -1005,17 +996,15 @@ export default {
   cursor: default;
   // pointer-events: none;
 }
-:deep(.el-upload .el-upload-dragger) {
+::v-deep .el-upload .el-upload-dragger {
   width: 100%;
   height: 100%;
-  // Element Plus 的拖拽区默认带 40px 10px 内边距，旧版没有
-  padding: 0;
   border: none;
   text-align: left;
   cursor: default;
   background: transparent;
 }
-:deep(.el-pagination) {
+::v-deep .el-pagination {
   padding-bottom: 0;
 }
 </style>

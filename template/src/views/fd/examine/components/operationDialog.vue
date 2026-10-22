@@ -5,7 +5,7 @@
       :append-to-body="true"
       :before-close="handleClose"
       :title="config.title"
-      v-model="dialogVisible"
+      :visible.sync="dialogVisible"
       width="540px"
     >
       <el-form ref="form" :label-width="labelWidth + 'px'" :model="rules" :rules="rule" class="mt15">
@@ -39,7 +39,7 @@
           <template #label>
             <span>续费类型： </span>
           </template>
-          <el-select v-model="rules.cate_id" placeholder="请选择续费类型">
+          <el-select v-model="rules.cate_id" :placeholder="$t('customer.placeholder31')" size="small">
             <el-option v-for="item in sourceOptions" :key="item.id" :label="item.value.title" :value="item.id" />
           </el-select>
         </el-form-item>
@@ -54,6 +54,7 @@
             :controls="false"
             :max="999999.99"
             :placeholder="placeholder01"
+            size="small"
           ></el-input-number>
         </el-form-item>
 
@@ -64,9 +65,10 @@
           </template>
           <el-date-picker
             v-model="rules.end_date"
-            v-bind="$pickerProps(config.type > 2 ? expireTimeOption : '')"
-            type="date"
+            :picker-options="config.type > 2 ? expireTimeOption : ''"
+            :type="'date'"
             placeholder="请选择续费结束日期"
+            size="small"
           >
           </el-date-picker>
         </el-form-item>
@@ -75,7 +77,7 @@
           <template #label>
             <span>支付方式：</span>
           </template>
-          <el-select v-model="rules.type_id" placeholder="请选择支付方式">
+          <el-select v-model="rules.type_id" placeholder="请选择支付方式" size="small">
             <el-option v-for="item in paymentOptions" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
         </el-form-item>
@@ -87,8 +89,10 @@
           </template>
           <el-date-picker
             v-model="rules.dateTime"
-            format="YYYY/MM/DD HH:mm:ss"
+            format="yyyy/MM/dd HH:mm:ss"
+            picker-options="expireTimeOption"
             placeholder="请选择付款时间"
+            size="small"
             type="datetime"
           >
           </el-date-picker>
@@ -126,22 +130,21 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="handleClose">取消</el-button>
-          <el-button type="primary" @click="handleConfirm">确定</el-button>
+          <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
+          <el-button size="small" type="primary" @click="handleConfirm">{{ $t('public.ok') }}</el-button>
         </div>
       </template>
     </el-dialog>
   </div>
 </template>
 <script>
-import dayjs from 'dayjs'
-import { enterprisePayTypeApi, clientConfigListApi, billFinanceApi } from '@/api/enterprise.ts'
-import { clientBillStatusApi } from '@/api/client.ts'
-import { getToken } from '@/utils/auth.ts'
-import { uploader } from '@/utils/uploadCloud.ts'
-import SettingMer from '@/libs/settingMer.ts'
+import moment from 'moment'
+import { enterprisePayTypeApi, clientConfigListApi, billFinanceApi } from '@/api/enterprise'
+import { clientBillStatusApi } from '@/api/client'
+import { getToken } from '@/utils/auth'
+import { uploader } from '@/utils/uploadCloud'
+import SettingMer from '@/libs/settingMer'
 export default {
-  emits: ['isOk'],
   name: '',
   components: {},
   props: {
@@ -158,9 +161,9 @@ export default {
   data() {
     const checkAmount = (rule, value, callback) => {
       if (this.types == 0 && !value) {
-        return callback(new Error('请输入回款金额'))
+        return callback(new Error(this.$t('customer.placeholder33')))
       } else if (this.types == 1 && !value) {
-        return callback(new Error('请输入续费金额'))
+        return callback(new Error(this.$t('customer.placeholder35')))
       } else {
         callback()
       }
@@ -244,7 +247,7 @@ export default {
         this.rules.type_id = nVal.data.type_id
         this.rules.remarks = nVal.data.mark
 
-        this.rules.dateTime = dayjs(nVal.data.date).format('YYYY/MM/DD HH:mm:ss')
+        this.rules.dateTime = moment(nVal.data.date).format('YYYY/MM/DD HH:mm:ss')
 
         if (nVal.data.end_date == '0000-00-00') {
           this.rules.end_date = ''
@@ -301,7 +304,7 @@ export default {
             types: this.config.data.types,
             num: this.rules.amount,
             mark: this.rules.remarks,
-            date: dayjs(this.rules.dateTime).format('YYYY-MM-DD HH:mm:ss'),
+            date: moment(this.rules.dateTime).format('YYYY-MM-DD HH:mm:ss'),
             end_date: this.rules.end_date,
             type_id: this.rules.type_id,
             cate_id: this.rules.cate_id,
@@ -392,10 +395,10 @@ export default {
   width: 75px;
   height: 95px;
 }
-:deep(.el-cascader) {
+::v-deep .el-cascader {
   width: 100%;
 }
-:deep(.el-alert) {
+::v-deep .el-alert {
   padding-left: 30px;
   border: 1px solid #1890ff;
   color: #1890ff;
@@ -404,12 +407,12 @@ export default {
   line-height: 1;
   margin-bottom: 20px;
 }
-:deep(.el-alert--info .el-alert__description) {
+::v-deep .el-alert--info .el-alert__description {
   color: #303133;
   font-size: 13px;
   font-weight: 500;
 }
-:deep(.el-alert__icon.is-big) {
+::v-deep .el-alert__icon.is-big {
   font-size: 16px;
   width: 15px;
 }
@@ -437,19 +440,19 @@ export default {
   text-align: center;
   cursor: pointer;
 }
-:deep(.el-date-editor) {
+::v-deep .el-date-editor {
   width: 100%;
 }
-:deep(.el-textarea__inner) {
+::v-deep .el-textarea__inner {
   resize: none;
 }
-:deep(.el-input-number) {
+::v-deep .el-input-number {
   width: 100%;
 }
-:deep(.el-select) {
+::v-deep .el-select {
   width: 100%;
 }
-:deep(.el-form-item:last-of-type) {
+::v-deep .el-form-item:last-of-type {
   margin-bottom: 0;
 }
 .dialog-footer {

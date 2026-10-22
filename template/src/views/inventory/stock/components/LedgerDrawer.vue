@@ -1,18 +1,18 @@
 <template>
-  <el-drawer v-model="visible" :size="DRAWER_SIZE.LG" class="stock-ledger-drawer" @close="reset">
+  <el-drawer :visible.sync="visible" :size="DRAWER_SIZE.LG" custom-class="stock-ledger-drawer" @close="reset">
     <!-- 抽屉头部：商品缩略图 + 名称 + 规格 + 编码 -->
-    <template #header>
+    <template #title>
       <GoodsBrief :product="row.product" :sku="row.sku" />
     </template>
 
     <!-- 库存属性页签：良品台账 / 残次品台账，紧贴抽屉边框与头部，不受表格区内边距影响 -->
-    <el-tabs type="border-card" v-model="activeQuality" class="ledger-tabs" @tab-change="handleQualityChange">
+    <el-tabs type="border-card" v-model="activeQuality" class="ledger-tabs" @tab-click="handleQualityChange">
       <el-tab-pane v-for="tab of LEDGER_QUALITY_TABS" :key="tab.name" :name="tab.name" :label="tab.label" />
     </el-tabs>
 
     <div class="ledger-body">
       <BaseTable :table-columns="tableColumns" :data="tableData" :loading="isLoading" :total="total"
-        v-model:page="page" v-model:page-size="pageSize">
+        :page.sync="page" :page-size.sync="pageSize">
         <!-- 库存变化：变动前 -> 变动后 + 差值角标 -->
         <template #change="{ row: item }">
           <div class="stock-change flex">
@@ -41,12 +41,12 @@
 </template>
 
 <script>
-import { DRAWER_SIZE } from "@/constants/popupSize.ts";
+import { DRAWER_SIZE } from "@/constants/popupSize";
 import BaseTable from "@/components/BaseTable/index.vue";
 import GoodsBrief from "./GoodsBrief.vue";
-import { useLedger } from "../composables/useLedger.ts";
-import { LEDGER_QUALITY_TABS } from "../constants.ts";
-import { formatStock } from "../utils.ts";
+import { useLedger } from "../composables/useLedger";
+import { LEDGER_QUALITY_TABS } from "../constants";
+import { formatStock } from "../utils";
 
 export default {
   name: "LedgerDrawer",

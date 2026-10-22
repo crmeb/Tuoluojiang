@@ -1,28 +1,21 @@
 <template>
   <div class="_fc_fetch">
  
-    <form-create v-model:api="api" :value="formValue" :rule="rule" :option="option" @change="input" />
+    <form-create v-model="api" :value="formValue" :rule="rule" :option="option" @change="input" />
   </div>
 </template>
 
 <script>
 import debounce from '@form-create/utils/lib/debounce'
 import is from '@form-create/utils/lib/type'
-import { designerForm } from '../config/viewForm'
 
 export default {
-  emits: ['update:modelValue'],
   name: 'Fetch',
-  components: { formCreate: designerForm.$form() },
   props: {
-    modelValue: [Object, String],
+    value: [Object, String],
     to: String
   },
   computed: {
-    // Vue 3 的 v-model 走 modelValue，保留 value 供组件内部沿用
-    value() {
-      return this.modelValue
-    },
     formValue() {
       const val = this.value
       if (!val) return {}
@@ -46,7 +39,7 @@ export default {
       option: {
         form: {
           labelPosition: 'right',
-          size: 'small',
+          size: 'mini',
           labelWidth: '90px'
         },
         submitBtn: false
@@ -124,8 +117,8 @@ export default {
       this.api.submit((formData) => {
         formData.to = this.to || 'options'
         if (formData._parse) formData.parse = this.parseFn(formData._parse)
-        this.$emit('update:modelValue', formData)
-      }).catch(() => {}) // 校验不通过时 reject，错误已显示在表单上
+        this.$emit('input', formData)
+      })
     },
     input: debounce(function () {
       this._input()
@@ -138,8 +131,9 @@ export default {
 </script>
 <style>
 ._fc_fetch .el-form-item__label {
-  display: inline-flex;
-  justify-content: flex-end;
+  float: left;
+  display: inline-block;
+  text-align: right;
   padding-right: 5px;
 }
 

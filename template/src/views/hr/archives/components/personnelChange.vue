@@ -9,7 +9,7 @@
         <!-- 离职 -->
         <div class="quit" v-if="item.types === 3">
           <div class="time">
-            {{ item.date ? item.date : item.created_at }} <el-tag size="small" type="warning" class="ml15">离职</el-tag>
+            {{ item.date ? item.date : item.created_at }} <el-tag type="warning" size="mini" class="ml15">离职</el-tag>
           </div>
           <div>离职时部门： {{ item.o_frame ? item.o_frame.name : '' }}</div>
           <div>离职时职位：{{ item.o_position ? item.o_position.name : '' }}</div>
@@ -20,14 +20,14 @@
         <div class="quit" v-if="item.types === 1">
           <div class="time">
             {{ item.date ? item.date : item.created_at }}
-            <el-tag size="small" type="warning" class="ml15">转正</el-tag>
+            <el-tag type="warning" size="mini" class="ml15">转正</el-tag>
           </div>
           <div>转正备注： {{ item.mark || '--' }}</div>
         </div>
 
         <!-- 调岗 -->
         <div class="post-transfer quit" v-if="item.types === 2">
-          <div class="time">{{ item.created_at }} <el-tag size="small" type="success" class="ml15">调岗</el-tag></div>
+          <div class="time">{{ item.created_at }} <el-tag type="success" size="mini" class="ml15">调岗</el-tag></div>
           <div>新部门职位： 产品研发部</div>
           <div>原部门职位： 研发工程师；p8，职等3</div>
           <div>调岗备注： 由于特殊原因进行调岗操作，已经得到上级领导批准</div>
@@ -35,7 +35,7 @@
         <!-- 入职 -->
         <div class="post-transfer quit" v-if="item.types === 0">
           <div class="time">
-            {{ item.date ? item.date : item.created_at }} <el-tag size="small" class="ml15">入职</el-tag>
+            {{ item.date ? item.date : item.created_at }} <el-tag size="mini" class="ml15">入职</el-tag>
           </div>
 
           <div>员工类型： {{ item.is_part || '--' }}</div>
@@ -61,8 +61,8 @@
         <div class="quit">
           <div class="time">
             {{ activity.take_date }}
-            <el-tag size="small" type="success" class="ml15" v-if="index + 1 !== list.length">调薪</el-tag>
-            <el-tag size="small" class="ml15" v-else>定薪</el-tag>
+            <el-tag type="success" size="mini" class="ml15" v-if="index + 1 !== list.length">调薪</el-tag>
+            <el-tag size="mini" class="ml15" v-else>定薪</el-tag>
           </div>
           <div class="icon"></div>
           <div>薪资合计(元)： {{ activity.total }}</div>

@@ -1,7 +1,7 @@
 <template>
-  <el-dialog class="nodeTagDialog" title="标签" v-model="dialogVisible" :width="isMobile ? '90%' : '50%'"
+  <el-dialog class="nodeTagDialog" title="标签" :visible.sync="dialogVisible" :width="isMobile ? '90%' : '50%'"
     :top="isMobile ? '20px' : '15vh'">
-    <el-input v-model="tag" @keyup.enter="add" @keyup.stop @keydown.stop
+    <el-input v-model="tag" @keyup.native.enter="add" @keyup.native.stop @keydown.native.stop
       :disabled="tagArr.length >= max" placeholder="请按回车键添加">
     </el-input>
     <div class="tagList">
@@ -24,12 +24,12 @@
 </template>
 
 <script>
-import { EventBus } from '@/libs/bus.ts'
+import { EventBus } from '@/libs/bus'
 import {
   generateColorByContent,
   isMobile
 } from 'simple-mind-map/src/utils/index'
-import { END_TEXT_EDIT, NODE_ACTIVE, SHOW_NODE_TAG, START_TEXT_EDIT } from '../event-constant.ts';
+import { END_TEXT_EDIT, NODE_ACTIVE, SHOW_NODE_TAG, START_TEXT_EDIT } from '../event-constant';
 
 
 export default {
@@ -55,7 +55,7 @@ export default {
     EventBus.$on(NODE_ACTIVE, this.handleNodeActive)
     EventBus.$on(SHOW_NODE_TAG, this.handleShowNodeTag)
   },
-  beforeUnmount() {
+  beforeDestroy() {
     EventBus.$off(NODE_ACTIVE, this.handleNodeActive)
     EventBus.$off(SHOW_NODE_TAG, this.handleShowNodeTag)
   },

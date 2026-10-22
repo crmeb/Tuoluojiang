@@ -32,8 +32,8 @@
 </template>
 
 <script>
-import { EventBus } from '@/libs/bus.ts'
-import { DRAW_CLICK, SCALE } from '../event-constant.ts';
+import { EventBus } from '@/libs/bus'
+import { DRAW_CLICK, SCALE } from '../event-constant';
 
 
 export default {
@@ -56,7 +56,7 @@ export default {
   mounted() {
     this.scaleNum = this.toPer(this.mindMap.view.scale)
   },
-  beforeUnmount() {
+  beforeDestroy() {
     EventBus.$off(SCALE, this.onScale)
     EventBus.$off(DRAW_CLICK, this.onDrawClick)
   },

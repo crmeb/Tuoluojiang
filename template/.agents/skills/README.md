@@ -22,7 +22,7 @@ description: 项目自定义 skills 的总入口与使用说明
 
 | Skill | 触发场景 |
 |---|---|
-| [`scaffold-business-module`](./scaffold-business-module/SKILL.md) | 一键：API + 视图 + 路由/菜单 + 可选 Pinia store |
+| [`scaffold-business-module`](./scaffold-business-module/SKILL.md) | 一键：API + 视图 + 路由/菜单 + 可选 Vuex |
 | [`create-crud-page`](./create-crud-page/SKILL.md) | 单独新建列表页 + 弹窗 + 详情抽屉 |
 | [`create-popup`](./create-popup/SKILL.md) | 独立弹窗 / 侧滑 / 抽屉 |
 | [`create-form-validator`](./create-form-validator/SKILL.md) | 表单校验规则 |
@@ -34,7 +34,7 @@ description: 项目自定义 skills 的总入口与使用说明
 
 | Skill | 触发场景 |
 |---|---|
-| [`create-route`](./create-route/SKILL.md) | 静态路由注册（`routes.ts`） |
+| [`create-route`](./create-route/SKILL.md) | 静态路由注册（`routes.js`） |
 | [`integrate-dynamic-menu`](./integrate-dynamic-menu/SKILL.md) | 后台动态菜单对接（**默认方式**） |
 | [`register-permission`](./register-permission/SKILL.md) | 按钮 / 菜单权限码 |
 
@@ -42,8 +42,8 @@ description: 项目自定义 skills 的总入口与使用说明
 
 | Skill | 触发场景 |
 |---|---|
-| [`create-api-module`](./create-api-module/SKILL.md) | 新建 `.ts` / 扩展现有 `src/api/*` |
-| [`create-pinia-store`](./create-pinia-store/SKILL.md) | Pinia setup store（TS） |
+| [`create-api-module`](./create-api-module/SKILL.md) | 新建 / 扩展 `src/api/*.js` |
+| [`create-vuex-module`](./create-vuex-module/SKILL.md) | Vuex namespaced module |
 | [`apifox-cli`](./apifox-cli/SKILL.md) | 查 Apifox 接口 / Schema（**第三方包，必须先读 [`../rules/mcp/apifox.md`](../rules/mcp/apifox.md) 的只读与输出纪律**） |
 
 ### 4. 质量保障 — 环境与联调

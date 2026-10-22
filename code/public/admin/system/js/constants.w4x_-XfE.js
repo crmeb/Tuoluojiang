@@ -1,0 +1,1 @@
+import{i as e}from"./constants.Bv2fkdRE.js";var t={NORMAL:0,SUPER:1},n=[{label:`普通库管`,value:t.NORMAL},{label:`超级管理员`,value:t.SUPER}],r=e;export{n,r,t};

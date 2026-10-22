@@ -48,19 +48,19 @@
 </template>
 
 <script>
-import dayjs from 'dayjs'
-import { ref, computed, onMounted, defineAsyncComponent } from 'vue'
-import { todoListApi, scheduleTypesApi } from '@/api/user.ts'
+import moment from 'moment'
+import { ref, computed, onMounted } from 'vue'
+import { todoListApi, scheduleTypesApi } from '@/api/user'
 
 export default {
   name: 'TodoCalendarCard',
   components: {
-    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage'))
+    defaultPage: () => import('@/components/common/defaultPage')
   },
   setup() {
     const currentDate = new Date()
 
-    const time = ref(dayjs(currentDate).format('YYYY-MM-DD'))
+    const time = ref(moment(currentDate).format('YYYY-MM-DD'))
     const weekDays = ref([])
     const weekTitle = ref('')
     const currentWeekStart = ref(null)
@@ -70,24 +70,24 @@ export default {
     const types = ref([])
 
     const isCurrentWeek = computed(() => {
-      const today = dayjs().format('YYYY-MM-DD')
+      const today = moment().format('YYYY-MM-DD')
       return weekDays.value.some((day) => day.dateStr === today)
     })
 
     // 初始化周视图
     function initWeekView(date = new Date()) {
-      const startOfWeek = dayjs(date).startOf('isoWeek')
+      const startOfWeek = moment(date).startOf('isoWeek')
       currentWeekStart.value = startOfWeek.toDate()
       updateWeekDays()
     }
     // 更新周视图数据
     function updateWeekDays() {
-      const today = dayjs().format('YYYY-MM-DD')
-      const selectedDate = dayjs(time.value).format('YYYY-MM-DD')
+      const today = moment().format('YYYY-MM-DD')
+      const selectedDate = moment(time.value).format('YYYY-MM-DD')
       weekDays.value = []
       const weekNames = ['一', '二', '三', '四', '五', '六', '日']
       for (let i = 0; i < 7; i++) {
-        const dayDate = dayjs(currentWeekStart.value).add(i, 'days')
+        const dayDate = moment(currentWeekStart.value).add(i, 'days')
         weekDays.value.push({
           weekName: weekNames[i],
           dayNum: dayDate.format('D'),
@@ -98,23 +98,23 @@ export default {
       }
 
       // 更新标题
-      const startDate = dayjs(currentWeekStart.value)
-      const endDate = dayjs(currentWeekStart.value).add(6, 'days')
+      const startDate = moment(currentWeekStart.value)
+      const endDate = moment(currentWeekStart.value).add(6, 'days')
       weekTitle.value = `${startDate.format('MM月DD日')}-${endDate.format('MM月DD日')}`
     }
     // 上一周
     function prevWeek() {
-      currentWeekStart.value = dayjs(currentWeekStart.value).subtract(7, 'days').toDate()
+      currentWeekStart.value = moment(currentWeekStart.value).subtract(7, 'days').toDate()
       updateWeekDays()
     }
     // 下一周
     function nextWeek() {
-      currentWeekStart.value = dayjs(currentWeekStart.value).add(7, 'days').toDate()
+      currentWeekStart.value = moment(currentWeekStart.value).add(7, 'days').toDate()
       updateWeekDays()
     }
     // 跳转到今天
     function goToToday() {
-      time.value = dayjs().format('YYYY-MM-DD')
+      time.value = moment().format('YYYY-MM-DD')
       initWeekView()
       getDailyTodoInfo(time.value, true)
     }
@@ -149,7 +149,7 @@ export default {
       result.data.forEach((value) => {
         types.value.push(value.id)
       })
-      await getDailyTodoInfo(dayjs(new Date()).format('YYYY-MM-DD'))
+      await getDailyTodoInfo(moment(new Date()).format('YYYY-MM-DD'))
     }
 
     onMounted(() => {
@@ -199,7 +199,7 @@ export default {
   }
 }
 
-:deep(.el-timeline) {
+::v-deep .el-timeline {
   padding: 0;
   .el-timeline-item__node--normal {
     position: absolute;

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-drawer title="列表属性" v-model="drawerVisible" direction="rtl" :size="500">
+    <el-drawer title="列表属性" :visible.sync="drawerVisible" direction="rtl" :size="500">
       <el-form label-width="auto" label-position="top" class="p20">
         <!-- 表格类型切换 -->
         <el-form-item>
@@ -18,7 +18,7 @@
                 <el-row>
                   <el-col :span="24" class="bg-purple" />
                 </el-row>
-                <el-row v-for="index in 3" :key="index" justify="end">
+                <el-row v-for="index in 3" :key="index" type="flex" justify="end">
                   <el-col :span="20" class="bg-purple" />
                 </el-row>
               </div>
@@ -31,20 +31,20 @@
         <el-divider content-position="center">按钮配置</el-divider>
         <el-form-item>
           <el-checkbox-group v-model="checkedButtons" class="check-box">
-            <el-checkbox value="批量共享协作">
+            <el-checkbox label="批量共享协作">
               批量共享协作
-              <el-input v-model="value" class="ml20" />
+              <el-input v-model="value" size="small" class="ml20" />
             </el-checkbox>
-            <el-checkbox value="批量移交">批量移交</el-checkbox>
-            <el-checkbox value="批量编辑">批量编辑</el-checkbox>
-            <el-checkbox value="批量删除">批量删除</el-checkbox>
-            <el-checkbox value="邀请填写">邀请填写</el-checkbox>
-            <el-checkbox value="邀请链接填写">邀请链接填写</el-checkbox>
-            <el-checkbox value="数据导入">数据导入</el-checkbox>
-            <el-checkbox value="数据导出">数据导出</el-checkbox>
-            <el-checkbox value="筛选条件设置">筛选条件设置</el-checkbox>
-            <el-checkbox value="表头显示设置">表头显示设置</el-checkbox>
-            <el-checkbox value="详情tab设置">详情tab设置</el-checkbox>
+            <el-checkbox label="批量移交">批量移交</el-checkbox>
+            <el-checkbox label="批量编辑">批量编辑</el-checkbox>
+            <el-checkbox label="批量删除">批量删除</el-checkbox>
+            <el-checkbox label="邀请填写">邀请填写</el-checkbox>
+            <el-checkbox label="邀请链接填写">邀请链接填写</el-checkbox>
+            <el-checkbox label="数据导入">数据导入</el-checkbox>
+            <el-checkbox label="数据导出">数据导出</el-checkbox>
+            <el-checkbox label="筛选条件设置">筛选条件设置</el-checkbox>
+            <el-checkbox label="表头显示设置">表头显示设置</el-checkbox>
+            <el-checkbox label="详情tab设置">详情tab设置</el-checkbox>
           </el-checkbox-group>
         </el-form-item>
 
@@ -63,42 +63,40 @@
             animation="1000"
             handle=".drag-handle"
             @end="onDragEnd"
-            :item-key="$draggableKey"
           >
-            <template #item="{ element: item, index }">
-              <div>
-                <div class="flex mb10">
-                  <span class="drag-handle iconfont icontuodong" />
-                  <span class="mr20">按钮名称</span>
-                  <el-input
-                    v-model="item.name"
-                    placeholder="按钮名称"
-                    class="refresh-input"
-                    style="width: 313px; margin-right: 10px"
-                  >
-                    <template #suffix>
-                      <div class="refresh" @click="openBottonFn">
-                        <span class="iconfont iconhulianwang" />
-                      </div>
-                    </template>
-                  </el-input>
-                  <el-button
-                    type="primary" link
-                    icon="el-icon-delete"
-                    @click="handleDeleteCustomBtn(index)"
-                    style="margin-left: 8px"
-                  />
-                </div>
+            <div v-for="(item, index) in customButtons" :key="index">
+              <div class="flex mb10">
+                <span class="drag-handle iconfont icontuodong" />
+                <span class="mr20">按钮名称</span>
+                <el-input
+                  v-model="item.name"
+                  size="small"
+                  placeholder="按钮名称"
+                  class="refresh-input"
+                  style="width: 313px; margin-right: 10px"
+                >
+                  <template #suffix>
+                    <div class="refresh" @click="openBottonFn">
+                      <span class="iconfont iconhulianwang" />
+                    </div>
+                  </template>
+                </el-input>
+                <el-button
+                  type="text"
+                  icon="el-icon-delete"
+                  @click="handleDeleteCustomBtn(index)"
+                  style="margin-left: 8px"
+                />
               </div>
-            </template>
+            </div>
           </draggable>
-          <el-button type="primary" link icon="el-icon-plus" @click="handleAddCustomBtn"> 添加按钮 </el-button>
+          <el-button type="text" icon="el-icon-plus" @click="handleAddCustomBtn"> 添加按钮 </el-button>
         </el-form-item>
 
         <!-- 底部操作按钮 -->
         <div class="button from-foot-btn fix btn-shadow">
-          <el-button @click="drawerVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleConfirm">确定</el-button>
+          <el-button @click="drawerVisible = false" size="small">取消</el-button>
+          <el-button type="primary" @click="handleConfirm" size="small">确定</el-button>
         </div>
       </el-form>
     </el-drawer>
@@ -175,7 +173,7 @@ export default {
   border: 1px solid #1890ff;
 }
 
-:deep(.el-checkbox) {
+::v-deep .el-checkbox {
 }
 
 .refresh {
@@ -189,7 +187,7 @@ export default {
 }
 
 .refresh-input {
-  :deep(.el-input__suffix) {
+  ::v-deep .el-input__suffix {
     position: absolute;
     right: 0;
   }

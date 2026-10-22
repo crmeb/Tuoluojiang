@@ -9,7 +9,7 @@
               <div class="rank-left v-height-flag">
                 <el-row class="rank-left-header">
                   <el-col :span="18">
-                    <div class="title">职级类别</div>
+                    <div class="title">{{ $t('hr.ranktypes') }}</div>
                   </el-col>
                   <el-col :span="6" class="text-right">
                     <el-tooltip effect="dark" content="添加类别" placement="top">
@@ -39,9 +39,9 @@
                               @hide="handleHide"
                             >
                               <div class="right-item-list">
-                                <div class="right-item" @click.stop="editRankType(item)">编辑</div>
+                                <div class="right-item" @click.stop="editRankType(item)">{{ $t('public.edit') }}</div>
                                 <div class="right-item" @click.stop="deleteRankType(item)">
-                                  删除
+                                  {{ $t('public.delete') }}
                                 </div>
                               </div>
                               <template #reference>
@@ -66,7 +66,7 @@
                   :isViewSearch="false"
                   :total="total"
                   :title="`职级列表`"
-                  btnText="添加职级"
+                  :btnText="'添加职级'"
                   :isAddBtn="true"
                   @addDataFn="addRank"
                   @dropdownFn="batchHandleDelete"
@@ -83,28 +83,28 @@
                     @selection-change="handleSelectionChange"
                   >
                     <el-table-column type="selection" width="55"></el-table-column>
-                    <el-table-column prop="name" label="职级名称" min-width="150" />
-                    <el-table-column prop="alias" label="职级别名" min-width="100" />
+                    <el-table-column prop="name" :label="$t('hr.rankname')" min-width="150" />
+                    <el-table-column prop="alias" :label="$t('hr.ranktype')" min-width="100" />
                     <el-table-column prop="info" label="职级描述" min-width="200" show-overflow-tooltip>
                       <template #default="scope">
                         <div class="line1">{{ scope.row.info || '--' }}</div>
                       </template>
                     </el-table-column>
-                    <el-table-column prop="card.name" label="创建人" min-width="120" />
+                    <el-table-column prop="card.name" :label="$t('hr.founder')" min-width="120" />
                     <el-table-column prop="sort" label="排序" min-width="120" />
-                    <el-table-column prop="address" label="操作" width="140">
+                    <el-table-column prop="address" :label="$t('public.operation')" width="140">
                       <template #default="scope">
                         <el-button
-                          type="primary" link
+                          type="text"
                           @click="editRank(scope.row)"
                           v-hasPermi="['hr:enterprise:job:rankManagement:edit']"
-                          >编辑</el-button
+                          >{{ $t('public.edit') }}</el-button
                         >
                         <el-button
-                          type="primary" link
+                          type="text"
                           @click="deleteRank(scope.row)"
                           v-hasPermi="['hr:enterprise:job:rankManagement:delete']"
-                          >删除</el-button
+                          >{{ $t('public.delete') }}</el-button
                         >
                       </template>
                     </el-table-column>
@@ -133,9 +133,9 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import modalForm from '@/libs/modal-form.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { modalSure } from '@/libs/public'
+import modalForm from '@/libs/modal-form'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
 import dialogForm from './components/index'
 import oaFromBox from '@/components/common/oaFromBox'
 import {
@@ -147,7 +147,7 @@ import {
   rankDeleteApi,
   rankEditApi,
   rankListApi
-} from '@/api/setting.ts'
+} from '@/api/setting'
 
 export default {
   name: 'JobRank',
@@ -264,7 +264,7 @@ export default {
       })
     },
     closePopover() {
-      this.$refs[`pop-${this.activeValue}`][0].hide()
+      this.$refs[`pop-${this.activeValue}`][0].doClose()
     },
     // 添加职级
     async addRank() {
@@ -330,7 +330,7 @@ export default {
   padding: 20px 0 0 0;
   border-right: 1px solid #eeeeee;
   // background-color: rgba(247, 251, 255, 1);
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
   .clearfix {

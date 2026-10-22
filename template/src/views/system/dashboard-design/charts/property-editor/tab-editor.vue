@@ -3,28 +3,25 @@
      <draggable tag="div" :list="optionModel.tabList"
                 v-bind="{ group: 'optionsGroup', ghostClass: 'ghost', handle: '.icontuodong' }"
                  @change="emitDefaultValueChange"
-                 :item-key="$draggableKey"
-               >
-                  <template #item="{ element: item, index }">
-                    <div class="tab-item">
-                       <img src="@/assets/images/del.png" alt="" class="del-icon" @click="removeTab(index)"></img>
-                      <div class="left">
-                          <span class="iconfont icontuodong iconadd left" title="拖拽排序" />
-                      </div>
-                      <div class="right">
-                          <div class="name mb14">
-                     <span style="flex-shrink: 0;">标题</span>
-                        <el-input v-model="item.name" placeholder="请输入" class="ml10"></el-input>
-                      </div>
-                          <div class="name">
-                        状态
-                       <el-switch v-model="item.status" 
-                      class="ml10" :width="80" :active-value="1" :inactive-value="0" active-text="开启"
-                    inactive-text="关闭"></el-switch>
-                      </div>
-                      </div>
+                >
+                  <div v-for="(item, index) in optionModel.tabList" :key="index" class="tab-item">
+                     <img src="@/assets/images/del.png" alt="" class="del-icon" @click="removeTab(index)"></img>
+                    <div class="left">
+                        <span class="iconfont icontuodong iconadd left" title="拖拽排序" />
                     </div>
-                  </template>
+                    <div class="right">
+                        <div class="name mb14">
+                   <span style="flex-shrink: 0;">标题</span>
+                      <el-input v-model="item.name" size="small" placeholder="请输入" class="ml10"></el-input>
+                    </div>
+                        <div class="name">
+                      状态
+                     <el-switch v-model="item.status" 
+                    class="ml10" :width="80" :active-value="1" :inactive-value="0" active-text="开启"
+                  inactive-text="关闭"></el-switch>
+                    </div>
+                    </div>
+                  </div>
                 </draggable>
     
        <!-- 添加板块按钮 -->

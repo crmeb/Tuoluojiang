@@ -9,7 +9,7 @@
 </template>
 <script>
 import imageViewer from '@/components/common/imageViewer'
-import { getEmployeeTrainApi } from '@/api/config.ts'
+import { getEmployeeTrainApi } from '@/api/config.js'
 export default {
   name: '',
   components: {
@@ -60,20 +60,20 @@ export default {
   padding: 40px 86px;
   max-width: 1000px;
   margin: 0 auto;
-  :deep(p img) {
+  ::v-deep p img {
     max-width: 800px;
   }
-  :deep(img) {
+  ::v-deep img {
     cursor: pointer;
   }
-  :deep(table) {
+  ::v-deep table {
     border: 1px solid #ccc;
   }
 
-  :deep(table th) {
+  ::v-deep table th {
     border: 1px solid #ccc;
   }
-  :deep(table td) {
+  ::v-deep table td {
     padding: 10px 5px;
     border: 1px solid #ccc;
   }

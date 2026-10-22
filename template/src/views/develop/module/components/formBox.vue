@@ -3,22 +3,20 @@
     <div class="flex-between mt20">
       <div class="title-16">{{ info.crudInfo ? info.crudInfo.table_name : '设计' }}列表</div>
       <div class="lh-center">
-        <el-button class="h32" icon="el-icon-plus" type="primary" @click="addData">新增</el-button>
+        <el-button class="h32" icon="el-icon-plus" size="small" type="primary" @click="addData">新增</el-button>
 
         <div>
           <el-dropdown>
             <div class="xiala-box ml10">
               <span class="iconfont icongenjinjilu-gengduo"></span>
             </div>
-            <template #dropdown>
-              <el-dropdown-menu style="text-align: left">
-                <div v-for="(item, index) in dropdownList" :key="index" :class="index === 3 ? '' : 'border-bottom'">
-                  <el-dropdown-item v-for="(val, key) in item.children" :key="key" @click="dropdownSearch(val)">
-                    {{ val.label }}
-                  </el-dropdown-item>
-                </div>
-              </el-dropdown-menu>
-            </template>
+            <el-dropdown-menu style="text-align: left">
+              <div v-for="(item, index) in dropdownList" :key="index" :class="index === 3 ? '' : 'border-bottom'">
+                <el-dropdown-item v-for="(val, key) in item.children" :key="key" @click.native="dropdownSearch(val)">
+                  {{ val.label }}
+                </el-dropdown-item>
+              </div>
+            </el-dropdown-menu>
           </el-dropdown>
         </div>
       </div>
@@ -92,7 +90,7 @@
         </el-popover>
 
         <el-popover
-          :visible="conditionDialogStore.visible"
+          v-model="$store.state.business.conditionDialog"
           placement="bottom-start"
           trigger="manual"
           width="750"
@@ -101,10 +99,10 @@
           <div class="condition-box">
             <div class="flex-between">
               <div class="title">筛选条件</div>
-              <div class="el-icon-close pointer" @click="conditionDialogStore.visible = false"></div>
+              <div class="el-icon-close pointer" @click="$store.state.business.conditionDialog = false"></div>
             </div>
             <condition-dialog
-              v-if="info.viewSearch && conditionDialogStore.visible"
+              v-if="info.viewSearch && $store.state.business.conditionDialog"
               :additionalBoolean="where.view_search_boolean"
               :eventStr="`event`"
               :formArray="info.viewSearch"
@@ -125,7 +123,7 @@
         <!-- 分组筛选 -->
         <el-popover placement="bottom" width="202" trigger="hover">
           <div>
-            <el-input v-model="groupName" placeholder="请输入分组名称" clearable />
+            <el-input v-model="groupName" placeholder="请输入分组名称" clearable size="small" />
             <div class="viewSearch-box">
               <div
                 class="item"
@@ -151,7 +149,7 @@
                 分组&nbsp;<span class="iconfont iconfenzu"></span>
               </div>
               <el-dropdown-menu style="text-align: left; max-height: 400px; overflow-y: auto;">
-                <el-dropdown-item v-for="(val, key) in info.viewSearch" :key="key" @click="groupFn(val)">
+                <el-dropdown-item v-for="(val, key) in info.viewSearch" :key="key" @click.native="groupFn(val)">
                   {{ val.title }}
                 </el-dropdown-item>
               </el-dropdown-menu>
@@ -226,8 +224,6 @@
   </div>
 </template>
 <script>
-import { mapStores } from 'pinia'
-import { useConditionDialogStore } from '@/stores/conditionDialog.ts'
 import {
   crudModuleSaveApi,
   crudViewSaveApi,
@@ -236,8 +232,8 @@ import {
   crudSeniorSaveApi,
   crudModuleInfoApi,
   moduleFramerApi
-} from '@/api/develop.ts'
-import { roterPre } from '@/settings.ts'
+} from '@/api/develop'
+import { roterPre } from '@/settings'
 import formList from '@/components/common/formList'
 import tableStyle from './tableStyle'
 import oaDialog from '@/components/form-common/dialog-form'
@@ -248,7 +244,6 @@ import checkboxDialog from '@/components/develop/checkboxDialog'
 import conditionDialog from '@/components/develop/conditionDialog'
 
 export default {
-  emits: ['confirmData', 'addData', 'handleDelete', 'handleDropdown', 'getInfo', 'getList'],
   name: '',
   components: {
     formList,
@@ -280,9 +275,6 @@ export default {
       type: String,
       default: ''
     }
-  },
-  computed: {
-    ...mapStores(useConditionDialogStore)
   },
   data() {
     return {
@@ -594,7 +586,7 @@ export default {
       this.viewText = item.senior_title
       this.where.view_search_boolean = item.search_boolean
       this.additional_search = item.senior_search
-      this.$refs.popoverType.hide()
+      this.$refs.popoverType.doClose()
     },
 
     typeClick(item) {
@@ -604,7 +596,7 @@ export default {
       this.confirmData()
       this.additional_search = []
 
-      this.$refs.popoverType.hide()
+      this.$refs.popoverType.doClose()
     },
 
     onShow() {
@@ -625,13 +617,13 @@ export default {
         this.where.view_search_boolean = '1'
       }
 
-      this.conditionDialogStore.setFieldOptions(data)
-      this.conditionDialogStore.visible = true
+      this.$store.commit('uadatefieldOptions', data)
+      this.$store.commit('updateConditionDialog', true)
     },
 
     saveCondition() {
-      this.additional_search = this.conditionDialogStore.fieldOptions.list
-      this.where.view_search_boolean = this.conditionDialogStore.fieldOptions.additional_search_boolean
+      this.additional_search = this.$store.state.business.fieldOptions.list
+      this.where.view_search_boolean = this.$store.state.business.fieldOptions.additional_search_boolean
     },
 
     // 新增
@@ -895,7 +887,7 @@ export default {
         type: '',
         additional_search_boolean: '1'
       }
-      this.conditionDialogStore.setFieldOptions(data)
+      this.$store.commit('uadatefieldOptions', data)
       if (this.info.seniorSearch.length == 0) {
         this.$emit('confirmData', this.where)
       }
@@ -1020,6 +1012,13 @@ export default {
 
   .center {
     flex: 1;
+  }
+}
+
+.grey-bga {
+  ::v-deep .el-input__inner {
+    border: none;
+    background: #f0f2f5;
   }
 }
 

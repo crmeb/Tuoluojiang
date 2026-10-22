@@ -3,7 +3,7 @@
         <!-- 1. 选择需要筛选的图表 -->
         <div class="section-title">选择需要筛选的图表</div>
         <el-checkbox-group v-model="optionModel.entityIds" >
-            <el-checkbox v-for="(item, index) in chartList" :key="index" :value="item.value"
+            <el-checkbox v-for="(item, index) in chartList" :key="index" :label="item.value"
                 :disabled="getDisabled(item)||!item.dataEntity" style="display: block; margin: 8px 0;">
                 {{ item.label }} 
             </el-checkbox>
@@ -13,11 +13,11 @@
             <img src="@/assets/images/del.png" alt="" class="del-icon" @click="removeSearch(index)">
             <div class="section-title">选择筛选字段</div>
             <div class="mb10 mt10">未命名表单</div>
-            <el-select v-model="item.field_name_en" placeholder="请选择" style="width: 100%;" @change="changeField($event,item)">
+            <el-select v-model="item.field_name_en" placeholder="请选择" style="width: 100%;" size="small" @change="changeField($event,item)">
                 <el-option v-for="value in options" :key="value.field" :label="value.title" :value="value.field"></el-option>
             </el-select>
             <div class="mb10 mt10">名称</div>
-            <el-input v-model="item.field_name" placeholder="请输入"></el-input>
+            <el-input v-model="item.field_name" size="small" placeholder="请输入"></el-input>
 
             <div class="mb10 mt10">默认值</div>
              <fieldComponent v-if="item.field_name_en" :type="`dashboard`" :item="item" :index="index" :list="optionModel.searchList" :noRule="false" ></fieldComponent>
@@ -28,12 +28,11 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-    import { viewSearchApi } from '@/api/develop.ts'
+    import { viewSearchApi } from '@/api/develop'
 export default {
     name: "ChartFilterConfig",
     components: {
-        fieldComponent: defineAsyncComponent(() => import('@/components/develop/fieldComponent')),
+        fieldComponent: () => import('@/components/develop/fieldComponent'),
     },
     props: {
         designer: Object,

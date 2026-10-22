@@ -14,9 +14,9 @@
       <template v-if="fileData && fileData.length > 0">
         <div v-if="fileStyle.style === 1" class="first-header">
           <p>
-            <el-checkbox :key="0" v-model="checked" :disabled="fileData.length <= 0" :label="0" :value="0"
+            <el-checkbox :key="0" v-model="checked" :disabled="fileData.length <= 0" :label="0"
               @change="checkChange(1)">
-              {{ checked ? '反选' : '全选' }}
+              {{ checked ? $t('file.reverse') : $t('file.all') }}
             </el-checkbox>
           </p>
           <p>文件大小</p>
@@ -26,9 +26,9 @@
         </div>
         <div v-else class="first-header">
           <p>
-            <el-checkbox :key="0" v-model="checked" :disabled="fileData.length <= 0" :label="0" :value="0"
+            <el-checkbox :key="0" v-model="checked" :disabled="fileData.length <= 0" :label="0"
               @change="checkChange(1)">
-              {{ checked ? '反选' : '全选' }}
+              {{ checked ? $t('file.reverse') : $t('file.all') }}
             </el-checkbox>
           </p>
         </div>
@@ -53,7 +53,7 @@
                     <el-checkbox
                       :key="item.id"
                       v-model="menuIds"
-                      :label="item.id" :value="item.id"
+                      :label="item.id"
                       :style="{ display: menuIds.includes(item.id) ? 'block' : 'none' }"
                       @change="checkChange(2)"
                     />
@@ -96,7 +96,7 @@
 
                         <i v-else-if="fileStyle.style == 1" :class="getFileTypeIconfont(item.type, item.file_ext)"
                           class="icon iconfont" />
-                        <input :id="'input' + index" v-model="item.name" placeholder="请输入文件名称"
+                        <input :id="'input' + index" v-model="item.name" :placeholder="$t('file.placeholder10')"
                           autofocus="autofocus" class="rename-input" maxlength="30" @blur="renameBlur(item)" />
                       </p>
                     </div>
@@ -121,22 +121,22 @@
                               打开
                             </div>
                             <div v-if="item.type !== 1" class="right-item" @click="fileDownLoad(item)">
-                              下载
+                              {{ $t('public.download') }}
                             </div>
                             <div v-if="item.type !== 1" class="right-item" @click="shareOther(item)">分享</div>
                             <el-divider v-if="item.type !== 1" />
-                            <div class="right-item" @click="getMoveDialog(item, 1)">移动至</div>
-                            <div v-if="item.type === 1 && item.user_id === userStore.userInfo.id"
+                            <div class="right-item" @click="getMoveDialog(item, 1)">{{ $t('file.moveto') }}</div>
+                            <div v-if="item.type === 1 && item.user_id === $store.state.user.userInfo.id"
                               class="right-item" @click="addAuthor(item)">
-                              目录权限
+                              {{ $t('file.directory') }}
                             </div>
                             <div v-if="item.type !== 1" class="right-item" @click="getMoveDialog(item, 2)">
-                              复制到
+                              {{ $t('file.copyto') }}
                             </div>
-                            <div class="right-item" @click="setRenameItem(item, index)">重命名</div>
+                            <div class="right-item" @click="setRenameItem(item, index)">{{ $t('file.rename') }}</div>
                             <el-divider />
-                            <div class="right-item" @click="getFolderDelete(item.id)">删除</div>
-                            <div class="right-item" @click="getFileAttribute(item)">属性</div>
+                            <div class="right-item" @click="getFolderDelete(item.id)">{{ $t('public.delete') }}</div>
+                            <div class="right-item" @click="getFileAttribute(item)">{{ $t('file.attribute') }}</div>
                         </div>
                         <template #reference>
                           <i class="icon iconfont icongengduo1" />
@@ -156,7 +156,7 @@
       <default-page v-else v-height :index="7" :min-height="510" />
     </div>
     <!-- 图片查看弹窗 -->
-    <el-image-viewer v-if="isImage" @close="closeImageViewer" :url-list="srcList" />
+    <el-image-viewer v-if="isImage" :on-close="closeImageViewer" :url-list="srcList" />
     <image-viewer ref="imageViewer" :src-list="srcList"></image-viewer>
     <!-- 移动弹窗 -->
     <move-dialog ref="moveDialog" :move-data="moveData" @handlerMove="handlerMove" />
@@ -170,16 +170,13 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useUserStore } from '@/stores/user.ts'
-import { defineAsyncComponent } from 'vue'
 import {
   folderSpaceEntAllMoveApi,
   folderSpaceEntDeleteApi,
   folderSpaceEntListApi,
   folderSpaceEntMoveApi,
   folderSpaceEntRenameApi,
-} from "@/api/cloud.ts";
+} from "@/api/cloud";
 import {
   fileDownLoad,
   fileIsImage,
@@ -188,19 +185,19 @@ import {
   formatBytes,
   getFileTypeIconfont,
   trim
-} from '@/utils/file.ts'
-import helper from "@/libs/helper.ts";
-import { modalSure } from '@/libs/public.ts';
+} from '@/utils/file'
+import helper from "@/libs/helper";
+import { modalSure } from '@/libs/public';
 export default {
-  emits: ['drag-move-state-change', 'totalFn', 'shareItemFile', 'openItemFile', 'handlerMyFile'],
   name: 'SpaceFile',
   components: {
-    imageViewer: defineAsyncComponent(() => import('@/components/common/imageViewer')),
-    moveDialog: defineAsyncComponent(() => import('../moveDialog')),
-    fileAttribute: defineAsyncComponent(() => import('../fileAttribute')),
-    rightClick: defineAsyncComponent(() => import('../rightClick')),
-    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage')),
-    authorDialog: defineAsyncComponent(() => import('../authorDialog'))
+    imageViewer: () => import('@/components/common/imageViewer'),
+    moveDialog: () => import('../moveDialog'),
+    fileAttribute: () => import('../fileAttribute'),
+    ElImageViewer: () => import('element-ui/packages/image/src/image-viewer'),
+    rightClick: () => import('../rightClick'),
+    defaultPage: () => import('@/components/common/defaultPage'),
+    authorDialog: () => import('../authorDialog')
   },
   props: {
     fileStyle: {
@@ -214,7 +211,7 @@ export default {
       default: 4
     },
     spaceId: {
-      type: [Number, String],
+      type: Number | String,
       default: 0
     },
     pageLimit: {
@@ -222,16 +219,13 @@ export default {
       default: 0
     },
     wps_type: {
-      type: [String, Number],
+      type: String | Number,
       default: '0'
     },
     spaceType: {
       type: String,
       default: ''
     }
-  },
-  computed: {
-    ...mapStores(useUserStore)
   },
   data() {
     return {
@@ -280,6 +274,11 @@ export default {
     };
   },
   mounted() { },
+  computed: {
+    lang: function () {
+      return this.$store.getters.lang
+    }
+  },
   watch: {
     pageLimit(val) {
       this.where.limit = val;
@@ -289,7 +288,7 @@ export default {
     this.boundWindowDragOver = this.handleWindowDragOver.bind(this);
     this.boundWindowDrop = this.handleWindowDrop.bind(this);
   },
-  beforeUnmount() {
+  beforeDestroy() {
     this.unregisterGlobalDragGuards();
     this.notifyDragMoveStateChange(false);
   },
@@ -300,6 +299,9 @@ export default {
     handleFileItemSelectChange(e) {
       this.menuIds = e
       this.handlerEmit()
+    },
+    setOptions() {
+      this.breadcrumbArray[0].name = this.$t('file.allfiles')
     },
     pageChange(page) {
       this.where.page = page;
@@ -643,7 +645,7 @@ export default {
     },
     addAuthor(row) {
       this.fromData = {
-        title: '设置目录权限',
+        title: this.$t('file.setdirectory'),
         fid: this.spaceId,
         id: row.id,
         edit: 1
@@ -700,7 +702,7 @@ export default {
     },
     getFileAttribute(item) {
       this.formBoxConfig = {
-        title: '文件属性',
+        title: this.$t('file.fileattribute'),
         is_file: false,
         fid: this.spaceType == 'recently' ? item.pid : this.spaceId,
         id: item.id,
@@ -731,7 +733,7 @@ export default {
       if (this.rightClickIndex > -1) {
         this.rightClickIndex = -1
       } else {
-        this.$refs[`pop-${this.activeValue}`][0].hide()
+        this.$refs[`pop-${this.activeValue}`][0].doClose()
       }
     },
     rightClick(event, item, index) {
@@ -775,7 +777,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-dialog) {
+::v-deep .el-dialog {
   border-radius: 8px;
 }
 
@@ -791,12 +793,12 @@ export default {
 }
 
 .box {
-  :deep(.el-dialog__header) {
+  ::v-deep .el-dialog__header {
     padding: 0 !important;
   }
 }
 
-:deep(.el-dialog__body) {
+::v-deep .el-dialog__body {
   padding-left: 10px;
 }
 
@@ -815,12 +817,12 @@ export default {
   overflow: hidden;
 
   .header-caption {
-    :deep(.el-breadcrumb__inner) {
+    ::v-deep .el-breadcrumb__inner {
       cursor: pointer;
     }
   }
 
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
 
@@ -860,7 +862,7 @@ export default {
         margin-right: 15px;
       }
 
-      :deep(.el-checkbox) {
+      ::v-deep .el-checkbox {
         margin-right: 15px;
       }
     }
@@ -906,7 +908,7 @@ export default {
       align-items: center;
     }
 
-    :deep(.el-checkbox__label) {
+    ::v-deep .el-checkbox__label {
       display: none;
     }
   }
@@ -952,7 +954,7 @@ export default {
           margin-right: 15px;
         }
 
-        :deep(.el-checkbox) {
+        ::v-deep .el-checkbox {
           margin-right: 15px;
           display: block !important;
         }
@@ -1053,7 +1055,7 @@ export default {
         margin: 0;
       }
 
-      :deep(.el-checkbox) {
+      ::v-deep .el-checkbox {
         padding-left: 10px;
         display: none;
       }
@@ -1062,7 +1064,7 @@ export default {
         width: 100%;
         text-align: center;
 
-        :deep(.el-checkbox) {
+        ::v-deep .el-checkbox {
           position: absolute;
           left: 0;
           top: 10px;
@@ -1114,7 +1116,7 @@ export default {
       &:hover {
         background-color: #f5f5f5;
 
-        :deep(.el-checkbox) {
+        ::v-deep .el-checkbox {
           display: block !important;
         }
       }

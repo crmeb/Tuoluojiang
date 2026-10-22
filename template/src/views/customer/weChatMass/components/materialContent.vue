@@ -1,5 +1,5 @@
 <template>
-  <div class="material-input-container oa-input-borderless">
+  <div class="material-input-container">
     <!-- 素材内容输入框 -->
     <div class="content-textarea-box">
       <el-input
@@ -7,7 +7,7 @@
         type="textarea"
         placeholder="输入素材内容..."
         v-model="content"
-        :rows="8"
+        rows="8"
         resize="none"
         maxlength="1000"
         @input="contentChange"
@@ -19,7 +19,7 @@
 
     <!-- 已选文件列表 -->
     <div class="selected-files mt10 mb10">
-      <el-popover placement="top-start" trigger="click" width="auto">
+      <el-popover placement="top-start" trigger="click">
         <div>
           <div class="flex" v-if="filteredTypeList.length > 0">
             <div
@@ -75,7 +75,7 @@
     <!-- 添加网页/小程序 -->
     <el-dialog
       :title="activeType === 'link' ? '添加网页消息' : '添加小程序消息'"
-      v-model="dialogTableVisible"
+      :visible.sync="dialogTableVisible"
       :append-to-body="true"
       width="650px"
       :close-on-click-modal="false"
@@ -85,20 +85,20 @@
         <!-- 网页 -->
         <template v-if="activeType === 'link'">
           <el-form-item label="网页链接：" prop="link">
-            <el-input placeholder="请以http或者https开头" v-model="form.link"> </el-input>
+            <el-input placeholder="请以http或者https开头" v-model="form.link" size="small"> </el-input>
           </el-form-item>
         </template>
         <!-- 小程序 -->
         <template v-if="activeType === 'mini_program'">
           <el-form-item label="小程序标题：" prop="title">
-            <el-input v-model="form.title" placeholder="请输入小程序标题"> </el-input>
+            <el-input v-model="form.title" size="small" placeholder="请输入小程序标题"> </el-input>
           </el-form-item>
           <el-form-item label="AppID：" prop="app_id">
-            <el-input v-model="form.app_id" placeholder="请输入小程序AppID，必须是关联到企业的小程序应用">
+            <el-input v-model="form.app_id" size="small" placeholder="请输入小程序AppID，必须是关联到企业的小程序应用">
             </el-input>
           </el-form-item>
           <el-form-item label="page路径：" prop="link">
-            <el-input v-model="form.link" placeholder="请输入page路径，例如：page/index"> </el-input>
+            <el-input v-model="form.link" placeholder="请输入page路径，例如：page/index" size="small"> </el-input>
           </el-form-item>
           <el-form-item prop="replyType">
             <template #label>
@@ -132,8 +132,8 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="handleClose">取 消</el-button>
-          <el-button type="primary" @click="handleConfirm" :loading="dialogLoading">确 定</el-button>
+          <el-button @click="handleClose" size="small">取 消</el-button>
+          <el-button type="primary" @click="handleConfirm" size="small" :loading="dialogLoading">确 定</el-button>
         </div>
       </template>
     </el-dialog>
@@ -151,13 +151,12 @@
 </template>
 
 <script>
-import { getUploadKeysApi } from '@/api/public.ts'
-import SettingMer from '@/libs/settingMer.ts'
-import { getFileExtension, getFileType } from '@/utils/file.ts'
-import { uploader } from '@/utils/uploadCloud.ts'
-import { getUrlMetadataApi } from '@/api/weCom.ts'
+import { getUploadKeysApi } from '@/api/public'
+import SettingMer from '@/libs/settingMer'
+import { getFileExtension, getFileType } from '@/utils/file'
+import { uploader } from '@/utils/uploadCloud'
+import { getUrlMetadataApi } from '@/api/weCom'
 export default {
-  emits: ['getAttachData', 'contentChange'],
   name: 'MaterialInput',
   props: {
     rightCustomerName: {
@@ -483,9 +482,12 @@ export default {
   border: 1px solid #e4e7ed;
   padding: 0 12px;
   border-radius: 4px;
-  :deep(.el-textarea__inner) {
+  ::v-deep .el-textarea__inner,
+  .el-input__inner {
     margin-top: 10px;
+    border: none;
     padding: 0;
+    border-bottom: none;
   }
 }
 

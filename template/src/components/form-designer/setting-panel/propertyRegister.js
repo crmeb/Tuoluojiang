@@ -1,4 +1,4 @@
-import { registerGlobalComponent } from '@/app-context'
+import Vue from 'vue'
 
 /**
  * 格式说明：属性名称==对应属性编辑器的组件名称
@@ -186,7 +186,7 @@ export function propertyRegistered(uniquePropName) {
  * @param editorComponent
  */
 export function registerCPEditor(uniquePropName, propEditorName, editorComponent) {
-  registerGlobalComponent(propEditorName, editorComponent)
+  Vue.component(propEditorName, editorComponent)
   registerCommonProperty(uniquePropName, propEditorName)
 }
 
@@ -197,7 +197,7 @@ export function registerCPEditor(uniquePropName, propEditorName, editorComponent
  * @param editorComponent
  */
 export function registerAPEditor(uniquePropName, propEditorName, editorComponent) {
-  registerGlobalComponent(propEditorName, editorComponent)
+  Vue.component(propEditorName, editorComponent)
   registerAdvancedProperty(uniquePropName, propEditorName)
 }
 
@@ -208,7 +208,7 @@ export function registerAPEditor(uniquePropName, propEditorName, editorComponent
  * @param editorComponent
  */
 export function registerEPEditor(uniquePropName, propEditorName, editorComponent) {
-  registerGlobalComponent(propEditorName, editorComponent)
+  Vue.component(propEditorName, editorComponent)
   registerEventProperty(uniquePropName, propEditorName)
 }
 

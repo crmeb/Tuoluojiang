@@ -10,7 +10,7 @@
       <div class="verifybox-bottom" :style="{ padding: mode == 'pop' ? '15px' : '0' }">
         <!-- 验证码容器 -->
 
-        <component
+        <components
           :is="componentType"
           v-if="componentType"
           ref="instance"
@@ -41,13 +41,11 @@ import VerifyPoints from './Verify/VerifyPoints'
 import defaultImg from '@/assets/images/default.jpg';
 
 export default {
-  name: 'Verify',
+  name: 'Vue2Verify',
   components: {
     VerifySlide,
     VerifyPoints
   },
-  // 由子组件 VerifySlide / VerifyPoints 通过 this.$parent.$emit 代为抛出
-  emits: ['ready', 'success', 'error'],
   props: {
     // 双语化
     locale: {
@@ -166,6 +164,21 @@ export default {
       }
     },
     /**
+     * i18n
+     * @description 兼容vue-i18n 调用$t来转换ok
+     * @param {String} text-被转换的目标
+     * @return {String} i18n的结果
+     * */
+    i18n(text) {
+      if (this.$t) {
+        return this.$t(text)
+      } else {
+        // 兼容不存在的语言
+        const i18n = this.$options.i18n.messages[this.locale] || this.$options.i18n.messages['en-US']
+        return i18n[text]
+      }
+    },
+    /**
      * refresh
      * @description 刷新
      * */
@@ -249,7 +262,7 @@ export default {
   background-color: rgba(217, 83, 79, 0.5);
   filter: progid:DXImageTransform.Microsoft.gradient(startcolorstr=#7fD9534F, endcolorstr=#7fD9534F);
 }
-.tips-enter-from,
+.tips-enter,
 .tips-leave-to {
   bottom: -30px;
 }

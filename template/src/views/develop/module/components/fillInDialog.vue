@@ -1,17 +1,17 @@
 <template>
   <div class="oa-dialog">
-    <el-dialog title="邀请填写" v-model="show" width="600px" :before-close="handleClose">
+    <el-dialog title="邀请填写" :visible.sync="show" width="600px" :before-close="handleClose">
       <div>
         <div class="mb20">通过链接邀请：</div>
         <div class="flex">
-          <el-select v-model="form.role_type" style="width: 100%">
+          <el-select v-model="form.role_type" style="width: 100%" size="small">
             <el-option v-for="item in roleOptions" :key="item.value" :label="item.label" :value="item.value">
             </el-option>
           </el-select>
-          <el-button class="ml10" type="primary" @click="submitFn">复制链接</el-button>
+          <el-button class="ml10" type="primary" size="small" @click="submitFn">复制链接</el-button>
         </div>
         <div class="mt20 day">
-          链接有效期：<el-select style="width: 64px" v-model="form.invalid_type">
+          链接有效期：<el-select style="width: 50px" v-model="form.invalid_type" size="small">
             <el-option v-for="item in invalidOptions" :key="item.value" :label="item.label" :value="item.value">
             </el-option>
           </el-select>
@@ -22,13 +22,12 @@
   </div>
 </template>
 <script>
-import { moduleQuestionnaireApi } from '@/api/develop.ts'
-import { roterPre } from '@/settings.ts'
-import { setShareUnique } from '@/utils/auth.ts'
-import SettingMer from '@/libs/settingMer.ts'
-import { getStorageJson } from '@/utils/storage.ts'
+import { moduleQuestionnaireApi } from '@/api/develop'
+import { roterPre } from '@/settings'
+import { mapMutations } from 'vuex'
+import SettingMer from '@/libs/settingMer'
+import { getStorageJson } from '@/utils/storage'
 export default {
-  emits: ['getList'],
   data() {
     return {
       show: false,
@@ -69,6 +68,7 @@ export default {
   },
 
   methods: {
+    ...mapMutations('user', ['SET_UNIQUE']),
     handleClose() {
       this.show = false
     },
@@ -82,7 +82,7 @@ export default {
       const enterprise = getStorageJson('enterprise', {})
       moduleQuestionnaireApi(this.keyName, this.form).then((res) => {
         if (res.status == 200) {
-          setShareUnique(res.data.unique)
+          this.$store.commit('user/SET_UNIQUE', res.data.unique)
           res.data.url = res.data.url + '?role_type=' + res.data.role_type
           const value = `${res.data.url}
           分享人:${userInfo.name || ''}
@@ -107,7 +107,7 @@ export default {
 }
 </script>
 <style scoped lang="scss">
-:deep(.el-dialog__body) {
+::v-deep .el-dialog__body {
   padding: 30px 20px;
 }
 .day {
@@ -122,14 +122,21 @@ export default {
   border: 1px solid #dcdfe6;
   background: #f7f7f7;
   border-radius: 6px 6px 6px 6px;
-  :deep(.el-select__wrapper) {
+  ::v-deep .el-input--small .el-input__inner {
     padding: 0;
     background: #f7f7f7;
-    box-shadow: none;
-  }
-  :deep(.el-select__selected-item),
-  :deep(.el-select__caret) {
+    border: none;
     color: #1890ff;
+  }
+  ::v-deep .el-select .el-input .el-select__caret {
+    color: #1890ff;
+    //   margin-right: 20px;
+  }
+  ::v-deep .el-input__suffix {
+    position: absolute;
+
+    top: -2px;
+    right: 0px;
   }
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <el-dialog class="nodeImageDialog" title="图片" v-model="dialogVisible" width="400px" top="15vh">
+  <el-dialog class="nodeImageDialog" title="图片" :visible.sync="dialogVisible" width="400px" top="15vh">
     <div class="node-image-wrapper" v-if="img">
       <img class="node-image" :src="img" ref="nodeImage" />
       <div class="node-image-mask">
@@ -21,9 +21,9 @@
 </template>
 
 <script>
-import { EventBus } from '@/libs/bus.ts'
-import { NODE_ACTIVE, SHOW_NODE_IMAGE } from '../event-constant.ts';
-import compressImg from '@/utils/compressImg.ts';
+import { EventBus } from '@/libs/bus'
+import { NODE_ACTIVE, SHOW_NODE_IMAGE } from '../event-constant';
+import compressImg from '@/utils/compressImg';
 
 export default {
   name: 'NodeImage',
@@ -38,7 +38,7 @@ export default {
     EventBus.$on(NODE_ACTIVE, this.handleNodeActive)
     EventBus.$on(SHOW_NODE_IMAGE, this.handleShowNodeImage)
   },
-  beforeUnmount() {
+  beforeDestroy() {
     EventBus.$off(NODE_ACTIVE, this.handleNodeActive)
     EventBus.$off(SHOW_NODE_IMAGE, this.handleShowNodeImage)
   },

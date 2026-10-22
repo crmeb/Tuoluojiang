@@ -8,7 +8,7 @@
             ref="elForm"
             :model="formData"
             :rules="rules"
-            size="default"
+            size="medium"
             label-width="125px"
             label-position="right"
           >
@@ -35,6 +35,7 @@
                   clearable
                   placeholder="请输入正整数"
                   show-word-limit
+                  size="small"
                 >
                   <template #suffix>天</template>
                 </el-input>
@@ -63,6 +64,7 @@
                     clearable
                     placeholder="请输入正整数"
                     show-word-limit
+                    size="small"
                   >
                     <template #suffix>天</template>
                   </el-input>
@@ -74,6 +76,7 @@
                     clearable
                     placeholder="请输入正整数"
                     show-word-limit
+                    size="small"
                   >
                     <template #suffix>天</template>
                   </el-input>
@@ -85,6 +88,7 @@
                     clearable
                     placeholder="请输入正整数"
                     show-word-limit
+                    size="small"
                   >
                     <template #suffix>天</template>
                   </el-input>
@@ -112,6 +116,7 @@
                   clearable
                   placeholder="请输入正整数"
                   show-word-limit
+                  size="small"
                 >
                   <template #suffix>条</template>
                 </el-input>
@@ -122,14 +127,13 @@
         </div>
       </el-card>
       <div class="cr-bottom-button">
-        <el-button type="primary" @click="saveEvt">保存</el-button>
+        <el-button type="primary" @click="saveEvt" size="small">保存</el-button>
       </div>
     </div>
   </div>
 </template>
 <script>
 export default {
-  emits: ['saveEvt'],
   name: 'CluePoolConfig',
   props: {
     formData: {
@@ -231,7 +235,7 @@ export default {
     }
   }
 }
-:deep(.el-card.is-always-shadow) {
+::v-deep .el-card.is-always-shadow {
   border: none;
 }
 </style>

@@ -1,15 +1,15 @@
 <template>
   <!-- 挂在表格表头里，弹层 append-to-body（el-popover 默认）避免被表头 .cell 的 overflow 裁剪 -->
-  <el-popover v-model:visible="visible" placement="bottom" trigger="click" :width="width"
+  <el-popover v-model="visible" placement="bottom" trigger="click" :width="width"
     popper-class="batch-edit-popover" @show="handleShow">
     <div class="batch-edit-popover__body">
       <p class="batch-edit-popover__title">{{ title }}</p>
       <el-input-number ref="inputRef" v-model="inputValue" :min="min" :max="max" :precision="0" :controls="false"
-        :placeholder="placeholder" class="batch-edit-popover__input" @keyup.enter="confirm" />
+        :placeholder="placeholder" size="small" class="batch-edit-popover__input" @keyup.enter.native="confirm" />
     </div>
     <div class="batch-edit-popover__footer">
-      <el-button @click="close">取消</el-button>
-      <el-button type="primary" @click="confirm">确定</el-button>
+      <el-button size="mini" @click="close">取消</el-button>
+      <el-button size="mini" type="primary" @click="confirm">确定</el-button>
     </div>
 
     <template #reference>

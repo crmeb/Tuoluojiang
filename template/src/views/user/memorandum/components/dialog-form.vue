@@ -3,18 +3,18 @@
   <div>
     <el-dialog
       :title="formData.title"
-      v-model="dialogFormVisible"
+      :visible.sync="dialogFormVisible"
       :width="formData.width"
       :close-on-click-modal="false"
-      class="person"
+      custom-class="person"
       :before-close="handleClose"
       :append-to-body="true"
     >
       <formCreate v-if="rules.length > 0 && dialogFormVisible" :key="formKey" ref="fc" :option="option" :rule="rules" />
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="handleClose">取消</el-button>
-          <el-button type="primary" @click="handleConfirm('ruleForm')">确定</el-button>
+          <el-button @click="handleClose">{{ $t('public.cancel') }}</el-button>
+          <el-button type="primary" @click="handleConfirm('ruleForm')">{{ $t('public.ok') }}</el-button>
         </div>
       </template>
     </el-dialog>
@@ -23,11 +23,10 @@
 
 <script>
 import formCreate from '@form-create/element-ui'
-import request from '@/api/request.ts'
+import request from '@/api/request'
 import ueditorFrom from '@/components/form-common/oa-wangeditor'
 formCreate.component('ueditorFrom', ueditorFrom)
 export default {
-  emits: ['isOk', 'changData'],
   name: 'DialogForm',
   components: { formCreate: formCreate.$form() },
   props: {
@@ -68,7 +67,7 @@ export default {
               closeBtn: false,
               okBtn: false,
               onLoad: (e) => {
-                e.fApi = this.$refs.fc.fapi
+                e.fApi = this.$refs.fc.$f
               }
             }
           }
@@ -97,7 +96,7 @@ export default {
     },
     // 提交
     handleConfirm() {
-      this.$refs.fc.fapi.submit((formDatas, fApi) => {
+      this.$refs.fc.$f.submit((formDatas, fApi) => {
         if (this.formData.hasOwnProperty('options')) {
           formDatas = Object.assign(formDatas, this.formData.options)
         }
@@ -109,14 +108,14 @@ export default {
         } else {
           this.$emit('changData', formDatas)
         }
-      }).catch(() => {}) // 校验不通过时 reject，错误已显示在表单上
+      })
     }
   }
 }
 </script>
 
 <style lang="scss" scoped>
-:deep(.tips) {
+::v-deep .tips {
   font-size: 13px;
   color: #999;
   margin-bottom: 20px;
@@ -127,7 +126,7 @@ export default {
   border-top: 1px solid #e6ebf5;
   text-align: right;
 }
-:deep(.el-cascader) {
+::v-deep .el-cascader {
   width: 100%;
 }
 </style>

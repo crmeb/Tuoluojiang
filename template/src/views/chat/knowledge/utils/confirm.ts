@@ -1,4 +1,4 @@
-import { ElMessageBox as MessageBox } from 'element-plus'
+import { MessageBox } from 'element-ui'
 
 /**
  * 知识库模块的删除二次确认

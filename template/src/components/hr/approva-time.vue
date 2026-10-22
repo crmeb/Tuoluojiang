@@ -3,13 +3,13 @@
     <!-- 请假表单 -->
 
     <el-form-item :error="errors.dateStart" :required="showRequired" label="开始时间" :label-width="itemLabelWidth">
-      <div class="time-row">
+      <div class="el-form-item__content">
         <el-date-picker
           v-model="timeData.dateStart"
           :type="timeData.timeType === 'day' ? 'date' : 'datetime'"
           placeholder="选择日期"
-          :format="timeData.timeType === 'day' ? 'YYYY/MM/DD' : 'YYYY/MM/DD HH:mm:ss'"
-          :value-format="timeData.timeType === 'day' ? 'YYYY/MM/DD' : 'YYYY/MM/DD HH:mm:ss'"
+          :format="timeData.timeType === 'day' ? 'yyyy/MM/dd' : 'yyyy/MM/dd HH:mm:ss'"
+          :value-format="timeData.timeType === 'day' ? 'yyyy/MM/dd' : 'yyyy/MM/dd HH:mm:ss'"
           :clearable="false"
           @change="onchangeTimeStart"
         ></el-date-picker>
@@ -27,13 +27,13 @@
       </div>
     </el-form-item>
     <el-form-item :error="errors.dateEnd" :required="showRequired" label="结束时间" :label-width="itemLabelWidth">
-      <div class="time-row">
+      <div class="el-form-item__content">
         <el-date-picker
           v-model="timeData.dateEnd"
           :type="timeData.timeType === 'day' ? 'date' : 'datetime'"
           placeholder="选择日期"
-          :format="timeData.timeType === 'day' ? 'YYYY/MM/DD' : 'YYYY/MM/DD HH:mm:ss'"
-          :value-format="timeData.timeType === 'day' ? 'YYYY/MM/DD' : 'YYYY/MM/DD HH:mm:ss'"
+          :format="timeData.timeType === 'day' ? 'yyyy/MM/dd' : 'yyyy/MM/dd HH:mm:ss'"
+          :value-format="timeData.timeType === 'day' ? 'yyyy/MM/dd' : 'yyyy/MM/dd HH:mm:ss'"
           :clearable="false"
           @change="onchangeTimeEnd"
         ></el-date-picker>
@@ -50,7 +50,7 @@
       </div>
     </el-form-item>
     <el-form-item :error="errors.duration" :required="showRequired" :label="title" :label-width="itemLabelWidth">
-      <div class="time-row">
+      <div class="el-form-item__content">
         <el-input v-model="timeData.duration" style="width: 220px" @change="changeDuration" placeholder="请输入时长">
           <template #suffix>
             <span class="el-input__icon">{{ timeData.timeType === 'day' ? '天' : '小时' }}</span>
@@ -62,13 +62,12 @@
 </template>
 
 <script>
-import { divTime } from '@/utils/index.ts'
+import { divTime } from '@/utils'
 export default {
   name: 'Index',
-  emits: ['update:modelValue', 'change'],
   props: {
     formCreateInject: Object,
-    modelValue: {
+    value: {
       type: Object,
       default: () => ({})
     },
@@ -99,13 +98,12 @@ export default {
           label: '下午'
         }
       ],
-      // data() 早于 computed 初始化，这里不能用 this.value
       timeData: {
-        dateStart: this.modelValue.dateStart,
-        timeStart: this.modelValue.timeStart,
-        dateEnd: this.modelValue.dateEnd,
-        timeEnd: this.modelValue.timeEnd,
-        duration: this.modelValue.duration,
+        dateStart: this.value.dateStart,
+        timeStart: this.value.timeStart,
+        dateEnd: this.value.dateEnd,
+        timeEnd: this.value.timeEnd,
+        duration: this.value.duration,
         timeType: this.timeType
       },
       errors: {
@@ -128,10 +126,6 @@ export default {
     this.syncOuterErrorVisibility()
   },
   computed: {
-    // Vue 3 的 v-model 走 modelValue，保留 value 供组件内部沿用
-    value() {
-      return this.modelValue
-    },
     showRequired() {
       return !!(this.formCreateInject && this.formCreateInject.rule && this.formCreateInject.rule.effect && this.formCreateInject.rule.effect.required)
     },
@@ -216,7 +210,7 @@ export default {
     },
     syncFieldState() {
       const value = { ...this.timeData }
-      this.$emit('update:modelValue', value)
+      this.$emit('input', value)
       this.$emit('change', value)
       this.errors = this.showErrors ? this.getErrors(value) : this.createEmptyErrors()
 
@@ -293,33 +287,24 @@ export default {
 <style scoped lang="scss">
 .el-form--label-top .el-form-item__label {
   float: none;
-  display: inline-flex;
-  justify-content: flex-start;
+  display: inline-block;
+  text-align: left;
   padding: 0 0 10px 0;
 }
 
 .timeFrom {
-  // 表单项内容区是 flex 容器，不设宽度会按内容收缩
-  width: 100%;
-
-  :deep(.el-date-editor),
-  :deep(.el-date-editor--date) {
+  ::v-deep .el-form-item.is-error .el-input__inner,
+  ::v-deep .el-form-item.is-error .el-textarea__inner {
+    border-color: #f56c6c;
+  }
+  ::v-deep .el-form-item .el-input__inner,
+  ::v-deep .el-form-item .el-textarea__inner {
+    border-color: #dcdfe6;
+  }
+  ::v-deep .el-date-editor,
+  ::v-deep .el-date-editor--date,
+  ::v-deep .el-select {
     width: 220px;
-  }
-}
-
-// 日期与上午/下午同行：下拉框按线上 220px，空间不足时（如发起申请抽屉）收缩到剩余宽度
-.time-row {
-  display: flex;
-  width: 100%;
-
-  :deep(.el-date-editor) {
-    flex-shrink: 0;
-  }
-
-  .el-select {
-    flex: 0 1 220px;
-    min-width: 0;
   }
 }
 </style>

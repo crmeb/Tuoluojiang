@@ -138,27 +138,27 @@
 
 <script>
 import { ref, computed, watch, onMounted, getCurrentInstance } from 'vue'
-import { scheduleStatusApi, todoOverviewApi, todoListApi } from '@/api/user.ts'
+import { scheduleStatusApi, todoOverviewApi, todoListApi } from '@/api/user'
 import CalendarDetails from './calendarDetails.vue'
 import QuickCreateSchedule from './QuickCreateSchedule.vue'
 import AddTodo from './addTodo.vue'
-import { roterPre } from '@/settings.ts'
+import { roterPre } from '@/settings'
 import {
   getProgramSelectApi,
   getProgramVersionSelectApi,
   getProgramTaskSelectApi,
   getProgramMemberApi
-} from '@/api/program.ts'
+} from '@/api/program'
 // import auditProcess from '@/views/user/assessment/components/auditProcess'
 import EditTask from '@/views/program/programTask/components/editTask.vue'
 import EditCustomerComp from '@/views/customer/list/components/editCustomer.vue'
 import CheckContractComp from '@/views/customer/signing/components/checkContract.vue'
 import InvoiceDetailsComp from '@/components/invoice/invoiceDetails.vue'
 import ExamineComp from '@/views/user/examine/components/detailExamine.vue'
-import { useCustomer } from '../composables/useCustomer.ts'
-import { useContract } from '../composables/useContract.ts'
-import { useInvoice } from '../composables/useInvoice.ts'
-import { useExamine } from '../composables/useExamine.ts'
+import { useCustomer } from '../composables/useCustomer'
+import { useContract } from '../composables/useContract'
+import { useInvoice } from '../composables/useInvoice'
+import { useExamine } from '../composables/useExamine'
 
 const PAGE_SIZE = 20
 
@@ -757,11 +757,11 @@ export default {
   color: #909399;
 }
 
-:deep(.el-collapse-item__header) {
+::v-deep .el-collapse-item__header {
   border-bottom: none;
 }
 
-:deep(.el-collapse-item__content) {
+::v-deep .el-collapse-item__content {
   padding-bottom: 0;
 }
 
@@ -772,7 +772,7 @@ export default {
 
     color: #909399 !important;
   }
-  :deep(.el-collapse-item__header) {
+  ::v-deep .el-collapse-item__header {
     display: flex;
     align-items: center;
     justify-content: center;

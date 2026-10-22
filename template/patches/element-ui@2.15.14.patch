@@ -1,0 +1,95 @@
+diff --git a/lib/element-ui.common.js b/lib/element-ui.common.js
+index 5631486796d454e650722ee90ed15472cc703643..ee7d81535d015cd1afbdfdff28bb27ecd23db936 100644
+--- a/lib/element-ui.common.js
++++ b/lib/element-ui.common.js
+@@ -23278,7 +23278,10 @@ formvue_type_template_id_a1b5ff34_render._withStripped = true
+       }
+     },
+     deregisterLabelWidth: function deregisterLabelWidth(val) {
+-      var index = this.getLabelWidthIndex(val);
++      var index = this.potentialLabelWidthArr.indexOf(val);
++      // label 处于隐藏容器（未激活的 tab、关闭的抽屉等）中时宽度从未注册成功，
++      // 此处静默跳过，避免组件销毁阶段抛出 [ElementForm]unpected width
++      if (index === -1) return;
+       this.potentialLabelWidthArr.splice(index, 1);
+     }
+   }
+@@ -23475,7 +23478,12 @@ var external_async_validator_default = /*#__PURE__*/__webpack_require__.n(extern
+ 
+       if (this.$slots.default && this.isAutoWidth && this.$el.firstElementChild) {
+         if (action === 'update') {
+-          this.computedWidth = this.getLabelWidth();
++          // 隐藏状态下 getComputedStyle().width 为 'auto'，parseFloat 得到 NaN，
++          // 此时保留上一次的有效宽度，避免把 NaN 写进 computedWidth 造成宽度登记表错乱
++          var labelWidth = this.getLabelWidth();
++          if (!isNaN(labelWidth)) {
++            this.computedWidth = labelWidth;
++          }
+         } else if (action === 'remove') {
+           this.elForm.deregisterLabelWidth(this.computedWidth);
+         }
+diff --git a/lib/form-item.js b/lib/form-item.js
+index a0de68ffdfddf961278a5e17764005fb03371dfe..4e483a20834abaea1bfb0741d8184847b60ab6b0 100644
+--- a/lib/form-item.js
++++ b/lib/form-item.js
+@@ -385,7 +385,12 @@ var util_ = __webpack_require__(3);
+ 
+       if (this.$slots.default && this.isAutoWidth && this.$el.firstElementChild) {
+         if (action === 'update') {
+-          this.computedWidth = this.getLabelWidth();
++          // 隐藏状态下 getComputedStyle().width 为 'auto'，parseFloat 得到 NaN，
++          // 此时保留上一次的有效宽度，避免把 NaN 写进 computedWidth 造成宽度登记表错乱
++          var labelWidth = this.getLabelWidth();
++          if (!isNaN(labelWidth)) {
++            this.computedWidth = labelWidth;
++          }
+         } else if (action === 'remove') {
+           this.elForm.deregisterLabelWidth(this.computedWidth);
+         }
+diff --git a/lib/form.js b/lib/form.js
+index 3d65b77f6db73bb39904ae6c5e466947adb68fd5..1a13cf2e8072d57b80072d6ac4f26ba2af6b5b60 100644
+--- a/lib/form.js
++++ b/lib/form.js
+@@ -410,7 +410,10 @@ var merge_default = /*#__PURE__*/__webpack_require__.n(merge_);
+       }
+     },
+     deregisterLabelWidth: function deregisterLabelWidth(val) {
+-      var index = this.getLabelWidthIndex(val);
++      var index = this.potentialLabelWidthArr.indexOf(val);
++      // label 处于隐藏容器（未激活的 tab、关闭的抽屉等）中时宽度从未注册成功，
++      // 此处静默跳过，避免组件销毁阶段抛出 [ElementForm]unpected width
++      if (index === -1) return;
+       this.potentialLabelWidthArr.splice(index, 1);
+     }
+   }
+diff --git a/lib/table.js b/lib/table.js
+index 9c241b351480a730860a5f4549e2c41c41047d58..f27dc2b860087e084e557a12ab828ec541b3b366 100644
+--- a/lib/table.js
++++ b/lib/table.js
+@@ -4008,7 +4008,7 @@ var convertToRows = function convertToRows(originColumns) {
+         var rect = target.getBoundingClientRect();
+ 
+         var bodyStyle = document.body.style;
+-        if (rect.width > 12 && rect.right - event.pageX < 8) {
++        if (rect.width > 12 && rect.right - event.pageX < 11) {
+           bodyStyle.cursor = 'col-resize';
+           if (Object(dom_["hasClass"])(target, 'is-sortable')) {
+             target.style.cursor = 'col-resize';
+diff --git a/packages/theme-chalk/src/tag.scss b/packages/theme-chalk/src/tag.scss
+index 162290206f3b9c35f541c0cc39ac9a8bf5076d9a..4fd7ad66e8fc2b135b5a1276be784bf450391e2a 100644
+--- a/packages/theme-chalk/src/tag.scss
++++ b/packages/theme-chalk/src/tag.scss
+@@ -124,11 +124,11 @@
+   }
+ 
+   @include m(dark) {
+-    @include genTheme(100%, 100%, 0, 80%);
++    @include genTheme(100%, 100%, 0%, 80%);
+   }
+ 
+   @include m(plain) {
+-    @include genTheme(0, 40%, 100%, 100%);
++    @include genTheme(0%, 40%, 100%, 100%);
+   }
+ 
+   @include m(medium) {

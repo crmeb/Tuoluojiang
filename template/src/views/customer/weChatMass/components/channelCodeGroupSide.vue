@@ -29,8 +29,10 @@
             <span class="icon iconfont icongengduo pointer group-side-more" @click.stop></span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item :command="{ action: 'edit', id: item.id }">编辑</el-dropdown-item>
-                <el-dropdown-item :command="{ action: 'delete', id: item.id }">删除</el-dropdown-item>
+                <el-dropdown-item :command="{ action: 'edit', id: item.id }">{{ $t('public.edit') }}</el-dropdown-item>
+                <el-dropdown-item :command="{ action: 'delete', id: item.id }">{{
+                  $t('public.delete')
+                }}</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -41,11 +43,11 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import modalForm from '@/libs/modal-form.ts'
+import { modalSure } from '@/libs/public'
+import modalForm from '@/libs/modal-form'
 import { ref, computed, onMounted } from 'vue'
-import { createChannelCodeGroupApi, editChannelCodeGroupApi, delChannelCodeGroupApi } from '@/api/weCom.ts'
-import { useChannelCodeGroup } from '../composables/useChannelCodeGroup.ts'
+import { createChannelCodeGroupApi, editChannelCodeGroupApi, delChannelCodeGroupApi } from '@/api/weCom'
+import { useChannelCodeGroup } from '../composables/useChannelCodeGroup'
 
 export default {
   name: 'ChannelCodeGroupSide',
@@ -150,7 +152,7 @@ export default {
     flex: 1;
     min-height: 0;
 
-    :deep(.el-scrollbar__wrap) {
+    ::v-deep .el-scrollbar__wrap {
       overflow-x: hidden;
     }
   }

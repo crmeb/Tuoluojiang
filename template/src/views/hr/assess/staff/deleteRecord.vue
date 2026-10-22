@@ -6,9 +6,9 @@
         <div class="total-16 mb10">共 {{ total }} 条</div>
         <div v-loading="loading">
           <el-table :data="tableData" :height="tableHeight1" style="width: 100%" row-key="id" default-expand-all>
-            <el-table-column prop="info.name" label="考核名称" min-width="140" />
-            <el-table-column prop="mark" label="删除原因" min-width="150" />
-            <el-table-column prop="card" label="删除人" min-width="140">
+            <el-table-column prop="info.name" :label="$t('user.work.assessmentname')" min-width="140" />
+            <el-table-column prop="mark" :label="$t('access.deletereason')" min-width="150" />
+            <el-table-column prop="card" :label="$t('access.deleteperson')" min-width="140">
               <template #default="{ row }">
                 <div style="display: flex; align-items: center; gap: 6px" class="pointer">
                   <el-avatar :size="24" :src="row.card.avatar"></el-avatar>
@@ -16,7 +16,7 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column prop="check" label="考核人" min-width="140">
+            <el-table-column prop="check" :label="$t('user.work.assessor')" min-width="140">
               <template #default="{ row }">
                 <div style="display: flex; align-items: center; gap: 6px" class="pointer">
                   <el-avatar :size="24" :src="row.check.avatar"></el-avatar>
@@ -24,7 +24,7 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column prop="test" label="被考核人" min-width="140">
+            <el-table-column prop="test" :label="$t('access.examinee')" min-width="140">
               <template #default="{ row }">
                 <div style="display: flex; align-items: center; gap: 6px" class="pointer">
                   <el-avatar :size="24" :src="row.test.avatar"></el-avatar>
@@ -32,13 +32,13 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column prop="address" label="操作" fixed="right" width="100">
+            <el-table-column prop="address" :label="$t('public.operation')" fixed="right" width="100">
               <template #default="scope">
                 <el-button
-                  type="primary" link
+                  type="text"
                   @click="handleScore(scope.row)"
                   v-hasPermi="['hr:assessStaff:deleteRecord:details']"
-                  >考核详情</el-button
+                  >{{ $t('access.assessmentdetails') }}</el-button
                 >
               </template>
             </el-table-column>
@@ -62,13 +62,12 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { userAssessDeletesList } from '@/api/user.ts'
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
+import { userAssessDeletesList } from '@/api/user'
+import { DIALOG_SIZE } from '@/constants/popupSize'
 export default {
   name: 'DeleteInfo',
   components: {
-    detailsDialog: defineAsyncComponent(() => import('./components/detailsDialog'))
+    detailsDialog: () => import('./components/detailsDialog')
   },
 
   data() {
@@ -109,7 +108,7 @@ export default {
     },
     handleScore(row) {
       this.config = {
-        title: '考核详情',
+        title: this.$t('access.assessmentdetails'),
         width: DIALOG_SIZE.XL,
         data: row.info
       }
@@ -120,7 +119,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-drawer__body) {
+::v-deep .el-drawer__body {
   height: 100%;
   overflow-y: auto;
 }

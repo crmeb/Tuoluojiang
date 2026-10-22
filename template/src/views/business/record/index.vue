@@ -23,24 +23,24 @@
           <el-table-column label="审批类型" min-width="150" prop="approve.name" show-overflow-tooltip />
           <el-table-column label="审批状态" min-width="120" prop="name" show-overflow-tooltip>
             <template #default="scope">
-              <el-tag size="small" effect="plain" v-if="scope.row.status === -1" type="info"> 已撤销 </el-tag>
-              <el-tag size="small" effect="plain" v-if="scope.row.status === 0" type="warning"> 待审核 </el-tag>
-              <el-tag size="small" effect="plain" v-if="scope.row.status === 1" type="info"> 已通过 </el-tag>
-              <el-tag size="small" effect="plain" v-if="scope.row.status === 2" type="danger"> 已拒绝 </el-tag>
+              <el-tag effect="plain" v-if="scope.row.status === -1" size="mini" type="info"> 已撤销 </el-tag>
+              <el-tag effect="plain" v-if="scope.row.status === 0" size="mini" type="warning"> 待审核 </el-tag>
+              <el-tag effect="plain" v-if="scope.row.status === 1" size="mini" type="info"> 已通过 </el-tag>
+              <el-tag effect="plain" v-if="scope.row.status === 2" size="mini" type="danger"> 已拒绝 </el-tag>
             </template>
           </el-table-column>
           <el-table-column label="提交时间" min-width="150" prop="created_at" show-overflow-tooltip />
-          <el-table-column label="操作" prop="name" show-overflow-tooltip width="180">
+          <el-table-column :label="$t('public.operation')" prop="name" show-overflow-tooltip width="180">
             <template #default="scope">
-              <el-button v-hasPermi="['business:record:index:details']" type="primary" link @click="handleDetail(scope.row)"
+              <el-button v-hasPermi="['business:record:index:details']" type="text" @click="handleDetail(scope.row)"
                 >详情</el-button
               >
 
-              <el-button v-hasPermi="['business:record:index:delete']" type="primary" link @click="handleDelete(scope.row)"
+              <el-button v-hasPermi="['business:record:index:delete']" type="text" @click="handleDelete(scope.row)"
                 >删除</el-button
               >
 
-              <el-button type="primary" link @click="handlePrint(scope.row)">
+              <el-button type="text" @click="handlePrint(scope.row)">
                 打印
               </el-button>
             </template>
@@ -70,19 +70,18 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { modalSure } from '@/libs/public.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { approveApplyApi, approveApplyDeleteApi, approveApplyExportApi, approveApplyEditApi } from '@/api/business.ts'
+import moment from 'moment'
+import { modalSure } from '@/libs/public'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { approveApplyApi, approveApplyDeleteApi, approveApplyExportApi, approveApplyEditApi } from '@/api/business'
 export default {
   name: 'IndexVue',
   components: {
-    formBox: defineAsyncComponent(() => import('./components/formBox')),
-    detailExamine: defineAsyncComponent(() => import('@/views/user/examine/components/detailExamine')),
-    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel')),
-    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage')),
-    printPreview: defineAsyncComponent(() => import('./components/printPreview'))
+    formBox: () => import('./components/formBox'),
+    detailExamine: () => import('@/views/user/examine/components/detailExamine'),
+    exportExcel: () => import('@/components/common/exportExcel'),
+    defaultPage: () => import('@/components/common/defaultPage'),
+    printPreview: () => import('./components/printPreview')
   },
   data() {
     return {
@@ -157,7 +156,7 @@ export default {
     },
     getExportData() {
       if (this.where.approve_id == '') return this.$message.error('请选择审批类型')
-      this.saveName = '审批导出_' + dayjs(new Date()).format('HH_mm_ss') + '.xlsx'
+      this.saveName = '审批导出_' + moment(new Date()).format('HH_mm_ss') + '.xlsx'
       const where = JSON.parse(JSON.stringify(this.where))
       where.limit = 0
       this.exportLoading = true
@@ -186,7 +185,7 @@ export default {
 // .normal-page {
 //   padding-bottom: 0;
 // }
-:deep(.el-table th) {
+::v-deep .el-table th {
   background-color: #f7fbff;
 }
 .search {

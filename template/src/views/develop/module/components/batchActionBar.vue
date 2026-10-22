@@ -8,15 +8,14 @@
       :value="selectCount === listCount"
       @change="$emit('change')"
     />
-    <el-button @click="$emit('delete')">批量删除</el-button>
-    <el-button @click="$emit('share')">共享协作</el-button>
-    <el-button @click="$emit('transfer')">批量移交</el-button>
+    <el-button size="small" @click="$emit('delete')">批量删除</el-button>
+    <el-button size="small" @click="$emit('share')">共享协作</el-button>
+    <el-button size="small" @click="$emit('transfer')">批量移交</el-button>
   </div>
 </template>
 
 <script>
 export default {
-  emits: ['change', 'delete', 'share', 'transfer'],
   props: {
     listCount: Number,
     selectCount: Number

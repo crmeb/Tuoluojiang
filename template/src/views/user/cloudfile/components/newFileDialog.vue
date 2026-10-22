@@ -1,6 +1,6 @@
 <template>
   <!--  新建文件或文件夹弹窗-->
-  <el-dialog :before-close="handleClose" :title="config.title" v-model="dialogVisible" width="480px">
+  <el-dialog :before-close="handleClose" :title="config.title" :visible.sync="dialogVisible" width="480px">
     <div class="mt15">
       <div v-if="config.command !== 5" class="current-dialog mb15">
         <span>文件类型：</span>
@@ -20,16 +20,15 @@
     </div>
     <template #footer>
       <div class="dialog-footer">
-        <el-button :loading="loading" type="primary" @click="handleAdd">确定</el-button>
+        <el-button :loading="loading" size="small" type="primary" @click="handleAdd">确定</el-button>
       </div>
     </template>
   </el-dialog>
 </template>
 
 <script>
-import { folderCreateApi, folderMakeApi, folderSpaceEntCreateApi, folderSpaceEntMakeApi } from '@/api/cloud.ts'
+import { folderCreateApi, folderMakeApi, folderSpaceEntCreateApi, folderSpaceEntMakeApi } from '@/api/cloud'
 export default {
-  emits: ['handleIsOK', 'handleCreateXmindFile'],
   name: 'MyFileDialog',
   props: {
     config: {
@@ -186,7 +185,7 @@ export default {
     width: auto;
     top: 12px;
   }
-  :deep(.el-input__inner) {
+  ::v-deep .el-input__inner {
     text-align: left;
   }
 }

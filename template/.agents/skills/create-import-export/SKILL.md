@@ -13,14 +13,10 @@ description: 为 CRUD 列表页接入 Excel 导入、导出、模板下载与导
 |---|---|---|
 | 导入弹窗 | `src/views/customer/components/dragUpload.vue` | 拖拽上传 xls/xlsx，调 `xxxImportApi` |
 | 导入记录 | `src/views/customer/list/components/importRecords.vue` | 查看导入/导出历史 |
-| 前端读表格 | `src/utils/excel/readSheet.ts` 的 `readFirstSheetRows(file)` | 读第一个工作表为字符串二维数组；.xlsx 用 exceljs、.csv 用 papaparse、.xls 懒加载 SheetJS；日期统一为 `YYYY-MM-DD[ HH:mm:ss]` |
-| 前端写表格 | `src/utils/excel/writeSheet.ts` 的 `aoaToXlsxBlob(data, { merges, cols, rows })` | 二维数组导出 .xlsx（exceljs），配置结构与原 SheetJS 相同 |
 | 列表导出 | 各业务 `index.vue` 的 `exportList` + `xxxExportApi` | 按当前筛选条件导出 |
 | API 命名 | `xxxImportTemplateApi` / `xxxImportApi` / `xxxExportApi` | 见 [`create-api-module`](../create-api-module/SKILL.md) |
 
 参考实现：`src/views/customer/list/index.vue`（`dropdownFn` case 4/8/12）。
-
-前端直接读写 Excel 一律走上面两个工具（项目统一用 exceljs），不要在业务代码里直接 `import 'xlsx'`；SheetJS 仅保留给 .xls 读取。
 
 ## oaFromBox 下拉 value 约定（客户列表通用）
 
@@ -55,7 +51,7 @@ export function xxxExportApi(data) {
 }
 ```
 
-具体 URL 以后端文档为准；导出若为文件流，确认 `request.ts` 是否需 `{ responseType: 'blob' }`。
+具体 URL 以后端文档为准；导出若为文件流，确认 `request.js` 是否需 `{ responseType: 'blob' }`。
 
 ### 2. 列表页接入组件
 
@@ -128,5 +124,5 @@ export default {
 ## 不要做的事
 
 - 不要新建第二套上传组件，优先复用 `dragUpload.vue`
-- 不要在导入成功后再 `this.$message.success`（`request.ts` 已统一提示）
+- 不要在导入成功后再 `this.$message.success`（`request.js` 已统一提示）
 - 不要假设所有模块 value 4/8/12 含义相同，必须读当前页 `dropdownList`

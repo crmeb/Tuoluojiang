@@ -3,21 +3,21 @@
 <template>
   <el-dialog
     title="选择向量化内容"
-    v-model="visible"
+    :visible.sync="visible"
     :width="DIALOG_SIZE.MD"
     :close-on-click-modal="false"
     append-to-body
   >
     <el-radio-group v-model="scope" class="embed-scope">
-      <el-radio v-for="item in EMBED_SCOPES" :key="item.value" :label="item.value" :value="item.value">
+      <el-radio v-for="item in EMBED_SCOPES" :key="item.value" :label="item.value">
         {{ item.label }}
       </el-radio>
     </el-radio-group>
 
     <template #footer>
       <div>
-        <el-button @click="visible = false">取消</el-button>
-        <el-button type="primary" @click="handleConfirm">确定</el-button>
+        <el-button size="small" @click="visible = false">取消</el-button>
+        <el-button size="small" type="primary" @click="handleConfirm">确定</el-button>
       </div>
     </template>
   </el-dialog>
@@ -25,8 +25,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { DIALOG_SIZE } from '@/constants/popupSize.ts'
-import { EMBED_SCOPES } from '../constants.ts'
+import { DIALOG_SIZE } from '@/constants/popupSize'
+import { EMBED_SCOPES } from '../constants'
 
 const emit = defineEmits<{ (e: 'confirm', scope: string): void }>()
 
@@ -52,7 +52,7 @@ defineExpose({ openBox })
   flex-direction: column;
   gap: 19px;
 
-  :deep(.el-radio__label) {
+  ::v-deep .el-radio__label {
     font-size: 13px;
     color: #303133;
   }

@@ -12,8 +12,8 @@
 </template>
 
 <script>
-import { EventBus } from '@/libs/bus.ts'
-import { DATA_CHANGE } from '../event-constant.ts';
+import { EventBus } from '@/libs/bus'
+import { DATA_CHANGE } from '../event-constant';
 
 
 let countEl = document.createElement('div')
@@ -38,7 +38,7 @@ export default {
       this.onDataChange(this.mindMap.getData())
     }
   },
-  beforeUnmount() {
+  beforeDestroy() {
     EventBus.$off(DATA_CHANGE, this.onDataChange)
   },
   methods: {

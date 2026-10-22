@@ -40,27 +40,6 @@ function getImageUrl(type) {
 }
 
 // 静态内容配置
-// 按图片序号对应的缺省文案（原 public.message00 ~ message17）
-const INDEXED_TEXTS = [
-  '暂无考核记录',
-  '暂无统计图',
-  '暂无考核详情',
-  '暂无考核计划',
-  '暂无考核记录',
-  '暂无考核模板',
-  '暂无员工绩效',
-  '暂无文件或文件夹',
-  '暂无待办任务',
-  '暂无记事本内容',
-  '暂无收入统计图',
-  '暂无支出统计图',
-  '暂无职位说明详情',
-  '暂无职位体系图',
-  '暂无数据',
-  '暂无工作分析数据',
-  '暂无数据',
-  '暂无数据',
-]
 const STATIC_CONTENTS = [
   { url: newdef1, text: '暂无表单数据' },
   { url: none008, text: '暂无评论' },
@@ -107,6 +86,9 @@ export default {
     }
   },
   computed: {
+    lang() {
+      return this.$store.getters.lang
+    },
     showContent() {
       return this.index > -1 && this.currentContent
     },
@@ -128,15 +110,15 @@ export default {
       const offset = String(this.top).endsWith('px') ? this.top : `${this.top}px`
       return { transform: `translateY(-${offset})` }
     },
-    // 按序号生成缺省内容
-    indexedContents() {
+    // 动态生成国际化内容
+    i18nContents() {
       return Array.from({ length: 18 }, (_, i) => ({
         url: getImageUrl(this.getImageType(i)),
-        text: INDEXED_TEXTS[i]
+        text: this.$t(`public.message${i.toString().padStart(2, '0')}`)
       }))
     },
     contentList() {
-      return [...this.indexedContents, ...STATIC_CONTENTS]
+      return [...this.i18nContents, ...STATIC_CONTENTS]
     }
   },
   methods: {

@@ -8,13 +8,12 @@
             <div class="shu mr10"></div>
             <span class="title">提交审批</span>
           </div>
-          <component
-            :is="formCreateComponent"
-            v-if="formCreateComponent"
+          <form-create
             class="edit-examine-form"
             ref="fc"
-            v-model:api="fapi"
+            v-model="fapi"
             :option="option"
+            size="small"
             :rule="rules"
             @change="handleChange"
           />
@@ -28,31 +27,28 @@
       </el-scrollbar>
     </div>
     <div class="button from-foot-btn fix btn-shadow">
-      <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" :loading="loading" @click="handleConfirm('ruleForm')">
-        确定
+      <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
+      <el-button size="small" type="primary" :loading="loading" @click="handleConfirm('ruleForm')">
+        {{ $t('public.ok') }}
       </el-button>
     </div>
   </div>
 </template>
 
 <script>
-import { defineAsyncComponent, markRaw } from 'vue'
-import { loadApprovalForm } from '@/libs/approval-form'
-import request from '@/api/request.ts'
+import request from '@/api/request'
 import {
   approveApplyEditApi,
   approveApplyFormApi,
   approveApplyListApi,
   attendanceAbnormalDateApi,
   attendanceAbnormalRecordApi
-} from '@/api/business.ts'
+} from '@/api/business'
 
 export default {
-  emits: ['isOk'],
   name: 'EditExamine',
   components: {
-    processFrom: defineAsyncComponent(() => import('@/views/user/examine/components/process'))
+    processFrom: () => import('@/views/user/examine/components/process')
   },
   props: {
     parameterData: {
@@ -69,7 +65,6 @@ export default {
   data() {
     return {
       fapi: null,
-      formCreateComponent: null,
       abnormal: '', //异常日期
       record: '', //异常记录
       holiday: '', //假期类型
@@ -90,7 +85,7 @@ export default {
               closeBtn: false,
               okBtn: false,
               onLoad: (e) => {
-                e.fApi = this.$refs.fc.fapi
+                e.fApi = this.$refs.fc.$f
               }
             }
           }
@@ -130,8 +125,7 @@ export default {
 
     // 获取表单配置
     approveApply() {
-      Promise.all([loadApprovalForm(), approveApplyFormApi(this.commandId, this.parameterData)]).then(([FormCreate, res]) => {
-        this.formCreateComponent = markRaw(FormCreate)
+      approveApplyFormApi(this.commandId, this.parameterData).then((res) => {
         this.configData = res.data.info
         res.data.forms.forEach((item) => {
           if ((item.type === 'moneyFrom' || item.type === 'inputNumber') && item.props) {
@@ -182,8 +176,6 @@ export default {
         } else {
           this.approveApplyEdit(this.id, { types: 0 })
         }
-      }).catch(() => {
-        this.$message.error('审批表单加载失败，请重试')
       })
     },
     // 获取人员配置表单
@@ -380,11 +372,11 @@ export default {
     // 保存
     approveApplySave(id) {
       const FromData = {
-        title: '添加职位',
+        title: this.$t('hr.addposition'),
         method: 'post',
         action: `approve/apply/save/${id}`
       }
-      this.$refs.fc.fapi.submit((formData) => {
+      this.$refs.fc.$f.submit((formData) => {
         Object.keys(formData).forEach((k) => {
           if (formData[k] === undefined) formData[k] = ''
         })
@@ -443,7 +435,7 @@ export default {
           .catch((err) => {
             this.loading = false
           })
-      }).catch(() => {}) // 校验不通过时 reject，错误已显示在表单上
+      })
     },
     // 调用接口赋值 异常日期
     attendanceAbnormalDate() {
@@ -537,7 +529,7 @@ export default {
   font-weight: 600;
 }
 
-:deep(.el-drawer__body) {
+::v-deep .el-drawer__body {
   padding-bottom: 40px;
 }
 .ex-content {
@@ -546,14 +538,14 @@ export default {
   .ex-content-con {
     padding-right: 24px;
   }
-  :deep(.select-item) {
+  ::v-deep .select-item {
     margin-top: 0 !important;
   }
-  :deep(.el-divider--horizontal) {
+  ::v-deep .el-divider--horizontal {
     margin-top: 0;
     margin-bottom: 30px;
   }
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
   .shu {
@@ -568,10 +560,10 @@ export default {
     color: rgba(0, 0, 0, 0.85);
   }
 }
-:deep(.el-input) {
+::v-deep .el-input--medium {
   font-size: 12px;
 }
-:deep(.el-cascader) {
+::v-deep .el-cascader--medium {
   width: 100%;
 }
 </style>

@@ -19,7 +19,7 @@
 - **SFC 里写 JSX 必须标 `<script lang="jsx">`**，否则 esbuild 以 js 解析而报错。
 - **`:export` 只在 `*.module.scss` 中生效**：SCSS 变量给 JS 读，走 `@/styles/variables.module.scss`。
 - **不存在的具名导入会让构建直接失败**（"No matching export"），不要保留 IDE 自动补全产生的死导入。
-- **给第三方库打补丁用 pnpm patch**：补丁文件放 `patches/`，在 `pnpm-workspace.yaml` 的 `patchedDependencies` 登记（当前为 `qrcodejs2`、`mammoth`）。补丁绑定精确版本，升级被补丁的包时要用 `pnpm patch` 重新生成；patch-package 格式的补丁不会被 pnpm 应用。
+- **给第三方库打补丁用 pnpm patch**：补丁文件放 `patches/`，在 `pnpm-workspace.yaml` 的 `patchedDependencies` 登记（已有 `element-ui`、`qrcodejs2` 两例）。典型场景：CJS 老库在 IIFE 顶层用 `this` 指代 window，打成 ESM 后 `this` 为 `undefined` 抛错。
 - **根 `package.json` 是 `"type": "module"`**：根目录新增配置 / 脚本一律 ESM，确需 CJS 的单个文件用 `.cjs` 后缀。
 - **`browserslist` 必须与 `build.target` 逐条对齐**（当前 chrome/edge ≥ 107、firefox ≥ 104、safari/ios ≥ 16）：`build.target` 决定 JS 降级程度，`browserslist` 决定 autoprefixer 加哪些前缀，放宽任一侧只会产出永远用不上的死前缀。
 - 命令：`pnpm dev`（端口 9527）/ `pnpm build` / `pnpm build:demo` / `pnpm analyze`（产出 `dist/stats.html`）/ `pnpm preview` / `pnpm typecheck`。**没有 lint / format / test script，不要凭空调用。**

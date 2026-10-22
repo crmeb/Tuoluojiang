@@ -1,16 +1,17 @@
 <template>
   <div>
     <!-- 查看未考核人员 -->
-    <el-drawer title="未创建考核人员" v-model="drawer" size="700px" :before-close="handleClose">
+    <el-drawer title="未创建考核人员" :visible.sync="drawer" size="700px" :before-close="handleClose">
       <div class="box">
         <!-- 筛选 -->
         <el-form :inline="true" class="from-s">
           <div class="flex">
-            <el-form-item label="考核周期" class="select-bar">
+            <el-form-item :label="$t('toptable.assessmentcycle')" class="select-bar">
               <el-select
                 v-model="tableFrom.period"
+                size="small"
                 @change="changePeriod"
-                placeholder="请选择"
+                :placeholder="$t('finance.pleaseselect')"
                 style="width: 150px"
               >
                 <el-option
@@ -22,12 +23,13 @@
               </el-select>
             </el-form-item>
             <template v-if="tableFrom.period">
-              <el-form-item label="考核时间" class="select-bar">
+              <el-form-item :label="$t('access.assessmenttime')" class="select-bar">
                 <el-date-picker
                   class="time"
                   v-if="tableFrom.period === 1 || tableFrom.period === 2"
                   ref="getDateValue"
                   v-model="tableFrom.time"
+                  size="small"
                   :type="dateArray[tableFrom.period - 1].type"
                   :format="dateArray[tableFrom.period - 1].format"
                   :placeholder="dateArray[tableFrom.period - 1].text"
@@ -38,6 +40,7 @@
                   ref="getDateValue"
                   v-model="tableFrom.time"
                   class="time"
+                  size="small"
                   :type="dateArray[4].type"
                   :format="dateArray[4].format"
                   :placeholder="dateArray[4].text"
@@ -82,12 +85,11 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { userAssessAbnormalList } from '@/api/user.ts'
+import moment from 'moment'
+import { userAssessAbnormalList } from '@/api/user'
 export default {
   components: {
-    dateQuarter: defineAsyncComponent(() => import('@/components/form-common/select-dateQuarter'))
+    dateQuarter: () => import('@/components/form-common/select-dateQuarter')
   },
   data() {
     return {
@@ -95,11 +97,11 @@ export default {
       quarterBtn: false,
       listData: [],
       dateArray: [
-        { value: 1, type: 'week', text: '选择周', format: 'YYYY 第 ww 周' },
-        { value: 2, type: 'month', text: '选择月份', format: 'YYYY-MM' },
+        { value: 1, type: 'week', text: '选择周', format: 'yyyy 第 WW 周' },
+        { value: 2, type: 'month', text: '选择月份', format: 'yyyy-MM' },
         { value: 4, type: '' },
         { value: 5, type: '' },
-        { value: 3, type: 'year', text: '选择年份', format: 'YYYY' }
+        { value: 3, type: 'year', text: '选择年份', format: 'yyyy' }
       ],
       total: 0,
       timeVal: [],
@@ -121,7 +123,7 @@ export default {
     },
     reset() {
       this.tableFrom.period = 2
-      this.tableFrom.time = dayjs().startOf('month').format('YYYY-MM-DD 00:00:00')
+      this.tableFrom.time = moment().startOf('month').format('YYYY-MM-DD 00:00:00')
       this.quarterBtn = false
       this.getList()
     },
@@ -166,7 +168,7 @@ export default {
 
     openBox() {
       this.getList()
-      this.tableFrom.time = dayjs().startOf('month').format('YYYY-MM-DD 00:00:00')
+      this.tableFrom.time = moment().startOf('month').format('YYYY-MM-DD 00:00:00')
       this.drawer = true
     },
     changePeriod(e) {
@@ -197,11 +199,11 @@ export default {
         this.tableFrom.time = ''
       } else {
         if (this.tableFrom.period == 1) {
-          this.tableFrom.time = dayjs(this.tableFrom.time).format('YYYY-MM-DD 00:00:00')
+          this.tableFrom.time = moment(this.tableFrom.time).format('YYYY-MM-DD 00:00:00')
         } else if (this.tableFrom.period == 2) {
-          this.tableFrom.time = dayjs(this.tableFrom.time).format('YYYY-MM-DD 00:00:00')
+          this.tableFrom.time = moment(this.tableFrom.time).format('YYYY-MM-DD 00:00:00')
         } else if (this.tableFrom.period == 3) {
-          this.tableFrom.time = dayjs(this.tableFrom.time).format('YYYY-MM-DD 00:00:00')
+          this.tableFrom.time = moment(this.tableFrom.time).format('YYYY-MM-DD 00:00:00')
         } else {
           this.quarterBtn = true
         }
@@ -216,7 +218,8 @@ export default {
 .box {
   padding: 20px;
 }
-:deep(.el-form-item__label) {
+::v-deep .el-form-item--medium .el-form-item__label {
+  line-height: 32px;
   margin-left: 10px;
 }
 </style>

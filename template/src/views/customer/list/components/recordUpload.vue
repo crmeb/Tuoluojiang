@@ -47,8 +47,8 @@
             </el-upload>
           </el-col>
           <el-col :span="12" class="text-right mt20">
-            <el-button v-if="formInfo.type === 'edit'" @click="clientCancel">取消</el-button>
-            <el-button :loading="loading" type="primary" @click="clientFollowSave">确定</el-button>
+            <el-button v-if="formInfo.type === 'edit'" size="small" @click="clientCancel">取消</el-button>
+            <el-button :loading="loading" size="small" type="primary" @click="clientFollowSave">确定</el-button>
           </el-col>
         </el-row>
         <!-- <div v-if="formInfo.show !== 1" class="mt30"></div> -->
@@ -58,14 +58,13 @@
 </template>
 
 <script>
-import { getStorageJson } from '@/utils/storage.ts'
-import { saveClientFollowApi, putClientFollowApi } from '@/api/client.ts'
-import { ElImageViewer } from 'element-plus'
-import { uploader } from '@/utils/uploadCloud.ts'
-import { toSrcFn } from '@/utils/format.ts'
+import { getStorageJson } from '@/utils/storage'
+import { saveClientFollowApi, putClientFollowApi } from '@/api/client'
+import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
+import { uploader } from '@/utils/uploadCloud'
+import { toSrcFn } from '@/utils/format'
 export default {
   name: 'recordUpload',
-  emits: ['change'],
   components: {
     ElImageViewer
   },
@@ -263,6 +262,9 @@ export default {
     font-size: 12px;
   }
 }
+::v-deep .el-button--small {
+  padding: 9px 10px;
+}
 .addContent {
   margin-top: 10px;
   display: flex;
@@ -329,13 +331,12 @@ export default {
   display: flex;
 }
 
-:deep(.el-textarea__inner) {
+::v-deep .el-textarea__inner {
   min-height: 96px;
   border: none;
-  box-shadow: none;
   font-size: 12px;
 }
-:deep(.el-tag) {
+::v-deep .el-tag {
   padding: 0 4px;
 }
 </style>

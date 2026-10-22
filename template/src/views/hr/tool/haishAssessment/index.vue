@@ -35,7 +35,7 @@
                 </template>
 
                 <template #default="scope">
-                  <el-select v-model="scope.row.col1" placeholder="请选择">
+                  <el-select v-model="scope.row.col1" size="mini" placeholder="请选择">
                     <el-option
                       v-for="item in position"
                       :key="item.id"
@@ -63,7 +63,7 @@
                     </el-popover>
                   </template>
                   <template #default="scope">
-                    <el-select v-model="scope.row.col2" placeholder="请选择">
+                    <el-select v-model="scope.row.col2" size="mini" placeholder="请选择">
                       <el-option
                         v-for="item in professionalKnowledge"
                         :key="item.id"
@@ -89,7 +89,7 @@
                     </el-popover>
                   </template>
                   <template #default="scope">
-                    <el-select v-model="scope.row.col3" placeholder="请选择">
+                    <el-select v-model="scope.row.col3" size="mini" placeholder="请选择">
                       <el-option v-for="item in managementKnowHow" :key="item.id" :label="item.label" :value="item.id">
                       </el-option>
                     </el-select>
@@ -110,7 +110,7 @@
                     </el-popover>
                   </template>
                   <template #default="scope">
-                    <el-select v-model="scope.row.col4" placeholder="请选择">
+                    <el-select v-model="scope.row.col4" size="mini" placeholder="请选择">
                       <el-option
                         v-for="item in interpersonalRelationship"
                         :key="item.id"
@@ -127,6 +127,7 @@
                     <el-select
                       v-model="scope.row.col5"
                       :disabled="!score[getScore(scope.row.col2, scope.row.col3, scope.row.col4)]"
+                      size="mini"
                       placeholder="请选择"
                       @change="positionScore(scope.row)"
                     >
@@ -157,7 +158,7 @@
                     </el-popover>
                   </template>
                   <template #default="scope">
-                    <el-select v-model="scope.row.col6" placeholder="请选择">
+                    <el-select v-model="scope.row.col6" size="mini" placeholder="请选择">
                       <el-option v-for="item in environment" :key="item.id" :label="item.label" :value="item.id">
                       </el-option>
                     </el-select>
@@ -177,7 +178,7 @@
                     </el-popover>
                   </template>
                   <template #default="scope">
-                    <el-select v-model="scope.row.col7" placeholder="请选择">
+                    <el-select v-model="scope.row.col7" size="mini" placeholder="请选择">
                       <el-option v-for="item in difficulty" :key="item.id" :label="item.label" :value="item.id">
                       </el-option>
                     </el-select>
@@ -188,6 +189,7 @@
                     <el-select
                       v-model="scope.row.col8"
                       :disabled="!solve[getSolve(scope.row.col6, scope.row.col7)]"
+                      size="mini"
                       placeholder="请选择"
                       @change="positionScore(scope.row)"
                     >
@@ -218,7 +220,7 @@
                     </el-popover>
                   </template>
                   <template #default="scope">
-                    <el-select v-model="scope.row.col9" placeholder="请选择">
+                    <el-select v-model="scope.row.col9" size="mini" placeholder="请选择">
                       <el-option v-for="item in free" :key="item.id" :label="item.label" :value="item.id"> </el-option>
                     </el-select>
                   </template>
@@ -237,7 +239,7 @@
                     </el-popover>
                   </template>
                   <template #default="scope">
-                    <el-select v-model="scope.row.col10" placeholder="请选择">
+                    <el-select v-model="scope.row.col10" size="mini" placeholder="请选择">
                       <el-option v-for="item in responsibility" :key="item.id" :label="item.label" :value="item.id">
                       </el-option>
                     </el-select>
@@ -257,7 +259,7 @@
                     </el-popover>
                   </template>
                   <template #default="scope">
-                    <el-cascader v-model="scope.row.col11" :options="influence"></el-cascader>
+                    <el-cascader v-model="scope.row.col11" size="mini" :options="influence"></el-cascader>
                   </template>
                 </el-table-column>
                 <el-table-column prop="col12" label="评分" min-width="70">
@@ -265,6 +267,7 @@
                     <el-select
                       v-model="scope.row.col12"
                       :disabled="!bear[getBear(scope.row.col9, scope.row.col10, scope.row.col11)]"
+                      size="mini"
                       placeholder="请选择"
                       @change="positionScore(scope.row)"
                     >
@@ -302,6 +305,7 @@
                       class="input"
                       v-model="scope.row.col13"
                       type="number"
+                      size="mini"
                       min="20"
                       max="80"
                       placeholder="请输入整数"
@@ -318,7 +322,7 @@
                     <div>（β）</div>
                   </template>
                   <template #default="scope">
-                    <el-input class="input" v-model="scope.row.col14" disabled placeholder="自动计算">
+                    <el-input class="input" v-model="scope.row.col14" size="mini" disabled placeholder="自动计算">
                       <template #suffix>
                         <i style="font-style: normal; margin-right: 10px">%</i>
                       </template></el-input
@@ -326,7 +330,7 @@
                   </template>
                 </el-table-column>
               </el-table-column>
-              <el-table-column min-width="110">
+              <el-table-column min-width="80">
                 <template #header="scope">
                   <el-popover placement="top" width="250" trigger="hover" content="岗位分数= αA*(1+B) + βC">
                     <template #reference>
@@ -335,10 +339,10 @@
                   </el-popover>
                 </template>
                 <template #default="scope">
-                  <el-input v-model="scope.row.col15" disabled placeholder="自动计算"></el-input>
+                  <el-input v-model="scope.row.col15" size="mini" disabled placeholder="自动计算"></el-input>
                 </template>
               </el-table-column>
-              <el-table-column min-width="110"
+              <el-table-column min-width="80"
                 ><template #header="scope">
                   <el-popover placement="top" width="250" trigger="hover" content="岗位系数=岗位分数/最低岗位分数">
                     <template #reference>
@@ -347,13 +351,13 @@
                   </el-popover>
                 </template>
                 <template #default="scope">
-                  <el-input v-model="scope.row.col16" disabled placeholder="自动计算"></el-input>
+                  <el-input v-model="scope.row.col16" size="mini" disabled placeholder="自动计算"></el-input>
                 </template>
               </el-table-column>
-              <el-table-column label="操作" width="110" fixed="right">
+              <el-table-column label="操作" width="100" fixed="right">
                 <template #default="scope">
-                  <el-button v-if="scope.row.col1" type="primary" link @click="openHistory(scope)">历史</el-button>
-                  <el-button type="primary" link @click="deleteFn(scope)">删除</el-button>
+                  <el-button v-if="scope.row.col1" type="text" @click="openHistory(scope)">历史</el-button>
+                  <el-button type="text" @click="deleteFn(scope)">删除</el-button>
                 </template>
               </el-table-column>
             </el-table>
@@ -362,8 +366,8 @@
         </el-card>
 
         <div class="cr-bottom-button btn-shadow">
-          <el-button @click="exportExcelData">下载</el-button>
-          <el-button :loading="loading" type="primary" @click="submit()">保存</el-button>
+          <el-button size="small" @click="exportExcelData">下载</el-button>
+          <el-button size="small" :loading="loading" type="primary" @click="submit()">保存</el-button>
         </div>
       </div>
     </template>
@@ -376,20 +380,19 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { modalSure } from '@/libs/public.ts'
+import moment from 'moment'
+import { modalSure } from '@/libs/public'
 import Sortable from 'sortablejs'
 import data from './mixins/index.js'
-import { jobSelectApi, hayGroupApi, getHayGroupApi, putHayGroupApi } from '@/api/config.ts'
+import { jobSelectApi, hayGroupApi, getHayGroupApi, putHayGroupApi } from '@/api/config.js'
 
 export default {
   mixins: [data],
   components: {
-    tableList: defineAsyncComponent(() => import('./components/tableList')),
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
-    historyList: defineAsyncComponent(() => import('./components/historyList')),
-    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel'))
+    tableList: () => import('./components/tableList'),
+    selectMember: () => import('@/components/form-common/select-member'),
+    historyList: () => import('./components/historyList'),
+    exportExcel: () => import('@/components/common/exportExcel')
   },
   data() {
     return {
@@ -635,7 +638,7 @@ export default {
       this.selectedList = []
       this.type = 'add'
       this.title = '新增评估表'
-      this.name = '评估表' + dayjs(new Date()).format('YYYYMMDD')
+      this.name = '评估表' + moment(new Date()).format('YYYYMMDD')
       this.addANewLine()
       setTimeout(() => {
         this.rowDrop()
@@ -679,7 +682,7 @@ export default {
 
     // 表格拖拽函数
     rowDrop() {
-      const tbody = this.$refs.table.$el.querySelectorAll('.el-table__body-wrapper tbody')[0]
+      const tbody = this.$refs.table.$el.querySelectorAll('.el-table__body-wrapper > table > tbody')[0]
       Sortable.create(tbody, {
         animation: 300,
         onEnd: (e) => {
@@ -736,11 +739,12 @@ export default {
     font-size: 18px;
     font-weight: 700;
     font-family: PingFangSC-Semibold, PingFang SC;
-    :deep(.el-input) {
-      font-size: 18px;
+    ::v-deep .el-input--medium {
+      font-size: 18px !important;
 
-      .el-input__wrapper {
-        box-shadow: none;
+      .el-input__inner {
+        border: none;
+        font-size: 18px;
       }
     }
   }
@@ -783,37 +787,35 @@ export default {
 
 .divBox {
   .input {
-    :deep(.el-input__suffix) {
+    ::v-deep .el-input__suffix {
       position: absolute;
       top: 2px;
     }
   }
-  :deep(.el-icon-back) {
+  ::v-deep .el-icon-back {
     display: none;
   }
-  :deep(.el-table thead.is-group th) {
+  ::v-deep .el-table thead.is-group th {
     background-color: rgba(247, 251, 255, 1);
     border-color: #ebeef5;
   }
-  :deep(.el-table td) {
+  ::v-deep .el-table td {
     border: none;
   }
   .el-table {
     border: none;
-    :deep(.el-select__wrapper) {
+    ::v-deep .el-input--mini {
       font-size: 12px;
     }
-    :deep(.cell) {
+    ::v-deep .cell {
       padding-left: 6px;
       padding-right: 0;
     }
-    :deep(.el-input__wrapper) {
+    ::v-deep .el-input__inner {
       padding: 3px 6px;
-    }
-    :deep(.el-input__inner) {
       font-size: 13px;
     }
-    :deep(.el-input__suffix) {
+    ::v-deep .el-input__suffix {
       right: 0;
     }
   }
@@ -861,7 +863,7 @@ export default {
     }
   }
 }
-:deep(.el-table__inner-wrapper::before) {
+::v-deep .el-table__fixed::before {
   height: 0;
 }
 </style>

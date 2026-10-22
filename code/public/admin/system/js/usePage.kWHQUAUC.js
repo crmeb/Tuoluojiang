@@ -1,0 +1,1 @@
+import{bt as e,wt as t}from"./chunk-vendor.Di-Ybv3u.js";e();var n=(e=15)=>{let n=t(1);return{page:n,pageSize:t(e),total:t(0),resetPage:()=>{n.value=1}}};export{n as t};

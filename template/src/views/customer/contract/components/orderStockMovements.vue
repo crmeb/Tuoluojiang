@@ -6,6 +6,7 @@
       <div>
         <el-button
           v-warehouse-permi="{ id: warehouseId, permission: WAREHOUSE_PERMISSION.INBOUND }"
+          size="small"
           type="primary"
           @click="handleAddBill('inbound')"
         >
@@ -13,6 +14,7 @@
         </el-button>
         <el-button
           v-warehouse-permi="{ id: warehouseId, permission: WAREHOUSE_PERMISSION.OUTBOUND }"
+          size="small"
           type="primary"
           @click="handleAddBill('outbound')"
         >
@@ -26,8 +28,8 @@
       :data="tableData"
       :loading="isLoading"
       :total="total"
-      v-model:page="page"
-      v-model:page-size="pageSize"
+      :page.sync="page"
+      :page-size.sync="pageSize"
     >
       <!-- 变动类型标签：按记录类型取退货入库 / 销售出库配色，仅描边不带背景色 -->
       <template #type="{ row }">
@@ -53,7 +55,7 @@
 
       <!-- 操作列 -->
       <template #action="{ row }">
-        <el-button type="primary" link @click="handleViewDetail(row)">查看详情</el-button>
+        <el-button type="text" @click="handleViewDetail(row)">查看详情</el-button>
       </template>
     </BaseTable>
 
@@ -65,17 +67,17 @@
 
 <script>
 import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter } from "vue-router/composables";
 import BaseTable from "@/components/BaseTable/index.vue";
 import GoodsInfoCell from "@/components/common/goodsInfoCell.vue";
 import InboundDetail from "@/views/inventory/inbound/components/detail.vue";
 import OutboundDetail from "@/views/inventory/outbound/components/detail.vue";
-import { useTable } from "@/composables/useTable.ts";
-import { orderStockBillListApi } from "@/api/inventory.ts";
-import { roterPre } from "@/settings.ts";
-import { WAREHOUSE_PERMISSION } from "@/views/inventory/constants.ts";
-import { INBOUND_TYPE, INBOUND_TYPE_MAP, INBOUND_STATUS } from "@/views/inventory/inbound/constants.ts";
-import { OUTBOUND_TYPE, OUTBOUND_TYPE_MAP, OUTBOUND_STATUS } from "@/views/inventory/outbound/constants.ts";
+import { useTable } from "@/composables/useTable";
+import { orderStockBillListApi } from "@/api/inventory";
+import { roterPre } from "@/settings";
+import { WAREHOUSE_PERMISSION } from "@/views/inventory/constants";
+import { INBOUND_TYPE, INBOUND_TYPE_MAP, INBOUND_STATUS } from "@/views/inventory/inbound/constants";
+import { OUTBOUND_TYPE, OUTBOUND_TYPE_MAP, OUTBOUND_STATUS } from "@/views/inventory/outbound/constants";
 
 // 记录类型枚举值（接口 record_type）：区分一条记录是退货入库单还是销售出库单
 const RECORD_TYPE = {

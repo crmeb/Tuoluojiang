@@ -14,7 +14,7 @@
 
 <script>
 import { ref, onMounted } from 'vue'
-import { getStorageJson } from '@/utils/storage.ts'
+import { getStorageJson } from '@/utils/storage'
 
 import personalIcon from '@/assets/images/personal-icon.png'
 

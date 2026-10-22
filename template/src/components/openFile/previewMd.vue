@@ -2,7 +2,7 @@
   <div class="box">
     <div v-if="!editBtn" class="m20">
       <!-- 预览文件 -->
-      <div class="markdown-body" v-html="renderedMd"></div>
+      <markdown-it-vue :content="htmlMD" />
     </div>
     <!-- 编辑文件 md/html-->
     <mavon-editor v-else v-model="htmlMD" ref="md" :toolbars="toolbars"> </mavon-editor>
@@ -10,12 +10,15 @@
 </template>
 
 <script>
-import { fileUpload } from '@/api/public.ts'
-import { processResourceUrl } from '@/utils/resourceUtil.ts'
-import mavon from 'mavon-editor'
+import { fileUpload } from '@/api/public'
+import { processResourceUrl } from '@/utils/resourceUtil'
+import Vue from 'vue'
+import mavonEditor from 'mavon-editor'
+Vue.use(mavonEditor)
 import 'mavon-editor/dist/css/index.css'
+import MarkdownItVue from 'markdown-it-vue'
+import 'markdown-it-vue/dist/markdown-it-vue.css'
 export default {
-  emits: ['closeLoading'],
   name: '',
   props: {
     url: {
@@ -36,13 +39,7 @@ export default {
     }
   },
   components: {
-    mavonEditor: mavon.mavonEditor
-  },
-  computed: {
-    // 预览复用 mavon-editor 内置的 markdown-it 实例（原 markdown-it-vue 不支持 Vue 3）
-    renderedMd() {
-      return mavon.markdownIt.render(this.htmlMD || '')
-    }
+    MarkdownItVue
   },
   data() {
     return {
@@ -109,7 +106,7 @@ export default {
       }
       fileUpload(this.fid, this.file.id, data).then((res) => {
         if (res.status === 200) {
-          let path = this.$route.path
+          let path = this.$router.history.current.path
           this.$router.push({ path, query: { ...this.$route.query, word_url: res.data.file_url } })
         }
         this.$emit('closeLoading')
@@ -129,7 +126,7 @@ export default {
 .p20 {
   padding: 20px;
 }
-:deep(.v-note-wrapper) {
+::v-deep .v-note-wrapper {
   height: calc(100vh - 120px) !important;
   // overflow-y: auto;
 }

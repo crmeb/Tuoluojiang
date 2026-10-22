@@ -4,8 +4,8 @@
       <div class="flex-between">
         <div class="title-16">{{ $route.meta.title }}</div>
         <div>
-          <el-button @click="synchronizeTags">同步标签</el-button>
-          <el-button icon="el-icon-plus" type="primary" @click="addFinance">添加标签组</el-button>
+          <el-button size="small" @click="synchronizeTags">同步标签</el-button>
+          <el-button size="small" icon="el-icon-plus" type="primary" @click="addFinance">添加标签组</el-button>
         </div>
       </div>
       <div>
@@ -24,7 +24,7 @@
                 <span class="iconfont icontuodong tuozhuai" title="拖拽排序"></span>
               </template>
             </el-table-column>
-            <el-table-column prop="name" label="标签组名称" min-width="100"></el-table-column>
+            <el-table-column prop="name" :label="$t('customer.labelename')" min-width="100"></el-table-column>
             <el-table-column prop="group_type" label="标签组类型" min-width="100">
               <template #default="scope">
                 <status-tag
@@ -35,7 +35,7 @@
                 </status-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="cate.name" label="标签" min-width="440">
+            <el-table-column prop="cate.name" :label="$t('customer.label')" min-width="440">
               <template #default="scope">
                 <div class="label-list">
                   <div v-for="item in scope.row.children" :key="item.id" class="item">
@@ -45,15 +45,17 @@
               </template>
             </el-table-column>
 
-            <el-table-column prop="address" label="操作" fixed="right" width="120">
+            <el-table-column prop="address" :label="$t('public.operation')" fixed="right" width="120">
               <template #default="scope">
-                <el-button type="primary" link v-hasPermi="['customer:setup:label:edit']" @click="handleEdit(scope.row)">编辑</el-button>
+                <el-button type="text" v-hasPermi="['customer:setup:label:edit']" @click="handleEdit(scope.row)">{{
+                  $t('public.edit')
+                }}</el-button>
 
                 <el-button
-                  type="primary" link
+                  type="text"
                   v-hasPermi="['customer:setup:label:delete']"
                   @click="handleDelete(scope.row, 1)"
-                  >删除</el-button
+                  >{{ $t('public.delete') }}</el-button
                 >
               </template>
             </el-table-column>
@@ -73,12 +75,12 @@
         </div>
 
         <!-- 替换标签 -->
-        <el-dialog title="标签替换" v-model="dialogTableVisible" width="560px" class="replaceDialog">
+        <el-dialog title="标签替换" :visible.sync="dialogTableVisible" width="560px" class="replaceDialog">
           <el-form :model="form" :rules="rules" label-width="90px" ref="dynamicValidateForm">
             <el-form-item label="是否替换：">
               <el-radio-group v-model="radio">
-                <el-radio :label="1" :value="1">替换标签</el-radio>
-                <el-radio :label="2" :value="2">不替换</el-radio>
+                <el-radio :label="1">替换标签</el-radio>
+                <el-radio :label="2">不替换</el-radio>
               </el-radio-group>
               <div class="tips" v-if="radio == 1">标签替换之后陀螺匠系统与企业微信标签同步替换！</div>
               <div class="tips" v-if="radio == 2">不替换标签则直接删除该标签，请谨慎操作！</div>
@@ -86,6 +88,7 @@
             <el-form-item label="替换标签：" v-if="radio == 1" prop="labelId">
               <el-cascader
                 v-model="form.labelId"
+                size="small"
                 :options="tableData"
                 placeholder="请选择替换标签"
                 :props="{ label: 'name', value: 'id' }"
@@ -95,8 +98,8 @@
           </el-form>
           <template #footer>
             <span class="dialog-footer">
-              <el-button @click="dialogTableVisible = false">取消</el-button>
-              <el-button type="primary" @click="deleteSubmit()">确定</el-button>
+              <el-button size="small" @click="dialogTableVisible = false">取消</el-button>
+              <el-button size="small" type="primary" @click="deleteSubmit()">确定</el-button>
             </span>
           </template>
         </el-dialog>
@@ -116,19 +119,19 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import Sortable from 'sortablejs'
 import addGroupDialog from './components/addGroupDialog'
 import addLabel from './addLabel'
 import StatusTag from '@/components/common/statusTag.vue'
-import { LABEL_GROUP_TYPE_MAP } from '@/constants/labelGroupType.ts'
-import { clientWorkLabelApi, clientSortLabelsApi } from '@/api/client.ts'
+import { LABEL_GROUP_TYPE_MAP } from '@/constants/labelGroupType'
+import { clientWorkLabelApi, clientSortLabelsApi } from '@/api/client'
 import {
   clientConfigLabelApi,
   clientConfigLabelDeleteApi,
   clientConfigLabelSaveApi,
   putcLientLabel
-} from '@/api/enterprise.ts'
+} from '@/api/enterprise'
 
 // 未知标签组类型时退化为普通文本占位
 const UNKNOWN_GROUP_TYPE = { label: '--', theme: '', variant: 'filled' }
@@ -144,7 +147,7 @@ export default {
     // 注册一个局部的自定义指令v-focus
     focus: {
       // 指令的定义
-      mounted: function (el) {
+      inserted: function (el) {
         // 聚焦元素
         el.querySelector('input').focus()
       }
@@ -257,7 +260,7 @@ export default {
     },
     // 删除
     handleDelete(item, type) {
-      const mes = type === 1 ? '你确定要删除该客户标签吗' : '该标签可能已经关联客户，您确认要删除吗'
+      const mes = type === 1 ? this.$t('customer.message03') : this.$t('customer.message04')
       modalSure(mes).then(() => {
         clientConfigLabelDeleteApi(item.id).then((res) => {
           if (this.where.page > 1 && this.tableData.length <= 1) {
@@ -319,8 +322,7 @@ export default {
     },
     // 表格拖拽排序
     rowDrop() {
-      const tbody = this.$refs.table?.$el?.querySelector('.el-table__body-wrapper tbody')
-      if (!tbody) return
+      const tbody = this.$refs.table.$el.querySelectorAll('.el-table__body-wrapper > table > tbody')[0]
 
       Sortable.create(tbody, {
         animation: 200,
@@ -343,7 +345,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-scrollbar__wrap) {
+::v-deep .el-scrollbar__wrap {
   overflow-x: hidden;
 }
 .label-list {
@@ -360,6 +362,11 @@ export default {
   font-size: 12px;
   color: red;
 }
+.replaceDialog {
+  ::v-deep .el-dialog__body {
+    padding-bottom: 0px;
+  }
+}
 .tuozhuai {
   cursor: move;
   color: #909399;
@@ -375,14 +382,5 @@ export default {
   font-size: 13px;
   color: #303133;
   margin-right: 10px;
-}
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.replaceDialog {
-  .el-dialog__body {
-    padding-bottom: 0px;
-  }
 }
 </style>

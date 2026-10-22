@@ -26,18 +26,16 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { getStorageJson } from '@/utils/storage.ts'
+import { getStorageJson } from '@/utils/storage'
 export default {
-  emits: ['update:modelValue'],
   name: 'Index',
   components: {
-    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department')),
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member'))
+    selectDepartment: () => import('@/components/form-common/select-department'),
+    selectMember: () => import('@/components/form-common/select-member')
   },
   props: {
     /* eslint-disable */
-    modelValue: [Array, Object],
+    value: [Array, Object],
     departType: {
       default: () => '',
       type: String
@@ -50,19 +48,13 @@ export default {
     disabled: Boolean,
     formCreateInject: Object
   },
-  computed: {
-    // Vue 3 的 v-model 走 modelValue，保留 value 供组件内部沿用
-    value() {
-      return this.modelValue
-    },
-  },
   data() {
     return {
       oaDepartmentShow: false,
       memberShow: false,
       memberList: [],
       disabledList: [getStorageJson('userInfo', {}).id],
-      activeMastart: this.modelValue || []
+      activeMastart: this.value || []
     }
   },
   watch: {
@@ -100,7 +92,7 @@ export default {
           is_mastart: value.is_mastart || 0
         })
       })
-      this.$emit('update:modelValue', array)
+      this.$emit('input', array)
       setTimeout(() => {
         this.formCreateInject.api.validateField(this.formCreateInject.rule.field)
       }, 300)
@@ -116,7 +108,7 @@ export default {
         })
       })
 
-      this.$emit('update:modelValue', array)
+      this.$emit('input', array)
       setTimeout(() => {
         this.formCreateInject.api.validateField(this.formCreateInject.rule.field)
       }, 300)
@@ -130,16 +122,13 @@ export default {
   margin-right: 6px;
 }
 .departBox {
-  // 表单项内容区是 flex 容器，不设宽度会按内容收缩
-  width: 100%;
-
-  :deep(.user-item) {
+  ::v-deep .user-item {
     padding: 0;
   }
-  :deep(.select-item) {
+  ::v-deep .select-item {
     margin-top: 0;
   }
-  :deep(.left) {
+  ::v-deep .left {
     align-items: center;
   }
 }

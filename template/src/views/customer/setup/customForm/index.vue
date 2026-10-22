@@ -4,7 +4,7 @@
       <template #header>
         <div class="acea-row row-between row-middle card-header">
           <div>
-            <el-tabs v-model="activeName" @tab-change="handleClick">
+            <el-tabs v-model="activeName" @tab-click="handleClick">
               <el-tab-pane label="线索表单" name="4" />
               <el-tab-pane label="客户表单" name="1" />
               <el-tab-pane label="商机表单" name="5" />
@@ -18,8 +18,8 @@
               <span class="el-icon-setting"></span>
             </div>
 
-            <el-button @click="addGroup">新增分组</el-button>
-            <el-button :loading="loading" type="primary" @click="submitFrom">保存</el-button>
+            <el-button size="small" @click="addGroup">新增分组</el-button>
+            <el-button :loading="loading" size="small" type="primary" @click="submitFrom">保存</el-button>
           </div>
         </div>
       </template>
@@ -60,7 +60,7 @@
         <el-table ref="table" :data="item.data" class="table" row-key="id" style="width: 100%">
           <el-table-column fixed="left" label="字段名称" min-width="130px" prop="id">
             <template #default="scope">
-              <el-input v-model="scope.row.key_name" class="input" placeholder="请输入"> </el-input>
+              <el-input v-model="scope.row.key_name" class="input" placeholder="请输入" size="small"> </el-input>
             </template>
           </el-table-column>
           <!-- 字段类型 -->
@@ -69,6 +69,7 @@
               <el-select
                 v-model="scope.row.type"
                 :disabled="scope.row.enable_delete !== 1"
+                size="small"
                 @change="scope.row.dict_ident = ''"
               >
                 <el-option v-for="(item, index) in typeOptions" :key="index" :label="item.label" :value="item.value">
@@ -85,6 +86,7 @@
                 clearable
                 filterable
                 placeholder="请选择关联字典"
+                size="small"
                 @change="getDictData(scope.row.dict_ident, index1, scope.$index)"
               >
                 <el-option v-for="(item, index) in dictList" :key="index" :label="item.name" :value="item.ident">
@@ -119,7 +121,7 @@
           </el-table-column>
           <el-table-column label="提示信息" min-width="110px" prop="placeholder">
             <template #default="{ row }">
-              <el-input v-model="row.placeholder" class="input" placeholder="请输入"> </el-input>
+              <el-input v-model="row.placeholder" class="input" placeholder="请输入" size="small"> </el-input>
             </template>
           </el-table-column>
           <!-- 默认值 -->
@@ -131,10 +133,11 @@
                 :disabled="row.type == 'file' || row.type == 'images'"
                 class="input"
                 placeholder="请输入默认值"
+                size="small"
               >
               </el-input>
 
-              <el-select v-else-if="row.type == 'radio'" v-model="row.value" placeholder="请选择默认值">
+              <el-select v-else-if="row.type == 'radio'" v-model="row.value" placeholder="请选择默认值" size="small">
                 <el-option v-for="el in row.optionItems" :key="el.value" :label="el.name" :value="el.value">
                 </el-option>
               </el-select>
@@ -143,6 +146,7 @@
                 multiple
                 v-model="row.value"
                 placeholder="请选择默认值"
+                size="small"
               >
                 <el-option v-for="el in row.optionItems" :key="el.value" :label="el.name" :value="el.value">
                 </el-option>
@@ -188,6 +192,7 @@
                   :max="99999999"
                   :min="0"
                   controls-position="right"
+                  size="small"
                   style="width: 130px"
                 ></el-input-number>
                 <span class="m5"> - </span>
@@ -198,6 +203,7 @@
                   :max="99999999"
                   :min="0"
                   controls-position="right"
+                  size="small"
                   style="width: 130px"
                 ></el-input-number>
                 <!-- 选择数字控制小数点 -->
@@ -207,6 +213,7 @@
                   :max="10"
                   :min="0"
                   controls-position="right"
+                  size="small"
                   style="width: 100px; margin-left: 5px"
                 ></el-input-number>
               </div>
@@ -214,8 +221,8 @@
                 <span class="m5"> 不支持设置边界值 </span>
                 <!-- <el-date-picker
                   v-model="scope.row.min"
-                  format="YYYY-MM-DD"
-                  value-format="YYYY-MM-DD"
+                  :format="'yyyy-MM-dd'"
+                  :value-format="'yyyy-MM-dd'"
                   clearable
                   placeholder="请选择"
                   size="small"
@@ -225,8 +232,8 @@
                 <span class="m5"> - </span>
                 <el-date-picker
                   v-model="scope.row.max"
-                  format="YYYY-MM-DD"
-                  value-format="YYYY-MM-DD"
+                  :format="'yyyy-MM-dd'"
+                  :value-format="'yyyy-MM-dd'"
                   clearable
                   placeholder="请选择"
                   size="small"
@@ -251,8 +258,8 @@
           </el-table-column>
           <el-table-column fixed="right" label="操作" min-width="150px" prop="address">
             <template #default="scope">
-              <el-button type="primary" link @click="moveFn(scope.row)">移动分组</el-button>
-              <el-button v-if="scope.row.enable_delete == 1" type="primary" link @click="deleteFn(scope, index1)"
+              <el-button type="text" @click="moveFn(scope.row)">移动分组</el-button>
+              <el-button v-if="scope.row.enable_delete == 1" type="text" @click="deleteFn(scope, index1)"
                 >删除</el-button
               >
             </template>
@@ -305,12 +312,10 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import Sortable from 'sortablejs'
-import { configConvertApi } from '@/api/client.ts'
+import { configConvertApi } from '@/api/client'
 import common from './components/customCommon'
-import { createDictTreeCache } from '@/utils/dictTreeCache.ts'
 import {
   getFormListApi,
   formCateSaveApi,
@@ -320,12 +325,12 @@ import {
   getDictListApi,
   formCateSaveDataApi,
   formCateMoveApi
-} from '@/api/form.ts'
+} from '@/api/form'
 export default {
   name: '',
   components: {
-    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form')),
-    clueToCustomers: defineAsyncComponent(() => import('././components/clueToCustomers'))
+    oaDialog: () => import('@/components/form-common/dialog-form'),
+    clueToCustomers: () => import('././components/clueToCustomers')
   },
   data() {
     return {
@@ -366,16 +371,14 @@ export default {
     }
   },
 
-  created() {
-    // 本页内复用的字典树缓存，离开页面随实例释放
-    this.dictTreeCache = createDictTreeCache()
-  },
-
   mounted() {
     this.getDictList()
     this.getList()
   },
 
+  beforeDestroy() {
+    this.$store.commit('user/REMOVE_FORMDIC', [])
+  },
 
   methods: {
     gridData(val) {
@@ -428,11 +431,12 @@ export default {
         level: '',
         types: dict_ident
       }
-      this.dictTreeCache
-        .load(data)
-        .then((list) => {
+      this.$store
+        .dispatch('user/getDictList', data)
+        .then((res) => {
           setTimeout(() => {
-            this.dataList[index1].data[index].optionItems = list
+            const result = res.find((item) => item.dict_ident == dict_ident)
+            this.dataList[index1].data[index].optionItems = result.list
           }, 300)
         })
         .catch(() => undefined)
@@ -485,10 +489,11 @@ export default {
               types: val.dict_ident
             }
             if (val.dict_ident) {
-              this.dictTreeCache.load(data).then((list) => {
+              this.$store.dispatch('user/getDictList', data).then((res) => {
                 setTimeout(() => {
-                  if (list) {
-                    val.optionItems = list
+                  const resultDict = res.find((item) => item.dict_ident == val.dict_ident)
+                  if (resultDict.list) {
+                    val.optionItems = resultDict.list
                   }
                 }, 300)
               })
@@ -678,10 +683,9 @@ export default {
     // 表格拖拽排序
     rowDrop() {
       let list = this.$refs.table
-      if (!Array.isArray(list) || list.length === 0) return
+      if (list.length == 0) return
       list.map((item, index) => {
-        const tbody = item?.$el?.querySelector('.el-table__body-wrapper tbody')
-        if (!tbody) return
+        const tbody = item.$el.querySelectorAll('.el-table__body-wrapper > table > tbody')[0]
         Sortable.create(tbody, {
           animation: 300,
           onEnd: (e) => {
@@ -781,7 +785,7 @@ export default {
   font-family: PingFangSC-Regular, PingFang SC;
   font-weight: 400;
   color: #303133;
-  :deep(.el-card__header) {
+  ::v-deep .el-card__header {
     padding: 0 20px;
   }
 }
@@ -795,7 +799,7 @@ export default {
   bottom: 0;
   width: calc(100% + 220px);
 }
-:deep(.card-header) {
+::v-deep .card-header {
   .el-tabs__header {
     margin: 0;
   }
@@ -823,7 +827,7 @@ export default {
   line-height: 44px;
   text-align: center;
 }
-:deep(.el-table__inner-wrapper::before) {
+::v-deep .el-table__fixed::before {
   background-color: #fff;
 }
 </style>

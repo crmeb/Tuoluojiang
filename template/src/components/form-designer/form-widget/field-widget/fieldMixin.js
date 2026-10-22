@@ -1,24 +1,9 @@
-import { toElSize } from '@/utils/el-size'
 import { deepClone } from '@/utils/util'
 import FormValidators from '@/utils/validators'
 import {putUpdateFieldApi} from '@/api/develop'
-import { FORM_RENDER_HUB, hubSubscriberMixin } from '@/utils/eventHub'
-import { setActiveField, listenActiveFieldOutsideClick } from '@/components/form-render/activeField'
 
 export default {
-  emits: ['field-value-changed', 'valueChange'],
-  mixins: [hubSubscriberMixin],
-  inject: {
-    refList: 'refList',
-    formConfig: 'formConfig',
-    getGlobalDsv: 'getGlobalDsv',
-    globalOptionData: 'globalOptionData',
-    globalModel: 'globalModel',
-    getOptionData: 'getOptionData',
-    getReadMode: 'getReadMode',
-    // 最近的 VFormRender 提供；设计态字段不在渲染器内，为 null 时收发事件均静默忽略
-    formRenderHub: { from: FORM_RENDER_HUB, default: null }
-  },
+  inject: ['refList', 'formConfig', 'getGlobalDsv', 'globalOptionData', 'globalModel', 'getOptionData', 'getReadMode'],
   props:['developData','tableData'],
    
   data () {
@@ -42,9 +27,15 @@ export default {
 
    
   },
+  created() {
+    this._handlePopoverHideBound = () => {
+      this.handlePopoverHide()
+    }
+  },
   mounted() {
-    // 点击空白处收起编辑态并保存
-    this._unlistenOutsideClick = listenActiveFieldOutsideClick(() => this.field, () => this.$el)
+    this.$nextTick(() => {
+      document.addEventListener('click', this._handlePopoverHideBound)
+    })
 
 
     // 明细表组件数据回显
@@ -53,9 +44,9 @@ export default {
 
     }
   },
-  beforeUnmount() {
+  beforeDestroy() {
     this.unregisterFromRefList()
-    this._unlistenOutsideClick?.()
+    document.removeEventListener('click', this._handlePopoverHideBound)
   },
   computed: {
      subFormName() {
@@ -77,13 +68,12 @@ export default {
   },
  
   methods: {
-    toElSize,
     isShowFn() {
      
       if(this.disabledUser.includes(this.field.options.name)){
         return false
       }
-      setActiveField(this.field)
+      this.$store.commit('user/SET_FIELD', this.field)
     },
     //--------------------- 组件内部方法 begin ------------------//
     getPropName() {
@@ -92,6 +82,14 @@ export default {
       } else {
         return this.field.options.name
       }
+    },
+    // 点击空白处关闭所有编辑状态
+    handlePopoverHide(){
+      let obj = {
+        id:0
+      }
+
+      this.$store.commit('user/SET_FIELD', obj)
     },
 
 
@@ -165,28 +163,27 @@ export default {
     },
 
     initEventHandler() {
-      this.subscribeHub(this.formRenderHub, 'field:setFormData', (newFormData) => {
+      this.$on('setFormData', (newFormData) => {
         if (!this.subFormItemFlag) {
           this.setValue(newFormData[this.field.options.name])
         }
       })
 
+      this.$on('field-value-changed', (values) => {
+        if (!!this.subFormItemFlag) {
+          let subFormData = this.formModel[this.subFormName]
+          this.handleOnChangeForSubForm(values[0], values[1], subFormData, this.subFormRowId)
+        } else {
+          this.handleOnChange(values[0], values[1])
+        }
+      })
+
       /* 监听重新加载选项事件 */
-      this.subscribeHub(this.formRenderHub, 'field:reloadOptionItems', (widgetNames) => {
+      this.$on('reloadOptionItems', (widgetNames) => {
         if (widgetNames.length === 0 || widgetNames.indexOf(this.field.options.name) > -1) {
           this.initOptionItems(true)
         }
       })
-    },
-
-    /* 执行字段自身配置的 onChange 脚本（Vue 2 时由自身 $on('field-value-changed') 触发） */
-    runFieldChangeHandler(newValue, oldValue) {
-      if (!!this.subFormItemFlag) {
-        let subFormData = this.formModel[this.subFormName]
-        this.handleOnChangeForSubForm(newValue, oldValue, subFormData, this.subFormRowId)
-      } else {
-        this.handleOnChange(newValue, oldValue)
-      }
     },
 
     handleOnCreated() {
@@ -385,16 +382,15 @@ export default {
   return false
       }
       this.$emit('field-value-changed', [newValue, oldValue])
-      this.runFieldChangeHandler(newValue, oldValue)
 
-      /* 通知所在的表单渲染器 */
-      this.formRenderHub?.emit('fieldChange',
+      /* 必须用dispatch向指定父组件派发消息！！ */
+      this.dispatch('VFormRender', 'fieldChange', [
         this.field.options.name,
         newValue,
         oldValue,
         this.subFormName,
         this.subFormRowIndex
-      )
+      ])
     },
 
     syncUpdateFormModel(value) {
@@ -415,6 +411,7 @@ export default {
     putUpdateField() {
   
       if(this.developData.show==='0'){
+        document.removeEventListener('click', this._handlePopoverHideBound)
         return false
       }
       
@@ -456,7 +453,7 @@ return false
 
       /* 主动触发表单的单个字段校验，用于清除字段可能存在的校验错误提示 */
    
-      this.formRenderHub?.emit('fieldValidation', this.getPropName())
+      this.dispatch('VFormRender', 'fieldValidation', [this.getPropName()])
     },
 
     handleFocusCustomEvent(event) {
@@ -480,7 +477,7 @@ return false
       this.syncUpdateFormModel(value)
 
       /* 主动触发表单的单个字段校验，用于清除字段可能存在的校验错误提示 */
-      this.formRenderHub?.emit('fieldValidation', this.getPropName())
+      this.dispatch('VFormRender', 'fieldValidation', [this.getPropName()])
 
       if (!!this.field.options.onInput) {
         let customFn = new Function('value', this.field.options.onInput)
@@ -498,7 +495,8 @@ return false
         let customFn = new Function(this.field.options.onAppendButtonClick)
         customFn.call(this)
       } else {
-        this.formRenderHub?.emit('appendButtonClick', this)
+        /* 必须调用mixins中的dispatch方法逐级向父组件发送消息！！ */
+        this.dispatch('VFormRender', 'appendButtonClick', [this])
       }
     },
 
@@ -528,7 +526,7 @@ return false
         let changeFn = new Function(this.field.options.onClick)
         changeFn.call(this)
       } else {
-        this.formRenderHub?.emit('buttonClick', this)
+        this.dispatch('VFormRender', 'buttonClick', [this])
       }
     },
 
@@ -711,11 +709,11 @@ return false
     },
 
     setUploadHeader(name, value) {
-      this.uploadHeaders[name] = value
+      this.$set(this.uploadHeaders, name, value)
     },
 
     setUploadData(name, value) {
-      this.uploadData[name] = value
+      this.$set(this.uploadData, name, value)
     },
 
     setToolbar(customToolbar) {

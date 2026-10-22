@@ -2,21 +2,20 @@
 <template>
   <div class="station">
     <el-drawer
-      class="customer-we-chat-mass-group-details-drawer"
       :append-to-body="true"
       :direction="direction"
       :show-close="false"
       :size="DRAWER_SIZE.LG"
       title="查看"
-      v-model="drawer"
+      :visible.sync="drawer"
     >
-      <template #header>
+      <template #title>
         <div class="invoice-title">
-          <div class="invoice-header">
-            <div class="invoice-left">
+          <el-row class="invoice-header">
+            <el-col class="invoice-left">
               <div class="invoice-logo"><i class="icon iconfont iconhetong"></i></div>
-            </div>
-            <div class="invoice-right">
+            </el-col>
+            <el-col class="invoice-right">
               <div class="txt1 over-text">{{ title }}</div>
 
               <div class="txt2">
@@ -26,8 +25,8 @@
                   <span v-else class="info1">关闭</span>
                 </span>
               </div>
-            </div>
-          </div>
+            </el-col>
+          </el-row>
           <div @click="handleClose" class="el-icon-close"></div>
         </div>
       </template>
@@ -99,8 +98,8 @@
         <el-form-item label="邀请加群：">
           {{ dataInfo.invite_group == 1 ? '开启' : '关闭' }}
         </el-form-item>
-        <!-- 群聊表格放入空白 label 的表单域正文（label-width="auto" 下无 label 不会缩进），宽度与其他表单项内容保持一致 -->
-        <el-form-item class="group-table-item" label=" ">
+        <!-- 群聊表格放入空 label 的表单域正文，宽度与其他表单项内容保持一致 -->
+        <el-form-item class="group-table-item">
           <el-table :data="dataInfo.groups" style="width: 100%" class="group-table">
             <el-table-column label="群聊名称" min-width="140" :show-overflow-tooltip="true">
               <template #default="{ row }">
@@ -131,12 +130,12 @@
   </div>
 </template>
 <script>
-import { getGroupChatyDetails } from '@/api/weCom.ts'
-import { DRAWER_SIZE } from '@/constants/popupSize.ts'
-import { getFileExtension, getFileType } from '@/utils/file.ts'
-import { roterPre } from '@/settings.ts'
-import { filePreview } from '@/utils/filePreview.ts'
-import { processResourceUrl } from '@/utils/resourceUtil.ts'
+import { getGroupChatyDetails } from '@/api/weCom'
+import { DRAWER_SIZE } from '@/constants/popupSize'
+import { getFileExtension, getFileType } from '@/utils/file'
+import { roterPre } from '@/settings'
+import { filePreview } from '@/utils/filePreview'
+import { processResourceUrl } from '@/utils/resourceUtil'
 import { saveAs } from 'file-saver'
 export default {
   name: 'detailsDrawer',
@@ -249,6 +248,15 @@ export default {
   cursor: pointer;
   font-size: 13px;
   z-index: 99;
+}
+::v-deep .el-drawer__body {
+  padding-bottom: 50px;
+}
+::v-deep .el-drawer__header {
+  height: 80px !important;
+  border: none;
+  padding: 14px 18px;
+  border-bottom: 1px solid #eeeeee;
 }
 .box {
   // display: flex;
@@ -426,7 +434,7 @@ export default {
   margin-bottom: 20px;
 }
 
-:deep(.el-form-item) {
+::v-deep .el-form-item {
   margin-bottom: 10px;
 }
 
@@ -448,18 +456,5 @@ export default {
     margin-right: 6px;
     flex-shrink: 0;
   }
-}
-</style>
-
-<style lang="scss">
-// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
-.customer-we-chat-mass-group-details-drawer .el-drawer__body {
-  padding-bottom: 50px;
-}
-.customer-we-chat-mass-group-details-drawer .el-drawer__header {
-  height: 80px !important;
-  border: none;
-  padding: 14px 18px;
-  border-bottom: 1px solid #eeeeee;
 }
 </style>

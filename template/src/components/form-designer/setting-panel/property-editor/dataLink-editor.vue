@@ -11,11 +11,12 @@
   </template>
   
   <script>
-    import i18n from "@/utils/i18n.ts";
+    import i18n from "@/utils/i18n";
     import {deepClone} from "@/utils/util";
   import conditionGroupDialog from '@/components/develop/conditionGroupDialog'
     export default {
       name: "dataLink-editor",
+      componentName: 'PropertyEditor',
       components: {conditionGroupDialog},
       mixins: [i18n],
       props: {
@@ -80,3 +81,5 @@ openFormCssEditor() {
   <style scoped>
   
   </style>
+  @/utils/i18ns
+  

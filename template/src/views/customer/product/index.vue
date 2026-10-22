@@ -31,9 +31,9 @@
           @getTableData="getTableData"
         >
           <template #options="{ data }">
-            <el-button type="primary" link @click="openDetails(data)">查看</el-button>
-            <el-button type="primary" link @click="handleEdit(data)">编辑</el-button>
-            <el-button type="primary" link @click="handleDelete(data)">删除</el-button>
+            <el-button type="text" @click="openDetails(data)">查看</el-button>
+            <el-button type="text" @click="handleEdit(data)">编辑</el-button>
+            <el-button type="text" @click="handleDelete(data)">删除</el-button>
           </template>
       </customizeTable>
     </el-card>
@@ -42,18 +42,16 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { roterPre } from '@/settings.ts'
-import { productListApi, productDelApi } from '@/api/client.ts'
-import { DRAWER_SIZE } from '@/constants/popupSize.ts'
-import oaFromBox from '@/components/common/oaFromBox'
+import { modalSure } from '@/libs/public'
+import { roterPre } from '@/settings'
+import { productListApi, productDelApi } from '@/api/client'
+import { DRAWER_SIZE } from '@/constants/popupSize'
 export default {
   name: 'product',
   components: {
-    customizeTable: defineAsyncComponent(() => import('../components/customizeTable')),
-    detailsDrawer: defineAsyncComponent(() => import('./details')),
-    oaFromBox
+    customizeTable: () => import('../components/customizeTable'),
+    detailsDrawer: () => import('./details'),
+    oaFromBox: () => import('@/components/common/oaFromBox')
   },
 
   data() {

@@ -50,8 +50,8 @@
 </template>
 
 <script>
-import { getDictListApi, getDictTreeListApi } from '@/api/form.ts'
-import i18n from '@/utils/i18n.ts'
+import { getDictListApi, getDictTreeListApi } from '@/api/form'
+import i18n from '@/utils/i18n'
 import OptionItemsSetting from '@/components/form-designer/setting-panel/option-items-setting'
 import OptionCascsderSetting from '@/components/form-designer/setting-panel/option-cascsder-setting'
 
@@ -92,7 +92,7 @@ export default {
 
     if (!this.optionModel.customizeItems || this.optionModel.customizeItems.length == 0) {
       let list = []
-      this.optionModel.customizeItems = list
+      this.$set(this.optionModel, 'customizeItems', list)
     }
   },
   watch: {
@@ -121,11 +121,11 @@ export default {
         this.getDictData(this.optionModel.dataDictId)
       }
       if (!this.optionModel.customizeItems || this.optionModel.customizeItems.length == 0) {
-        this.optionModel.customizeItems = [
+        this.$set(this.optionModel, 'customizeItems', [
           // { name: '选项1', value: '1', color: '#1890ff' },
           // { name: '选项2', value: '2', color: '#1890ff' },
           // { name: '选项3', value: '3', color: '#1890ff' }
-        ]
+        ])
       }
     },
     getDictList() {
@@ -164,3 +164,4 @@ export default {
   }
 }
 </style>
+@/utils/i18ns

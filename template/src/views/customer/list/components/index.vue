@@ -3,10 +3,10 @@
   <div class="station">
     <el-drawer
       :title="formData.title"
-      v-model="drawer"
+      :visible.sync="drawer"
       :direction="direction"
       :modal="true"
-      :close-on-click-modal="false"
+      :wrapperClosable="false"
       :before-close="handleClose"
       :size="formData.width"
     >
@@ -25,13 +25,11 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { oddsCreateApi } from '@/api/client.ts'
-import { chargeCreateApi, chargeEditApi, chargeEditSubmitApi } from '@/api/enterprise.ts'
-import { clientCustomerSaveApi } from '@/api/client.ts'
+import { modalSure } from '@/libs/public'
+import { oddsCreateApi } from '@/api/client'
+import { chargeCreateApi, chargeEditApi, chargeEditSubmitApi } from '@/api/enterprise'
+import { clientCustomerSaveApi } from '@/api/client'
 export default {
-  emits: ['isOkEdit'],
   name: 'Index',
   props: {
     formData: {
@@ -42,9 +40,9 @@ export default {
     }
   },
   components: {
-    addForm: defineAsyncComponent(() => import('@/views/customer/components/addForm')),
-    oaForm: defineAsyncComponent(() => import('@/components/customer/oaForm')),
-    addContract: defineAsyncComponent(() => import('@/views/customer/contract/components/addContract'))
+    addForm: () => import('@/views/customer/components/addForm'),
+    oaForm: () => import('@/components/customer/oaForm'),
+    addContract: () => import('@/views/customer/contract/components/addContract')
   },
   data() {
     return {
@@ -197,10 +195,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.station :deep(.el-drawer__body) {
+.station ::v-deep .el-drawer__body {
   padding: 30px 24px 50px 24px;
 }
-:deep(.el-form--inline .el-form-item) {
+::v-deep .el-form--inline .el-form-item {
   display: flex;
 }
 
@@ -209,7 +207,7 @@ export default {
     height: auto;
   }
 }
-:deep(.el-tag.el-tag--info) {
+::v-deep .el-tag.el-tag--info {
   border: none;
 }
 </style>

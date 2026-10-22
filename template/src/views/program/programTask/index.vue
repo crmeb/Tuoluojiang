@@ -27,6 +27,7 @@
 
                 <el-select
                   v-model="formData.program_id"
+                  size="small"
                   clearable
                   @clear="setValueNull"
                   placeholder="项目"
@@ -47,6 +48,7 @@
 
                 <el-select
                   v-model="formData.version_id"
+                  size="small"
                   filterable
                   clearable
                   :disabled="!formData.program_id"
@@ -60,6 +62,7 @@
 
                 <el-select
                   v-model="formData.uid"
+                  size="small"
                   filterable
                   clearable
                   placeholder="负责人"
@@ -72,6 +75,7 @@
 
                 <el-select
                   v-model="formData.status"
+                  size="small"
                   filterable
                   clearable
                   collapse-tags
@@ -88,6 +92,7 @@
                 </el-select>
 
                 <el-cascader
+                  size="small"
                   v-model="formData.path"
                   :options="programOptions"
                   :props="{ checkStrictly: true }"
@@ -101,26 +106,28 @@
                 </el-cascader>
                 <el-date-picker
                   v-model="formData.start_date"
+                  size="small"
                   type="date"
                   clearable
-                  format="YYYY-MM-DD"
-                  value-format="YYYY-MM-DD"
+                  :format="'yyyy-MM-dd'"
+                  :value-format="'yyyy-MM-dd'"
                   placeholder="开始时间"
                   style="width: 130px; margin-right: 10px"
                 ></el-date-picker>
                 <el-date-picker
                   v-model="formData.end_date"
+                  size="small"
                   type="date"
                   clearable
-                  format="YYYY-MM-DD"
-                  value-format="YYYY-MM-DD"
+                  :format="'yyyy-MM-dd'"
+                  :value-format="'yyyy-MM-dd'"
                   placeholder="结束时间"
-                  v-bind="$pickerProps({ disabledDate: disabledEndDate })"
+                  :picker-options="{ disabledDate: disabledEndDate }"
                   style="width: 130px; margin-right: 10px"
                 ></el-date-picker>
 
-                <el-button type="primary" @click="submitEvt"> 确定 </el-button>
-                <el-button @click="deleteEvt"> 删除 </el-button>
+                <el-button type="primary" size="small" @click="submitEvt"> 确定 </el-button>
+                <el-button size="small" @click="deleteEvt"> 删除 </el-button>
                 <span class="cancel" @click="cancelEvt">取消</span>
               </span>
             </div>
@@ -168,7 +175,7 @@
                     v-model="addName"
                     placeholder="请输入子任务名称(Enter保存)"
                     @blur="handleBlur(scope.row)"
-                    @keyup.enter="handleEnter(scope.row, 1)"
+                    @keyup.native.enter="handleEnter(scope.row, 1)"
                     style="width: 260px"
                   ></el-input>
                 </div>
@@ -194,7 +201,7 @@
                     v-if="scope.row.edit"
                     v-model="scope.row.name"
                     @blur="putName(scope.row, 0)"
-                    @keyup.enter="putName(scope.row, 1)"
+                    @keyup.native.enter="putName(scope.row, 1)"
                   ></el-input>
                   <div class="icon-btn" v-if="!scope.row.edit">
                     <el-tooltip
@@ -203,7 +210,7 @@
                       effect="dark"
                       content="新建子工作项"
                       placement="top"
-                      :show-after="500"
+                      :open-delay="500"
                     >
                       <i class="iconfont icona-ziji1x pointer" @click.stop="addChild(scope.row)"></i>
                     </el-tooltip>
@@ -213,7 +220,7 @@
                       effect="dark"
                       content="编辑"
                       placement="top"
-                      :show-after="500"
+                      :open-delay="500"
                     >
                       <i class="iconfont iconbianji pointer" @click="editChild(scope.row.id)"></i>
                     </el-tooltip>
@@ -229,11 +236,11 @@
                   @command="putProgramTask('priority', $event, scope.row.id)"
                 >
                   <span class="el-dropdown-link pointer dack" @click="isOperate(scope.row)">
-                    <el-tag size="small" v-if="scope.row.priority == 1" type="danger" effect="dark">紧急</el-tag>
-                    <el-tag size="small" v-else-if="scope.row.priority == 2" type="warning" effect="dark">高</el-tag>
-                    <el-tag size="small" v-else-if="scope.row.priority == 3" effect="dark">中</el-tag>
-                    <el-tag size="small" v-else-if="scope.row.priority == 4" type="success" effect="dark">低</el-tag>
-                    <el-tag size="small" v-else type="info" effect="dark">无优先级</el-tag>
+                    <el-tag v-if="scope.row.priority == 1" type="danger" effect="dark" size="mini">紧急</el-tag>
+                    <el-tag v-else-if="scope.row.priority == 2" type="warning" effect="dark" size="mini">高</el-tag>
+                    <el-tag v-else-if="scope.row.priority == 3" effect="dark" size="mini">中</el-tag>
+                    <el-tag v-else-if="scope.row.priority == 4" type="success" effect="dark" size="mini">低</el-tag>
+                    <el-tag v-else type="info" effect="dark" size="mini">无优先级</el-tag>
                   </span>
                   <template #dropdown>
                     <el-dropdown-menu>
@@ -243,15 +250,16 @@
                           v-for="(item, index) in selectData.priorityOptions"
                           :key="index"
                         >
-                          <el-tag size="small"
+                          <el-tag
                             effect="dark"
+                            size="mini"
                             :type="
                               item.value === 1
                                 ? 'danger'
                                 : item.value === 2
                                 ? 'warning'
                                 : item.value === 3
-                                ? 'primary'
+                                ? ''
                                 : item.value === 4
                                 ? 'success'
                                 : 'info'
@@ -273,18 +281,19 @@
                   @command="putProgramTask('status', $event, scope.row.id)"
                 >
                   <span class="el-dropdown-link pointer status" @click="isOperate(scope.row)">
-                    <el-tag size="small" v-if="scope.row.status == 0" type="warning" effect="plain">未处理</el-tag>
-                    <el-tag size="small" v-if="scope.row.status == 1" effect="plain">进行中</el-tag>
-                    <el-tag size="small"
+                    <el-tag v-if="scope.row.status == 0" type="warning" effect="plain" size="mini">未处理</el-tag>
+                    <el-tag v-if="scope.row.status == 1" effect="plain" size="mini">进行中</el-tag>
+                    <el-tag
                       v-if="scope.row.status == 2"
                       type="info"
                       style="color: #f95c96; border: 1px solid #f95c96"
                       effect="plain"
+                      size="mini"
                       >已解决</el-tag
                     >
-                    <el-tag size="small" v-if="scope.row.status == 3" type="success" effect="plain">已验收</el-tag>
-                    <el-tag size="small" v-if="scope.row.status == 4" type="danger" effect="plain">已拒绝</el-tag>
-                    <el-tag size="small" v-if="scope.row.status == 5" type="info" effect="plain">已关闭</el-tag>
+                    <el-tag v-if="scope.row.status == 3" type="success" effect="plain" size="mini">已验收</el-tag>
+                    <el-tag v-if="scope.row.status == 4" type="danger" effect="plain" size="mini">已拒绝</el-tag>
+                    <el-tag v-if="scope.row.status == 5" type="info" effect="plain" size="mini">已关闭</el-tag>
                   </span>
                   <template #dropdown>
                     <el-dropdown-menu>
@@ -294,8 +303,9 @@
                           v-for="(item, index) in selectData.statusOptions"
                           :key="index"
                         >
-                          <el-tag size="small"
+                          <el-tag
                             effect="plain"
+                            size="mini"
                             :style="{
                               color: item.value === 2 ? '#f95c96' : '',
                               border: item.value === 2 ? ' 1px solid #f95c96' : '',
@@ -307,7 +317,7 @@
                                 : item.value === 0
                                 ? 'warning'
                                 : item.value === 1
-                                ? 'primary'
+                                ? ''
                                 : item.value === 3
                                 ? 'success'
                                 : 'info'
@@ -339,9 +349,10 @@
                 <el-select
                   v-else
                   v-model="adminsUid"
+                  size="small"
                   clearable
                   placeholder="负责人"
-                  @click="changeAdmins(scope.row.program_id, scope.$index)"
+                  @click.native="changeAdmins(scope.row.program_id, scope.$index)"
                   @change="chooseAdmins(scope.row, scope.$index)"
                 >
                   <el-option v-for="item in programMemberOptions" :key="item.id" :label="item.name" :value="item.id" />
@@ -355,14 +366,16 @@
                   placement="top"
                   style="width: fit-content"
                   :disabled="scope.row.members && scope.row.members.length > 0 ? false : true"
-                  :show-after="500"
+                  :open-delay="500"
                 >
-                  <div @click="showMembers(scope.row, scope.$index)" class="pointer line1 members-line">
-                    <span class="flex" style="gap: 4px">
-                      <img class="img" :src="item.avatar" v-for="(item, index) in scope.row.members" :key="index" />
-                    </span>
-                    <span v-if="scope.row.members && scope.row.members.length == 0">- -</span>
-                  </div>
+                  <template>
+                    <div @click="showMembers(scope.row, scope.$index)" class="pointer line1 members-line">
+                      <span class="flex" style="gap: 4px">
+                        <img class="img" :src="item.avatar" v-for="(item, index) in scope.row.members" :key="index" />
+                      </span>
+                      <span v-if="scope.row.members && scope.row.members.length == 0">- -</span>
+                    </div>
+                  </template>
                   <template #content>
                     <div>
                       <div class="pointer tooltip flex" style="gap: 4px">
@@ -383,6 +396,7 @@
                 <el-select
                   v-else
                   v-model="membersId"
+                  size="small"
                   multiple
                   filterable
                   collapse-tags
@@ -431,8 +445,9 @@
                 <el-select
                   v-else
                   v-model="versionId"
+                  size="small"
                   placeholder="请选择关联版本"
-                  @click="changeVersion(scope.row.program_id, scope.$index)"
+                  @click.native="changeVersion(scope.row.program_id, scope.$index)"
                   @change="chooseVersion(scope.row, scope.$index)"
                 >
                   <el-option v-for="item in programVersionList" :key="item.id" :label="item.name" :value="item.id" />
@@ -451,10 +466,11 @@
                 <el-date-picker
                   v-else
                   v-model="scope.row.plan_start"
+                  size="small"
                   type="date"
                   clearable
-                  format="YYYY-MM-DD"
-                  value-format="YYYY-MM-DD"
+                  :format="'yyyy-MM-dd'"
+                  :value-format="'yyyy-MM-dd'"
                   placeholder="请选择项目计划开始日期"
                   @change="putProgramTask('plan_start', $event, scope.row.id)"
                   @blur="hideStartPicker(scope.row.id)"
@@ -469,10 +485,11 @@
                 <el-date-picker
                   v-else
                   v-model="scope.row.plan_end"
+                  size="small"
                   type="date"
                   clearable
-                  format="YYYY-MM-DD"
-                  value-format="YYYY-MM-DD"
+                  :format="'yyyy-MM-dd'"
+                  :value-format="'yyyy-MM-dd'"
                   placeholder="请选择项目计划开始日期"
                   @change="putProgramTask('plan_end', $event, scope.row.id)"
                   @blur="hideEndPicker(scope.row.id)"
@@ -551,11 +568,8 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useAppStore } from '@/stores/app.ts'
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { getAvatarSrc } from '@/utils/avatar.ts'
+import { modalSure } from '@/libs/public'
+import { getAvatarSrc } from '@/utils/avatar'
 import {
   getProgramSelectApi,
   getProgramTaskApi,
@@ -567,19 +581,18 @@ import {
   putProgramTaskApi,
   putTaskSortApi,
   saveSubordinateApi
-} from '@/api/program.ts'
-import SettingMer from '@/libs/settingMer.ts'
+} from '@/api/program'
+import SettingMer from '@/libs/settingMer'
 import editTask from './components/editTask'
 import Sortable from 'sortablejs'
 import ClipboardJS from 'clipboard'
 
-import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'programTask',
   components: {
-    oaFromBox,
-    addTask: defineAsyncComponent(() => import('./components/addTask')),
-    inlineEditSelect: defineAsyncComponent(() => import('@/components/common/inlineEditSelect')),
+    oaFromBox: () => import('@/components/common/oaFromBox'),
+    addTask: () => import('./components/addTask'),
+    inlineEditSelect: () => import('@/components/common/inlineEditSelect'),
     editTask
   },
   props: {
@@ -598,8 +611,6 @@ export default {
   },
   data() {
     return {
-      // Vue 3 的 prop 只读，组件内部需要改写时用本地副本
-      programIdLocal: this.programId,
       tableData: [],
 
       showDiv: false,
@@ -726,6 +737,7 @@ export default {
       startX: 0,
       startY: 0,
       hoveredRow: null, // 用于追踪悬停的行索引
+      sortableFix: undefined,
       sortable: undefined,
       activeRows: [],
       treeData: [
@@ -873,7 +885,6 @@ export default {
     }
   },
   computed: {
-    ...mapStores(useAppStore),
     treePaddingClass() {
       return this.headerShow ? 'header-show-padding' : 'normal-padding'
     },
@@ -885,15 +896,11 @@ export default {
     }
   },
   watch: {
-    // prop 由父组件更新时同步到本地副本（组件内部改写的是 programIdLocal）
-    programId(val) {
-      this.programIdLocal = val
-    },
-    programIdLocal(newVal) {
-      this.tableFrom.program_id = newVal
-      this.formData.program_id = newVal
+    programId(newVal) {
+      this.$set(this.tableFrom, 'program_id', newVal)
+      this.$set(this.formData, 'program_id', newVal)
       this.getProgramMember(newVal)
-      this.programIdLocal = newVal
+      this.programId = newVal
       this.getTableData()
       this.getProgramVersion(newVal)
     },
@@ -904,16 +911,16 @@ export default {
   },
   created() {
     // 1. 同步赋值逻辑（无性能消耗，保留）
-    this.tableFrom.program_id = this.programIdLocal || ''
+    this.tableFrom.program_id = this.programId || ''
 
     // 2. 核心优化：异步任务并行执行 + 合并重复逻辑
     this.initPage()
   },
   // created() {
-  //   this.tableFrom.program_id = this.programIdLocal ? this.programIdLocal : ''
+  //   this.tableFrom.program_id = this.programId ? this.programId : ''
   //   this.getProgram()
   //   // 判断是否为抽屉模式 不需要项目搜索框
-  //   if (this.isDrawer && this.programIdLocal !== 0) {
+  //   if (this.isDrawer && this.programId !== 0) {
   //     // 然后，从 this.search 中移除 field_name_en 为 'program_id' 的对象
   //     this.search = this.search.filter((item) => {
   //       return item.field_name_en !== 'program_id'
@@ -925,11 +932,11 @@ export default {
   //     this.getTableData()
   //   }
   //   // 监听 program_id 变化 选择项目自动获取版本
-  //   if (this.programIdLocal) {
-  //     this.getProgramVersion(this.programIdLocal)
-  //     this.getProgramMember(this.programIdLocal)
+  //   if (this.programId) {
+  //     this.getProgramVersion(this.programId)
+  //     this.getProgramMember(this.programId)
   //     let row = {
-  //       program_id: this.programIdLocal
+  //       program_id: this.programId
   //     }
   //     this.getProgramSelect(row)
   //   } else {
@@ -949,12 +956,12 @@ export default {
 
         // 2.2 延迟加载非关键请求（避免阻塞首屏）
         setTimeout(() => {
-          if (this.programIdLocal) {
+          if (this.programId) {
             // 并行执行programId相关请求
             Promise.all([
-              this.getProgramVersion(this.programIdLocal),
-              this.getProgramMember(this.programIdLocal),
-              this.getProgramSelect({ program_id: this.programIdLocal })
+              this.getProgramVersion(this.programId),
+              this.getProgramMember(this.programId),
+              this.getProgramSelect({ program_id: this.programId })
             ]).catch((err) => console.error('项目关联请求失败:', err))
           } else {
             this.getProgramVersion('')
@@ -962,7 +969,7 @@ export default {
         }, 0)
 
         // 2.3 处理抽屉模式逻辑
-        if (this.isDrawer && this.programIdLocal !== 0) {
+        if (this.isDrawer && this.programId !== 0) {
           this.search = this.search.filter((item) => item.field_name_en !== 'program_id')
         }
       } catch (err) {
@@ -986,11 +993,12 @@ export default {
      */
     setSort() {
       // 获取正确的表格主体元素
-      const wrapper = this.$refs.tableData?.$el?.querySelector('.el-table__body-wrapper tbody')
+      const wrapper = this.$refs.tableData.$el.querySelector('.el-table__body-wrapper tbody')
       if (!wrapper) return
 
       // 销毁旧的Sortable实例
       this.sortable && this.sortable.destroy()
+      this.sortableFix && this.sortableFix.destroy()
 
       // 配置项统一管理
       const sortableConfig = {
@@ -1040,6 +1048,10 @@ export default {
 
       // 初始化排序实例
       this.sortable = Sortable.create(wrapper, sortableConfig)
+      this.sortableFix = Sortable.create(
+        this.$refs.tableData.$el.querySelector('.el-table__fixed-body-wrapper tbody'),
+        sortableConfig
+      )
     },
 
     /**
@@ -1146,12 +1158,12 @@ export default {
       this.$nextTick(() => {
         const clipboard = new ClipboardJS('.copy')
         clipboard.on('success', () => {
-          this.$message.success('复制成功')
+          this.$message.success(this.$t('setting.copytitle'))
           clipboard.destroy()
         })
         clipboard.on('error', () => {})
         clipboard.onClick(event)
-        this.appStore.setClickTab(false)
+        this.$store.commit('app/SET_CLICK_TAB', false)
       })
     },
 
@@ -1181,7 +1193,7 @@ export default {
       this.loading = true
       // 确定请求数据时使用的参数
       const data = tableFrom || this.tableFrom
-      data.program_id = this.programIdLocal || this.tableFrom.program_id
+      data.program_id = this.programId || this.tableFrom.program_id
 
       // 懒加载刷新新父级
       if (!this.parentRoleId) {
@@ -1257,11 +1269,11 @@ export default {
      */
     addProgram() {
       this.getProgram()
-      if (this.programIdLocal) {
-        this.formData.program_id = Number(this.programIdLocal)
+      if (this.programId) {
+        this.formData.program_id = Number(this.programId)
         this.formData.pid = 0
         let data = {
-          program_id: Number(this.programIdLocal),
+          program_id: Number(this.programId),
           pid: 0,
           describe: ''
         }
@@ -1306,10 +1318,10 @@ export default {
       this.programMemberOptions = result.data
       if (this.programMemberOptions.length) {
         if (type == 1) {
-          this.adminsVisible[index] = true
+          this.$set(this.adminsVisible, index, true)
         }
         if (type == 2) {
-          this.membersVisible[index] = true
+          this.$set(this.membersVisible, index, true)
         }
       }
     },
@@ -1335,7 +1347,7 @@ export default {
       const result = await getProgramTaskSelectApi(data)
       result.data.map((item) => {
         if (row.id === item.value) {
-          item.disabled = true
+          this.$set(item, 'disabled', true)
         }
       })
       this.programOptions = result.data
@@ -1381,7 +1393,7 @@ export default {
 
       this.setDataDict('version_id', result.data)
       if (this.programVersionList.length) {
-        this.versionVisible[index] = true
+        this.$set(this.versionVisible, index, true)
       } else if (type == 1) {
         this.$message('请到任务详情设置版本')
       }
@@ -1481,7 +1493,7 @@ export default {
     // 批量取消
     cancelEvt() {
       this.formData = {
-        program_id: this.programIdLocal || null,
+        program_id: this.programId || null,
         version_id: null,
         uid: null,
         pid: null,
@@ -1529,7 +1541,7 @@ export default {
           types: 0,
           name: '',
           pid: 0,
-          program_id: this.programIdLocal || '',
+          program_id: this.programId || '',
           version_id: [],
           time_field: '',
           time: '',
@@ -1642,7 +1654,7 @@ export default {
         } else {
           this.getTableData()
         }
-        this.membersVisible[this.membersIndex] = false
+        this.$set(this.membersVisible, this.membersIndex, false)
       })
     },
     /**
@@ -1666,7 +1678,7 @@ export default {
       if (!row.operate) {
         return this.$message('没有操作权限')
       }
-      this.startShowStates[row.id] = true
+      this.$set(this.startShowStates, row.id, true)
     },
     /**
      * 隐藏开始时间选择器
@@ -1675,7 +1687,7 @@ export default {
      * @returns 无返回值
      */
     hideStartPicker(rowId) {
-      this.startShowStates[rowId] = false
+      this.$set(this.startShowStates, rowId, false)
     },
     /**
      * 处理结束按钮点击事件
@@ -1687,7 +1699,7 @@ export default {
       if (!row.operate) {
         return this.$message('没有操作权限')
       }
-      this.endShowStates[row.id] = true
+      this.$set(this.endShowStates, row.id, true)
     },
     /**
      * 隐藏结束时间选择器
@@ -1695,7 +1707,7 @@ export default {
      * @param rowId 行ID
      */
     hideEndPicker(rowId) {
-      this.endShowStates[rowId] = false
+      this.$set(this.endShowStates, rowId, false)
     },
     /**
      * 隐藏成员选择器
@@ -1704,9 +1716,9 @@ export default {
       if (this.membersVisible[this.membersIndex] == true && this.row.id) {
         this.putProgramTask('members', this.membersId, this.row.id)
       }
-      this.versionVisible[this.versionIndex] = false
-      this.adminsVisible[this.adminIndex] = false
-      this.membersVisible[this.membersIndex] = false
+      this.$set(this.versionVisible, this.versionIndex, false)
+      this.$set(this.adminsVisible, this.adminIndex, false)
+      this.$set(this.membersVisible, this.membersIndex, false)
     },
     /**
      * 显示图标
@@ -1715,7 +1727,7 @@ export default {
      * @returns 无返回值
      */
     showIcon(index) {
-      this.iconVisible[index] = true
+      this.$set(this.iconVisible, index, true)
     },
     /**
      * 隐藏图标
@@ -1723,7 +1735,7 @@ export default {
      * @param index 图标索引
      */
     hideIcon(index) {
-      this.iconVisible[index] = false
+      this.$set(this.iconVisible, index, false)
     },
     /**
      * 添加子节点
@@ -1750,10 +1762,10 @@ export default {
         array.forEach((item) => {
           if (item.id == row.id) {
             if (!item.children) {
-              item.children = []
+              this.$set(item, 'children', [])
             }
             item.children.unshift(newRow)
-            item.has_children = true
+            this.$set(item, 'has_children', true)
           } else if (item.children && item.children.length > 0) {
             findAndAdd(item.children)
           }
@@ -1897,11 +1909,11 @@ export default {
       this.activeEdit = true
       this.tableData.forEach((item) => {
         if (item.id === currentId) {
-          item.edit = true
+          this.$set(item, 'edit', true)
         } else if (item.children) {
           item.children.forEach((it) => {
             if (it.id === currentId) {
-              it.edit = true
+              this.$set(it, 'edit', true)
             }
           })
         }
@@ -1921,9 +1933,9 @@ export default {
       }
 
       this.versionId = ''
-      this.adminsVisible[this.adminIndex] = false
-      this.versionVisible[this.versionIndex] = false
-      this.membersVisible[this.membersIndex] = false
+      this.$set(this.adminsVisible, this.adminIndex, false)
+      this.$set(this.versionVisible, this.versionIndex, false)
+      this.$set(this.membersVisible, this.membersIndex, false)
       this.versionId = row.version_id || ''
       this.changeVersion(row.program_id, index, type)
     },
@@ -1939,9 +1951,9 @@ export default {
         return this.$message('没有操作权限')
       }
       this.adminsUid = null
-      this.adminsVisible[this.adminIndex] = false
-      this.versionVisible[this.versionIndex] = false
-      this.membersVisible[this.membersIndex] = false
+      this.$set(this.adminsVisible, this.adminIndex, false)
+      this.$set(this.versionVisible, this.versionIndex, false)
+      this.$set(this.membersVisible, this.membersIndex, false)
       this.adminsUid = row.uid || null
       this.changeAdmins(row.program_id, index, 1)
     },
@@ -1957,9 +1969,9 @@ export default {
         return this.$message('没有操作权限')
       }
       this.membersId = []
-      this.adminsVisible[this.adminIndex] = false
-      this.versionVisible[this.versionIndex] = false
-      this.membersVisible[this.membersIndex] = false
+      this.$set(this.adminsVisible, this.adminIndex, false)
+      this.$set(this.versionVisible, this.versionIndex, false)
+      this.$set(this.membersVisible, this.membersIndex, false)
       this.membersIndex = index
       row.members.map((item) => {
         this.membersId.push(item.id)
@@ -1972,15 +1984,15 @@ export default {
      * @param index 版本号索引
      */
     hideVersion(index) {
-      this.versionVisible[index] = false
+      this.$set(this.versionVisible, index, false)
     },
     /**
      * 打开关联项目行内编辑时，关闭其他列的行内编辑器
      */
     closeOtherEditors() {
-      this.adminsVisible[this.adminIndex] = false
-      this.versionVisible[this.versionIndex] = false
-      this.membersVisible[this.membersIndex] = false
+      this.$set(this.adminsVisible, this.adminIndex, false)
+      this.$set(this.versionVisible, this.versionIndex, false)
+      this.$set(this.membersVisible, this.membersIndex, false)
     },
     /**
      * 隐藏管理员
@@ -1988,7 +2000,7 @@ export default {
      * @param index 管理员索引
      */
     hideAdmins(index) {
-      this.adminsVisible[index] = false
+      this.$set(this.adminsVisible, index, false)
     },
     /**
      * 隐藏成员
@@ -1996,7 +2008,7 @@ export default {
      * @param index 成员索引
      */
     hideMembers(index) {
-      this.membersVisible[index] = false
+      this.$set(this.membersVisible, index, false)
     },
     /**
      * 视图切换搜索
@@ -2071,12 +2083,12 @@ export default {
   }
 }
 .status {
-  :deep(.el-tag) {
+  ::v-deep .el-tag {
     background: #fff;
   }
 }
 
-:deep(.add-color .el-tag.el-tag--info) {
+::v-deep .add-color .el-tag.el-tag--info {
   color: #f95c96 !important;
 }
 .img {
@@ -2099,12 +2111,17 @@ export default {
     color: #1890ff;
   }
 }
-:deep(.el-table th) {
+::v-deep .el-table th {
   background-color: #f7fbff;
 }
 .flex {
   display: flex;
   align-items: center;
+}
+.el-input__inner {
+  height: 32px;
+  line-height: 32px;
+  cursor: pointer;
 }
 .table {
   position: relative;
@@ -2115,6 +2132,11 @@ export default {
   background: #f5f7fa;
 }
 
+/* 修复操作列宽度 */
+.el-table__fixed-right {
+  right: 0 !important;
+  width: 60px !important; /* 原20px导致操作列显示不全 */
+}
 .table-header {
   width: 97%;
   height: 44px;
@@ -2147,7 +2169,7 @@ export default {
     span {
       min-width: 70px;
     }
-    .el-select {
+    .el-input__inner {
       width: 120px;
       min-width: 100px;
       margin-right: 14px;
@@ -2160,7 +2182,7 @@ export default {
     }
   }
 }
-:deep(.el-table .cell) {
+::v-deep .el-table .cell {
   width: 100%;
   display: flex;
 }
@@ -2173,6 +2195,20 @@ export default {
   }
   .icon-btn {
     width: 50px;
+  }
+}
+.members {
+  ::v-deep .select-without-input .el-input__inner {
+    cursor: pointer;
+    background-color: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+  ::v-deep .select-without-input .el-input__icon {
+    display: none;
+  }
+  ::v-deep .select-without-input .el-tag {
+    display: none !important;
   }
 }
 .icontask1 {
@@ -2218,14 +2254,14 @@ export default {
   color: #909399;
   padding: 0 2px;
 }
-:deep(.el-table__placeholder) {
+::v-deep .el-table__placeholder {
   margin-left: 3px; //子节点无Child缩进
 }
-:deep(.normal-padding .el-table__row:not([class*='el-table__row--level-']) td:nth-child(3)) {
+::v-deep .normal-padding .el-table__row:not([class*='el-table__row--level-']) td:nth-child(3) {
   padding-left: 15px; /* 当没有批量操作时，任务名称是第三列 */
 }
 
-:deep(.header-show-padding .el-table__row:not([class*='el-table__row--level-']) td:nth-child(4)) {
+::v-deep .header-show-padding .el-table__row:not([class*='el-table__row--level-']) td:nth-child(4) {
   padding-left: 15px; /* 启用批量操作时，任务名称变为第四列 */
 }
 .follow-div {
@@ -2249,16 +2285,16 @@ export default {
 .normal-page {
   padding: 20px;
 }
-:deep(.el-card__body) {
+::v-deep .el-card__body {
   padding: 0;
 }
 .dack {
-  :deep(.el-tag) {
+  ::v-deep .el-tag {
     border: none !important;
   }
 }
 
-:deep(.program-task-table .el-table__expand-icon) {
+::v-deep .program-task-table .el-table__expand-icon {
   margin-left: -7px;
 }
 </style>

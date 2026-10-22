@@ -70,9 +70,9 @@
  * VerifySlide
  * @description 滑块
  * */
-import { aesEncrypt } from './../utils/ase.ts'
+import { aesEncrypt } from './../utils/ase'
 import { resetSize } from './../utils/util'
-import { getModuleCaptchaApi, saveModuleCaptchaApi } from '@/api/develop.ts'
+import { getModuleCaptchaApi, saveModuleCaptchaApi } from '@/api/develop'
 
 //  "captchaType":"blockPuzzle",
 export default {
@@ -191,7 +191,7 @@ export default {
     this._bindMove = (e) => this.move(e)
     this._bindEnd = () => this.end()
   },
-  beforeUnmount() {
+  beforeDestroy() {
     // 组件销毁时移除全局事件监听
     window.removeEventListener('touchmove', this._bindMove)
     window.removeEventListener('mousemove', this._bindMove)
@@ -205,7 +205,7 @@ export default {
       this.$nextTick(() => {
         const setSize = this.resetSize(this) // 重新设置宽度高度
         for (const key in setSize) {
-          this.setSize[key] = setSize[key]
+          this.$set(this.setSize, key, setSize[key])
         }
         this.$parent.$emit('ready', this)
       })

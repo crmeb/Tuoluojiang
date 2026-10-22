@@ -14,16 +14,16 @@
       :move="checkContainerMove"
       @end="onContainerDragEnd"
     >
-      <template #item="{ element: element }">
-        <div
-          class="chart-container-widget-item"
-          :title="element.displayName"
-          @click="addChartContainerByDbClick(element)"
-        >
-          <svg-icon :icon-class="element.icon" class-name="color-svg-icon" />
-          <span>{{ getWidgetLabel(element) }} </span>
-        </div>
-      </template>
+      <div
+        v-for="element in designer.chartWidgets"
+        :key="element.key"
+        class="chart-container-widget-item"
+        :title="element.displayName"
+        @click="addChartContainerByDbClick(element)"
+      >
+        <svg-icon :icon-class="element.icon" class-name="color-svg-icon" />
+        <span>{{ getWidgetLabel(element) }} </span>
+      </div>
     </draggable>
 
 
@@ -41,24 +41,24 @@
       :move="checkContainerMove"
       @end="onContainerDragEnd"
     >
-      <template #item="{ element: element }">
-        <div
-          v-show="designer.tabIsShow !== element.type"
-          class="chart-container-widget-item"
-          :title="element.displayName"
-          @click="addChartContainerByDbClick(element)"
-        >
-          <svg-icon :icon-class="element.icon" class-name="color-svg-icon" />
-          <span>{{ element.options.label }}</span>
-        </div>
-      </template>
+      <div
+        v-for="element in designer.chartContainers"
+        :key="element.key"
+        v-show="designer.tabIsShow !== element.type"
+        class="chart-container-widget-item"
+        :title="element.displayName"
+        @click="addChartContainerByDbClick(element)"
+      >
+        <svg-icon :icon-class="element.icon" class-name="color-svg-icon" />
+        <span>{{ element.options.label }}</span>
+      </div>
     </draggable>
   </div>
 </template>
 
 <script>
 import draggable from 'vuedraggable'
-import i18n from '@/utils/i18n.ts'
+import i18n from '@/utils/i18n'
 import axios from 'axios'
 import SvgIcon from '@/components/svg-icon-nc'
 import { ext_charts_widgets, dashboard_container_schema } from '../charts-schema.js'

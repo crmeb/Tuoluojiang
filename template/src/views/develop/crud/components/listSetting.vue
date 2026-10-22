@@ -47,25 +47,27 @@
                 :percentage="scope.row[item.field_name_en] ? scope.row[item.field_name_en] : 0"></el-progress>
             </div>
             <div v-else-if="item.form_value === 'tag'">
-              <el-popover
-                v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 2"
+              <el-popover v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 2"
                 placement="top-start" trigger="hover">
-                <div class="flex_box">
-                  <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                    <el-tag>
-                      {{ val }}
-                    </el-tag>
+                <template>
+                  <div class="flex_box">
+                    <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
+                      <el-tag size="small">
+                        {{ val }}
+                      </el-tag>
+                    </div>
                   </div>
-                </div>
+                </template>
                 <template #reference>
                   <div>
                     <div class="flex_box">
                       <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                        <el-tag v-if="index < 2">
+                        <el-tag size="small" v-if="index < 2">
                           {{ val }}
                         </el-tag>
                       </div>
-                      <el-tag v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 2">...</el-tag>
+                      <el-tag v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 2"
+                        size="small">...</el-tag>
                     </div>
                   </div>
                 </template>
@@ -73,11 +75,12 @@
               <template v-else>
                 <div class="flex_box">
                   <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                    <el-tag v-if="index < 2">
+                    <el-tag size="small" v-if="index < 2">
                       {{ val }}
                     </el-tag>
                   </div>
-                  <el-tag v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 2">...</el-tag>
+                  <el-tag v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 2"
+                    size="small">...</el-tag>
                 </div>
               </template>
               <span v-if="!scope.row[item.field_name_en] || scope.row[item.field_name_en].length == 0">--</span>
@@ -88,9 +91,10 @@
               </el-switch>
             </div>
             <div v-else-if="item.form_value === 'textarea'">
-              <el-popover v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 11" placement="top-start" width="350" trigger="hover" :content="scope.row[item.field_name_en]">
+              <el-popover placement="top-start" width="350" trigger="hover" :content="scope.row[item.field_name_en]">
                 <template #reference>
-                  <div class="over-text">
+                  <div class="over-text"
+                    v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 11">
                     {{ scope.row[item.field_name_en] }}
                   </div>
                 </template>
@@ -137,20 +141,18 @@
           </template>
           <template #default="scope">
 
-            <el-button type="primary" link class="mr10" @click="checkRow(scope.row)">查看</el-button>
+            <el-button type="text" class="mr10" @click="checkRow(scope.row)">查看</el-button>
             <el-dropdown>
-              <el-button type="primary" link class="el-dropdown-link">
-                &nbsp;更多 <i class="el-icon-arrow-down" /></el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item @click="openShare(scope.row)"> 共享协作 </el-dropdown-item>
-                  <el-dropdown-item v-if="scope.row.is_share" @click="cancelShare(scope.row)">
-                    取消协作
-                  </el-dropdown-item>
-                  <el-dropdown-item @click="handleDropdown('transfer', scope.row)"> 移交负责人 </el-dropdown-item>
-                  <el-dropdown-item @click="deleteRow(scope.row)">删除</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
+              <span class="el-dropdown-link el-button--text el-button">
+                &nbsp;更多 <i class="el-icon-arrow-down" /></span>
+              <el-dropdown-menu>
+                <el-dropdown-item @click.native="openShare(scope.row)"> 共享协作 </el-dropdown-item>
+                <el-dropdown-item v-if="scope.row.is_share" @click.native="cancelShare(scope.row)">
+                  取消协作
+                </el-dropdown-item>
+                <el-dropdown-item @click.native="handleDropdown('transfer', scope.row)"> 移交负责人 </el-dropdown-item>
+                <el-dropdown-item @click.native="deleteRow(scope.row)">删除</el-dropdown-item>
+              </el-dropdown-menu>
             </el-dropdown>
           </template>
         </el-table-column>
@@ -195,11 +197,9 @@
   </div>
 </template>
 <script>
-import { mapStores } from 'pinia'
-import { useConditionDialogStore } from '@/stores/conditionDialog.ts'
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import treeTable from '@/views/develop/module/treeTable.vue'
-import { getColor } from '@/utils/format.ts'
+import { getColor } from '@/utils/format'
 import Commnt from '@/components/develop/commonData'
 import oaDialog from '@/components/form-common/dialog-form'
 import formBox from '@/views/develop/module/components/formBox'
@@ -221,7 +221,7 @@ import {
   moduleTransferApi,
   moduleShareApi,
   delCancelShareApi
-} from '@/api/develop.ts'
+} from '@/api/develop'
 import BatchActionBar from '../../module/components/batchActionBar.vue'
 import batchActionHandler from '../../module/mixins/batchActionHandler'
 
@@ -248,9 +248,6 @@ export default {
     treeTable
   },
   mixins: [batchActionHandler],
-  computed: {
-    ...mapStores(useConditionDialogStore)
-  },
   data() {
     return {
       loading: false,
@@ -300,8 +297,8 @@ export default {
     this.id = this.infoData.id
     this.getInfo()
   },
-  unmounted() {
-    this.conditionDialogStore.visible = false
+  destroyed() {
+    this.$store.commit('updateConditionDialog', false)
   },
 
   methods: {
@@ -644,4 +641,7 @@ export default {
   flex-wrap: wrap;
 }
 
+::v-deep .el-table__fixed-right .el-table__fixed-body-wrapper {
+  border-right: 1px solid #fff;
+}
 </style>

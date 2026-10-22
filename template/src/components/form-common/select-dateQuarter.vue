@@ -10,6 +10,7 @@
       v-model="showValue"
       :placeholder="halfYearBtn ? '请选择半年' : '请选择季度'"
       style="width: 100%"
+      size="small"
       @focus="showSeason = true"
     >
       <template #prefix>
@@ -42,8 +43,8 @@
         <el-button
           v-for="(item, index) in quarterArray"
           :key="index"
-          type="primary" link
-          size="default"
+          type="text"
+          size="medium"
           class="item-button"
           @click="selectSeason(index)"
         >
@@ -54,8 +55,8 @@
         <el-button
           v-for="(item, index) in halfYearArray"
           :key="index"
-          type="primary" link
-          size="default"
+          type="text"
+          size="medium"
           class="item-button"
           @click="selectSeason(index)"
         >

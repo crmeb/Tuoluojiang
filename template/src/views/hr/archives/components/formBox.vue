@@ -26,15 +26,15 @@
 </template>
 
 <script>
-import pickerOptions from '@/libs/pickerOptions.ts'
-import 'element-plus/theme-chalk/display.css'
-import { getTemp, importCardApi } from '@/api/enterprise.ts'
+import pickerOptions from '@/libs/pickerOptions'
+import 'element-ui/lib/theme-chalk/display.css'
+import { getTemp, importCardApi } from '@/api/enterprise'
 import exportExcel from '@/components/common/exportExcel'
 import importExcel from '@/components/common/importExcel'
 import oaFromBox from '@/components/common/oaFromBox'
-import { fileLinkDownLoad } from '@/utils/file.ts'
+import 'animate.css'
+import { fileLinkDownLoad } from '@/utils/file'
 export default {
-  emits: ['opendrawer', 'confirmData'],
   name: 'FormBox',
   components: {
     importExcel,
@@ -82,19 +82,19 @@ export default {
       search: [],
       sexOptions: [
         {
-          name: '全部',
+          name: this.$t('toptable.all'),
           value: ''
         },
         {
-          name: '未知',
+          name: this.$t('toptable.unknown'),
           value: '0'
         },
         {
-          name: '男',
+          name: this.$t('toptable.male'),
           value: '1'
         },
         {
-          name: '女',
+          name: this.$t('toptable.female'),
           value: '2'
         }
       ],
@@ -146,11 +146,11 @@ export default {
           type: 'select',
           options: [
             {
-              name: '全部',
+              name: this.$t('toptable.all'),
               value: ''
             },
             {
-              name: '正常',
+              name: this.$t('toptable.normal'),
               value: 1
             },
             {
@@ -214,6 +214,11 @@ export default {
       activeDepartment: {},
       openStatus: false,
       departmentList: []
+    }
+  },
+  computed: {
+    lang: function () {
+      return this.$store.getters.lang
     }
   },
 
@@ -387,11 +392,14 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+::v-deep .animate__animated {
+  animation-duration: 0.4s;
+}
 .noWrap {
   display: flex;
   justify-content: space-between;
 }
-:deep(.el-button) {
+::v-deep .el-button {
   font-size: 13px;
 }
 
@@ -419,10 +427,10 @@ export default {
   display: flex;
   flex-wrap: wrap;
 }
-.department :deep(.el-input__inner) {
+.department ::v-deep .el-input__inner {
   color: #c0c4cc;
 }
-:deep(.from-s .flex-row .el-form-item) {
+::v-deep .from-s .flex-row .el-form-item {
   margin-left: 0px;
   margin-right: 10px;
 }

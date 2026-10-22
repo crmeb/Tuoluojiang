@@ -2,13 +2,13 @@
   <div>
     <el-dialog
       :title="this.id ? '编辑快捷回复' : '新增快捷回复'"
-      v-model="visible"
+      :visible.sync="visible"
       width="650px"
       @close="handleClose"
     >
       <el-form :model="form" label-width="auto" ref="form" :rules="rules">
         <el-form-item label="内容分组：" prop="group_id">
-          <el-select v-model="form.group_id" placeholder="请输入选择内容分组（单选）" style="width: 100%">
+          <el-select v-model="form.group_id" placeholder="请输入选择内容分组（单选）" size="small" style="width: 100%">
             <el-option v-for="item in leftList" :key="item.id" :label="item.name" :value="item.id"></el-option>
           </el-select>
         </el-form-item>
@@ -33,13 +33,13 @@
         <div class="flex flex-between lh-center" v-if="activeType === 'text'">
           <!-- <span class="required">*</span>回复内容： -->
           <div class="title">群发内容</div>
-          <el-button type="primary" link @click="openLibrary">从素材库中选择</el-button>
+          <el-button type="text" @click="openLibrary">从素材库中选择</el-button>
         </div>
         <el-form-item v-if="activeType === 'text'" label="" prop="content">
           <template #label>
             <div><span class="required">*</span>回复内容：</div>
           </template>
-          <div class="width100">
+          <div>
             <el-input
               v-model="form.content"
               type="textarea"
@@ -126,14 +126,14 @@
         <!-- 网页 -->
         <template v-if="activeType === 'link'">
           <el-form-item label="网页链接：" prop="link">
-            <el-input placeholder="请以http或者https开头" v-model="form.link" @change="handleLinkChange">
+            <el-input placeholder="请以http或者https开头" v-model="form.link" size="small" @change="handleLinkChange">
             </el-input>
           </el-form-item>
           <el-form-item label="链接标题：" prop="title">
-            <el-input placeholder="请输入链接标题" v-model="form.title"> </el-input>
+            <el-input placeholder="请输入链接标题" v-model="form.title" size="small"> </el-input>
           </el-form-item>
           <el-form-item label="链接摘要：" prop="info">
-            <el-input placeholder="请输入链接摘要" v-model="form.info"> </el-input>
+            <el-input placeholder="请输入链接摘要" v-model="form.info" size="small"> </el-input>
           </el-form-item>
           <el-form-item>
             <template #label>
@@ -167,14 +167,14 @@
         <!-- 小程序 -->
         <template v-if="activeType === 'mini_program'">
           <el-form-item label="小程序标题：" prop="title">
-            <el-input v-model="form.title" placeholder="请输入小程序标题"> </el-input>
+            <el-input v-model="form.title" size="small" placeholder="请输入小程序标题"> </el-input>
           </el-form-item>
           <el-form-item label="AppID：" prop="app_id">
-            <el-input v-model="form.app_id" placeholder="请输入小程序AppID，必须是关联到企业的小程序应用">
+            <el-input v-model="form.app_id" size="small" placeholder="请输入小程序AppID，必须是关联到企业的小程序应用">
             </el-input>
           </el-form-item>
           <el-form-item label="page路径：" prop="link">
-            <el-input v-model="form.link" placeholder="请输入page路径，例如：page/index"> </el-input>
+            <el-input v-model="form.link" placeholder="请输入page路径，例如：page/index" size="small"> </el-input>
           </el-form-item>
           <el-form-item prop="replyType">
             <template #label>
@@ -208,7 +208,7 @@
         </template>
 
         <el-form-item label="排序：" prop="sort">
-          <el-input v-model.number="form.sort" placeholder="请输入排序（数字越大越靠前）" type="number" />
+          <el-input size="small" v-model.number="form.sort" placeholder="请输入排序（数字越大越靠前）" type="number" />
           <div class="sort-tip">数字越大越靠前</div>
         </el-form-item>
       </el-form>
@@ -226,24 +226,22 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
 import {
   workReplySaveApi,
   workReplyDetailsApi,
   workReplyPutApi,
   getUrlMetadataApi,
   getMediaUploadByUrlApi
-} from '@/api/weCom.ts'
-import { getUploadKeysApi } from '@/api/public.ts'
-import SettingMer from '@/libs/settingMer.ts'
-import { workMassTempApi } from '@/api/weCom.ts'
-import { uploader } from '@/utils/uploadCloud.ts'
+} from '@/api/weCom'
+import { getUploadKeysApi } from '@/api/public'
+import SettingMer from '@/libs/settingMer'
+import { workMassTempApi } from '@/api/weCom'
+import { uploader } from '@/utils/uploadCloud'
 export default {
-  emits: ['getList'],
   name: 'QuickReplyModal',
   components: {
-    uploadList: defineAsyncComponent(() => import('@/components/form-common/oa-uploadList')),
-    materialLibrary: defineAsyncComponent(() => import('@/views/customer/weChatMass/components/materialLibrary'))
+    uploadList: () => import('@/components/form-common/oa-uploadList'),
+    materialLibrary: () => import('@/views/customer/weChatMass/components/materialLibrary')
   },
   props: {
     leftList: {

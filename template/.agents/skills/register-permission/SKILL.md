@@ -5,7 +5,7 @@ description: 为按钮/区块/路由配置权限控制，统一权限码命名�
 
 # register-permission
 
-为本项目（Vue 3 + Element Plus）的按钮、区块、路由配置统一的权限控制。本项目权限是**三层体系**，详见 `docs/二次开发手册/08-权限控制规范.md`，本 skill 是其落地脚手架。
+为本项目（Vue 2.7 + Element UI）的按钮、区块、路由配置统一的权限控制。本项目权限是**三层体系**，详见 `docs/二次开发手册/08-权限控制规范.md`，本 skill 是其落地脚手架。
 
 ## 权限三层（必须先分清用哪一层）
 
@@ -15,7 +15,7 @@ description: 为按钮/区块/路由配置权限控制，统一权限码命名�
 | 按钮级 | `v-hasPermi` 指令 | `store.getters.permissions` | DOM 元素 | **最常用**，按"功能权限码"控制按钮/操作 |
 | 角色级 | `v-permission` 指令 | `store.getters.roles` | DOM 元素 | 按"角色"控制（如仅 admin/finance 可见） |
 
-> 指令均已在 `src/directive/index.ts` 全局注册（`src/directive/permission/hasPermi.ts`、`permission.ts`），页面无需 import。
+> 指令均已在 `src/directive/index.js` 全局注册（`src/directive/permission/hasPermi.js`、`permission.js`），页面无需 import。
 
 ## 一、按钮级权限 v-hasPermi（默认首选）
 
@@ -26,7 +26,7 @@ description: 为按钮/区块/路由配置权限控制，统一权限码命名�
 <el-button v-hasPermi="['asset:delete']" type="danger" @click="handleDelete">删除</el-button>
 ```
 
-机制（见 `hasPermi.ts`）：超管标识 `'*'` 命中所有权限；`permissions` 数组用 `includes` 判定；不通过则 `el.parentNode.removeChild(el)`。
+机制（见 `hasPermi.js`）：超管标识 `'*'` 命中所有权限；`permissions` 数组用 `includes` 判定；不通过则 `el.parentNode.removeChild(el)`。
 
 ## 二、角色级权限 v-permission
 
@@ -56,13 +56,12 @@ aftersale:ticket:export
 
 ## 四、非模板场景的编程式判断
 
-项目**没有** `checkPermi` 工具函数。需要在 `<script>` 里（如 `v-if` 表达式、方法内分支）判断权限时，直接读 user store：
+项目**没有** `checkPermi` 工具函数。需要在 `<script>` 里（如 `v-if` 表达式、方法内分支）判断权限时，直接读 store：
 
 ```js
-import pinia from '@/stores'
-import { useUserStore } from '@/stores/user'
+import store from '@/store'
 const has = (codes) => {
-  const perms = useUserStore(pinia).permissions || []
+  const perms = store.getters.permissions || []
   return perms.includes('*') || codes.some((c) => perms.includes(c))
 }
 ```
@@ -78,7 +77,7 @@ const has = (codes) => {
 
 ## 不要做的事
 
-- 不要用 `v-hasPermi="'asset:edit'"`（字符串）——指令值**必须是数组**，否则 `hasPermi.ts` 抛错。
+- 不要用 `v-hasPermi="'asset:edit'"`（字符串）——指令值**必须是数组**，否则 `hasPermi.js` 抛错。
 - 不要用 `v-show`/`v-if` 手写 `store.getters.permissions.includes(...)` 替代指令做按钮显隐（除非确需保留占位）。
 - 不要臆造后台不存在的权限码当作"已生效"，必须把清单交回用户登记。
 - 不要把功能权限误用成角色权限（`v-permission` 走的是 `roles` 不是 `permissions`）。

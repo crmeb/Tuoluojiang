@@ -5,7 +5,7 @@
       <!-- 工作经历table -->
       <div class="from-item-title mb15">
         <span class="title">工作经历 </span>
-        <el-link underline="never" icon="el-icon-plus" @click="editWorks('work')">添加经历</el-link>
+        <el-link :underline="false" icon="el-icon-plus" @click="editWorks('work')">添加经历</el-link>
       </div>
       <div>
         <tableBox
@@ -21,7 +21,7 @@
       <!-- 教育经历table -->
       <div class="from-item-title mb15">
         <span class="title">教育经历</span>
-        <el-link underline="never" icon="el-icon-plus" @click="editEducation('education')">添加经历</el-link>
+        <el-link :underline="false" icon="el-icon-plus" @click="editEducation('education')">添加经历</el-link>
       </div>
       <div>
         <tableBox
@@ -65,21 +65,21 @@
           <!-- 修改按钮 -->
           <span v-if="FORMITEMISEDIT[itemIndex] && componentStatus.type === 'edit'" class="editBtn">
             <el-link
-              underline="never"
+              :underline="false"
               icon="el-icon-edit-outline"
               @click="FORMITEMISEDIT[itemIndex] = !FORMITEMISEDIT[itemIndex]"
               >编辑</el-link
             >
           </span>
           <div v-if="!FORMITEMISEDIT[itemIndex]">
-            <el-button @click="restFn(itemIndex)">取消</el-button>
-            <el-button type="primary" @click="formItemEdit(formItem.edit_type, itemIndex)">确定</el-button>
+            <el-button size="small" @click="restFn(itemIndex)">取消</el-button>
+            <el-button size="small" type="primary" @click="formItemEdit(formItem.edit_type, itemIndex)">确定</el-button>
           </div>
 
           <!-- 新增:添加经历 -->
           <span v-if="['工作经历', '教育经历'].includes(formItem.title)">
             <div style="padding: 10px">
-              <el-link underline="never" icon="el-icon-plus" @click="addWorks(formItem.title)">添加经历</el-link>
+              <el-link :underline="false" icon="el-icon-plus" @click="addWorks(formItem.title)">添加经历</el-link>
             </div>
           </span>
         </div>
@@ -174,6 +174,7 @@
                   v-if="item.type === 'input'"
                   v-model="ruleForm[item.value]"
                   :placeholder="item.placeholder"
+                  size="small"
                   clearable
                   @blur="getBirthday(item.value)"
                 />
@@ -183,6 +184,7 @@
                   v-model="ruleForm[item.value]"
                   :max="999999"
                   :min="1"
+                  size="small"
                   controls-position="right"
                 ></el-input-number>
 
@@ -192,7 +194,8 @@
                   v-model="ruleForm[item.value]"
                   :placeholder="item.placeholder"
                   type="date"
-                  value-format="YYYY-MM-DD"
+                  size="small"
+                  value-format="yyyy-MM-dd"
                 >
                 </el-date-picker>
 
@@ -205,6 +208,7 @@
                       :placeholder="item.placeholder"
                       :props="propsPos"
                       filterable
+                      size="small"
                     ></el-cascader>
                     <i class="el-icon-circle-plus" @click="addQuick"></i>
                   </div>
@@ -224,8 +228,8 @@
 
                 <!-- 负责人 -->
                 <template v-if="item.type === 'radio'">
-                  <el-radio v-model="ruleForm[item.value]" label="1" value="1">是</el-radio>
-                  <el-radio v-model="ruleForm[item.value]" label="0" value="0">否</el-radio>
+                  <el-radio v-model="ruleForm[item.value]" label="1">是</el-radio>
+                  <el-radio v-model="ruleForm[item.value]" label="0">否</el-radio>
                 </template>
 
                 <!-- 直属上级 -->
@@ -262,6 +266,7 @@
                   <el-select
                     v-model="ruleForm.manage_frame"
                     placeholder="请选择"
+                    size="small"
                     :disabled="ruleForm.is_admin != 1"
                     multiple
                     style="width: 100%"
@@ -276,6 +281,7 @@
                   v-model="ruleForm[item.value]"
                   :disabled="tabtypes !== 1 && item.value == 'type'"
                   :placeholder="item.placeholder"
+                  size="small"
                   clearable
                 >
                   <el-option
@@ -291,7 +297,7 @@
                 <upload-image
                   v-if="item.type === 'uploadImg'"
                   :append-to-body="true"
-                  v-model:imageUrl="ruleForm[item.value]"
+                  :imageUrl.sync="ruleForm[item.value]"
                   :isUploadStatus="componentStatus.type === 'edit' && FORMITEMISEDIT[itemIndex]"
                   :user="user"
                 ></upload-image>
@@ -301,13 +307,13 @@
                   <el-radio
                     v-model="ruleForm.radio"
                     :disabled="componentStatus.type === 'edit' && FORMITEMISEDIT[itemIndex]"
-                    label="1" value="1"
+                    label="1"
                     >直接加入</el-radio
                   >
                   <el-radio
                     v-model="ruleForm.radio"
                     :disabled="componentStatus.type === 'edit' && FORMITEMISEDIT[itemIndex]"
-                    label="2" value="2"
+                    label="2"
                     >后续邀请</el-radio
                   >
                 </template>
@@ -327,10 +333,7 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useOrganizationStore } from '@/stores/organization.ts'
-import { defineAsyncComponent } from 'vue'
-import modalForm from '@/libs/modal-form.ts'
+import modalForm from '@/libs/modal-form'
 import formOptions from '../mixins/index.js'
 import myMixins from '../mixins/method.js'
 import {
@@ -342,7 +345,7 @@ import {
   enterpriseEducationCreateApi,
   getWorkList,
   getEducationList
-} from '@/api/enterprise.ts'
+} from '@/api/enterprise'
 import {
   getResume,
   saveResume,
@@ -350,10 +353,9 @@ import {
   userCreateEducation,
   getUserWorkList,
   getUserEducationList
-} from '@/api/user.ts'
+} from '@/api/user'
 
 export default {
-  emits: ['hiddenSave', 'getPhoto', 'submitOk', 'userInfoFn'],
   name: 'formOptions',
   mixins: [formOptions, myMixins],
   props: {
@@ -474,32 +476,32 @@ export default {
       // 工作经历表格头部
       workLabel: [
         {
-          name: '开始时间',
+          name: this.$t('toptable.startdate'),
           prop: 'start_time',
           width: '100'
         },
         {
-          name: '结束时间',
+          name: this.$t('toptable.endingdate'),
           prop: 'end_time',
           width: '100'
         },
         {
-          name: '公司',
+          name: this.$t('hr.company'),
           prop: 'company',
           width: '110'
         },
         {
-          name: '工作描述',
+          name: this.$t('hr.jobdescription'),
           prop: 'describe',
           width: '120'
         },
         {
-          name: '职位',
+          name: this.$t('toptable.post'),
           prop: 'position',
           width: '100'
         },
         {
-          name: '离职原因',
+          name: this.$t('hr.reasonsleaving'),
           prop: 'quit_reason',
           width: '120'
         }
@@ -510,37 +512,37 @@ export default {
       // 教育经历表格头部
       educationLabel: [
         {
-          name: '入学时间',
+          name: this.$t('hr.admissiontime'),
           prop: 'start_time',
           width: '100'
         },
         {
-          name: '毕业时间',
+          name: this.$t('hr.graduationtime'),
           prop: 'end_time',
           width: '100'
         },
         {
-          name: '学校名称',
+          name: this.$t('hr.schoolname'),
           prop: 'school_name',
           width: '90'
         },
         {
-          name: '专业',
+          name: this.$t('hr.major'),
           prop: 'major',
           width: '90'
         },
         {
-          name: '学历',
+          name: this.$t('hr.education'),
           prop: 'education',
           width: '80'
         },
         {
-          name: '学位',
+          name: this.$t('hr.degree'),
           prop: 'academic',
           width: '80'
         },
         {
-          name: '备注',
+          name: this.$t('public.remarks'),
           prop: 'remark',
           width: '100'
         }
@@ -552,7 +554,6 @@ export default {
     this.getTreeData()
   },
   computed: {
-    ...mapStores(useOrganizationStore),
     newFrom() {
       // 数据在minxins
       if (this.user == '个人简历') {
@@ -726,7 +727,7 @@ export default {
             if (res.status == 200) {
               this.$emit('submitOk')
               this.defaultFn()
-              this.organizationStore.getMember({ force: true })
+              this.$store.dispatch('user/getMember')
             }
           })
         }
@@ -746,22 +747,41 @@ export default {
 
     // 编辑: 保存个人档案信息
     // 编辑: 保存个人档案信息
-    async formItemEdit(type, itemIndex) {
-      const fields = type == 'staff'
-        ? ['interview_position', 'interview_date', 'is_part', 'type']
-        : type == 'basic'
-          ? ['name', 'phone', 'position', 'frame_id']
-          : type == 'user'
-            ? ['card_id']
-            : null
-      if (fields) {
-        try {
-          if (!(await this.$refs.form.validateField(fields))) return
-        } catch {
-          return
+    formItemEdit(type, itemIndex) {
+      let valiSome = ['interview_position', 'interview_date', 'is_part', 'type']
+      let basicSome = ['name', 'phone', 'position', 'frame_id']
+      let flag = true
+      if (type == 'staff') {
+        valiSome.forEach((item) => {
+          this.$refs.form.validateField(item, (valid) => {
+            if (valid.length) {
+              return (flag = false)
+            }
+          })
+        })
+        if (flag) {
+          this.editFn(type, itemIndex)
         }
+      } else if (type == 'basic') {
+        basicSome.forEach((item) => {
+          this.$refs.form.validateField(item, (valid) => {
+            if (valid.length) {
+              return (flag = false)
+            }
+          })
+        })
+        if (flag) {
+          this.editFn(type, itemIndex)
+        }
+      } else if (type == 'user') {
+        this.$refs.form.validateField('card_id', (valid) => {
+          if (!valid) {
+            this.editFn(type, itemIndex)
+          }
+        })
+      } else {
+        this.editFn(type, itemIndex)
       }
-      this.editFn(type, itemIndex)
     },
     async editFn(type, itemIndex) {
       this.FORMITEMISEDIT[itemIndex] = !this.FORMITEMISEDIT[itemIndex]
@@ -777,7 +797,7 @@ export default {
 
       await putCardApi(this.id, this.ruleForm)
       await this.enterpriseCardId()
-      await this.organizationStore.getMember({ force: true })
+      await this.$store.dispatch('user/getMember')
     },
 
     // 新增：职位等级
@@ -984,7 +1004,7 @@ export default {
 
     // 删除所在部门
     handleDeleteDep(index) {
-      this.$refs[`popover-${index}`][0].hide()
+      this.$refs[`popover-${index}`][0].doClose()
       this.frames.splice(index, 1)
     },
 
@@ -1072,23 +1092,24 @@ export default {
 
   components: {
     // 新增: 添加工作/教育经历
-    Addwork: defineAsyncComponent(() => import('./addWork')),
+    Addwork: () => import('./addWork'),
     // 编辑: 工作/教育经历
-    tableBox: defineAsyncComponent(() => import('../components/tableBox')),
+    tableBox: () => import('../components/tableBox'),
     // 上传图片
-    UploadImage: defineAsyncComponent(() => import('../components/UploadImage.vue')),
+    UploadImage: () => import('../components/UploadImage.vue'),
+    ElImageViewer: () => import('element-ui/packages/image/src/image-viewer'),
 
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
-    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department')),
+    selectMember: () => import('@/components/form-common/select-member'),
+    selectDepartment: () => import('@/components/form-common/select-department'),
 
     // 职位等级
-    positionDialog: defineAsyncComponent(() => import('@/views/hr/archives/components/positionDialog'))
+    positionDialog: () => import('@/views/hr/archives/components/positionDialog')
   }
 }
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-drawer__body) {
+::v-deep .el-drawer__body {
   overflow-y: hidden;
 }
 
@@ -1110,18 +1131,7 @@ export default {
   font-family: PingFangSC-Regular, PingFang SC;
 }
 .activeItem {
-  // 旧版 element-ui 表单项的下边距会折叠掉，只保留上方 -7px；Element Plus 的表单项为 flex 不折叠，这里显式去掉下边距
-  margin: -7px -10px 0 !important;
-
-  // 按旧版 medium 尺寸还原 36px 行高
-  :deep(.el-form-item__label) {
-    height: 36px;
-    line-height: 36px;
-  }
-
-  :deep(.el-form-item__content) {
-    line-height: 36px;
-  }
+  margin: -7px -10px !important;
 }
 .item-superior {
   margin-left: -88px;
@@ -1131,7 +1141,7 @@ export default {
     font-size: 13px;
   }
 }
-:deep(.el-form-item__label),
+::v-deep .el-form-item__label,
 .el-form-item__content {
   // font-size: 12px !important;
   // font-weight: 400;
@@ -1152,16 +1162,16 @@ export default {
   font-weight: 400;
   color: #303133;
 }
-:deep(.el-cascader) {
+::v-deep .el-cascader {
   width: 100%;
 }
-:deep(.el-input) {
+::v-deep .el-input--small {
   font-size: 13px;
 }
-:deep(.el-input) {
+::v-deep .el-input--medium {
   font-size: 13px;
 }
-:deep(.el-button) {
+::v-deep .el-button--small {
   width: 44px;
   height: 28px;
   padding: 0;
@@ -1177,10 +1187,10 @@ export default {
   color: #1890ff;
   opacity: 0.5;
 }
-:deep(.form-box .form-item .el-input) {
+::v-deep .form-box .form-item .el-input {
   width: 100% !important;
 }
-:deep(.el-drawer__close-btn) {
+::v-deep .el-drawer__close-btn {
   margin-bottom: 0;
 }
 .m10 {
@@ -1196,11 +1206,11 @@ export default {
   margin: 20px;
   overflow-y: hidden;
 }
-:deep(.el-tabs__item) {
+::v-deep .el-tabs__item {
   font-weight: 700;
   z-index: 9999;
 }
-:deep(.el-form-item__label) {
+::v-deep .el-form-item__label {
   padding-right: 4px !important;
 }
 .table-box {
@@ -1316,23 +1326,23 @@ export default {
   .form-item {
     width: 48%;
 
-    :deep(.el-form-item__content) {
+    ::v-deep .el-form-item__content {
       width: calc(100% - 90px);
     }
 
-    :deep(.el-input) {
+    ::v-deep .el-input {
       width: 95%;
     }
 
-    :deep(.el-select) {
+    ::v-deep .el-select {
       width: 100%;
     }
 
-    :deep(.el-form-item) {
+    ::v-deep .el-form-item {
       margin-bottom: 20px;
     }
 
-    :deep(.el-textarea__inner) {
+    ::v-deep .el-textarea__inner {
       resize: none;
     }
   }
@@ -1352,17 +1362,17 @@ export default {
   }
 }
 
-:deep(.avatar-uploader .el-upload:hover) {
+::v-deep .avatar-uploader .el-upload:hover {
   border-color: #409eff;
 }
 
-:deep(.avatar-uploader-icon) {
+::v-deep .avatar-uploader-icon {
   font-size: 28px;
   color: #8c939d;
   text-align: center;
 }
 
-:deep(.el-upload--picture-card) {
+::v-deep .el-upload--picture-card {
   width: 160px;
   height: 100px;
   border: 1px dashed #d9d9d9;
@@ -1373,7 +1383,7 @@ export default {
   overflow: hidden;
 }
 
-:deep(.avatar) {
+::v-deep .avatar {
   width: 160px;
   height: 100px;
   display: block;

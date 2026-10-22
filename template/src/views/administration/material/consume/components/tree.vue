@@ -32,7 +32,6 @@
 
 <script>
 export default {
-  emits: ['frameId'],
   name: 'TreeVue',
   props: {
     parentTree: {
@@ -110,7 +109,7 @@ export default {
       } else {
         this.focusShow = false
         if (this.activeValue) {
-          this.$refs[`pop-${this.activeValue}`].hide()
+          this.$refs[`pop-${this.activeValue}`].doClose()
         }
         this.frame_id = node.value
         this.isShowEdit = ''
@@ -141,7 +140,7 @@ export default {
   font-size: 18px;
   color: #ffca28;
 }
-:deep(.el-card__header) {
+::v-deep .el-card__header {
   border-bottom: none;
   padding-left: 0;
   font-family: PingFang SC, PingFang SC;
@@ -149,24 +148,24 @@ export default {
   font-size: 14px;
   color: #303133;
 }
-:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
+::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content {
   background: rgba(24, 144, 255, 0.08);
 }
-:deep(.el-scrollbar__wrap) {
+::v-deep .el-scrollbar__wrap {
   overflow-x: hidden;
 }
-:deep(.tree-box-con .el-tree-node__content) {
+::v-deep .tree-box-con .el-tree-node__content {
   height: 40px;
   border-radius: 4px;
 }
-:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node),
+::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node,
 .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .right-icon {
   display: inline-block;
   color: #1890ff;
   font-weight: 800;
 }
 
-:deep(.el-tree-node > .el-tree-node__children) {
+::v-deep .el-tree-node > .el-tree-node__children {
   overflow: inherit;
 }
 .custom-tree-node {
@@ -211,7 +210,7 @@ export default {
   font-weight: 800;
 }
 
-:deep(.el-tree) {
+::v-deep .el-tree {
   background-color: transparent;
 }
 </style>

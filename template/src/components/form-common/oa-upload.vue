@@ -11,7 +11,7 @@
         :http-request="uploadServerLog"
         :multiple="maxLength > 1"
       >
-        <el-button v-if="!percentShow" :disabled="disabled">
+        <el-button v-if="!percentShow" :disabled="disabled" size="small">
           <span class="iconfont iconshangchuan" />
           上传文件
         </el-button>
@@ -33,17 +33,15 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { uploader } from '@/utils/uploadCloud.ts'
-import i18n from '@/utils/i18n.ts'
-import helper from '@/libs/helper.ts'
+import { uploader } from '@/utils/uploadCloud'
+import i18n from '@/utils/i18n'
+import helper from '@/libs/helper'
 
 export default {
-  emits: ['update:modelValue', 'getVal'],
   name: 'OaUpload',
   mixins: [i18n],
   props: {
-    modelValue: {
+    value: {
       type: Array,
       default: () => []
     },
@@ -79,12 +77,11 @@ export default {
     onlyRead: { type: Boolean, default: false }
   },
   components: {
-    uploadList: defineAsyncComponent(() => import('@/components/form-common/oa-uploadList'))
+    uploadList: () => import('@/components/form-common/oa-uploadList')
   },
   data() {
     return {
-      // data() 早于 computed 初始化，这里不能读 this.value
-      fileList: this.modelValue,
+      fileList: this.value,
       percentShow: false,
       leftPercent: 0,
       leftTime: 0,
@@ -96,10 +93,6 @@ export default {
     }
   },
   computed: {
-    // Vue 3 的 v-model 走 modelValue，保留 value 供组件内部沿用
-    value() {
-      return this.modelValue
-    },
     allowUpload() {
       return this.fileList.length < this.maxLength && !this.onlyRead
     }
@@ -112,7 +105,7 @@ export default {
   methods: {
     clearFiles() {
       this.fileList = []
-      this.$emit('update:modelValue', [])
+      this.$emit('input', [])
     },
     // 进度条模拟时间
     progress(data) {
@@ -127,7 +120,7 @@ export default {
     fileDelete(index) {
       this.fileList.splice(index, 1)
 
-      this.$emit('update:modelValue', this.fileList)
+      this.$emit('input', this.fileList)
       this.$emit('getVal', this.fileList)
     },
 
@@ -186,7 +179,7 @@ export default {
               file_url: res.data.url
             })
 
-            this.$emit('update:modelValue', this.fileList)
+            this.$emit('input', this.fileList)
             this.$emit('getVal', this.fileList)
           }
         })
@@ -200,7 +193,7 @@ export default {
         this.fileList.findIndex((item) => item.name === file.name),
         1
       )
-      this.$emit('update:modelValue', this.fileList)
+      this.$emit('input', this.fileList)
     }
   }
 }
@@ -208,19 +201,19 @@ export default {
 
 <style scoped lang="scss">
 .uploadBox {
-  :deep(.el-upload-list__item-thumbnail) {
+  ::v-deep .el-upload-list__item-thumbnail {
     width: 44px !important;
     height: 44px !important;
     margin-left: -83px !important;
     margin-top: -3px;
   }
-  :deep(.el-upload-list__item-name) {
+  ::v-deep .el-upload-list__item-name {
     line-height: 42px !important;
     margin-left: -36px !important;
     width: auto !important;
     margin-right: 0 !important;
   }
-  :deep(.el-upload-list__item) {
+  ::v-deep .el-upload-list__item {
     height: 60px !important;
     background: #f5f5f5 !important;
     border: none;
@@ -235,7 +228,7 @@ export default {
 .percent {
   margin-top: 20px;
 }
-:deep(.el-button) {
+::v-deep .el-button--small {
   height: 32px;
   padding: 0 12px;
   font-family: PingFang SC, PingFang SC;

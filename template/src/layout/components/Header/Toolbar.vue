@@ -13,24 +13,23 @@
         v-model="keyword"
         clearable
         @blur="handleConfirm"
-        @keyup.stop.prevent.enter="handleConfirm"
+        @keyup.native.stop.prevent.enter="handleConfirm"
       >
-        <template #suffix>
-          <el-button
-            class="search"
-            size="small"
-            @click="handleConfirm()"
-            type="primary" link
-            icon="el-icon-search"
-          ></el-button>
-        </template>
+        <el-button
+          class="search"
+          size="small"
+          slot="suffix"
+          @click="handleConfirm()"
+          type="text"
+          icon="el-icon-search"
+        ></el-button>
       </el-input>
       <el-tooltip
         class="item"
         effect="dark"
         :content="helpShow ? '收起帮助中心' : '展开帮助中心'"
         placement="bottom"
-        v-if="settings.helpShow"
+        v-if="this.$store.state.settings.helpShow"
       >
         <span class="iconfont" :class="helpShow ? 'iconcebian-shouqi' : 'iconcebian-zhankai'" @click="openHelp"></span>"
       </el-tooltip>
@@ -51,16 +50,15 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
+
 export default {
-  emits: ['openOrCloseHelp', 'handleSearchConfirm'],
   name: 'headerToolbar',
   components: {
-    breadcrumb:defineAsyncComponent(() => import('./breadcrumb')),
-    configapp: defineAsyncComponent(() => import('../ConfigApp/index')),
-    headerNotice: defineAsyncComponent(() => import('../Notice/index')),
-    notepad: defineAsyncComponent(() => import('../Notepad/notepad')),
-    personal: defineAsyncComponent(() => import('../Personal/index')),
+    breadcrumb:() => import('./breadcrumb'),
+    configapp: () => import('../ConfigApp/index'),
+    headerNotice: () => import('../Notice/index'),
+    notepad: () => import('../Notepad/notepad'),
+    personal: () => import('../Personal/index'),
   },
   props: [
     'searchShow',
@@ -162,7 +160,7 @@ export default {
   align-items: center;
   padding-right: 5px;
 
-  :deep(.iconfont) {
+  ::v-deep .iconfont {
     font-size: 20px !important;
     color: #606266;
   }

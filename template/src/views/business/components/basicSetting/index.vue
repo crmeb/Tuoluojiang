@@ -6,18 +6,18 @@
         <el-row>
           <el-col v-bind="grid1">&nbsp;</el-col>
           <el-col v-bind="grid2">
-            <el-form ref="elForm" :model="examineFrom" :rules="rules" size="default" label-width="150px">
-              <el-form-item label="审批类型：" prop="name">
+            <el-form ref="elForm" :model="examineFrom" :rules="rules" size="medium" label-width="150px">
+              <el-form-item :label="$t('business.businessType1')" prop="name">
                 <el-input
                   v-model="examineFrom.name"
                   :maxlength="16"
                   show-word-limit
-                  placeholder="请输入审批类型"
+                  :placeholder="$t('business.message1')"
                   clearable
                   :style="{ width: '100%' }"
                 ></el-input>
               </el-form-item>
-              <el-form-item label="审批流图标：" prop="icon">
+              <el-form-item :label="$t('business.businessPic1')" prop="icon">
                 <div
                   v-if="examineFrom.icon"
                   class="selIcon mr15"
@@ -26,20 +26,20 @@
                 >
                   <i class="icon iconfont" :class="examineFrom.icon" style="color: #fff"></i>
                 </div>
-                <el-popover ref="iconPopover" v-model:visible="visible" placement="bottom" width="400" trigger="click">
+                <el-popover ref="iconPopover" placement="bottom" width="400" trigger="click">
                   <div v-for="(i, index) in iconList" :key="index" class="icon-item" @click="itemChose(i)">
                     <i class="icon iconfont" :class="i.icon" :style="{ color: i.color }"></i>
                   </div>
                   <template #reference>
-                    <el-button>选择图标</el-button>
+                    <el-button>{{ $t('business.changeIcon') }}</el-button>
                   </template>
                 </el-popover>
               </el-form-item>
-              <el-form-item label="审批类型说明：" prop="flowRemark">
+              <el-form-item :label="$t('business.businessTypeIn')" prop="flowRemark">
                 <el-input
                   v-model="examineFrom.info"
                   type="textarea"
-                  placeholder="请输入审批类型说明"
+                  :placeholder="$t('business.message3')"
                   :maxlength="100"
                   show-word-limit
                   :autosize="{ minRows: 4, maxRows: 4 }"
@@ -64,7 +64,7 @@
 </template>
 
 <script>
-import iconfontList from './iconfontList.ts'
+import iconfontList from './iconfontList.js'
 export default {
   name: 'BasicSetting',
   props: {
@@ -109,14 +109,14 @@ export default {
         name: [
           {
             required: true,
-            message: '请输入审批类型',
+            message: this.$t('business.message1'),
             trigger: 'blur'
           }
         ],
         icon: [
           {
             required: true,
-            message: '请选择模板图标',
+            message: this.$t('business.message2'),
             trigger: 'change'
           }
         ]
@@ -147,10 +147,10 @@ export default {
       this.examineFrom.icon = row.icon
       this.examineFrom.color = row.color
       this.resetForm('elForm', 'icon')
-      this.visible = false
+      this.$refs.iconPopover.doClose()
     },
     handleIcon() {
-      this.visible = true
+      this.$refs.iconPopover.doShow()
     },
     resetForm(formName, props) {
       this.$refs[formName].validateField(props)
@@ -173,10 +173,9 @@ export default {
     width: 100%;
   }
 }
-// 撑满编辑页主体区域（原 calc(100vh - 130px) 比主体高，编辑页出现滚动条）
 .basicSetting {
-  height: 100%;
-  :deep(.el-card) {
+  height: calc(100vh - 130px);
+  ::v-deep .el-card {
     height: 100%;
   }
 }

@@ -28,24 +28,22 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { toMessageDetailUrl } from '@/libs/public.ts'
-import { chargeDetailsApi } from '@/api/enterprise.ts'
-import { clientBillDetailApi, clientContractDetailApi, clientInvoiceDetailApi } from '@/api/client.ts'
-import { crudModuleInfoApi, crudModuleFindApi } from '@/api/develop.ts'
+import { toMessageDetailUrl } from '@/libs/public'
+import { chargeDetailsApi } from '@/api/enterprise'
+import { clientBillDetailApi, clientContractDetailApi, clientInvoiceDetailApi } from '@/api/client'
+import { crudModuleInfoApi, crudModuleFindApi } from '@/api/develop'
 
 export default {
-  emits: ['handleClose'],
   name: 'MessageHandlePopup',
   components: {
     // 异步加载组件
-    addBox: defineAsyncComponent(() => import('@/views/user/daily/components/addBox')),
-    detailExamine: defineAsyncComponent(() => import('@/views/user/examine/components/detailExamine')),
-    checkDrawer: defineAsyncComponent(() => import('@/views/develop/module/components/checkDrawer')),
-    applyForPayment: defineAsyncComponent(() => import('@/views/customer/list/components/applyForPayment')),
-    invoiceDetails: defineAsyncComponent(() => import('@/components/invoice/invoiceDetails')),
-    editContract: defineAsyncComponent(() => import('@/views/customer/contract/components/editContract')),
-    editCustomer: defineAsyncComponent(() => import('@/views/customer/list/components/editCustomer'))
+    addBox: () => import('@/views/user/daily/components/addBox'),
+    detailExamine: () => import('@/views/user/examine/components/detailExamine'),
+    checkDrawer: () => import('@/views/develop/module/components/checkDrawer'),
+    applyForPayment: () => import('@/views/customer/list/components/applyForPayment'),
+    invoiceDetails: () => import('@/components/invoice/invoiceDetails'),
+    editContract: () => import('@/views/customer/contract/components/editContract'),
+    editCustomer: () => import('@/views/customer/list/components/editCustomer')
   },
 
   props: {
@@ -227,7 +225,7 @@ export default {
     getClientBillDetail(id) {
       clientBillDetailApi(id).then((res) => {
         this.applyData = {
-          title: '查看客户',
+          title: this.$t('customer.viewcustomer'),
           width: '500px',
           data: res.data,
           isClient: false,
@@ -309,12 +307,6 @@ export default {
      * @param {Number} id - 客户ID
      */
     getClientDataDetail(id) {
-      this.customerData = {
-        title: '编辑客户',
-        width: '1100px',
-        data: { eid: id },
-        link_type: 'customer'
-      }
       this.$refs.editCustomer.tabIndex = '1'
       this.$refs.editCustomer.tabNumber = 1
       this.$refs.editCustomer.openBox(id)

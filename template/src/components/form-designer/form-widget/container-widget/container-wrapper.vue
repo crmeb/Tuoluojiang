@@ -50,7 +50,7 @@
 </template>
 
 <script>
-import i18n from '@/utils/i18n.ts'
+import i18n from '@/utils/i18n'
 import containerMixin from '@/components/form-designer/form-widget/container-widget/containerMixin'
 
 export default {

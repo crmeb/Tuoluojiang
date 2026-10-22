@@ -2,7 +2,7 @@
   <div class="dealt-bar v-height-flag">
     <div class="dealt-date">
       <el-calendar v-model="value">
-        <template #date-cell="{ date, data, index }">
+        <template #dateCell="{ date, data, index }">
           <div class="dealt-date-item" @click="dateBnt(data.day)">
             <input :value="data.day" type="hidden" />
             <div class="calendar_area">
@@ -22,9 +22,8 @@
   </div>
 </template>
 <script>
-import dayjs from 'dayjs'
+import moment from 'moment'
 export default {
-  emits: ['currentTime', 'switchTime'],
   name: 'calendar',
   components: {},
   props: ['calendar', 'type', 'activeVal', 'tabType'],
@@ -43,7 +42,7 @@ export default {
       },
 
       data: {
-        time: dayjs(new Date()).format('YYYY-MM-DD'),
+        time: moment(new Date()).format('YYYY-MM-DD'),
         type: []
       }
     }
@@ -150,7 +149,7 @@ export default {
 
     // 选择周后样式修改
     setWeek() {
-      let numWeek = this.getMonthWeek(dayjs()) - 1
+      let numWeek = this.getMonthWeek(moment()) - 1
       // this.value = new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
       this.value = new Date()
       this.clickDate = numWeek
@@ -240,12 +239,12 @@ export default {
 }
 
 // 修改选中日期样式
-// :deep(.el-calendar-table td.is-selected) {
+// ::v-deep .el-calendar-table td.is-selected {
 
 // }
 
 .dealt-date {
-  :deep(.el-calendar__header) {
+  ::v-deep .el-calendar__header {
     padding: 20px;
   }
   .calendar_area {
@@ -267,19 +266,19 @@ export default {
     }
   }
 
-  :deep(.el-calendar-table td) {
+  ::v-deep .el-calendar-table td {
     border: none;
   }
 
-  :deep(.el-calendar-table td :hover) {
+  ::v-deep .el-calendar-table td :hover {
     background: transparent;
   }
 
-  :deep(.el-calendar-table thead th) {
+  ::v-deep .el-calendar-table thead th {
     text-align: center;
   }
 
-  :deep(.el-calendar-table td .dealt-content) {
+  ::v-deep .el-calendar-table td .dealt-content {
     i {
       position: absolute;
       right: 0;
@@ -294,23 +293,23 @@ export default {
   }
 
   position: relative;
-  :deep(.el-calendar-table .el-calendar-day) {
+  ::v-deep .el-calendar-table .el-calendar-day {
     height: 40px;
     padding: 0;
   }
-  :deep(.el-calendar__body) {
+  ::v-deep .el-calendar__body {
     // padding-bottom: 20px;
     padding: 0px;
   }
-  :deep(.el-calendar-table__row td) {
+  ::v-deep .el-calendar-table__row td {
     text-align: center;
   }
-  :deep(.el-calendar__header) {
+  ::v-deep .el-calendar__header {
     justify-content: center;
     border: none;
     padding-bottom: 0px;
   }
-  :deep(.el-calendar__button-group) {
+  ::v-deep .el-calendar__button-group {
     .el-button-group {
       button {
         color: #000000;

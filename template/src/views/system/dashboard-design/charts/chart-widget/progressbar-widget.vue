@@ -20,7 +20,7 @@
 
 <script>
 import myEcharts from '@/components/scEcharts/chart-widget.vue'
-import { queryChartData } from '../chartQuery.ts'
+import { queryChartData } from '@/api/chart'
 
 export default {
   name: 'progressbar-widget',
@@ -342,7 +342,7 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  :deep(.el-progress-bar__innerText) {
+  ::v-deep .el-progress-bar__innerText {
     color: #fff !important;
   }
 }

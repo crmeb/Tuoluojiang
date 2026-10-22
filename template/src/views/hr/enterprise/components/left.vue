@@ -19,16 +19,16 @@
               <div>
                 <el-tooltip content="显示/隐藏" effect="dark" placement="top">
                   <span v-if="item.status == 1" class="iconfont icondakai" @click.stop="putStatus(item)" />
-                  <span v-else class="iconfont iconyincang" @click.stop="putStatus(item)" />
+                  <span v-if="item.status == 0" class="iconfont iconyincang" @click.stop="putStatus(item)" />
                 </el-tooltip>
 
                 <span>{{ item.name }}</span>
               </div>
 
-              <el-popover :ref="`pop-${item.id}`" :offset="10" placement="bottom-end" trigger="click" width="auto">
+              <el-popover :ref="`pop-${item.id}`" :offset="10" placement="bottom-end" trigger="click">
                 <div class="right-item-list">
-                  <div class="right-item" @click.stop="addDivsion(item)">编辑</div>
-                  <div class="right-item" @click.stop="handleDelete(item.id)">删除</div>
+                  <div class="right-item" @click.stop="addDivsion(item)">{{ $t('public.edit') }}</div>
+                  <div class="right-item" @click.stop="handleDelete(item.id)">{{ $t('public.delete') }}</div>
                 </div>
                 <template #reference>
                   <i class="icon iconfont icongengduo pointer assess-left-more"></i>
@@ -52,19 +52,17 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import {
   promotionListApi,
   subPromotionApi,
   putPromotionApi,
   deletePromotionApi,
   promotionShowApi
-} from '@/api/config.ts'
+} from '@/api/config.js'
 export default {
-  emits: ['clickType'],
   name: 'CrmebOaEntLeft',
-  components: { oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form')) },
+  components: { oaDialog: () => import('@/components/form-common/dialog-form') },
 
   data() {
     return {
@@ -186,7 +184,7 @@ export default {
   margin: -15px 0 -20px -20px;
   padding: 14px 0;
   border-right: 1px solid #eeeeee;
-  :deep(.el-card__header) {
+  ::v-deep .el-card__header {
     border-bottom: none;
     display: flex;
     align-items: center;
@@ -197,7 +195,7 @@ export default {
       justify-content: flex-end;
     }
   }
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
   overflow: auto;

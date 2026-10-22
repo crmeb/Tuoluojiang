@@ -2,7 +2,7 @@
   <div class="contract-signing-slide">
     <el-drawer
       title="新增合同"
-      v-model="drawer"
+      :visible.sync="drawer"
       direction="rtl"
       size="1071px"
       :append-to-body="true"
@@ -66,8 +66,8 @@
               <h4 class="section-title">关联数据</h4>
 
               <el-radio-group v-model="contractForm.link_type" @change="radioChange">
-                <el-radio label="5" value="5">关联商机，转合同</el-radio>
-                <el-radio label="2" value="2">关联订单，补签合同</el-radio>
+                <el-radio label="5">关联商机，转合同</el-radio>
+                <el-radio label="2">关联订单，补签合同</el-radio>
               </el-radio-group>
 
               <signProduct
@@ -99,6 +99,7 @@
               <el-form-item label="合同名称：" prop="doc_name">
                 <el-input
                   v-model="contractForm.doc_name"
+                  size="small"
                   placeholder="请输入合同名称"
                   style="width: 370px"
                   @change="getProcess"
@@ -107,17 +108,17 @@
               <!-- 签约方式 -->
               <el-form-item label="签约方式：" prop="sign_type">
                 <el-radio-group v-model="contractForm.sign_type" @change="getProcess">
-                  <el-radio label="2" value="2" :disabled="webConfig.e_signature == 0">电子签约</el-radio>
-                  <el-radio label="1" value="1">线下签约</el-radio>
+                  <el-radio label="2" :disabled="webConfig.e_signature == 0">电子签约</el-radio>
+                  <el-radio label="1">线下签约</el-radio>
                 </el-radio-group>
               </el-form-item>
 
               <!-- 合同期限 -->
               <el-form-item label="合同期限：" prop="term_type">
                 <el-radio-group v-model="contractForm.term_type" @change="getProcess">
-                  <el-radio label="2" value="2">签约日起算</el-radio>
-                  <el-radio label="1" value="1">固定期限</el-radio>
-                  <el-radio label="0" value="0">无期限</el-radio>
+                  <el-radio label="2">签约日起算</el-radio>
+                  <el-radio label="1">固定期限</el-radio>
+                  <el-radio label="0">无期限</el-radio>
                 </el-radio-group>
               </el-form-item>
 
@@ -127,6 +128,7 @@
                   v-model="contractForm.date_count"
                   type="number"
                   min="0"
+                  size="small"
                   placeholder="请输入"
                   style="width: 370px"
                 >
@@ -139,9 +141,10 @@
                   <el-date-picker
                     v-model="contractForm.start_date"
                     type="date"
+                    size="small"
                     placeholder="选择日期"
-                    format="YYYY-MM-DD"
-                    value-format="YYYY-MM-DD"
+                    format="yyyy-MM-dd"
+                    value-format="yyyy-MM-dd"
                   >
                   </el-date-picker>
                 </el-form-item>
@@ -149,9 +152,10 @@
                   <el-date-picker
                     v-model="contractForm.end_date"
                     type="date"
+                    size="small"
                     placeholder="选择日期"
-                    format="YYYY-MM-DD"
-                    value-format="YYYY-MM-DD"
+                    format="yyyy-MM-dd"
+                    value-format="yyyy-MM-dd"
                   >
                   </el-date-picker>
                 </el-form-item>
@@ -171,10 +175,10 @@
                 </div>
                 <upload-file
                   class="mb20"
-                  :model-value="fileList"
+                  :value="fileList"
                   :isTwoColumnShow="true"
                   :maxLength="maxLength"
-                  @getVal="getVal"
+                  @input="getVal"
                 />
 
                 <!-- 签署人 -->
@@ -183,117 +187,115 @@
                   :list="contractForm.signatory"
                   v-bind="{ group: 'optionsGroup', ghostClass: 'ghost', handle: '.icontuodong' }"
                   @change="emitDefaultValueChange"
-                  :item-key="$draggableKey"
                 >
                   <!-- 动态校验规则：给每个 signatory 生成独立字段名，利用 el-form 内置校验 -->
-                  <template #item="{ element: item, index: idx }">
-                    <div>
-                      <!-- 本企业 -->
-                      <div class="signatory-item" v-if="item.types == '0'">
-                        <span class="iconadd left" />
-  
-                        <div class="right">
-                          <!-- 企业信息 -->
-                          <div class="mb8">
-                            <span class="company-name">{{ webConfig.enterprise_name || '--' }}</span>
-                            <el-tag size="small" type="primary">本企业</el-tag>
-                          </div>
-  
-                          <!-- 经办人 & 手机号 -->
-                          <el-row :gutter="20" class="mt10">
-                            <el-col :span="8">
-                              <!-- 经办人必填 -->
-                              <el-form-item label-width="70px" label="经办人：">
-                                <select-member
-                                  only-one
-                                  @getSelectList="getSelectList($event, item)"
-                                  :selectIdData="[item.user_id]"
-                                  style="width: 100%"
-                                />
-                              </el-form-item>
-                            </el-col>
-  
-                            <el-col :span="8">
-                              <!-- 手机号必填 + 格式校验 -->
-                              <el-form-item
-                                label="手机号："
-                                label-width="70px"
-                                :prop="`signatory.${idx}.phone`"
-                                :rules="[{ required: true, message: '请输入手机号', trigger: 'blur' }]"
-                              >
-                                <el-input v-model="item.phone" placeholder="请输入" />
-                              </el-form-item>
-                            </el-col>
-                          </el-row>
+                  <div v-for="(item, idx) in contractForm.signatory" :key="idx">
+                    <!-- 本企业 -->
+                    <div class="signatory-item" v-if="item.types == '0'">
+                      <span class="iconadd left" />
+
+                      <div class="right">
+                        <!-- 企业信息 -->
+                        <div class="mb8">
+                          <span class="company-name">{{ webConfig.enterprise_name || '--' }}</span>
+                          <el-tag size="mini" type="primary">本企业</el-tag>
                         </div>
-                      </div>
-  
-                      <!-- 外部企业 / 个人 -->
-                      <div class="signatory-item" v-else>
-                        <span class="el-icon-error" v-if="contractForm.signatory.length > 2" @click="handleDelete(idx)" />
-                        <span class="iconfont icontuodong iconadd left" title="拖拽排序" />
-                        <div class="right">
-                          <!-- 签署方类型 -->
-                          <div class="mb8">
-                            <el-form-item label-width="70px">
-                              <template #label>
-                                <div><span class="required">*</span>签署方：</div>
-                              </template>
-                              <el-radio-group v-model="item.types">
-                                <el-radio :label="2" :value="2">企业</el-radio>
-                                <el-radio :label="1" :value="1">个人</el-radio>
-                              </el-radio-group>
+
+                        <!-- 经办人 & 手机号 -->
+                        <el-row :gutter="20" class="mt10">
+                          <el-col :span="8">
+                            <!-- 经办人必填 -->
+                            <el-form-item label-width="70px" label="经办人：">
+                              <select-member
+                                only-one
+                                @getSelectList="getSelectList($event, item)"
+                                :selectIdData="[item.user_id]"
+                                style="width: 100%"
+                              />
                             </el-form-item>
-                          </div>
-  
-                          <el-row :gutter="10">
-                            <!-- 企业名称（仅企业类型时必填） -->
-                            <el-col :span="8">
-                              <el-form-item
-                                v-if="item.types == 2"
-                                label="企业名称："
-                                label-width="86px"
-                                :prop="`signatory.${idx}.company_name`"
-                                :rules="[{ required: true, message: '请输入企业名称', trigger: 'blur' }]"
-                              >
-                                <el-input
-                                  v-model="item.company_name"
-                                  placeholder="请输入"
-                                  style="width: 100%"
-                                />
-                              </el-form-item>
-                            </el-col>
-  
-                            <!-- 经办人 / 姓名（企业类型为经办人，个人类型为姓名） -->
-                            <el-col :span="8">
-                              <el-form-item
-                                label-width="70px"
-                                :prop="`signatory.${idx}.name`"
-                                label="经办人："
-                                :rules="[{ required: true, message: '请输入经办人', trigger: 'blur' }]"
-                              >
-                                <el-input v-model="item.name" placeholder="请输入" style="width: 100%" />
-                              </el-form-item>
-                            </el-col>
-  
-                            <!-- 手机号（必填） -->
-                            <el-col :span="8">
-                              <el-form-item
-                                label-width="70px"
-                                :prop="`signatory.${idx}.phone`"
-                                label="手机号："
-                                :rules="[{ required: true, message: '请输入手机号', trigger: 'blur' }]"
-                              >
-                                <el-input v-model="item.phone" placeholder="请输入" style="width: 100%" />
-                              </el-form-item>
-                            </el-col>
-                          </el-row>
-                        </div>
+                          </el-col>
+
+                          <el-col :span="8">
+                            <!-- 手机号必填 + 格式校验 -->
+                            <el-form-item
+                              label="手机号："
+                              label-width="70px"
+                              :prop="`signatory.${idx}.phone`"
+                              :rules="[{ required: true, message: '请输入手机号', trigger: 'blur' }]"
+                            >
+                              <el-input v-model="item.phone" size="small" placeholder="请输入" />
+                            </el-form-item>
+                          </el-col>
+                        </el-row>
                       </div>
                     </div>
-                  </template>
+
+                    <!-- 外部企业 / 个人 -->
+                    <div class="signatory-item" v-else>
+                      <span class="el-icon-error" v-if="contractForm.signatory.length > 2" @click="handleDelete(idx)" />
+                      <span class="iconfont icontuodong iconadd left" title="拖拽排序" />
+                      <div class="right">
+                        <!-- 签署方类型 -->
+                        <div class="mb8">
+                          <el-form-item label-width="70px">
+                            <template #label>
+                              <div><span class="required">*</span>签署方：</div>
+                            </template>
+                            <el-radio-group v-model="item.types">
+                              <el-radio :label="2">企业</el-radio>
+                              <el-radio :label="1">个人</el-radio>
+                            </el-radio-group>
+                          </el-form-item>
+                        </div>
+
+                        <el-row :gutter="10">
+                          <!-- 企业名称（仅企业类型时必填） -->
+                          <el-col :span="8">
+                            <el-form-item
+                              v-if="item.types == 2"
+                              label="企业名称："
+                              label-width="86px"
+                              :prop="`signatory.${idx}.company_name`"
+                              :rules="[{ required: true, message: '请输入企业名称', trigger: 'blur' }]"
+                            >
+                              <el-input
+                                v-model="item.company_name"
+                                placeholder="请输入"
+                                size="small"
+                                style="width: 100%"
+                              />
+                            </el-form-item>
+                          </el-col>
+
+                          <!-- 经办人 / 姓名（企业类型为经办人，个人类型为姓名） -->
+                          <el-col :span="8">
+                            <el-form-item
+                              label-width="70px"
+                              :prop="`signatory.${idx}.name`"
+                              label="经办人："
+                              :rules="[{ required: true, message: '请输入经办人', trigger: 'blur' }]"
+                            >
+                              <el-input v-model="item.name" placeholder="请输入" size="small" style="width: 100%" />
+                            </el-form-item>
+                          </el-col>
+
+                          <!-- 手机号（必填） -->
+                          <el-col :span="8">
+                            <el-form-item
+                              label-width="70px"
+                              :prop="`signatory.${idx}.phone`"
+                              label="手机号："
+                              :rules="[{ required: true, message: '请输入手机号', trigger: 'blur' }]"
+                            >
+                              <el-input v-model="item.phone" placeholder="请输入" size="small" style="width: 100%" />
+                            </el-form-item>
+                          </el-col>
+                        </el-row>
+                      </div>
+                    </div>
+                  </div>
                 </draggable>
-                <el-button type="primary" link icon="el-icon-plus" @click="addSignatory">添加签署方</el-button>
+                <el-button type="text" icon="el-icon-plus" @click="addSignatory">添加签署方</el-button>
               </el-form-item>
             </div>
 
@@ -319,10 +321,10 @@
         </el-form>
       </div>
       <div class="button from-foot-btn fix btn-shadow" v-if="!infoLoading">
-        <el-button @click="handleClose" v-show="activeIndex == 1">取消</el-button>
-        <el-button @click="prevStep(1)" v-show="activeIndex == 2">上一步</el-button>
-        <el-button type="primary" @click="nextStep" v-show="activeIndex == 1">下一步</el-button>
-        <el-button type="primary" :loading="loading" @click="handleSubmit" v-show="activeIndex == 2"
+        <el-button size="small" @click="handleClose" v-show="activeIndex == 1">取消</el-button>
+        <el-button size="small" @click="prevStep(1)" v-show="activeIndex == 2">上一步</el-button>
+        <el-button type="primary" size="small" @click="nextStep" v-show="activeIndex == 1">下一步</el-button>
+        <el-button type="primary" size="small" :loading="loading" @click="handleSubmit" v-show="activeIndex == 2"
           >提交</el-button
         >
       </div>
@@ -331,29 +333,27 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { oddsListApi, clientCustomerBaseApi, clientLiaisonListApi, oddsCreateEditApi } from '@/api/client.ts'
-import { clientContractListApi } from '@/api/enterprise.ts'
+import { oddsListApi, clientCustomerBaseApi, oddsCreateEditApi } from '@/api/client'
+import { clientContractListApi } from '@/api/enterprise'
 import {
   contractDocSaveApi,
   contractDocPutApi,
   contractDocTaskApi,
   contractProcessApi,
   contractDocDetailApi
-} from '@/api/contractSign.ts'
+} from '@/api/contractSign'
 import Draggable from 'vuedraggable'
-import { getStorageJson } from '@/utils/storage.ts'
+import { getStorageJson } from '@/utils/storage'
 export default {
-  emits: ['getTableData', 'isOk'],
   name: 'AddContractSign',
   components: {
     Draggable,
-    signProduct: defineAsyncComponent(() => import('./signProduct')),
-    productList: defineAsyncComponent(() => import('@/views/customer/components/productList')),
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
-    uploadFile: defineAsyncComponent(() => import('@/components/form-common/oa-upload')),
-    paymentTable: defineAsyncComponent(() => import('./paymentTable')),
-    processFrom: defineAsyncComponent(() => import('@/views/user/examine/components/process'))
+    signProduct: () => import('./signProduct'),
+    productList: () => import('@/views/customer/components/productList'),
+    selectMember: () => import('@/components/form-common/select-member'),
+    uploadFile: () => import('@/components/form-common/oa-upload'),
+    paymentTable: () => import('./paymentTable'),
+    processFrom: () => import('@/views/user/examine/components/process')
   },
 
   data() {
@@ -460,7 +460,7 @@ export default {
     }
   },
 
-  beforeUnmount() {
+  beforeDestroy() {
     if (this.timer) {
       clearInterval(this.timer)
       this.timer = null
@@ -615,20 +615,13 @@ export default {
     },
 
     async getCustomerInfo() {
-      const [res, liaisonRes] = await Promise.all([
-        clientCustomerBaseApi(this.eid),
-        this.type == 'add' ? clientLiaisonListApi({ eid: this.eid, page: 1, limit: 15 }).catch(() => null) : null
-      ])
-      this.customerInfo = res.data || {}
-      if (this.type == 'add') {
-        // 签署方默认带出客户名称及其关联联系人，均可修改
-        const liaisons = liaisonRes?.data?.list || []
-        const liaison = liaisons.find((item) => item.liaison_name) || liaisons[0] || {}
-        const signatory = this.contractForm.signatory[1]
-        signatory.company_name = this.customerInfo.customer_name || ''
-        signatory.name = liaison.liaison_name || ''
-        signatory.phone = liaison.liaison_tel || this.customerInfo.customer_tel || ''
-      }
+      clientCustomerBaseApi(this.eid).then((res) => {
+        this.customerInfo = res.data || {}
+        if (this.type == 'add') {
+          this.contractForm.signatory[1].name = this.customerInfo.customer_name || ''
+          this.contractForm.signatory[1].phone = this.customerInfo.customer_tel || ''
+        }
+      })
     },
 
     prevStep(index) {
@@ -993,23 +986,23 @@ export default {
   margin-right: 4px;
 }
 
-:deep(.el-form-item__label) {
+::v-deep .el-form-item__label {
   font-weight: 400;
   font-size: 13px;
   color: #606266;
 }
 
-:deep(.el-form-item__content) {
+::v-deep .el-form-item__content {
   font-weight: 400;
   font-size: 13px;
   color: #303133;
 }
 
-:deep(.el-form-item) {
+::v-deep .el-form-item {
   margin-bottom: 10px;
 }
 
-:deep(.is-error + .upload-field) {
+::v-deep .is-error + .upload-field {
   margin-top: 20px;
 }
 

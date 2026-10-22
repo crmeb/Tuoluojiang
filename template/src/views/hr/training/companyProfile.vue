@@ -12,17 +12,16 @@
       />
 
       <div class="cr-bottom-button btn-shadow">
-        <el-button :loading="loading" type="primary" @click="handleConfirm()">保存</el-button>
+        <el-button size="small" :loading="loading" type="primary" @click="handleConfirm()">保存</el-button>
       </div>
     </div>
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { employeeTrainApi, getEmployeeTrainApi } from '@/api/config.ts'
+import { employeeTrainApi, getEmployeeTrainApi } from '@/api/config.js'
 export default {
   name: '',
-  components: { ueditorFrom: defineAsyncComponent(() => import('@/components/form-common/oa-wangeditor')) },
+  components: { ueditorFrom: () => import('@/components/form-common/oa-wangeditor') },
   data() {
     return {
       height: 'calc(100vh - 200px)',
@@ -77,18 +76,18 @@ export default {
   width: calc(100% + 0px);
   border-radius: 0 0 8px 8px;
 }
-:deep(.w-e-toolbar) {
+::v-deep .w-e-toolbar {
   border-radius: 8px 8px 0 0;
   border-bottom-color: #eee;
   background-color: transparent;
 }
-:deep(.wangeditor-box) {
+::v-deep .wangeditor-box {
   border-left: none;
 }
-:deep(.main) {
+::v-deep .main {
   background-color: transparent;
 }
-:deep(.w-e-text-container) {
+::v-deep .w-e-text-container {
   background-color: transparent;
 }
 </style>

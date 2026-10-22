@@ -18,18 +18,16 @@
 
 <script>
 import '@wangeditor-next/editor/dist/css/style.css'
-import { Editor, Toolbar } from '@wangeditor-next/editor-for-vue'
-import { uploader } from '@/utils/uploadCloud.ts'
-import { normalizePastedTableHtml } from '@/utils/wangeditor/tablePaste.ts'
-import { extractDocxImageSizes, applyDocxImageSizes, normalizeImageSizeForSave } from '@/utils/wangeditor/docxImageSize.ts'
-import { markDocxParagraphAlignment, restoreDocxParagraphAlignment } from '@/utils/wangeditor/docxHtml'
+import { Editor, Toolbar } from '@wangeditor-next/editor-for-vue2'
+import { uploader } from '@/utils/uploadCloud'
+import { normalizePastedTableHtml } from '@/utils/wangeditor/tablePaste'
+import { extractDocxImageSizes, applyDocxImageSizes, normalizeImageSizeForSave } from '@/utils/wangeditor/docxImageSize'
 import mammoth from 'mammoth'
 import { asBlob } from 'html-docx-js-typescript'
 import { saveAs } from 'file-saver'
-import { fileUpload } from '@/api/public.ts'
-import { processResourceUrl } from '@/utils/resourceUtil.ts'
+import { fileUpload } from '@/api/public'
+import { processResourceUrl } from '@/utils/resourceUtil'
 export default {
-  emits: ['closeLoading'],
   name: 'fileEdit',
   props: {
     url: {
@@ -93,7 +91,6 @@ export default {
           mammoth.convertToHtml(
             { arrayBuffer: buffer },
             {
-              transformDocument: mammoth.transforms.paragraph(markDocxParagraphAlignment),
               transformImage: function (image) {
                 return image.read('base64').then(function (imageBuffer) {
                   return `<img src="data:${image.contentType};base64,${imageBuffer}" alt="文档图片">`
@@ -104,7 +101,7 @@ export default {
           extractDocxImageSizes(buffer)
         ]).then(([resultObject, imageSizes]) => {
           this.$nextTick(() => {
-            this.vHtml = restoreDocxParagraphAlignment(applyDocxImageSizes(resultObject.value, imageSizes))
+            this.vHtml = applyDocxImageSizes(resultObject.value, imageSizes)
           })
         })
       }
@@ -173,12 +170,13 @@ export default {
           console.error('转换为Blob失败:', error)
           this.$emit('closeLoading') // 确保在错误情况下也关闭加载状态
         })
+    },
+
+    beforeDestroy() {
+      const editor = this.editor
+      if (editor == null) return
+      editor.destroy() // 组件销毁时，及时销毁编辑器
     }
-  },
-  beforeUnmount() {
-    const editor = this.editor
-    if (editor == null) return
-    editor.destroy() // 组件销毁时，及时销毁编辑器
   }
 }
 </script>
@@ -188,7 +186,7 @@ export default {
   width: 100%;
   z-index: 99;
 }
-:deep(.w-e-bar-show) {
+::v-deep .w-e-bar-show {
   display: flex;
   justify-content: center;
 }
@@ -199,14 +197,14 @@ export default {
   margin: 0 auto;
   padding-top: 20px;
 }
-:deep(.w-e-text-container) {
+::v-deep .w-e-text-container {
   margin-top: 30px;
   min-height: calc(100vh - 110px) !important;
   // overflow-y: auto;
   border: none !important;
   padding: 40px 60px;
 }
-:deep(.w-e-text-placeholder) {
+::v-deep .w-e-text-placeholder {
   padding: 40px 60px;
 }
 </style>

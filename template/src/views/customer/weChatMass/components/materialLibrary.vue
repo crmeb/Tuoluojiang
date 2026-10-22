@@ -1,8 +1,9 @@
 <template>
-  <el-dialog title="选择素材弹窗" v-model="dialogTableVisible">
+  <el-dialog title="选择素材弹窗" :visible.sync="dialogTableVisible">
     <div class="flex mb10">
       <el-input
         v-model="where.name"
+        size="small"
         placeholder="请输入素材内容"
         style="width: 200px"
         class="mr10"
@@ -11,6 +12,7 @@
       <el-select
         v-model="where.group_id"
         placeholder="请选择素材分类"
+        size="small"
         style="width: 200px"
         @change="getTableData()"
       >
@@ -41,9 +43,8 @@
   </el-dialog>
 </template>
 <script>
-import { workMassTempGroupApi, workMassTempListApi } from '@/api/weCom.ts'
+import { workMassTempGroupApi, workMassTempListApi } from '@/api/weCom'
 export default {
-  emits: ['selectMaterial'],
   name: '',
   components: {},
   props: {},

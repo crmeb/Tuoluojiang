@@ -34,7 +34,6 @@
 </template>
 <script>
 export default {
-  emits: ['update:optionModel'],
   name: 'setChartStyle-editor',
   props: {
     designer: Object,
@@ -98,10 +97,10 @@ export default {
     }
   }
 }
-:deep(.el-icon-arrow-down) {
+::v-deep .el-icon-arrow-down {
   margin-left: 0;
 }
-:deep(.el-input-number .el-input__inner) {
+::v-deep .el-input-number .el-input__inner {
   text-align: center;
 }
 </style>

@@ -1,0 +1,1 @@
+var e=0;function t(){let t=370+ ++e;return`F`+Math.random().toString(36).substr(3,3)+Number(`${Date.now()}`).toString(36)+t.toString(36)+`c`}export{t};

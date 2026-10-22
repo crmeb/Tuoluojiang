@@ -4,7 +4,7 @@
       @confirmData="handleSearch" btnText="新增调拨" @addDataFn="handleAddTransfer" />
 
     <BaseTable class="mt-10" :table-columns="tableColumns" :data="tableData" :loading="isLoading" :total="total"
-      v-model:page="page" v-model:page-size="pageSize">
+      :page.sync="page" :page-size.sync="pageSize">
       <!-- 调拨仓库：调出仓库 → 调入仓库 -->
       <template #warehouse="{ row }">
         <div class="warehouse-cell">
@@ -50,23 +50,23 @@
 
       <!-- 操作列：按调拨状态展示不同操作 -->
       <template #action="{ row }">
-        <el-button type="primary" link @click="handleViewDetail(row)">查看详情</el-button>
+        <el-button type="text" @click="handleViewDetail(row)">查看详情</el-button>
         <!-- 待出库：出库 + 作废 -->
         <template v-if="row.status === TRANSFER_STATUS.PENDING_OUT">
           <el-divider direction="vertical" />
-          <el-button type="primary" link @click="handleOut(row)">出库</el-button>
+          <el-button type="text" @click="handleOut(row)">出库</el-button>
           <el-divider direction="vertical" />
-          <el-button type="primary" link class="danger-text" @click="handleCancel(row)">作废</el-button>
+          <el-button type="text" class="danger-text" @click="handleCancel(row)">作废</el-button>
         </template>
         <!-- 待入库：入库 -->
         <template v-else-if="row.status === TRANSFER_STATUS.PENDING_IN">
           <el-divider direction="vertical" />
-          <el-button type="primary" link @click="handleIn(row)">入库</el-button>
+          <el-button type="text" @click="handleIn(row)">入库</el-button>
         </template>
         <!-- 已作废：重新提交 -->
         <template v-else-if="row.status === TRANSFER_STATUS.VOIDED">
           <el-divider direction="vertical" />
-          <el-button type="primary" link @click="handleResubmit(row)">重新提交</el-button>
+          <el-button type="text" @click="handleResubmit(row)">重新提交</el-button>
         </template>
       </template>
     </BaseTable>
@@ -82,10 +82,10 @@ import BaseTable from "@/components/BaseTable/index.vue";
 import oaFromBox from "@/components/common/oaFromBox.vue";
 import GoodsInfoCell from "@/components/common/goodsInfoCell.vue";
 import InventoryStatusTag from "../components/InventoryStatusTag.vue";
-import { useTransfer } from "./composables/useTransfer.ts";
+import { useTransfer } from "./composables/useTransfer";
 import TransferDetail from "./components/detail.vue";
-import { TRANSFER_TYPE_MAP, TRANSFER_STATUS_MAP, TRANSFER_STATUS } from "./constants.ts";
-import dayjs from "dayjs";
+import { TRANSFER_TYPE_MAP, TRANSFER_STATUS_MAP, TRANSFER_STATUS } from "./constants";
+import moment from "moment";
 
 export default {
   name: "InventoryTransfer",
@@ -98,7 +98,7 @@ export default {
     };
 
     const formatTime = time => {
-      return time ? dayjs(time).format("YYYY-MM-DD HH:mm") : "--";
+      return time ? moment(time).format("YYYY-MM-DD HH:mm") : "--";
     };
 
     return {

@@ -1,7 +1,7 @@
 <!-- 查看发票详情弹窗 -->
 <template>
   <div>
-    <el-dialog :title="config.title" v-model="dialogVisible" width="540px" :close-on-click-modal="false"
+    <el-dialog :title="config.title" :visible.sync="dialogVisible" width="540px" :close-on-click-modal="false"
       :append-to-body="true" :before-close="handleClose">
       <el-form ref="form" :model="rules" :rules="rule" :label-width="labelWidth + 'px'" class="mt15">
         <el-form-item prop="remark" v-if="rules.status == 2">
@@ -51,7 +51,7 @@
               <span>开票凭证：</span>
             </template>
             <div class="avatar">
-              <oa-upload :maxLength="1" :only-image="false" :model-value="imageUrl" @getVal="getVal"></oa-upload>
+              <oa-upload :maxLength="1" :only-image="false" :value="imageUrl" @getVal="getVal"></oa-upload>
               <!-- <el-upload
                 class="upload-demo mr10 mb12"
                 action="##"
@@ -70,23 +70,24 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="handleClose">取消</el-button>
-          <el-button type="primary" :loading="loading" @click="handleConfirm">确定</el-button>
+          <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
+          <el-button size="small" type="primary" :loading="loading" @click="handleConfirm">{{
+            $t('public.ok')
+          }}</el-button>
         </div>
       </template>
     </el-dialog>
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { clientInvoiceStatusApi } from '@/api/client.ts'
-import { getToken } from '@/utils/auth.ts'
-import { uploader } from '@/utils/uploadCloud.ts'
+
+import { clientInvoiceStatusApi } from '@/api/client'
+import { getToken } from '@/utils/auth'
+import { uploader } from '@/utils/uploadCloud'
 export default {
-  emits: ['isOk'],
   name: '',
   components: {
-    oaUpload: defineAsyncComponent(() => import('@/components/form-common/oa-upload')),
+    oaUpload: () => import('@/components/form-common/oa-upload'),
   },
 
   props: {
@@ -217,7 +218,7 @@ export default {
         invoice_mail: '',
         file: ''
       }
-      this.imageUrl = []
+      this.imageUrl = ''
     }
   }
 }
@@ -230,15 +231,15 @@ export default {
   margin-bottom: 20px;
 }
 
-:deep(.el-date-editor) {
+::v-deep .el-date-editor {
   width: 100%;
 }
 
-:deep(.el-textarea__inner) {
+::v-deep .el-textarea__inner {
   resize: none;
 }
 
-:deep(.el-input-number) {
+::v-deep .el-input-number {
   width: 100%;
 }
 
@@ -271,11 +272,11 @@ export default {
   cursor: pointer;
 }
 
-:deep(.el-select) {
+::v-deep .el-select {
   width: 100%;
 }
 
-:deep(.el-form-item:last-of-type) {
+::v-deep .el-form-item:last-of-type {
   margin-bottom: 0;
 }
 

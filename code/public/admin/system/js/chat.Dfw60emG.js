@@ -1,0 +1,1 @@
+import{B as e,Z as t,q as n,st as r}from"./chunk-vendor.Di-Ybv3u.js";import{t as i}from"./applicationManagement.CmJIXxCT.js";t();var a=n({__name:`index`,setup(t){return(t,n)=>(r(),e(i))}});export{a as default};

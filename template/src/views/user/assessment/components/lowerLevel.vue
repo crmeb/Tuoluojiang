@@ -19,7 +19,7 @@
         row-key="id"
         style="width: 100%"
       >
-        <el-table-column label="姓名" min-width="100" prop="test">
+        <el-table-column :label="$t('toptable.name')" min-width="100" prop="test">
           <template #default="{ row }">
             <div style="display: flex; align-items: center; gap: 6px" class="pointer">
               <el-avatar :size="24" :src="row.test.avatar"></el-avatar>
@@ -27,31 +27,31 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="部门" min-width="160" prop="frame.name" />
-        <el-table-column label="考核名称" min-width="120" prop="name" />
-        <el-table-column label="考核周期" min-width="100" prop="period">
+        <el-table-column :label="$t('toptable.department')" min-width="160" prop="frame.name" />
+        <el-table-column :label="$t('user.work.assessmentname')" min-width="120" prop="name" />
+        <el-table-column :label="$t('toptable.assessmentcycle')" min-width="100" prop="period">
           <template #default="scope">
             <span>{{ getPeriodText(scope.row.period) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="考核得分" min-width="80" prop="score" />
-        <el-table-column label="考核等级" min-width="100" prop="level" />
-        <el-table-column label="开启状态" min-width="80" prop="is_show">
+        <el-table-column :label="$t('user.work.qssessmentscore')" min-width="80" prop="score" />
+        <el-table-column :label="$t('access.assessmentgrade')" min-width="100" prop="level" />
+        <el-table-column :label="$t('access.openstatus')" min-width="80" prop="is_show">
           <template #default="scope">
             <el-switch
               v-if="scope.row.status !== 5"
-              active-text="已启用"
+              :active-text="$t('access.enabled')"
               :disabled="scope.row.is_show === 1"
-              inactive-text="未启用"
-              :model-value="!(scope.row.is_show === 0)"
+              :inactive-text="$t('access.notenabled')"
+              :value="!(scope.row.is_show === 0)"
               :width="70"
               @change="handleIsShow(scope.row, 1)"
             />
             <el-switch
               v-else
-              active-text="已启用"
-              inactive-text="未启用"
-              :model-value="!(scope.row.is_show === 0)"
+              :active-text="$t('access.enabled')"
+              :inactive-text="$t('access.notenabled')"
+              :value="!(scope.row.is_show === 0)"
               :width="70"
               @change="handleIsShow(scope.row, 2)"
             />
@@ -64,52 +64,50 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="考核开始时间" min-width="100" prop="start_time">
+        <el-table-column :label="$t('access.starttime')" min-width="100" prop="start_time">
           <template #default="scope">
-            {{ dayjs(scope.row.start_time).format('YYYY-MM-DD') }}
+            {{ moment(scope.row.start_time).format('yyyy-MM-DD') }}
           </template>
         </el-table-column>
-        <el-table-column label="考核结束时间" min-width="100" prop="end_time">
+        <el-table-column :label="$t('access.endtime')" min-width="100" prop="end_time">
           <template #default="scope">
-            {{ dayjs(scope.row.end_time).format('YYYY-MM-DD') }}
+            {{ moment(scope.row.end_time).format('yyyy-MM-DD') }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" fixed="right" prop="address" width="220">
+        <el-table-column :label="$t('public.operation')" fixed="right" prop="address" width="220">
           <template #default="scope">
-            <el-button v-if="scope.row.status !== 0" type="primary" link @click="handleCheck(scope.row, 'check')">
+            <el-button v-if="scope.row.status !== 0" type="text" @click="handleCheck(scope.row, 'check')">
               查看
             </el-button>
             <el-button
               v-if="userInfoUid == scope.row.check.uid && scope.row.status == 2"
-              type="primary" link
+              type="text"
               @click="handleCheck(scope.row, scope.$index)"
             >
               评分
             </el-button>
-            <el-button v-if="userInfoUid == scope.row.check.uid" type="primary" link @click="handleCheck(scope.row, 'edit')">
+            <el-button v-if="userInfoUid == scope.row.check.uid" type="text" @click="handleCheck(scope.row, 'edit')">
               修改考核
             </el-button>
             <!-- {{ scope.row.check.uid }} -->
-            <el-button v-if="userInfoUid !== scope.row.check.uid" type="primary" link @click="handleScore(scope.row)">
+            <el-button v-if="userInfoUid !== scope.row.check.uid" type="text" @click="handleScore(scope.row)">
               评分记录
             </el-button>
             <el-dropdown class="ml10">
-              <el-button type="primary" link class="el-dropdown-link">
-                更多
+              <span class="el-dropdown-link el-button--text el-button">
+                {{ $t('hr.more') }}
                 <i class="el-icon-arrow-down el-icon--right" />
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item @click="copy(scope.row, scope.$index)"> 复制 </el-dropdown-item>
-                  <el-dropdown-item @click="handleDelete(scope.row)"> 删除 </el-dropdown-item>
-                  <el-dropdown-item
-                    v-if="(scope.row.status == 3 || scope.row.status == 4) && userInfoUid == scope.row.check.uid"
-                    @click="handleScore(scope.row)"
-                  >
-                    评分记录
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
+              </span>
+              <el-dropdown-menu>
+                <el-dropdown-item @click.native="copy(scope.row, scope.$index)"> 复制 </el-dropdown-item>
+                <el-dropdown-item @click.native="handleDelete(scope.row)"> 删除 </el-dropdown-item>
+                <el-dropdown-item
+                  v-if="(scope.row.status == 3 || scope.row.status == 4) && userInfoUid == scope.row.check.uid"
+                  @click.native="handleScore(scope.row)"
+                >
+                  评分记录
+                </el-dropdown-item>
+              </el-dropdown-menu>
             </el-dropdown>
           </template>
         </el-table-column>
@@ -132,40 +130,26 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useUserStore } from '@/stores/user.ts'
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { modalSure } from '@/libs/public.ts'
-import modalForm from '@/libs/modal-form.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { userAssessDelete, userAssessSetShow, userAssessSubord } from '@/api/user.ts'
-import Common from '@/components/user/accessCommon.ts'
+import moment from 'moment'
+import { modalSure } from '@/libs/public'
+import modalForm from '@/libs/modal-form'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { userAssessDelete, userAssessSetShow, userAssessSubord } from '@/api/user'
+import Common from '@/components/user/accessCommon'
 
-import oaFromBox from '@/components/common/oaFromBox'
 export default {
-  emits: ['lowerHandleCheck'],
   name: 'LowerLevel',
   components: {
-    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage')),
-    scoreDialog: defineAsyncComponent(() => import('./scoreDialog')),
-    oaFromBox
+    defaultPage: () => import('@/components/common/defaultPage'),
+    scoreDialog: () => import('./scoreDialog'),
+    oaFromBox: () => import('@/components/common/oaFromBox')
   },
   props: ['handle'],
   computed: {
-    ...mapStores(useUserStore),
-    dayjs: () => dayjs
-  },
-  watch: {
-    // prop 由父组件更新时同步到本地副本（组件内部改写的是 handleLocal）
-    handle(val) {
-      this.handleLocal = val
-    }
+    moment: () => moment
   },
   data() {
     return {
-      // Vue 3 的 prop 只读，组件内部需要改写时用本地副本
-      handleLocal: this.handle,
       TABLE_HEIGHT,
       tableData: [],
       where: {
@@ -231,7 +215,7 @@ export default {
     }
   },
   mounted() {
-    this.userInfoUid = this.userStore.userInfo.uid
+    this.userInfoUid = this.$store.state.user.userInfo.uid
   },
   methods: {
     addFinance() {
@@ -254,7 +238,7 @@ export default {
       this.loading = true
       const data = {
         ...this.where,
-        handle: this.handleLocal,
+        handle: this.handle,
         date: this.date,
         type: 1
       }
@@ -291,7 +275,7 @@ export default {
     },
     handleScore(row) {
       this.config = {
-        title: '评分记录',
+        title: this.$t('access.scoringrecord'),
         width: '720px',
         id: row.id
       }
@@ -307,7 +291,7 @@ export default {
           str = '确定开启考核吗'
         }
       } else {
-        str = '启用后，被考核人将会看到考核，确定开启吗'
+        str = this.$t('access.tips16')
       }
       modalSure(str).then(() => {
         userAssessSetShow(row.id, { status }).then((res) => {
@@ -339,19 +323,19 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-switch__label--right) {
+::v-deep .el-switch__label--right {
   margin-left: 6px;
 }
 .el-icon--right {
   margin-left: 0;
 }
-:deep(.el-card__body) {
+::v-deep .el-card__body {
   padding: 0 20px;
 }
 .cell .el-tag {
   background-color: #fff;
 }
-:deep(.el-table .cell) {
+::v-deep .el-table .cell {
   overflow: none;
   text-overflow: clip;
 }

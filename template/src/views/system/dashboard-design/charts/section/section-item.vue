@@ -1,13 +1,13 @@
 <template>
 	<div>
 		<template v-if="!!widget.widgetList && (widget.widgetList.length > 0)">
-			<template v-for="(subWidget, swIdx) in widget.widgetList" :key="swIdx">
+			<template v-for="(subWidget, swIdx) in widget.widgetList">
 				<template v-if="'container' === subWidget.category">
 					<component :is="getComponentByContainer(subWidget)" :widget="subWidget" :key="swIdx" :parent-list="widget.widgetList"
 							   :index-of-parent-list="swIdx" :parent-widget="widget"
 							   :sub-form-row-id="subFormRowId" :sub-form-row-index="subFormRowIndex" :sub-form-col-index="subFormColIndex">
 						<!-- 递归传递插槽！！！ -->
-						<template v-for="slot in Object.keys($slots)" :key="slot" v-slot:[slot]="scope">
+						<template v-for="slot in Object.keys($slots)" v-slot:[slot]="scope">
 							<slot :name="slot" v-bind="scope"/>
 						</template>
 					</component>
@@ -17,7 +17,7 @@
 							   :index-of-parent-list="swIdx" :parent-widget="widget"
 							   :sub-form-row-id="subFormRowId" :sub-form-row-index="subFormRowIndex" :sub-form-col-index="subFormColIndex">
 						<!-- 递归传递插槽！！！ -->
-						<template v-for="slot in Object.keys($slots)" :key="slot" v-slot:[slot]="scope">
+						<template v-for="slot in Object.keys($slots)" v-slot:[slot]="scope">
 							<slot :name="slot" v-bind="scope"/>
 						</template>
 					</component>

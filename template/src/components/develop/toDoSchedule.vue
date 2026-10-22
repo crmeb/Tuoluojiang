@@ -2,7 +2,7 @@
 <template>
   <div>
     <el-form-item label="待办标题">
-      <el-input class="textPosition" placeholder="请输入推送标题" @input="onInput" v-model="form.title">
+      <el-input class="textPosition" size="small" placeholder="请输入推送标题" @input="onInput" v-model="form.title">
       </el-input>
       <span class="prompt"
         >标题支持字段变量，如 <span class="color-file">{createdOn} </span>(其中 createdOn 为源实体的字段内部标识)</span
@@ -26,6 +26,7 @@
     <el-form-item label="参与人员" class="mt14">
       <div class="flex-between">
         <el-select
+          size="small"
           v-model="form.schedule_user.operator"
           placeholder="请选择"
           style="width: 200px"
@@ -41,6 +42,7 @@
         </el-select>
         <el-select
           v-if="form.schedule_user.operator != 'value'"
+          size="small"
           class="ml14"
           v-model="form.schedule_user.form_field_uniqid"
           placeholder="请选择"
@@ -62,11 +64,11 @@
       </div>
     </el-form-item>
     <el-form-item label="日程周期" class="mt14">
-      <el-checkbox v-model="form.schedule_cycle" true-value="1" false-value="0">全天</el-checkbox>
+      <el-checkbox v-model="form.schedule_cycle" true-label="1" false-label="0">全天</el-checkbox>
     </el-form-item>
     <el-form-item label="开始时间" class="mt14">
       <div class="flex-between">
-        <el-select v-model="form.start_time.operator" placeholder="请选择" style="width: 200px" filterable>
+        <el-select size="small" v-model="form.start_time.operator" placeholder="请选择" style="width: 200px" filterable>
           <el-option
             v-for="item in options.update_type.slice(0, 2)"
             :key="item.value"
@@ -77,6 +79,7 @@
         </el-select>
         <el-select
           v-if="form.start_time.operator != 'value'"
+          size="small"
           class="ml14"
           v-model="form.start_time.form_field_uniqid"
           placeholder="请选择"
@@ -92,8 +95,9 @@
           :type="form.schedule_cycle == 1 ? 'date' : 'datetime'"
           style="width: 100%"
           class="ml14"
-          :format="form.schedule_cycle == 1 ? 'YYYY/MM/DD' : 'YYYY/MM/DD HH:mm:ss'"
-          :value-format="form.schedule_cycle == 1 ? 'YYYY/MM/DD' : 'YYYY/MM/DD HH:mm:ss'"
+          size="small"
+          :format="form.schedule_cycle == 1 ? 'yyyy/MM/dd' : 'yyyy/MM/dd HH:mm:ss'"
+          :value-format="form.schedule_cycle == 1 ? 'yyyy/MM/dd' : 'yyyy/MM/dd HH:mm:ss'"
           placeholder="选择开始时间"
         >
         </el-date-picker>
@@ -101,7 +105,7 @@
     </el-form-item>
     <el-form-item label="结束时间" class="mt14">
       <div class="flex-between">
-        <el-select v-model="form.end_time.operator" placeholder="请选择" style="width: 200px" filterable>
+        <el-select size="small" v-model="form.end_time.operator" placeholder="请选择" style="width: 200px" filterable>
           <el-option
             v-for="item in options.update_type.slice(0, 2)"
             :key="item.value"
@@ -112,6 +116,7 @@
         </el-select>
         <el-select
           v-if="form.end_time.operator != 'value'"
+          size="small"
           class="ml14"
           v-model="form.end_time.form_field_uniqid"
           placeholder="请选择"
@@ -127,15 +132,16 @@
           :type="form.schedule_cycle == 1 ? 'date' : 'datetime'"
           style="width: 100%"
           class="ml14"
-          :format="form.schedule_cycle == 1 ? 'YYYY/MM/DD' : 'YYYY/MM/DD HH:mm:ss'"
-          :value-format="form.schedule_cycle == 1 ? 'YYYY/MM/DD' : 'YYYY/MM/DD HH:mm:ss'"
+          size="small"
+          :format="form.schedule_cycle == 1 ? 'yyyy/MM/dd' : 'yyyy/MM/dd HH:mm:ss'"
+          :value-format="form.schedule_cycle == 1 ? 'yyyy/MM/dd' : 'yyyy/MM/dd HH:mm:ss'"
           placeholder="选择结束时间"
         >
         </el-date-picker>
       </div>
     </el-form-item>
     <el-form-item label="提醒时间" class="mt14">
-      <el-select v-model="form.remind_time" placeholder="请选择" style="width: 100%">
+      <el-select size="small" v-model="form.remind_time" placeholder="请选择" style="width: 100%">
         <el-option v-for="item in remindOptions" :key="item.value" :label="item.label" :value="item.value"> </el-option>
       </el-select>
     </el-form-item>
@@ -166,7 +172,6 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
 export default {
   props: {
     field: {
@@ -184,7 +189,7 @@ export default {
       default: () => {}
     }
   },
-  components: { selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')) },
+  components: { selectMember: () => import('@/components/form-common/select-member') },
   data() {
     return {
       form: {
@@ -261,7 +266,7 @@ export default {
 
     handleClick(val, type) {
       if (type == 'title') {
-        this.form.title = this.form.title + '{' + val.value + '}'
+        this.$set(this.form, 'title', this.form.title + '{' + val.value + '}')
         this.onInput()
       } else {
         this.form.template = this.form.template + '{' + val.value + '}'
@@ -291,7 +296,7 @@ export default {
 .textPosition {
   position: relative;
 }
-:deep(.el-textarea__inner) {
+::v-deep .el-textarea__inner {
   resize: none;
   font-size: 13px;
 }

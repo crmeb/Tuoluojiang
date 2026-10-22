@@ -6,7 +6,7 @@
         <div>
           <div class="flex-between">
             <div class="title-16">假期类型</div>
-            <el-button type="primary" icon="el-icon-plus" @click="addType()">新增</el-button>
+            <el-button type="primary" icon="el-icon-plus" size="small" @click="addType()">新增</el-button>
           </div>
           <div class="total-16 mt20">共有 {{ total }} 条</div>
           <div class="mt14" v-if="tableData.length > 0">
@@ -26,13 +26,15 @@
               <el-table-column prop="sort" label="排序"></el-table-column>
               <el-table-column label="操作" width="200">
                 <template #default="scope">
-                  <el-button type="primary" link @click="handleEdit(scope.row)" v-hasPermi="['business:examine:index:edit']">编辑</el-button>
+                  <el-button type="text" @click="handleEdit(scope.row)" v-hasPermi="['business:examine:index:edit']">{{
+                    $t('public.edit')
+                  }}</el-button>
 
                   <el-button
-                    type="primary" link
+                    type="text"
                     @click="handleDelete(scope.row)"
                     v-hasPermi="['business:examine:index:delete']"
-                    >删除</el-button
+                    >{{ $t('public.delete') }}</el-button
                   >
                 </template>
               </el-table-column>
@@ -67,13 +69,14 @@
           <el-row>
             <el-col v-bind="grid1">&nbsp;</el-col>
             <el-col v-bind="grid2">
-              <el-form ref="elForm" :model="form" :rules="rules" label-width="100px" size="default">
+              <el-form ref="elForm" :model="form" :rules="rules" label-width="100px" size="medium">
                 <div class="card-list">
                   <div class="head">
                     <span class="title">基础信息设置</span>
                   </div>
                   <el-form-item label="假期类型：" prop="name">
                     <el-input
+                      size="small"
                       style="width: 350px"
                       v-model="form.name"
                       show-word-limit
@@ -83,7 +86,7 @@
                     </el-input>
                   </el-form-item>
                   <el-form-item style="margin-bottom: 0" label="新员工请假：" prop="new_employee_limit">
-                    <el-select v-model="form.new_employee_limit" style="width: 350px">
+                    <el-select v-model="form.new_employee_limit" style="width: 350px" size="small">
                       <el-option label="限制" :value="1"></el-option>
                       <el-option label="不限制" :value="0"></el-option>
                     </el-select>
@@ -92,7 +95,7 @@
                     <span v-if="form.new_employee_limit == 0" class="info">入职即可请假</span>
                     <div v-else class="info">
                       入职时长小于
-                      <el-select v-model="form.new_employee_limit_month" style="width: 100px">
+                      <el-select v-model="form.new_employee_limit_month" style="width: 100px" size="small">
                         <el-option v-for="month in months" :key="month" :label="month" :value="month"></el-option>
                       </el-select>
                       个月时，不可申请此假期
@@ -105,7 +108,7 @@
                     <span class="title">请假时长核算规则</span>
                   </div>
                   <el-form-item label="请假时长：" prop="duration_type">
-                    <el-select v-model="form.duration_type" style="width: 350px">
+                    <el-select v-model="form.duration_type" style="width: 350px" size="small">
                       <el-option label="按天" :value="0"></el-option>
                       <el-option label="按小时" :value="1"></el-option>
                     </el-select>
@@ -122,6 +125,7 @@
                       :min="0"
                       controls-position="right"
                       style="width: 350px"
+                      size="small"
                     ></el-input-number>
                   </el-form-item>
                 </div>
@@ -133,24 +137,23 @@
 
       <!-- 底部按钮 -->
       <FormPageFooter>
-        <el-button @click="checkBtn = true">取消</el-button>
-        <el-button type="primary" @click="save">保存</el-button>
+        <el-button size="small" @click="checkBtn = true">取消</el-button>
+        <el-button type="primary" size="small" @click="save">保存</el-button>
       </FormPageFooter>
     </BaseContainer>
   </div>
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { modalSure } from '@/libs/public'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
 import {
   saveHolidayTypeApi,
   approveHolidayTypeApi,
   putHolidayTypeApi,
   approveHolidayTypeInfoApi,
   holidayTypeDeleteApi
-} from '@/api/business.ts'
+} from '@/api/business'
 import BaseContainer from '@/components/BaseContainer/index.vue'
 import FormPageHeader from '@/components/FormPageHeader/index.vue'
 import FormPageFooter from '@/components/FormPageFooter/index.vue'
@@ -160,7 +163,7 @@ export default {
     BaseContainer,
     FormPageHeader,
     FormPageFooter,
-    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage'))
+    defaultPage: () => import('@/components/common/defaultPage')
   },
   data() {
     return {
@@ -187,9 +190,9 @@ export default {
       repeatData: {},
       key: 'cate',
       tabArray: [
-        { label: '表单配置', value: 'formSetting', number: 2 },
-        { label: '流程配置', value: 'processSetting', number: 3 },
-        { label: '规则配置', value: 'ruleSetting', number: 4 }
+        { label: this.$t('business.formConfiguration'), value: 'formSetting', number: 2 },
+        { label: this.$t('business.processSetting'), value: 'processSetting', number: 3 },
+        { label: this.$t('business.ruleConfiguration'), value: 'ruleSetting', number: 4 }
       ],
       id: 0,
       grid1: {
@@ -319,22 +322,22 @@ export default {
 .p20 {
   padding: 20px;
 }
-:deep(.el-card) {
+::v-deep .el-card {
   transition: 0s;
 }
-:deep(.from-foot-btn) {
+::v-deep .from-foot-btn {
   // width: calc(100% - 29px);
   width: 100%;
 }
-:deep(.el-tabs__header) {
+::v-deep .el-tabs__header {
   margin: 0;
 }
 
-:deep(.el-table th) {
+::v-deep .el-table th {
   background-color: #f7fbff;
 }
 .examineTabs {
-  :deep(.el-tabs__nav-wrap::after) {
+  ::v-deep .el-tabs__nav-wrap::after {
     background-color: #fff;
   }
   .sp1 {
@@ -347,11 +350,11 @@ export default {
     line-height: 14px;
     font-size: 12px;
   }
-  :deep(.el-tabs__nav-scroll) {
+  ::v-deep .el-tabs__nav-scroll {
     display: flex;
     justify-content: left;
   }
-  :deep(.el-tabs__item) {
+  ::v-deep .el-tabs__item {
     color: #999999;
     font-weight: 600;
     &.is-active {
@@ -417,10 +420,10 @@ export default {
   font-size: 13px;
   color: #fff;
 }
-:deep(.el-card__body) {
+::v-deep .el-card__body {
   padding: 0;
 }
-:deep(.el-form-item) {
+::v-deep .el-form-item {
   margin: 0;
 }
 .divBox {
@@ -472,13 +475,13 @@ export default {
   margin-left: 8px;
 }
 
-:deep(.el-form-item) {
+::v-deep .el-form-item {
   // display: flex;
   // align-items: center;
   // justify-content: flex-start;
   margin-bottom: 20px;
 }
-:deep(.el-form-item__content) {
+::v-deep .el-form-item__content {
   margin-left: 0 !important;
 }
 .infos {

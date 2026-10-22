@@ -3,7 +3,7 @@
   <div class="paymentTable">
     <div class="mb10" v-if="!type">
       <span class="select-label">客户名称：</span>
-      <el-select v-model="eid" placeholder="请选择客户" filterable style="width: 250px" @change="changeFn">
+      <el-select v-model="eid" placeholder="请选择客户" filterable size="small" style="width: 250px" @change="changeFn">
         <el-option v-for="item in optionsList" :key="item.id" :label="item.customer_name" :value="item.id" />
       </el-select>
       <span class="select-tips">可跳过订单，直接进行合同签约</span>
@@ -57,8 +57,8 @@
 
       <el-table-column fixed="right" label="操作" width="150" v-if="!selectionIsShow">
         <template #default="scope">
-          <el-button @click="checkFn(scope.row)" type="primary" link>查看</el-button>
-          <el-button @click="deleteFn(scope.row, scope.$index)" type="primary" link>删除</el-button>
+          <el-button @click="checkFn(scope.row)" type="text" size="small">查看</el-button>
+          <el-button @click="deleteFn(scope.row, scope.$index)" type="text" size="small">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -67,15 +67,13 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { getColor } from '@/utils/format.ts'
-import { customerViewApi, clientContractListApi } from '@/api/enterprise.ts'
+import { modalSure } from '@/libs/public'
+import { getColor } from '@/utils/format'
+import { customerViewApi, clientContractListApi } from '@/api/enterprise'
 export default {
-  emits: ['handleSelectionFn', 'deleteFn'],
   name: '',
   components: {
-    editContract: defineAsyncComponent(() => import('@/views/customer/contract/components/editContract.vue'))
+    editContract: () => import('@/views/customer/contract/components/editContract.vue')
   },
   props: {
     type: {
@@ -175,7 +173,7 @@ export default {
         })
       clientContractListApi(obj).then((res) => {
         res.data.list = res.data.list.filter((item) => !item.is_sign)
-        this.table = res.data.list
+        this.$set(this, 'table', res.data.list)
         this.total = res.data.count
 
         if (!cid && this.table.length > 0) {

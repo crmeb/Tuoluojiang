@@ -5,14 +5,14 @@ description: 将二开页面接入后台动态菜单体系（views 路径约定�
 
 # integrate-dynamic-menu
 
-本项目**绝大多数业务页**走**后台动态菜单**，前端只需保证 `src/views/` 下文件存在，由 `src/router/index.ts` 的 `import.meta.glob` 自动映射组件。**不要**默认改 `routes.ts`。
+本项目**绝大多数业务页**走**后台动态菜单**，前端只需保证 `src/views/` 下文件存在，由 `src/router/index.js` 的 `require.context` 自动映射组件。**不要**默认改 `routes.js`。
 
 ## 动态 vs 静态路由（决策）
 
 | 场景 | 做法 | 参考 skill |
 |---|---|---|
 | 常规业务模块（客户、合同、设置等） | 动态菜单 | **本 skill** |
-| 登录页、分享页、隐藏工具页 | 静态 `routes.ts` | [`create-route`](../create-route/SKILL.md) |
+| 登录页、分享页、隐藏工具页 | 静态 `routes.js` | [`create-route`](../create-route/SKILL.md) |
 
 ## 前端文件约定
 
@@ -78,6 +78,6 @@ customer:aftersale:export
 
 ## 不要做的事
 
-- 不要为常规模块同时改 `routes.ts` 和配动态菜单（二选一）
+- 不要为常规模块同时改 `routes.js` 和配动态菜单（二选一）
 - 不要写 `component: '@/views/...'`（动态路由解析不支持 `@/`）
-- 不要修改 `src/router/index.ts` 的 `filterAsyncRoutes` 核心逻辑
+- 不要修改 `src/router/index.js` 的 `filterAsyncRoutes` 核心逻辑

@@ -2,45 +2,49 @@
   <div class="station">
     <el-drawer
       :title="formData.title"
-      v-model="drawer"
+      :visible.sync="drawer"
       :direction="direction"
       :modal="true"
+      :wrapper-closable="true"
       :before-close="handleClose"
       size="650px"
     >
       <div class="content">
         <el-form ref="form" :model="rules" :rules="rule" label-width="100px">
-          <el-form-item prop="content" :label="'待办内容' + ':'">
+          <el-form-item prop="content" :label="$t('calendar.todocontent') + ':'">
             <el-input
               v-model="rules.content"
+              size="small"
               class="input-item"
               :maxlength="50"
-              placeholder="填写待办内容"
+              :placeholder="$t('calendar.placeholder09')"
             />
           </el-form-item>
-          <el-form-item :label="'备注内容' + ':'">
+          <el-form-item :label="$t('calendar.remarks') + ':'">
             <el-input
               v-model="rules.marks"
               type="textarea"
               :rows="2"
               :maxlength="200"
               class="textarea-item"
-              placeholder="请输入备注信息"
+              :placeholder="$t('finance.pleaseremark')"
             />
           </el-form-item>
-          <el-form-item prop="time" :label="'提醒时间' + ':'">
+          <el-form-item prop="time" :label="$t('customer.reminderdata') + ':'">
             <el-date-picker
               v-model="rules.time"
+              size="small"
               type="datetime"
               prefix-icon="el-icon-date"
-              v-bind="$pickerProps(pickerOptions)"
-              placeholder="选择提醒时间"
+              :picker-options="pickerOptions"
+              :placeholder="$t('calendar.placeholder11')"
             />
           </el-form-item>
-          <el-form-item :label="'重复提醒' + ':'">
+          <el-form-item :label="$t('calendar.repeatreminder') + ':'">
             <el-select
               v-model="rules.repeat"
-              placeholder="请选择提醒方式"
+              size="small"
+              :placeholder="$t('calendar.placeholder10')"
               @change="handleRepeat"
             >
               <el-option
@@ -48,16 +52,16 @@
                 :key="item.value"
                 :label="item.label"
                 :value="item.value"
-                @click="rulesOptionChange(item.value)"
+                @click.native="rulesOptionChange(item.value)"
               />
             </el-select>
           </el-form-item>
         </el-form>
       </div>
       <div class="button from-foot-btn fix btn-shadow">
-        <el-button @click="drawer = false">取消</el-button>
-        <el-button type="primary" :loading="loading" @click="handleConfirm('ruleForm')">
-          确定
+        <el-button size="small" @click="drawer = false">{{ $t('public.cancel') }}</el-button>
+        <el-button size="small" type="primary" :loading="loading" @click="handleConfirm('ruleForm')">
+          {{ $t('public.ok') }}
         </el-button>
       </div>
     </el-drawer>
@@ -66,12 +70,11 @@
 </template>
 
 <script>
-import dayjs from 'dayjs'
+import moment from 'moment'
 import repeatDialog from './repeatDialog'
-import { dealtScheduleAddApi, dealtScheduleEditApi } from '@/api/user.ts'
-import { clientFollowEditApi } from '@/api/client.ts'
+import { dealtScheduleAddApi, dealtScheduleEditApi } from '@/api/user'
+import { clientFollowEditApi } from '@/api/client'
 export default {
-  emits: ['isOk'],
   name: 'Index',
   components: {
     repeatDialog
@@ -95,16 +98,16 @@ export default {
         repeat: -1
       },
       rule: {
-        content: [{ required: true, message: '待办内容不能为空', trigger: 'blur' }],
-        time: [{ required: true, message: '提醒时间不能为空', trigger: 'change' }]
+        content: [{ required: true, message: this.$t('calendar.placeholder12'), trigger: 'blur' }],
+        time: [{ required: true, message: this.$t('calendar.placeholder13'), trigger: 'change' }]
       },
       options: [
-        { value: -1, label: '不重复' },
-        { value: 0, label: '按天重复' },
-        { value: 1, label: '按周重复' },
-        { value: 2, label: '按月重复' },
-        { value: 3, label: '按年重复' },
-        { value: 4, label: '自定义' }
+        { value: -1, label: this.$t('calendar.norepetition') },
+        { value: 0, label: this.$t('calendar.repeatbyday') },
+        { value: 1, label: this.$t('calendar.repeatweekly') },
+        { value: 2, label: this.$t('calendar.repeatmonthly') },
+        { value: 3, label: this.$t('calendar.repeatyear') },
+        { value: 4, label: this.$t('calendar.custom') }
       ],
       repeatData: {},
       repeatDialogData: {},
@@ -113,6 +116,11 @@ export default {
         firstDayOfWeek: 1
       },
       loading: false
+    }
+  },
+  computed: {
+    lang: function () {
+      return this.$store.getters.lang
     }
   },
   watch: {
@@ -129,8 +137,21 @@ export default {
       },
       deep: true
     },
+    lang() {
+      this.setOptions()
+    }
   },
   methods: {
+    setOptions() {
+      this.options = [
+        { value: -1, label: this.$t('calendar.norepetition') },
+        { value: 0, label: this.$t('calendar.repeatbyday') },
+        { value: 1, label: this.$t('calendar.repeatweekly') },
+        { value: 2, label: this.$t('calendar.repeatmonthly') },
+        { value: 3, label: this.$t('calendar.repeatyear') },
+        { value: 4, label: this.$t('calendar.custom') }
+      ]
+    },
     handleClose() {
       this.drawer = false
       // 取消编辑
@@ -148,7 +169,7 @@ export default {
     rulesOptionChange(e) {
       if (e === 4) {
         this.repeatData = {
-          title: '自定义重复',
+          title: this.$t('calendar.customrepeat'),
           width: this.width
         }
         if (this.formData.edit) {
@@ -170,14 +191,14 @@ export default {
             data = {
               eid: this.formData.data.id,
               types: 0,
-              time: dayjs(this.rules.time).format('YYYY-MM-DD HH:mm:ss'),
+              time: moment(this.rules.time).format('YYYY-MM-DD HH:mm:ss'),
               content: this.rules.content
             }
           } else {
             data = {
               content: this.rules.content,
               mark: this.rules.marks,
-              remind: dayjs(this.rules.time).format('YYYY-MM-DD HH:mm:ss'),
+              remind: moment(this.rules.time).format('YYYY-MM-DD HH:mm:ss'),
               repeat: this.rules.repeat,
               types: this.formData.data.types
             }
@@ -280,11 +301,11 @@ export default {
 <style lang="scss" scoped>
 .content {
   padding: 20px 15px 0 10px;
-  :deep(.el-textarea__inner) {
+  ::v-deep .el-textarea__inner {
     resize: none;
   }
-  :deep(.el-select),
-  :deep(.el-input) {
+  ::v-deep .el-select,
+  ::v-deep .el-input {
     width: 100%;
   }
 }

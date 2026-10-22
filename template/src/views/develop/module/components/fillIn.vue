@@ -2,9 +2,10 @@
   <div>
     <el-drawer
       title="邀请链接记录"
-      v-model="drawer"
+      :visible.sync="drawer"
       direction="rtl"
       :show-close="true"
+      :wrapper-closable="true"
       :append-to-body="true"
       :before-close="handleClose"
       :size="`65%`"
@@ -12,7 +13,7 @@
       <div class="table-box">
         <div class="mb10 flex-between">
           <div class="title-16">邀请链接生成记录</div>
-          <el-button type="primary" @click="addShare">邀请填写</el-button>
+          <el-button type="primary" size="small" @click="addShare">邀请填写</el-button>
         </div>
         <el-table :data="tableData" style="width: 100%" :height="height">
           <el-table-column prop="user.name" label="邀请链接" min-width="100px">
@@ -46,7 +47,7 @@
           </el-table-column>
           <el-table-column prop="address" label="操作" width="80">
             <template #default="scope">
-              <el-button type="primary" link @click="delModuleShare(scope.row.id)">删除</el-button>
+              <el-button type="text" @click="delModuleShare(scope.row.id)">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -68,10 +69,9 @@
   </div>
 </template>
 <script>
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import fillInDialog from './fillInDialog'
-import { getModuleQuestionnaireApi, delModuleQuestionnaireApi, putModuleQuestionnaireApi } from '@/api/develop.ts'
-import { writeClipboard } from '@/utils/clipboard'
+import { getModuleQuestionnaireApi, delModuleQuestionnaireApi, putModuleQuestionnaireApi } from '@/api/develop'
 export default {
   name: '',
   components: { fillInDialog },
@@ -136,9 +136,8 @@ export default {
       this.drawer = false
     },
     copy(val) {
-      writeClipboard(val).then((isOk) => {
-        isOk ? this.$message.success('复制成功') : this.$message.error('复制失败')
-      })
+      clipboard.writeText(val)
+      this.$message.success('复制成功')
     }
   }
 }

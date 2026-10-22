@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="visible" title="单据备注" :width="DIALOG_SIZE.SM" :close-on-click-modal="false" @close="reset">
+  <el-dialog :visible.sync="visible" title="单据备注" :width="DIALOG_SIZE.SM" :close-on-click-modal="false" @close="reset">
     <el-form ref="formRef" :model="form" label-width="0">
       <el-form-item>
         <el-input v-model="form.remark" type="textarea" :rows="4" maxlength="250" show-word-limit
@@ -8,8 +8,8 @@
     </el-form>
     <template #footer>
       <span>
-        <el-button @click="visible = false">取 消</el-button>
-        <el-button type="primary" :loading="loading" @click="submit">确 定</el-button>
+        <el-button size="small" @click="visible = false">取 消</el-button>
+        <el-button size="small" type="primary" :loading="loading" @click="submit">确 定</el-button>
       </span>
     </template>
   </el-dialog>
@@ -17,9 +17,9 @@
 
 <script>
 import { ref, reactive } from "vue";
-import { DIALOG_SIZE } from "@/constants/popupSize.ts";
-import { checkRemarkUpdateApi } from "@/api/inventory.ts";
-import { useLoading } from "@/composables/useLoading.ts";
+import { DIALOG_SIZE } from "@/constants/popupSize";
+import { checkRemarkUpdateApi } from "@/api/inventory";
+import { useLoading } from "@/composables/useLoading";
 
 export default {
   name: "StocktakingRemarkDialog",

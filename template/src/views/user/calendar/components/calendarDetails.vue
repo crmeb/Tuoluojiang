@@ -1,15 +1,15 @@
 <template>
   <div>
     <el-dialog
-      class="box user-calendar-details-dialog"
-      v-model="dialogVisible"
+      class="box"
+      :visible.sync="dialogVisible"
       width="550px"
       top="15vh"
       :append-to-body="appendToBody"
       :close-on-click-modal="false"
       :show-close="false"
     >
-      <template #header>
+      <template #title>
         <div class="header">
           <div class="iconfont iconguanbi1" @click="dialogVisible = false"></div>
           <div class="title" v-if="info.title && info.title.length < 19">
@@ -24,19 +24,19 @@
           <div
             class="time"
             v-if="
-              getYear(dateInfo.start, 'YYYY') == getYear(dateInfo.end, 'YYYY') &&
+              getYear(dateInfo.start, 'yyyy') == getYear(dateInfo.end, 'yyyy') &&
               getYear(dateInfo.start, 'MM-DD') !== getYear(dateInfo.end, 'MM-DD')
             "
           >
             {{ getYear(dateInfo.start, 'M月DD日') }}({{ getWeek(dateInfo.start) }})
-            <template v-if="info.all_day == 0">{{ dayjs(dateInfo.start).format('HH:mm:ss') }}</template>
+            <template v-if="info.all_day == 0">{{ moment(dateInfo.start).format('HH:mm:ss') }}</template>
             - {{ getYear(dateInfo.end, 'M月DD日') }}({{ getWeek(dateInfo.end) }})
             <template v-if="info.all_day == 0">{{ getYear(info.end_time, 'HH:mm:ss') }}</template>
           </div>
-          <div class="time" v-else-if="getYear(dateInfo.start, 'YYYY') !== getYear(dateInfo.end, 'YYYY')">
-            {{ getYear(dateInfo.start, 'YYYY-MM-DD HH:mm:ss') }}
+          <div class="time" v-else-if="getYear(dateInfo.start, 'yyyy') !== getYear(dateInfo.end, 'yyyy')">
+            {{ getYear(dateInfo.start, 'yyyy-MM-DD HH:mm:ss') }}
             -
-            {{ getYear(dateInfo.end, 'YYYY-MM-DD HH:mm:ss') }}
+            {{ getYear(dateInfo.end, 'yyyy-MM-DD HH:mm:ss') }}
           </div>
           <div class="time" v-else>
             {{ getYear(dateInfo.start, 'M月DD日') }} ({{ getWeek(dateInfo.start) }})
@@ -90,7 +90,7 @@
           </el-form-item>
           <el-form-item label="提醒时间：">
             <span v-if="[2, 3, 4, 5].includes(info.cid) && info.remind"
-              >{{ dayjs(info.remind.remind_day).format('M月DD日') }}
+              >{{ moment(info.remind.remind_day).format('M月DD日') }}
               {{ info.remind.remind_time || '09:00:00' }}</span
             >
             <span class="name" v-else>{{ info.remindInfo ? info.remindInfo.text : '--' }}</span>
@@ -107,15 +107,17 @@
 
       <!-- 底部编辑删除按钮 -->
       <div class="mt20 footer" v-if="infoId == userId">
-        <el-button plain style="width: 100%" @click="onDelete(info)">删除</el-button>
+        <el-button plain size="small" style="width: 100%" @click="onDelete(info)">删除</el-button>
         <el-button
           plain
           v-if="info.cid !== 2 && info.cid !== 3 && info.cid !== 4 && info.cid !== 5"
+          size="small"
           style="width: 100%"
           @click="onEdit(info)"
           >编辑</el-button
         >
         <el-button
+          size="small"
           :class="info.finish == 3 ? 'primary' : 'btn'"
           style="width: 100%"
           @click="putStatus('完成', 3)"
@@ -131,12 +133,14 @@
       <!-- 底部状态按钮 -->
       <div class="mt20 footer" v-else>
         <el-button
+          size="small"
           :class="info.finish == 1 ? 'success' : 'btn'"
           style="width: 148px"
           @click="putStatus('已接受', 1)"
           >{{ info.finish == 1 ? '已接受' : '接受' }}</el-button
         >
         <el-button
+          size="small"
           :class="info.finish == 2 ? 'danger' : 'btn'"
           style="width: 148px"
           @click="putStatus('拒绝', 2)"
@@ -144,12 +148,14 @@
         >
 
         <el-button
+          size="small"
           :class="info.finish == 0 ? 'warning' : 'btn'"
           style="width: 148px"
           @click="putStatus('待定', 0)"
           >{{ info.finish == 0 ? '已待定' : '待定' }}</el-button
         >
         <el-button
+          size="small"
           :class="info.finish == 3 ? 'primary' : 'btn'"
           style="width: 148px"
           @click="putStatus('完成', 3)"
@@ -158,7 +164,7 @@
         <img src="../../../../assets/images/comment.png" @click="openComment" alt="" class="commentImg" />
       </div>
       <div class="mt20 footer" v-if="false">
-        <el-button type="primary" link style="width: 148px; font-size: 16px" @click="onDelete(info)"
+        <el-button type="text" size="small" style="width: 148px; font-size: 16px" @click="onDelete(info)"
           >+ 加入日程</el-button
         >
       </div>
@@ -166,41 +172,33 @@
 
     <!-- 删除弹窗 -->
     <el-dialog
-      class="user-calendar-details-dialog"
       :title="deleteText == 1 ? '删除重复性日程' : '编辑重复性日程'"
-      v-model="deleteVisible"
+      :visible.sync="deleteVisible"
       width="20%"
       top="20vh"
       :before-close="handleClose"
     >
       <el-radio-group v-model="type" class="radio">
-        <el-radio label="0" value="0">此日程</el-radio>
-        <el-radio label="1" value="1">此日程及后续日程</el-radio>
-        <el-radio label="2" value="2">所有日程</el-radio>
+        <el-radio label="0">此日程</el-radio>
+        <el-radio label="1">此日程及后续日程</el-radio>
+        <el-radio label="2">所有日程</el-radio>
       </el-radio-group>
 
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="returnFn">返回</el-button>
-          <el-button type="danger" @click="deleteFn">{{ deleteText == 1 ? '删除' : '编辑' }}</el-button>
+          <el-button size="small" @click="returnFn">返回</el-button>
+          <el-button size="small" type="danger" @click="deleteFn">{{ deleteText == 1 ? '删除' : '编辑' }}</el-button>
         </span>
       </template>
     </el-dialog>
     <message-handle-popup ref="messageHandlePopup" :detail="detail"></message-handle-popup>
     <!-- 跟进弹窗 -->
-    <el-dialog title="添加跟进记录" class="record user-calendar-details-dialog" v-model="dialogShow" width="40%">
+    <el-dialog title="添加跟进记录" class="record" :visible.sync="dialogShow" width="40%">
       <recordUpload :form-info="formInfo" @change="recordChange"></recordUpload>
     </el-dialog>
     <!-- 评论回复弹窗 -->
-    <el-dialog
-      class="user-calendar-details-dialog"
-      v-model="commentShow"
-      top="25vh"
-      :title="commentTitle"
-      width="400px"
-      :close-on-click-modal="false"
-    >
-      <div class="mt14 comment-box oa-input-borderless">
+    <el-dialog :visible.sync="commentShow" top="25vh" :title="commentTitle" width="400px" :close-on-click-modal="false">
+      <div class="mt14 comment-box">
         <el-input type="textarea" autosize placeholder="请输入内容" resize="none" maxlength="256" v-model="textarea">
         </el-input>
 
@@ -233,7 +231,7 @@
             </div>
           </el-upload>
           <div>
-            <el-button @click="commentCancel">取 消</el-button>
+            <el-button size="small" @click="commentCancel">取 消</el-button>
             <el-button type="primary" @click="commentSubmit">确 定</el-button>
           </div>
         </span>
@@ -246,9 +244,8 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { modalSure } from '@/libs/public.ts'
+import moment from 'moment'
+import { modalSure } from '@/libs/public'
 // 集中导入用户相关的日程API
 import {
   scheduleInfoApi,
@@ -257,31 +254,30 @@ import {
   scheduleReplySaveApi,
   scheduleReplyListApi,
   scheduleReplyDelApi
-} from '@/api/user.ts'
-import { uploader } from '@/utils/uploadCloud.ts'
-import { toSrcFn } from '@/utils/format.ts'
+} from '@/api/user'
+import { uploader } from '@/utils/uploadCloud'
+import { toSrcFn } from '@/utils/format'
 
 // 导入企业相关的客户提醒详情API
-import { clientRemindDetailApi } from '@/api/enterprise.ts'
-import { getStorageJson } from '@/utils/storage.ts'
+import { clientRemindDetailApi } from '@/api/enterprise'
+import { getStorageJson } from '@/utils/storage'
 
 // 导入配置相关的规则审批API
-import { configRuleApproveApi } from '@/api/config.ts'
+import { configRuleApproveApi } from '@/api/config'
 
 // 导入提示工具类
-import Tips from '@/utils/tips.ts'
+import Tips from '@/utils/tips'
 
 // 导入日期格式化工具函数
-import { toGetWeek } from '@/utils/format.ts'
+import { toGetWeek } from '@/utils/format'
 
 export default {
-  emits: ['deleteFn', 'editFn'],
   name: 'CrmebOaEntCalendarDetails',
   components: {
-    editExamine: defineAsyncComponent(() => import('@/views/user/examine/components/editExamine')),
-    messageHandlePopup: defineAsyncComponent(() => import('@/components/common/messageHandlePopup')),
-    recordUpload: defineAsyncComponent(() => import('@/views/customer/list/components/recordUpload')),
-    commentList: defineAsyncComponent(() => import('./commentList'))
+    editExamine: () => import('@/views/user/examine/components/editExamine'),
+    messageHandlePopup: () => import('@/components/common/messageHandlePopup'),
+    recordUpload: () => import('@/views/customer/list/components/recordUpload'),
+    commentList: () => import('./commentList')
   },
   props: {
     appendToBody: {
@@ -290,7 +286,7 @@ export default {
     }
   },
   computed: {
-    dayjs: () => dayjs
+    moment: () => moment
   },
   data() {
     return {
@@ -342,7 +338,7 @@ export default {
   methods: {
     // 格式化日期
     getYear(val, text) {
-      return dayjs(val).format(text)
+      return moment(val).format(text)
     },
     isOk() {
       this.completeFn(this.completionStatus)
@@ -676,7 +672,7 @@ export default {
     getWeek(date) {
       // 参数时间戳
 
-      if (dayjs(date).format('YYYY-MM-DD') == dayjs().format('YYYY-MM-DD')) {
+      if (moment(date).format('YYYY-MM-DD') == moment().format('YYYY-MM-DD')) {
         return '今天'
       }
       return toGetWeek(date)
@@ -689,6 +685,11 @@ export default {
 .divBox {
   margin: 0;
   padding: 0;
+}
+.record {
+  ::v-deep .el-dialog__body {
+    padding: 20px 20px 30px 20px;
+  }
 }
 .commentImg {
   cursor: pointer;
@@ -715,8 +716,9 @@ export default {
   flex-direction: column;
   justify-content: space-between;
   border-radius: 4px;
-  :deep(.el-textarea__inner) {
+  ::v-deep .el-textarea__inner {
     min-height: 96px;
+    border: none;
     font-size: 12px;
   }
   .info {
@@ -797,7 +799,7 @@ export default {
   overflow-x: hidden;
   scrollbar-width: none; /* firefox */
   -ms-overflow-style: none; /* IE 10+ */
-  :deep(.el-form-item__label) {
+  ::v-deep .el-form-item__label {
     font-size: 13px;
     font-family: PingFang SC-Regular, PingFang SC;
     font-weight: 400;
@@ -839,7 +841,7 @@ export default {
     font-weight: 400;
     color: #303133;
   }
-  :deep(p) {
+  ::v-deep p {
     display: block;
     margin: 0;
     padding: 0;
@@ -850,11 +852,14 @@ export default {
     }
   }
 }
-:deep(.el-button--warning.is-plain:hover) {
+::v-deep .el-button--warning.is-plain:hover {
   background: transparent !important;
   color: transparent !important;
 }
-:deep(.content::-webkit-scrollbar) {
+::v-deep .el-dialog {
+  border-radius: 8px;
+}
+::v-deep .content::-webkit-scrollbar {
   height: 0;
   width: 0;
 }
@@ -875,7 +880,20 @@ export default {
   }
 }
 
-:deep(.fileItem) {
+.box {
+  ::v-deep .el-dialog {
+    border-radius: 12px 12px 10px 10px;
+  }
+
+  ::v-deep .el-dialog__header {
+    padding: 0 !important;
+  }
+}
+
+::v-deep .el-dialog__body {
+  // padding-left: 10px;
+}
+::v-deep .fileItem {
   background: #fff;
 }
 .b-color {
@@ -925,33 +943,9 @@ export default {
   border-color: #a3d3ff;
 }
 
-:deep(.comment-dialog .el-dialog) {
+::v-deep .comment-dialog .el-dialog {
   position: absolute;
   left: 60%;
   top: 10%;
-}
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.record {
-  .el-dialog__body {
-    padding: 20px 20px 30px 20px;
-  }
-}
-.el-dialog.user-calendar-details-dialog {
-  border-radius: 8px;
-}
-.el-dialog.box {
-  & {
-    border-radius: 12px 12px 10px 10px;
-  }
-
-  .el-dialog__header {
-    padding: 0 !important;
-  }
-}
-.el-dialog.user-calendar-details-dialog .el-dialog__body {
-  // padding-left: 10px;
 }
 </style>

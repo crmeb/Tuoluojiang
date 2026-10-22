@@ -15,7 +15,7 @@
         ></div>
       </div>
       <div class="reply-ueditor" v-if="showReply">
-        <component
+        <ueditor-form
           is="ueditorFrom"
           :border="true"
           ref="ueditorFrom"
@@ -23,13 +23,13 @@
           :type="`simple`"
           :headers="true"
           :content="formData.describe"
-          placeholder="发表您的看法..."
+          :placeholder="'发表您的看法...'"
           @input="ueditorEdit"
         />
       </div>
       <div class="reply-btn-box" v-show="showReply">
         <el-button class="reply-btn" @click="cancelComment">取消</el-button>
-        <el-button size="default" @click="sendComment" type="primary">评论</el-button>
+        <el-button size="medium" @click="sendComment" type="primary">评论</el-button>
       </div>
     </div>
     <div v-if="comments.length" class="reply-father">
@@ -111,7 +111,7 @@
             ></div>
           </div>
           <div class="reply-btn-box">
-            <el-button class="reply-btn" size="default" @click="sendCommentReply(i, j)" type="primary"
+            <el-button class="reply-btn" size="medium" @click="sendCommentReply(i, j)" type="primary"
               >发表评论</el-button
             >
           </div>
@@ -125,42 +125,41 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { getTaskCommentApi, saveTaskCommentApi, putTaskCommentApi, deleteTaskCommentApi } from '@/api/program.ts'
+import { modalSure } from '@/libs/public'
+import { getTaskCommentApi, saveTaskCommentApi, putTaskCommentApi, deleteTaskCommentApi } from '@/api/program'
 import imageViewer from '@/components/common/imageViewer'
-import { getStorageJson } from '@/utils/storage.ts'
+import { getStorageJson } from '@/utils/storage'
 
 const clickoutside = {
   // 初始化指令
-  beforeMount(el, binding) {
+  bind(el, binding, vnode) {
     function documentHandler(e) {
       // 这里判断点击的元素是否是本身，是本身，则返回
       if (el.contains(e.target)) {
         return false
       }
       // 判断指令中是否绑定了函数
-      if (typeof binding.value === 'function') {
+      if (binding.expression) {
         // 如果绑定了函数 则调用那个函数，此处binding.value就是handleClose方法
         binding.value(e)
       }
     }
-    // 给当前元素绑定个私有变量，方便在unmounted中可以解除事件监听
+    // 给当前元素绑定个私有变量，方便在unbind中可以解除事件监听
     el.vueClickOutside = documentHandler
     document.addEventListener('click', documentHandler)
   },
-  unmounted(el) {
+  update() {},
+  unbind(el, binding) {
     // 解除事件监听
     document.removeEventListener('click', el.vueClickOutside)
     delete el.vueClickOutside
   }
 }
 export default {
-  emits: ['gettotalCount'],
   name: 'ArticleComment',
   components: {
-    ueditorFrom: defineAsyncComponent(() => import('@/components/form-common/oa-wangeditor')),
-    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage')),
+    ueditorFrom: () => import('@/components/form-common/oa-wangeditor'),
+    defaultPage: () => import('@/components/common/defaultPage'),
     imageViewer
   },
   props: {
@@ -486,7 +485,7 @@ export default {
       font-size: 14px;
       color: #303133;
       display: inline-block;
-      :deep(p) {
+      ::v-deep p {
         img {
           width: 148px;
         }
@@ -503,7 +502,7 @@ export default {
     background-color: #f7fbff;
   }
 }
-:deep(.el-avatar > img) {
+::v-deep .el-avatar > img {
   width: 100% !important;
   height: 100% !important;
 }
@@ -514,11 +513,11 @@ export default {
   padding: 20px 0 0 20px;
   color: #909399;
 }
-:deep(.w-e-text-container) {
+::v-deep .w-e-text-container {
   padding-top: 10px;
 }
 
-:deep(.my-reply .wangeditor-box) {
+::v-deep .my-reply .wangeditor-box {
   border-right: 1px solid rgb(220, 223, 230);
 }
 </style>

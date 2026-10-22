@@ -3,7 +3,7 @@
     <div class="message">
       <el-card :body-style="{ padding: '0 20px 20px' }">
         <div class="">
-          <el-tabs v-model="currentTab" @tab-change="changeTab">
+          <el-tabs v-model="currentTab" @tab-click="changeTab">
             <el-tab-pane
               v-for="(item, index) in headerList"
               :key="index"
@@ -58,13 +58,13 @@
           <el-col :span="24">
             <span class="save-type"> 存储方式： </span>
             <el-radio-group v-model="upload_type" @change="changeSave">
-              <el-radio label="1" value="1">本地存储</el-radio>
-              <el-radio label="2" value="2">七牛云存储</el-radio>
-              <el-radio label="3" value="3">阿里云存储</el-radio>
-              <el-radio label="4" value="4">腾讯云存储</el-radio>
-              <el-radio label="5" value="5">京东云存储</el-radio>
-              <el-radio label="6" value="6">华为云存储</el-radio>
-              <el-radio label="7" value="7">天翼云存储</el-radio>
+              <el-radio label="1">本地存储</el-radio>
+              <el-radio label="2">七牛云存储</el-radio>
+              <el-radio label="3">阿里云存储</el-radio>
+              <el-radio label="4">腾讯云存储</el-radio>
+              <el-radio label="5">京东云存储</el-radio>
+              <el-radio label="6">华为云存储</el-radio>
+              <el-radio label="7">天翼云存储</el-radio>
             </el-radio-group>
             <!-- <el-switch :active-value="1"  :inactive-value="0"
               v-model="localStorage"
@@ -199,8 +199,8 @@
               <div v-if="formValidate.image_watermark_status === 1">
                 <el-form-item label="水印类型：" label-width="160px">
                   <el-radio-group v-model="formValidate.watermark_type">
-                    <el-radio :label="1" :value="1">图片</el-radio>
-                    <el-radio :label="2" :value="2">文字</el-radio>
+                    <el-radio :label="1">图片</el-radio>
+                    <el-radio :label="2">文字</el-radio>
                   </el-radio-group>
                 </el-form-item>
                 <div v-if="formValidate.watermark_type === 1">
@@ -366,7 +366,7 @@
         <el-row class="mb20">
           <el-col :span="24">
             <div class="btn-box">
-              <el-button type="primary" @click="addStorageBtn">添加存储空间</el-button>
+              <el-button type="primary" size="mini" @click="addStorageBtn">添加存储空间</el-button>
               <!-- <el-button style="margin-left: 20px" type="success" @click="synchro">同步存储空间</el-button>
               <el-button style="float: right" @click="addConfigBtn">修改配置信息</el-button> -->
               <el-dropdown @command="handleCommand">
@@ -411,7 +411,7 @@
                 v-model="scope.row.status"
                 :active-value="1"
                 :inactive-value="0"
-                :model-value="scope.row.status"
+                :value="scope.row.status"
                 active-text="开启"
                 class="defineSwitch"
                 inactive-text="关闭"
@@ -457,7 +457,7 @@
         </div>
       </el-card>
     </div>
-    <el-dialog v-model="configuModal" width="550px">
+    <el-dialog :visible.sync="configuModal" width="550px">
       <el-descriptions :column="1" title="CNAME配置">
         <el-descriptions-item label="主机记录">{{ configData.domain }}</el-descriptions-item>
         <el-descriptions-item label="记录类型">CNAME</el-descriptions-item>
@@ -473,7 +473,7 @@
 </template>
 
 <script>
-import modalForm from '@/libs/modal-form.ts'
+import modalForm from '@/libs/modal-form'
 import ClipboardJS from 'clipboard'
 
 import {
@@ -488,8 +488,8 @@ import {
   positionPostApi,
   saveType,
   storageDelApi
-} from '@/api/setting.ts'
-import Tips from '@/utils/tips.ts'
+} from '@/api/setting'
+import Tips from '@/utils/tips'
 export default {
   name: 'storages',
   data() {
@@ -596,7 +596,7 @@ export default {
     async changeSave(type) {
       const res = await saveType(type)
       if (res.status == 200) {
-        this.upload_type = type
+        this.$set(this, 'upload_type', type)
       }
     },
     bindbox(item) {
@@ -727,22 +727,22 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-:deep(.el-card) {
+::v-deep .el-card {
   border: none;
 }
-:deep(.el-tabs__item) {
+::v-deep .el-tabs__item {
   height: 54px !important;
   line-height: 54px !important;
 }
 .ivu-input-group > .ivu-input:last-child,
-:deep(.ivu-input-group-append) {
+::v-deep .ivu-input-group-append {
   background: none;
   color: #999999;
 }
-:deep(.ivu-input-group .ivu-input) {
+::v-deep .ivu-input-group .ivu-input {
   border-right: 0px !important;
 }
-.content :deep(.ivu-form .ivu-form-item-label) {
+.content ::v-deep .ivu-form .ivu-form-item-label {
   width: 133px;
 }
 .topIput {
@@ -786,7 +786,7 @@ export default {
     }
   }
   .content {
-    :deep(.ivu-form-item-label) {
+    ::v-deep .ivu-form-item-label {
       width: 120px;
     }
     .flex {
@@ -827,14 +827,14 @@ export default {
 }
 </style>
 <style scoped>
-.message :deep(.ivu-table-header thead tr th) {
+.message ::v-deep .ivu-table-header thead tr th {
   padding: 8px 16px;
 }
 .ivu-radio-wrapper {
   margin-right: 15px;
   font-size: 12px !important;
 }
-.message :deep(.ivu-tabs-tab) {
+.message ::v-deep .ivu-tabs-tab {
   border-radius: 0 !important;
 }
 .table-box {
@@ -885,8 +885,6 @@ export default {
 }
 .picBox {
   display: inline-block;
-  /* 豁免全局表单内容区 div 占满整行的规则，点击区域只覆盖图片 */
-  width: auto;
   cursor: pointer;
 }
 .picBox .pictrue {
@@ -917,7 +915,7 @@ h3 {
 .save-type {
   font-size: 13px;
 }
-:deep(.el-descriptions-item__container) {
+::v-deep .el-descriptions-item__container {
   display: inline-block;
 }
 .btn-box {

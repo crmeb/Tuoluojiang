@@ -34,12 +34,14 @@
 
 <script>
 import FormItemWrapper from './form-item-wrapper'
-import i18n, { translate } from '@/utils/i18n.ts'
+import emitter from '@/utils/emitter'
+import i18n, { translate } from '@/utils/i18n'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
 
 export default {
   name: 'input-percentage-widget',
-  mixins: [fieldMixin, i18n],
+  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
+  mixins: [emitter, fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -103,7 +105,7 @@ export default {
     this.handleOnMounted()
   },
 
-  beforeUnmount() {
+  beforeDestroy() {
     this.unregisterFromRefList()
   },
 
@@ -117,7 +119,8 @@ export default {
 .full-width-input {
   width: 100% !important;
 }
-:deep(.el-slider__button-wrapper) {
+::v-deep .el-slider__button-wrapper {
   z-index: 1 !important;
 }
 </style>
+@/utils/i18ns

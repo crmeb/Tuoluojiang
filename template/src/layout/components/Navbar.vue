@@ -6,7 +6,7 @@
         <el-scrollbar style="height: 100%;">
           <template v-if="showMore">
             <div class="nav-box">
-              <template v-for="(item, index) in menuList" :key="index">
+              <template v-for="(item, index) in menuList">
                 <div v-if="item.is_show != 0 && item.menu_path !== settingMenuUniquePath" :key="index"
                   :class="{ on: parentcur === index }" class="nav-item" @click="handleParentCur(index, 1, item)">
                   <div class="nav-items">
@@ -19,7 +19,7 @@
           </template>
           <template v-else>
             <div class="nav-box">
-              <template v-for="(item, index) in menuList.slice(0, showMax)" :key="index">
+              <template v-for="(item, index) in menuList.slice(0, showMax)">
                 <div v-if="item.is_show != 0 && item.menu_path !== settingMenuUniquePath" :key="index"
                   :class="{ on: parentcur === index }" class="nav-item" @click="handleParentCur(index, 1, item)">
                   <div class="nav-items">
@@ -30,7 +30,7 @@
               </template>
               <el-popover v-if="newMenuListArr.length - 1 > showMax" placement="right" trigger="hover" width="176">
                 <div class="popover-content">
-                  <template v-for="(item, index) in menuList.slice(showMax, menuList.length)" :key="index">
+                  <template v-for="(item, index) in menuList.slice(showMax, menuList.length)">
                     <div v-if="item.is_show !== 0 && item.menu_path !== settingMenuUniquePath" :key="'pop' + index"
                       class="nav-item" @click="handleParentCur(index, 2, item)">
                       <div class="nav-items">
@@ -66,20 +66,19 @@
 </template>
 
 <script>
-import { mapActions, mapState } from 'pinia'
-import { useAppStore } from '@/stores/app.ts'
-import { useUserStore } from '@/stores/user.ts'
-import { useAppConfigStore } from '@/stores/appConfig.ts'
-import { roterPre } from '@/settings.ts'
+import { mapGetters } from 'vuex'
+import { roterPre } from '@/settings'
 import Cookies from 'js-cookie'
-import defaultSettings from '@/settings.ts'
+import { generateTitle } from '@/utils/i18ns'
+import defaultSettings from '@/settings'
 const settingMenuUniquePath = '/admin/setting';
 export default {
   props: ['type'],
   computed: {
-    ...mapState(useAppStore, ['sidebarParentCur']),
-    ...mapState(useUserStore, ['menuList', 'enterprise']),
-    ...mapState(useAppConfigStore, { webConfig: 'configData' }),
+    ...mapGetters(['sidebar', 'avatar', 'device', 'sidebarParentCur', 'menuList', 'enterprise']),
+    webConfig() {
+      return this.$store.getters['appConfig/configData'];
+    },
     enterpriseTitle() {
       return this.enterprise?.enterprise_name || this.webConfig?.enterprise_name || '';
     },
@@ -141,11 +140,10 @@ export default {
     this.getShowMore()
     window.addEventListener('resize', this.getShowMore)
   },
-  unmounted() {
+  destroyed() {
     window.removeEventListener('resize', this.getShowMore)
   },
   methods: {
-    ...mapActions(useAppStore, ['setClickTab', 'setSidebarParentCur']),
     getIconCss(cssName) {
       if (/^el-icon-/.test(cssName)) {
         return [cssName]
@@ -163,12 +161,13 @@ export default {
       // 会让 slice(0, showMax) 取到非预期区间，这里兜底至少展示 1 项
       this.showMax = Math.max(1, Math.floor(height / navHeight) - 1)
     },
+    generateTitle,
     getBreadcrumb() {
       // only show routes with meta.title
       const matched = this.$route.matched.filter((item) => item.meta && item.meta.title)
       this.levelList = matched.filter((item) => item.meta && item.meta.title && item.meta.breadcrumb !== false)
       if (this.activeMenus === `${roterPre}/dashboard`) {
-        return this.setSidebarParentCur(2)
+        return this.$store.commit('app/SET_PARENTCUR', 2)
       }
       this.filterArr(this.menuList, this.activeMenus)
     },
@@ -180,10 +179,10 @@ export default {
       if (type === 1) {
         const hasChildren = Array.isArray(row.children) && row.children.length > 0
         this.parentcur = index
-        this.setClickTab(true)
-        this.setSidebarParentCur(this.parentcur)
+        this.$store.commit('app/SET_CLICK_TAB', true)
+        this.$store.commit('app/SET_PARENTCUR', this.parentcur)
         if (!hasChildren) {
-          this.setClickTab(false)
+          this.$store.commit('app/SET_CLICK_TAB', false)
           this.$router.push({
             path: row.menu_path
           })
@@ -191,7 +190,24 @@ export default {
       } else {
         this.parentcur = this.menuList.findIndex(item => item.id === row.id)
         this.handleParentCur(this.parentcur, 1, row)
+
+        // const len4 = this.menuList[this.showMax - 1]
+        // this.menuList[this.showMax - 1] = row
+        // this.menuList[this.showMax + index] = len4
+        // this.$store.commit('user/SET_MENU_LIST', this.menuList)
+        // this.$store.commit('app/SET_CLICK_TAB', true)
+        // this.$store.commit('app/SET_PARENTCUR', this.parentcur)
+        // if (!row.children) {
+        //   this.$router.push({
+        //     path: row.menu_path
+        //   })
+
+        // }
+
+
       }
+
+
     },
     filterArr(arr, url) {
       const findInTree = (nodes, target) => {
@@ -207,7 +223,7 @@ export default {
       for (let i = 0; i < arr.length; i++) {
         if (arr[i].menu_path === url || (arr[i].children && findInTree(arr[i].children, url))) {
           this.parentcur = i
-          this.setSidebarParentCur(i)
+          this.$store.commit('app/SET_PARENTCUR', i)
           return
         }
       }
@@ -221,10 +237,10 @@ export default {
   font-size: 14px !important;
 }
 
-// :deep(.user-dropdown) {
+//::v-deep .user-dropdown {
 //  //left: 50px !important;
 //}
-// :deep(.divBox) {
+//::v-deep .divBox {
 //  padding-top: 0 !important;
 //}
 //.popover-user {
@@ -284,7 +300,7 @@ export default {
 
 .menu-box {
   padding-top: 10px;
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
 

@@ -1,29 +1,28 @@
 <!-- 客户-选择客户标签弹窗组件 -->
 <template>
   <el-dialog
-      class="customer-list-label-dialog"
     title="选择标签"
     :append-to-body="true"
-    v-model="dialogVisible"
+    :visible.sync="dialogVisible"
     width="50%"
     :before-close="handleClose"
   >
     <div class="label-content">
       <div class="label-filter">
-        <el-input v-model="searchName" placeholder="请输入客户标签" clearable style="width: 250px" @change="searchFn" />
-        <el-select v-model="groupType" placeholder="全部" style="width: 160px" @change="handleGroupTypeChange">
+        <el-input v-model="searchName" placeholder="请输入客户标签" size="small" clearable style="width: 250px" @change="searchFn" />
+        <el-select v-model="groupType" size="small" placeholder="全部" style="width: 160px" @change="handleGroupTypeChange">
           <el-option label="全部" value="" />
           <el-option v-for="item in LABEL_GROUP_TYPE_OPTIONS" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
       </div>
       <el-scrollbar class="label-scroll">
-        <el-checkbox-group v-model="checkGroup">
-          <template v-for="child in tableData" :key="child.id">
+        <el-checkbox-group v-model="checkGroup" size="small">
+          <template v-for="child in tableData">
             <div class="box" v-if="child.children?.length">
               <div class="label-title">
                 <span class="line" /> {{ child.name }}
                 <el-button
-                  type="primary" link
+                  type="text"
                   style="padding: 0"
                   v-if="config.label && config.label.length > 0"
                   @click="checkAll(child, child.child ? 'child' : 'children')"
@@ -36,7 +35,8 @@
                 :key="item.id"
                 :class="item.pid === 0 ? 'label-title' : ''"
                 border
-                :label="item.id" :value="item.id"
+                size="small"
+                :label="item.id"
                 @change="(val) => onChange(val, child, 'children')"
                 >{{ item.name }}</el-checkbox-button
               >
@@ -48,20 +48,19 @@
 
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleClose">取消</el-button>
-        <el-button type="primary" @click="handleConfirm">确定</el-button>
+        <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
+        <el-button size="small" type="primary" @click="handleConfirm">{{ $t('public.ok') }}</el-button>
       </div>
     </template>
   </el-dialog>
 </template>
 
 <script>
-import { clientConfigLabelApi } from '@/api/enterprise.ts'
-import { LABEL_GROUP_TYPE, LABEL_GROUP_TYPE_OPTIONS } from '@/constants/labelGroupType.ts'
+import { clientConfigLabelApi } from '@/api/enterprise'
+import { LABEL_GROUP_TYPE, LABEL_GROUP_TYPE_OPTIONS } from '@/constants/labelGroupType'
 
 export default {
   name: 'LabelDialog',
-  emits: ['handleLabelConf', 'loaded'],
   props: {
     config: {
       type: Object,
@@ -249,8 +248,14 @@ export default {
 </script>
 
 <style scoped lang="scss">
-:deep(.el-scrollbar__wrap) {
+::v-deep .el-dialog__header {
+  border-bottom: 1px solid #d8d8d8;
+}
+::v-deep .el-scrollbar__wrap {
   overflow-x: hidden;
+}
+::v-deep .el-dialog {
+  border-radius: 6px;
 }
 .label-content {
   height: 420px;
@@ -283,6 +288,7 @@ export default {
   position: relative;
 }
 
+
 .box {
   margin-top: 30px;
   &:first-child {
@@ -299,7 +305,7 @@ export default {
   margin-right: 6px;
 }
 
-:deep(.el-checkbox-button.is-checked .el-checkbox-button__inner) {
+::v-deep .el-checkbox-button.is-checked .el-checkbox-button__inner {
   box-sizing: border-box !important;
   background: rgba(24, 144, 255, 0.08);
   border-radius: 4px;
@@ -310,28 +316,22 @@ export default {
   margin: 10px 10px 0px 0px;
 }
 
-:deep(.el-checkbox-button .el-checkbox-button__inner) {
+::v-deep .el-checkbox-button--small .el-checkbox-button__inner {
   box-sizing: border-box !important;
   background: #f2f6fc;
   border-radius: 4px;
   margin: 10px 10px 0px 0px;
   border: 1px solid transparent;
-  // Element Plus 用 outline 画按钮边框，element-ui 没有；字号与内边距按 element-ui 的 small 尺寸
-  outline: none;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 9px 15px;
 }
-:deep(.el-checkbox-button .el-checkbox-button__inner:hover) {
+::v-deep .el-checkbox-button--small .el-checkbox-button__inner:hover {
   background-color: rgba(24, 144, 255, 0.08) !important;
 }
 
-:deep(.el-checkbox__label) {
+::v-deep .el-checkbox__label {
   padding-left: 6px;
 }
 
-// 原 type="text" 按钮在 Element Plus 下是 link 按钮
-:deep(.el-button.is-link) {
+::v-deep .el-button--text {
   font-size: 13px;
   margin-left: 4px;
 }
@@ -341,15 +341,5 @@ font-weight: 400;
 font-size: 12px;
 color: #909399;
 margin-right: 10px;
-}
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.customer-list-label-dialog .el-dialog__header {
-  border-bottom: 1px solid #d8d8d8;
-}
-.el-dialog.customer-list-label-dialog {
-  border-radius: 6px;
 }
 </style>

@@ -3,32 +3,32 @@
   <el-scrollbar class="setting-scrollbar" :style="{ height: scrollerHeight }">
 
     <template v-if="designer.selectedWidget && designer.selectedWidget.type">
-      <el-form :model="optionModel" label-position="left" label-width="120px" class="setting-form"
-        @submit.prevent>
+      <el-form :model="optionModel" size="mini" label-position="left" label-width="120px" class="setting-form"
+        @submit.native.prevent>
         <el-collapse v-model="widgetActiveCollapseNames" class="setting-collapse has-left-border">
 
           <el-collapse-item name="1"
             v-if="showCollapse(commonProps) && !['search', 'tab'].includes(designer.selectedWidget.type)"
             :title="i18nt('designer.setting.commonSetting')">
-            <template v-for="(A, R) in commonProps" :key="R">
+            <template v-for="(A, R) in commonProps">
 
               <component v-if="hasPropEditor(R, A)" :is="getPropEditor(R, A)" :designer="designer"
-                :selected-widget="selectedWidget" v-model:option-model="optionModel" @clearSearch="clearSearch"
+                :selected-widget="selectedWidget" :option-model.sync="optionModel" @clearSearch="clearSearch"
                 @optionModelChange="optionModelChange" />
             </template>
           </el-collapse-item>
 
           <el-collapse-item name="1" v-else-if="designer.selectedWidget.type === 'search'" title=" 筛选设置">
 
-            <search-editor :designer="designer" :selected-widget="selectedWidget" v-model:option-model="optionModel"
+            <search-editor :designer="designer" :selected-widget="selectedWidget" :option-model.sync="optionModel"
               @clearSearch="clearSearch" @optionModelChange="optionModelChange"></search-editor>
           </el-collapse-item>
           <el-collapse-item name="1" v-else-if="designer.selectedWidget.type === 'tab'" title="标签样式">
-            <tab-style-editor :designer="designer" :selected-widget="selectedWidget" v-model:option-model="optionModel"
+            <tab-style-editor :designer="designer" :selected-widget="selectedWidget" :option-model.sync="optionModel"
               @optionModelChange="optionModelChange"></tab-style-editor>
           </el-collapse-item>
           <el-collapse-item name="3" v-if="designer.selectedWidget.type === 'tab'" title="标签设置">
-            <tab-editor :designer="designer" :selected-widget="selectedWidget" v-model:option-model="optionModel"
+            <tab-editor :designer="designer" :selected-widget="selectedWidget" :option-model.sync="optionModel"
               @clearSearch="clearSearch" @optionModelChange="optionModelChange"></tab-editor>
           </el-collapse-item>
 
@@ -46,8 +46,8 @@
 </template>
 
 <script>
-import i18n, { changeLocale } from '@/utils/i18n.ts'
-import { createEventHub, SETTING_PANEL_HUB } from '@/utils/eventHub.ts'
+import i18n, { changeLocale } from '@/utils/i18n'
+import emitter from '@/utils/emitter'
 import { COMMON_PROPERTIES$1, ADVANCED_PROPERTIES$1, EVENT_PROPERTIES$1 } from '../configData'
 import CodeEditor from '@/components/code-editor/index'
 import SearchEditor from '../property-editor/search-editor.vue'
@@ -60,7 +60,8 @@ import comp from '../property-editor/export'
 import PropertyEditors from '@/components/form-designer/setting-panel/property-editor/index'
 export default {
   name: 'SettingPanel',
-  mixins: [i18n],
+  componentName: 'SettingPanel',
+  mixins: [i18n, emitter],
   components: { CodeEditor, FormSetting, ...PropertyEditors, ...comp, SearchEditor, TabEditor, TabStyleEditor },
   props: {
     designer: Object,
@@ -70,8 +71,6 @@ export default {
   },
   provide() {
     return {
-      // 属性编辑器（eventMixin）通过它请求打开事件编辑弹窗
-      [SETTING_PANEL_HUB]: this.panelHub,
       isSubFormChildWidget: () => this.subFormChildWidgetFlag,
       getGlobalDsv: () => this.globalDsv
     }
@@ -123,19 +122,16 @@ export default {
       }
     }
   },
-  beforeCreate() {
-    this.panelHub = createEventHub()
-  },
   created() {
-    this.panelHub.on('editEventHandler', (eventName, eventParams) => {
-      this.editEventHandler(eventName, eventParams)
-    })
-    this.designer.handleEvent('form-css-updated', (o) => {
-      this.designer.setCssClassList(o)
-    })
-    this.designer.handleEvent('field-selected', (o) => {
-      this.subFormChildWidgetFlag = !!o && o.type === 'sub-form'
-    })
+    this.on$('editEventHandler', (o) => {
+      this.editEventHandler(o[0], o[1])
+    }),
+      this.designer.handleEvent('form-css-updated', (o) => {
+        this.designer.setCssClassList(o)
+      }),
+      this.designer.handleEvent('field-selected', (o) => {
+        this.subFormChildWidgetFlag = !!o && o.type === 'sub-form'
+      })
   },
   mounted() {
     this.designer.selectedWidget ? (this.activeTab = '1') : (this.activeTab = '2')
@@ -249,12 +245,12 @@ export default {
   background-color: #fff;
   width: 310px;
 
-  :deep(.el-switch__core) {
+  ::v-deep .el-switch__core {
     width: 40px !important;
     // min-width: auto;
   }
 }
-:deep(.el-collapse-item__wrap) {
+::v-deep .el-collapse-item__wrap {
   border-bottom: none;
 }
 
@@ -266,7 +262,7 @@ export default {
   padding: 0px 20px 20px 20px;
 }
 
-.el-form-item {
+.el-form-item--mini.el-form-item {
   margin-bottom: 14px;
 }
 
@@ -287,7 +283,7 @@ export default {
   }
 }
 
-:deep(.has-left-border) {
+::v-deep .has-left-border {
   .el-collapse-item__header {
     &::before {
       content: "";

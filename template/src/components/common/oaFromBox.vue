@@ -10,10 +10,10 @@
         <span v-if="isBack" class="el-icon-arrow-left pointer"></span>
         {{ title }}
         <!-- 提示信息 -->
-        <el-popover v-if="alert" placement="right" popper-class="monitor-yt-popover" trigger="hover">
+        <el-popover placement="right" popper-class="monitor-yt-popover" trigger="hover">
           <div class="prompt-bag">{{ alert }}</div>
           <template #reference>
-            <i class="el-icon-question"></i>
+            <i v-if="alert" class="el-icon-question"></i>
           </template>
         </el-popover>
         <slot name="title"></slot>
@@ -30,13 +30,14 @@
           :loading="loading"
           :type="btnText == '导出' ? '' : 'primary'"
           class="h32"
+          size="small"
           @click="addDataFn()"
         >
           {{ btnText }}
         </el-button>
 
         <!-- 默认按钮 -->
-        <el-button v-if="btnType === 'default'" class="h32" @click="addDataFn()">
+        <el-button v-if="btnType === 'default'" class="h32" size="small" @click="addDataFn()">
           {{ btnText }}
         </el-button>
 
@@ -47,13 +48,11 @@
               <span class="iconfont icongenjinjilu-gengduo"></span>
             </div>
             <!-- <span class="iconfont icongengduo2 pointer ml10"></span> -->
-            <template #dropdown>
-              <el-dropdown-menu style="text-align: left">
-                <el-dropdown-item v-for="item in dropdownList" :key="item.value" @click="dropdownSearch(item)">
-                  <span>{{ item.label }}</span>
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
+            <el-dropdown-menu style="text-align: left">
+              <el-dropdown-item v-for="item in dropdownList" :key="item.value" @click.native="dropdownSearch(item)">
+                <span>{{ item.label }}</span>
+              </el-dropdown-item>
+            </el-dropdown-menu>
           </el-dropdown>
         </div>
       </div>
@@ -66,7 +65,6 @@
         <template v-if="category">
           <el-popover
             ref="popoverType"
-            :offset="6"
             placement="bottom-start"
             popper-class="time-popover"
             trigger="click"
@@ -112,9 +110,10 @@
         <el-select
           v-if="treeData.length && !category"
           v-model="treeValue"
-          class="oa-input-borderless mr10"
+          class="grey-bga mr10"
           placeholder="请选择"
           popper-class="tree-select"
+          size="small"
           style="width: 120px"
           @change="treeChange"
         >
@@ -156,10 +155,7 @@
         </el-popover>
         <!-- 高级筛选 -->
         <el-popover
-          v-if="isViewSearch"
-          :visible="conditionDialogStore.visible"
-          :offset="6"
-          :show-arrow="false"
+          v-model="$store.state.business.conditionDialog"
           placement="bottom-start"
           popper-class="condition-popover"
           trigger="manual"
@@ -168,10 +164,10 @@
           <div class="condition-box">
             <div class="flex-between">
               <div class="title">筛选条件</div>
-              <div class="el-icon-close pointer" @click="conditionDialogStore.visible = false" />
+              <div class="el-icon-close pointer" @click="$store.state.business.conditionDialog = false" />
             </div>
             <condition-dialog
-              v-if="conditionDialogStore.visible"
+              v-if="$store.state.business.conditionDialog"
               :eventStr="`event`"
               :formArray="viewSearch"
               :max="9"
@@ -180,7 +176,7 @@
             />
           </div>
           <template #reference>
-            <div class="pointer text-16 el-dropdown-link" @click="onShow">
+            <div v-if="isViewSearch" class="pointer text-16 el-dropdown-link" @click="onShow">
               筛选&nbsp;<span class="iconfont iconshaixuan2"></span>
               <span v-if="additional_search.length > 0" class="yuan">
                 {{ additional_search ? additional_search.length : 0 }}
@@ -190,9 +186,7 @@
         </el-popover>
         <!-- 时间排序 -->
         <el-popover
-          v-if="sortSearch"
           ref="popover"
-          :offset="6"
           placement="bottom"
           popper-class="time-popover"
           trigger="click"
@@ -225,7 +219,7 @@
           </div>
 
           <template #reference>
-            <div class="text-16 paixuBox pointer">
+            <div v-if="sortSearch" class="text-16 paixuBox pointer">
               <span class="iconfont iconpaixu5"></span>
             </div>
           </template>
@@ -256,20 +250,17 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useConditionDialogStore } from '@/stores/conditionDialog.ts'
 import viewManagement from '@/components/develop/viewManagement'
 import oaDialog from '@/components/form-common/dialog-form'
 import formList from './formList'
 import conditionDialog from '@/components/develop/conditionDialog'
 import selectLabel from '@/components/form-common/select-label'
-import { getViewSeachApi, putViewSeachInfoApi, saveViewSeachApi } from '@/api/client.ts'
-import { clientConfigLabelApi } from '@/api/enterprise.ts'
-import { getStorageJson } from '@/utils/storage.ts'
+import { getViewSeachApi, putViewSeachInfoApi, saveViewSeachApi } from '@/api/client'
+import { clientConfigLabelApi } from '@/api/enterprise'
+import { getStorageJson } from '@/utils/storage'
 
 export default {
   name: 'OaFromBox',
-  emits: ['addDataFn', 'backFn', 'confirmData', 'dropdownFn', 'treeChange'],
   components: {
     formList,
     conditionDialog,
@@ -547,7 +538,6 @@ export default {
   },
 
   computed: {
-    ...mapStores(useConditionDialogStore),
     // 是否显示头部
     showHeader() {
       return this.title !== '' || this.isAddBtn || this.dropdownList.length > 0
@@ -575,8 +565,8 @@ export default {
     }
     setTimeout(() => {
       if (this.timeSearchObj && this.timeSearchObj.sort_field) {
-        this.timeSearch = this.timeSearchObj.sort_field
-        this.sortList = this.timeSearchObj.sort_value
+        this.$set(this, 'timeSearch', this.timeSearchObj.sort_field)
+        this.$set(this, 'sortList', this.timeSearchObj.sort_value)
       }
     }, 500)
   },
@@ -602,7 +592,7 @@ export default {
       return null
     },
     handleSortPopoverShow() {
-      this.conditionDialogStore.visible = false
+      this.$store.commit('updateConditionDialog', false)
     },
     /**
      * 组件维护的默认排序，与 data 中 where 的初始值保持一致
@@ -691,7 +681,7 @@ export default {
     searchFn(type) {
       let obj = {}
       if (this.additional_search.length == 0) {
-        const resetList = this.conditionDialogStore.fieldOptions.resetList
+        const resetList = this.$store.state.business.fieldOptions.resetList
         if (resetList && resetList.length > 0) {
           resetList.map((item) => {
             if (item.type === 'date_picker') {
@@ -817,7 +807,7 @@ export default {
           additional_search_boolean: '1'
         }
 
-        this.conditionDialogStore.setFieldOptions(data)
+        this.$store.commit('uadatefieldOptions', data)
         this.advancedFilter = false
       }
       this.where.view_search = item.id
@@ -840,7 +830,7 @@ export default {
 
       this.advancedFilter = false
       if (this.$refs.popoverType) {
-        this.$refs.popoverType.hide()
+        this.$refs.popoverType.doClose()
       }
     },
     viewClick(item, index) {
@@ -848,7 +838,7 @@ export default {
       if (this.$refs.formList) {
         this.$refs.formList.resetSearch('typeClick')
       }
-      this.additional_search = []
+      this.$set(this, 'additional_search', [])
       this.where = {
         sort_field: 'created_at',
         sort_value: ''
@@ -888,8 +878,8 @@ export default {
           return !this.seniorSearch.some((el) => el.field === contentItem.field)
         })
         filteredContent = filteredContent.filter((item) => item.option)
-        this.additional_search = filteredContent
-        this.conditionDialogStore.setFieldOptions({ list: filteredContent })
+        this.$set(this, 'additional_search', filteredContent)
+        this.$store.commit('uadatefieldOptions', { list: filteredContent })
         this.$nextTick(() => {
           const formList = this.$refs.formList
           if (formList && typeof formList.setValue === 'function') {
@@ -898,12 +888,12 @@ export default {
         })
         this.searchFn()
       } else {
-        this.additional_search = []
-        this.conditionDialogStore.setFieldOptions({ list: [] })
+        this.$set(this, 'additional_search', [])
+        this.$store.commit('uadatefieldOptions', { list: [] })
       }
       this.advancedFilter = false
       if (this.$refs.popoverType) {
-        this.$refs.popoverType.hide()
+        this.$refs.popoverType.doClose()
       }
     },
     getLableList() {
@@ -931,8 +921,8 @@ export default {
         let data = {
           list: this.additional_search
         }
-        this.conditionDialogStore.setFieldOptions(data)
-        this.conditionDialogStore.visible = true
+        this.$store.commit('uadatefieldOptions', data)
+        this.$store.commit('updateConditionDialog', true)
       }, 100)
     },
 
@@ -974,7 +964,7 @@ export default {
         additional_search_boolean: '1'
       }
 
-      this.conditionDialogStore.setFieldOptions(data)
+      this.$store.commit('uadatefieldOptions', data)
       this.advancedFilter = false
       if (!type) {
         // 重置后由调用方重建查询参数，组件自身维护的默认状态（排序、视图）需一并回传，
@@ -1018,12 +1008,12 @@ export default {
      * @param {Number} index - 索引
      */
     handleClick(item, index) {
-      this.where.sort_field = item.field
+      this.$set(this.where, 'sort_field', item.field)
       this.activeIndex = item.field
       // 无默认排序的列表首次只选时间字段时，方向未选过，补默认方向避免后端拿不到排序方向
       if (!this.sortIndex) {
         this.sortIndex = this.defaultSortValue || 'desc'
-        this.where.sort_value = this.sortIndex
+        this.$set(this.where, 'sort_value', this.sortIndex)
       }
       this.$emit('confirmData', this.where)
     },
@@ -1034,13 +1024,13 @@ export default {
      * @param {Number} index - 索引
      */
     sortFn(item, index) {
-      this.where.sort_value = item.field
+      this.$set(this.where, 'sort_value', item.field)
       this.sortIndex = item.field
       // 无默认排序的列表首次只选方向时，字段未选过，补第一个时间字段避免排序参数不完整
       if (!this.activeIndex) {
         const firstField = (this.timeSearch[0] && this.timeSearch[0].field) || 'created_at'
         this.activeIndex = firstField
-        this.where.sort_field = firstField
+        this.$set(this.where, 'sort_field', firstField)
       }
       this.$emit('confirmData', this.where)
     },
@@ -1076,6 +1066,13 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.grey-bga {
+  ::v-deep .el-input__inner {
+    border: none;
+    // background: #f7f7f7;
+  }
+}
+
 .search {
   //margin-top: 11px;
   display: flex;
@@ -1336,16 +1333,16 @@ export default {
 }
 </style>
 <style>
-.el-popover.time-popover {
-  --el-popover-padding: 0;
+.time-popover {
+  padding: 0;
   min-width: 0;
   transform: translateX(-10px);
 }
-.el-popover.view-popover {
+.view-popover {
   min-width: 0;
+  padding: 12px;
 }
-.el-popover.condition-popover {
-  --el-popover-padding: 20px;
+.condition-popover {
   transform: translateX(-10px);
 }
 

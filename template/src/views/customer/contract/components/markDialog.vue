@@ -2,7 +2,7 @@
 <template>
   <el-dialog
     :title="config.title"
-    v-model="dialogVisible"
+    :visible.sync="dialogVisible"
     :width="config.width"
     :append-to-body="true"
     :before-close="handleClose"
@@ -15,24 +15,23 @@
           show-word-limit
           :rows="4"
           v-model="rules.remarks"
-          placeholder="请填写备注信息"
+          :placeholder="$t('customer.placeholder18')"
         />
       </el-form-item>
     </el-form>
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleClose">取消</el-button>
-        <el-button :loading="loading" type="primary" @click="handleConfirm">确定</el-button>
+        <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
+        <el-button size="small" :loading="loading" type="primary" @click="handleConfirm">{{ $t('public.ok') }}</el-button>
       </div>
     </template>
   </el-dialog>
 </template>
 
 <script>
-import { clientInvoiceMarkApi, clientMarkApi, clientRemindMarkApi } from '@/api/client.ts'
+import { clientInvoiceMarkApi, clientMarkApi, clientRemindMarkApi } from '@/api/client'
 
 export default {
-  emits: ['isMark'],
   name: 'MarkDialog',
   props: {
     config: {
@@ -48,7 +47,7 @@ export default {
         remarks: ''
       },
       rule: {
-        remarks: [{ required: true, message: '请填写备注信息', trigger: 'blur' }]
+        remarks: [{ required: true, message: this.$t('customer.placeholder18'), trigger: 'blur' }]
       },
       dialogVisible: false,
       loading: false
@@ -128,19 +127,19 @@ export default {
 </script>
 
 <style scoped lang="scss">
-:deep(.el-date-editor) {
+::v-deep .el-date-editor {
   width: 100%;
 }
-:deep(.el-textarea__inner) {
+::v-deep .el-textarea__inner {
   resize: none;
 }
-:deep(.el-input-number) {
+::v-deep .el-input-number--medium {
   width: 100%;
 }
-:deep(.el-select) {
+::v-deep .el-select--medium {
   width: 100%;
 }
-:deep(.el-form-item:last-of-type) {
+::v-deep .el-form-item:last-of-type {
   margin-bottom: 0;
 }
 .dialog-footer {

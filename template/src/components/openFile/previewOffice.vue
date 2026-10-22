@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import { resolveAbsoluteResourceUrl } from '@/utils/resourceUtil.ts'
+import { resolveAbsoluteResourceUrl } from '@/utils/resourceUtil'
 export default {
   name: '',
   props: {

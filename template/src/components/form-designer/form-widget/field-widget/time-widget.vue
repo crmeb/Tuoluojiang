@@ -4,9 +4,9 @@
                      :sub-form-row-index="subFormRowIndex" :sub-form-col-index="subFormColIndex" :sub-form-row-id="subFormRowId">
     <el-time-picker ref="fieldEditor" v-model="fieldModel" class="full-width-input"
                     :disabled="field.options.disabled" :readonly="field.options.readonly"
-                    :size="toElSize(field.options.size)"
+                    :size="field.options.size"
                     :clearable="field.options.clearable" :editable="field.options.editable"
-                    :format="toDayjsFormat(field.options.format)" value-format="HH:mm:ss"
+                    :format="field.options.format" value-format="HH:mm:ss"
                     :placeholder="field.options.placeholder || i18nt('render.hint.timePlaceholder')"
                     @focus="handleFocusCustomEvent" @blur="handleBlurCustomEvent"
                     @change="handleChangeEvent">
@@ -15,14 +15,15 @@
 </template>
 
 <script>
-  import { toDayjsFormat } from '@/utils/date-format.ts'
-import FormItemWrapper from './form-item-wrapper'
-  import i18n, {translate} from "@/utils/i18n.ts";
+  import FormItemWrapper from './form-item-wrapper'
+  import emitter from '@/utils/emitter'
+  import i18n, {translate} from "@/utils/i18n";
   import fieldMixin from "@/components/form-designer/form-widget/field-widget/fieldMixin";
 
   export default {
     name: "time-widget",
-    mixins: [fieldMixin, i18n],
+    componentName: 'FieldWidget',  //必须固定为FieldWidget，用于接收父级组件的broadcast事件
+    mixins: [emitter, fieldMixin, i18n],
     props: {
       field: Object,
       parentWidget: Object,
@@ -82,12 +83,12 @@ import FormItemWrapper from './form-item-wrapper'
       this.handleOnMounted()
     },
 
-    beforeUnmount() {
+    beforeDestroy() {
       this.unregisterFromRefList()
     },
 
     methods: {
-      toDayjsFormat
+
     }
   }
 </script>
@@ -95,8 +96,9 @@ import FormItemWrapper from './form-item-wrapper'
 <style lang="scss" scoped>
   @import "../../../../styles/global.scss"; //* form-item-wrapper已引入，还需要重复引入吗？ *//
 
-  :deep(.full-width-input) {
+  .full-width-input {
     width: 100% !important;
   }
 
 </style>
+@/utils/i18ns

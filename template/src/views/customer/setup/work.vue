@@ -31,33 +31,33 @@
                       group="people"
                       @end="onEnd"
                       @start="onStart"
-                      tag="transition-group"
-                      item-key="id"
                     >
-                      <template #item="{ element: item, index }">
-                        <div class="item-list">
+                      <transition-group>
+                        <div v-for="(item, index) in dataArray" :key="item.id" class="item-list">
                           <i class="icon iconfont icontuodong item-drag"></i>
                           <el-input
                             v-model="item.value.title"
                             :maxlength="16"
                             :minlength="2"
-                            placeholder="请输入类型"
+                            :placeholder="$t('customer.placeholder06')"
                             clearable
                             show-word-limit
                           />
                           <i class="el-icon-remove item-remove" @click="handleDelete(index, item.id)"></i>
                         </div>
-                      </template>
+                      </transition-group>
                     </draggable>
-                    <el-button class="add-type mt14" type="primary" link @click="handleAddType"
-                      >添加类型 <i class="el-icon-plus"></i
+                    <el-button class="add-type mt14" type="text" @click="handleAddType"
+                      >{{ $t('customer.addmodel') }} <i class="el-icon-plus"></i
                     ></el-button>
                   </el-scrollbar>
                 </div>
 
                 <!--发票 -->
                 <div v-if="tabName == '发票类目'" class="v-height-flag">
-                  <el-button class="mb14" type="primary" @click="addFinance">添加分类</el-button>
+                  <el-button class="mb14" size="small" type="primary" @click="addFinance">{{
+                    $t('customer.addtype')
+                  }}</el-button>
                   <div class="v-height-flag table-box">
                     <div v-height>
                       <el-table
@@ -67,14 +67,14 @@
                         row-key="id"
                         style="width: 100%"
                       >
-                        <el-table-column label="分类名称" min-width="220" prop="name">
+                        <el-table-column :label="$t('customer.typename')" min-width="220" prop="name">
                         </el-table-column>
-                        <el-table-column label="排序" min-width="100" prop="sort" />
-                        <el-table-column label="操作" prop="address" width="200">
+                        <el-table-column :label="$t('toptable.sort')" min-width="100" prop="sort" />
+                        <el-table-column :label="$t('public.operation')" prop="address" width="200">
                           <template #default="scope">
-                            <el-button type="primary" link @click="handleEdit(scope.row)">编辑</el-button>
+                            <el-button type="text" @click="handleEdit(scope.row)">{{ $t('public.edit') }}</el-button>
 
-                            <el-button type="primary" link @click="deleteFn(scope.row)">删除</el-button>
+                            <el-button type="text" @click="deleteFn(scope.row)">{{ $t('public.delete') }}</el-button>
                           </template>
                         </el-table-column>
                       </el-table>
@@ -98,9 +98,10 @@
           <el-button
             v-hasPermi="['setup:work:add']"
             :loading="loading"
+            size="small"
             type="primary"
             @click="handleConfirm"
-            >确定</el-button
+            >{{ $t('public.ok') }}</el-button
           >
         </div>
       </div>
@@ -110,11 +111,11 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import draggable from 'vuedraggable'
 import dialogForm from './type/components/addDialog'
-import { clientConfigListApi, invoiceCategoryList, deleteInvoiceCategory } from '@/api/enterprise.ts'
-import { clientConfigSaveApi } from '@/api/client.ts'
+import { clientConfigListApi, invoiceCategoryList, deleteInvoiceCategory } from '@/api/enterprise'
+import { clientConfigSaveApi } from '@/api/client'
 export default {
   name: 'SetupWork',
   components: {
@@ -146,22 +147,33 @@ export default {
       },
       total: 0,
       department: [
-        { id: 1, name: '客户来源' },
-        { id: 2, name: '续费类型' }
+        { id: 1, name: this.$t('customer.customersource') },
+        { id: 2, name: this.$t('customer.renewaltype') }
       ],
       tabIndex: 0,
       tabId: 1,
-      tabName: '客户来源',
+      tabName: this.$t('customer.customersource'),
       drag: false,
       dataArray: [],
       deleteArray: [],
       loading: false
     }
   },
+  watch: {
+    lang() {
+      this.setOptions()
+    }
+  },
   created() {
     this.getClientList()
   },
   methods: {
+    setOptions() {
+      this.department = [
+        { id: 1, name: this.$t('customer.customersource') },
+        { id: 2, name: this.$t('customer.renewaltype') }
+      ]
+    },
 
     // 发票类目列表
     invoiceCategoryList() {
@@ -182,7 +194,7 @@ export default {
     // 编辑分类
     async handleEdit(item) {
       this.repeatData = {
-        title: '编辑分类',
+        title: this.$t('customer.edittype'),
         width: '480px',
         label: 3,
         type: 2,
@@ -193,7 +205,7 @@ export default {
 
     // 删除发票分类
     async deleteFn(item) {
-      await modalSure('你确定要删除该分类吗')
+      await modalSure(this.$t('customer.message01'))
       await deleteInvoiceCategory(item.id)
 
       this.getTableData()
@@ -209,7 +221,7 @@ export default {
     // 添加分类
     async addFinance() {
       this.repeatData = {
-        title: '添加分类',
+        title: this.$t('customer.addtype'),
         width: '480px',
         label: 3,
         type: 1,
@@ -229,9 +241,9 @@ export default {
       this.tabIndex = index
       this.tabId = id
       if (this.tabId == 1) {
-        this.tabName = '客户来源'
+        this.tabName = this.$t('customer.customersource')
       } else if (this.tabId == 2) {
-        this.tabName = '续费类型'
+        this.tabName = this.$t('customer.renewaltype')
       } else {
         this.tabName = '发票类目'
         this.invoiceCategoryList()
@@ -247,13 +259,13 @@ export default {
     handleConfirm() {
       const data = []
       if (this.dataArray.length <= 0) {
-        this.$message.warning('名称不能为空')
+        this.$message.warning(this.$t('customer.message05'))
       } else {
         const status = this.dataArray.some((el, index) => {
           return el.value.title === ''
         })
         if (status) {
-          this.$message.warning('名称不能为空')
+          this.$message.warning(this.$t('customer.message05'))
         } else {
           const len = this.dataArray.length
           this.dataArray.map((value, index) => {
@@ -272,7 +284,7 @@ export default {
         })
 
         if (status) {
-          this.$message.warning('名称不能为空')
+          this.$message.warning(this.$t('customer.message05'))
         } else {
           this.dataArray.push({ sort: '', id: 0, value: { title: '' } })
         }
@@ -371,15 +383,15 @@ export default {
 .assess-right {
   position: relative;
   height: 100%;
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
   .tab-share {
     margin: -10px 0px 0 -14px;
-    :deep(.el-tabs__nav) {
+    ::v-deep .el-tabs__nav {
       padding: 0 20px;
     }
-    :deep(.el-tabs__nav-wrap::after) {
+    ::v-deep .el-tabs__nav-wrap::after {
       height: 0;
     }
   }
@@ -416,7 +428,7 @@ export default {
     height: auto;
   }
 }
-:deep(.el-card__body) {
+::v-deep .el-card__body {
   padding-left: 0;
 }
 </style>

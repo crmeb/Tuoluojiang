@@ -3,10 +3,11 @@
   <div>
     <el-form
       :model="formConfig"
+      size="mini"
       label-position="left"
       label-width="120px"
       class="setting-form"
-      @submit.prevent
+      @submit.native.prevent
     >
       <el-collapse v-model="formActiveCollapseNames" class="setting-collapse">
         <el-collapse-item name="1" :title="i18nt('designer.setting.basicSetting')">
@@ -18,15 +19,15 @@
           </el-form-item>
           <el-form-item :label="i18nt('designer.setting.labelPosition')">
             <el-radio-group v-model="formConfig.labelPosition" class="radio-group-custom">
-              <el-radio-button value="left">{{ i18nt('designer.setting.leftPosition') }}</el-radio-button>
-              <el-radio-button value="top">{{ i18nt('designer.setting.topPosition') }}</el-radio-button>
+              <el-radio-button label="left">{{ i18nt('designer.setting.leftPosition') }}</el-radio-button>
+              <el-radio-button label="top">{{ i18nt('designer.setting.topPosition') }}</el-radio-button>
             </el-radio-group>
           </el-form-item>
           <el-form-item :label="i18nt('designer.setting.labelAlign')">
             <el-radio-group v-model="formConfig.labelAlign" class="radio-group-custom">
-              <el-radio-button value="label-left-align">{{ i18nt('designer.setting.leftAlign') }}</el-radio-button>
-              <el-radio-button value="label-center-align">{{ i18nt('designer.setting.centerAlign') }}</el-radio-button>
-              <el-radio-button value="label-right-align">{{ i18nt('designer.setting.rightAlign') }}</el-radio-button>
+              <el-radio-button label="label-left-align">{{ i18nt('designer.setting.leftAlign') }}</el-radio-button>
+              <el-radio-button label="label-center-align">{{ i18nt('designer.setting.centerAlign') }}</el-radio-button>
+              <el-radio-button label="label-right-align">{{ i18nt('designer.setting.rightAlign') }}</el-radio-button>
             </el-radio-group>
           </el-form-item>
           <el-form-item :label="i18nt('designer.setting.labelWidth')">
@@ -50,12 +51,12 @@
 
     <el-dialog
       :title="i18nt('designer.setting.editFormEventHandler')"
-      v-model="showFormEventDialogFlag"
+      :visible.sync="showFormEventDialogFlag"
       v-if="showFormEventDialogFlag"
       :show-close="true"
       class="small-padding-dialog"
       append-to-body
-      draggable
+      v-dialog-drag
       :close-on-click-modal="false"
       :close-on-press-escape="false"
       :destroy-on-close="true"
@@ -72,12 +73,12 @@
 
     <el-dialog
       :title="i18nt('designer.setting.formCss')"
-      v-model="showEditFormCssDialogFlag"
+      :visible.sync="showEditFormCssDialogFlag"
       v-if="showEditFormCssDialogFlag"
       :show-close="true"
       class="small-padding-dialog"
       append-to-body
-      draggable
+      v-dialog-drag
       :close-on-click-modal="false"
       :close-on-press-escape="false"
       :destroy-on-close="true"
@@ -93,7 +94,7 @@
 </template>
 
 <script>
-import i18n from '@/utils/i18n.ts'
+import i18n from '@/utils/i18n'
 import { deepClone, insertCustomCssToHead, insertGlobalFunctionsToHtml } from '@/utils/formDesignerUtils'
 
 export default {
@@ -114,7 +115,9 @@ export default {
       formSizes: [
         { label: 'default', value: '' },
         { label: 'large', value: 'large' },
-        { label: 'small', value: 'small' }
+        { label: 'medium', value: 'medium' },
+        { label: 'small', value: 'small' },
+        { label: 'mini', value: 'mini' }
       ],
 
       showEditFormCssDialogFlag: false,
@@ -258,19 +261,19 @@ export default {
 
 <style lang="scss" scoped>
 .setting-form {
-  :deep(.el-form-item__label) {
+  ::v-deep .el-form-item__label {
     font-size: 13px;
     //text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
   }
 
-  :deep(.el-form-item) {
+  ::v-deep .el-form-item--mini.el-form-item {
     margin-bottom: 14px;
   }
 
   .radio-group-custom {
-    :deep(.el-radio-button__inner) {
+    ::v-deep .el-radio-button__inner {
       padding-left: 12px;
       padding-right: 12px;
     }
@@ -282,22 +285,19 @@ export default {
 }
 
 .setting-collapse {
-  :deep(.el-collapse-item__content) {
+  ::v-deep .el-collapse-item__content {
     padding-bottom: 6px;
   }
 
-  :deep(.el-collapse-item__header) {
+  ::v-deep .el-collapse-item__header {
     font-weight: bold;
   }
 }
 
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.small-padding-dialog {
-  .el-dialog__body {
+.small-padding-dialog {
+  ::v-deep .el-dialog__body {
     padding: 6px 15px 12px 15px;
   }
 }
 </style>
+@/utils/i18ns

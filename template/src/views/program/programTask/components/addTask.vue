@@ -2,11 +2,10 @@
 <template>
   <div class="station">
     <el-drawer
-      class="program-task-add-task-drawer"
       title="新建任务"
-      v-model="drawer"
+      :visible.sync="drawer"
       :modal="true"
-      :close-on-click-modal="false"
+      :wrapper-closable="false"
       :before-close="handleClose"
       :append-to-body="true"
       size="1120px"
@@ -27,6 +26,7 @@
               <el-form-item label="关联项目：" prop="program_id">
                 <el-select
                   v-model="formData.program_id"
+                  size="small"
                   clearable
                   placeholder="请选择关联项目"
                   filterable
@@ -47,7 +47,7 @@
             </el-col>
             <el-col :span="12">
               <el-form-item label="负责人：" class="select-bar">
-                <el-select v-model="formData.uid" filterable placeholder="请选择负责人">
+                <el-select v-model="formData.uid" size="small" filterable placeholder="请选择负责人">
                   <el-option v-for="item in programMemberOptions" :key="item.id" :label="item.name" :value="item.id">
                   </el-option>
                 </el-select>
@@ -59,14 +59,15 @@
               <el-form-item label="计划时间：" class="select-bar">
                 <el-date-picker
                   v-model="timeVal"
+                  size="small"
                   type="daterange"
                   clearable
-                  format="YYYY-MM-DD"
-                  value-format="YYYY-MM-DD"
+                  :format="'yyyy-MM-dd'"
+                  :value-format="'yyyy-MM-dd'"
                   placeholder="请选择项目计划结束日期"
-                  range-separator="至"
-                  start-placeholder="开始时间"
-                  end-placeholder="结束时间"
+                  :range-separator="$t('toptable.to')"
+                  :start-placeholder="$t('toptable.startdate')"
+                  :end-placeholder="$t('toptable.endingdate')"
                   @change="onchangeTime"
                 ></el-date-picker>
               </el-form-item>
@@ -75,6 +76,7 @@
               <el-form-item label="协作者：" class="select-bar">
                 <el-select
                   v-model="formData.members"
+                  size="small"
                   multiple
                   filterable
                   collapse-tags
@@ -87,7 +89,7 @@
             </el-col>
           </el-row>
           <div class="content">
-            <component
+            <ueditor-form
               is="ueditorFrom"
               :border="true"
               :height="`560px`"
@@ -112,7 +114,7 @@
             </el-cascader>
           </el-form-item>
           <el-form-item label="优先级：" class="select-bar">
-            <el-select v-model="formData.priority" placeholder="请选择优先级">
+            <el-select v-model="formData.priority" size="small" placeholder="请选择优先级">
               <el-option v-for="item in priorityOptions" :key="item.value" :label="item.label" :value="item.value">
               </el-option>
             </el-select>
@@ -120,6 +122,7 @@
           <el-form-item label="关联版本：" prop="version_id">
             <el-select
               v-model="formData.version_id"
+              size="small"
               clearable
               placeholder="请选择关联版本"
               style="width: 80%"
@@ -132,9 +135,9 @@
         </div>
       </el-form>
       <div class="button from-foot-btn fix btn-shadow">
-        <el-button @click="handleClose">取消</el-button>
-        <el-button @click="handleConfirm(1)">保存并继续新建</el-button>
-        <el-button type="primary" @click="handleConfirm()">保存</el-button>
+        <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
+        <el-button size="small" @click="handleConfirm(1)">保存并继续新建</el-button>
+        <el-button size="small" type="primary" @click="handleConfirm()">保存</el-button>
       </div>
     </el-drawer>
     <!-- 设置关联版本 -->
@@ -142,19 +145,17 @@
       top="13%"
       title="版本设置"
       :append-to-body="true"
-      v-model="dialogVisible"
+      :visible.sync="dialogVisible"
       width="30%"
       :before-close="handleCloseVersion"
     >
-      <draggable v-model="inputs" class="drag-area" @start="dragging = true" @end="dragging = false" :item-key="$draggableKey">
-        <template #item="{ element: input, index }">
-          <div class="input-row">
-            <i class="iconfont icontuodong pointer"></i>
-            <el-input v-model="input.name" placeholder="请输入版本名称"></el-input>
-            <span class="el-icon-remove"  @click="removeInput(index)"></span>
-            <!-- <span class="pointer">-</span> -->
-          </div>
-        </template>
+      <draggable v-model="inputs" class="drag-area" @start="dragging = true" @end="dragging = false">
+        <div v-for="(input, index) in inputs" :key="index" class="input-row">
+          <i class="iconfont icontuodong pointer"></i>
+          <el-input v-model="input.name" placeholder="请输入版本名称"></el-input>
+          <span class="el-icon-remove"  @click="removeInput(index)"></span>
+          <!-- <span class="pointer">-</span> -->
+        </div>
       </draggable>
       <span class="add-input pointer" @click="addInput">
         <i class="el-icon-plus"></i>
@@ -171,14 +172,12 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { saveProgramTaskApi, getProgramTaskInfoApi, getProgramVersionApi, setProgramVersionApi } from '@/api/program.ts'
+import { saveProgramTaskApi, getProgramTaskInfoApi, getProgramVersionApi, setProgramVersionApi } from '@/api/program'
 import draggable from 'vuedraggable'
 export default {
-  emits: ['getProgramVersionList', 'getMemberList', 'getProgramSelectList', 'getTableData'],
   name: 'addProgram',
   components: {
-    ueditorFrom: defineAsyncComponent(() => import('@/components/form-common/oa-wangeditor')),
+    ueditorFrom: () => import('@/components/form-common/oa-wangeditor'),
     draggable
   },
   props: {
@@ -421,8 +420,11 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.station :deep(.edui-editor-iframeholder) {
+.station ::v-deep .edui-editor-iframeholder {
   height: 300px !important;
+}
+.station ::v-deep .el-drawer__body {
+  padding: 20px 20px 50px 20px;
 }
 .el-icon-remove {
   cursor: pointer;
@@ -434,11 +436,14 @@ export default {
   border-top: 1px solid #e6ebf5;
   text-align: right;
 }
-:deep(.el-cascader),
-:deep(.el-input-number),
-:deep(.el-select),
-:deep(.el-date-editor) {
+::v-deep .el-cascader,
+::v-deep .el-input-number,
+::v-deep .el-select,
+::v-deep .el-date-editor {
   width: 100%;
+}
+::v-deep .el-drawer__body {
+  padding: 0 !important;
 }
 .el-form {
   height: 100%;
@@ -447,6 +452,7 @@ export default {
   .left-card {
     width: 800px;
     padding-top: 20px;
+    .el-input__inner,
     .flex-box {
       height: 32px;
       line-height: 32px;
@@ -466,9 +472,11 @@ export default {
     padding-top: 20px;
     margin-right: 20px;
     border-left: 1px solid #f2f6fc;
-    // Element Plus 的 label 与内容区是 flex 并排，内容区不再需要 margin-left 让位
-    :deep(.el-form-item__label) {
+    ::v-deep .el-form-item__label {
       width: 94px !important;
+    }
+    ::v-deep .el-form-item__content {
+      margin-left: 94px !important;
     }
   }
 }
@@ -524,11 +532,8 @@ export default {
   color: #909399;
   padding: 0 2px;
 }
-</style>
-
-<style lang="scss">
-// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
-.program-task-add-task-drawer .el-drawer__body {
-  padding: 0 !important;
+::v-deep .el-input--medium .el-input__inner {
+  height: 32px;
+  line-height: 32px;
 }
 </style>

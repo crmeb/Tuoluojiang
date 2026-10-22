@@ -5,11 +5,11 @@
       :modal="true"
       :show-close="true"
       :title="title"
-      v-model="dialogFormVisible"
+      :visible.sync="dialogFormVisible"
       top="8vh"
       width="1200px"
     >
-      <template #header>
+      <template #title>
         <div class="dialog-title">
           <div class="dialog-title-title">{{ title }}</div>
         </div>
@@ -32,6 +32,7 @@
                 clearable
                 placeholder="根据关键字搜索"
                 prefix-icon="el-icon-search"
+                size="small"
                 style="width: 300px"
                 @change="handleSearch"
               />
@@ -71,8 +72,8 @@
       </el-row>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="closeDialog">取消</el-button>
-          <el-button type="primary" @click="handleConfirm">确定</el-button>
+          <el-button size="small" @click="closeDialog">取消</el-button>
+          <el-button size="small" type="primary" @click="handleConfirm">确定</el-button>
         </div>
       </template>
     </el-dialog>
@@ -80,13 +81,11 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { assessTargetListApi } from '@/api/enterprise.ts'
+import { assessTargetListApi } from '@/api/enterprise'
 export default {
-  emits: ['dialogChangeDada'],
   name: 'SelectTarget',
   components: {
-    departmentNot: defineAsyncComponent(() => import('@/components/user/department'))
+    departmentNot: () => import('@/components/user/department')
   },
   props: {
     title: {
@@ -182,7 +181,7 @@ export default {
     line-height: 22px;
     color: rgba(0, 0, 0, 0.85);
   }
-  :deep(.el-pagination) {
+  ::v-deep .el-pagination {
     padding-bottom: 0;
   }
   .dialog-title-search {
@@ -190,7 +189,7 @@ export default {
     // display: flex;
     // align-items: center;
     // width: 70%;
-    :deep(button) {
+    ::v-deep button {
       margin-left: 15px;
     }
   }
@@ -203,7 +202,7 @@ export default {
 .table-box {
   margin-left: 12px;
 }
-:deep(.el-table th.is-leaf) {
+::v-deep .el-table th.is-leaf {
   background: #f0fafe !important;
   color: #000;
 }

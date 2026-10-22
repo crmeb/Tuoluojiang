@@ -23,7 +23,7 @@
                       <el-row :gutter="20">
                         <el-col class="notice-left" :class="item.cover ? '' : 'width'">
                           <p class="title1">
-                            <span class="tag" v-if="item.is_top === 1">置顶</span>
+                            <span class="tag" v-if="item.is_top === 1" size="mini">置顶</span>
                             <span class="over-text"> {{ item.title }}</span>
                           </p>
                           <p class="info over-text2">{{ item.info }}</p>
@@ -116,17 +116,16 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { noticeCategoryApi, noticeDetailApi, noticeListApi, allArticlesApi } from '@/api/administration.ts'
-import settings from '@/settings.ts'
+import { noticeCategoryApi, noticeDetailApi, noticeListApi, allArticlesApi } from '@/api/administration'
+import settings from '@/settings'
 
 import noticeImg from '@/assets/images/notice.png'
 
 export default {
   name: 'IndexVue',
   components: {
-    noticeDetail: defineAsyncComponent(() => import('./components/noticeDetail')),
-    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage'))
+    noticeDetail: () => import('./components/noticeDetail'),
+    defaultPage: () => import('@/components/common/defaultPage')
   },
   data() {
     return {
@@ -154,7 +153,7 @@ export default {
   computed: {
     nweNoticelist() {
       if (this.nweNoticeData.length > 5) {
-        return this.nweNoticeData.slice(0, 5)
+        return this.nweNoticeData.splice(0, 5)
       } else {
         return this.nweNoticeData
       }
@@ -176,7 +175,7 @@ export default {
       this.getTableData()
     },
     handleClick(e) {
-      const index = Number(e.paneName)
+      const index = Number(e.name)
       const data = this.noticeNav[index]
       if (data.is_read == 0) {
         this.where.is_read = 0
@@ -313,7 +312,7 @@ export default {
   width: calc(100% - 20px);
 }
 
-.mt0 :deep(.divBox .el-pagination) {
+.mt0 ::v-deep .divBox .el-pagination {
   margin-top: 0px;
 }
 .pagination {
@@ -325,7 +324,7 @@ export default {
   width: 100% !important;
 }
 .table-box {
-  :deep(.el-table th) {
+  ::v-deep .el-table th {
     background-color: #f5f5f5;
   }
   .table-img {
@@ -333,10 +332,10 @@ export default {
     height: auto;
   }
 }
-:deep(.el-scrollbar__wrap) {
+::v-deep .el-scrollbar__wrap {
   overflow-x: hidden;
 }
-:deep(.el-scrollbar__thumb) {
+::v-deep .el-scrollbar__thumb {
   display: none;
 }
 .content {
@@ -350,19 +349,19 @@ export default {
 
     border-bottom: 1px solid #eeeeee;
     position: relative;
-    :deep(.el-tabs__header) {
+    ::v-deep .el-tabs__header {
       margin: 0;
     }
-    :deep(.el-tabs__nav-scroll) {
+    ::v-deep .el-tabs__nav-scroll {
       // padding: 0 20px;
     }
-    :deep(.el-tabs__item.is-active) {
+    ::v-deep .el-tabs__item.is-active {
       color: #1890ff !important;
     }
-    :deep(.el-tabs__nav-wrap::after) {
+    ::v-deep .el-tabs__nav-wrap::after {
       height: 1px;
     }
-    :deep(.el-tabs__item) {
+    ::v-deep .el-tabs__item {
       height: 35px;
       font-size: 14px;
       font-family: PingFang SC-中黑体, PingFang SC;
@@ -441,7 +440,7 @@ export default {
           margin: 10px 0;
           display: flex;
           align-items: flex-start;
-          :deep(.el-tag--warning) {
+          ::v-deep .el-tag--warning {
             background-color: #ffba00;
             color: #ffffff;
             font-size: 13px;
@@ -592,11 +591,11 @@ export default {
   border-radius: 4px 4px 4px 4px;
   min-height: calc(100vh - 77px);
   opacity: 1;
-  :deep(.el-card__header) {
+  ::v-deep .el-card__header {
     padding: 12px 20px 0 20px;
     border-bottom: none;
   }
-  :deep(.el-card__body) {
+  ::v-deep .el-card__body {
     padding-top: 0;
     padding-bottom: 0;
   }
@@ -604,7 +603,7 @@ export default {
 .page-fixed {
   position: relative;
 }
-:deep(.el-pagination) {
+::v-deep .el-pagination {
   margin-top: 40px;
 }
 </style>

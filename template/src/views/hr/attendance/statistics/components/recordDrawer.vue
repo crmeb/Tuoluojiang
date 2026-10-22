@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-drawer title="打卡结果处理记录" v-model="drawer" size="800px" :before-close="handleClose">
+    <el-drawer title="打卡结果处理记录" :visible.sync="drawer" size="800px" :before-close="handleClose">
       <div class="box">
         <el-table ref="multipleTable" :data="tableData" tooltip-effect="dark" style="width: 100%;">
           <el-table-column prop="shift_number" label="班次信息" width="80">
@@ -37,7 +37,7 @@
 </template>
 
 <script>
-import { clockRecordApi } from '@/api/config.ts'
+import { clockRecordApi } from '@/api/config'
 export default {
   name: 'CrmebOaEntChangeResult',
   data() {

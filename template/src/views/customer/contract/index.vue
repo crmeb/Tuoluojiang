@@ -35,55 +35,53 @@
         @getTableData="getTableData"
       >
         <template #options="{ data }">
-          <el-button type="primary" link @click="handleCheck(data)">
-            查看
+          <el-button type="text" @click="handleCheck(data)">
+            {{ $t('public.check') }}
           </el-button>
-          <el-button type="primary" link @click="handleBuild(data, buildData.contract_refund_switch, 'contract_refund_switch')">
+          <el-button type="text" @click="handleBuild(data, buildData.contract_refund_switch, 'contract_refund_switch')">
             添加回款
           </el-button>
           <el-dropdown>
-            <el-button type="primary" link class="el-dropdown-link more">
+            <span class="el-dropdown-link el-button--text el-button more">
               更多
               <i class="el-icon-arrow-down" />
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu class="dropdown-menu-left" placement="top-start">
-                <el-dropdown-item
-                  @click="handleBuild(data, buildData.contract_renew_switch, 'contract_renew_switch')"
-                >
-                  添加续费
-                </el-dropdown-item>
-                <el-dropdown-item
-                  @click="handleBuild(data, buildData.contract_disburse_switch, 'contract_disburse_switch')"
-                >
-                  添加支出
-                </el-dropdown-item>
-                <el-dropdown-item
-                  v-if="isModuleEnabled(CUSTOMER_MODULE_KEYS.INVOICE)"
-                  style="border-bottom: 1px solid #f5f5f5"
-                  @click="handleBuild(data, buildData.invoicing_switch, 'invoicing_switch')"
-                >
-                  申请发票
-                </el-dropdown-item>
-                <el-dropdown-item
-                  v-if="hasWarehousePermission({ id: data.outbound_warehouse_id, permission: WAREHOUSE_PERMISSION.INBOUND })"
-                  @click="handleAddInventoryBill('inbound', data)"
-                >
-                  添加入库单
-                </el-dropdown-item>
-                <el-dropdown-item
-                  v-if="hasWarehousePermission({ id: data.outbound_warehouse_id, permission: WAREHOUSE_PERMISSION.OUTBOUND })"
-                  @click="handleAddInventoryBill('outbound', data)"
-                >
-                  添加出库单
-                </el-dropdown-item>
-                <el-dropdown-item @click="handleTransfer(2, data)"> 移交同事 </el-dropdown-item>
-                <el-dropdown-item @click="markedAbnormal(data)">
-                  {{ data.contract_status.value == 3 ? '标为正常订单' : '标为异常订单' }}
-                </el-dropdown-item>
-                <el-dropdown-item @click="handleDelete(data)"> 删除 </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
+            </span>
+            <el-dropdown-menu class="dropdown-menu-left" placement="top-start">
+              <el-dropdown-item
+                @click.native="handleBuild(data, buildData.contract_renew_switch, 'contract_renew_switch')"
+              >
+                添加续费
+              </el-dropdown-item>
+              <el-dropdown-item
+                @click.native="handleBuild(data, buildData.contract_disburse_switch, 'contract_disburse_switch')"
+              >
+                添加支出
+              </el-dropdown-item>
+              <el-dropdown-item
+                v-customer-module="CUSTOMER_MODULE_KEYS.INVOICE"
+                style="border-bottom: 1px solid #f5f5f5"
+                @click.native="handleBuild(data, buildData.invoicing_switch, 'invoicing_switch')"
+              >
+                申请发票
+              </el-dropdown-item>
+              <el-dropdown-item
+                v-warehouse-permi="{ id: data.outbound_warehouse_id, permission: WAREHOUSE_PERMISSION.INBOUND }"
+                @click.native="handleAddInventoryBill('inbound', data)"
+              >
+                添加入库单
+              </el-dropdown-item>
+              <el-dropdown-item
+                v-warehouse-permi="{ id: data.outbound_warehouse_id, permission: WAREHOUSE_PERMISSION.OUTBOUND }"
+                @click.native="handleAddInventoryBill('outbound', data)"
+              >
+                添加出库单
+              </el-dropdown-item>
+              <el-dropdown-item @click.native="handleTransfer(2, data)"> 移交同事 </el-dropdown-item>
+              <el-dropdown-item @click.native="markedAbnormal(data)">
+                {{ data.contract_status.value == 3 ? '标为正常订单' : '标为异常订单' }}
+              </el-dropdown-item>
+              <el-dropdown-item @click.native="handleDelete(data)"> 删除 </el-dropdown-item>
+            </el-dropdown-menu>
           </el-dropdown>
         </template>
       </customizeTable>
@@ -108,42 +106,33 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useAppConfigStore } from '@/stores/appConfig.ts'
-import { useWarehouseStore } from '@/stores/warehouse.ts'
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { clientContractDeleteApi, contractViewApi, contractAbnormalApi, contractImport } from '@/api/enterprise.ts'
-import { clientExportApi } from '@/api/client.ts'
-import { configRuleApproveApi } from '@/api/config.ts'
-import { DRAWER_SIZE } from '@/constants/popupSize.ts'
-import { roterPre } from '@/settings.ts'
-import { CUSTOMER_MODULE_KEYS } from '@/constants/customerModules.ts'
-import { WAREHOUSE_PERMISSION } from '@/views/inventory/constants.ts'
-import { hasWarehousePermission } from '@/directive/warehousePermi.ts'
+import { modalSure } from '@/libs/public'
+import { clientContractDeleteApi, contractViewApi, contractAbnormalApi, contractImport } from '@/api/enterprise'
+import { clientExportApi } from '@/api/client'
+import { configRuleApproveApi } from '@/api/config'
+import { DRAWER_SIZE } from '@/constants/popupSize'
+import { roterPre } from '@/settings'
+import { CUSTOMER_MODULE_KEYS } from '@/constants/customerModules'
+import { WAREHOUSE_PERMISSION } from '@/views/inventory/constants'
 
-import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'ContractList',
   components: {
-    oaFromBox,
-    editContract: defineAsyncComponent(() => import('./components/editContract')),
-    addContract: defineAsyncComponent(() => import('./components/addContract')),
-    customizeTable: defineAsyncComponent(() => import('../components/customizeTable')),
-    dragUpload: defineAsyncComponent(() => import('../components/dragUpload')),
-    importRecords: defineAsyncComponent(() => import('@/views/customer/list/components/importRecords')),
-    transferDialog: defineAsyncComponent(() => import('@/views/customer/list/components/transferDialog')),
-    editCustomer: defineAsyncComponent(() => import('@/views/customer/list/components/editCustomer')),
-    editExamine: defineAsyncComponent(() => import('@/views/user/examine/components/editExamine'))
+    oaFromBox: () => import('@/components/common/oaFromBox'),
+    editContract: () => import('./components/editContract'),
+    addContract: () => import('./components/addContract'),
+    customizeTable: () => import('../components/customizeTable'),
+    dragUpload: () => import('../components/dragUpload'),
+    importRecords: () => import('@/views/customer/list/components/importRecords'),
+    transferDialog: () => import('@/views/customer/list/components/transferDialog'),
+    editCustomer: () => import('@/views/customer/list/components/editCustomer'),
+    editExamine: () => import('@/views/user/examine/components/editExamine')
   },
   props: {
     types: {
       type: Number,
       default: 1
     }
-  },
-  computed: {
-    ...mapStores(useAppConfigStore, useWarehouseStore)
   },
   data() {
     return {
@@ -238,18 +227,10 @@ export default {
   },
 
   created() {
-    this.warehouseStore.loadAccessible().catch(() => {})
     this.getConfigApprove()
   },
 
   methods: {
-    // 客户模块开关用 v-if 判断：原自定义指令直接删 DOM，挂在 el-dropdown-item（非元素根节点）上不生效，
-    // 与 v-if 同用时还会让 Vue 更新到已被移除的节点而报错
-    isModuleEnabled(key) {
-      return this.appConfigStore.isCustomerModuleEnabled(key)
-    },
-    // 依赖 warehouse 模块的可访问仓库列表（created 中加载），加载完成前返回 false，菜单项保持隐藏
-    hasWarehousePermission,
     getSearch(val) {
       this.search = val.search
       this.viewSearch = val.viewSearch
@@ -266,7 +247,7 @@ export default {
       let text, status
       text = row.contract_status.value == 3 ? '正常' : '异常'
       status = row.contract_status.value == 3 ? 0 : 1
-      modalSure(`您确定要将此订单标为${text}吗`).then(() => {
+      modalSure(this.$t(`您确定要将此订单标为${text}吗`)).then(() => {
         contractAbnormalApi(row.id, status)
         this.getTableData()
       })
@@ -336,7 +317,7 @@ export default {
     // 转移
     handleTransfer(type, row = []) {
       if (this.ids.length <= 0 && type === 1) {
-        this.$message.error('至少选择一项')
+        this.$message.error(this.$t('customer.placeholder22'))
       } else {
         let ids = []
         if (type === 1) {
@@ -355,7 +336,7 @@ export default {
           ids.push(row.id)
         }
         this.transferData = {
-          title: type === 1 ? '移交其他同事' : '转移设置',
+          title: type === 1 ? '移交其他同事' : this.$t('customer.transfersettings'),
           width: '520px',
           type: 2,
           ids
@@ -366,7 +347,7 @@ export default {
 
     // 删除
     handleDelete(item) {
-      modalSure('确定要删除该订单吗').then(() => {
+      modalSure(this.$t('customer.placeholder27')).then(() => {
         clientContractDeleteApi(item.id).then((res) => {
           if (this.where.page > 1 && this.tableData.length <= 1) {
             this.where.page--
@@ -381,7 +362,7 @@ export default {
       item.eid = item.eid
       item.cid = item.id
       this.fromData = {
-        title: '编辑客户',
+        title: this.$t('customer.editcustomer'),
         width: '1100px',
         link_type: 'customer',
         data: item
@@ -502,7 +483,7 @@ export default {
   padding: 0 14px;
 }
 
-:deep(.el-card__body) {
+::v-deep .el-card__body {
   padding: 0;
 }
 

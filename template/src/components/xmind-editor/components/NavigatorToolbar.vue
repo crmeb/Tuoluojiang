@@ -40,12 +40,12 @@
 </template>
 
 <script>
-import { EventBus } from '@/libs/bus.ts'
+import { EventBus } from '@/libs/bus'
 import Scale from './Scale.vue'
 import Fullscreen from './Fullscreen.vue'
 import MouseAction from './MouseAction.vue'
 import Demonstrate from './Demonstrate.vue'
-import { SHOW_SEARCH, TOGGLE_MINI_MAP } from '../event-constant.ts';
+import { SHOW_SEARCH, TOGGLE_MINI_MAP } from '../event-constant';
 
 
 export default {

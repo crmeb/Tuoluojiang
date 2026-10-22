@@ -7,9 +7,10 @@
       <el-input
         ref="searchInputRef"
         placeholder="请输入查找内容"
+        size="small"
         v-model="searchText"
-        @keyup.enter.stop="onSearchNext"
-        @keydown.stop
+        @keyup.native.enter.stop="onSearchNext"
+        @keydown.native.stop
         @focus="onFocus"
         @blur="onBlur"
       >
@@ -17,7 +18,7 @@
           <i class="el-input__icon el-icon-search"></i>
         </template>
         <template #append>
-          <el-button v-if="!isUndef(searchText)" @click="showReplaceInput = true"
+          <el-button size="small" v-if="!isUndef(searchText)" @click="showReplaceInput = true"
             >替换</el-button
           >
         </template>
@@ -28,9 +29,10 @@
       v-if="showReplaceInput"
       ref="replaceInputRef"
       placeholder="请输入替换内容"
+      size="small"
       v-model="replaceText"
       style="margin: 12px 0"
-      @keydown.stop
+      @keydown.native.stop
       @focus="onFocus"
       @blur="onBlur"
     >
@@ -38,12 +40,12 @@
         <i class="el-input__icon el-icon-edit"></i>
       </template>
       <template #append>
-        <el-button @click="hideReplaceInput">取消</el-button>
+        <el-button size="small" @click="hideReplaceInput">取消</el-button>
       </template>
     </el-input>
     <div class="btnList" v-if="showReplaceInput">
-      <el-button :disabled="isReadonly" @click="replace">替换</el-button>
-      <el-button :disabled="isReadonly" @click="replaceAll">全部替换</el-button>
+      <el-button size="small" :disabled="isReadonly" @click="replace">替换</el-button>
+      <el-button size="small" :disabled="isReadonly" @click="replaceAll">全部替换</el-button>
     </div>
     <div class="searchResultList" :style="{ height: searchResultListHeight + 'px' }" v-if="showSearchResultList">
       <div
@@ -63,7 +65,7 @@
 </template>
 
 <script>
-import { EventBus } from '@/libs/bus.ts'
+import { EventBus } from '@/libs/bus'
 import { isUndef, getTextFromHtml } from 'simple-mind-map/src/utils/index'
 import {
   CLOSE_SIDE_BAR,
@@ -73,7 +75,7 @@ import {
   SEARCH_INFO_CHANGE,
   SEARCH_MATCH_NODE_LIST_CHANGE,
   SHOW_SEARCH
-} from '../event-constant.ts'
+} from '../event-constant'
 
 // 搜索替换
 export default {
@@ -127,7 +129,7 @@ export default {
   mounted() {
     this.setSearchResultListHeight()
   },
-  beforeUnmount() {
+  beforeDestroy() {
     this.mindMap.keyCommand.removeShortcut('Control+f', this.showSearch)
     window.removeEventListener('resize', this.setSearchResultListHeight)
 
@@ -329,7 +331,7 @@ export default {
         background-color: #f2f4f7;
       }
 
-      :deep(.match) {
+      ::v-deep .match {
         color: #409eff;
         font-weight: bold;
       }

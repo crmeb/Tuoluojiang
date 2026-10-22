@@ -53,8 +53,8 @@
                 <el-table-column prop="created_at" label="跟进时间" width="220"> </el-table-column>
                 <el-table-column prop="address" label="操作" fixed="right" width="150">
                   <template #default="scope">
-                    <el-button type="primary" link @click="handleEdit(scope.row)">编辑</el-button>
-                    <el-button type="primary" link @click="handleDelete(scope.row)">删除</el-button>
+                    <el-button type="text" size="mini" @click="handleEdit(scope.row)">编辑</el-button>
+                    <el-button type="text" size="mini" @click="handleDelete(scope.row)">删除</el-button>
                   </template>
                 </el-table-column>
               </el-table>
@@ -80,25 +80,23 @@
     <!-- 线索商机详情 -->
     <detailsDrawer ref="details" :formData="detailsFromData"></detailsDrawer>
     <!-- 跟进弹窗 -->
-    <el-dialog v-model="dialogShow" class="record" title="编辑跟进记录" width="40%">
+    <el-dialog :visible.sync="dialogShow" class="record" title="编辑跟进记录" width="40%">
       <recordUpload :form-info="formInfo" @change="recordChange"></recordUpload>
     </el-dialog>
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { getClientFollowApi, delClientFollowApi } from '@/api/client.ts'
-import { divTime } from '@/utils/index.ts'
-import oaFromBox from '@/components/common/oaFromBox'
+import { modalSure } from '@/libs/public'
+import { getClientFollowApi, delClientFollowApi } from '@/api/client'
+import { divTime } from '@/utils'
 export default {
   name: 'RecordList',
   components: {
-    detailsDrawer: defineAsyncComponent(() => import('../components/details')),
-    oaFromBox,
+    detailsDrawer: () => import('../components/details'),
+    oaFromBox: () => import('@/components/common/oaFromBox'),
 
-    editCustomer: defineAsyncComponent(() => import('@/views/customer/list/components/editCustomer')),
-    recordUpload: defineAsyncComponent(() => import('@/views/customer/list/components/recordUpload'))
+    editCustomer: () => import('@/views/customer/list/components/editCustomer'),
+    recordUpload: () => import('@/views/customer/list/components/recordUpload')
   },
 
   data() {
@@ -192,7 +190,7 @@ export default {
         this.$refs.details.openBox(item.eid, 'clue')
       } else if (item.link_type === 'customer') {
         this.fromData = {
-          title: '编辑客户',
+          title: this.$t('customer.editcustomer'),
           width: '1100px',
           data: item,
           link_type: 'customer',
@@ -204,7 +202,7 @@ export default {
       } else if (item.link_type === 'odds') {
         item.eid = item.title.eid
         this.fromData = {
-          title: '编辑客户',
+          title: this.$t('customer.editcustomer'),
           width: '1100px',
           data: item,
           link_type: 'customer',
@@ -284,12 +282,11 @@ export default {
   cursor: pointer;
   color: #1890ff;
 }
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.record {
-  .el-dialog__body {
+::v-deep .el-input--small {
+  width: 230px;
+}
+.record {
+  ::v-deep .el-dialog__body {
     padding: 20px 20px 30px 20px;
   }
 }

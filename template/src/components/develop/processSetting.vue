@@ -14,9 +14,9 @@
           :style="'transform: scale(' + nowVal / 100 + '); transform-origin: 50% 0px 0px;'"
         >
           <nodeWrap
-            v-model:node-config="nodeConfig"
-            v-model:flow-permission="flowPermission"
-            v-model:is-tried="isTried"
+            :node-config.sync="nodeConfig"
+            :flow-permission.sync="flowPermission"
+            :is-tried.sync="isTried"
             :table-id="tableId"
             :type-str="lowCode"
           ></nodeWrap>
@@ -27,7 +27,7 @@
         </div>
       </section>
     </div>
-    <errorDialog v-model:visible="tipVisible" :list="tipList" />
+    <errorDialog :visible.sync="tipVisible" :list="tipList" />
     <promoter-drawer />
     <approver-drawer :type-str="lowCode" :director-max-level="directorMaxLevel" />
     <copyer-drawer :type-str="lowCode" :director-max-level="directorMaxLevel" />
@@ -35,30 +35,27 @@
     <el-drawer
       :append-to-body="true"
       title="条件设置"
-      v-model="conditionDialogStore.visible"
-      :close-on-click-modal="false"
+      :visible.sync="$store.state.business.conditionDialog"
+      :wrapperClosable="false"
       direction="rtl"
       class="condition_copyer"
       size="650px"
     >
-      <condition-dialog :id="curd_id" v-if="conditionDialogStore.visible" />
+      <condition-dialog :id="curd_id" v-if="$store.state.business.conditionDialog" />
     </el-drawer>
   </div>
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useConditionDialogStore } from '@/stores/conditionDialog.ts'
-import { defineAsyncComponent } from 'vue'
-import func from '@/utils/preload.ts'
+import func from '@/utils/preload'
 export default {
   name: 'ProcessData',
   components: {
-    promoterDrawer: defineAsyncComponent(() => import('@/components/workFlow/drawer/promoterDrawer')),
-    approverDrawer: defineAsyncComponent(() => import('@/components/workFlow/drawer/approverDrawer')),
-    copyerDrawer: defineAsyncComponent(() => import('@/components/workFlow/drawer/copyerDrawer')),
-    conditionDialog: defineAsyncComponent(() => import('@/components/develop/conditionDialog')),
-    errorDialog: defineAsyncComponent(() => import('@/components/workFlow/dialog/errorDialog'))
+    promoterDrawer: () => import('@/components/workFlow/drawer/promoterDrawer'),
+    approverDrawer: () => import('@/components/workFlow/drawer/approverDrawer'),
+    copyerDrawer: () => import('@/components/workFlow/drawer/copyerDrawer'),
+    conditionDialog: () => import('@/components/develop/conditionDialog'),
+    errorDialog: () => import('@/components/workFlow/dialog/errorDialog')
   },
   props: {
     tabName: {
@@ -75,9 +72,6 @@ export default {
         return null
       }
     }
-  },
-  computed: {
-    ...mapStores(useConditionDialogStore)
   },
   data() {
     return {
@@ -241,11 +235,11 @@ export default {
   }
   .condition_content {
     padding: 20px 20px 0;
-    :deep(.el-input-number),
-    :deep(.el-select) {
+    ::v-deep .el-input-number--medium,
+    ::v-deep .el-select--medium {
       width: 100%;
     }
-    :deep(.el-input__inner) {
+    ::v-deep .el-input__inner {
       text-align: left;
     }
   }

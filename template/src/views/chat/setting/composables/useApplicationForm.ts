@@ -73,17 +73,12 @@ const normalizeSourceTypes = (detail: ApplicationDetail): number[] => {
  */
 export const fillApplicationForm = (form: ApplicationForm, detail: ApplicationDetail) => {
   ;(Object.keys(form) as (keyof ApplicationForm)[]).forEach((key) => {
-    // 只认详情自身的字段：接口无数据时 PHP 会返回空数组，detail['sort'] 会取到 Array.prototype.sort
-    if (!Object.hasOwn(detail, key)) return
     const value = detail[key]
     if (isUndef(value)) return
     ;(form[key] as unknown) = Array.isArray(form[key]) ? normalizeArray(value) : value
   })
 
-  form.app_type = Number(detail.app_type) === APP_TYPE.EXTERNAL ? APP_TYPE.EXTERNAL : APP_TYPE.INTERNAL
-  form.source_types = normalizeSourceTypes(detail).filter(
-    (type) => form.app_type !== APP_TYPE.EXTERNAL || type !== PLUGIN_TYPE.DATABASE
-  )
+  form.source_types = normalizeSourceTypes(detail)
   // 详情里的 MCP 服务ID可能是字符串，提交时接口只接受整数
   form.mcp_service_ids = form.mcp_service_ids.map(Number).filter((id) => !!id)
   // 开场白问题为空时留一个空行，否则用户看不到可编辑的输入框
@@ -103,12 +98,8 @@ export const buildApplicationPayload = (
   form: ApplicationForm,
   knowledge: KnowledgeItem[]
 ) => {
-  const sourceTypes = form.source_types.filter(
-    (type) => form.app_type !== APP_TYPE.EXTERNAL || type !== PLUGIN_TYPE.DATABASE
-  )
   const payload: Partial<ApplicationForm> = {
     ...form,
-    source_types: sourceTypes,
     prologue_list: normalizeStringList(form.prologue_list),
     keyword: normalizeStringList(form.keyword),
     knowledge_ids: knowledge.map((item) => item.id),
@@ -119,7 +110,7 @@ export const buildApplicationPayload = (
 
   if (payload.app_type === APP_TYPE.EXTERNAL) payload.auth_ids = []
 
-  if (!sourceTypes.includes(PLUGIN_TYPE.DATABASE)) {
+  if (!form.source_types.includes(PLUGIN_TYPE.DATABASE)) {
     delete payload.tables
     delete payload.content
     delete payload.keyword

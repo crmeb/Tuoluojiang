@@ -34,9 +34,9 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
 
 export default {
-  emits: ['update:modelValue'],
   name: 'MyDialog',
   props: {
     modelValue: null,

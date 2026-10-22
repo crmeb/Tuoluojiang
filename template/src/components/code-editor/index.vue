@@ -18,14 +18,6 @@ import 'ace-builds/src-min-noconflict/mode-javascript' // 默认设置的语言�
 import 'ace-builds/src-min-noconflict/mode-json' //
 import 'ace-builds/src-min-noconflict/mode-css' //
 import 'ace-builds/src-min-noconflict/ext-language_tools'
-// 语法检查 worker：ace 默认按 basePath 动态加载，Vite 下没有这个路径，需逐个登记产物地址
-import jsWorkerUrl from 'ace-builds/src-min-noconflict/worker-javascript.js?url'
-import jsonWorkerUrl from 'ace-builds/src-min-noconflict/worker-json.js?url'
-import cssWorkerUrl from 'ace-builds/src-min-noconflict/worker-css.js?url'
-
-ace.config.setModuleUrl('ace/mode/javascript_worker', jsWorkerUrl)
-ace.config.setModuleUrl('ace/mode/json_worker', jsonWorkerUrl)
-ace.config.setModuleUrl('ace/mode/css_worker', cssWorkerUrl)
 // import {ACE_BASE_PATH} from "@/utils/config";
 
 // 编辑器配置常量
@@ -47,10 +39,9 @@ const EDITOR_CONFIG = {
 }
 
 export default {
-  emits: ['update:value', 'update:modelValue'],
   name: 'CodeEditor',
   props: {
-    modelValue: {
+    value: {
       type: String,
       required: true
     },
@@ -67,12 +58,6 @@ export default {
       default: true
     },
 
-  },
-  computed: {
-    // Vue 3 的 v-model 走 modelValue，保留 value 供组件内部沿用
-    value() {
-      return this.modelValue
-    },
   },
   mounted() {
     //ace.config.set('basePath', 'https://ks3-cn-beijing.ksyun.com/vform2021/ace')
@@ -103,13 +88,13 @@ export default {
     //编辑时同步数据
     this.aceEditor.getSession().on('change',(ev)=>{
       //this.$emit('update:value', this.aceEditor.getValue())  // 触发更新事件, 实现.sync双向绑定！！
-      this.$emit('update:modelValue', this.aceEditor.getValue())
+      this.$emit('input', this.aceEditor.getValue())
     })
   },
   data() {
     return {
       aceEditor: null,
-      codeValue: this.modelValue
+      codeValue: this.value
     }
   },
   watch: {

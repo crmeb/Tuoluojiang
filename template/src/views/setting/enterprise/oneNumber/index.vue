@@ -9,7 +9,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import oneNumber from '../setup/components/oneNumber.vue'
-import { configUpdateDataApi } from '@/api/setting.ts'
+import { configUpdateDataApi } from '@/api/setting'
 
 interface RuleItem {
   field: string

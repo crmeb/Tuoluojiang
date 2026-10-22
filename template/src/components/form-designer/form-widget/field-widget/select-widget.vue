@@ -17,7 +17,7 @@
       v-model="fieldModel"
       class="full-width-input"
       :disabled="field.options.disabled"
-      :size="toElSize(field.options.size)"
+      :size="field.options.size"
       :clearable="field.options.clearable"
       :filterable="field.options.filterable"
       :allow-create="field.options.allowCreate"
@@ -49,12 +49,14 @@
 
 <script>
 import FormItemWrapper from './form-item-wrapper'
-import i18n, { translate } from '@/utils/i18n.ts'
+import emitter from '@/utils/emitter'
+import i18n, { translate } from '@/utils/i18n'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
 
 export default {
   name: 'select-widget',
-  mixins: [fieldMixin, i18n],
+  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
+  mixins: [emitter, fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -150,7 +152,7 @@ export default {
     this.handleOnMounted()
   },
 
-  beforeUnmount() {
+  beforeDestroy() {
     this.unregisterFromRefList()
   },
 
@@ -165,3 +167,4 @@ export default {
   width: 100% !important;
 }
 </style>
+@/utils/i18ns

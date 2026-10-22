@@ -11,22 +11,23 @@
       v-else
       ref="inputRef"
       v-model="draft"
+      size="mini"
       class="limit-input"
       :disabled="saving"
       :suffix-icon="saving ? 'el-icon-loading' : ''"
       placeholder="请输入"
       @blur="handleSave"
-      @keyup.enter="triggerBlur"
-      @keyup.esc="cancelEdit"
+      @keyup.enter.native="triggerBlur"
+      @keyup.esc.native="cancelEdit"
     />
   </div>
 </template>
 
 <script>
 import { ref, computed, nextTick } from "vue";
-import { stockLimitSetApi } from "@/api/inventory.ts";
-import { useLoading } from "@/composables/useLoading.ts";
-import Tips from "@/utils/tips.ts";
+import { stockLimitSetApi } from "@/api/inventory";
+import { useLoading } from "@/composables/useLoading";
+import Tips from "@/utils/tips";
 
 // 归一：空 / 非法 -> null，其余转数字
 const toLimit = (val) => {

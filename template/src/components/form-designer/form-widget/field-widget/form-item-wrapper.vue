@@ -13,7 +13,7 @@
         customClass,
         field.options.required ? 'required' : 'not-required'
       ]"
-      @click.stop="selectField(field)"
+      @click.native.stop="selectField(field)"
     >
       <template #label>
         <span v-if="!!field.options.labelIconClass" class="custom-label">
@@ -71,7 +71,7 @@
 </template>
 
 <script>
-import i18n from '@/utils/i18n.ts'
+import i18n from '@/utils/i18n'
 
 export default {
   name: 'form-item-wrapper',
@@ -287,12 +287,12 @@ export default {
   // margin-bottom: 5px;
   position: relative;
 
-  :deep(.el-form-item__label) {
+  ::v-deep .el-form-item__label {
     white-space: nowrap;
     text-overflow: ellipsis;
   }
 
-  :deep(.el-form-item__content) {
+  ::v-deep .el-form-item__content {
     //position: unset;  /* TODO: 忘了这个样式设置是为了解决什么问题？？ */
   }
 
@@ -301,23 +301,23 @@ export default {
   }
 
   /* 隐藏Chrome浏览器中el-input数字输入框右侧的上下调整小箭头 */
-  :deep(.hide-spin-button input::-webkit-outer-spin-button),
-  :deep(.hide-spin-button input::-webkit-inner-spin-button) {
+  ::v-deep .hide-spin-button input::-webkit-outer-spin-button,
+  ::v-deep .hide-spin-button input::-webkit-inner-spin-button {
     -webkit-appearance: none !important;
   }
 
   /* 隐藏Firefox浏览器中el-input数字输入框右侧的上下调整小箭头 */
-  :deep(.hide-spin-button input[type='number']) {
+  ::v-deep .hide-spin-button input[type='number'] {
     -moz-appearance: textfield;
   }
 }
 
-.required :deep(.el-form-item__label::before) {
+.required ::v-deep .el-form-item__label::before {
   content: '*';
   color: #f56c6c;
   margin-right: 4px;
 }
-.not-required :deep(.el-form-item__label::before) {
+.not-required ::v-deep .el-form-item__label::before {
   content: '' !important;
   display: none;
 }
@@ -327,7 +327,7 @@ export default {
   display: flex; /* 垂直居中 */
   align-items: center; /* 垂直居中 */
 
-  :deep(.el-divider--horizontal) {
+  ::v-deep .el-divider--horizontal {
     margin: 0;
   }
 }
@@ -337,15 +337,16 @@ export default {
   outline: 2px solid #409eff;
 }
 
-:deep(.label-left-align .el-form-item__label) {
-  justify-content: flex-start;
+::v-deep .label-left-align .el-form-item__label {
+  text-align: left;
 }
 
-:deep(.label-center-align .el-form-item__label) {
-  justify-content: center;
+::v-deep .label-center-align .el-form-item__label {
+  text-align: center;
 }
 
-:deep(.label-right-align .el-form-item__label) {
-  justify-content: flex-end;
+::v-deep .label-right-align .el-form-item__label {
+  text-align: right;
 }
 </style>
+@/utils/i18ns

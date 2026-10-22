@@ -6,8 +6,8 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { useUserStore } from '@/stores/user.ts'
-import { useAppPreview } from '../composables/useAppPreview.ts'
+import store from '@/store'
+import { useAppPreview } from '../composables/useAppPreview'
 
 /**
  * 外部应用按访客形态预览，因此要等应用详情带回 share_key 之后才能挂载 ——
@@ -23,7 +23,7 @@ const { containerRef, create, update } = useAppPreview(() => ({
   appId: props.appId,
   identity: props.identity,
   shareKey: props.shareKey,
-  token: useUserStore().token
+  token: store.getters.token
 }))
 
 onMounted(create)

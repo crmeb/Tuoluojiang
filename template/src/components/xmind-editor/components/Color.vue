@@ -6,17 +6,16 @@
     </div>
     <div class="moreColor">
       <span>更多颜色</span>
-      <el-color-picker show-alpha v-model="selectColor" @change="changeColor"></el-color-picker>
+      <el-color-picker size="mini" show-alpha v-model="selectColor" @change="changeColor"></el-color-picker>
     </div>
   </div>
 </template>
 
 <script>
-import { colorList } from "../config.ts";
+import { colorList } from "../config";
 
 export default {
   name: 'Color',
-  emits: ['change'],
   props: {
     color: {
       type: String,

@@ -37,7 +37,7 @@ export default {
   },
   methods: {
     handleTabClick(tab) {
-      if (tab.paneName !== 'calendar') return
+      if (tab.name !== 'calendar') return
 
       this.$nextTick(() => {
         this.$refs.calendarRef.refresh()

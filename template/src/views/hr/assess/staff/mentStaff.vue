@@ -19,7 +19,7 @@
               default-expand-all
               :tree-props="{ children: 'children' }"
             >
-              <el-table-column prop="test" label="被考核人" min-width="100">
+              <el-table-column prop="test" :label="$t('access.examinee')" min-width="100">
                 <template #default="{ row }">
                   <div style="display: flex; align-items: center; gap: 6px" class="pointer">
                     <el-avatar :size="24" :src="row.test.avatar"></el-avatar>
@@ -27,16 +27,16 @@
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column prop="frame.name" label="部门" min-width="120" />
-              <el-table-column prop="name" label="考核名称" min-width="100" />
-              <el-table-column prop="period" label="考核周期" min-width="100">
+              <el-table-column prop="frame.name" :label="$t('user.work.department')" min-width="120" />
+              <el-table-column prop="name" :label="$t('user.work.assessmentname')" min-width="100" />
+              <el-table-column prop="period" :label="$t('toptable.assessmentcycle')" min-width="100">
                 <template #default="scope">
                   <span>{{ getPeriodText(scope.row.period) }}</span>
                 </template>
               </el-table-column>
-              <el-table-column prop="score" label="考核得分" min-width="80" />
-              <el-table-column prop="level" label="考核等级" min-width="80" />
-              <el-table-column prop="check" label="考核人" min-width="100">
+              <el-table-column prop="score" :label="$t('user.work.qssessmentscore')" min-width="80" />
+              <el-table-column prop="level" :label="$t('access.assessmentgrade')" min-width="80" />
+              <el-table-column prop="check" :label="$t('user.work.assessor')" min-width="100">
                 <template #default="{ row }">
                   <div style="display: flex; align-items: center; gap: 6px" class="pointer">
                     <el-avatar :size="24" :src="row.check.avatar"></el-avatar>
@@ -44,45 +44,45 @@
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column prop="status" label="考核状态" min-width="80">
+              <el-table-column prop="status" :label="$t('hr.assessmentstatus')" min-width="80">
                 <template #default="scope">
-                  <span>{{ getStatusText(scope.row.status) }}</span>
+                  <span>{{ $refs.formBox.getStatusText(scope.row.status) }}</span>
                 </template>
               </el-table-column>
-              <el-table-column prop="id" label="考核时间" min-width="150">
+              <el-table-column prop="id" :label="$t('access.assessmenttime')" min-width="150">
                 <template #default="scope">
                   <p class="p-time">
-                    <span>开始：</span>
-                    {{ dayjs(scope.row.start_time).format('YYYY-MM-DD') }}
+                    <span>{{ $t('access.start') }}：</span>
+                    {{ moment(scope.row.start_time).format('yyyy-MM-DD') }}
                   </p>
                   <p class="p-time">
-                    <span>结束：</span>
-                    {{ dayjs(scope.row.end_time).format('YYYY-MM-DD') }}
+                    <span>{{ $t('access.end') }}：</span>
+                    {{ moment(scope.row.end_time).format('yyyy-MM-DD') }}
                   </p>
                 </template>
               </el-table-column>
-              <el-table-column prop="address" label="操作" fixed="right" width="180">
+              <el-table-column prop="address" :label="$t('public.operation')" fixed="right" width="180">
                 <template #default="scope">
                   <el-button
-                    type="primary" link
+                    type="text"
                     @click="changeStaff(scope.row)"
                     v-hasPermi="['hr:assessStaff:assessmentStaff:edit']"
                     >查看</el-button
                   >
-                  <el-button v-if="scope.row.status == 1" type="primary" link @click="skipSelfAssessment(scope.row)"
+                  <el-button v-if="scope.row.status == 1" type="text" @click="skipSelfAssessment(scope.row)"
                     >跳过自评</el-button
                   >
 
                   <el-button
-                    type="primary" link
+                    type="text"
                     @click="handleDelete(scope.row)"
                     v-hasPermi="['hr:assessStaff:assessmentStaff:delete']"
-                    >删除</el-button
+                    >{{ $t('public.delete') }}</el-button
                   >
 
                   <el-button
                     v-if="scope.row.status == 3 || scope.row.status == 4"
-                    type="primary" link
+                    type="text"
                     @click="handleScore(scope.row)"
                     v-hasPermi="['hr:assessStaff:assessmentStaff:record']"
                     >评分记录</el-button
@@ -123,32 +123,30 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import Commnt from '@/components/user/accessCommon.ts'
-import { modalSure } from '@/libs/public.ts'
-import modalForm from '@/libs/modal-form.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import moment from 'moment'
+import { modalSure } from '@/libs/public'
+import modalForm from '@/libs/modal-form'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
 import {
   userAssessDelete,
   userAssessList,
   userAssessRemindApi,
   userAssessAbnormal,
   skipSelfAssessment
-} from '@/api/user.ts'
+} from '@/api/user'
 
 export default {
   name: 'AssessRecord',
   components: {
-    formBox: defineAsyncComponent(() => import('./components/formBox')),
-    scoreDialog: defineAsyncComponent(() => import('@/views/user/assessment/components/scoreDialog')),
-    auditProcess: defineAsyncComponent(() => import('@/views/user/assessment/components/auditProcess')),
-    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel')),
-    notAssessed: defineAsyncComponent(() => import('./components/notAssessed'))
+    formBox: () => import('./components/formBox'),
+    scoreDialog: () => import('@/views/user/assessment/components/scoreDialog'),
+    auditProcess: () => import('@/views/user/assessment/components/auditProcess'),
+    exportExcel: () => import('@/components/common/exportExcel'),
+    notAssessed: () => import('./components/notAssessed')
   },
 
   computed: {
-    dayjs: () => dayjs
+    moment: () => moment
   },
   data() {
     return {
@@ -197,10 +195,6 @@ export default {
     this.getTableData()
   },
   methods: {
-    // formBox 是异步组件，表格首次渲染时 $refs.formBox 可能尚未就绪，直接取公共映射
-    getStatusText(status) {
-      return Commnt.getStatusText(status)
-    },
     getPeriodText(id) {
       if (id == 1) {
         return '周考核'
@@ -265,24 +259,24 @@ export default {
       obj.page = 1
       obj.limit = 0
       this.saveName =
-        '绩效导出' + '_' + dayjs(new Date()).format('MM-DD-HH-mm-ss') + '.xlsx'
+        this.$t('access.performanceexport') + '_' + moment(new Date()).format('MM-DD-HH-mm-ss') + '.xlsx'
       userAssessList(obj).then((res) => {
         const data = res.data.list
         if (data.length <= 0) {
-          this.$message.error('暂无内容可导出')
+          this.$message.error(this.$t('access.placeholder24'))
         } else {
           const aoaData = [
             [
-              '姓名',
-              '部门',
-              '考核名称',
-              '考核周期',
-              '考核得分',
-              '考核等级',
-              '考核人',
-              '考核状态',
-              '考核开始时间',
-              '考核结束时间'
+              this.$t('user.work.name'),
+              this.$t('user.work.department'),
+              this.$t('user.work.assessmentname'),
+              this.$t('toptable.assessmentcycle'),
+              this.$t('user.work.qssessmentscore'),
+              this.$t('access.assessmentgrade'),
+              this.$t('user.work.assessor'),
+              this.$t('hr.assessmentstatus'),
+              this.$t('access.starttime'),
+              this.$t('access.endtime')
             ]
           ]
           data.forEach((value) => {
@@ -317,7 +311,7 @@ export default {
     },
     handleScore(row) {
       this.config = {
-        title: '评分记录',
+        title: this.$t('access.scoringrecord'),
         width: '720px',
         id: row.id
       }
@@ -354,10 +348,10 @@ export default {
   width: 100%;
   padding-top: 0;
 }
-:deep(.cr-alert .el-icon-info) {
+::v-deep .cr-alert .el-icon-info {
   font-size: 16px;
 }
-:deep(.el-alert) {
+::v-deep .el-alert {
   padding-left: 30px;
   border: 1px solid #1890ff;
   color: #1890ff;
@@ -366,7 +360,7 @@ export default {
   line-height: 1;
   margin-bottom: 14px;
 }
-:deep(.el-alert--info .el-alert__description) {
+::v-deep .el-alert--info .el-alert__description {
   color: #303133;
   font-size: 13px;
   font-weight: 500;
@@ -384,10 +378,10 @@ export default {
   margin: 0;
 }
 
-:deep(.el-table th) {
+::v-deep .el-table th {
   background-color: #f7fbff;
 }
-:deep(.el-drawer__body) {
+::v-deep .el-drawer__body {
   height: 100%;
   overflow-y: auto;
 }

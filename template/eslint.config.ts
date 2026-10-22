@@ -124,10 +124,10 @@ export default defineConfig([
     },
   },
 
-  // ---- Vue 3：模板正确性校验 ----
+  // ---- Vue 2：模板正确性校验 ----
   {
     files: ['**/*.vue'],
-    extends: [pluginVue.configs['flat/recommended']],
+    extends: [pluginVue.configs['flat/vue2-recommended']],
     languageOptions: {
       parser: vueParser,
       parserOptions: {
@@ -155,7 +155,7 @@ export default defineConfig([
       'vue/component-definition-name-casing': 'warn',
       'vue/order-in-components': 'off',
       'vue/attributes-order': 'off',
-      // element-plus 组件在模板里既有 <el-button> 也有 <ElButton>，不强制统一
+      // element-ui 组件在模板里既有 <el-button> 也有 <ElButton>，不强制统一
       'vue/component-name-in-template-casing': 'off',
       'vue/attribute-hyphenation': 'off',
       // 自闭合写法一律放行：<div /> 与 <div></div> 均可
@@ -170,10 +170,17 @@ export default defineConfig([
       'vue/valid-v-slot': 'error',
       'vue/no-parsing-error': 'error',
 
-      // ---- Vue 2 旧语法：Vue 3 下编译不报错但行为错误，必须拦住 ----
-      'vue/no-deprecated-slot-attribute': 'error',
-      'vue/no-deprecated-slot-scope-attribute': 'error',
-      'vue/no-deprecated-scope-attribute': 'error',
+      // ---- 插槽语法迁移：slot-scope / slot="xxx" → #default / #xxx ----
+      // 这两条在 vue2 preset 里默认关闭，必须显式开启。
+      // Vue 3 编译器完全不识别旧语法（compiler-core 里 'slot-scope' 出现 0 次），
+      // 且 @vue/compat 的 8 项 COMPILER_* 兼容清单中没有任何插槽相关项 ——
+      // 旧写法在 Vue 3 下编译不报错，但 <template> 退化成原生 inert 元素、
+      // slot="xxx" 静默错位到默认插槽，属于升级前必须清空的硬前置。
+      // 存量清理期间设为 warn（与项目既有的「不批量整改、只拦增量」策略一致），
+      // 全部改完后升级为 error。
+      'vue/no-deprecated-slot-attribute': 'warn',
+      'vue/no-deprecated-slot-scope-attribute': 'warn',
+      'vue/no-deprecated-scope-attribute': 'warn',
     },
   },
 

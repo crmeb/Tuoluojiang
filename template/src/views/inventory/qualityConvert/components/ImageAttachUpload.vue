@@ -2,7 +2,7 @@
   <div class="image-attach-upload">
     <!-- 已上传图片：缩略图 + 右上角删除角标（对齐原型与商品规格图上传样式） -->
     <div v-for="(file, index) of fileList" :key="file.id || file.url || index" class="image-attach-upload__item">
-      <el-image :src="file.url" :preview-src-list="previewList" preview-teleported class="image-attach-upload__img" />
+      <el-image :src="file.url" :preview-src-list="previewList" class="image-attach-upload__img" />
       <i class="el-icon-error image-attach-upload__del" @click.stop="handleRemove(index)" />
     </div>
 
@@ -20,16 +20,15 @@
 
 <script>
 import { ref, computed, watch, getCurrentInstance } from "vue";
-import SettingMer from "@/libs/settingMer.ts";
-import { getToken } from "@/utils/auth.ts";
-import compressImg from "@/utils/compressImg.ts";
+import SettingMer from "@/libs/settingMer";
+import { getToken } from "@/utils/auth";
+import compressImg from "@/utils/compressImg";
 
 // 超过该体积先压缩再上传（对齐图片库 uploadPicture 组件）
 const COMPRESS_THRESHOLD = 2 * 1024 * 1024;
 
 export default {
   name: "ImageAttachUpload",
-  emits: ["input", "getVal"],
   props: {
     // 已上传图片列表，每项含 url / id（与 oa-upload 的产出字段一致）
     value: {

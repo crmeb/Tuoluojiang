@@ -11,7 +11,7 @@
               </template>
             </fieldLabel>
           </template>
-          <el-select v-model="form.models_id" placeholder="请选择AI模型" class="full-width">
+          <el-select v-model="form.models_id" placeholder="请选择AI模型" size="small" class="full-width">
             <el-option v-for="item in modelOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
@@ -75,6 +75,7 @@
                 :key="index"
                 v-model="form.prologue_list[index]"
                 class="line-input"
+                size="small"
                 :maxlength="TEXT_MAX.PROLOGUE_ITEM"
                 placeholder="请输入开场白问题"
               >
@@ -119,6 +120,7 @@
               <el-input-number
                 v-model="form.count_number"
                 :controls="false"
+                size="small"
                 :max="MAX_COUNT_NUMBER"
                 :min="0"
                 class="count-input"
@@ -135,14 +137,14 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { getModelsSelectListApi } from '@/api/chatAi.ts'
+import { getModelsSelectListApi } from '@/api/chatAi'
 import fieldLabel from './fieldLabel.vue'
 import promptTextarea from './promptTextarea.vue'
 import pluginPanel from './pluginPanel.vue'
 import paramsDialog from './paramsDialog.vue'
-import { FIELD_TIPS, MAX_COUNT_NUMBER, TEXT_MAX } from '../constants.ts'
-import type { PreviewState } from '../types.ts'
-import { useApplicationSetting } from '../composables/useApplicationSetting.ts'
+import { FIELD_TIPS, MAX_COUNT_NUMBER, TEXT_MAX } from '../constants'
+import type { PreviewState } from '../types'
+import { useApplicationSetting } from '../composables/useApplicationSetting'
 
 const emit = defineEmits<{ (e: 'update-preview', state: PreviewState): void }>()
 
@@ -184,11 +186,6 @@ defineExpose({ validate })
 <style scoped lang="scss">
 .model-panel {
   font-family: PingFang SC, PingFang SC;
-
-  // 折叠区容器按 element-ui 的块布局占满整行
-  :deep(.el-form-item__content) {
-    display: block;
-  }
 
   :deep(.el-form-item__label) {
     width: 100%;

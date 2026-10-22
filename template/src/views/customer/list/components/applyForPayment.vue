@@ -3,16 +3,17 @@
   <div class="station">
     <el-drawer
       :title="formData.title"
-      v-model="drawer"
+      :visible.sync="drawer"
       :direction="direction"
       :modal="true"
       :append-to-body="true"
+      :wrapper-closable="true"
       :before-close="handleClose"
       :size="formData.width"
     >
-      <template #header>
+      <template #title>
         <div class="invoice-title">
-          <div class="invoice-header">
+          <el-row class="invoice-header">
             <div class="invoice-left">
               <img :src="list.card ? list.card.avatar : ''" alt="" class="img" />
             </div>
@@ -23,7 +24,7 @@
               <span class="text color3" v-if="list.status === 2"> 未通过 </span>
               <span class="text color2" v-if="list.status === -1"> 已撤销 </span>
             </div>
-          </div>
+          </el-row>
         </div>
       </template>
 
@@ -108,8 +109,8 @@
         </el-form>
       </div>
       <div class="button from-foot-btn fix btn-shadow" v-if="list.status === 0 && formData.type !== 1">
-        <el-button type="primary" @click="handleContract">通过</el-button>
-        <el-button type="danger" @click="refuse">拒绝</el-button>
+        <el-button size="small" type="primary" @click="handleContract">通过</el-button>
+        <el-button size="small" type="danger" @click="refuse">拒绝</el-button>
       </div>
     </el-drawer>
     <expend-dialog ref="expendDialog" :config="operationDialog" @isOk="isOk"></expend-dialog>
@@ -121,15 +122,15 @@
     ></operationDialog>
 
     <!-- 拒绝 -->
-    <el-dialog :title="title" top="25vh" :append-to-body="true" v-model="dialogVisible" width="540px">
+    <el-dialog :title="title" top="25vh" :append-to-body="true" :visible.sync="dialogVisible" width="540px">
       <div class="line" />
       <el-form :model="form" ref="from" :rules="rules" class="from">
         <el-form-item :label="reason + '：'" label-width="90px" prop="remarks">
           <el-input type="textarea" v-model="form.remarks"></el-input>
         </el-form-item>
         <div class="footer">
-          <el-button class="btn" @click="cancelFn">取消</el-button>
-          <el-button type="primary" @click="submitFn" class="btn">确定</el-button>
+          <el-button size="small" class="btn" @click="cancelFn">取消</el-button>
+          <el-button size="small" type="primary" @click="submitFn" class="btn">确定</el-button>
         </div>
       </el-form>
     </el-dialog>
@@ -137,17 +138,15 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { getbillCate, billCateApi } from '@/api/enterprise.ts'
-import { clientBillStatusApi } from '@/api/client.ts'
-import { getInvoiceText } from '@/libs/customer.ts'
+import { getbillCate, billCateApi } from '@/api/enterprise'
+import { clientBillStatusApi } from '@/api/client'
+import { getInvoiceText } from '@/libs/customer'
 export default {
-  emits: ['isOk'],
   name: 'applyForPayment',
   components: {
-    operationDialog: defineAsyncComponent(() => import('@/views/fd/examine/components/operationDialog')),
-    expendDialog: defineAsyncComponent(() => import('@/views/customer/list/components/expendDialog')),
-    imageViewer: defineAsyncComponent(() => import('@/components/common/imageViewer'))
+    operationDialog: () => import('@/views/fd/examine/components/operationDialog'),
+    expendDialog: () => import('@/views/customer/list/components/expendDialog'),
+    imageViewer: () => import('@/components/common/imageViewer')
   },
   props: {
     paymentType: {
@@ -352,13 +351,13 @@ export default {
         height: 50px;
         display: block;
       }
-      :deep(.el-form-item) {
+      ::v-deep .el-form-item {
         margin-bottom: 20px;
       }
-      :deep(.el-form-item .el-form-item__content) {
+      ::v-deep .el-form-item--medium .el-form-item__content {
         line-height: 12px;
       }
-      :deep(.el-form-item__label) {
+      ::v-deep .el-form-item__label {
         font-size: 12px !important;
         font-weight: normal;
         color: #909399;

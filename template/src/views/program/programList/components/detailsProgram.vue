@@ -79,21 +79,21 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.station :deep(.edui-editor-iframeholder) {
+.station ::v-deep .edui-editor-iframeholder {
   height: 300px !important;
 }
 .mb-10 {
   margin-bottom: -10px;
 }
 .station {
-  :deep(.el-form-item__label) {
+  ::v-deep .el-form-item__label {
     font-family: PingFang SC, PingFang SC;
     font-weight: 400;
     font-size: 13px;
     color: #606266;
     line-height: 22px;
   }
-  :deep(.el-form-item__content) {
+  ::v-deep .el-form-item__content {
     font-family: PingFang SC, PingFang SC;
     font-weight: 400;
     font-size: 13px;
@@ -102,10 +102,10 @@ export default {
   }
 }
 
-:deep(.el-cascader),
-:deep(.el-input-number),
-:deep(.el-select),
-:deep(.el-date-editor) {
+::v-deep .el-cascader,
+::v-deep .el-input-number,
+::v-deep .el-select,
+::v-deep .el-date-editor {
   width: 100%;
 }
 .avatar-box {
@@ -130,7 +130,7 @@ export default {
 .members-box-content {
   margin: 0 3px 0 0;
 }
-:deep(.el-form-item) {
+::v-deep .el-form-item {
   align-items: center;
   margin-bottom: 30px;
 }

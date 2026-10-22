@@ -2,10 +2,9 @@
 <template>
   <el-select
     class="embedding-model-select"
-    :model-value="modelValue"
+    :value="value"
     filterable
     remote
-    remote-show-suffix
     clearable
     :disabled="disabled"
     :remote-method="remoteSearch"
@@ -23,8 +22,8 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useRemoteSelect } from '@/composables/useRemoteSelect.ts'
-import { getModelsListApi, getModelsInfoApi } from '@/api/chatAi.ts'
+import { useRemoteSelect } from '@/composables/useRemoteSelect'
+import { getModelsListApi, getModelsInfoApi } from '@/api/chatAi'
 
 interface EmbeddingModel {
   id: number
@@ -34,19 +33,19 @@ interface EmbeddingModel {
 
 const props = withDefaults(
   defineProps<{
-    modelValue?: number | string
+    value?: number | string
     placeholder?: string
     disabled?: boolean
   }>(),
   {
-    modelValue: '',
+    value: '',
     placeholder: '请选择向量模型',
     disabled: false
   }
 )
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: number | string): void
+  (e: 'input', value: number | string): void
   (e: 'change', value: number | string): void
 }>()
 
@@ -92,10 +91,10 @@ const ensureSelected = async (id?: number | string) => {
   }
 }
 
-watch(() => props.modelValue, ensureSelected, { immediate: true })
+watch(() => props.value, ensureSelected, { immediate: true })
 
 const handleChange = (val: number | string) => {
-  emit('update:modelValue', val)
+  emit('input', val)
   emit('change', val)
 }
 
@@ -112,6 +111,27 @@ const handleVisibleChange = (isOpen: boolean) => {
 <style scoped lang="scss">
 .embedding-model-select {
   width: 100%;
+
+  // remote + filterable 时 element 会把 iconClass 置空，下拉箭头没有字形，
+  // 按 inventory/components/OrderSelect.vue 的方式补回来
+  :deep(.el-input) {
+    --rotate: 180deg;
+
+    &.is-focus {
+      --rotate: 0deg;
+    }
+
+    // 仅改写下拉箭头字形；clearable 的清空图标与箭头共用 .el-select__caret.el-input__icon，
+    // 需排除，否则清空按钮会被画成箭头，用户以为在展开下拉实则触发清空
+    .el-select__caret.el-input__icon:not(.el-icon-circle-close) {
+      transition: transform 0.3s;
+      rotate: var(--rotate);
+
+      &::before {
+        content: '\e6df';
+      }
+    }
+  }
 }
 
 .option-name {

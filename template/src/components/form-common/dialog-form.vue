@@ -2,15 +2,14 @@
 <template>
   <div class="oa-dialog">
     <el-dialog
-      class="form-common-dialog-form-dialog"
       top="8%"
-      v-model="show"
+      :visible.sync="show"
       :width="fromData.width || '500px'"
       :show-close="false"
       :append-to-body="true"
       :close-on-click-modal="false"
     >
-      <template #header>
+      <template #title>
         <div class="header">
           <span class="title">{{ fromData.title }} </span>
           <span class="el-icon-close" @click="handleClose"></span>
@@ -32,8 +31,8 @@
       </div>
       <template #footer>
         <span class="dialog-footer" v-if="isFooter">
-          <el-button @click="handleClose">取消</el-button>
-          <el-button type="primary" @click="submit">{{ fromData.btnText || '确定' }}</el-button>
+          <el-button size="small" @click="handleClose">取消</el-button>
+          <el-button size="small" type="primary" @click="submit">{{ fromData.btnText || '确定' }}</el-button>
         </span>
       </template>
     </el-dialog>
@@ -46,7 +45,6 @@ import selectMember from '@/components/form-common/select-member'
 
 export default {
   name: 'CrmebOaEntIndex',
-  emits: ['submit', 'handleClose'],
   components: {
     oaForm,
     selectMember
@@ -122,6 +120,7 @@ export default {
 
 <style lang="scss" scoped>
 
+
 .header {
   display: flex;
   align-items: center;
@@ -148,19 +147,19 @@ export default {
     display: flex;
     justify-content: flex-end;
   }
-  :deep(.el-dialog) {
+  ::v-deep .el-dialog {
     border-radius: 6px;
   }
+
+  ::v-deep .el-button--medium {
+    padding: 10px 15px;
+  }
 }
-
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.form-common-dialog-form-dialog .el-dialog__footer {
+::v-deep .el-dialog__footer {
   padding-top: 0;
 }
-.el-dialog.form-common-dialog-form-dialog .el-dialog__body {
+
+::v-deep .el-dialog__body {
    max-height: 550px;
   overflow-y: auto;
 }

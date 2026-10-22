@@ -1,4 +1,4 @@
-<!-- 人事-职位管理-职位管理 -->
+﻿<!-- 人事-职位管理-职位管理 -->
 <template>
   <div class="divBox">
     <div>
@@ -27,35 +27,35 @@
               @selection-change="handleSelectionChange"
             >
               <el-table-column type="selection" width="55"></el-table-column>
-              <el-table-column label="职位名称" min-width="150" prop="name" />
-              <el-table-column label="职位类别" min-width="150" prop="cate.name" />
-              <el-table-column label="职位级别" min-width="100" prop="rank.alias" />
+              <el-table-column :label="$t('hr.jobtitle')" min-width="150" prop="name" />
+              <el-table-column :label="$t('hr.immediatesuperior')" min-width="150" prop="cate.name" />
+              <el-table-column :label="$t('hr.positionlevel')" min-width="100" prop="rank.alias" />
               <el-table-column label="职位简介" min-width="240" prop="describe" show-overflow-tooltip>
                 <template #default="scope">
                   <div class="line1">{{ scope.row.describe || '--' }}</div>
                 </template>
               </el-table-column>
 
-              <el-table-column label="创建人" min-width="120" prop="card.name" />
-              <el-table-column label="操作" prop="describe" show-overflow-tooltip width="200">
+              <el-table-column :label="$t('hr.founder')" min-width="120" prop="card.name" />
+              <el-table-column :label="$t('public.operation')" prop="describe" show-overflow-tooltip width="200">
                 <template #default="scope">
                   <el-button
                     v-hasPermi="['hr:enterprise:job:jobAdministration:check']"
-                    type="primary" link
+                    type="text"
                     @click="handleDetail(scope.row)"
-                    >查看</el-button
+                    >{{ $t('public.check') }}</el-button
                   >
                   <el-button
                     v-hasPermi="['hr:enterprise:job:jobAdministration:edit']"
-                    type="primary" link
+                    type="text"
                     @click="handleEdit(scope.row)"
-                    >编辑</el-button
+                    >{{ $t('public.edit') }}</el-button
                   >
                   <el-button
                     v-hasPermi="['hr:enterprise:job:jobAdministration:delete']"
-                    type="primary" link
+                    type="text"
                     @click="handleDelete(scope.row, scope.$index)"
-                    >删除</el-button
+                    >{{ $t('public.delete') }}</el-button
                   >
                 </template>
               </el-table-column>
@@ -78,30 +78,31 @@
           <el-drawer
             :before-close="handleDrawerClose"
             :modal="true"
-            title="职位详情"
-            v-model="drawer"
+            :title="$t('hr.joboetails')"
+            :visible.sync="drawer"
+            :wrapper-closable="true"
             direction="rtl"
             size="60%"
           >
             <div v-if="detailData" class="detail-box">
               <div class="item-box">
-                <span>职位名称:</span>
+                <span>{{ $t('hr.jobtitle') }}:</span>
                 <div>{{ detailData.name || '--' }}</div>
               </div>
               <div class="item-box">
-                <span>职位人数:</span>
+                <span>{{ $t('hr.numberPosts') }}:</span>
                 <div>{{ detailData.job_count || '--' }}</div>
               </div>
               <div class="item-box">
-                <span>职位简介:</span>
+                <span>{{ $t('hr.jobdescriptiones') }}:</span>
                 <div>{{ detailData.describe || '--' }}</div>
               </div>
               <div class="item-box">
-                <span>创建时间:</span>
+                <span>{{ $t('hr.creationtime') }}:</span>
                 <div>{{ detailData.created_at || '--' }}</div>
               </div>
               <div class="item-box">
-                <span>职位职责:</span>
+                <span>{{ $t('hr.jobresponsibilities') }}:</span>
                 <div v-if="detailData.duty == '<p><br></p>'">--</div>
               </div>
 
@@ -128,12 +129,12 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
+import { modalSure } from '@/libs/public'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
 import oaFromBox from '@/components/common/oaFromBox'
 import draweForm from '@/components/form-common/drawer-form'
-import { endJobApi, endJobStatusApi, endJobInfoApi, endJobDeleteApi, enterpriseEntInfoApi } from '@/api/enterprise.ts'
-import { rankCateListApi, rankListApi, rankJobsPutApi, rankJobsApi, rankJobsAddApi } from '@/api/setting.ts'
+import { endJobApi, endJobStatusApi, endJobInfoApi, endJobDeleteApi, enterpriseEntInfoApi } from '@/api/enterprise'
+import { rankCateListApi, rankListApi, rankJobsPutApi, rankJobsApi, rankJobsAddApi } from '@/api/setting'
 export default {
   name: 'JobManage',
   components: {
@@ -361,12 +362,12 @@ export default {
           this.$refs.draweForm.openBox()
         }, 300)
       } catch (e) {
-        this.$message.error(e.message)
+        this.$messgae.error(e.message)
       }
     },
     // 删除
     handleDelete(item, index) {
-      modalSure('删除该职位吗').then(() => {
+      modalSure(this.$t('hr.message3')).then(() => {
         this.endJobDelete(item.id)
       })
     },
@@ -413,32 +414,32 @@ export default {
     span {
       font-size: 14px;
     }
-    :deep(table) {
+    ::v-deep table {
       border: 1px solid #ccc;
     }
 
-    :deep(table th) {
+    ::v-deep table th {
       border: 1px solid #ccc;
     }
-    :deep(table td) {
+    ::v-deep table td {
       padding: 10px 5px;
       border: 1px solid #ccc;
     }
 
-    :deep(p img) {
+    ::v-deep p img {
       max-width: 800px;
     }
   }
   .content {
-    :deep(p) {
+    ::v-deep p {
       font-size: 16px;
     }
-    :deep(td) {
+    ::v-deep td {
       border: 1px solid;
     }
   }
 }
-:deep(.el-drawer__body) {
+::v-deep .el-drawer__body {
   height: 100%;
   overflow-y: auto;
 }

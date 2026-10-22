@@ -13,7 +13,7 @@
         v-model="fieldModel.id"
         class="full-width-input"
         :disabled="field.options.disabled"
-        :size="toElSize(field.options.size)"
+        :size="field.options.size"
         :clearable="field.options.clearable"
         filterable
         :allow-create="field.options.allowCreate"
@@ -41,19 +41,17 @@
         <template v-slot:custom>
           <el-input ref="fieldEditor" v-model="displayValue"
             :disabled="disabledList.includes(field.options.name) ? true : field.options.disabled" readonly clearable
-            v-show="!getReadMode() || field.isShow" :size="toElSize(field.options.size)" class="hide-spin-button" type="text"
-            :placeholder="field.options.placeholder" :prefix-icon="$icon(field.options.prefixIcon)"
-            :suffix-icon="$icon(field.options.suffixIcon)" @click="onAppendButtonClick">
+            v-show="!getReadMode() || field.isShow" :size="field.options.size" class="hide-spin-button" :type="'text'"
+            :placeholder="field.options.placeholder" :prefix-icon="field.options.prefixIcon"
+            :suffix-icon="field.options.suffixIcon" @click.native="onAppendButtonClick">
             <template #suffix>
               <i title="清除" v-if="!!displayValue && !field.options.disabled" class="el-input__icon el-icon-circle-close"
                 @click.stop="handleClearEvent">
               </i>
             </template>
-            <template #append>
-              <el-button :disabled="field.options.disabled" @click.stop="onAppendButtonClick">
-                {{ field.options.buttonText }}
-              </el-button>
-            </template>
+            <!-- <el-button slot="append" :disabled="field.options.disabled" @click="onAppendButtonClick">
+              {{ field.options.buttonText }}
+            </el-button> -->
           </el-input>
         </template>
       </component>
@@ -66,18 +64,20 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { dataModulerListApi, dataModulerFieldApi } from '@/api/develop.ts'
+import { dataModulerListApi, dataModulerFieldApi } from '@/api/develop'
 // import VisualDesign from '@/../lib/visual-design/designer.umd.js'
 import ReferenceSearchTable from '@/components/mlReferenceSearch/reference-search-table.vue'
+// import emitter from '@/utils/emitter'
 // const { FormItemWrapper, emitter, i18n, fieldMixin } = VisualDesign.VFormSDK
 import FormItemWrapper from './form-item-wrapper'
-import i18n, { translate } from '@/utils/i18n.ts'
-import { putUpdateFieldApi } from '@/api/develop.ts'
+import emitter from '@/utils/emitter'
+import i18n, { translate } from '@/utils/i18n'
+import { putUpdateFieldApi } from '@/api/develop'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
 export default {
   name: 'input-select-widget',
-  mixins: [fieldMixin, i18n],
+  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
+  mixins: [emitter, fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -106,9 +106,9 @@ export default {
   components: {
     FormItemWrapper,
     ReferenceSearchTable,
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
-    selectOne: defineAsyncComponent(() => import('@/components/form-common/select-one')),
-    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department'))
+    selectMember: () => import('@/components/form-common/select-member'),
+    selectOne: () => import('@/components/form-common/select-one'),
+    selectDepartment: () => import('@/components/form-common/select-department')
   },
   data() {
     return {
@@ -187,11 +187,11 @@ export default {
     this.buildFieldRules()
     this.handleOnCreated()
     if (!this.fieldModel) {
-      this.fieldModel = { name: '', id: '' }
+      this.$set(this, 'fieldModel', { name: '', id: '' })
     }
 
   },
-  beforeUnmount() { },
+  beforeDestroy() { },
 
   mounted() {
     this.handleOnMounted()

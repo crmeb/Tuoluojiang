@@ -21,7 +21,7 @@
     <UserDetails ref="userDetails" :actionType="actionType" :tabtypes="tabtypes" @getList="getList" />
 
     <!-- 邀请链接 -->
-    <el-dialog :before-close="handleClose" :title="linkTitle" v-model="linkShow" top="20%" width="560px">
+    <el-dialog :before-close="handleClose" :title="linkTitle" :visible.sync="linkShow" top="20%" width="560px">
       <span>{{ linkTable }}</span>
       <div class="tips">提示：{{ linkContent }}</div>
       <template #footer>
@@ -45,12 +45,11 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import modalForm from '@/libs/modal-form.ts'
-import { perfectCard, deleteCard, formalCard, quitCard, importCardApi, getTemp, getInterview } from '@/api/enterprise.ts'
-import { fileLinkDownLoad } from '@/utils/file.ts'
-import { getStorageJson } from '@/utils/storage.ts'
+import { modalSure } from '@/libs/public'
+import modalForm from '@/libs/modal-form'
+import { perfectCard, deleteCard, formalCard, quitCard, importCardApi, getTemp, getInterview } from '@/api/enterprise'
+import { fileLinkDownLoad } from '@/utils/file'
+import { getStorageJson } from '@/utils/storage'
 export default {
   props: {
     componentName: {
@@ -86,7 +85,7 @@ export default {
           label: '离职时间：',
           placeholder: '选择时间',
           key: 'quit_time',
-          format: 'YYYY-MM-DD'
+          format: 'yyyy-MM-dd'
         },
         {
           type: 'input',
@@ -155,7 +154,7 @@ export default {
 
     // 删除: 单个
     onDelete(data) {
-      modalSure('你确定要删除该员工吗').then(() => {
+      modalSure(this.$t('business.message10')).then(() => {
         deleteCard(data.id).then((res) => {
           this.$refs.dynamic.getList()
         })
@@ -343,28 +342,28 @@ export default {
   },
 
   components: {
-    Table: defineAsyncComponent(() => import('./components/table.vue')),
+    Table: () => import('./components/table.vue'),
     // 在职员工
-    jobEmployees: defineAsyncComponent(() => import('./components/index/employees.vue')),
+    jobEmployees: () => import('./components/index/employees.vue'),
     // 未入职员工
-    notNewEmployees: defineAsyncComponent(() => import('./components/index/notEmployees.vue')),
+    notNewEmployees: () => import('./components/index/notEmployees.vue'),
     // 离职员工
-    resignedEmployee: defineAsyncComponent(() => import('./components/index/quitEmployees.vue')),
+    resignedEmployee: () => import('./components/index/quitEmployees.vue'),
     // 档案信息弹窗
-    UserDetails: defineAsyncComponent(() => import('./components/userDetails.vue')),
+    UserDetails: () => import('./components/userDetails.vue'),
 
-    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form')),
+    oaDialog: () => import('@/components/form-common/dialog-form'),
     // 导入
-    importExcel: defineAsyncComponent(() => import('@/components/common/importExcel'))
+    importExcel: () => import('@/components/common/importExcel')
   }
 }
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-form-item__content) {
+::v-deep .el-form-item__content {
   flex: 1;
 }
-:deep(.input-with-select .el-input-group__prepend) {
+::v-deep .input-with-select .el-input-group__prepend {
   background-color: #fff;
 }
 .tips {
@@ -440,14 +439,14 @@ export default {
   font-size: 11px;
   color: #666;
 }
-:deep(.el-page-header__title) {
+::v-deep .el-page-header__title {
   font-size: 13px;
 }
-:deep(.el-page-header__content) {
+::v-deep .el-page-header__content {
   font-size: 17px;
   font-weight: 500;
 }
-:deep(.el-dialog__body) {
+::v-deep .el-dialog__body {
   padding-bottom: 0;
 }
 </style>

@@ -5,12 +5,10 @@
       <div class="lh-center">
         <el-dropdown>
           <span class="iconfont icongengduo2 fz32 pointer ml10"></span>
-          <template #dropdown>
-            <el-dropdown-menu style="text-align: left">
-              <el-dropdown-item @click="handleExport()"> 导出 </el-dropdown-item>
-              <el-dropdown-item @click="dropdownSearch()"> 查看异常 </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
+          <el-dropdown-menu style="text-align: left">
+            <el-dropdown-item @click.native="handleExport()"> 导出 </el-dropdown-item>
+            <el-dropdown-item @click.native="dropdownSearch()"> 查看异常 </el-dropdown-item>
+          </el-dropdown-menu>
         </el-dropdown>
       </div>
     </div>
@@ -25,9 +23,10 @@
                 
                   <select-member
                     :selectIdData="userList || []"
-                    placeholder="请选择被考核人"
+                    :placeholder="$t('access.placeholder18')"
                     @getSelectList="getSelectList($event, 2)"
                     :is-search="true"
+                    style="width: 200px"
                   ></select-member>
                 </el-form-item>
                 <el-form-item class="select-bar">
@@ -35,7 +34,7 @@
                     v-model="tableFrom.period"
                     placeholder="请选择考核周期"
                     clearable
-                    value-on-clear=""
+                    size="small"
                     style="width: 160px"
                     @change="changePeriod"
                   >
@@ -59,6 +58,7 @@
                       :type="dateArray[tableFrom.period - 1].type"
                       class="time"
                       clearable
+                      size="small"
                       style="width: 250px"
                       @change="getDateValue"
                     />
@@ -71,6 +71,7 @@
                       :type="dateArray[4].type"
                       class="time"
                       clearable
+                      size="small"
                       @change="getDateValue"
                     />
                     <dateQuarter
@@ -85,16 +86,17 @@
                 <el-form-item v-if="tableFrom.period === ''" class="select-bar">
                   <el-date-picker
                     v-model="timeVal"
-                    end-placeholder="结束时间"
-                    v-bind="$pickerProps(pickerOptions)"
-                    placeholder="选择时间"
-                    range-separator="至"
-                    start-placeholder="开始时间"
+                    :end-placeholder="$t('toptable.endingdate')"
+                    :picker-options="pickerOptions"
+                    :placeholder="$t('toptable.selecttime')"
+                    :range-separator="$t('toptable.to')"
+                    :start-placeholder="$t('toptable.startdate')"
                     class="time"
                     clearable
-                    format="YYYY/MM/DD"
+                    format="yyyy/MM/dd"
+                    size="small"
                     type="daterange"
-                    value-format="YYYY/MM/DD"
+                    value-format="yyyy/MM/dd"
                     @change="onchangeTime"
                   />
                 </el-form-item>
@@ -111,7 +113,7 @@
       </div>
       <div class="flex">
         <el-popover
-          :visible="conditionDialogStore.visible"
+          v-model="$store.state.business.conditionDialog"
           placement="bottom-start"
           trigger="manual"
           width="750"
@@ -121,10 +123,10 @@
           <div class="condition-box">
             <div class="flex-between">
               <div class="title">筛选条件</div>
-              <div class="el-icon-close pointer" @click="conditionDialogStore.visible = false"></div>
+              <div class="el-icon-close pointer" @click="$store.state.business.conditionDialog = false"></div>
             </div>
             <condition-dialog
-              v-if="conditionDialogStore.visible"
+              v-if="$store.state.business.conditionDialog"
               :eventStr="`event`"
               :formArray="viewSearch"
               :max="9"
@@ -176,23 +178,16 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useConditionDialogStore } from '@/stores/conditionDialog.ts'
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import pickerOptions from '@/libs/pickerOptions.ts'
-import Commnt from '@/components/user/accessCommon.ts'
+import moment from 'moment'
+import pickerOptions from '@/libs/pickerOptions'
+import Commnt from '@/components/user/accessCommon'
 export default {
-  emits: ['openAssessed', 'confirmData', 'getExportData'],
   name: 'FormBox',
   props: ['total'],
   components: {
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
-    dateQuarter: defineAsyncComponent(() => import('@/components/form-common/select-dateQuarter')),
-    conditionDialog: defineAsyncComponent(() => import('@/components/develop/conditionDialog'))
-  },
-  computed: {
-    ...mapStores(useConditionDialogStore)
+    selectMember: () => import('@/components/form-common/select-member'),
+    dateQuarter: () => import('@/components/form-common/select-dateQuarter'),
+    conditionDialog: () => import('@/components/develop/conditionDialog')
   },
   data() {
     return {
@@ -263,30 +258,41 @@ export default {
       ],
       title: '',
       dateArray: [
-        { value: 1, type: 'week', text: '选择周', format: 'YYYY 第 ww 周' },
-        { value: 2, type: 'month', text: '选择月份', format: 'YYYY-MM' },
+        { value: 1, type: 'week', text: '选择周', format: 'yyyy 第 WW 周' },
+        { value: 2, type: 'month', text: '选择月份', format: 'yyyy-MM' },
         { value: 4, type: '' },
         { value: 5, type: '' },
-        { value: 3, type: 'year', text: '选择年份', format: 'YYYY' }
+        { value: 3, type: 'year', text: '选择年份', format: 'yyyy' }
       ],
       quarterBtn: false,
       halfYearBtn: false
     }
   },
+  computed: {
+    lang: function () {
+      return this.$store.getters.lang
+    }
+  },
+  watch: {
+    lang() {
+      this.setOptions()
+    }
+  },
   methods: {
+    setOptions() {},
     // 时间段选择
     selectChange() {
       this.timeVal = ''
     },
     onShow() {
-      this.conditionDialogStore.visible = true
+      this.$store.state.business.conditionDialog = true
     },
     dropdownSearch() {
       this.$emit('openAssessed')
     },
     // 高级筛选样式
     saveCondition(data) {
-      this.additional_search = this.conditionDialogStore.fieldOptions.list
+      this.additional_search = this.$store.state.business.fieldOptions.list
 
       let obj = {}
       this.additional_search.map((item) => {
@@ -333,7 +339,7 @@ export default {
         type: '',
         additional_search_boolean: '1'
       }
-      this.conditionDialogStore.setFieldOptions(data)
+      this.$store.commit('uadatefieldOptions', data)
       this.$emit('confirmData', 'reset')
     },
     // cardTag(type, index) {
@@ -456,11 +462,11 @@ export default {
         this.tableFrom.date = ''
       } else {
         if (this.tableFrom.period == 1) {
-          this.tableFrom.date = dayjs(this.tableFrom.time).format('YYYY-MM-DD 00:00:00')
+          this.tableFrom.date = moment(this.tableFrom.time).format('YYYY-MM-DD 00:00:00')
         } else if (this.tableFrom.period == 2) {
-          this.tableFrom.date = dayjs(this.tableFrom.time).format('YYYY-MM-DD 00:00:00')
+          this.tableFrom.date = moment(this.tableFrom.time).format('YYYY-MM-DD 00:00:00')
         } else if (this.tableFrom.period == 3) {
-          this.tableFrom.date = dayjs(this.tableFrom.time).format('YYYY-MM-DD 00:00:00')
+          this.tableFrom.date = moment(this.tableFrom.time).format('YYYY-MM-DD 00:00:00')
         }
       }
       this.handleConfirm()
@@ -571,12 +577,8 @@ export default {
   width: 100%;
 }
 
-:deep(.el-form-item) {
+::v-deep .el-form-item {
   margin-bottom: 0;
-}
-// Element Plus 行内表单项默认右边距 32px，按旧版还原为 10px
-.search :deep(.el-form--inline .el-form-item) {
-  margin-right: 10px;
 }
 .icona-bianzu8 {
   color: #999999;

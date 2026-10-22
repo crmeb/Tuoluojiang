@@ -2,19 +2,20 @@
   <div class="oa-dialog">
     <el-drawer
       :title="title"
-      v-model="show"
+      :visible.sync="show"
       direction="rtl"
+      :wrapper-closable="true"
       :before-close="handleClose"
       size="60%"
-      :close-on-click-modal="false"
+      :wrapperClosable="false"
     >
       <div class="invite">
         <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="auto">
           <el-form-item label="密钥名称：" prop="title">
-            <el-input placeholder="请输入名称" v-model="ruleForm.title"> </el-input>
+            <el-input placeholder="请输入名称" v-model="ruleForm.title" size="small"> </el-input>
           </el-form-item>
           <el-form-item label="密钥描述：">
-            <el-input type="textarea" v-model="ruleForm.info" :rows="2" placeholder="请输入内容">
+            <el-input type="textarea" v-model="ruleForm.info" :rows="2" size="small" placeholder="请输入内容">
             </el-input>
           </el-form-item>
         </el-form>
@@ -48,7 +49,7 @@
               <el-table-column prop="date" label="接口权限">
                 <template #default="scope">
                   <el-checkbox-group v-model="auth">
-                    <el-checkbox v-for="(item, index) in scope.row.opitons" :value="item.id" :key="index">{{
+                    <el-checkbox v-for="(item, index) in scope.row.opitons" :label="item.id" :key="index">{{
                       item.name
                     }}</el-checkbox>
                   </el-checkbox-group>
@@ -59,17 +60,16 @@
         </div>
       </div>
       <div class="button from-foot-btn fix btn-shadow">
-        <el-button class="el-btn" @click="handleClose()">取消</el-button>
-        <el-button type="primary" @click="submit">保存</el-button>
+        <el-button class="el-btn" size="small" @click="handleClose()">取消</el-button>
+        <el-button size="small" type="primary" @click="submit">保存</el-button>
       </div>
     </el-drawer>
   </div>
 </template>
 <script>
-import { extractArrayIds } from '@/libs/public.ts'
-import { getOenapiApi, saveOpenKeyApi, getOpenKeyInfoApi, putOpenKeyApi } from '@/api/develop.ts'
+import { extractArrayIds } from '@/libs/public'
+import { getOenapiApi, saveOpenKeyApi, getOpenKeyInfoApi, putOpenKeyApi } from '@/api/develop'
 export default {
-  emits: ['submitOk'],
   name: '',
   components: {},
   props: {},
@@ -310,7 +310,7 @@ export default {
 }
 
 .delete-icon {
-  :deep(.el-tree-node__content) {
+  ::v-deep .el-tree-node__content {
     display: none !important;
   }
 }

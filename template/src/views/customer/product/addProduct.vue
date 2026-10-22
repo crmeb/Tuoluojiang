@@ -13,8 +13,8 @@
         <el-form ref="form" :label-width="specLabelWidth">
           <el-form-item label="规格：">
             <el-radio-group v-model="form.spec_type">
-              <el-radio :label="0" :value="0" class="radio">单规格</el-radio>
-              <el-radio :label="1" :value="1">多规格</el-radio>
+              <el-radio :label="0" class="radio">单规格</el-radio>
+              <el-radio :label="1">多规格</el-radio>
             </el-radio-group>
           </el-form-item>
           <el-form-item label="商品规格：" required v-if="form.spec_type == 1">
@@ -26,103 +26,100 @@
                 handle=".move-icon"
                 @end="onMoveSpec"
                 animation="300"
-                :item-key="$draggableKey"
               >
-                <template #item="{ element: item, index }">
-                  <div
-                    class="specifications-item active"
-                    @click="changeCurrentIndex(index)"
-                  >
-                    <div class="move-icon">
-                      <span class="iconfont icontuodong"></span>
+                <div
+                  class="specifications-item active"
+                  v-for="(item, index) in attrs"
+                  :key="index"
+                  @click="changeCurrentIndex(index)"
+                >
+                  <div class="move-icon">
+                    <span class="iconfont icontuodong"></span>
+                  </div>
+                  <i class="del el-icon-error" @click="handleRemoveRole(index, item.value)"></i>
+                  <div class="specifications-item-box">
+                    <div class="lineBox"></div>
+                    <div class="specifications-item-name mb18">
+                      <el-input
+                        size="small"
+                        v-model="item.value"
+                        placeholder="规格名称"
+                        @change="attrChangeValue(index, item.value)"
+                        @focus="handleFocus(item.value, item)"
+                        class="specifications-item-name-input"
+                        maxlength="30"
+                        show-word-limit
+                      ></el-input>
                     </div>
-                    <i class="del el-icon-error" @click="handleRemoveRole(index, item.value)"></i>
-                    <div class="specifications-item-box">
-                      <div class="lineBox"></div>
-                      <div class="specifications-item-name mb18">
-                        <el-input
-                          v-model="item.value"
-                          placeholder="规格名称"
-                          @change="attrChangeValue(index, item.value)"
-                          @focus="handleFocus(item.value, item)"
-                          class="specifications-item-name-input"
-                          maxlength="30"
-                          show-word-limit
-                        ></el-input>
-                      </div>
-                      <div class="rulesBox">
-                        <draggable
-                          class="item"
-                          :list="item.detail"
-                          :disabled="item.detail.length < 2"
-                          handle=".drag"
-                          @end="onMoveSpec"
-                          :item-key="$draggableKey"
-                        >
-                          <template #item="{ element: det, index: indexn }">
-                            <div class="mr10 spec drag">
-                              <i class="el-icon-error" @click="handleRemove2(item.detail, indexn, det.value)"></i>
-                              <el-input
-                                style="width: 120px"
-                                v-model="det.value"
-                                placeholder="规格值"
-                                @change="attrDetailChangeValue(det.value, index)"
-                                @focus="handleFocus(det.value)"
-                                maxlength="30"
-                                @blur="handleBlur()"
-                              >
-                                <template #prefix>
-                                  <span class="iconfont icontuodong"></span>
-                                </template>
-                              </el-input>
-                              <div class="img-popover" v-if="item.add_pic">
-                                <div class="popper-arrow"></div>
-                                <div class="popper" @click="handleSelImg(det, index, indexn)">
-                                  <img class="img" v-if="det.pic" :src="det.pic" />
-                                  <i v-else class="el-icon-plus"></i>
-                                </div>
-                                <i
-                                  v-if="det.pic"
-                                  class="img-del el-icon-error"
-                                  @click="handleRemoveImg(det, index, indexn)"
-                                ></i>
-                              </div>
+                    <div class="rulesBox">
+                      <draggable
+                        class="item"
+                        :list="item.detail"
+                        :disabled="item.detail.length < 2"
+                        handle=".drag"
+                        @end="onMoveSpec"
+                      >
+                        <div v-for="(det, indexn) in item.detail" :key="indexn" class="mr10 spec drag">
+                          <i class="el-icon-error" @click="handleRemove2(item.detail, indexn, det.value)"></i>
+                          <el-input
+                            style="width: 120px"
+                            size="small"
+                            v-model="det.value"
+                            placeholder="规格值"
+                            @change="attrDetailChangeValue(det.value, index)"
+                            @focus="handleFocus(det.value)"
+                            maxlength="30"
+                            @blur="handleBlur()"
+                          >
+                            <template #prefix>
+                              <span class="iconfont icontuodong"></span>
+                            </template>
+                          </el-input>
+                          <div class="img-popover" v-if="item.add_pic">
+                            <div class="popper-arrow"></div>
+                            <div class="popper" @click="handleSelImg(det, index, indexn)">
+                              <img class="img" v-if="det.pic" :src="det.pic" />
+                              <i v-else class="el-icon-plus"></i>
                             </div>
+                            <i
+                              v-if="det.pic"
+                              class="img-del el-icon-error"
+                              @click="handleRemoveImg(det, index, indexn)"
+                            ></i>
+                          </div>
+                        </div>
+                        <el-popover
+                          :ref="'popoverRef_' + index"
+                          placement=""
+                          width="210"
+                          trigger="click"
+                          @after-enter="handleShowPop(index)"
+                        >
+                          <el-input
+                            style="min-width: 80px; width: 210"
+                            :ref="'inputRef_' + index"
+                            size="small"
+                            placeholder="请输入规格值后回车"
+                            v-model="formDynamic.attrsVal"
+                            @keyup.enter.native="createAttr(formDynamic.attrsVal, index)"
+                            @blur="createAttr(formDynamic.attrsVal, index)"
+                            maxlength="30"
+                            show-word-limit
+                          >
+                          </el-input>
+                          <template #reference>
+                            <div class="addfont">添加规格值</div>
                           </template>
-                          <template #footer>
-                            <el-popover
-                              :ref="'popoverRef_' + index"
-                              v-model:visible="specPopoverOpen[index]"
-                              placement="bottom"
-                              width="210"
-                              trigger="click"
-                              @after-enter="handleShowPop(index)"
-                            >
-                              <el-input
-                                style="min-width: 80px; width: 210"
-                                :ref="'inputRef_' + index"
-                                placeholder="请输入规格值后回车"
-                                v-model="formDynamic.attrsVal"
-                                @keyup.enter="createAttr(formDynamic.attrsVal, index)"
-                                @blur="createAttr(formDynamic.attrsVal, index)"
-                                maxlength="30"
-                                show-word-limit
-                              >
-                              </el-input>
-                              <template #reference>
-                                <div class="addfont">添加规格值</div>
-                              </template>
-                            </el-popover>
-                          </template>
-                        </draggable>
-                      </div>
+                        </el-popover>
+                      </draggable>
                     </div>
                   </div>
-                </template>
+                </div>
               </draggable>
               <el-button
                 v-if="attrs.length < 4 && form.spec_type == 1"
-                type="primary" link
+                size="small"
+                type="text"
                 @click="handleAddRole()"
                 >添加新规格</el-button
               >
@@ -131,7 +128,7 @@
 
           <!-- 单规格列表 -->
           <el-form-item v-if="form.spec_type === 0">
-            <el-table :data="OneattrValue" class="tabNumWidth">
+            <el-table :data="OneattrValue" class="tabNumWidth" size="mini">
               <el-table-column label="图片" min-width="80">
                 <template #default="scope">
                   <div class="upLoadPicBox specPictrue" @click="modalPicTap('1', 'dan')">
@@ -164,6 +161,7 @@
                       v-else
                       v-model="scope.row[iii]"
                       :min="0"
+                      size="small"
                       class="priceBox"
                       controls-position="right"
                     />
@@ -181,6 +179,7 @@
               :cell-class-name="tableCellClassName"
               :span-method="objectSpanMethod"
               :key="tableKey"
+              size="small"
             >
               <el-table-column
                 v-for="(item, index) in header"
@@ -193,7 +192,7 @@
                   <template v-if="item.key">
                     <template v-if="scope.$index == 0">
                       <div v-if="attrs.length && attrs[scope.column.index] && ManyAttrValue.length">
-                        <el-select v-model="oneFormBatch[0][item.title]" :placeholder="`请选择`" clearable>
+                        <el-select v-model="oneFormBatch[0][item.title]" :placeholder="`请选择`" size="small" clearable>
                           <el-option
                             v-for="val in attrs[scope.column.index].detail"
                             :key="val.value"
@@ -236,8 +235,8 @@
                   </template>
 
                   <template v-else-if="item.slot === 'action' && scope.$index == 0">
-                    <el-button type="primary" link @click="batchAdd">批量修改</el-button>
-                    <el-button type="primary" link @click="batchDel">清空</el-button>
+                    <el-button type="text" size="mini" @click="batchAdd">批量修改</el-button>
+                    <el-button type="text" size="mini" @click="batchDel">清空</el-button>
                   </template>
                 </template>
               </el-table-column>
@@ -248,20 +247,19 @@
     </div>
     <!-- 底部按钮 -->
     <FormPageFooter>
-      <el-button @click="backFn">取消</el-button>
-      <el-button type="primary" @click="submit()">保存</el-button>
+      <el-button size="small" @click="backFn">取消</el-button>
+      <el-button size="small" type="primary" @click="submit()">保存</el-button>
     </FormPageFooter>
   </BaseContainer>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { roterPre } from '@/settings.ts'
+import { roterPre } from '@/settings'
 import vuedraggable from 'vuedraggable'
-import { productCreateApi, productSaveApi, productInfoApi, putProductApi } from '@/api/client.ts'
+import { productCreateApi, productSaveApi, productInfoApi, putProductApi } from '@/api/client'
 import BaseContainer from '@/components/BaseContainer/index.vue'
 import FormPageHeader from '@/components/FormPageHeader/index.vue'
 import FormPageFooter from '@/components/FormPageFooter/index.vue'
-import { modalUpload } from '@/components/uploadPicture/uploadFrom/index.ts'
+import { modalUpload } from '@/components/uploadPicture/uploadFrom'
 
 // 「规格售价」表单自身最长 label（规格列表）的字符数，作为宽度下限，
 // 避免上方动态表单尚未返回时 label 被压得过窄
@@ -270,7 +268,7 @@ const SPEC_LABEL_MIN_CHAR_LENGTH = 4
 export default {
   components: {
     draggable: vuedraggable,
-    oaForm: defineAsyncComponent(() => import('@/components/customer/oaForm')),
+    oaForm: () => import('@/components/customer/oaForm'),
     BaseContainer,
     FormPageHeader,
     FormPageFooter
@@ -295,14 +293,13 @@ export default {
         attrsName: '',
         attrsVal: ''
       },
-      specPopoverOpen: {},
       tableKey: 0,
       attrs: [],
       oneFormBatch: [
         {
           image: '',
-          price: null,
-          cost: null,
+          price: '',
+          cost: '',
           bar_code: '',
           product_bar_code: ''
         }
@@ -443,9 +440,7 @@ export default {
     },
 
     handleShowPop(index) {
-      const input = this.$refs['inputRef_' + index]
-      const target = Array.isArray(input) ? input[0] : input
-      target?.focus()
+      this.$refs['inputRef_' + index][0].focus()
     },
     watCh(val) {
       const tmp = {}
@@ -511,7 +506,7 @@ export default {
           .then(() => {
             for (let val of this.ManyAttrValue) {
               if (this.isSubset(val.attr_arr, arr)) {
-                val.image = img
+                this.$set(val, 'image', img)
               }
             }
 
@@ -521,7 +516,7 @@ export default {
       } else {
         for (let val of this.ManyAttrValue) {
           if (this.isSubset(val.attr_arr, arr)) {
-            val.image = img
+            this.$set(val, 'image', img)
           }
         }
 
@@ -533,7 +528,7 @@ export default {
       if (e) {
         this.attrs.map((item, ii) => {
           if (ii !== i) {
-            item.add_pic = 0
+            this.$set(item, 'add_pic', 0)
           }
         })
         this.canSel = false
@@ -660,14 +655,17 @@ export default {
         } else {
           this.generateAttr(this.attrs)
         }
-        this.specPopoverOpen[idx] = false
+        this.$refs['popoverRef_' + idx][0].doClose() //关闭的
         this.clearAttr()
-        // 关掉后再打开，方便连续添加下一个规格值
         setTimeout(() => {
-          this.specPopoverOpen[idx] = true
+          if (this.$refs['popoverRef_' + idx]) {
+            //重点是以下两句
+            this.$refs['popoverRef_' + idx][0].doShow() //打开的
+            //重点是以上两句
+          }
         }, 20)
       } else {
-        this.specPopoverOpen[idx] = false
+        this.$refs['popoverRef_' + idx][0].doClose() //关闭的
       }
       // 监听多规格值变化，在新增时候默认选中规格要自动默认第一个数据
       let exists = this.ManyAttrValue.some((item) => item.is_default_select == 0)
@@ -747,10 +745,10 @@ export default {
         }
         for (let i = 0; i < combination.length; i++) {
           const value = combination[i]
-          row[data[i].value] = value
-          row.title = data[i].value
-          row.key = data[i].value
-          row.detail[data[i].value] = value
+          this.$set(row, data[i].value, value)
+          this.$set(row, 'title', data[i].value)
+          this.$set(row, 'key', data[i].value)
+          this.$set(row.detail, data[i].value, value)
           // 如果manyFormValidate中存在该属性值，则赋值
           for (let k = 0; k < this.ManyAttrValue.length; k++) {
             const manyItem = this.ManyAttrValue[k]
@@ -826,19 +824,19 @@ export default {
         for (let val of this.ManyAttrValue) {
           if (this.isSubset(val.attr_arr, arr)) {
             if (this.oneFormBatch[0].image) {
-              val.image = this.oneFormBatch[0].image
+              this.$set(val, 'image', this.oneFormBatch[0].image)
             }
             if (this.oneFormBatch[0].price != undefined && this.oneFormBatch[0].price != '') {
-              val.price = this.oneFormBatch[0].price
+              this.$set(val, 'price', this.oneFormBatch[0].price)
             }
             if (this.oneFormBatch[0].cost != undefined && this.oneFormBatch[0].cost != '') {
-              val.cost = this.oneFormBatch[0].cost
+              this.$set(val, 'cost', this.oneFormBatch[0].cost)
             }
             if (this.oneFormBatch[0].bar_code != undefined && this.oneFormBatch[0].bar_code != '') {
-              val.bar_code = this.oneFormBatch[0].bar_code
+              this.$set(val, 'bar_code', this.oneFormBatch[0].bar_code)
             }
             if (this.oneFormBatch[0].product_bar_code != undefined && this.oneFormBatch[0].product_bar_code != '') {
-              val.product_bar_code = this.oneFormBatch[0].product_bar_code
+              this.$set(val, 'product_bar_code', this.oneFormBatch[0].product_bar_code)
             }
           }
         }
@@ -874,7 +872,7 @@ export default {
         bar_code: '',
         product_bar_code: ''
       }
-      this.oneFormBatch = [obj]
+      this.$set(this, 'oneFormBatch', [obj])
       this.ManyAttrValue[0] = obj
       this.tableKey += 1
     },
@@ -903,7 +901,7 @@ export default {
       })
       let arr = []
       arr = [...array, ...this.GoodsTableHead]
-      this.header = arr
+      this.$set(this, 'header', arr)
       this.tableKey += 1
     }
   }
@@ -924,24 +922,24 @@ export default {
 .main {
   width: 65%;
 
-  :deep(.el-form--inline .el-form-item) {
+  ::v-deep .el-form--inline .el-form-item {
     display: flex;
   }
 
-  :deep(.el-input-number) {
+  ::v-deep .el-input-number--medium {
     width: 100%;
   }
 
-  :deep(.el-input__inner) {
+  ::v-deep .el-input__inner {
     text-align: left;
   }
 
-  :deep(.el-date-editor) {
+  ::v-deep .el-date-editor {
     width: 100%;
   }
 
   // 产品信息动态表单：控件统一 460px（产品简介富文本编辑器除外）
-  :deep(.inline-edit-item) {
+  ::v-deep .inline-edit-item {
     .el-input,
     .el-textarea,
     .el-select,
@@ -974,7 +972,7 @@ export default {
     background-color: #fafafa;
     border-radius: 10px;
 
-    :deep(.el-checkbox__label) {
+    ::v-deep .el-checkbox__label {
       font-size: 13px;
     }
   }
@@ -1278,7 +1276,7 @@ export default {
       width: 100px;
     }
 
-    :deep(.el-popover) {
+    ::v-deep .el-popover {
       border: none;
       box-shadow: none;
       padding: 0;

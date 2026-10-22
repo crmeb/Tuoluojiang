@@ -1,6 +1,6 @@
 <template>
     <div class="oa-dialog">
-        <el-dialog title="导入数据" v-model="show" width="789px" :before-close="handleClose"
+        <el-dialog title="导入数据" :visible.sync="show" width="789px" :before-close="handleClose"
             :close-on-click-modal="false">
             <div class="tips-box">
                 按照模板中的格式编辑内容，完成后在下方上传<img src="@/assets/images/excel.png" alt="" class="img" />
@@ -52,12 +52,11 @@
     </div>
 </template>
 <script>
-import { uploader } from '@/utils/uploadCloud.ts'
-import { fileLinkDownLoad, formatBytes } from '@/utils/file.ts'
-import { clientImportTemplateApi, clientImportApi } from '@/api/client.ts'
+import { uploader } from '@/utils/uploadCloud'
+import { fileLinkDownLoad, formatBytes } from '@/utils/file'
+import { clientImportTemplateApi, clientImportApi } from '@/api/client'
 import exportExcel from '@/components/common/exportExcel'
 export default {
-  emits: ['getTableData'],
     name: '',
     components: { exportExcel },
     props: {},
@@ -194,13 +193,13 @@ export default {
         width: 100%;
         height: 312px;
 
-        :deep(.el-upload) {
+        ::v-deep .el-upload {
             width: 100%;
             height: 100%;
             border-color: #dddddd;
         }
 
-        :deep(.el-upload .el-upload-dragger) {
+        ::v-deep .el-upload .el-upload-dragger {
             width: 100%;
             height: 100%;
             border-color: #dddddd;

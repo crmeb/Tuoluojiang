@@ -14,43 +14,43 @@
           <li v-for="(item, index) in tableData" :key="index">
             <el-row class="table-header">
               <el-col :span="12">
-                <div class="table-title">
-                  <div class="table-title-left" v-if="item.approve">
+                <el-row class="table-title">
+                  <el-col class="table-title-left" v-if="item.approve">
                     <div class="selIcon" :style="{ backgroundColor: item.approve.color }">
                       <i class="icon iconfont" :class="item.approve.icon"></i>
                     </div>
-                  </div>
-                  <div class="table-title-right">
+                  </el-col>
+                  <el-col class="table-title-right">
                     <div class="title" v-if="item.approve">{{ item.approve.name }}</div>
                     <div class="tag">
-                      <el-tag size="small" v-if="item.status === -1" type="info"> 已撤销 </el-tag>
-                      <el-tag size="small" v-if="item.status === 0" type="warning"> 审核中 </el-tag>
-                      <el-tag size="small" v-if="item.status === 1 && !item.recall" type="info"> 已通过 </el-tag>
-                      <el-tag size="small" v-if="item.status === 2" type="danger"> 已拒绝 </el-tag>
-                      <el-tag size="small" v-if="item.status === 1 && item.recall" type="danger"> 撤销中 </el-tag>
+                      <el-tag v-if="item.status === -1" type="info" size="mini"> 已撤销 </el-tag>
+                      <el-tag v-if="item.status === 0" type="warning" size="mini"> 审核中 </el-tag>
+                      <el-tag v-if="item.status === 1 && !item.recall" type="info" size="mini"> 已通过 </el-tag>
+                      <el-tag v-if="item.status === 2" type="danger" size="mini"> 已拒绝 </el-tag>
+                      <el-tag v-if="item.status === 1 && item.recall" type="danger" size="mini"> 撤销中 </el-tag>
                     </div>
-                  </div>
-                </div>
+                  </el-col>
+                </el-row>
               </el-col>
               <el-col :span="12" class="text-right">
-                <el-button @click="handleDetail(item)">查看详情</el-button>
+                <el-button size="mini" @click="handleDetail(item)">查看详情</el-button>
                 <template v-if="item.status == 0">
-                  <el-button v-if="item.verify_status === 0" type="danger" @click="handleRefuse(item)">
+                  <el-button v-if="item.verify_status === 0" type="danger" size="mini" @click="handleRefuse(item)">
                     拒绝
                   </el-button>
-                  <el-button v-if="item.verify_status === 0" type="primary" @click="handleAgree(item)">
+                  <el-button v-if="item.verify_status === 0" type="primary" size="mini" @click="handleAgree(item)">
                     同意
                   </el-button>
                 </template>
               </el-col>
             </el-row>
-            <div class="table-body">
-              <div class="table-body-title">
-                <div class="table-body-left">
+            <el-row class="table-body">
+              <el-row class="table-body-title">
+                <el-col class="table-body-left">
                   <img class="img-body" v-if="judge(item)" :src="item.card.avatar" alt="" />
                   <img class="img-body" v-else src="../../../../assets/images/portrait.png" alt="" />
-                </div>
-                <div class="table-body-right">
+                </el-col>
+                <el-col class="table-body-right">
                   <div class="title">
                     <span>{{ item.card ? item.card.name : '' }}</span>
                     <span class="time">创建于{{ item.created_at }}</span>
@@ -58,9 +58,9 @@
                   <div class="mt15 table-body-body">
                     <div class="over-text" v-html="getValue(item.content)"></div>
                   </div>
-                </div>
-              </div>
-            </div>
+                </el-col>
+              </el-row>
+            </el-row>
           </li>
         </ul>
       </el-scrollbar>
@@ -86,17 +86,15 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { approveApplyApi, approveConfigSearchApi } from '@/api/business.ts'
-import oaFromBox from '@/components/common/oaFromBox'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { approveApplyApi, approveConfigSearchApi } from '@/api/business'
 export default {
   name: 'Examine',
   components: {
-    oaFromBox,
-    detailExamine: defineAsyncComponent(() => import('@/views/user/examine/components/detailExamine')),
-    verifyOpinion: defineAsyncComponent(() => import('@/views/user/examine/components/verifyOpinion')),
-    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage'))
+    oaFromBox: () => import('@/components/common/oaFromBox'),
+    detailExamine: () => import('@/views/user/examine/components/detailExamine'),
+    verifyOpinion: () => import('@/views/user/examine/components/verifyOpinion'),
+    defaultPage: () => import('@/components/common/defaultPage')
   },
   props: ['examineActive'],
 
@@ -144,9 +142,6 @@ export default {
   },
   watch: {
     examineActive(val) {
-      this.where.verify_status = val
-      this.where.page = 1
-      this.getTableData()
       this.getConfigSearch(1)
       if (![1, 4].includes(val)) {
         if (this.search.length == 3) {
@@ -170,8 +165,6 @@ export default {
     }
   },
   created() {
-    this.where.verify_status = this.examineActive
-    this.getTableData()
     this.getConfigSearch(1)
   },
   methods: {
@@ -222,21 +215,14 @@ export default {
     },
     async getTableData() {
       this.loading = true
-      try {
-        const data = { ...this.where }
-        if (data.verify_status == '5') {
-          data.verify_status = ''
-        }
-        const result = await approveApplyApi(data)
-        this.tableData = Array.isArray(result?.data?.list) ? result.data.list : []
-        this.total = result?.data?.count ?? 0
-      } catch {
-        console.error('获取审批数据失败')
-        this.tableData = []
-        this.total = 0
-      } finally {
-        this.loading = false
+      const data = this.where
+      if (data.verify_status == '5') {
+        data.verify_status = ''
       }
+      const result = await approveApplyApi(data)
+      this.loading = false
+      this.tableData = result.data.list
+      this.total = result.data.count
     },
     getApproveIcon(icon) {
       let str = ''
@@ -315,10 +301,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-scrollbar__wrap) {
+::v-deep .el-scrollbar__wrap {
   overflow-x: hidden;
 }
-:deep(.el-card__body) {
+::v-deep .el-card__body {
   padding-right: 0;
 }
 .img-body {
@@ -377,7 +363,7 @@ export default {
           }
           .tag {
             margin-left: 5px;
-            :deep(.el-tag) {
+            ::v-deep .el-tag {
               background: #fff;
             }
           }
@@ -391,9 +377,6 @@ export default {
       }
       padding: 16px 15px;
       background-color: rgba(24, 144, 255, 0.04);
-      .table-body-title {
-        display: flex;
-      }
       .table-body-left {
         width: 40px;
       }

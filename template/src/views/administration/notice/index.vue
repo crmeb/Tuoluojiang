@@ -29,7 +29,7 @@
                         <el-image
                           :src="scope.row.cover || defaultImage"
                           fit="cover"
-                          :preview-src-list="scope.row.cover ? [scope.row.cover] : undefined" preview-teleported
+                          :preview-src-list="scope.row.cover ? [scope.row.cover] : undefined"
                           class="table-img"
                         />
                       </template>
@@ -56,7 +56,7 @@
                     </el-table-column>
                     <el-table-column prop="created_at" label="创建时间" min-width="120">
                       <template #default="scope">
-                        {{ dayjs(scope.row.created_at).format('YYYY-MM-DD') }}
+                        {{ moment(scope.row.created_at).format('yyyy-MM-DD') }}
                       </template>
                     </el-table-column>
                     <el-table-column prop="is_top" label="置顶" width="100">
@@ -72,21 +72,21 @@
                         />
                       </template>
                     </el-table-column>
-                    <el-table-column prop="describe" label="操作" fixed="right" width="120">
+                    <el-table-column prop="describe" :label="$t('public.operation')" fixed="right" width="120">
                       <template #default="scope">
                         <el-button
-                          type="primary" link
+                          type="text"
                           @click="handleEdit(scope.row)"
                           v-hasPermi="['administration:notice:edit']"
-                          >编辑</el-button
+                          >{{ $t('public.edit') }}</el-button
                         >
 
                         <el-button
-                          type="primary" link
+                          type="text"
                           @click="handleDelete(scope.row.id)"
                           v-hasPermi="['administration:notice:delete']"
                         >
-                          删除
+                          {{ $t('public.delete') }}
                         </el-button>
                       </template>
                     </el-table-column>
@@ -124,23 +124,19 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useUserStore } from '@/stores/user.ts'
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { modalSure } from '@/libs/public.ts'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { noticeCategoryApi, noticeDeleteApi, noticeListApi, noticeStatusApi, noticeTopApi } from '@/api/administration.ts'
+import moment from 'moment'
+import { modalSure } from '@/libs/public'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { noticeCategoryApi, noticeDeleteApi, noticeListApi, noticeStatusApi, noticeTopApi } from '@/api/administration'
 
 import noticeImg from '@/assets/images/notice.png'
 
-import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'IndexVue',
   components: {
-    left: defineAsyncComponent(() => import('./components/left')),
-    addNotice: defineAsyncComponent(() => import('./components/addNotice')),
-    oaFromBox
+    left: () => import('./components/left'),
+    addNotice: () => import('./components/addNotice'),
+    oaFromBox: () => import('@/components/common/oaFromBox')
   },
   data() {
     return {
@@ -187,10 +183,9 @@ export default {
     }
   },
   computed: {
-    ...mapStores(useUserStore),
-    dayjs: () => dayjs,
+    moment: () => moment,
     hasAddPermission() {
-      return this.userStore.permissions.includes('administration:notice:add')
+      return this.$store.getters.permissions.includes('administration:notice:add')
     }
   },
   mounted() {
@@ -284,7 +279,7 @@ export default {
   height: calc(100vh - 77px);
 }
 .assess-right {
-  :deep(.el-card__header) {
+  ::v-deep .el-card__header {
     border-bottom: none;
     padding: 0;
   }
@@ -295,7 +290,7 @@ export default {
   // width: 100%;
   height: 100%;
 }
-// :deep(.el-switch__label--right) {
+// ::v-deep .el-switch__label--right {
 //   margin-left: 6px;
 // }
 
@@ -310,7 +305,7 @@ export default {
 }
 .select-bar {
   margin-bottom: 0;
-  :deep(.el-input-group__append) {
+  ::v-deep .el-input-group__append {
     top: 0;
     button {
       color: #fff;
@@ -320,14 +315,14 @@ export default {
     }
   }
 }
-:deep(.el-textarea__inner),
+::v-deep .el-textarea__inner,
 .el-input__inner {
   font-size: 13px !important;
 }
-:deep(.el-input__inner) {
+::v-deep .el-input__inner {
   font-size: 13px !important;
 }
-:deep(.is-top .el-switch__core) {
+::v-deep .is-top .el-switch__core {
   width: 69px !important;
 }
 </style>

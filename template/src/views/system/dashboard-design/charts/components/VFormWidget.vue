@@ -3,7 +3,7 @@
     <el-form
       class="full-height-width widget-form custom-class layoutType-layout"
       label-position="top"
-      size="default"
+      size="medium"
       :validate-on-rule-change="false"
     >
       <div
@@ -20,14 +20,14 @@
           animation="400"
           filter=".no-widget-hint"
           tag="div"
-          :component-data="{ name: 'fade', class: 'canvas-drag-drop-zone' }"
+          :component-data="{ name: 'fade', attrs: { class: 'canvas-drag-drop-zone' } }"
           handle=".drag-handler"
           @end="onDragEnd"
           @add="onDragAdd"
           @update="onDragUpdate"
           :move="checkMove"
         >
-          <template #item="{ element: g, index: y }">
+          <template class="transition-group-el" v-for="(g, y) in designer.widgetList">
             <component
               v-if="g.category === 'container'"
               :is="getWidgetName(g)"
@@ -58,11 +58,12 @@
 <script>
 import Draggable from 'vuedraggable'
 // import FieldComponents from '../charts-widget/index'
-import i18n, { changeLocale } from '@/utils/i18n.ts'
+import i18n, { changeLocale } from '@/utils/i18n'
 import EmptyPlaceholder from './EmptyPlaceholder.vue'
 
 export default {
   name: 'VFormWidget',
+  componentName: 'VFormWidget',
   mixins: [i18n],
   components: {
     Draggable,
@@ -464,7 +465,7 @@ body.no-overflow {
   padding: 0;
   margin: 0;
 }
-:deep(.smartwidget .widget-header .widget-header__toolbar a) {
+::v-deep .smartwidget .widget-header .widget-header__toolbar a {
   display: inline-block;
   text-decoration: none;
   text-align: center;

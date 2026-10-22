@@ -5,9 +5,9 @@
       <div class="toolbarBlock">
         <ToolbarNodeBtnList :list="horizontalList" />
         <!-- 更多 -->
-        <el-popover v-model:visible="popoverShow" placement="bottom-end" width="120" trigger="hover" v-if="showMoreBtn"
+        <el-popover v-model="popoverShow" placement="bottom-end" width="120" trigger="hover" v-if="showMoreBtn"
           :style="{ marginLeft: horizontalList.length > 0 ? '20px' : 0 }">
-          <ToolbarNodeBtnList dir="v" :list="verticalList" @click="popoverShow = false"></ToolbarNodeBtnList>
+          <ToolbarNodeBtnList dir="v" :list="verticalList" @click.native="popoverShow = false"></ToolbarNodeBtnList>
           <template #reference>
             <div class="toolbarBtn">
               <span class="icon xmind-iconfont icongongshi"></span>
@@ -72,7 +72,7 @@ export default {
     this.computeToolbarShowThrottle = throttle(this.computeToolbarShow, 300)
     window.addEventListener('resize', this.computeToolbarShowThrottle)
   },
-  beforeUnmount() {
+  beforeDestroy() {
     window.removeEventListener('resize', this.computeToolbarShowThrottle)
   },
   methods: {

@@ -2,11 +2,11 @@
   <div class="card-box">
     <el-card :body-style="{ padding: '20px 20px 0' }" class="box-card">
       <div class="setting-container">
-        <el-form ref="elForm" :model="formData" size="default" label-width="150px">
+        <el-form ref="elForm" :model="formData" size="medium" label-width="150px">
           <el-form-item label="自动生成出库单规则：" prop="order_auto_outbound_rule" style="margin-bottom: 22px;">
             <el-radio-group v-model="formData.order_auto_outbound_rule" class="rule-radio-group">
               <div v-for="item in autoOutboundOptions" :key="item.value" class="rule-radio-item">
-                <el-radio :label="item.value" :value="item.value">{{ item.label }}</el-radio>
+                <el-radio :label="item.value">{{ item.label }}</el-radio>
                 <div class="info">{{ item.desc }}</div>
               </div>
             </el-radio-group>
@@ -14,7 +14,7 @@
           <el-form-item label="订单发货规则：" prop="order_delivery_rule">
             <el-radio-group v-model="formData.order_delivery_rule" class="rule-radio-group">
               <div v-for="item in deliveryRuleOptions" :key="item.value" class="rule-radio-item">
-                <el-radio :label="item.value" :value="item.value">{{ item.label }}</el-radio>
+                <el-radio :label="item.value">{{ item.label }}</el-radio>
                 <div class="info">{{ item.desc }}</div>
               </div>
             </el-radio-group>
@@ -23,7 +23,7 @@
       </div>
     </el-card>
     <div class="cr-bottom-button">
-      <el-button type="primary" @click="saveEvt">保存</el-button>
+      <el-button size="small" type="primary" @click="saveEvt">保存</el-button>
     </div>
   </div>
 </template>
@@ -105,7 +105,7 @@ export default {
         &:last-child {
           margin-bottom: 0;
         }
-        :deep(.el-radio) {
+        ::v-deep .el-radio {
           margin-right: 0;
           // 覆盖 global.scss 中 .el-form-item--medium .el-radio 的 36px 行高
           line-height: 20px !important;
@@ -121,14 +121,14 @@ export default {
     }
   }
 }
-:deep(.el-card.is-always-shadow) {
+::v-deep .el-card.is-always-shadow {
   border: none;
 }
 // 与 .rule-radio-item 内单选项的 20px 行高对齐，特异性需高于父级 scoped 的 38px
-:deep(.el-form-item .el-form-item__label) {
+::v-deep .el-form-item .el-form-item__label {
   line-height: 20px;
 }
-:deep(.el-radio__label) {
+::v-deep .el-radio__label {
   font-size: 13px;
   color: #303133;
 }

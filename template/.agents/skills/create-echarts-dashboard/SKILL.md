@@ -5,7 +5,7 @@ description: 新建统计页/数据看板，复用项目通用图表组件 @/com
 
 # create-echarts-dashboard
 
-为本项目（Vue 3 + Element Plus + echarts）生成业务统计页 / 数据看板。
+为本项目（Vue 2.7 + Element UI + echarts）生成业务统计页 / 数据看板。
 
 ## 用哪个图表组件（关键，别选错）
 
@@ -24,7 +24,7 @@ description: 新建统计页/数据看板，复用项目通用图表组件 @/com
   - `:type` —— 可选，传 `'fd'` 时关闭图例联动逻辑。
 - 事件：
   - `@pieChange` —— 点击图元（含饼图）回调，参数是 `param.data`，用于下钻/联动筛选。
-- 组件已处理 `window resize` 自适应与 `beforeUnmount` 销毁，**页面层不要再手写** `echarts.init` / `addEventListener('resize')`。
+- 组件已处理 `window resize` 自适应与 `beforeDestroy` 销毁，**页面层不要再手写** `echarts.init` / `addEventListener('resize')`。
 
 ## 页面骨架（`<script setup lang="ts">`）
 

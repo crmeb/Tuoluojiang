@@ -13,7 +13,7 @@
             placeholder="搜索客户名称"
             prefix-icon="el-icon-search"
             style="width: 200px; margin-right: 10px;"
-            @keyup.enter="handleSearch"
+            @keyup.enter.native="handleSearch"
           />
           <el-button type="primary" icon="el-icon-plus" @click="handleAdd">新增</el-button>
           <el-button
@@ -87,7 +87,7 @@
                     @click="toggleGroup(scope.row.groupIndex)"
                   ></i>
                   <span class="group-name">{{ scope.row.groupName }}</span>
-                  <el-tag size="small" type="info">{{ scope.row.totalCount }}个客户</el-tag>
+                  <el-tag type="info" size="mini">{{ scope.row.totalCount }}个客户</el-tag>
                 </div>
               </div>
             </template>
@@ -111,14 +111,15 @@
           <el-table-column prop="tags" label="客户标签" width="150">
             <template #default="scope">
               <div class="tags-container" v-if="scope.row.rowType === 'data'">
-                <el-tag size="small"
+                <el-tag
                   v-for="tag in scope.row.tags"
                   :key="tag.id"
+                  size="mini"
                   class="tag-item"
                 >
                   {{ tag.name }}
                 </el-tag>
-                <el-tag size="small" v-if="!scope.row.tags || scope.row.tags.length === 0">--</el-tag>
+                <el-tag v-if="!scope.row.tags || scope.row.tags.length === 0" size="mini">--</el-tag>
               </div>
             </template>
           </el-table-column>
@@ -133,9 +134,10 @@
           <!-- 客户状态列 -->
           <el-table-column prop="status" label="客户状态" width="100">
             <template #default="scope">
-              <el-tag size="small"
+              <el-tag
                 v-if="scope.row.rowType === 'data'"
                 :type="getStatusType(scope.row.status)"
+                size="mini"
               >
                 {{ getStatusText(scope.row.status) }}
               </el-tag>
@@ -168,15 +170,16 @@
           <el-table-column label="操作" fixed="right" width="220">
             <template #default="scope">
               <div v-if="scope.row.rowType === 'data'" class="action-buttons">
-                <el-button type="primary" link @click="handleCopy(scope.row)">复制</el-button>
-                <el-button type="primary" link @click="handleDelete(scope.row)">删除</el-button>
-                <el-button type="primary" link @click="handleRegenerate(scope.row)">再次生成</el-button>
+                <el-button type="text" size="small" @click="handleCopy(scope.row)">复制</el-button>
+                <el-button type="text" size="small" @click="handleDelete(scope.row)">删除</el-button>
+                <el-button type="text" size="small" @click="handleRegenerate(scope.row)">再次生成</el-button>
               </div>
               <!-- 加载更多行 -->
               <div v-else-if="scope.row.rowType === 'loadmore'" class="load-more-row">
                 <el-button 
                   type="primary" 
                   plain
+                  size="small"
                   @click.stop="loadMoreGroupData(scope.row.groupIndex)"
                   :loading="scope.row.loading"
                 >
@@ -217,7 +220,7 @@
     <!-- 筛选对话框 -->
     <el-dialog
       :title="`筛选 - ${getFilterLabel(activeFilter)}`"
-      v-model="filterDialogVisible"
+      :visible.sync="filterDialogVisible"
       width="400px"
       @close="handleFilterDialogClose"
     >
@@ -519,7 +522,7 @@ export default {
       
       // 如果是第一次展开且有更多数据，显示加载更多提示
       if (group.expanded && group.hasMore && group.displayItems.length < group.items.length) {
-        group.showLoadMoreTip = true
+        this.$set(group, 'showLoadMoreTip', true)
       }
       
       // 重新生成扁平化数据
@@ -914,7 +917,7 @@ export default {
   }
 
   .table-section {
-    :deep(.el-table) {
+    ::v-deep .el-table {
       th {
         background-color: #f5f7fa;
         font-weight: 500;
@@ -1083,12 +1086,12 @@ export default {
 }
 
 // 全局样式覆盖
-:deep(.el-table th) {
+::v-deep .el-table th {
   background-color: #f5f7fa;
   font-weight: 500;
 }
 
-:deep(.el-table td) {
+::v-deep .el-table td {
   padding: 8px 0;
 }
 

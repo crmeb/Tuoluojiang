@@ -2,7 +2,7 @@
   <div class="left-box">
     <div class="dealt-date">
       <el-calendar v-model="value">
-        <template #date-cell="{ date, data, index }">
+        <template #dateCell="{ date, data, index }">
           <div class="dealt-date-item" @click="dateBnt(data.day)">
             <input type="hidden" :value="data.day" />
             <div class="calendar_area" :class="getRest(data.day) ? 'activeRed' : ''">
@@ -22,17 +22,15 @@
       </div>
       <el-checkbox-group v-model="checkedTypes" @change="handleCheckedKey">
         <div class="flex checkbox-item" v-for="(item, index) in tableData">
-          <el-checkbox :key="index" :label="item.id" :value="item.id" :style="{ '--fill-color': item.color }">
+          <el-checkbox :key="index" :label="item.id" :style="{ '--fill-color': item.color }">
             {{ item.name }}
           </el-checkbox>
           <el-dropdown class="more" v-if="item.id >= 6">
             <i class="iconfont icongengduo" />
-            <template #dropdown>
-              <el-dropdown-menu style="text-align: center">
-                <el-dropdown-item v-if="item.id >= 6" @click="handleEdit(item)"> 编辑 </el-dropdown-item>
-                <el-dropdown-item v-if="item.id >= 6" @click="handleDelete(item)"> 删除 </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
+            <el-dropdown-menu style="text-align: center">
+              <el-dropdown-item v-if="item.id >= 6" @click.native="handleEdit(item)"> 编辑 </el-dropdown-item>
+              <el-dropdown-item v-if="item.id >= 6" @click.native="handleDelete(item)"> 删除 </el-dropdown-item>
+            </el-dropdown-menu>
           </el-dropdown>
         </div>
       </el-checkbox-group>
@@ -41,19 +39,18 @@
 </template>
 
 <script>
-import dayjs from 'dayjs'
-import { modalSure } from '@/libs/public.ts'
-import modalForm from '@/libs/modal-form.ts'
+import moment from 'moment'
+import { modalSure } from '@/libs/public'
+import modalForm from '@/libs/modal-form'
 import {
   dealtScheduleCountApi,
   scheduleTypesCreateApi,
   scheduleTypesEditApi,
   scheduleTypesDeleteApi,
   scheduleTypesApi
-} from '@/api/user.ts'
+} from '@/api/user'
 
 export default {
-  emits: ['handleDate'],
   name: 'CalendarBar',
   components: {},
   data() {
@@ -69,7 +66,7 @@ export default {
       checkedTypes: [],
       isShow: true,
       data: {
-        time: dayjs(new Date()).format('YYYY-MM-DD'),
+        time: moment(new Date()).format('YYYY-MM-DD'),
         type: []
       }
     }
@@ -271,14 +268,14 @@ export default {
   font-size: 12px;
   cursor: pointer;
 }
-:deep(.el-submenu__title) {
+::v-deep .el-submenu__title {
   height: 30px;
   line-height: 30px;
   margin-bottom: 20px;
 }
 .dealt-date {
   margin-top: 10px;
-  :deep(.el-calendar__header) {
+  ::v-deep .el-calendar__header {
     padding: 20px;
     border-bottom: none;
   }
@@ -294,7 +291,7 @@ export default {
   .activeRed {
     color: red;
   }
-  :deep(.el-calendar-table td .dealt-content) {
+  ::v-deep .el-calendar-table td .dealt-content {
     i {
       position: absolute;
       right: 0;
@@ -315,23 +312,23 @@ export default {
     background-color: #1890ff;
   }
   position: relative;
-  :deep(.el-calendar-table .el-calendar-day) {
+  ::v-deep .el-calendar-table .el-calendar-day {
     height: 40px;
     padding: 0;
   }
-  :deep(.el-calendar) {
+  ::v-deep .el-calendar {
     background-color: transparent;
   }
-  :deep(.el-calendar__body) {
+  ::v-deep .el-calendar__body {
     padding-bottom: 20px;
   }
-  :deep(.el-calendar-table__row td) {
+  ::v-deep .el-calendar-table__row td {
     text-align: center;
   }
-  :deep(.el-calendar__header) {
+  ::v-deep .el-calendar__header {
     justify-content: center;
   }
-  :deep(.el-calendar__button-group) {
+  ::v-deep .el-calendar__button-group {
     .el-button-group {
       button {
         color: #000000;
@@ -353,7 +350,7 @@ export default {
   }
 }
 .dealt-list {
-  :deep(.is-checked .el-checkbox__label) {
+  ::v-deep .is-checked .el-checkbox__label {
     color: #606266;
   }
   .icontianjia {
@@ -365,16 +362,16 @@ export default {
     padding-left: 0;
     padding-right: 0;
   }
-  :deep(.el-submenu__icon-arrow) {
+  ::v-deep .el-submenu__icon-arrow {
     right: 0;
     font-size: 16px;
   }
-  :deep(.el-checkbox) {
+  ::v-deep .el-checkbox {
     display: block;
     margin: 0 0 14px 4px;
     margin-bottom: 0;
   }
-  :deep(.el-checkbox__inner) {
+  ::v-deep .el-checkbox__inner {
     border-radius: 50%;
   }
   padding: 0 20px;
@@ -385,7 +382,7 @@ export default {
     margin-left: -40px;
   }
   // 不同颜色判断
-  :deep(.el-checkbox) {
+  ::v-deep .el-checkbox {
     .is-checked .el-checkbox__inner {
       background-color: var(--fill-color);
       border-color: var(--fill-color);

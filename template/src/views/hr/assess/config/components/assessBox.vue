@@ -1,13 +1,14 @@
 <template>
   <div class="box-container">
     <el-drawer
-      v-model="drawer"
+      :visible.sync="drawer"
       direction="rtl"
       :before-close="handleClose"
       size="760px"
       :modal="true"
+      :wrapper-closable="true"
     >
-      <template #header>
+      <template #title>
         <div>
           <div class="tab-box">
             <div
@@ -22,7 +23,7 @@
           </div>
         </div>
       </template>
-      <el-form :inline="true" label-width="80px" @submit.prevent class="flex">
+      <el-form :inline="true" label-width="80px" @submit.native.prevent class="flex">
         <el-form-item class="select-bar el-input--small">
           <div style="width: 200px">
             <select-department
@@ -35,7 +36,7 @@
         </el-form-item>
 
         <el-form-item class="select-bar">
-          <el-input v-model="where.name" @change="handleOk" placeholder="请输入被考核人姓名"></el-input>
+          <el-input v-model="where.name" @change="handleOk" placeholder="请输入被考核人姓名" size="small"></el-input>
         </el-form-item>
 
         <el-tooltip effect="dark" content="重置搜索条件" placement="top">
@@ -73,13 +74,12 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { assessPlanUserListApi } from '@/api/enterprise.ts'
+import { assessPlanUserListApi } from '@/api/enterprise'
 
 export default {
   name: 'assessBox',
   components: {
-    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department'))
+    selectDepartment: () => import('@/components/form-common/select-department')
   },
   data() {
     return {
@@ -165,7 +165,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-drawer__header) {
+::v-deep .el-drawer__header {
   border-bottom: 1px solid #d8d8d8;
   padding-bottom: 14px;
   margin-bottom: 0;
@@ -174,7 +174,7 @@ export default {
   margin-top: 2px;
   // margin-left: 14px;
 }
-:deep(.el-drawer__body) {
+::v-deep .el-drawer__body {
   padding: 20px;
   overflow-y: auto;
 }
@@ -195,14 +195,14 @@ export default {
   }
 }
 .label1 {
-  :deep(.el-form-item__label) {
+  ::v-deep .el-form-item__label {
     width: 55px !important;
   }
 }
 .select-bar {
   display: flex;
 }
-:deep(.el-form-item__content) {
+::v-deep .el-form-item__content {
   flex: 1;
 }
 .plan-footer-one {

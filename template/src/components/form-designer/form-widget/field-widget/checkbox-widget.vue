@@ -16,14 +16,14 @@
       ref="fieldEditor"
       v-model="fieldModel"
       :disabled="field.options.disabled"
-      :size="toElSize(field.options.size)"
+      :size="field.options.size"
       @change="handleChangeEvent"
     >
       <template v-if="!!field.options.buttonStyle">
         <el-checkbox-button
           v-for="(item, index) in optionItems"
           :key="index"
-          :value="item[field.options.valueName] || item.value"
+          :label="item[field.options.valueName] || item.value"
           :disabled="item.disabled"
           :border="field.options.border"
           :style="{ display: field.options.displayStyle }"
@@ -34,7 +34,7 @@
         <el-checkbox
           v-for="(item, index) in optionItems"
           :key="index"
-          :value="item[field.options.valueName] || item.value"
+          :label="item[field.options.valueName] || item.value"
           :disabled="item.disabled"
           :border="field.options.border"
           :style="{ display: field.options.displayStyle }"
@@ -51,12 +51,14 @@
 
 <script>
 import FormItemWrapper from './form-item-wrapper'
-import i18n, { translate } from '@/utils/i18n.ts'
+import emitter from '@/utils/emitter'
+import i18n, { translate } from '@/utils/i18n'
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
 
 export default {
   name: 'checkbox-widget',
-  mixins: [fieldMixin, i18n],
+  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
+  mixins: [emitter, fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -134,7 +136,7 @@ export default {
     this.handleOnMounted()
   },
 
-  beforeUnmount() {
+  beforeDestroy() {
     this.unregisterFromRefList()
   },
 

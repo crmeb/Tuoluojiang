@@ -8,7 +8,7 @@
     >
       <div v-if="loadError" class="ai-error">
         <span>AI 助手加载失败</span>
-        <el-button type="primary" link @click="mountChat">重新加载</el-button>
+        <el-button type="text" @click="mountChat">重新加载</el-button>
       </div>
       <div v-show="!loadError" ref="containerRef" class="ai-frame" />
     </el-card>
@@ -17,9 +17,9 @@
 
 <script lang="ts" setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { useUserStore } from '@/stores/user.ts'
-import router from '@/router/index.ts'
-import { AiEmbeddedManager } from '@/libs/ai/index.ts'
+import store from '@/store'
+import router from '@/router'
+import { AiEmbeddedManager } from '@/libs/ai'
 
 /**
  * AI 助手整页。
@@ -28,7 +28,6 @@ import { AiEmbeddedManager } from '@/libs/ai/index.ts'
  * 没有悬浮球也没有缩放收起按钮，高度由 OA 这边的容器决定 ——
  * 子应用不认识宿主页面的布局，容器没有确定高度它就撑不开。
  */
-const userStore = useUserStore()
 const containerRef = ref<HTMLElement | null>(null)
 const loadError = ref(false)
 const loading = ref(true)
@@ -42,7 +41,7 @@ let loadRevision = 0
 const READY_TIMEOUT = 15000
 
 /** 不带 id 就开工作台首页，带上就直接进那个应用 */
-const appId = String(router.currentRoute.value.query.id || '') || undefined
+const appId = String(router.currentRoute.query.id || '') || undefined
 
 const stopWaitingReady = () => {
   if (readyTimer !== null) {
@@ -90,7 +89,7 @@ const mountChat = async () => {
   try {
     // 先走一次宿主请求层；access token 过期时会等待 refresh token 刷新并重试，
     // 确保 SDK 初始化时拿到的是最新 token。
-    await userStore.fetchUserInfo()
+    await store.dispatch('user/fetchUserInfo')
   } catch {
     if (revision === loadRevision) {
       loadError.value = true
@@ -103,7 +102,7 @@ const mountChat = async () => {
 
   const created = await AiEmbeddedManager.createInline({
     mount: containerRef.value,
-    token: userStore.token,
+    token: store.getters.token,
     appId
   })
 

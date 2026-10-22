@@ -43,45 +43,47 @@
       v-else
       ref="fieldEditor"
       :only-image="true"
+      :value="fieldModel"
       v-model="fieldModel"
       :max-length="Number(field.options.fileMaxSize)"
       :max-size="Number(field.options.fileMaxSize)"
       :fileTypes="field.options.fileTypes"
-      @update:modelValue="handleSuccess"
+      @input="handleSuccess"
     ></uploadFile>
 
     <el-dialog
       title=""
       v-if="showPreviewDialogFlag"
-      v-model="showPreviewDialogFlag"
-      draggable
+      :visible.sync="showPreviewDialogFlag"
+      v-dialog-drag
       append-to-body
       width="60%"
       :show-close="true"
-      class="drag-dialog small-padding-dialog"
+      custom-class="drag-dialog small-padding-dialog"
       :close-on-click-modal="true"
       :close-on-press-escape="true"
       :destroy-on-close="true"
     >
       <img :src="previewUrl" width="100%" alt="" />
     </el-dialog>
-    <el-image-viewer v-if="isImage" @close="closeImageViewer" :url-list="srcList" />
+    <el-image-viewer v-if="isImage" :on-close="closeImageViewer" :url-list="srcList" />
   </form-item-wrapper>
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import i18n from '@/utils/i18n.ts'
+import emitter from '@/utils/emitter'
+import i18n from '@/utils/i18n'
 import { deepClone } from '@/utils/util'
 import { evalFn } from '@/utils/formDesignerUtils'
-import { uploader } from '@/utils/uploadCloud.ts'
+import { uploader } from '@/utils/uploadCloud'
 import FormItemWrapper from "./form-item-wrapper.vue";
 
 import fieldMixin from '@/components/form-designer/form-widget/field-widget/fieldMixin'
 
 export default {
   name: 'image-widget',
-  mixins: [fieldMixin, i18n],
+  componentName: 'FieldWidget', //必须固定为FieldWidget，用于接收父级组件的broadcast事件
+  mixins: [emitter, fieldMixin, i18n],
   props: {
     field: Object,
     parentWidget: Object,
@@ -109,7 +111,8 @@ export default {
   },
   components: {
     FormItemWrapper,
-    uploadFile: defineAsyncComponent(() => import('@/components/form-common/oa-upload')),
+    uploadFile: () => import('@/components/form-common/oa-upload'),
+    ElImageViewer: () => import('element-ui/packages/image/src/image-viewer')
   },
   inject: ['refList', 'formConfig', 'globalOptionData', 'globalModel'],
   data() {
@@ -172,7 +175,7 @@ export default {
     this.handleOnMounted()
   },
 
-  beforeUnmount() {
+  beforeDestroy() {
     this.unregisterFromRefList()
   },
 
@@ -407,17 +410,17 @@ export default {
 }
 
 .hideUploadDiv {
-  :deep(div.el-upload--picture-card) {
+  ::v-deep div.el-upload--picture-card {
     /* 隐藏最后的图片上传按钮 */
     display: none;
   }
 
-  :deep(div.el-upload--text) {
+  ::v-deep div.el-upload--text {
     /* 隐藏最后的文件上传按钮 */
     display: none;
   }
 
-  :deep(div.el-upload__tip) {
+  ::v-deep div.el-upload__tip {
     /* 隐藏最后的文件上传按钮提示 */
     display: none;
   }
@@ -479,3 +482,4 @@ export default {
   cursor: pointer;
 }
 </style>
+@/utils/i18ns

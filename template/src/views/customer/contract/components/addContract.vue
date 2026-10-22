@@ -2,15 +2,15 @@
 <template>
   <div class="station">
     <el-drawer
-      class="customer-contract-add-contract-drawer"
       :title="formData.title"
-      v-model="drawer"
+      :visible.sync="drawer"
       :direction="direction"
       :modal="true"
       :append-to-body="true"
+      :wrapper-closable="true"
       :before-close="handleClose"
       :size="formData.width"
-      :close-on-click-modal="false"
+      :wrapperClosable="false"
     >
       <oaForm
         :form-info="fromInfo"
@@ -40,14 +40,12 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { oddsCreateEditApi } from '@/api/client.ts'
-import { contractCreateApi, contractEditCreateApi } from '@/api/enterprise.ts'
-import { clientContractSaveApi as contractAddApi, clientContractEditApi } from '@/api/client.ts'
-import { generateEmptyProduct } from "@/views/customer/components/helper.ts";
+import { oddsCreateEditApi } from '@/api/client'
+import { contractCreateApi, contractEditCreateApi } from '@/api/enterprise'
+import { clientContractSaveApi as contractAddApi, clientContractEditApi } from '@/api/client'
+import { generateEmptyProduct } from "@/views/customer/components/helper";
 
 export default {
-  emits: ['getTableData'],
   name: 'AddContract',
   props: {
     formData: {
@@ -64,9 +62,9 @@ export default {
     }
   },
   components: {
-    oaForm: defineAsyncComponent(() => import('@/components/customer/oaForm')),
-    productList: defineAsyncComponent(() => import('@/views/customer/components/productList')),
-    editContract: defineAsyncComponent(() => import('@/views/customer/contract/components/editContract'))
+    oaForm: () => import('@/components/customer/oaForm'),
+    productList: () => import('@/views/customer/components/productList'),
+    editContract: () => import('@/views/customer/contract/components/editContract')
   },
   data() {
     return {
@@ -183,13 +181,13 @@ export default {
         this._rawOidOptions = structuredClone(oidConfig.options);
       }
 
-      delete oaFormRef.ruleForm.oid;
+      this.$delete(oaFormRef.ruleForm, 'oid');
       this.product = [];
       if (customerId) {
         const filteredOptions = this._rawOidOptions.filter(option => String(option.eid) === String(customerId));
-        oidConfig.options = filteredOptions;
+        this.$set(oidConfig, 'options', filteredOptions);
       } else {
-        oidConfig.options = structuredClone(this._rawOidOptions);
+        this.$set(oidConfig, 'options', structuredClone(this._rawOidOptions));
       }
     },
     // 根据 key 查找表单字段配置
@@ -379,7 +377,7 @@ export default {
       this.$refs.contractInfo.handleConfirm().then(() => {
         setTimeout(() => {
           this.fromData = {
-            title: '查看客户',
+            title: this.$t('customer.viewcustomer'),
             width: '1000px',
             data: this.itemData,
             isClient: false,
@@ -405,16 +403,16 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-form--inline .el-form-item) {
+::v-deep .el-form--inline .el-form-item {
   display: flex;
 }
-:deep(.el-input-number) {
+::v-deep .el-input-number--medium {
   width: 100%;
 }
-:deep(.el-input__inner) {
+::v-deep .el-input__inner {
   text-align: left;
 }
-:deep(.el-date-editor) {
+::v-deep .el-date-editor {
   width: 100%;
 }
 .from-item-title {
@@ -432,16 +430,16 @@ export default {
   justify-content: space-between;
   .form-item {
     width: 48%;
-    :deep(.el-form-item__content) {
+    ::v-deep .el-form-item__content {
       width: calc(100% - 90px);
     }
-    :deep(.el-select) {
+    ::v-deep .el-select--medium {
       width: 100%;
     }
-    :deep(.el-form-item) {
+    ::v-deep .el-form-item {
       margin-bottom: 20px;
     }
-    :deep(.el-textarea__inner) {
+    ::v-deep .el-textarea__inner {
       resize: none;
     }
   }
@@ -456,11 +454,7 @@ export default {
     height: auto;
   }
 }
-</style>
-
-<style lang="scss">
-// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
-.customer-contract-add-contract-drawer .el-drawer__body {
+::v-deep .el-drawer__body {
   padding: 20px;
   padding-bottom: 40px;
 }

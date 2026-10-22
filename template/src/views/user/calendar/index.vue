@@ -15,6 +15,7 @@
         <el-button
           v-if="activeTab === 'calendar'"
           type="primary"
+          size="small"
           icon="el-icon-plus"
           @click="handleAddSchedule"
         >

@@ -10,25 +10,27 @@
             <el-progress :percentage="scope.row[item.field_name_en] ? scope.row[item.field_name_en] : 0"></el-progress>
         </div>
         <div v-else-if="item.form_value === 'tag'">
-            <el-popover
-                v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 2"
+            <el-popover v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 2"
                 placement="top-start" trigger="hover">
-                  <div class="flex_box">
-                      <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                          <el-tag>
-                              {{ val }}
-                          </el-tag>
-                      </div>
-                  </div>
+                <template>
+                    <div class="flex_box">
+                        <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
+                            <el-tag size="small">
+                                {{ val }}
+                            </el-tag>
+                        </div>
+                    </div>
+                </template>
                 <template #reference>
                   <div>
                       <div class="flex_box">
                           <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                              <el-tag v-if="index < 2">
+                              <el-tag size="small" v-if="index < 2">
                                   {{ val }}
                               </el-tag>
                           </div>
-                          <el-tag v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 2">...</el-tag>
+                          <el-tag v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 2"
+                              size="small">...</el-tag>
                       </div>
                   </div>
                 </template>
@@ -36,11 +38,12 @@
             <template v-else>
                 <div class="flex_box">
                     <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                        <el-tag v-if="index < 2">
+                        <el-tag size="small" v-if="index < 2">
                             {{ val }}
                         </el-tag>
                     </div>
-                    <el-tag v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 2">...</el-tag>
+                    <el-tag v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 2"
+                        size="small">...</el-tag>
                 </div>
             </template>
             <span v-if="!scope.row[item.field_name_en] || scope.row[item.field_name_en].length == 0">--</span>
@@ -52,9 +55,10 @@
         </div>
 
         <div v-else-if="item.form_value === 'textarea'">
-            <el-popover v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 11" placement="top-start" width="350" trigger="hover" :content="scope.row[item.field_name_en]">
+            <el-popover placement="top-start" width="350" trigger="hover" :content="scope.row[item.field_name_en]">
                 <template #reference>
-                  <div class="over-text">
+                  <div class="over-text"
+                      v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length > 11">
                       {{ scope.row[item.field_name_en] }}
                   </div>
                 </template>
@@ -105,10 +109,9 @@
 </template>
 
 <script>
-import { getColor } from '@/utils/format.ts'
+import { getColor } from '@/utils/format'
 import imageViewer from '@/components/common/imageViewer'
 export default {
-  emits: ['checkRow'],
     props: {
         item: {
             type: Object,
@@ -267,16 +270,20 @@ export default {
 }
 
 .table-box {
-    :deep(.el-table__column-resize-proxy) {
+    ::v-deep .el-table__column-resize-proxy {
         border-left-color: #6fbaff;
     }
 
-    :deep(.el-table--border) {
+    ::v-deep .el-table--border {
         border: none;
 
         .el-table__cell {
             border-right: none;
         }
+    }
+
+    ::v-deep .el-table__fixed-right .el-table__fixed-body-wrapper {
+        border-right: 1px solid #fff;
     }
 }
 </style>

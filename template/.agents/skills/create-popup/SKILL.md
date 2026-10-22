@@ -5,7 +5,7 @@ description: 新建独立的 PC 端模态弹窗（el-dialog）或侧滑抽屉（
 
 # create-popup
 
-为本项目（Vue 3 + Element Plus）生成一个**独立**的弹窗/侧滑组件。整套 CRUD 列表页请用 `create-crud-page`；本 skill 用于单独新增一个弹窗/抽屉（详情、表单、选择器、二次确认等）。
+为本项目（Vue 2.7 + Element UI）生成一个**独立**的弹窗/侧滑组件。整套 CRUD 列表页请用 `create-crud-page`；本 skill 用于单独新增一个弹窗/抽屉（详情、表单、选择器、二次确认等）。
 
 ## 动手前必读
 
@@ -20,7 +20,7 @@ description: 新建独立的 PC 端模态弹窗（el-dialog）或侧滑抽屉（
    - 禁止 `520/550/700/760/850/920px` 等散值与 `40%/60%` 等百分比宽度，禁止用全局 CSS 覆盖 `.el-dialog`/`.el-drawer` 宽度。
 3. **父子通信模式**：子组件用 `defineExpose({ openBox })` 暴露打开方法，父组件 `ref` 调用；提交成功 `emit('ok')` 由父组件刷新。**`defineExpose` 必写**——`<script setup>` 组件默认对外封闭，漏了父组件 `ref` 只能拿到空壳。
 4. **关闭即重置**：`@close="reset"`，reset 里清空表单并 `clearValidate()`，避免下次打开残留。
-5. **轻提示**：成功提示由 `request.ts` 拦截器统一弹出，业务里**不要** `$message.success`。
+5. **轻提示**：成功提示由 `request.js` 拦截器统一弹出，业务里**不要** `$message.success`。
 6. **选型**：表单/确认类用 `el-dialog`；详情/信息较多用 `el-drawer`。简单确认优先 `proxy.$modalSure('文案')` 而不是新建弹窗。
 
 ## 模板骨架
@@ -30,7 +30,7 @@ description: 新建独立的 PC 端模态弹窗（el-dialog）或侧滑抽屉（
 ```vue
 <template>
   <el-dialog
-    v-model="visible"
+    :visible.sync="visible"
     :title="form.id ? '编辑' : '新增'"
     :width="DIALOG_SIZE.SM"
     :close-on-click-modal="false"
@@ -103,7 +103,7 @@ defineExpose({ openBox })
 
 ```vue
 <template>
-  <el-drawer v-model="visible" title="详情" :size="DRAWER_SIZE.SM" :close-on-click-modal="false">
+  <el-drawer :visible.sync="visible" title="详情" :size="DRAWER_SIZE.SM" :wrapper-closable="false">
     <div v-loading="loading" class="p20">
       <el-descriptions :column="1" border>
         <el-descriptions-item label="名称">{{ data.name || '--' }}</el-descriptions-item>
@@ -166,4 +166,4 @@ const detailsDrawerRef = ref<any>(null)
 - 不要把弹窗逻辑塞进列表页 `index.vue`，独立组件放 `components/`。
 - 不要在成功后再写 `$message.success`。
 - 简单二次确认不要新建弹窗组件，用 `proxy.$modalSure('文案')`（`proxy` 取自 `getCurrentInstance()`，不能脱离实例直接调 `modalSure`，它内部依赖 `this.$t`）。
-- 父组件要通过 ref 调用弹窗方法时不要漏 `defineExpose`；`defineOptions` / `defineModel` 在 Vue 3 中可用。
+- 不要漏 `defineExpose`；也不要在 Vue 2.7 里写 `defineOptions` / `defineModel`（都不存在）。

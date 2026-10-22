@@ -1,25 +1,25 @@
 <template>
   <div>
-    <el-dialog :before-close="handleClose" :title="fromData.title" v-model="dialogVisible" width="680px">
+    <el-dialog :before-close="handleClose" :title="fromData.title" :visible.sync="dialogVisible" width="680px">
       <div class="body">
         <div class="content">
           <ul class="content-title">
             <li>
-              <p class="text-left">空间成员</p>
+              <p class="text-left">{{ $t('file.spacemember') }}</p>
               <p>
-                <el-checkbox v-model="lookCheck" @change="handleChange(1)">查看</el-checkbox>
+                <el-checkbox v-model="lookCheck" @change="handleChange(1)">{{ $t('public.check') }}</el-checkbox>
               </p>
               <p>
-                <el-checkbox v-model="createCheck" @change="handleChange(2)">创建</el-checkbox>
+                <el-checkbox v-model="createCheck" @change="handleChange(2)">{{ $t('public.establish') }}</el-checkbox>
               </p>
               <p>
-                <el-checkbox v-model="editCheck" @change="handleChange(3)">编辑</el-checkbox>
+                <el-checkbox v-model="editCheck" @change="handleChange(3)">{{ $t('public.edit') }}</el-checkbox>
               </p>
               <p>
-                <el-checkbox v-model="downloadCheck" @change="handleChange(4)">下载</el-checkbox>
+                <el-checkbox v-model="downloadCheck" @change="handleChange(4)">{{ $t('public.download') }}</el-checkbox>
               </p>
               <p>
-                <el-checkbox v-model="deleteCheck" @change="handleChange(5)">删除</el-checkbox>
+                <el-checkbox v-model="deleteCheck" @change="handleChange(5)">{{ $t('public.delete') }}</el-checkbox>
               </p>
             </li>
           </ul>
@@ -31,23 +31,23 @@
               </p>
 
               <p>
-                <el-checkbox v-model="item.lookCheck" :label="item.lookCheck" :value="item.lookCheck" :disabled="item.auth.is_admin == 1" />
+                <el-checkbox v-model="item.lookCheck" :label="item.lookCheck" :disabled="item.auth.is_admin == 1" />
               </p>
               <p>
-                <el-checkbox v-model="item.createCheck" :label="item.createCheck" :value="item.createCheck" :disabled="item.auth.is_admin == 1" />
+                <el-checkbox v-model="item.createCheck" :label="item.createCheck" :disabled="item.auth.is_admin == 1" />
               </p>
               <p>
-                <el-checkbox v-model="item.editCheck" :label="item.editCheck" :value="item.editCheck" :disabled="item.auth.is_admin == 1" />
+                <el-checkbox v-model="item.editCheck" :label="item.editCheck" :disabled="item.auth.is_admin == 1" />
               </p>
               <p>
                 <el-checkbox
                   v-model="item.downloadCheck"
-                  :label="item.downloadCheck" :value="item.downloadCheck"
+                  :label="item.downloadCheck"
                   :disabled="item.auth.is_admin == 1"
                 />
               </p>
               <p>
-                <el-checkbox v-model="item.deleteCheck" :label="item.deleteCheck" :value="item.deleteCheck" :disabled="item.auth.is_admin == 1" />
+                <el-checkbox v-model="item.deleteCheck" :label="item.deleteCheck" :disabled="item.auth.is_admin == 1" />
               </p>
             </li>
           </ul>
@@ -55,8 +55,8 @@
       </div>
       <template #footer>
         <div class="dialog-footer text-right">
-          <el-button @click="handleClose">取消</el-button>
-          <el-button :loading="loading" type="primary" @click="handleAdd">确定</el-button>
+          <el-button size="small" @click="handleClose">{{ $t('public.cancel') }}</el-button>
+          <el-button :loading="loading" size="small" type="primary" @click="handleAdd">{{ $t('public.ok') }}</el-button>
         </div>
       </template>
     </el-dialog>
@@ -64,7 +64,7 @@
 </template>
 
 <script>
-import { folderSpaceSubRuleApi, folderSubRuleApi } from '@/api/cloud.ts'
+import { folderSpaceSubRuleApi, folderSubRuleApi } from '@/api/cloud'
 export default {
   name: 'SpaceDialog',
   props: {
@@ -107,7 +107,7 @@ export default {
     },
     handleAdd() {
       if (this.userList.length <= 0) {
-        this.$message.error('请添加分享成员')
+        this.$message.error(this.$t('file.placeholder04'))
       } else {
         var list = []
         var data = {}
@@ -257,7 +257,7 @@ export default {
       margin-right: 8px;
     }
     .content-body {
-      :deep(.el-checkbox__label) {
+      ::v-deep .el-checkbox__label {
         display: none;
       }
       .username {

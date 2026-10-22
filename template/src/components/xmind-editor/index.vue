@@ -30,7 +30,7 @@
 </template>
 
 <script>
-import { EventBus } from '@/libs/bus.ts'
+import { EventBus } from '@/libs/bus'
 import MindMap from 'simple-mind-map';
 import Export from 'simple-mind-map/src/plugins/Export.js';
 import MiniMap from 'simple-mind-map/src/plugins/MiniMap.js'
@@ -52,7 +52,7 @@ import Search from './components/Search.vue';
 import Toolbar from './components/Toolbar.vue';
 // import RichTextToolbar from './components/RichTextToolbar.vue';
 
-import { EDITOR_EVENTS, FORWARD_EDITOR_INNER_EVENTS } from "./event-constant.ts";
+import { EDITOR_EVENTS, FORWARD_EDITOR_INNER_EVENTS } from "./event-constant";
 
 import '@/icons/xmind-iconfont.scss';
 
@@ -79,7 +79,6 @@ Themes.init(MindMap);
  *          也可以在外部直接调用 getData 方法来获取 Blob 数据
  */
 export default {
-  emits: ['save'],
   name: 'XmindEditor',
   components: {
     Contextmenu,
@@ -131,7 +130,7 @@ export default {
 
     this.handleKeyBoardSaveShortCut();
   },
-  beforeUnmount() {
+  beforeDestroy() {
     this.stopListenEvent();
   },
   methods: {

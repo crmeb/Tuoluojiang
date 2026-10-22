@@ -3,7 +3,7 @@
   <div class="station">
     <div class="btn-box1 mb10">
       <div class="title-16">联系人列表</div>
-      <el-button @click="addLiaison()" type="primary">添加联系人</el-button>
+      <el-button @click="addLiaison()" size="small" type="primary">{{ $t('customer.addliaison') }}</el-button>
     </div>
     <customizeTable
       keyword="liaison"
@@ -14,8 +14,8 @@
       @getTableData="getTableData"
     >
       <template #options="{ data }">
-        <el-button type="primary" link @click="handleCheck( data)">查看</el-button>
-        <el-button type="primary" link @click="deleteLiaison(data)">删除</el-button>
+        <el-button type="text" @click="handleCheck( data)">查看</el-button>
+        <el-button type="text" @click="deleteLiaison(data)">删除</el-button>
       </template>
     </customizeTable>
      <!-- 详情 -->
@@ -25,13 +25,11 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import liaisonDialog from '@/views/customer/list/components/liaisonDialog'
 import detailsDrawer from '@/views/customer/components/details'
-import { clientLiaisonDeleteApi, clientLiaisonListApi as liaisonViewApi } from '@/api/client.ts'
+import { clientLiaisonDeleteApi, clientLiaisonListApi as liaisonViewApi } from '@/api/client'
 export default {
-  emits: ['refresh-detail'],
   name: 'Liaison',
   props: {
     formInfo: {
@@ -52,7 +50,7 @@ export default {
   components: {
     liaisonDialog,
     detailsDrawer,
-    customizeTable: defineAsyncComponent(() => import('@/views/customer/components/customizeTable'))
+    customizeTable: () => import('@/views/customer/components/customizeTable')
   },
   data() {
     return {
@@ -94,7 +92,7 @@ export default {
      // 添加编辑联系人
     addLiaison(edit, row) {
       this.liaisonConfig = {
-        title: edit !== 'edit' ? '添加联系人' : '编辑联系人',
+        title: edit !== 'edit' ? this.$t('customer.addliaison') : this.$t('customer.editliaison'),
         width: '570px'
       }
       this.$refs.liaisonDialog.openBox(row, this.customInfo, edit)
@@ -117,14 +115,14 @@ export default {
 
       this.$refs.details.openBox(item.id, 'liaison')
       // this.liaisonConfig = {
-      //   title: edit !== 'edit' ? '添加联系人' : '编辑联系人',
+      //   title: edit !== 'edit' ? this.$t('customer.addliaison') : this.$t('customer.editliaison'),
       //   width: '570px'
       // }
       // this.$refs.liaisonDialog.openBox(row, this.customInfo, edit)
     },
 
     async deleteLiaison(row) {
-      await modalSure('你确定要删除该联系人吗')
+      await modalSure(this.$t('customer.message07'))
       await clientLiaisonDeleteApi(row.id)
       await this.getTableData()
       this.$emit('refresh-detail')
@@ -154,7 +152,7 @@ export default {
 .hand {
   cursor: pointer;
 }
-:deep(.el-input__inner) {
+::v-deep .el-input__inner {
   text-align: left;
 }
 .from-item-title {

@@ -1,0 +1,1 @@
+var e=`calc(100vh - 269px)`;export{e as t};

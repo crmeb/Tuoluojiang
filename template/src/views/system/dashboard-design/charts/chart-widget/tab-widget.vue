@@ -6,7 +6,7 @@
       @dragover.capture.prevent="onTabAreaDragOver"
     >
       <el-tabs v-model="field.options.activeValue" class="tab-custom" :class="'tab-style-' + (field.options.tabStyle || 'linear')">
-        <template v-for="(item,y) in field.options.tabList" :key="y">
+        <template v-for="(item,y) in field.options.tabList">
           <el-tab-pane v-if="item.status === 1" :key="item.value" :label="item.name" :name="item.value">
             <div
               class="pt30"
@@ -29,7 +29,7 @@
   </div>
 </template>
 <script>
-import { queryChartData } from '../chartQuery.ts'
+import { queryChartData, } from '@/api/chart'
 export default {
   name: 'tab-widget',
   props: {
@@ -148,7 +148,7 @@ export default {
       const layoutItem = this.layout.find(item => item.i === this.field.id)
       if (layoutItem && layoutItem.h !== newH) {
         const oldH = this.toNumber(layoutItem.h, 5)
-        layoutItem.h = newH
+        this.$set(layoutItem, 'h', newH)
         if (newH > oldH) {
           this.reflowAfterResize(layoutItem)
         }
@@ -203,7 +203,7 @@ export default {
           const nextY = Number(anchorBottom.toFixed(2))
           const itemY = this.toNumber(item.y, 0)
           if (itemY < nextY) {
-            item.y = nextY
+            this.$set(item, 'y', nextY)
             queue.push(item)
           }
         })
@@ -249,28 +249,28 @@ export default {
   height: 100%;
 
 
-:deep(.el-tabs__item) {
+::v-deep .el-tabs__item {
   height: 32px;
 }
-:deep(.el-tabs__nav-wrap::after) {
+::v-deep .el-tabs__nav-wrap::after {
   width: 0;
 }
 
 
 }
 
-.tab-custom :deep(.el-tabs__header.is-top) {
+.tab-custom ::v-deep .el-tabs__header.is-top {
   border-bottom: 1px solid #eee;
   margin-inline: 15px;
 }
 
 /* 矩形 */
-.tab-style-rectangle {
-  :deep(.el-tabs__active-bar) {
+.tab-style-rectangle ::v-deep {
+  .el-tabs__active-bar {
     display: none;
   }
 
-  :deep(.el-tabs__item) {
+  .el-tabs__item {
     width: 88px;
     height: 38px;
     border-top-left-radius: 6px;
@@ -299,12 +299,12 @@ export default {
 }
 
 /* 梯形 */
-.tab-style-trapezoid {
-  :deep(.el-tabs__active-bar) {
+.tab-style-trapezoid ::v-deep {
+  .el-tabs__active-bar {
     display: none;
   }
 
-  :deep(.el-tabs__item) {
+  .el-tabs__item {
     width: 110px;
     height: 36px;
     position: relative;

@@ -3,14 +3,14 @@
   <div>
     <div class="station">
       <el-drawer
-      class="invoice-merge-invoice-drawer"
         :append-to-body="true"
         :before-close="handleClose"
         :direction="direction"
         :modal="true"
         :size="formData.width"
         :title="formData.title"
-        v-model="drawer"
+        :visible.sync="drawer"
+        :wrapper-closable="true"
       >
         <!-- 步骤条 -->
         <div class="step">
@@ -28,7 +28,7 @@
         </div>
         <!-- 表格 -->
         <div v-if="activeIndex == 1" class="mt20">
-          <el-button v-if="formData.type == 'edit'" class="mb14" type="primary" @click="addPaymentFn"
+          <el-button v-if="formData.type == 'edit'" class="mb14" size="small" type="primary" @click="addPaymentFn"
             >添加其他付款单</el-button
           >
           <paymentTable
@@ -53,8 +53,8 @@
           </div>
         </div>
         <div class="button from-foot-btn fix btn-shadow">
-          <el-button @click="handleClose">{{ activeIndex == 1 ? '取消' : '上一步' }}</el-button>
-          <el-button type="primary" @click="handleConfirm()">
+          <el-button size="small" @click="handleClose">{{ activeIndex == 1 ? '取消' : '上一步' }}</el-button>
+          <el-button size="small" type="primary" @click="handleConfirm()">
             {{ activeIndex == 1 ? '下一步' : '确定' }}
           </el-button>
         </div>
@@ -62,7 +62,7 @@
 
       <el-dialog
         :append-to-body="true"
-        v-model="addPayment"
+        :visible.sync="addPayment"
         title="选择申请开票付款单"
         width="1100px"
         @close="cancelFn"
@@ -70,8 +70,8 @@
         <div class="line" />
         <paymentTable :edit="edit" :ids="rules.bill_id" :tableData="tableData2" @handleSelectionFn="pushTableFn" />
         <div class="footer">
-          <el-button class="btn" @click="cancelFn">取消</el-button>
-          <el-button class="btn" type="primary" @click="okFn">确定</el-button>
+          <el-button class="btn" size="small" @click="cancelFn">取消</el-button>
+          <el-button class="btn" size="small" type="primary" @click="okFn">确定</el-button>
         </div>
       </el-dialog>
     </div>
@@ -79,16 +79,14 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
+import moment from 'moment'
 import paymentTable from './paymentTable'
 
-import { uninvoicedListApi } from '@/api/enterprise.ts'
-import { clientInvoiceSaveApi, clientInvoicePutApi } from '@/api/client.ts'
-import helper from '@/libs/helper.ts'
-import { getStorageJson } from '@/utils/storage.ts'
+import { uninvoicedListApi } from '@/api/enterprise'
+import { clientInvoiceSaveApi, clientInvoicePutApi } from '@/api/client'
+import helper from '@/libs/helper'
+import { getStorageJson } from '@/utils/storage'
 export default {
-  emits: ['getTableData', 'isOk'],
   name: 'MergeInvoice',
   props: {
     contractInvoice: {
@@ -110,12 +108,12 @@ export default {
   },
   components: {
     paymentTable,
-    approvalEdit: defineAsyncComponent(() => import('./approvalEdit'))
+    approvalEdit: () => import('./approvalEdit')
   },
   data() {
     const checkIdent = (rule, value, callback) => {
       if (!value && this.rules.invoiceType > 1) {
-        return callback(new Error('请输入纳税人识别号'))
+        return callback(new Error(this.$t('customer.placeholder47')))
       } else if (!helper.identReg.test(value)) {
         return callback(new Error('税号输入不合法'))
       } else {
@@ -138,13 +136,13 @@ export default {
       categoryList: [], // 发票类目
       invoiceOptions: [
         // 发票类型
-        { value: 1, label: '个人普通发票' },
-        { value: 2, label: '企业普通发票' },
-        { value: 3, label: '企业专用发票' }
+        { value: 1, label: this.$t('customer.personalinvoice') },
+        { value: 2, label: this.$t('customer.enterpriseinvoice') },
+        { value: 3, label: this.$t('customer.specialinvoice') }
       ],
       methodOptions: [
-        { value: 'express', label: '快递' },
-        { value: 'mail', label: '邮件' }
+        { value: 'express', label: this.$t('customer.express') },
+        { value: 'mail', label: this.$t('customer.mail') }
       ],
       activeIndex: 1,
       withdraw: '',
@@ -172,19 +170,19 @@ export default {
       },
       newFormData: {},
       rule: {
-        name: [{ required: true, message: '请输入发票名称', trigger: 'blur' }],
-        amount: [{ required: true, message: '请输入开票金额', trigger: 'blur' }],
-        billDate: [{ required: true, message: '请选择期望开票时间', trigger: 'blur' }],
-        title: [{ required: true, message: '请输入抬头信息', trigger: 'blur' }],
+        name: [{ required: true, message: this.$t('customer.placeholder42'), trigger: 'blur' }],
+        amount: [{ required: true, message: this.$t('customer.placeholder44'), trigger: 'blur' }],
+        billDate: [{ required: true, message: this.$t('customer.placeholder65'), trigger: 'blur' }],
+        title: [{ required: true, message: this.$t('customer.placeholder46'), trigger: 'blur' }],
         ident: [{ required: true, validator: checkIdent, trigger: 'blur' }],
         category_id: [{ required: true, message: '请选择发票类目', trigger: 'change' }],
         collect_name: [{ required: true, message: '电话号码不能为空', trigger: 'blur' }],
         collect_tel: [{ required: true, message: '电话号码不能为空', trigger: 'blur' }],
         collect_email: [{ required: true, message: '邮箱地址不能为空', trigger: 'blur' }],
         mail_address: [{ required: true, message: '邮寄地址不能为空', trigger: 'blur' }],
-        address: [{ required: true, message: '请输入邮寄详细地址', trigger: 'blur' }],
-        bank: [{ required: true, message: '请输入开户行', trigger: 'blur' }],
-        account: [{ required: true, message: '请输入开户账号', trigger: 'blur' }],
+        address: [{ required: true, message: this.$t('customer.placeholder56'), trigger: 'blur' }],
+        bank: [{ required: true, message: this.$t('customer.placeholder48'), trigger: 'blur' }],
+        account: [{ required: true, message: this.$t('customer.placeholder49'), trigger: 'blur' }],
         tel: [{ required: true, message: '电话号码不能为空', trigger: 'blur' }]
       }
     }
@@ -232,12 +230,12 @@ export default {
         if (this.edit == 'edit') {
           this.editPaymentRecord()
           this.$nextTick(() => {
-            this.$refs.paymentTable.editLocal = 'edit'
+            this.$refs.paymentTable.edit = 'edit'
           })
         } else {
           this.getPaymentRecord()
         }
-        this.rules.billDate = dayjs(new Date()).format('YYYY-MM-DD')
+        this.rules.billDate = moment(new Date()).format('YYYY-MM-DD')
       }, 300)
       this.drawer = true
     },
@@ -460,7 +458,7 @@ export default {
         this.activeIndex = 1
         let list = getStorageJson('paymentOrderList', [])
         this.$nextTick(() => {
-          this.tableData1 = list
+          this.$set(this, 'tableData1', list)
         })
 
         this.getPayment()
@@ -552,6 +550,10 @@ export default {
   font-weight: 400;
   color: #303133;
 }
+::v-deep .el-drawer__body {
+  margin-right: 20px;
+  margin-left: 20px;
+}
 .invoice {
   margin: 20px 20px 20px 20px;
   .from-foot-btn button {
@@ -559,7 +561,7 @@ export default {
     height: auto;
   }
 }
-:deep(.el-input-number) {
+::v-deep .el-input-number {
   width: 100%;
   .el-input__inner {
     text-align: left;
@@ -579,13 +581,13 @@ export default {
   justify-content: space-between;
   .form-item {
     width: 49%;
-    :deep(.el-form-item__content) {
+    ::v-deep .el-form-item__content {
       width: calc(100% - 110px);
     }
-    :deep(.el-select) {
+    ::v-deep .el-select {
       width: 100%;
     }
-    :deep(.el-textarea__inner) {
+    ::v-deep .el-textarea__inner {
       resize: none;
     }
   }
@@ -595,7 +597,7 @@ export default {
   padding: 20px 20px;
   padding-bottom: 0;
 }
-:deep(.el-alert) {
+::v-deep .el-alert {
   padding-left: 30px;
   border: 1px solid #1890ff;
   color: #1890ff;
@@ -604,24 +606,16 @@ export default {
   line-height: 1;
   margin-bottom: 10px;
 }
-:deep(.el-alert--info .el-alert__description) {
+::v-deep .el-alert--info .el-alert__description {
   color: #303133;
   font-size: 13px;
   font-weight: 500;
 }
-:deep(.el-alert__icon.is-big) {
+::v-deep .el-alert__icon.is-big {
   font-size: 16px;
   width: 15px;
 }
 .mb50 {
   margin-bottom: 50px;
-}
-</style>
-
-<style lang="scss">
-// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
-.invoice-merge-invoice-drawer .el-drawer__body {
-  margin-right: 20px;
-  margin-left: 20px;
 }
 </style>

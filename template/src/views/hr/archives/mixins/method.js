@@ -1,12 +1,11 @@
-import dayjs from 'dayjs'
+import moment from 'moment'
 import { modalSure } from '@/libs/public'
 import { enterpriseCardApi, enterpriseBatchApi } from '@/api/enterprise'
 let myMixins = {
-  emits: ['invitationFn'],
   methods: {
     // 导出功能
     getExportData(val) {
-      this.$refs.formBox.saveName = '导出员工档案_' + dayjs(new Date()).format('MM_DD_HH_mm_ss') + '.xlsx';
+      this.$refs.formBox.saveName = '导出员工档案_' + moment(new Date()).format('MM_DD_HH_mm_ss') + '.xlsx';
       enterpriseCardApi(val)
         .then((res) => {
           const newdata = res.data.list;
@@ -159,7 +158,7 @@ let myMixins = {
 
     // 获取当天的日期
     getDate() {
-      let nowDay = dayjs().format('YYYY-MM-DD')
+      let nowDay = moment().format('YYYY-MM-DD')
       if (this.tabtypes == 1) {
         this.ruleForm.work_time = nowDay
       } else if (this.tabtypes == 2) {

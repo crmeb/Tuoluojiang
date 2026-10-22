@@ -2,7 +2,7 @@
   <div class="station">
     <div class="btn-box1 mb10">
       <div class="title-16">合同列表</div>
-      <el-button type="primary" @click="addContract">添加合同</el-button>
+      <el-button size="small" type="primary" @click="addContract">添加合同</el-button>
     </div>
     <el-table :data="contractData" fit style="width: 100%">
       <el-table-column prop="doc_name" label="合同名称"> </el-table-column>
@@ -38,48 +38,46 @@
       </el-table-column>
       <el-table-column label="操作" width="230" fixed="right">
         <template #default="scope">
-          <el-button type="primary" link @click="handleClick(1, scope.row)">查看</el-button>
+          <el-button type="text" size="mini" @click="handleClick(1, scope.row)">查看</el-button>
           <!-- 审核中 -->
           <template v-if="scope.row.status == 1">
-            <el-button type="primary" link @click="handleClick(4, scope.row)">撤销申请</el-button>
-            <el-button type="primary" link @click="handleClick(6, scope.row)">关联订单</el-button>
+            <el-button type="text" size="mini" @click="handleClick(4, scope.row)">撤销申请</el-button>
+            <el-button type="text" size="mini" @click="handleClick(6, scope.row)">关联订单</el-button>
           </template>
 
           <!-- 待签约 -->
           <template v-if="scope.row.status == 2">
-            <el-button v-if="scope.row.sign_type == 1" type="primary" link
+            <el-button v-if="scope.row.sign_type == 1" type="text" size="mini"
               @click="handleClick(7, scope.row)">签约录入</el-button>
-            <el-button v-else type="primary" link @click="handleClick(2, scope.row)">电子签</el-button>
+            <el-button v-else type="text" size="mini" @click="handleClick(2, scope.row)">电子签</el-button>
           </template>
 
           <!-- 已签约 -->
           <template v-if="scope.row.status == 3">
-            <el-button type="primary" link @click="handleClick(6, scope.row)">关联订单</el-button>
-            <el-button type="primary" link @click="handleClick(9, scope.row)">删除</el-button>
+            <el-button type="text" size="mini" @click="handleClick(6, scope.row)">关联订单</el-button>
+            <el-button type="text" size="mini" @click="handleClick(9, scope.row)">删除</el-button>
           </template>
-          <el-button v-if="scope.row.status >= 4" type="primary" link
+          <el-button v-if="scope.row.status >= 4" type="text" size="mini"
             @click="handleClick(3, scope.row)">重新签约</el-button>
           <el-dropdown v-if="scope.row.status != 1 && scope.row.status != 3" class="ml10">
-            <el-button type="primary" link class="el-dropdown-link more">
+            <span class="el-dropdown-link el-button--text el-button more">
               更多
               <i class="el-icon-arrow-down" />
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu class="dropdown-menu-left" placement="top-start">
-                <!-- 待签约 -->
-                <el-dropdown-item v-if="scope.row.status == 2 || scope.row.status == 6"
-                  @click="handleClick(8, scope.row)">
-                  签约变更
-                </el-dropdown-item>
-                <el-dropdown-item v-if="scope.row.status != 6" @click="handleClick(6, scope.row)">
-                  关联订单
-                </el-dropdown-item>
-  
-                <el-dropdown-item @click="handleClick(9, scope.row)">
-                  删除
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
+            </span>
+            <el-dropdown-menu class="dropdown-menu-left" placement="top-start">
+              <!-- 待签约 -->
+              <el-dropdown-item v-if="scope.row.status == 2 || scope.row.status == 6"
+                @click.native="handleClick(8, scope.row)">
+                签约变更
+              </el-dropdown-item>
+              <el-dropdown-item v-if="scope.row.status != 6" @click.native="handleClick(6, scope.row)">
+                关联订单
+              </el-dropdown-item>
+
+              <el-dropdown-item @click.native="handleClick(9, scope.row)">
+                删除
+              </el-dropdown-item>
+            </el-dropdown-menu>
           </el-dropdown>
 
         </template>
@@ -111,29 +109,27 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 
-import { getStorageJson } from '@/utils/storage.ts'
-import { getColor } from '@/utils/format.ts'
+import { getStorageJson } from '@/utils/storage'
+import { getColor } from '@/utils/format'
 import {
   getContractDocListApi,
   contractDocCancelApi,
   contractDocDelApi,
   contractSignatoryApi,
   contractDocSignApi
-} from '@/api/contractSign.ts'
+} from '@/api/contractSign'
 export default {
-  emits: ['refresh-detail'],
   name: 'Sign',
   components: {
 
-    checkContract: defineAsyncComponent(() => import('@/views/customer/signing/components/checkContract')),
-    addContractSign: defineAsyncComponent(() => import('@/views/customer/signing/components/addContractSign')),
-    eSignatureDialog: defineAsyncComponent(() => import('@/views/customer/signing/components/eSignatureDialog')),
-    paymentTableDialog: defineAsyncComponent(() => import('@/views/customer/signing/components/paymentTableDialog')),
-    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form')),
-    uploadFile: defineAsyncComponent(() => import('@/components/form-common/oa-upload')),
+    checkContract: () => import('@/views/customer/signing/components/checkContract'),
+    addContractSign: () => import('@/views/customer/signing/components/addContractSign'),
+    eSignatureDialog: () => import('@/views/customer/signing/components/eSignatureDialog'),
+    paymentTableDialog: () => import('@/views/customer/signing/components/paymentTableDialog'),
+    oaDialog: () => import('@/components/form-common/dialog-form'),
+    uploadFile: () => import('@/components/form-common/oa-upload'),
   },
   props: {
     formInfo: {
@@ -304,7 +300,7 @@ export default {
       // 解构赋值获取id，避免直接修改传入的item对象
       const { id } = item
       this.fromData = {
-        title: '查看客户',
+        title: this.$t('customer.viewcustomer'),
         width: '1000px',
         data: { ...item, cid: id }, // 使用展开运算符创建新对象并添加cid属性
         isClient: false,

@@ -2,7 +2,7 @@
   <div>
     <el-dialog
       top="10%"
-      v-model="dialogVisible"
+      :visible.sync="dialogVisible"
       width="80%"
       :show-close="false"
       :append-to-body="true"
@@ -24,8 +24,8 @@
       </div>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="handleCancel">取消</el-button>
-          <el-button type="primary" @click="handleCreate">创建</el-button>
+          <el-button size="small" @click="handleCancel">取消</el-button>
+          <el-button size="small" type="primary" @click="handleCreate">创建</el-button>
         </span>
       </template>
     </el-dialog>

@@ -3,13 +3,13 @@
   <div class="oa-dialog">
     <el-dialog
       top="10%"
-      v-model="show"
+      :visible.sync="show"
       width="700px"
       append-to-body
       :show-close="false"
       :close-on-click-modal="false"
     >
-      <template #header>
+      <template #title>
         <div class="header flex-between">
           <span class="title">选择引用内容</span>
           <span class="el-icon-close" @click="handleClose"></span>
@@ -22,11 +22,12 @@
           <el-input
             v-model="where.keyword"
             prefix-icon="el-icon-search"
+            size="small"
             placeholder="请输入关键字搜索"
             clearable
             style="width: 250px"
             @change="getList"
-            @keyup.stop.prevent.enter="getList"
+            @keyup.native.stop.prevent.enter="getList"
             class="input"
           ></el-input>
         </div>
@@ -59,22 +60,24 @@
               </div>
               <div v-else-if="item.form_value === 'tag' || item.form_value === 'checkbox'">
                 <el-popover v-if="scope.row[item.field_name_en].length > 2" placement="top-start" trigger="hover">
-                  <div class="flex_box">
-                    <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                      <el-tag>
-                        {{ val }}
-                      </el-tag>
+                  <template>
+                    <div class="flex_box">
+                      <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
+                        <el-tag size="small">
+                          {{ val }}
+                        </el-tag>
+                      </div>
                     </div>
-                  </div>
+                  </template>
                   <template #reference>
                     <div>
                       <div class="flex_box">
                         <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                          <el-tag v-if="index < 2">
+                          <el-tag size="small" v-if="index < 2">
                             {{ val }}
                           </el-tag>
                         </div>
-                        <el-tag v-if="scope.row[item.field_name_en].length > 2">...</el-tag>
+                        <el-tag v-if="scope.row[item.field_name_en].length > 2" size="small">...</el-tag>
                       </div>
                     </div>
                   </template>
@@ -82,11 +85,11 @@
                 <template v-else>
                   <div class="flex_box">
                     <div class="tips" v-for="(val, index) in scope.row[item.field_name_en]" :key="index">
-                      <el-tag v-if="index < 2">
+                      <el-tag size="small" v-if="index < 2">
                         {{ val }}
                       </el-tag>
                     </div>
-                    <el-tag v-if="scope.row[item.field_name_en].length > 2">...</el-tag>
+                    <el-tag v-if="scope.row[item.field_name_en].length > 2" size="small">...</el-tag>
                   </div>
                 </template>
                 <span v-if="scope.row[item.field_name_en] && scope.row[item.field_name_en].length == 0">--</span>
@@ -104,9 +107,9 @@
               </div>
 
               <div v-else-if="item.form_value === 'textarea'">
-                <el-popover v-if="scope.row[item.field_name_en].length > 11" placement="top-start" width="350" trigger="hover" :content="scope.row[item.field_name_en]">
+                <el-popover placement="top-start" width="350" trigger="hover" :content="scope.row[item.field_name_en]">
                   <template #reference>
-                    <div class="over-text">
+                    <div class="over-text" v-if="scope.row[item.field_name_en].length > 11">
                       {{ scope.row[item.field_name_en] }}
                     </div>
                   </template>
@@ -124,7 +127,7 @@
           </el-table-column>
           <el-table-column label="操作">
             <template #default="scope">
-              <el-button type="primary" link @click="selectClick(scope.row)">选择</el-button>
+              <el-button type="text" @click="selectClick(scope.row)">选择</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -145,9 +148,8 @@
 </template>
 
 <script>
-import { savecrudCateApi, dataModulerListApi, dataModulerFieldApi } from '@/api/develop.ts'
+import { savecrudCateApi, dataModulerListApi, dataModulerFieldApi } from '@/api/develop'
 export default {
-  emits: ['getSelection', 'getList'],
   name: 'CrmebOaEntApplicatDialog',
   props: {},
   data() {
@@ -188,7 +190,7 @@ export default {
       })
     },
     // 数组转成字符串
-    getValue(val, type) {
+    getValue(val) {
       let str = ''
       if (val == '') {
         str = '--'
@@ -281,12 +283,16 @@ export default {
     display: flex;
     justify-content: flex-end;
   }
-  :deep(.el-dialog) {
+  ::v-deep .el-dialog {
     border-radius: 6px;
   }
-  :deep(.el-dialog__body) {
+  ::v-deep .el-dialog__body {
     margin-bottom: 0;
     padding: 0;
+  }
+
+  ::v-deep .el-button--medium {
+    padding: 10px 15px;
   }
 }
 .el-icon-remove {

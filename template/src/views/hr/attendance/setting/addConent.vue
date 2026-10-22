@@ -31,11 +31,11 @@
           >
           </el-alert>
         </div>
-        <el-form ref="ruleForm" class="demo-ruleForm" label-width="120px" @submit.prevent>
+        <el-form ref="ruleForm" class="demo-ruleForm" label-width="120px" @submit.native.prevent>
           <!-- 第一步 -->
           <template v-if="activeIndex == 1">
             <div class="from-item-title mb15">
-              <span>基本信息</span>
+              <span>{{ $t('setting.info.essentialinformation') }}</span>
             </div>
             <!-- 基本信息 -->
             <div class="form-box">
@@ -44,7 +44,7 @@
                   <template #label>
                     <span><span class="color-tab">* </span>考勤组名称：</span>
                   </template>
-                  <el-input v-model="from.name" clearable placeholder="请输入考勤组名称" />
+                  <el-input v-model="from.name" clearable placeholder="请输入考勤组名称" size="small" />
                 </el-form-item>
               </div>
               <div class="form-item">
@@ -53,11 +53,11 @@
                     <span><span class="color-tab">* </span>考勤人员：</span>
                   </template>
                   <el-radio-group v-model="from.type">
-                    <el-radio class="mb14" label="1" value="1">按部门添加</el-radio>
+                    <el-radio class="mb14" label="1">按部门添加</el-radio>
                     <span class="tips"
                       >用于本部门所有人员均需参加考勤的情况；若所选择的部门有新员工加入，则该人员自动加入考勤人员之中</span
                     >
-                    <el-radio label="0" value="0">按人员添加</el-radio
+                    <el-radio label="0">按人员添加</el-radio
                     ><span class="tips"> 用于特殊个例人员需要参加考勤的情况</span>
                   </el-radio-group>
                 </el-form-item>
@@ -189,15 +189,16 @@
                   </template>
                   <div class="wifi-info-list">
                     <div v-for="(item, index) in from.wifi_data" :key="index">
-                      <el-input v-model="item.name" style="width: 180px" placeholder="请输入WIFI名称" />
+                      <el-input v-model="item.name" size="small" style="width: 180px" placeholder="请输入WIFI名称" />
                       <el-input
                         v-model="item.mac"
+                        size="small"
                         style="width: 180px"
                         placeholder="请输入路由器 mac 地址"
                       />
-                      <el-button type="danger" @click="deleteWifiFn(index)">删除</el-button>
+                      <el-button size="small" type="danger" @click="deleteWifiFn(index)">删除</el-button>
                     </div>
-                    <el-button type="primary" @click="addWifiFn">新增WIFI信息</el-button>
+                    <el-button size="mini" type="primary" @click="addWifiFn">新增WIFI信息</el-button>
                   </div>
                 </el-form-item>
               </div>
@@ -210,7 +211,7 @@
                 <mapContainer :positionInfo="from" @select="selectMap"></mapContainer>
               </div>
               <div class="map pl60">
-                <el-form class="invoice-body" label-width="110px" @submit.prevent>
+                <el-form class="invoice-body" label-width="110px" @submit.native.prevent>
                   <div class="form-item">
                     <el-form-item>
                       <template #label>
@@ -232,7 +233,7 @@
                       <template #label>
                         <span>有效范围：</span>
                       </template>
-                      <el-input id="tipinput" v-model="from.effective_range" style="width: 100px">
+                      <el-input id="tipinput" v-model="from.effective_range" size="small" style="width: 100px">
                         <template #suffix>
                           <i style="font-style: normal; margin-right: 10px">米</i>
                         </template></el-input
@@ -253,6 +254,7 @@
                     v-model="from.location_name"
                     clearable
                     placeholder="请输入地点"
+                    size="small"
                     style="width: 350px"
                   />
                   <div>
@@ -276,11 +278,11 @@
                     <span>补卡类型：</span>
                   </template>
                   <el-checkbox-group v-model="from.repair_type">
-                    <el-checkbox label="1" value="1">缺卡</el-checkbox>
-                    <el-checkbox label="2" value="2">迟到</el-checkbox>
-                    <el-checkbox label="3" value="3">严重迟到</el-checkbox>
-                    <el-checkbox label="4" value="4">早退</el-checkbox>
-                    <el-checkbox label="5" value="5">地点异常</el-checkbox>
+                    <el-checkbox label="1">缺卡</el-checkbox>
+                    <el-checkbox label="2">迟到</el-checkbox>
+                    <el-checkbox label="3">严重迟到</el-checkbox>
+                    <el-checkbox label="4">早退</el-checkbox>
+                    <el-checkbox label="5">地点异常</el-checkbox>
                   </el-checkbox-group>
                 </el-form-item>
                 <el-form-item label-width="100px">
@@ -368,8 +370,8 @@
               <el-table-column label="周期天数" prop="cycle"> </el-table-column>
               <el-table-column fixed="right" label="操作" width="180">
                 <template #default="scope">
-                  <el-button type="primary" link @click="editFn(scope.row)">编辑</el-button>
-                  <el-button type="primary" link @click="deleteFn(scope.row)">删除</el-button>
+                  <el-button type="text" @click="editFn(scope.row)">编辑</el-button>
+                  <el-button type="text" @click="deleteFn(scope.row)">删除</el-button>
                 </template>
               </el-table-column>
             </el-table>
@@ -380,9 +382,9 @@
 
     <!-- 底部按钮 -->
     <FormPageFooter>
-      <el-button v-if="activeIndex !== 1" @click="activeIndex = activeIndex - 1">上一步</el-button>
-      <el-button v-if="activeIndex !== 4" type="primary" @click="nextStep()">下一步</el-button>
-      <el-button v-if="activeIndex == 4" type="primary" @click="submit()">保存</el-button>
+      <el-button v-if="activeIndex !== 1" size="small" @click="activeIndex = activeIndex - 1">上一步</el-button>
+      <el-button v-if="activeIndex !== 4" size="small" type="primary" @click="nextStep()">下一步</el-button>
+      <el-button v-if="activeIndex == 4" size="small" type="primary" @click="submit()">保存</el-button>
     </FormPageFooter>
 
     <!-- 新增排班周期 -->
@@ -394,11 +396,9 @@
   </BaseContainer>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { roterPre } from '@/settings.ts'
-import { mapState } from 'pinia'
-import { useUserStore } from '@/stores/user.ts'
+import { modalSure } from '@/libs/public'
+import { roterPre } from '@/settings'
+import { mapGetters } from 'vuex'
 import BaseContainer from '@/components/BaseContainer/index.vue'
 import FormPageHeader from '@/components/FormPageHeader/index.vue'
 import FormPageFooter from '@/components/FormPageFooter/index.vue'
@@ -410,22 +410,22 @@ import {
   attendanceGroupDetailsApi,
   putAttendanceGroup,
   repeatCheckMemberApi
-} from '@/api/config.ts'
+} from '@/api/config'
 export default {
   name: 'AddContent',
   components: {
     BaseContainer,
     FormPageHeader,
     FormPageFooter,
-    mapContainer: defineAsyncComponent(() => import('@/components/common/mapContainer')),
-    addCycle: defineAsyncComponent(() => import('./components/addCycle')),
-    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department')),
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
-    shiftList: defineAsyncComponent(() => import('./components/shiftList')),
-    notJoin: defineAsyncComponent(() => import('./components/notJoin'))
+    mapContainer: () => import('@/components/common/mapContainer'),
+    addCycle: () => import('./components/addCycle'),
+    selectDepartment: () => import('@/components/form-common/select-department'),
+    selectMember: () => import('@/components/form-common/select-member'),
+    shiftList: () => import('./components/shiftList'),
+    notJoin: () => import('./components/notJoin')
   },
   computed: {
-    ...mapState(useUserStore, ['userInfo'])
+    ...mapGetters(['userInfo'])
   },
   data() {
     return {
@@ -826,18 +826,18 @@ export default {
   font-size: 12px;
   color: #909399;
 }
-:deep(.el-radio) {
+::v-deep .el-radio {
   margin-right: 10px;
 }
-:deep(.el-radio-group) {
+::v-deep .el-radio-group {
   // margin-top: 10px;
 }
 
 .invoice-body {
-  :deep(.el-form-item) {
+  ::v-deep .el-form-item {
     margin-bottom: 0;
   }
-  :deep(.el-form-item__label) {
+  ::v-deep .el-form-item__label {
     font-size: 12px !important;
     font-weight: 400;
     color: #909399 !important;
@@ -893,6 +893,14 @@ export default {
     font-weight: 700;
     background-color: #1890ff;
     font-family: PingFangSC-Semibold, PingFang SC;
+
+    ::v-deep .el-input--medium {
+      font-size: 20px;
+
+      .el-input__inner {
+        border: none;
+      }
+    }
   }
 }
 
@@ -915,35 +923,38 @@ export default {
   .form-item {
     width: 100%;
     margin-bottom: 20px;
-    :deep(.el-form-item) {
+    ::v-deep .el-form-item {
       margin-bottom: 0;
     }
-    :deep(.el-checkbox__input.is-checked + .el-checkbox__label) {
+    ::v-deep .el-checkbox__input.is-checked + .el-checkbox__label {
       color: #303133;
     }
-    :deep(.el-form-item__label) {
+    ::v-deep .el-form-item__label {
       font-size: 13px;
       font-family: PingFangSC-Regular, PingFang SC;
       font-weight: 400;
       color: #303133;
     }
 
-    :deep(.el-input .el-input__inner) {
+    ::v-deep .el-input--small .el-input__inner {
       font-size: 12px;
     }
+    ::v-deep .el-form-item--medium .el-radio {
+      line-height: 0;
+    }
 
-    :deep(.el-form-item__content) {
+    ::v-deep .el-form-item__content {
       width: calc(100% - 110px);
     }
-    :deep(.el-select) {
+    ::v-deep .el-select {
       width: 100%;
     }
-    :deep(.el-textarea__inner) {
+    ::v-deep .el-textarea__inner {
       resize: none;
     }
   }
 }
-:deep(.el-checkbox__label) {
+::v-deep .el-checkbox__label {
   font-size: 13px;
   font-family: PingFangSC-Regular, PingFang SC;
   font-weight: 400;
@@ -974,6 +985,7 @@ export default {
   display: inline;
   font-size: 12px;
   color: #909399;
+  font-size: 400 !important;
 }
 .fz12 {
   font-size: 12px;
@@ -1045,7 +1057,7 @@ export default {
   padding: 20px 0;
   padding-top: 0;
 }
-:deep(.el-alert) {
+::v-deep .el-alert {
   padding-left: 30px;
   border: 1px solid #1890ff;
   color: #1890ff;
@@ -1054,12 +1066,12 @@ export default {
   line-height: 1;
   margin-bottom: 10px;
 }
-:deep(.el-alert--info .el-alert__description) {
+::v-deep .el-alert--info .el-alert__description {
   color: #303133;
   font-size: 13px;
   font-weight: 500;
 }
-:deep(.el-alert__icon.is-big) {
+::v-deep .el-alert__icon.is-big {
   font-size: 16px;
   width: 15px;
 }

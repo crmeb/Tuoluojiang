@@ -30,6 +30,7 @@
       <el-input
         v-model="userMessage"
         class="parameter-input"
+        size="small"
         type="textarea"
         maxlength="50"
         ref="userMessage"
@@ -46,9 +47,8 @@
 </template>
 
 <script>
-import { getStorageJson } from '@/utils/storage.ts'
+import { getStorageJson } from '@/utils/storage'
 export default {
-  emits: ['handleSend'],
   name: 'AssistantDialog',
   data() {
     return {
@@ -189,13 +189,12 @@ export default {
   right: 10px;
   width: calc(100% - 20px);
 
-  :deep(.el-textarea__inner) {
+  ::v-deep .el-textarea__inner {
     resize: none;
     padding-right: 20px;
     height: 70px;
     border-radius: 14px;
     border: 1px solid transparent;
-    box-shadow: none;
     background-origin: border-box;
     background-clip: padding-box, border-box;
     background-image: linear-gradient(#fff, #fff),

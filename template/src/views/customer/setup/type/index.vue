@@ -1,7 +1,7 @@
 ﻿<template>
   <div class="divBox">
     <el-card class="normal-page">
-      <el-button type="primary" class="mb14" @click="addFinance">添加分类</el-button>
+      <el-button type="primary" class="mb14" size="small" @click="addFinance">{{ $t('customer.addtype') }}</el-button>
       <div class="splitLine mt10"></div>
       <div class="inTotal">共 {{ total }} 条</div>
       <el-table
@@ -11,12 +11,12 @@
         default-expand-all
         :tree-props="{ children: 'children' }"
       >
-        <el-table-column prop="value.title" label="分类名称" min-width="220"> </el-table-column>
-        <el-table-column prop="sort" label="排序" min-width="100" />
-        <el-table-column prop="address" label="操作" width="200">
+        <el-table-column prop="value.title" :label="$t('customer.typename')" min-width="220"> </el-table-column>
+        <el-table-column prop="sort" :label="$t('toptable.sort')" min-width="100" />
+        <el-table-column prop="address" :label="$t('public.operation')" width="200">
           <template #default="scope">
-            <el-button type="primary" link @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button type="primary" link @click="handleDelete(scope.row)">删除</el-button>
+            <el-button type="text" @click="handleEdit(scope.row)">{{ $t('public.edit') }}</el-button>
+            <el-button type="text" @click="handleDelete(scope.row)">{{ $t('public.delete') }}</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -36,10 +36,10 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
+import { modalSure } from '@/libs/public'
 import dialogForm from './components/addDialog'
-import { clientConfigListApi } from '@/api/enterprise.ts'
-import { clientConfigSaveApi } from '@/api/client.ts'
+import { clientConfigListApi } from '@/api/enterprise'
+import { clientConfigSaveApi } from '@/api/client'
 export default {
   name: 'FinanceList',
   components: {
@@ -85,7 +85,7 @@ export default {
     // 添加分类
     async addFinance() {
       this.repeatData = {
-        title: '添加分类',
+        title: this.$t('customer.addtype'),
         width: '480px',
         label: 1,
         type: 1,
@@ -96,7 +96,7 @@ export default {
     // 编辑分类
     async handleEdit(item) {
       this.repeatData = {
-        title: '编辑分类',
+        title: this.$t('customer.edittype'),
         width: '480px',
         label: 1,
         type: 2,
@@ -106,7 +106,7 @@ export default {
     },
     // 删除
     handleDelete(item) {
-      modalSure('你确定要删除该分类吗').then(() => {
+      modalSure(this.$t('customer.message01')).then(() => {
         const deleteArr = []
         deleteArr.push(item.id)
         this.clientConfigSave({ key: this.key, delete: deleteArr })

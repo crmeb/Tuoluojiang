@@ -2,7 +2,7 @@
 <template>
   <div class="goods-info-cell">
     <div v-for="(item, index) of visibleDetails" :key="index" class="goods-img-box">
-      <el-image :src="getItemImage(item)" :preview-src-list="previewSrcList" preview-teleported class="goods-img" />
+      <el-image :src="getItemImage(item)" :preview-src-list="previewSrcList" class="goods-img" />
       <span class="goods-count">{{ getItemCount(item) }}</span>
     </div>
     <div v-if="restCount > 0" class="goods-more">

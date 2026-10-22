@@ -2,24 +2,24 @@
 <template>
   <div class="contract">
     <el-drawer
-      class="customer-contract-edit-contract-drawer"
       :append-to-body="true"
       :before-close="handleClose"
       :direction="direction"
       :modal="true"
-     
+      :modal-append-to-body="false"
       :show-close="true"
       :size="formData.width"
       :title="formData.title"
-      v-model="drawer"
+      :visible.sync="drawer"
+      :wrapper-closable="true"
     >
-      <template #header>
+      <template #title>
         <div class="invoice-title">
-          <div class="invoice-header">
-            <div class="invoice-left">
+          <el-row class="invoice-header">
+            <el-col class="invoice-left">
               <div class="invoice-logo"><i class="icon iconfont iconhetong"></i></div>
-            </div>
-            <div v-if="drawer" class="invoice-right">
+            </el-col>
+            <el-col v-if="drawer" class="invoice-right">
               <div class="txt1 over-text">{{ dataInfo.data ? dataInfo.data.contract_no : '--' }}</div>
               <div class="txt2">
                 <span class="title">订单状态：</span
@@ -32,15 +32,15 @@
                 >
                 <span class="title">订单金额(元)：</span
                 ><span class="info1">{{ dataInfo.data ? dataInfo.data.price : '--' }}</span>
-                <span class="title">客户：</span
+                <span class="title">{{ $t('customer.customer') }}：</span
                 ><span class="weight">{{ dataInfo.data ? dataInfo.data.customer_name : '--' }}</span>
                 <span class="title"> 业务员：</span
                 ><span class="weight">{{ dataInfo.data ? dataInfo.data.salesman : '--' }}</span>
                 <span class="title">创建时间：</span
                 ><span>{{ (dataInfo.data && dataInfo.data.created_at) || '--' }}</span>
               </div>
-            </div>
-          </div>
+            </el-col>
+          </el-row>
         </div>
       </template>
       <el-tabs
@@ -95,8 +95,8 @@
               />
 
               <div v-if="slotProps.type == 'add'" class="mb10 flex-end">
-                <el-button @click="productFn(1)">取消</el-button>
-                <el-button type="primary" @click="productFn(2)">确定</el-button>
+                <el-button size="small" @click="productFn(1)">取消</el-button>
+                <el-button size="small" type="primary" @click="productFn(2)">确定</el-button>
               </div>
             </template>
           </oaForm>
@@ -109,7 +109,7 @@
           <process-from v-if="signDataInfo.length != 0" :examine-data="examineData"></process-from>
           <template v-else>
             <default-page :textShow="false" imgWidth="128px" :index="17" :min-height="400" :top="`40px`">
-              <el-button class="ml10" type="primary" link @click="openContract"
+              <el-button class="ml10" type="text" size="small" @click="openContract"
                 >生成合同<span class="el-icon-arrow-right"
               /></el-button>
             </default-page>
@@ -160,7 +160,7 @@
             ref="file"
             :form-info="formData"
             @refresh-detail="refreshContractDetail"
-            @vue:mounted="handleFileMounted"
+            @hook:mounted="handleFileMounted"
           ></file>
         </div>
         <div v-if="tabNumber === 6" class="contract-list">
@@ -175,13 +175,11 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { contractDocDetailApi } from '@/api/contractSign.ts'
-import { contractEditCreateApi } from '@/api/enterprise.ts'
-import { clientDataInfoApi, clientContractDetailApi as contractDetailApi } from '@/api/client.ts'
+import { contractDocDetailApi } from '@/api/contractSign'
+import { contractEditCreateApi } from '@/api/enterprise'
+import { clientDataInfoApi, clientContractDetailApi as contractDetailApi } from '@/api/client'
 
 export default {
-  emits: ['isOk'],
   name: 'EditContract',
   props: {
     formData: {
@@ -192,23 +190,23 @@ export default {
     }
   },
   components: {
-    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage')),
-    addContractSign: defineAsyncComponent(() => import('@/views/customer/signing/components/addContractSign')),
-    infoItem: defineAsyncComponent(() => import('@/views/customer/signing/components/infoItem')),
-    processFrom: defineAsyncComponent(() => import('@/views/user/examine/components/detailProcecss')),
-    contractInfo: defineAsyncComponent(() => import('./contractInfo')),
-    contractRenew: defineAsyncComponent(() => import('./contractRenew')),
-    contractInvoice: defineAsyncComponent(() => import('./contractInvoice')),
-    contractRemind: defineAsyncComponent(() => import('./contractRemind')),
-    contractPayment: defineAsyncComponent(() => import('./contractPayment')),
-    orderStockMovements: defineAsyncComponent(() => import('./orderStockMovements')),
-    file: defineAsyncComponent(() => import('./file')),
-    dynamicRecord: defineAsyncComponent(() => import('@/views/customer/list/components/dynamicRecord')),
-    oaForm: defineAsyncComponent(() => import('@/components/customer/oaForm')),
-    productList: defineAsyncComponent(() => import('@/views/customer/components/productList')),
-    uploadFile: defineAsyncComponent(() => import('@/components/form-common/oa-upload')),
-    ueditorFrom: defineAsyncComponent(() => import('@/components/form-common/oa-wangeditor')),
-    editCustomer: defineAsyncComponent(() => import('@/views/customer/list/components/editCustomer'))
+    defaultPage: () => import('@/components/common/defaultPage'),
+    addContractSign: () => import('@/views/customer/signing/components/addContractSign'),
+    infoItem: () => import('@/views/customer/signing/components/infoItem'),
+    processFrom: () => import('@/views/user/examine/components/detailProcecss'),
+    contractInfo: () => import('./contractInfo'),
+    contractRenew: () => import('./contractRenew'),
+    contractInvoice: () => import('./contractInvoice'),
+    contractRemind: () => import('./contractRemind'),
+    contractPayment: () => import('./contractPayment'),
+    orderStockMovements: () => import('./orderStockMovements'),
+    file: () => import('./file'),
+    dynamicRecord: () => import('@/views/customer/list/components/dynamicRecord'),
+    oaForm: () => import('@/components/customer/oaForm'),
+    productList: () => import('@/views/customer/components/productList'),
+    uploadFile: () => import('@/components/form-common/oa-upload'),
+    ueditorFrom: () => import('@/components/form-common/oa-wangeditor'),
+    editCustomer: () => import('@/views/customer/list/components/editCustomer')
   },
   data() {
     return {
@@ -236,13 +234,13 @@ export default {
       tabIndex: '1',
       tabNumber: 1,
       tabData: [
-        { value: '1', label: '基本信息' },
+        { value: '1', label: this.$t('setting.info.essentialinformation') },
         { value: '8', label: '合同信息' },
         { value: '2', label: '账目记录', badgeKey: 'bill_count' },
         // { value: '6', label: '订单续费' },
-        { value: '3', label: '付款提醒', badgeKey: 'remind_count' },
+        { value: '3', label: this.$t('customer.paymentreminder'), badgeKey: 'remind_count' },
         { value: '10', label: '出入库记录', badgeKey: 'stock_record_count' },
-        { value: '4', label: '发票', badgeKey: 'invoice_count' },
+        { value: '4', label: this.$t('customer.invoice'), badgeKey: 'invoice_count' },
         { value: '5', label: '记录', badgeKey: 'file_count' },
         { value: '6', label: '动态记录', badgeKey: 'record_count' }
       ],
@@ -252,6 +250,9 @@ export default {
     }
   },
   computed: {
+    lang: function () {
+      return this.$store.getters.lang
+    },
     warehouseId() {
       if (this.dataInfo?.form?.length) {
         const warehouseInfo = this.dataInfo.form[0]?.data?.find(item => item.key === "outbound_warehouse_id");
@@ -259,6 +260,11 @@ export default {
       }
 
       return null;
+    }
+  },
+  watch: {
+    lang() {
+      this.setOptions()
     }
   },
   methods: {
@@ -271,6 +277,18 @@ export default {
       if (!this.drawer) return
       if (!this.cid) return
       this.getDetails(this.cid)
+    },
+    setOptions() {
+      this.tabData = [
+        { value: '1', label: this.$t('setting.info.essentialinformation') },
+        { value: '8', label: '合同信息' },
+        { value: '2', label: this.$t('customer.paymentrecord'), badgeKey: 'bill_count' },
+        { value: '3', label: this.$t('customer.paymentreminder'), badgeKey: 'remind_count' },
+        { value: '10', label: '出入库记录', badgeKey: 'stock_record_count' },
+        { value: '4', label: this.$t('customer.invoice'), badgeKey: 'invoice_count' },
+        { value: '5', label: this.$t('customer.annexrelated'), badgeKey: 'file_count' },
+        { value: '6', label: '动态记录', badgeKey: 'record_count' }
+      ]
     },
     handleClose() {
       if (this.$refs.oaForm) {
@@ -316,7 +334,7 @@ export default {
       }
     },
     handleClick(event) {
-      this.tabNumber = Number(event.paneName)
+      this.tabNumber = Number(event.name)
       if (this.tabNumber === 2) {
         this.$refs.contractPayment.getTableData(this.cid)
         this.$refs.contractPayment.getConfigApprove(6)
@@ -351,7 +369,7 @@ export default {
           : this.signDataInfo.attach
           ? [this.signDataInfo.attach]
           : []
-        this.examineData.users = res.data.approve
+        this.$set(this.examineData, 'users', res.data.approve)
       })
     },
     editProduct() {
@@ -404,12 +422,11 @@ export default {
         }
 
         this.newForm = {
-          title: '编辑客户',
+          title: this.$t('customer.editcustomer'),
           width: '1100px',
           data: res.data,
           isClient: true,
-          edit: true,
-          link_type: 'customer'
+          edit: true
         }
 
         this.$refs.editCustomer.tabIndex = '1'
@@ -429,7 +446,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-tabs__item.is-active) {
+::v-deep .el-tabs__item.is-active {
   border-right-color: transparent !important;
   border-left-color: transparent !important;
 
@@ -460,28 +477,33 @@ export default {
   margin-left: 10px;
 }
 
-:deep(.el-tabs__content) {
+::v-deep .el-drawer__header {
+  height: 80px !important;
+  padding: 14px 18px;
+}
+
+::v-deep .el-tabs__content {
   padding: 0;
 }
 
-:deep(.el-form--inline .el-form-item) {
+::v-deep .el-form--inline .el-form-item {
   display: flex;
 }
 
-:deep(.el-tabs__header) {
+::v-deep .el-tabs__header {
   background-color: #f7fbff;
   border-bottom: none;
 }
 
-:deep(.el-tabs__nav-wrap::after) {
+::v-deep .el-tabs__nav-wrap::after {
   height: 0;
 }
 
-:deep(.el-tabs__active-bar) {
+::v-deep .el-tabs__active-bar {
   top: 0;
 }
 
-:deep(.el-input__inner) {
+::v-deep .el-input__inner {
   text-align: left;
 }
 
@@ -560,7 +582,7 @@ export default {
     }
   }
 }
-:deep(.form-box) {
+::v-deep .form-box {
   padding-bottom: 20px;
 }
 
@@ -579,7 +601,7 @@ export default {
     width: 100%;
     height: 100%;
 
-    :deep(.el-button) {
+    ::v-deep .el-button--medium {
       font-size: 13px;
     }
 
@@ -601,7 +623,7 @@ export default {
   }
 }
 
-:deep(.el-tabs__header .el-tabs__item) {
+::v-deep .el-tabs__header .el-tabs__item {
   line-height: 40px;
   .tab-label-wrap {
     position: relative;
@@ -614,13 +636,5 @@ export default {
     font-size: 14px;
     font-weight: 400;
   }
-}
-</style>
-
-<style lang="scss">
-// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
-.customer-contract-edit-contract-drawer .el-drawer__header {
-  height: 80px !important;
-  padding: 14px 18px;
 }
 </style>

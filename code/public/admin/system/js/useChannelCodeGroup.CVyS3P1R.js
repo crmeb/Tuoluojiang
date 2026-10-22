@@ -1,0 +1,1 @@
+import{bt as e,wt as t}from"./chunk-vendor.Di-Ybv3u.js";import{c as n}from"./weCom.Ckbmae1h.js";e();var r=()=>{let e=t([]);return{groupList:e,fetchGroupList:async()=>{let t=await n();e.value=t.data.list||[]}}};export{r as t};

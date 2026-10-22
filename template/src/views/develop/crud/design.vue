@@ -40,13 +40,13 @@
   </div>
 </template>
 <script>
-import { roterPre } from '@/settings.ts'
+import { roterPre } from '@/settings'
 import basicSetting from './components/basicSetting'
 import fieldSetting from './components/fieldSetting'
 import eventSetting from './components/eventSetting'
 import processSetting from './components/processSetting'
 import listSetting from './components/listSetting'
-import { databaseInfoApi } from '@/api/develop.ts'
+import { databaseInfoApi } from '@/api/develop'
 import formDesign from '@/components/form-designer'
 export default {
   components: { basicSetting, fieldSetting, formDesign, processSetting, eventSetting, listSetting },
@@ -91,8 +91,12 @@ export default {
     // 返回页面
     backFn() {
       this.$router.push({
-        path: `${roterPre}/develop/crud/entityList`,
-        query: { cate_id: this.$route.query.cate_id }
+        path: `${roterPre}/develop/crud`,
+        query: {
+          isShow: 1,
+       
+          cate_id: this.$route.query.cate_id
+        }
       })
     },
     async getInfo() {
@@ -111,7 +115,7 @@ export default {
 </script>
 <style scoped lang="scss">
 .examineTabs {
-  :deep(.el-tabs__nav-wrap::after) {
+  ::v-deep .el-tabs__nav-wrap::after {
     background-color: #fff;
   }
   .sp1 {
@@ -124,11 +128,11 @@ export default {
     line-height: 14px;
     font-size: 12px;
   }
-  :deep(.el-tabs__nav-scroll) {
+  ::v-deep .el-tabs__nav-scroll {
     display: flex;
     justify-content: left;
   }
-  :deep(.el-tabs__item) {
+  ::v-deep .el-tabs__item {
     color: #909399;
     font-weight: 500;
     font-size: 14px;
@@ -143,20 +147,20 @@ export default {
     }
   }
 }
-:deep(.el-icon-back) {
+::v-deep .el-icon-back {
   display: none;
 }
-:deep(.el-tabs__header) {
+::v-deep .el-tabs__header {
   margin: 0;
 }
-:deep(.el-page-header__content) {
+::v-deep .el-page-header__content {
   font-size: 16px;
   font-weight: 500;
 }
-:deep(.el-tabs__active-bar) {
+::v-deep .el-tabs__active-bar {
   height: 3px;
 }
-:deep(.el-page-header) {
+::v-deep .el-page-header {
   margin-top: 10px;
 }
 .pt20 {
@@ -212,17 +216,17 @@ export default {
       text-transform: none;
     }
     .tab {
-      :deep(.el-tabs__nav-wrap::after) {
+      ::v-deep .el-tabs__nav-wrap::after {
         height: 0;
       }
-      :deep(.el-tabs__item) {
+      ::v-deep .el-tabs__item {
         line-height: 37px;
         font-family: PingFang SC, PingFang SC;
         font-weight: 400;
         font-size: 13px;
         color: #606266;
       }
-      :deep(.el-tabs__item.is-active) {
+      ::v-deep .el-tabs__item.is-active {
         color: #1890ff;
       }
     }

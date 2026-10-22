@@ -2,7 +2,7 @@
   <div class="divBox">
     <div class="box-height">
       <el-card :body-style="{ padding: 0 }">
-        <el-tabs v-model="activeName" class="cr-header-tabs" @tab-change="handleClick">
+        <el-tabs v-model="activeName" class="cr-header-tabs" @tab-click="handleClick">
           <el-tab-pane
             v-for="item in tabData"
             :key="'id' + item.key"
@@ -15,6 +15,11 @@
           <oneNumber v-else-if="activeName === 'yiht_config'" :fromData="rule" />
           <storage v-else-if="activeName === 'storage_config'" />
           <config-form v-else :config-type="activeName" :rule="rule" :from-data="fromData" @submit="onSubmit" />
+          <div v-else>
+            <el-scrollbar style="height: calc(100vh - 190px)">
+              <form-create v-if="fromData" :option="option" :rule="fromData.rule" @submit="onSubmit" />
+            </el-scrollbar>
+          </div>
         </div>
       </el-card>
     </div>
@@ -22,17 +27,15 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useUserStore } from '@/stores/user.ts'
 import cloudfile from './components/cloudfile'
 import oneNumber from './components/oneNumber'
 import storage from './components/storage.vue'
 import configForm from './components/config-form.vue'
 import formCreate from '@form-create/element-ui'
-import request from '@/api/request.ts'
-import { configCateApi, configUpdateDataApi } from '@/api/setting.ts'
-import { site } from '@/api/user.ts'
-import { aiFloatEntryController } from '@/libs/ai/index.ts'
+import request from '@/api/request'
+import { configCateApi, configUpdateDataApi } from '@/api/setting'
+import { site } from '@/api/user'
+import { aiFloatEntryController } from '@/libs/ai'
 
 export default {
   name: 'CompanyInfo',
@@ -42,9 +45,6 @@ export default {
     storage,
     configForm,
     formCreate: formCreate.$form()
-  },
-  computed: {
-    ...mapStores(useUserStore)
   },
   data() {
     return {
@@ -75,7 +75,7 @@ export default {
   mounted() {
     this.getConfigCate()
   },
-  unmounted() {},
+  destroyed() {},
   methods: {
     getSide() {
       site().then((res) => {
@@ -102,7 +102,7 @@ export default {
     onSubmit(formData) {
       request[this.fromData.method.toLowerCase()](this.fromData.action, formData).then(async () => {
         if (Object.prototype.hasOwnProperty.call(formData, 'ai_status')) {
-          await aiFloatEntryController.refresh(this.userStore.token, this.$route.path)
+          await aiFloatEntryController.refresh(this.$store.getters.token, this.$route.path)
         }
       })
       localStorage.setItem('isWebConfig', formData.global_watermark_status)
@@ -115,7 +115,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-scrollbar__wrap) {
+::v-deep .el-scrollbar__wrap {
   overflow-x: hidden;
 }
 .cr-header-tabs {
@@ -123,13 +123,13 @@ export default {
   // margin-bottom: 20px;
   // padding-left: 20px;
 }
-:deep(.el-tabs__header) {
+::v-deep .el-tabs__header {
   border-bottom: 1px solid #eeeeee;
 }
-:deep(.el-tabs__nav) {
+::v-deep .el-tabs__nav {
   margin-left: 20px;
 }
-:deep(.el-tabs__item) {
+::v-deep .el-tabs__item {
   height: 60px;
   line-height: 60px;
 }

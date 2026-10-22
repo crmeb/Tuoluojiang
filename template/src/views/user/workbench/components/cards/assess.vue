@@ -16,15 +16,14 @@
 </template>
 
 <script>
-import { ref, onMounted, defineAsyncComponent } from 'vue'
-import { userAssessSubord } from '@/api/user.ts'
-import { pageJumpTo } from '@/libs/public.ts'
+import { ref, onMounted } from 'vue'
+import { userAssessSubord } from '@/api/user'
+import { pageJumpTo } from '@/libs/public'
 
 export default {
   name: 'AssessCard',
-  emits: ['assess-ready'],
   components: {
-    echarts: defineAsyncComponent(() => import('../echart'))
+    echarts: () => import('../echart')
   },
   setup(_, { emit }) {
     const assessNowData = ref([])

@@ -51,7 +51,7 @@
           </div>
         </div>
       </div>
-      <addNode v-model:childNodeP="nodeConfig.childNode"></addNode>
+      <addNode :childNodeP.sync="nodeConfig.childNode"></addNode>
     </div>
     <div class="branch-wrap" v-if="nodeConfig.type == 4">
       <div class="branch-box-wrap">
@@ -99,16 +99,15 @@
                   </div>
                   <input type="hidden" :value="func.conditionFieldsStr(nodeConfig, index)" />
                 </div>
-                <addNode v-model:childNodeP="item.childNode"></addNode>
+                <addNode :childNodeP.sync="item.childNode"></addNode>
               </div>
             </div>
             <nodeWrap
               v-if="item.childNode && item.childNode"
-              v-model:nodeConfig="item.childNode"
+              :nodeConfig.sync="item.childNode"
               :tableId="tableId"
               :typeStr="typeStr"
-              :isTried="isTried"
-              @update:isTried="$emit('update:isTried', $event)"
+              :isTried.sync="isTried"
             ></nodeWrap>
             <div class="top-left-cover-line" v-if="index == 0"></div>
             <div class="bottom-left-cover-line" v-if="index == 0"></div>
@@ -116,27 +115,22 @@
             <div class="bottom-right-cover-line" v-if="index == nodeConfig.conditionNodes.length - 1"></div>
           </div>
         </div>
-        <addNode v-model:childNodeP="nodeConfig.childNode"></addNode>
+        <addNode :childNodeP.sync="nodeConfig.childNode"></addNode>
       </div>
     </div>
 
     <nodeWrap
       v-if="nodeConfig.childNode && nodeConfig.childNode"
-      v-model:nodeConfig="nodeConfig.childNode"
+      :nodeConfig.sync="nodeConfig.childNode"
       :tableId="tableId"
       :typeStr="typeStr"
-      :isTried="isTried"
-      @update:isTried="$emit('update:isTried', $event)"
+      :isTried.sync="isTried"
     ></nodeWrap>
   </div>
 </template>
 <script>
-import { mapStores } from 'pinia'
-import { useFlowDesignerStore } from '@/stores/flowDesigner.ts'
-import { useConditionDialogStore } from '@/stores/conditionDialog.ts'
-import func from '@/utils/preload.ts'
+import func from '@/utils/preload'
 export default {
-  emits: ['update:isTried', 'update:flowPermission', 'update:nodeConfig'],
   props: {
     typeStr: {
       // 判断是低代码还是审批流程
@@ -170,7 +164,7 @@ export default {
   directives: {
     focus: {
       // 当被绑定的元素插入到 DOM 中时……
-      mounted(el) {
+      inserted(el) {
         el.focus()
       }
     }
@@ -189,39 +183,38 @@ export default {
     this.getConditionType()
   },
   computed: {
-    ...mapStores(useFlowDesignerStore, useConditionDialogStore),
     func: () => func,
     flowPermission1() {
-      return this.flowDesignerStore.flowPermission
+      return this.$store.state.business.flowPermission
     },
     approverConfig1() {
-      return this.flowDesignerStore.approverConfig
+      return this.$store.state.business.approverConfig
     },
     copyerConfig1() {
-      return this.flowDesignerStore.copyerConfig
+      return this.$store.state.business.copyerConfig
     },
     conditionsConfig1() {
-      return this.flowDesignerStore.conditionsConfig
+      return this.$store.state.business.conditionsConfig
     }
   },
   watch: {
     flowPermission1(data) {
-      if (data.flag && data.id === this.$.uid) {
+      if (data.flag && data.id === this._uid) {
         this.$emit('update:flowPermission', data.value)
       }
     },
     approverConfig1(data) {
-      if (data.flag && data.id === this.$.uid) {
+      if (data.flag && data.id === this._uid) {
         this.$emit('update:nodeConfig', data.value)
       }
     },
     copyerConfig1(data) {
-      if (data.flag && data.id === this.$.uid) {
+      if (data.flag && data.id === this._uid) {
         this.$emit('update:nodeConfig', data.value)
       }
     },
     conditionsConfig1(data) {
-      if (data.flag && data.id === this.$.uid) {
+      if (data.flag && data.id === this._uid) {
         this.$emit('update:nodeConfig', data.value)
         this.getConditionType()
       }
@@ -230,14 +223,14 @@ export default {
   methods: {
     clickEvent(index) {
       if (index || index === 0) {
-        this.isInputList[index] = true
+        this.$set(this.isInputList, index, true)
       } else {
         this.isInput = true
       }
     },
     blurEvent(index) {
       if (index || index === 0) {
-        this.isInputList[index] = false
+        this.$set(this.isInputList, index, false)
         this.nodeConfig.conditionNodes[index].nodeName = this.nodeConfig.conditionNodes[index].nodeName
           ? this.nodeConfig.conditionNodes[index].nodeName
           : '条件'
@@ -305,43 +298,43 @@ export default {
     setPerson(priorityLevel) {
       var { type } = this.nodeConfig
       if (type == 0) {
-        this.flowDesignerStore.promoterDrawer = true
-        this.flowDesignerStore.flowPermission = {
+        this.$store.commit('updatePromoter', true)
+        this.$store.commit('updateFlowPermission', {
           value: this.flowPermission,
           flag: false,
-          id: this.$.uid
-        }
+          id: this._uid
+        })
       } else if (type == 1) {
-        this.flowDesignerStore.approverDrawer = true
-        this.flowDesignerStore.approverConfig = {
+        this.$store.commit('updateApprover', true)
+        this.$store.commit('updateApproverConfig', {
           value: {
             ...JSON.parse(JSON.stringify(this.nodeConfig)),
             ...{ settype: this.nodeConfig.settype ? this.nodeConfig.settype : 1 }
           },
           flag: false,
-          id: this.$.uid
-        }
+          id: this._uid
+        })
       } else if (type == 2) {
-        this.flowDesignerStore.copyerDrawer = true
-        this.flowDesignerStore.copyerConfig = {
+        this.$store.commit('updateCopyer', true)
+        this.$store.commit('updateCopyerConfig', {
           value: JSON.parse(JSON.stringify(this.nodeConfig)),
           flag: false,
-          id: this.$.uid
-        }
+          id: this._uid
+        })
       } else {
         // 打开条件设置
         if (this.typeStr == 'lowCode') {
-          this.conditionDialogStore.visible = true
+          this.$store.commit('updateConditionDialog', true)
         } else {
-          this.flowDesignerStore.conditionDrawer = true
+          this.$store.commit('updateCondition', true)
         }
 
-        this.flowDesignerStore.conditionsConfig = {
+        this.$store.commit('updateConditionsConfig', {
           value: JSON.parse(JSON.stringify(this.nodeConfig)),
           priorityLevel,
           flag: false,
-          id: this.$.uid
-        }
+          id: this._uid
+        })
       }
     },
     arrTransfer(index, type = 1) {
@@ -377,7 +370,7 @@ export default {
             }
           }
         }
-        this.flowDesignerStore.conditionsFields = arr
+        this.$store.commit('upDateConditionsField', arr)
       })
     }
   }

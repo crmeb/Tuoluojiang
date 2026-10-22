@@ -3,7 +3,7 @@
     <el-dialog
       :append-to-body="true"
       :before-close="beforeClose"
-      v-model="dialogVisible"
+      :visible.sync="dialogVisible"
       :width="messageData.width"
       class="message-details"
     >
@@ -18,7 +18,7 @@
             </el-col>
             <el-col class="right">
               <div class="top">
-                <el-tag effect="dark">{{ messageData.data.cate_name }}</el-tag>
+                <el-tag effect="dark" size="small">{{ messageData.data.cate_name }}</el-tag>
               </div>
               <div
                 v-if="messageData.data.buttons.length > 0"
@@ -43,6 +43,7 @@
               v-for="(item, index) in messageData.data.buttons"
               :key="index"
               :disabled="selectedType.includes(item.action)"
+              size="small"
               type="primary"
               @click="handleConfirm(item)"
               >{{ item.title }}</el-button
@@ -56,15 +57,12 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useUserStore } from '@/stores/user.ts'
-import noticeHandle from '@/libs/noticeHandle.ts'
-import { noticeMessageReadApi } from '@/api/user.ts'
-import { messageListApi } from '@/api/public.ts'
-import { roterPre } from '@/settings.ts'
+import noticeHandle from '@/libs/noticeHandle'
+import { noticeMessageReadApi } from '@/api/user'
+import { messageListApi } from '@/api/public'
+import { roterPre } from '@/settings'
 import messageHandlePopup from '@/components/common/messageHandlePopup'
 export default {
-  emits: ['isOk'],
   name: 'MessageDetails',
   components: {
     messageHandlePopup
@@ -76,9 +74,6 @@ export default {
         return {}
       }
     }
-  },
-  computed: {
-    ...mapStores(useUserStore)
   },
   data() {
     return {
@@ -139,7 +134,7 @@ export default {
     getMessage() {
       messageListApi({ page: 1, limit: 5 }).then((res) => {
         const num = res.data.messageNum ? res.data.messageNum : 0
-        this.userStore.setMessageCount(num)
+        this.$store.commit('user/SET_MESSAGE', num)
       })
     }
   }
@@ -147,6 +142,15 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.message-details {
+  ::v-deep .el-dialog__header {
+    padding: 20px;
+  }
+  ::v-deep .el-dialog__headerbtn {
+    position: absolute;
+    top: 14px;
+  }
+}
 .details {
   .left {
     width: 72px;
@@ -171,7 +175,7 @@ export default {
   .right {
     width: calc(100% - 72px);
     padding-left: 14px;
-    :deep(.el-tag) {
+    ::v-deep .el-tag {
       border-radius: 2px;
     }
     .content {
@@ -184,19 +188,6 @@ export default {
       color: #606266;
       line-height: 1.5;
     }
-  }
-}
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.message-details {
-  .el-dialog__header {
-    padding: 20px;
-  }
-  .el-dialog__headerbtn {
-    position: absolute;
-    top: 14px;
   }
 }
 </style>

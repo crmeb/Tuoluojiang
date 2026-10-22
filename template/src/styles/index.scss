@@ -35,8 +35,7 @@ html {
   overflow: hidden;
 }
 
-#app > .app-root,
-.app-root > div {
+#app > div {
   height: 100%;
 }
 
@@ -210,23 +209,61 @@ aside {
   margin-right: 10px;
 }
 
-// 分页器：按钮带边框、当前页实心主色。类名可以加在 el-pagination 上，也可以加在外层
-.el-pagination-reset,
-.el-pagination-reset .el-pagination {
-  --el-pagination-font-size: 13px;
-  --el-pagination-button-width: 36px;
-  --el-pagination-item-gap: 10px;
-}
-
 .el-pagination-reset {
-  .el-pagination__sizes .el-select {
+  .el-pagination {
+    font-weight: 400;
+  }
+
+  .el-pagination__total {
+    height: 32px !important;
+    line-height: 32px !important;
+  }
+
+  .el-pagination__sizes {
+    margin: 0;
+  }
+
+  .el-input__inner {
     width: 94px;
+    height: 32px;
+    background: #ffffff;
+    border-radius: 2px;
+    border: 1px solid $--color-line01;
+    padding: 10px;
+  }
+
+  .el-input__suffix {
+    right: 10px;
+  }
+
+  .number {
+    width: 32px;
+    height: 32px;
+    background: #ffffff;
+    border-radius: 2px;
+    border: 1px solid $--color-line01 !important;
+    margin: 0 6px;
+    font-size: 12px;
+  }
+
+  .number:hover {
+    border: 1px solid $--color-primary !important;
+  }
+
+  .active {
+    background: $--color-primary;
+    border-radius: 2px;
+    border: 1px solid $--color-primary !important;
+    color: #ffffff !important;
   }
 
   .btn-prev,
-  .btn-next,
-  .el-pager li {
+  .btn-next {
+    width: 32px;
+    height: 32px;
     border: 1px solid $--color-line01;
+    border-radius: 2px;
+    padding: 0;
   }
 
   .btn-prev {
@@ -237,33 +274,23 @@ aside {
     margin-left: 6px;
   }
 
-  .el-pager li {
-    margin: 0 6px;
-    font-size: 12px;
-
-    &:hover {
-      border-color: $--color-primary;
-    }
-
-    &.is-active {
-      background: $--color-primary;
-      border-color: $--color-primary;
-      color: #ffffff;
-      font-weight: 400;
-    }
-  }
-
-  .btn-prev:not(:disabled):hover,
-  .btn-next:not(:disabled):hover {
-    border-color: $--color-primary;
+  .btn-prev:hover,
+  .btn-next:hover {
+    border: 1px solid $--color-primary;
   }
 
   .el-pagination__jump {
+    height: 32px !important;
+    line-height: 32px !important;
     margin-left: 12px;
-  }
 
-  .el-pagination__editor.el-input {
-    width: 48px;
+    .el-input__inner {
+      width: 48px;
+      height: 32px;
+      background: #ffffff;
+      border-radius: 2px;
+      border: 1px solid $--color-line01;
+    }
   }
 }
 
@@ -499,7 +526,7 @@ aside {
 .area_popper {
   transform: translateX(-40px);
 
-  .el-popper__arrow {
+  .popper__arrow {
     left: 114px !important;
   }
 }
@@ -558,7 +585,7 @@ aside {
   box-shadow: none;
 }
 
-.el-button.is-link {
+.el-button--text {
   font-size: 13px;
 }
 
@@ -861,22 +888,12 @@ tabel {
   -webkit-box-orient: vertical;
 }
 
-// 固定列是 sticky 单元格，背景继承自 tr；.divBox 等容器把 tr 设成透明后需要单独补背景
-.el-table .el-table__body-wrapper tr {
-  td.el-table-fixed-column--left,
-  td.el-table-fixed-column--right {
-    background-color: var(--el-table-tr-bg-color);
+.el-table__fixed,
+.el-table__fixed-right {
+  .el-table__row td {
+    background-color: #fff;
   }
-
-  &:hover > td.el-table-fixed-column--left,
-  &:hover > td.el-table-fixed-column--right {
-    background-color: var(--el-table-row-hover-bg-color);
-  }
-}
-
-// 操作列里「按钮 + 更多下拉」并排时按中线对齐（el-dropdown 默认 vertical-align: top）
-.el-table .cell > .el-dropdown {
-  vertical-align: middle;
+  height: 100% !important;
 }
 
 .flex-box {

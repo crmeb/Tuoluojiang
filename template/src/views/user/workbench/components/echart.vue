@@ -23,7 +23,7 @@
               class="assess-list-item"
               v-for="(items, index) in item.target"
               :key="'assess' + index"
-              @click="targetItem(item, items)"
+              @click.native="targetItem(item, items)"
             >
               <el-col :span="22" class="top-left">
                 <div class="name over-text1 hover-text">{{ items.name }}</div>
@@ -50,8 +50,7 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import { userAssessInfo } from '@/api/user.ts'
+import { userAssessInfo } from '@/api/user'
 export default {
   name: 'AssessInfo',
   props: {
@@ -61,7 +60,7 @@ export default {
     }
   },
   components: {
-    assessTarget: defineAsyncComponent(() => import('./assessTarget'))
+    assessTarget: () => import('./assessTarget')
   },
   data() {
     return {
@@ -123,7 +122,7 @@ export default {
   padding-bottom: 14px;
   // 内容不存在横向溢出，关掉 wrap 的原生横向滚动条：
   // 否则它会落在 padding-bottom 区域内躲开 overflow:hidden 的裁剪，露出一条拖不动的横条
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
   .assess-ul {

@@ -175,9 +175,8 @@
   </div>
 </template>
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { attendanceStatistics, individualStatistics } from '@/api/user.ts'
+import moment from 'moment'
+import { attendanceStatistics, individualStatistics } from '@/api/user'
 
 // 预加载图片资源，避免在渲染时多次加载
 import clock1 from '../../../assets/images/clock1.png'
@@ -190,7 +189,7 @@ import single2 from '../../../assets/images/single2.png'
 import single3 from '../../../assets/images/single3.png'
 import single4 from '../../../assets/images/single4.png'
 import single5 from '../../../assets/images/single5.png'
-import { divTime } from '@/utils/index.ts'
+import { divTime } from '@/utils'
 
 // 缺卡状态：后端历史枚举 5 与现行返回值 7 并存，两者都按缺卡处理
 const LACK_CARD_STATUS = [5, 7]
@@ -208,12 +207,11 @@ const clockImages = {
   single5
 }
 
-import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'SingleStatistic',
   components: {
-    echartBox: defineAsyncComponent(() => import('@/components/common/echarts')),
-    oaFromBox
+    echartBox: () => import('@/components/common/echarts'),
+    oaFromBox: () => import('@/components/common/oaFromBox')
   },
   data() {
     return {
@@ -346,8 +344,8 @@ export default {
     // 获取本月时间范围 [开始日期, 结束日期]
     getCurrentMonthRange() {
       return [
-        dayjs().startOf('month').format('YYYY/MM/DD'),
-        dayjs().endOf('month').format('YYYY/MM/DD')
+        moment().startOf('month').format('YYYY/MM/DD'),
+        moment().endOf('month').format('YYYY/MM/DD')
       ]
     },
 
@@ -728,15 +726,15 @@ export default {
     }
   }
 }
-:deep(.el-table thead.is-group th) {
+::v-deep .el-table thead.is-group th {
   background-color: rgba(247, 251, 255, 1);
   border-color: #fff;
 }
-:deep(.el-table) {
+::v-deep .el-table {
   border: none;
 }
 
-:deep(.el-table td) {
+::v-deep .el-table td {
   border: none;
 }
 .red {

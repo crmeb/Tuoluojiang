@@ -50,6 +50,7 @@
           :key="index"
           v-model="form.keyword[index]"
           class="line-input"
+          size="small"
           :maxlength="TEXT_MAX.KEYWORD"
           placeholder="请输入关键词"
         >
@@ -75,8 +76,8 @@ import { reactive, ref } from 'vue'
 import fieldLabel from './fieldLabel.vue'
 import promptTextarea from './promptTextarea.vue'
 import jsonDialog from './jsonDialog.vue'
-import { FIELD_TIPS, TEXT_MAX } from '../constants.ts'
-import { useApplicationSetting } from '../composables/useApplicationSetting.ts'
+import { FIELD_TIPS, TEXT_MAX } from '../constants'
+import { useApplicationSetting } from '../composables/useApplicationSetting'
 
 const { form } = useApplicationSetting()
 

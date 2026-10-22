@@ -40,65 +40,63 @@
         @getTableData="getTableData"
       >
         <template #options="{ data }">
-          <el-button type="primary" link @click="handleCheck(data)">查看</el-button>
-          <el-button v-if="types == 'customer'" type="primary" link @click="handleLabel(data)">设置标签</el-button>
+          <el-button type="text" @click="handleCheck(data)">查看</el-button>
+          <el-button v-if="types == 'customer'" type="text" @click="handleLabel(data)">设置标签</el-button>
 
-          <el-button v-else type="primary" link @click="receive(2, data)">领取</el-button>
+          <el-button v-else type="text" @click="receive(2, data)">领取</el-button>
           <el-dropdown>
-            <el-button type="primary" link class="el-dropdown-link more">
+            <span class="el-dropdown-link el-button--text el-button more">
               更多
               <i class="el-icon-arrow-down" />
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu style="text-align: center">
-                <!-- 客户：添加商机、添加订单、添加合同、填写跟进 -->
-                <el-dropdown-item
-                  v-if="types == 'customer' && customerModule.opportunity"
-                  @click="addOdds(data)"
-                >
-                  添加商机
-                </el-dropdown-item>
-                <el-dropdown-item v-if="types == 'customer' && customerModule.order" @click="addContract(data)">
-                  添加订单
-                </el-dropdown-item>
-                <el-dropdown-item v-if="types == 'customer' && customerModule.contract" @click="addSign(data)">
-                  添加合同
-                </el-dropdown-item>
-                <el-dropdown-item
-                  style="border-bottom: 1px solid #f5f5f5"
-                  v-if="types == 'customer'"
-                  @click="handleFollowUp(data)"
-                >
-                  填写跟进
-                </el-dropdown-item>
-                <el-dropdown-item
-                  v-if="types == 'customer' && userId == data.creator_uid"
-                  @click="handleTransfer(2, data)"
-                >
-                  移交同事
-                </el-dropdown-item>
-                <el-dropdown-item v-if="types !== 'customer_seas'" @click="handleReturn(0, data)">
-                  退回公海
-                </el-dropdown-item>
-  
-                <!-- 客户公海：分配、设置标签、标为流失/取消流失 -->
-                <el-dropdown-item v-if="types == 'customer_seas'" @click="handleTransfer(2, data)">
-                  分配
-                </el-dropdown-item>
-                <el-dropdown-item v-if="types == 'customer_seas'" @click="handleLabel(data)">
-                  设置标签
-                </el-dropdown-item>
-                <el-dropdown-item
-                  style="border-top: 1px solid #f5f5f5"
-                  v-if="types == 'customer_seas'"
-                  @click="markedLoss(data, 1)"
-                >
-                  {{ data.customer_status.value == 2 ? '取消流失' : '标为流失' }}
-                </el-dropdown-item>
-  
-                <el-dropdown-item @click="handleDelete(data)">删除 </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
+            </span>
+            <el-dropdown-menu style="text-align: center">
+              <!-- 客户：添加商机、添加订单、添加合同、填写跟进 -->
+              <el-dropdown-item
+                v-if="types == 'customer' && customerModule.opportunity"
+                @click.native="addOdds(data)"
+              >
+                添加商机
+              </el-dropdown-item>
+              <el-dropdown-item v-if="types == 'customer' && customerModule.order" @click.native="addContract(data)">
+                添加订单
+              </el-dropdown-item>
+              <el-dropdown-item v-if="types == 'customer' && customerModule.contract" @click.native="addSign(data)">
+                添加合同
+              </el-dropdown-item>
+              <el-dropdown-item
+                style="border-bottom: 1px solid #f5f5f5"
+                v-if="types == 'customer'"
+                @click.native="handleFollowUp(data)"
+              >
+                填写跟进
+              </el-dropdown-item>
+              <el-dropdown-item
+                v-if="types == 'customer' && userId == data.creator_uid"
+                @click.native="handleTransfer(2, data)"
+              >
+                移交同事
+              </el-dropdown-item>
+              <el-dropdown-item v-if="types !== 'customer_seas'" @click.native="handleReturn(0, data)">
+                退回公海
+              </el-dropdown-item>
+
+              <!-- 客户公海：分配、设置标签、标为流失/取消流失 -->
+              <el-dropdown-item v-if="types == 'customer_seas'" @click.native="handleTransfer(2, data)">
+                分配
+              </el-dropdown-item>
+              <el-dropdown-item v-if="types == 'customer_seas'" @click.native="handleLabel(data)">
+                设置标签
+              </el-dropdown-item>
+              <el-dropdown-item
+                style="border-top: 1px solid #f5f5f5"
+                v-if="types == 'customer_seas'"
+                @click.native="markedLoss(data, 1)"
+              >
+                {{ data.customer_status.value == 2 ? '取消流失' : '标为流失' }}
+              </el-dropdown-item>
+
+              <el-dropdown-item @click.native="handleDelete(data)">删除 </el-dropdown-item>
+            </el-dropdown-menu>
           </el-dropdown>
         </template>
       </customizeTable>
@@ -108,23 +106,23 @@
     <el-dialog
       :before-close="handleClose"
       :close-on-click-modal="false"
-      v-model="dialogVisible"
+      :visible.sync="dialogVisible"
       title="修改客户状态"
       width="30%"
     >
       <el-form class="mt20" label-width="80px">
         <el-form-item label="客户状态：" prop="resource">
           <el-radio-group v-model="resource">
-            <el-radio label="0" value="0">跟进中</el-radio>
-            <el-radio label="1" value="1">已成交</el-radio>
-            <el-radio label="2" value="2">已放弃</el-radio>
+            <el-radio label="0">跟进中</el-radio>
+            <el-radio label="1">已成交</el-radio>
+            <el-radio label="2">已放弃</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取 消</el-button>
-          <el-button type="primary" @click="followFn">确 定</el-button>
+          <el-button size="small" @click="dialogVisible = false">取 消</el-button>
+          <el-button size="small" type="primary" @click="followFn">确 定</el-button>
         </span>
       </template>
     </el-dialog>
@@ -138,11 +136,11 @@
     <add-contract-sign ref="addContractSign" @getTableData="getTableData()"></add-contract-sign>
     <transfer-dialog ref="transferDialog" :from-data="transferData" @handleTransfer="getTable"></transfer-dialog>
     <!-- 跟进弹窗 -->
-    <el-dialog v-model="dialogShow" class="record" title="添加跟进记录" width="40%">
+    <el-dialog :visible.sync="dialogShow" class="record" title="添加跟进记录" width="40%">
       <recordUpload :form-info="formInfo" @change="recordChange"></recordUpload>
     </el-dialog>
     <!-- 退回公海 -->
-    <el-dialog :append-to-body="true" v-model="returnShow" title="退回客户公海" width="540px">
+    <el-dialog :append-to-body="true" :visible.sync="returnShow" title="退回客户公海" width="540px">
       <el-form ref="returnForm" :model="returnForm" :rules="rule">
         <el-form-item label="说明原因：" label-width="90px" prop="reason">
           <el-input
@@ -177,7 +175,7 @@
     <!-- 导入客户 -->
     <dragUpload ref="dragUpload" @getTableData="getTableData()"></dragUpload>
     <!-- 合并客户 -->
-    <el-dialog :append-to-body="true" v-model="mergeCustomerShow" title="合并客户数据" width="30%">
+    <el-dialog :append-to-body="true" :visible.sync="mergeCustomerShow" title="合并客户数据" width="30%">
       <el-form ref="returnForm" :model="returnForm" :rules="rule">
         <el-form-item label="主客户：" prop="reason" label-width="80px">
           <el-select v-model="mergeCustomerId" placeholder="请选择主客户" style="width: 80%">
@@ -199,56 +197,52 @@
 
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="cancel">取 消</el-button>
-          <el-button type="primary" @click="mergeCustomerSubmit">确 定</el-button>
+          <el-button size="small" @click="cancel">取 消</el-button>
+          <el-button size="small" type="primary" @click="mergeCustomerSubmit">确 定</el-button>
         </div>
       </template>
     </el-dialog>
   </div>
 </template>
 <script>
-import { mapStores } from 'pinia'
-import { useAppConfigStore } from '@/stores/appConfig.ts'
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { getStorageJson } from '@/utils/storage.ts'
+import { modalSure } from '@/libs/public'
+import { getStorageJson } from '@/utils/storage'
 import {
   customerViewApi,
   customerReturnApi,
   customerLostApi,
   customerCancelLostApi,
   customerClaimApi
-} from '@/api/enterprise.ts'
+} from '@/api/enterprise'
 import {
   oddsCreateApi,
   clientCluesMergeApi,
   clientDataDeleteApi,
   clientDataLabelApi,
   clientExportApi
-} from '@/api/client.ts'
-import { CUSTOMER_MODULE_KEYS } from '@/constants/customerModules.ts'
-import { DRAWER_SIZE } from '@/constants/popupSize.ts'
-import { roterPre } from '@/settings.ts'
+} from '@/api/client'
+import { CUSTOMER_MODULE_KEYS } from '@/constants/customerModules'
+import { DRAWER_SIZE } from '@/constants/popupSize'
+import { roterPre } from '@/settings'
 
-import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'FinanceList',
   components: {
-    customizeTable: defineAsyncComponent(() => import('../components/customizeTable')),
-    dragUpload: defineAsyncComponent(() => import('../components/dragUpload')),
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
-    recordUpload: defineAsyncComponent(() => import('@/views/customer/list/components/recordUpload')),
-    share: defineAsyncComponent(() => import('@/views/develop/module/components/share')),
-    addForm: defineAsyncComponent(() => import('@/views/customer/components/addForm')),
-    dialogForm: defineAsyncComponent(() => import('./components/index')),
-    editCustomer: defineAsyncComponent(() => import('./components/editCustomer')),
-    labelDialog: defineAsyncComponent(() => import('./components/labelDialog')),
-    selectLabel: defineAsyncComponent(() => import('@/components/form-common/select-label')),
-    addContract: defineAsyncComponent(() => import('@/views/customer/contract/components/addContract')),
-    addContractSign: defineAsyncComponent(() => import('@/views/customer/signing/components/addContractSign')),
-    transferDialog: defineAsyncComponent(() => import('@/views/customer/list/components/transferDialog')),
-    oaFromBox,
-    importRecords: defineAsyncComponent(() => import('@/views/customer/list/components/importRecords'))
+    customizeTable: () => import('../components/customizeTable'),
+    dragUpload: () => import('../components/dragUpload'),
+    selectMember: () => import('@/components/form-common/select-member'),
+    recordUpload: () => import('@/views/customer/list/components/recordUpload'),
+    share: () => import('@/views/develop/module/components/share'),
+    addForm: () => import('@/views/customer/components/addForm'),
+    dialogForm: () => import('./components/index'),
+    editCustomer: () => import('./components/editCustomer'),
+    labelDialog: () => import('./components/labelDialog'),
+    selectLabel: () => import('@/components/form-common/select-label'),
+    addContract: () => import('@/views/customer/contract/components/addContract'),
+    addContractSign: () => import('@/views/customer/signing/components/addContractSign'),
+    transferDialog: () => import('@/views/customer/list/components/transferDialog'),
+    oaFromBox: () => import('@/components/common/oaFromBox'),
+    importRecords: () => import('@/views/customer/list/components/importRecords')
   },
   props: {
     types: {
@@ -374,13 +368,12 @@ export default {
   },
 
   computed: {
-    ...mapStores(useAppConfigStore),
     keyword() {
       return this.types == 'customer' ? 'customer' : 'customer_seas'
     },
     // 商机/订单/合同模块开关，控制操作栏对应的添加入口
     customerModule() {
-      const isCustomerModuleEnabled = this.appConfigStore.isCustomerModuleEnabled
+      const isCustomerModuleEnabled = this.$store.getters['appConfig/isCustomerModuleEnabled']
       return {
         opportunity: isCustomerModuleEnabled(CUSTOMER_MODULE_KEYS.OPPORTUNITY),
         order: isCustomerModuleEnabled(CUSTOMER_MODULE_KEYS.ORDER),
@@ -488,7 +481,7 @@ export default {
       item.eid = item.id
       item.cid = 0
       this.fromData = {
-        title: '编辑客户',
+        title: this.$t('customer.editcustomer'),
         width: DRAWER_SIZE.XL,
         data: item,
         link_type: 'customer',
@@ -503,7 +496,7 @@ export default {
 
     handleTransfer(type, row = []) {
       if (this.ids.length <= 0 && type === 1) {
-        this.$message.error('至少选择一项')
+        this.$message.error(this.$t('customer.placeholder22'))
       } else {
         let ids = []
         if (type === 1) {
@@ -518,7 +511,7 @@ export default {
           ids.push(row.id)
         }
         this.transferData = {
-          title: type === 1 ? '移交其他同事' : '转移设置',
+          title: type === 1 ? '移交其他同事' : this.$t('customer.transfersettings'),
           width: '520px',
           type: 1,
           ids
@@ -558,7 +551,7 @@ export default {
     },
     // 删除
     async handleDelete(item) {
-      await modalSure('你确定要删除该客户吗')
+      await modalSure(this.$t('customer.message06'))
       await clientDataDeleteApi(item.id)
       if (this.where.page > 1 && this.tableData.length <= 1) {
         this.where.page--
@@ -597,7 +590,7 @@ export default {
     // 退回公海
     handleReturn(type, row) {
       if (this.ids.length <= 0 && type === 1) {
-        this.$message.error('至少选择一项')
+        this.$message.error(this.$t('customer.placeholder22'))
       } else {
         if (row) {
           this.id = [row.id]
@@ -683,14 +676,14 @@ export default {
       let checkedId = Array.from(this.checkedId)
       let id = checkedId.length && val !== 1 ? checkedId : [row.id]
       if (row && row.customer_status.value == 2) {
-        modalSure('您确定要将此客户取消流失吗').then(() => {
+        modalSure(this.$t('您确定要将此客户取消流失吗')).then(() => {
           customerCancelLostApi(row.id)
           setTimeout(() => {
             this.getTableData()
           }, 300)
         })
       } else {
-        modalSure('您确定要将此客户标为流失吗').then(() => {
+        modalSure(this.$t('您确定要将此客户标为流失吗')).then(() => {
           customerLostApi({ data: id })
           setTimeout(() => {
             this.getTableData()
@@ -701,11 +694,11 @@ export default {
     //领取客户
     receive(type, row) {
       if (this.ids.length <= 0 && type === 1) {
-        this.$message.error('至少选择一项')
+        this.$message.error(this.$t('customer.placeholder22'))
       } else {
         let checkedId = Array.from(this.checkedId)
         let id = checkedId.length ? checkedId : [row.id]
-        modalSure('您确定要领取此客户吗').then(async () => {
+        modalSure(this.$t('您确定要领取此客户吗')).then(async () => {
           await customerClaimApi({ data: id })
           await this.getTableData()
         })
@@ -724,7 +717,7 @@ export default {
     // 批量设置标签
     labelGroup(val) {
       if (this.ids.length <= 0) {
-        return this.$message.error('至少选择一项')
+        return this.$message.error(this.$t('customer.placeholder22'))
       }
 
       this.labelData = {
@@ -777,7 +770,7 @@ export default {
     // 添加订单
     addContract(row) {
       this.contractFromData = {
-        title: '添加订单',
+        title: this.$t('customer.addcontract'),
         id: row.id,
         name: row.customer_name,
         eid: row.id,
@@ -868,11 +861,17 @@ export default {
   max-width: 250px !important;
 }
 
-:deep(.el-card__body) {
+::v-deep .el-card__body {
   padding: 0;
 }
 
-:deep(.el-button--primary.is-plain:hover) {
+.record {
+  ::v-deep .el-dialog__body {
+    padding: 20px 20px 30px 20px;
+  }
+}
+
+::v-deep .el-button--primary.is-plain:hover {
   color: #1890ff;
   background: #e8f4ff;
   border-color: #a3d3ff;
@@ -902,7 +901,7 @@ export default {
   color: red !important;
 }
 
-:deep(.divBox .el-tag) {
+::v-deep .divBox .el-tag {
   max-width: 91px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -911,14 +910,5 @@ export default {
 .point {
   cursor: pointer;
   color: #1890ff;
-}
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.record {
-  .el-dialog__body {
-    padding: 20px 20px 30px 20px;
-  }
 }
 </style>

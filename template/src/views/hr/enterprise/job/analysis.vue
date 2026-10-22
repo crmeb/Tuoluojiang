@@ -12,6 +12,7 @@
                 clearable
                 placeholder="搜索部门"
                 prefix-icon="el-icon-search"
+                size="small"
               />
             </div>
             <el-tree
@@ -69,13 +70,15 @@
                 <template #default="scope">
                   <el-button
                     v-hasPermi="['hr:enterprise:analysis:check']"
-                    type="primary" link
+                    size="small"
+                    type="text"
                     @click="onCheck(scope.row)"
                     >查看</el-button
                   >
                   <el-button
                     v-hasPermi="['hr:enterprise:analysis:edit']"
-                    type="primary" link
+                    size="small"
+                    type="text"
                     @click="onEdit(scope.row)"
                     >编辑</el-button
                   >
@@ -99,7 +102,7 @@
     </el-card>
 
     <!-- 查看 -->
-    <el-drawer :before-close="handleClose" v-model="checkDrawer" direction="rtl" size="60%" title="工作分析表">
+    <el-drawer :before-close="handleClose" :visible.sync="checkDrawer" direction="rtl" size="60%" title="工作分析表">
       <div v-if="detailData" class="check-box">
         <div class="content mt14">
           <ueditorFrom :content="detailData" :readOnly="true" height="88vh" type="notepad" border />
@@ -113,8 +116,8 @@
     <!-- 编辑 -->
     <el-drawer
       :before-close="handleClose"
-      v-model="editDrawer"
-      :close-on-click-modal="false"
+      :visible.sync="editDrawer"
+      :wrapperClosable="false"
       direction="rtl"
       size="61%"
       title="编辑工作分析表"
@@ -137,25 +140,24 @@
         </div>
       </div>
       <div class="button from-foot-btn fix btn-shadow">
-        <el-button @click="editDrawer = false">取消</el-button>
-        <el-button :loading="saveLoading" type="primary" @click="handleConfirm">保存</el-button>
+        <el-button size="small" @click="editDrawer = false">{{ $t('public.cancel') }}</el-button>
+        <el-button :loading="saveLoading" size="small" type="primary" @click="handleConfirm">保存</el-button>
       </div>
     </el-drawer>
   </div>
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { configFrameApi } from '@/api/setting.ts'
-import { jobSelectApi } from '@/api/config.ts'
-import { jobAnalysis, jobDetails, putAnalysis } from '@/api/user.ts'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { configFrameApi } from '@/api/setting'
+import { jobSelectApi } from '@/api/config.js'
+import { jobAnalysis, jobDetails, putAnalysis } from '@/api/user'
 import ueditorFrom from '@/components/form-common/oa-wangeditor'
 import oaFromBox from '@/components/common/oaFromBox'
 export default {
   name: 'CrmebOaEntAnalysis',
   components: {
-    defaultPage: defineAsyncComponent(() => import('@/components/common/defaultPage')),
+    defaultPage: () => import('@/components/common/defaultPage'),
     oaFromBox,
     ueditorFrom
   },
@@ -232,7 +234,7 @@ export default {
     async getList() {
       const result = await configFrameApi()
       this.treeData = result.data
-      this.where.frame_id = this.treeData[0].value
+      this.$set(this.where, 'frame_id', this.treeData[0].value)
       this.defaultFrame = [this.treeData[0].value]
       await this.getAnalysis()
     },
@@ -262,7 +264,7 @@ export default {
           limit: 15,
           frame_id: ''
         }
-        this.where.frame_id = this.treeData[0].value
+        this.$set(this.where, 'frame_id', this.treeData[0].value)
         this.getAnalysis()
       } else {
         this.where = { ...this.where, ...data }
@@ -382,7 +384,7 @@ export default {
   color: #ffca28;
 }
 
-:deep(.el-tree) {
+::v-deep .el-tree {
   background-color: transparent;
 }
 .flex-box {
@@ -424,7 +426,7 @@ export default {
 .table {
   margin-top: 5px;
 }
-:deep(.el-card__body) {
+::v-deep .el-card__body {
   padding: 0;
 }
 .icon-h {
@@ -433,7 +435,7 @@ export default {
     color: #1890ff;
   }
 }
-:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
+::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content {
   background: rgba(240, 250, 254, 0.6);
   .flex-box {
     color: #1890ff;
@@ -441,13 +443,13 @@ export default {
   }
 }
 
-:deep(.el-tree-node__content) {
+::v-deep .el-tree-node__content {
   height: 40px;
   border-radius: 4px;
 }
 
 .check-box {
-  :deep(.el-scrollbar__wrap) {
+  ::v-deep .el-scrollbar__wrap {
     overflow-x: hidden;
   }
   color: #666666;
@@ -455,39 +457,39 @@ export default {
   padding-top: 0px;
 
   .content {
-    :deep(p) {
+    ::v-deep p {
       text-indent: 2em;
       font-size: 14px;
       line-height: 1.5;
     }
-    :deep(td) {
+    ::v-deep td {
       border: 1px solid;
     }
-    :deep(table) {
+    ::v-deep table {
       border: 1px solid #ccc;
     }
 
-    :deep(table th) {
+    ::v-deep table th {
       border: 1px solid #ccc;
     }
-    :deep(table td) {
+    ::v-deep table td {
       padding: 10px 5px;
       border: 1px solid #ccc;
     }
 
-    :deep(p img) {
+    ::v-deep p img {
       max-width: 800px;
     }
   }
 }
 
-:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node),
+::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node,
 .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .right-icon {
   display: inline-block;
   color: #1890ff;
   font-weight: 600;
 }
-:deep(.el-tree-node > .el-tree-node__children) {
+::v-deep .el-tree-node > .el-tree-node__children {
   overflow: inherit;
 }
 

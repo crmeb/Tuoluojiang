@@ -46,8 +46,8 @@
             </el-upload>
           </el-col>
           <el-col :span="12" class="text-right">
-            <el-button v-if="formInfo.type === 'edit'" @click="clientCancel">取消</el-button>
-            <el-button type="primary" @click="clientFollowSave">确定</el-button>
+            <el-button size="small" v-if="formInfo.type === 'edit'" @click="clientCancel">取消</el-button>
+            <el-button type="primary" size="small" @click="clientFollowSave">确定</el-button>
           </el-col>
         </el-row>
       </div>
@@ -56,14 +56,13 @@
 </template>
 
 <script>
-import { contracFileEditApi, contracFileSaveApi } from '@/api/client.ts'
-import { ElImageViewer } from 'element-plus'
-import { uploader } from '@/utils/uploadCloud.ts'
-import { toSrcFn } from '@/utils/format.ts'
-import { getStorageJson } from '@/utils/storage.ts'
+import { contracFileEditApi, contracFileSaveApi } from '@/api/client'
+import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
+import { uploader } from '@/utils/uploadCloud'
+import { toSrcFn } from '@/utils/format'
+import { getStorageJson } from '@/utils/storage'
 export default {
   name: 'Record',
-  emits: ['change'],
   components: {
     ElImageViewer
   },
@@ -307,6 +306,9 @@ export default {
   padding: 0px;
   margin-right: 16px;
 }
+.el-button--medium {
+  padding: 10px 15px !important;
+}
 .recordContent {
   padding-top: 38px;
 }
@@ -392,7 +394,7 @@ export default {
 .mt10 {
   margin-top: 20px;
 }
-:deep(.el-timeline-item__tail) {
+::v-deep .el-timeline-item__tail {
   position: absolute;
   left: 4px;
   height: 100%;
@@ -400,11 +402,10 @@ export default {
   border-left: 1px solid #dfe4ed;
 }
 
-:deep(.el-textarea__inner) {
+::v-deep .el-textarea__inner {
   min-height: 96px;
   // word-break: break-all;
   border: none;
-  box-shadow: none;
   font-size: 12px;
 }
 </style>

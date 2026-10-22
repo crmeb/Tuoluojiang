@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-drawer title="打卡记录详情" v-model="drawer" size="600px" :before-close="handleClose">
+    <el-drawer title="打卡记录详情" :visible.sync="drawer" size="600px" :before-close="handleClose">
       <div class="contract-body">
         <div class="mt20">
           <el-form label-width="110px">
@@ -29,7 +29,7 @@
                   <template #label>
                     <span>考勤日期：</span>
                   </template>
-                  <p>{{ dayjs(info.created_at).format('YYYY-MM-DD') }}</p>
+                  <p>{{ moment(info.created_at).format('YYYY-MM-DD') }}</p>
                 </el-form-item>
                 <el-form-item>
                   <template #label>
@@ -83,14 +83,13 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { clockRecordDetails } from '@/api/config.ts'
-import { toGetWeek } from '@/utils/format.ts'
+import moment from 'moment'
+import { clockRecordDetails } from '@/api/config'
+import { toGetWeek } from '@/utils/format'
 export default {
   name: 'CrmebOaEntDetailsDrawer',
   computed: {
-    dayjs: () => dayjs
+    moment: () => moment
   },
   data() {
     return {
@@ -101,7 +100,7 @@ export default {
   },
 
   components: {
-    imageViewer: defineAsyncComponent(() => import('@/components/common/imageViewer'))
+    imageViewer: () => import('@/components/common/imageViewer')
   },
 
   methods: {
@@ -173,11 +172,11 @@ export default {
   overflow-y: auto;
 }
 
-.description :deep(.el-form-item) {
+.description ::v-deep .el-form-item {
   margin-bottom: 0px;
 }
 
-:deep(.el-form-item__label) {
+::v-deep .el-form-item__label {
   font-size: 13px !important;
   font-weight: 400;
   color: #909399 !important;
@@ -192,17 +191,17 @@ export default {
   flex-wrap: wrap;
   justify-content: space-between;
   .form-item {
-    :deep(.el-form-item__content) {
+    ::v-deep .el-form-item__content {
       width: calc(100% - 110px);
       font-size: 13px !important;
     }
-    :deep(.el-select) {
+    ::v-deep .el-select--medium {
       width: 100%;
     }
-    :deep(.el-form-item) {
+    ::v-deep .el-form-item {
       margin-bottom: 0;
     }
-    :deep(.el-textarea__inner) {
+    ::v-deep .el-textarea__inner {
       resize: none;
     }
 

@@ -4,7 +4,7 @@
 
 <script>
 import myEcharts from '@/components/scEcharts/chart-widget.vue'
-import { queryChartData } from '../chartQuery.ts'
+import { queryChartData } from '@/api/chart'
 
 export default {
   name: 'lineChart-widget',

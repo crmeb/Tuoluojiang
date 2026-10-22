@@ -3,10 +3,10 @@
     <!-- <div class="title-16 mt20">属性信息</div> -->
     <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="90px" class="mt20">
       <el-form-item label="显示名称:" prop="table_name">
-        <el-input v-model="ruleForm.table_name"></el-input>
+        <el-input v-model="ruleForm.table_name" size="small"></el-input>
       </el-form-item>
       <el-form-item label="实体名称:" prop="table_name_en">
-        <el-input disabled v-model="ruleForm.table_name_en"></el-input>
+        <el-input disabled v-model="ruleForm.table_name_en" size="small"></el-input>
       </el-form-item>
 
       <el-form-item label="所属主实体:" prop="region" v-if="ruleForm.crud_id">
@@ -15,6 +15,7 @@
           v-model="ruleForm.crud_id"
           :options="options"
           style="width: 100%"
+          size="small"
           :show-all-levels="false"
           :props="{ checkStrictly: true, label: 'table_name', value: 'id', emitPath: false }"
         >
@@ -32,6 +33,7 @@
           inactive-value="0"
           inactive-text="关闭"
           active-text="开启"
+          size="small"
         ></el-switch>
       </el-form-item>
 
@@ -49,6 +51,7 @@
             class="ml10"
             v-model="ruleForm.comment_title"
             maxlength="5"
+            size="small"
             placeholder="评论重命名"
           ></el-input>
         </div>
@@ -60,6 +63,7 @@
           v-model="ruleForm.cate_ids"
           multiple
           filterable
+          size="small"
           placeholder="请搜索选择应用（多选）"
         >
           <el-option v-for="(v, index) in cateOptions" :key="v.id" :label="v.name" :value="v.id"> </el-option>
@@ -79,7 +83,7 @@
           placeholder="请选择图标"
           v-model="ruleForm.icon"
           readonly
-          @click="showIconDialog = true"
+          @click.native="showIconDialog = true"
           clearable
         >
           <template #suffix>
@@ -101,14 +105,15 @@
           type="textarea"
           v-model="ruleForm.info"
           :autosize="{ minRows: 4, maxRows: 8 }"
+          size="small"
         ></el-input>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" :loading="loading" @click="submit">保存</el-button>
+        <el-button type="primary" size="small" :loading="loading" @click="submit">保存</el-button>
       </el-form-item>
     </el-form>
     <!-- 选择图标 -->
-    <el-dialog title="选择菜单图标" v-model="showIconDialog" :append-to-body="true" width="50%">
+    <el-dialog title="选择菜单图标" :visible.sync="showIconDialog" :append-to-body="true" width="50%">
       <div class="icon-box">
         <select-icon ref="selectIconRef" :isEmit="true" @select="handleSelectIcon"></select-icon>
       </div>
@@ -119,8 +124,8 @@
 import oaSystemImage from '@/components/form-common/oa-systemImage'
 import selectIcon from '@/components/form-common/select-icon'
 import Commnt from '@/components/develop/commonData'
-import { menuListApi } from '@/api/system.ts'
-import { getcrudCateListApi, databaseListApi, databasePutApi } from '@/api/develop.ts'
+import { menuListApi } from '@/api/system'
+import { getcrudCateListApi, databaseListApi, databasePutApi } from '@/api/develop'
 
 export default {
   props: {
@@ -202,7 +207,7 @@ export default {
       this.menuList.unshift(obj)
     },
     handleClearIcon() {
-      this.ruleForm.icon = ''
+      this.$set(this.ruleForm, 'icon', '')
     },
     async getList() {
       let obj = {

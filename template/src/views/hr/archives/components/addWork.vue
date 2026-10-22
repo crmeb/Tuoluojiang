@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-dialog :title="title" v-model="dialogFormVisible" width="560px" v-bind="$attrs">
+    <el-dialog :title="title" :visible.sync="dialogFormVisible" width="560px" v-bind="$attrs">
       <!-- 工作经历 -->
       <el-form :model="workForm" ref="workForm" :rules="workRules" label-width="auto" v-if="add === 'work'">
         <div class="form-box">
@@ -10,11 +10,11 @@
                 <span>{{ item.label }}</span>
               </template>
               <!-- date -->
-              <el-date-picker v-if="item.type === 'date'" v-model="workForm[item.value]" type="date"
-                style="width: 100%" :placeholder="item.placeholder" value-format="YYYY-MM-DD">
+              <el-date-picker v-if="item.type === 'date'" v-model="workForm[item.value]" type="date" size="small"
+                style="width: 100%" :placeholder="item.placeholder" value-format="yyyy-MM-dd">
               </el-date-picker>
               <!-- input -->
-              <el-input v-if="item.type === 'input'" v-model="workForm[item.value]" style="width: 100%"
+              <el-input v-if="item.type === 'input'" v-model="workForm[item.value]" size="small" style="width: 100%"
                 clearable :placeholder="item.placeholder" />
               <el-input v-if="item.type === 'textarea'" type="textarea" :rows="4" resize="none"
                 v-model="workForm[item.value]"></el-input>
@@ -23,8 +23,8 @@
         </div>
         <template #footer>
           <div class="dialog-footer">
-            <el-button @click="cancelFn">取消</el-button>
-            <el-button type="primary" @click="submitFnn()">确 定</el-button>
+            <el-button size="small" @click="cancelFn">取消</el-button>
+            <el-button type="primary" size="small" @click="submitFnn()">确 定</el-button>
           </div>
         </template>
       </el-form>
@@ -38,11 +38,11 @@
                 <span>{{ item.label }}</span>
               </template>
               <!-- date -->
-              <el-date-picker v-if="item.type === 'date'" v-model="educationForm[item.value]" type="date"
-                style="width: 100%" :placeholder="item.placeholder" value-format="YYYY-MM-DD">
+              <el-date-picker v-if="item.type === 'date'" v-model="educationForm[item.value]" type="date" size="small"
+                style="width: 100%" :placeholder="item.placeholder" value-format="yyyy-MM-dd">
               </el-date-picker>
               <!-- input -->
-              <el-input v-if="item.type === 'input'" v-model="educationForm[item.value]"
+              <el-input v-if="item.type === 'input'" v-model="educationForm[item.value]" size="small"
                 style="width: 100%" clearable :placeholder="item.placeholder" />
               <el-input v-if="item.type === 'textarea'" type="textarea" :rows="4" resize="none"
                 v-model="educationForm[item.value]"></el-input>
@@ -52,8 +52,8 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="cancelFn">取消</el-button>
-          <el-button type="primary" @click="submitFnn()">确定</el-button>
+          <el-button size="small" @click="cancelFn">取消</el-button>
+          <el-button type="primary" size="small" @click="submitFnn()">确定</el-button>
         </div>
       </template>
     </el-dialog>
@@ -61,7 +61,6 @@
 </template>
 <script>
 export default {
-  emits: ['addWorkFn'],
   name: 'addWork',
   components: {},
   props: {

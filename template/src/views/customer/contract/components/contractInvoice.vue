@@ -3,7 +3,7 @@
   <div class="station-invoice">
     <div class="btn-box1">
       <div class="title-16">发票列表</div>
-      <el-button type="primary" @click="handleBuild(0, buildData.invoicing_switch, 'invoicing_switch')">
+      <el-button type="primary" size="small" @click="handleBuild(0, buildData.invoicing_switch, 'invoicing_switch')">
         申请开票
       </el-button>
     </div>
@@ -24,7 +24,7 @@
     <el-table :data="tableData" style="width: 100%; height: 100%">
       <el-table-column prop="created_at" label="申请时间" sortable min-width="150"> </el-table-column>
       <el-table-column prop="title" label="发票抬头" min-width="150"> </el-table-column>
-      <el-table-column prop="amount" label="开票金额(元)" min-width="100">
+      <el-table-column prop="amount" :label="$t('customer.invoicingpay')" min-width="100">
         <template #default="scope">
           <span :class="scope.row.price == scope.row.amount ? '' : 'active'">{{ scope.row.amount }}</span>
         </template>
@@ -37,28 +37,28 @@
 
       <el-table-column prop="status" label="发票审核状态" min-width="110">
         <template #default="scope">
-          <el-tag :type="scope.row.status == -1 ? 'danger' : scope.row.status == 0 ? 'warning' : 'primary'">
+          <el-tag :type="scope.row.status == -1 ? 'danger' : scope.row.status == -1 ? 'warning' : ''">
             {{ getInvoiceStatus(scope.row.status) }}
           </el-tag>
         </template>
       </el-table-column>
 
       <!-- 操作 -->
-      <el-table-column prop="address" min-width="240" label="操作">
+      <el-table-column prop="address" min-width="240" :label="$t('public.operation')">
         <template #default="scope">
-          <el-button @click="handleCheck(scope.row)" type="primary" link>查看</el-button>
+          <el-button @click="handleCheck(scope.row)" type="text">{{ $t('public.check') }}</el-button>
 
-          <el-button @click="setRemarks(scope.row)" type="primary" link>备注</el-button>
+          <el-button @click="setRemarks(scope.row)" type="text">备注</el-button>
 
-          <el-button v-if="scope.row.status === 0" @click="invoiceWithdrawal(scope.row)" type="primary" link>
+          <el-button v-if="scope.row.status === 0" @click="invoiceWithdrawal(scope.row)" type="text">
             发票撤回
           </el-button>
           <el-button v-if="scope.row.status === 5"
-            @click="handleBuild(scope.row, buildData.void_invoice_switch, 'void_invoice_switch')" type="primary" link>
+            @click="handleBuild(scope.row, buildData.void_invoice_switch, 'void_invoice_switch')" type="text">
             申请冲红
           </el-button>
-          <el-button v-if="scope.row.status === 4" @click="invoiceWithdrawal(scope.row, 1)" type="primary" link>冲红撤回</el-button>
-          <el-button @click="handleRelatePayment(scope.row, 1)" type="primary" link>关联付款单</el-button>
+          <el-button v-if="scope.row.status === 4" @click="invoiceWithdrawal(scope.row, 1)" type="text">冲红撤回</el-button>
+          <el-button @click="handleRelatePayment(scope.row, 1)" type="text">关联付款单</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -73,7 +73,7 @@
     </el-row>
 
     <!-- 发票撤回/申请弹窗 -->
-    <el-dialog :title="title" top="25vh" class="addBox customer-contract-invoice-dialog" :append-to-body="true" v-model="dialogVisible"
+    <el-dialog :title="title" top="25vh" class="addBox" :append-to-body="true" :visible.sync="dialogVisible"
       width="540px" :close-on-click-modal="false">
       <div class="line" />
       <el-form :model="form" :rules="rules" class="from">
@@ -81,8 +81,8 @@
           <el-input type="textarea" v-model="form.remarks" placeholder="请填写原因"></el-input>
         </el-form-item>
         <div class="footer">
-          <el-button class="btn" @click="cancelFn">取消</el-button>
-          <el-button type="primary" @click="submitFn" class="btn">确定</el-button>
+          <el-button size="small" class="btn" @click="cancelFn">取消</el-button>
+          <el-button size="small" type="primary" @click="submitFn" class="btn">确定</el-button>
         </div>
       </el-form>
     </el-dialog>
@@ -100,16 +100,16 @@
     </mergeInvoice>
     <!--审批开票 -->
     <!-- 关联付款侧滑 -->
-    <el-drawer title="关联付款单" v-model="paymentDrawer" direction="rtl" :append-to-body="true"
+    <el-drawer title="关联付款单" :visible.sync="paymentDrawer" direction="rtl" :append-to-body="true"
       :before-close="handleClose" size="60%">
  
      <div class="paymentTable-box">
-       <paymentTable ref="paymentTable" edit="" :tableData="tableData1" @handleSelectionFn="handleSelectionChange">
+       <paymentTable ref="paymentTable" :edit="''" :tableData="tableData1" @handleSelectionFn="handleSelectionChange">
       </paymentTable>
      </div>
      <div class="button from-foot-btn fix btn-shadow" >
-        <el-button class="el-btn" @click="handleClose">取消</el-button>
-        <el-button type="primary" @click="submit">确定</el-button>
+        <el-button class="el-btn" size="small" @click="handleClose">取消</el-button>
+        <el-button size="small" type="primary" @click="submit">确定</el-button>
       </div>
 
     </el-drawer>
@@ -120,22 +120,20 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { getInvoiceText, getInvoiceClassName } from '@/libs/customer.ts'
-import { approveApplyRevokeApi } from '@/api/business.ts'
+import { modalSure } from '@/libs/public'
+import { getInvoiceText, getInvoiceClassName } from '@/libs/customer'
+import { approveApplyRevokeApi } from '@/api/business'
 import {
   accumulatedAmountApi,
   uninvoicedListApi,
   invoiceBillApi
-} from '@/api/enterprise.ts'
-import { clientInvoiceDeleteApi, clientInvoiceListApi, recallStatus, invalidApply } from '@/api/client.ts'
-import { configRuleApproveApi } from '@/api/config.ts'
+} from '@/api/enterprise'
+import { clientInvoiceDeleteApi, clientInvoiceListApi, recallStatus, invalidApply } from '@/api/client'
+import { configRuleApproveApi } from '@/api/config'
 import invoiceApply from '@/components/invoice/invoiceApply'
 import mergeInvoice from '@/components/invoice/mergeInvoice'
 import editExamine from '@/views/user/examine/components/editExamine'
 export default {
-  emits: ['refresh-detail', 'handleInvoice'],
   name: 'ContractInvoice',
   props: {
     formInfo: {
@@ -153,10 +151,10 @@ export default {
     invoiceApply,
     mergeInvoice,
     editExamine,
-    markDialog: defineAsyncComponent(() => import('@/views/customer/contract/components/markDialog')),
-    invoiceDetails: defineAsyncComponent(() => import('@/components/invoice/invoiceDetails')),
-    invoiceView: defineAsyncComponent(() => import('@/views/customer/invoice/components/invoiceView')),
-    paymentTable: defineAsyncComponent(() => import('@/components/invoice/paymentTable'))
+    markDialog: () => import('@/views/customer/contract/components/markDialog'),
+    invoiceDetails: () => import('@/components/invoice/invoiceDetails'),
+    invoiceView: () => import('@/views/customer/invoice/components/invoiceView'),
+    paymentTable: () => import('@/components/invoice/paymentTable')
   },
   data() {
     return {
@@ -337,7 +335,7 @@ export default {
     },
     // 冲红撤回
     withdraw(val) {
-      modalSure('你确定要撤回申请冲红吗').then(() => {
+      modalSure(this.$t('customer.message08')).then(() => {
         let data = {
           invalid: -1
         }
@@ -468,7 +466,7 @@ export default {
     },
     handleEdit(row) {
       this.formBoxConfig = {
-        title: '发票编辑',
+        title: this.$t('customer.invoiceedit'),
         width: '820px',
         edit: true,
         data: row
@@ -489,7 +487,7 @@ export default {
     },
     setRemarks(row) {
       this.configMark = {
-        title: '备注信息',
+        title: this.$t('customer.remarkinformation'),
         width: '480px',
         id: row.id,
         type: 2,
@@ -499,7 +497,7 @@ export default {
     },
     // 删除
     handleDelete(item) {
-      modalSure('请确定要撤回该记录吗').then(() => {
+      modalSure(this.$t('customer.placeholder23')).then(() => {
         clientInvoiceDeleteApi(item.id).then((res) => {
           if (this.where.page > 1 && this.tableData.length <= 1) {
             this.where.page--
@@ -526,8 +524,17 @@ export default {
   margin: 0 24px;
 }
 
+.addBox ::v-deep .el-dialog__body {
+  padding: 0;
+}
+
 .ml36 {
   margin-left: 36px;
+}
+
+::v-deep .el-dialog__header .el-dialog__title {
+  font-size: 14px;
+  color: #303133;
 }
 
 .footer {
@@ -563,12 +570,23 @@ export default {
   }
 }
 
-:deep(.el-table) {
+.addBox ::v-deep .el-dialog {
+  border-radius: 6px;
+  height: 249px;
+}
+
+::v-deep .el-table {
   height: 100% !important;
 }
 
-:deep(.el-input__inner) {
+::v-deep .el-input__inner {
   text-align: left;
+}
+
+.addBox ::v-deep .el-textarea__inner {
+  width: 400px;
+  height: 90px;
+  font-size: 13px;
 }
 
 .from-item-title {
@@ -630,25 +648,5 @@ export default {
 }
 .paymentTable-box {
   padding: 20px;
-}
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.addBox .el-dialog__body {
-  padding: 0;
-}
-.el-dialog.customer-contract-invoice-dialog .el-dialog__header .el-dialog__title {
-  font-size: 14px;
-  color: #303133;
-}
-.el-dialog.addBox {
-  border-radius: 6px;
-  height: 249px;
-}
-.el-dialog.addBox .el-textarea__inner {
-  width: 400px;
-  height: 90px;
-  font-size: 13px;
 }
 </style>

@@ -5,8 +5,8 @@
 </template>
 
 <script>
-import { getAccount } from '@/utils/format.ts'
-import { getStorageJson } from '@/utils/storage.ts'
+import { getAccount } from '@/utils/format'
+import { getStorageJson } from '@/utils/storage'
 export default {
   name: 'ArticleContent',
   data() {

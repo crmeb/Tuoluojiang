@@ -12,7 +12,7 @@
 </template>
 
 <script>
-import defaultSettings from '@/settings.ts'
+import defaultSettings from '@/settings'
 const title = defaultSettings.title
 import Cookies from 'js-cookie'
 export default {
@@ -43,7 +43,7 @@ export default {
   vertical-align: middle;
   margin-right: 12px;
 }
-.sidebarLogoFade-enter-from,
+.sidebarLogoFade-enter,
 .sidebarLogoFade-leave-to {
   opacity: 0;
 }

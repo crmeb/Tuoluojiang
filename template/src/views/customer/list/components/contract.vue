@@ -2,11 +2,11 @@
   <div class="station">
     <div class="btn-box1 mb10">
       <div class="title-16">订单列表</div>
-      <el-button type="primary" @click="addContract">添加订单</el-button>
+      <el-button size="small" type="primary" @click="addContract">添加订单</el-button>
     </div>
     <el-table :data="contractData" fit style="width: 100%">
       <el-table-column prop="contract_no" label="订单编号"> </el-table-column>
-      <el-table-column prop="contract_price" min-width="100px" label="订单金额(元)"> </el-table-column>
+      <el-table-column prop="contract_price" min-width="100px" :label="$t('customer.contractpay')"> </el-table-column>
       <el-table-column prop="surplus" label="付款状态">
         <template #default="scope">
           <span class="pointer color-success" v-if="parseFloat(scope.row.surplus) === 0">已结清</span>
@@ -30,9 +30,9 @@
           {{ getCreatorName(scope.row) }}
         </template>
       </el-table-column>
-      <el-table-column prop="address" label="操作">
+      <el-table-column prop="address" :label="$t('public.operation')">
         <template #default="scope">
-          <el-button @click="handleCheck(scope.row)" type="primary" link>查看</el-button>
+          <el-button @click="handleCheck(scope.row)" type="text">{{ $t('public.check') }}</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -58,16 +58,14 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import { getStorageJson } from '@/utils/storage.ts'
-import { clientContractListApi } from '@/api/enterprise.ts'
-import { getContractTagType, getContractText } from '@/libs/customer.ts'
+import { getStorageJson } from '@/utils/storage'
+import { clientContractListApi } from '@/api/enterprise'
+import { getContractTagType, getContractText } from '@/libs/customer'
 export default {
-  emits: ['refresh-detail'],
   name: 'Contract',
   components: {
-    addContract: defineAsyncComponent(() => import('@/views/customer/contract/components/addContract')),
-    editContract: defineAsyncComponent(() => import('@/views/customer/contract/components/editContract'))
+    addContract: () => import('@/views/customer/contract/components/addContract'),
+    editContract: () => import('@/views/customer/contract/components/editContract')
   },
   props: {
     formInfo: {
@@ -140,7 +138,7 @@ export default {
     // 添加订单
     addContract() {
       this.contractFromData = {
-        title: '添加订单',
+        title: this.$t('customer.addcontract'),
         id: this.formInfo.data.eid,
         name: this.formInfo.data.name,
         edit: false,
@@ -157,7 +155,7 @@ export default {
       // 解构赋值获取id，避免直接修改传入的item对象
       const { id } = item
       this.fromData = {
-        title: '查看客户',
+        title: this.$t('customer.viewcustomer'),
         width: '1000px',
         data: { ...item, cid: id }, // 使用展开运算符创建新对象并添加cid属性
         isClient: false,
@@ -203,7 +201,7 @@ export default {
   height: 32px;
 }
 
-:deep(.el-input__inner) {
+::v-deep .el-input__inner {
   text-align: left;
 }
 .from-item-title {
@@ -214,7 +212,7 @@ export default {
     font-size: 14px;
   }
 }
-:deep(.el-tag) {
+::v-deep .el-tag {
   background-color: transparent;
 }
 </style>

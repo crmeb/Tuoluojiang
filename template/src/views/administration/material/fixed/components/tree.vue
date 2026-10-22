@@ -30,7 +30,6 @@
                 <div class="flex-box">
                   <span class="over-text">{{ node.label }}</span>
                   <el-popover
-                    v-if="data.value > 0"
                     :ref="`pop-${data.value}`"
                     placement="bottom-end"
                     trigger="click"
@@ -42,15 +41,15 @@
                       <div class="right-item" @click.stop="addDivsion(data)">添加子类</div>
                       <!-- v-if="data.value !== topId" -->
                       <div class="right-item" @click.stop="editDivsion(data.value)">
-                        编辑
+                        {{ $t('public.edit') }}
                       </div>
                       <!-- v-if="data.value !== topId"  -->
                       <div class="right-item" @click.stop="handleDelete(data)">
-                        删除
+                        {{ $t('public.delete') }}
                       </div>
                     </div>
                     <template #reference>
-                      <div class="iconfont icongengduo right-icon" @click.stop />
+                      <div v-if="data.value > 0" class="iconfont icongengduo right-icon" @click.stop />
                     </template>
                   </el-popover>
                 </div>
@@ -64,12 +63,11 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import modalForm from '@/libs/modal-form.ts'
-import { storageCateCreateApi, storageCateDeleteApi, storageCateEditApi } from '@/api/administration.ts'
+import { modalSure } from '@/libs/public'
+import modalForm from '@/libs/modal-form'
+import { storageCateCreateApi, storageCateDeleteApi, storageCateEditApi } from '@/api/administration'
 
 export default {
-  emits: ['frameId', 'getList'],
   name: 'TreeVue',
   components: {},
   props: {
@@ -144,7 +142,7 @@ export default {
       } else {
         this.focusShow = false
         if (this.activeValue !== '') {
-          this.$refs[`pop-${this.activeValue}`].hide()
+          this.$refs[`pop-${this.activeValue}`].doClose()
         }
         this.frame_id = node.value
         this.isShowEdit = ''
@@ -224,19 +222,19 @@ export default {
   font-size: 18px;
   color: #ffca28;
 }
-:deep(.el-card__header) {
+::v-deep .el-card__header {
   border-bottom: none;
   padding: 20px 16px 15px 0;
   font-weight: 600;
 }
-:deep(.el-scrollbar__wrap) {
+::v-deep .el-scrollbar__wrap {
   overflow-x: hidden;
 }
 
-:deep(.el-tree) {
+::v-deep .el-tree {
   background-color: transparent;
 }
-:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
+::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content {
   background: rgba(24, 144, 255, 0.08);
   .flex-box {
     max-width: 100%;
@@ -245,22 +243,22 @@ export default {
     color: #1890ff;
   }
 }
-:deep(.tree-box-con .el-tree-node__content) {
+::v-deep .tree-box-con .el-tree-node__content {
   height: 40px;
   border-radius: 4px;
 }
-:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node) {
+::v-deep .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content .custom-tree-node {
   color: #1890ff;
   font-weight: 600;
 }
-:deep(.el-tree-node__content:hover .right-icon) {
+::v-deep .el-tree-node__content:hover .right-icon {
   display: inline-block;
 }
 
-:deep(.el-tree-node > .el-tree-node__children) {
+::v-deep .el-tree-node > .el-tree-node__children {
   overflow: inherit;
 }
-:deep(.el-tree-node__content) {
+::v-deep .el-tree-node__content {
   // padding-left: 14px !important;
 }
 .custom-tree-node {

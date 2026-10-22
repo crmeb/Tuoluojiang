@@ -8,8 +8,7 @@
     <div class="flex">
       <!-- 主弹窗 -->
       <el-dialog
-      class="develop-checkbox-dialog"
-        v-model="dialogShow"
+        :visible.sync="dialogShow"
         width="760px"
         :before-close="handleClose"
         :modal="true"
@@ -18,7 +17,7 @@
         :close-on-click-modal="false"
       >
         <!-- 弹窗标题 -->
-        <template #header>
+        <template #title>
           <div class="header">
             <span class="title">{{ title }}</span>
             <span class="el-icon-close pointer" @click="handleClose"></span>
@@ -32,6 +31,7 @@
             v-model="id"
             :disabled="edit"
             placeholder="请选择"
+            size="small"
             style="width: 100%"
             filterable
             @change="getlistData"
@@ -128,26 +128,23 @@
                 force-fallback="true"
                 group="people"
                 animation="1000"
-                :item-key="$draggableKey"
               >
-                <template #item="{ element: item, index }">
-                  <div class="select-item">
-                    <div class="left over-text">
-                      <i class="icon iconfont icontuodong item-drag"></i>
-                      <span>
-                        {{ item.field_name }}
-                        <span v-if="item.field_name_en && type !== 'module'"> ({{ item.field_name_en }})</span>
-                      </span>
-                    </div>
-                    <div class="right-box">
-                      <span
-                        v-if="showCrud && item.field_name_en !== 'id'"
-                        class="el-icon-close"
-                        @click="handleDelete(item, type == 'module' || type == 'view' ? 'field_name_en' : 'id')"
-                      />
-                    </div>
+                <div v-for="(item, index) in selectList" :key="index" class="select-item">
+                  <div class="left over-text">
+                    <i class="icon iconfont icontuodong item-drag"></i>
+                    <span>
+                      {{ item.field_name }}
+                      <span v-if="item.field_name_en && type !== 'module'"> ({{ item.field_name_en }})</span>
+                    </span>
                   </div>
-                </template>
+                  <div class="right-box">
+                    <span
+                      v-if="showCrud && item.field_name_en !== 'id'"
+                      class="el-icon-close"
+                      @click="handleDelete(item, type == 'module' || type == 'view' ? 'field_name_en' : 'id')"
+                    />
+                  </div>
+                </div>
               </draggable>
             </div>
           </div>
@@ -156,8 +153,8 @@
         <!-- 底部按钮 -->
         <template #footer>
           <span class="dialog-footer">
-            <el-button @click="handleClose(1)">取消</el-button>
-            <el-button type="primary" @click="handleConfirm">确定</el-button>
+            <el-button size="small" @click="handleClose(1)">{{ $t('public.cancel') }}</el-button>
+            <el-button size="small" type="primary" @click="handleConfirm">{{ $t('public.ok') }}</el-button>
           </span>
         </template>
       </el-dialog>
@@ -168,10 +165,9 @@
 <script>
 import defaultPage from '@/components/common/defaultPage'
 import draggable from 'vuedraggable'
-import { databaseListApi, dataFieldListApi } from '@/api/develop.ts'
+import { databaseListApi, dataFieldListApi } from '@/api/develop'
 
 export default {
-  emits: ['close', 'getData'],
   name: 'CheckboxDialog',
   components: {
     draggable,
@@ -471,7 +467,7 @@ export default {
 .search-p {
   width: 70%;
   padding: 20px 20px 0 20px;
-  :deep(.el-input-group__append) {
+  ::v-deep .el-input-group__append {
     top: 0;
     background-color: transparent;
     border-left: none;
@@ -488,6 +484,9 @@ export default {
 
 ::-webkit-scrollbar {
   width: 3px !important; /*对垂直流动条有效*/
+}
+::v-deep .el-dialog__body {
+  height: max-content;
 }
 
 .container {
@@ -581,6 +580,9 @@ export default {
     flex-wrap: wrap;
   }
 }
+::v-deep .el-dialog__footer {
+  padding-top: 30px;
+}
 .title-num {
   font-family: PingFang SC, PingFang SC;
   font-weight: 500;
@@ -594,15 +596,5 @@ export default {
   font-size: 12px;
   color: #1890ff;
   cursor: pointer;
-}
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.develop-checkbox-dialog .el-dialog__body {
-  height: max-content;
-}
-.el-dialog.develop-checkbox-dialog .el-dialog__footer {
-  padding-top: 30px;
 }
 </style>

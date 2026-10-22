@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="visible" width="330px" :append-to-body="true" class="no-header-dialog common-auth-dialog">
+  <el-dialog :visible.sync="visible" width="330px" :append-to-body="true" custom-class="no-header-dialog">
     <div class="box" v-loading="loading">
       <div ref="weChatCodeLogin" style="width: 330px; height: 430px">
         <span class="el-icon-close" v-if="!forced_build" @click="handleClosed"></span>
@@ -11,11 +11,10 @@
 
 <script>
 import * as ww from '@wecom/jssdk'
-import { workBinding, workAuthLogin } from '@/api/user.ts'
-import { getWorkCorpConfigApi } from '@/api/setting.ts'
-import { getStorageJson } from '@/utils/storage.ts'
+import { workBinding, workAuthLogin } from '@/api/user'
+import { getWorkCorpConfigApi } from '@/api/setting'
+import { getStorageJson } from '@/utils/storage'
 export default {
-  emits: ['workloginOk'],
   name: 'AuthDialog',
   data() {
     return {
@@ -120,6 +119,22 @@ export default {
 </script>
 
 <style scoped lang="scss">
+::v-deep .el-dialog__header {
+  display: none;
+}
+// ::v-deep .wwLogin_qrcode_head {
+//   padding: 30px 0 !important;
+//   z-index: 9999 !important;
+//   /* 增加更具体的父级选择器 */
+//   .box & {
+//     padding: 30px 0 !important;
+//   }
+// }
+::v-deep .el-dialog__body {
+  width: 330px;
+  padding: 0 !important;
+  margin: 0;
+}
 
 .box {
   width: 100%;
@@ -142,25 +157,5 @@ export default {
     font-size: 12px;
     color: #909199;
   }
-}
-</style>
-
-<style lang="scss">
-// 弹框挂到 body 或 class 落在 .el-dialog 上时，scoped 样式选不到，按 class 定位
-.el-dialog.common-auth-dialog .el-dialog__header {
-  display: none;
-}
-// :deep(.wwLogin_qrcode_head) {
-//   padding: 30px 0 !important;
-//   z-index: 9999 !important;
-//   /* 增加更具体的父级选择器 */
-//   .box & {
-//     padding: 30px 0 !important;
-//   }
-// }
-.el-dialog.common-auth-dialog .el-dialog__body {
-  width: 330px;
-  padding: 0 !important;
-  margin: 0;
 }
 </style>

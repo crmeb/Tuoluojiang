@@ -3,7 +3,7 @@
   <el-drawer
     :append-to-body="true"
     :title="title"
-    v-model="flowDesignerStore.promoterDrawer"
+    :visible.sync="$store.state.business.promoterDrawer"
     direction="rtl"
     class="set_promoter"
     size="550px"
@@ -12,8 +12,8 @@
     <div class="demo-drawer__content">
       <div class="promoter_content drawer_content">
         <el-radio-group v-model="radio" class="mt20">
-          <el-radio :label="2" :value="2">按部门添加</el-radio>
-          <el-radio :label="1" :value="1">按人员添加</el-radio>
+          <el-radio :label="2">按部门添加</el-radio>
+          <el-radio :label="1">按人员添加</el-radio>
         </el-radio-group>
         <p class="title1">可提交申请的成员</p>
         <p class="title2">模板范围内的成员可提交，修改后，模板可见范围将被同步修改</p>
@@ -37,13 +37,10 @@
   </el-drawer>
 </template>
 <script>
-import { mapStores } from 'pinia'
-import { useFlowDesignerStore } from '@/stores/flowDesigner.ts'
-import { defineAsyncComponent } from 'vue'
 export default {
   components: {
-    selectMember: defineAsyncComponent(() => import('@/components/form-common/select-member')),
-    selectDepartment: defineAsyncComponent(() => import('@/components/form-common/select-department'))
+    selectMember: () => import('@/components/form-common/select-member'),
+    selectDepartment: () => import('@/components/form-common/select-department')
   },
   data() {
     return {
@@ -58,9 +55,8 @@ export default {
     }
   },
   computed: {
-    ...mapStores(useFlowDesignerStore),
     flowPermission1() {
-      return this.flowDesignerStore.flowPermission.value
+      return this.$store.state.business.flowPermission.value
     }
   },
   watch: {
@@ -87,11 +83,11 @@ export default {
         })
       }
       this.flowPermission.depList = arr1
-      this.flowDesignerStore.flowPermission = {
+      this.$store.commit('updateFlowPermission', {
         value: this.flowPermission,
         flag: true,
-        id: this.flowDesignerStore.flowPermission.id
-      }
+        id: this.$store.state.business.flowPermission.id
+      })
       this.closeDrawer()
     },
     // 选择成员完成回调
@@ -112,7 +108,7 @@ export default {
       }
     },
     closeDrawer() {
-      this.flowDesignerStore.promoterDrawer = false
+      this.$store.commit('updatePromoter', false)
     }
   }
 }
@@ -137,7 +133,7 @@ export default {
     }
   }
 }
-:deep(.plan-footer-one) {
+::v-deep .plan-footer-one {
   height: auto;
   line-height: 32px;
 }

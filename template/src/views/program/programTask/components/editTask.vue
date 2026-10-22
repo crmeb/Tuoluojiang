@@ -2,16 +2,15 @@
 <template>
   <div class="station">
     <el-drawer
-      class="program-task-edit-task-drawer"
-      v-model="drawer"
+      :visible.sync="drawer"
       :modal="true"
       :show-close="false"
       :append-to-body="true"
       size="1120px"
       :before-close="handleClose"
-      @click="changeMembers"
+      @click.native="changeMembers"
     >
-      <template #header>
+      <template #title>
         <div class="flex between-header align-center">
           <div class="flex align-center">
             <span class="ident copy" @click="copy" title="点击复制工作项地址" :data-clipboard-text="identAddress()"
@@ -19,6 +18,7 @@
             >
             <el-select
               v-model="formData.status"
+              size="small"
               filterable
               :disabled="!isOperable"
               collapse-tags
@@ -40,9 +40,9 @@
               </span>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item @click="addSubtasks(formData)">新建子任务</el-dropdown-item>
-                  <el-dropdown-item @click="copyTask">复制工作项</el-dropdown-item>
-                  <el-dropdown-item v-if="formData.operate" @click="deleteTask">删除</el-dropdown-item>
+                  <el-dropdown-item @click.native="addSubtasks(formData)">新建子任务</el-dropdown-item>
+                  <el-dropdown-item @click.native="copyTask">复制工作项</el-dropdown-item>
+                  <el-dropdown-item v-if="formData.operate" @click.native="deleteTask">删除</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -62,7 +62,7 @@
             placeholder="请输入任务名称"
             ref="name"
             @blur="handleName"
-            @keyup.enter="nameShow = false"
+            @keyup.native.enter="nameShow = false"
           />
           <i v-if="!nameShow && isOperable" @click="nameShowFn" class="iconfont iconbianji pointer"></i>
         </div>
@@ -87,6 +87,7 @@
                 <el-select
                   v-if="programShow"
                   v-model="formData.program_id"
+                  size="small"
                   placeholder="请选择关联项目"
                   @change="handleContract"
                   filterable
@@ -116,6 +117,7 @@
                 <el-select
                   v-if="adminsShow"
                   v-model="formData.uid"
+                  size="small"
                   filterable
                   clearable
                   placeholder="请选择负责人"
@@ -139,14 +141,15 @@
                 <el-date-picker
                   v-if="timeValShow"
                   v-model="timeVal"
+                  size="small"
                   type="daterange"
                   clearable
-                  format="YYYY-MM-DD"
-                  value-format="YYYY-MM-DD"
+                  :format="'yyyy-MM-dd'"
+                  :value-format="'yyyy-MM-dd'"
                   placeholder="请选择项目计划时间"
-                  range-separator="至"
-                  start-placeholder="开始时间"
-                  end-placeholder="结束时间"
+                  :range-separator="$t('toptable.to')"
+                  :start-placeholder="$t('toptable.startdate')"
+                  :end-placeholder="$t('toptable.endingdate')"
                   @blur="timeValShow = false"
                   @change="onchangeTime"
                 ></el-date-picker>
@@ -177,7 +180,7 @@
                       </div>
                     </div>
                     <template #reference>
-                      <div class="p-l-12">
+                      <div class="p-l-12" size="small">
                         <div class="members-box" v-for="(item, index) in formData.members.slice(0, 3)" :key="index">
                           <img v-default-avatar="item" :src="getAvatarSrc(item)" alt="" />
                         </div>
@@ -192,6 +195,7 @@
                 <el-select
                   v-else
                   v-model="formData.membersId"
+                  size="small"
                   multiple
                   filterable
                   collapse-tags
@@ -217,7 +221,7 @@
             ></div>
 
             <div v-else>
-              <component
+              <ueditor-form
                 is="ueditorFrom"
                 :border="describeShow"
                 ref="ueditorFrom"
@@ -281,6 +285,7 @@
               @change="changePriority"
               v-else
               v-model="formData.priority"
+              size="small"
               placeholder="请选择优先级"
             >
               <el-option v-for="item in priorityOptions" :key="item.value" :label="item.label" :value="item.value">
@@ -295,6 +300,7 @@
             <el-select
               v-if="versionShow"
               v-model="formData.version_id"
+              size="small"
               clearable
               placeholder="请选择关联版本"
               @change="handleVersion"
@@ -313,18 +319,16 @@
       :append-to-body="true"
       top="13%"
       title="版本设置"
-      v-model="dialogVisible"
+      :visible.sync="dialogVisible"
       width="30%"
       :before-close="handleCloseVersion"
     >
-      <draggable v-model="inputs" class="drag-area" @start="dragging = true" @end="dragging = false" :item-key="$draggableKey">
-        <template #item="{ element: input, index }">
-          <div class="input-row">
-            <i class="iconfont icontuodong pointer"></i>
-            <el-input v-model="input.name" placeholder="请输入版本名称"></el-input>
-            <span class="pointer" @click="removeInput(index)">-</span>
-          </div>
-        </template>
+      <draggable v-model="inputs" class="drag-area" @start="dragging = true" @end="dragging = false">
+        <div v-for="(input, index) in inputs" :key="index" class="input-row">
+          <i class="iconfont icontuodong pointer"></i>
+          <el-input v-model="input.name" placeholder="请输入版本名称"></el-input>
+          <span class="pointer" @click="removeInput(index)">-</span>
+        </div>
       </draggable>
       <span class="add-input pointer" @click="addInput">
         <i class="el-icon-plus"></i>
@@ -343,11 +347,8 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useAppStore } from '@/stores/app.ts'
-import { defineAsyncComponent } from 'vue'
-import { modalSure } from '@/libs/public.ts'
-import { getAvatarSrc } from '@/utils/avatar.ts'
+import { modalSure } from '@/libs/public'
+import { getAvatarSrc } from '@/utils/avatar'
 import {
   putProgramTaskApi,
   getProgramTaskInfoApi,
@@ -355,19 +356,18 @@ import {
   deleteProgramTaskApi,
   getProgramVersionApi,
   setProgramVersionApi
-} from '@/api/program.ts'
+} from '@/api/program'
 import imageViewer from '@/components/common/imageViewer'
 import draggable from 'vuedraggable'
 import ClipboardJS from 'clipboard'
-import SettingMer from '@/libs/settingMer.ts'
+import SettingMer from '@/libs/settingMer'
 import ueditorFrom from '@/components/form-common/oa-wangeditor'
 import oaLog from '@/components/form-common/oa-log'
 
 export default {
-  emits: ['getProgramVersionList', 'getMemberList', 'getProgramSelectList', 'openTask', 'getTableData'],
   name: 'addProgram',
   components: {
-    comment: defineAsyncComponent(() => import('../components/comment')),
+    comment: () => import('../components/comment'),
     ueditorFrom,
     draggable,
     imageViewer,
@@ -485,7 +485,6 @@ export default {
     }
   },
   computed: {
-    ...mapStores(useAppStore),
     // 是否有操作权限
     isOperable() {
       return this.formData.operate
@@ -579,7 +578,7 @@ export default {
       result.data.members.map((item) => {
         membersId.push(item.id)
       })
-      result.data.membersId = membersId
+      this.$set(result.data, 'membersId', membersId)
       this.formData = result.data
       this.principal = result.data.admins
       this.formData.uid = result.data.uid !== 0 ? this.formData.uid : null
@@ -819,7 +818,7 @@ export default {
       ]
 
       properties.forEach((property) => {
-        this[property] = false
+        this.$set(this, property, false)
       })
 
       this.$emit('getTableData')
@@ -834,10 +833,10 @@ export default {
       this.$nextTick(() => {
         const clipboard = new ClipboardJS('.copy')
         clipboard.on('success', () => {
-          this.$message.success('复制成功')
+          this.$message.success(this.$t('setting.copytitle'))
           clipboard.destroy()
         })
-        this.appStore.setClickTab(false)
+        this.$store.commit('app/SET_CLICK_TAB', false)
       })
     }
   }
@@ -852,19 +851,25 @@ export default {
 .header-item {
   position: fixed;
 }
-.station :deep(.edui-editor-iframeholder) {
+.station ::v-deep .edui-editor-iframeholder {
   height: 300px !important;
+}
+.station ::v-deep .el-drawer__body {
+  padding: 20px 20px 50px 20px;
 }
 .dialog-footer {
   // padding-top: 20px;
   // border-top: 1px solid #e6ebf5;
   text-align: right;
 }
-:deep(.el-cascader),
-:deep(.el-input-number),
-:deep(.el-select),
-:deep(.el-date-editor) {
+::v-deep .el-cascader,
+::v-deep .el-input-number,
+::v-deep .el-select,
+::v-deep .el-date-editor {
   width: 100%;
+}
+::v-deep .el-drawer__body {
+  padding: 0 !important;
 }
 .mr4 {
   margin-right: 4px;
@@ -889,6 +894,7 @@ export default {
         border-radius: 50%;
       }
     }
+    .el-input__inner,
     .flex-box {
       height: 32px;
       line-height: 32px;
@@ -942,7 +948,7 @@ export default {
     margin-bottom: 20px;
     display: flex;
     align-items: center;
-    :deep(.el-input__inner) {
+    ::v-deep .el-input__inner {
       width: 1080px;
     }
     .name {
@@ -995,39 +1001,39 @@ export default {
 }
 .describe-box {
   margin: 10px 0 26px;
-  :deep(table) {
+  ::v-deep table {
     width: 100% !important;
     border: 1px solid #ccc;
   }
 
-  :deep(table th) {
+  ::v-deep table th {
     border: 1px solid #ccc;
   }
-  :deep(table td) {
+  ::v-deep table td {
     padding: 10px 5px;
     border: 1px solid #ccc;
   }
 
-  :deep(p img) {
+  ::v-deep p img {
     max-width: 800px;
   }
 }
-:deep(.el-form-item__label) {
+::v-deep .el-form-item__label {
   color: #909399;
   padding: 0 !important;
 }
 .comment {
-  :deep(.el-tabs__active-bar.is-top) {
+  ::v-deep .el-tabs__active-bar.is-top {
     margin-left: 20px;
   }
-  :deep(.el-tabs__item.is-top:nth-child(2)) {
+  ::v-deep .el-tabs__item.is-top:nth-child(2) {
     margin-left: 20px;
   }
 }
-:deep(.el-form-item) {
+::v-deep .el-form-item {
   margin-bottom: 0;
 }
-:deep(.el-table__header-wrapper) {
+::v-deep .el-table__header-wrapper {
   display: none;
 }
 .expand-describe {
@@ -1040,14 +1046,14 @@ export default {
   .expand-left {
     width: 50%;
     align-items: flex-start;
-    :deep(table) {
+    ::v-deep table {
       border: 1px solid #ccc;
     }
 
-    :deep(table th) {
+    ::v-deep table th {
       border: 1px solid #ccc;
     }
-    :deep(table td) {
+    ::v-deep table td {
       padding: 10px 5px;
       border: 1px solid #ccc;
     }
@@ -1056,14 +1062,14 @@ export default {
     width: 50%;
     margin-left: 20px;
     align-items: flex-start;
-    :deep(table) {
+    ::v-deep table {
       border: 1px solid #ccc;
     }
 
-    :deep(table th) {
+    ::v-deep table th {
       border: 1px solid #ccc;
     }
-    :deep(table td) {
+    ::v-deep table td {
       padding: 10px 5px;
       border: 1px solid #ccc;
     }
@@ -1078,7 +1084,7 @@ export default {
     line-height: 16px;
     margin-right: 36px;
     margin-bottom: 0;
-    :deep(p) {
+    ::v-deep p {
       font-size: 14px;
       margin: 0;
     }
@@ -1126,28 +1132,28 @@ export default {
   flex-grow: 1;
   margin-right: 10px;
 }
-:deep(.icon-no .el-table__expand-icon) {
+::v-deep .icon-no .el-table__expand-icon {
   display: none;
 }
-:deep(.el-tabs__nav-wrap::after) {
+::v-deep .el-tabs__nav-wrap::after {
   background-color: #f2f6fc;
 }
-:deep(.el-tabs__nav-wrap) {
+::v-deep .el-tabs__nav-wrap {
   height: 54px;
   border-top: 1px solid #f2f6fc;
   line-height: 54px;
 }
-:deep(.w-e-content-preview),
+::v-deep .w-e-content-preview,
 .w-e-text {
   padding: 0;
 }
-:deep(.w-e-text p) {
+::v-deep .w-e-text p {
   margin: 0;
 }
 .placeholder {
   padding: 0;
 }
-:deep(.w-e-text-container) {
+::v-deep .w-e-text-container {
   padding-top: 10px;
 }
 .created-time {
@@ -1174,7 +1180,7 @@ export default {
   line-height: 22px;
   color: #909399;
 }
-:deep(.el-popover__reference) {
+::v-deep .el-popover__reference {
   display: flex;
   align-items: center;
 }
@@ -1202,12 +1208,5 @@ export default {
 }
 .el-cascader-node__label {
   max-width: 200px;
-}
-</style>
-
-<style lang="scss">
-// 抽屉挂到 body 上，scoped 样式选不到，按 class 定位
-.program-task-edit-task-drawer .el-drawer__body {
-  padding: 0 !important;
 }
 </style>

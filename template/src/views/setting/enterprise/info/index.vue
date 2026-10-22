@@ -26,7 +26,7 @@
               <div class="panel-title acea-row row-middle row-between">
                 <div class="title">基本信息</div>
                 <div>
-                  <el-button v-if="!isEdit" type="primary" link icon="el-icon-edit" @click="onEdit">编辑</el-button>
+                  <el-button v-if="!isEdit" type="text" icon="el-icon-edit" @click="onEdit">编辑</el-button>
                   <el-button v-if="isEdit" @click="onCancel">取消</el-button>
                   <el-button v-if="isEdit" type="primary" @click="handleSubmit">保存</el-button>
                 </div>
@@ -39,7 +39,7 @@
                         <el-input
                           v-show="isEdit"
                           v-model="ruleForm.enterprise_name"
-                          placeholder="请填写企业名称"
+                          :placeholder="$t('setting.info.title1')"
                           clearable
                         ></el-input>
                         <div v-show="!isEdit" class="value">{{ ruleForm.enterprise_name }}</div>
@@ -61,9 +61,9 @@
                   </el-row>
                   <el-row :gutter="30">
                     <el-col :span="12">
-                      <el-form-item label="企业城市">
+                      <el-form-item :label="$t('setting.info.enterprisecity')">
                         <el-cascader
-                          v-if="isEdit"
+                          v-show="isEdit"
                           v-model="cityVal"
                           :options="cityData"
                           :props="{ value: 'label', label: 'label' }"
@@ -74,11 +74,11 @@
                       </el-form-item>
                     </el-col>
                     <el-col :span="12">
-                      <el-form-item label="企业地址" prop="address">
+                      <el-form-item :label="$t('setting.info.businessaddress')" prop="address">
                         <el-input
                           v-show="isEdit"
                           v-model="ruleForm.address"
-                          placeholder="请填写企业地址"
+                          :placeholder="$t('setting.info.title2')"
                           clearable
                         ></el-input>
                         <div v-show="!isEdit" class="value">{{ ruleForm.address }}</div>
@@ -87,11 +87,11 @@
                   </el-row>
                   <el-row :gutter="30">
                     <el-col :span="12">
-                      <el-form-item label="联系电话" prop="phone">
+                      <el-form-item :label="$t('setting.info.contactnumber')" prop="phone">
                         <el-input
                           v-show="isEdit"
                           v-model="ruleForm.phone"
-                          placeholder="请填写联系电话"
+                          :placeholder="$t('setting.info.title3')"
                           clearable
                         ></el-input>
                         <div v-show="!isEdit" class="value">{{ ruleForm.phone }}</div>
@@ -129,10 +129,10 @@
                     <el-col :span="12">
                       <el-form-item label="企业状态">
                         <div class="value">
-                          <span v-if="pageData.status == 0" class="txt">禁用</span>
-                          <span v-if="pageData.status == 1" class="txt">正常</span>
-                          <span v-if="pageData.status == 2" class="txt">代缴费</span>
-                          <span v-if="pageData.status == 3" class="txt">已过期</span>
+                          <span v-if="pageData.status == 0" class="txt">{{ $t('setting.info.disabled') }}</span>
+                          <span v-if="pageData.status == 1" class="txt">{{ $t('setting.info.normal') }}</span>
+                          <span v-if="pageData.status == 2" class="txt">{{ $t('setting.info.behalfpayment') }}</span>
+                          <span v-if="pageData.status == 3" class="txt">{{ $t('setting.info.expired') }}</span>
                         </div>
                       </el-form-item>
                     </el-col>
@@ -148,12 +148,11 @@
 </template>
 
 <script>
-import { getCityListApi } from '@/api/public.ts'
-import { mapStores } from 'pinia'
-import { useUserStore } from '@/stores/user.ts'
-import { enterpriseEntInfoApi, entInfoUpdateApi } from '@/api/enterprise.ts'
-import { getToken } from '@/utils/auth.ts'
-import { uploader } from '@/utils/uploadCloud.ts'
+import { getCityListApi } from '@/api/public'
+import { mapGetters } from 'vuex'
+import { enterpriseEntInfoApi, entInfoUpdateApi } from '@/api/enterprise'
+import { getToken } from '@/utils/auth'
+import { uploader } from '@/utils/uploadCloud'
 import { edit } from 'ace-builds'
 
 export default {
@@ -164,16 +163,8 @@ export default {
       default: 0
     }
   },
-  watch: {
-    // prop 由父组件更新时同步到本地副本（组件内部改写的是 tabCurLocal）
-    tabCur(val) {
-      this.tabCurLocal = val
-    }
-  },
   data() {
     return {
-      // Vue 3 的 prop 只读，组件内部需要改写时用本地副本
-      tabCurLocal: this.tabCur,
       ruleForm: {
         logo: '',
         enterprise_name: '',
@@ -187,10 +178,10 @@ export default {
         business_license: ''
       },
       rules: {
-        enterprise_name: [{ required: true, message: '请填写企业名称', trigger: 'blur' }],
+        enterprise_name: [{ required: true, message: this.$t('setting.info.title1'), trigger: 'blur' }],
         short_name: [{ required: true, message: '请填写企业简称', trigger: 'blur' }],
-        address: [{ required: true, message: '请填写企业地址', trigger: 'blur' }],
-        phone: [{ required: true, message: '请填写联系电话', trigger: 'blur' }]
+        address: [{ required: true, message: this.$t('setting.info.title2'), trigger: 'blur' }],
+        phone: [{ required: true, message: this.$t('setting.info.title3'), trigger: 'blur' }]
       },
       pageData: {},
       upLoadData: {},
@@ -208,7 +199,7 @@ export default {
     }
   },
   computed: {
-    ...mapStores(useUserStore)
+    ...mapGetters(['userInfo'])
   },
   created() {
     this.getCitylist()
@@ -222,7 +213,7 @@ export default {
       })
     },
     handleClick(number) {
-      this.tabCurLocal = number.index
+      this.tabCur = number.index
     },
 
     // 上传文件方法
@@ -281,7 +272,7 @@ export default {
               if (res.status == 200) {
                 this.loading = false
                 this.isEdit = false
-                this.userStore.setEnterprise({
+                this.$store.commit('user/SET_ENTINFO', {
                   ...this.pageData,
                   ...this.ruleForm
                 })
@@ -337,7 +328,7 @@ export default {
     }
   }
 }
-:deep(.el-upload--picture-card) {
+::v-deep .el-upload--picture-card {
   border: none;
   background-color: #e4e7ed;
 }
@@ -368,7 +359,7 @@ export default {
     color: #909399;
   }
 }
-:deep(.el-scrollbar__wrap) {
+::v-deep .el-scrollbar__wrap {
   overflow-x: hidden;
 }
 .intro-box {
@@ -457,19 +448,8 @@ export default {
     }
   }
 }
-// 旧版 label 浮动在上、值在下一行：Element Plus 表单项是 flex 并排，这里改为上下排布并还原 36px 行高
-:deep(.el-form-item) {
-  display: block;
-  min-height: 62px;
-}
-:deep(.el-form-item .el-form-item__label) {
-  display: block;
-  height: auto;
+::v-deep .el-form-item--medium .el-form-item__label {
   margin-bottom: 12px;
   line-height: 13px;
-  text-align: left;
-}
-:deep(.el-form-item__content) {
-  line-height: 36px;
 }
 </style>

@@ -46,13 +46,13 @@
 </template>
 
 <script>
-import { ref, onMounted, getCurrentInstance, defineAsyncComponent } from 'vue'
-import { workStatisticsApi, workStatisticsApiAll } from '@/api/user.ts'
+import { ref, onMounted, getCurrentInstance } from 'vue'
+import { workStatisticsApi, workStatisticsApiAll } from '@/api/user'
 
 export default {
   name: 'AchievementCard',
   components: {
-    quickManage: defineAsyncComponent(() => import('../quickManage'))
+    quickManage: () => import('../quickManage')
   },
   setup() {
     const { proxy } = getCurrentInstance()

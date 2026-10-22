@@ -1,0 +1,1 @@
+import{t as e}from"./unique.oHcIf2Tj.js";var t=`文字`,n=`span`,r={icon:`iconfont iconshuomingwenzi1`,label:t,name:n,rule(){return{type:n,field:e(),title:`文字`,native:!1,children:[`这是一段文字`]}},props(){return[{type:`input`,field:`formCreateChild`,title:`内容`,props:{type:`textarea`}}]},basic(){}};export{r as t};

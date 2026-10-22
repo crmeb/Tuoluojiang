@@ -8,7 +8,7 @@
         <el-table-column prop="card.name" label="姓名" fixed="left" min-width="120px"> </el-table-column>
          <el-table-column prop="created_at" label="日期" width="120" fixed="left">
             <template #default="{ row }">
-              {{ dayjs(row.created_at).format('YYYY-MM-DD') }}
+              {{ moment(row.created_at).format('YYYY-MM-DD') }}
             </template>
           </el-table-column>
         <el-table-column prop="frame.name" label="部门" min-width="140px"> </el-table-column>
@@ -111,7 +111,7 @@
         </el-table-column>
         <el-table-column label="操作" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link @click="openRecord(row)">处理记录</el-button>
+            <el-button type="text" @click="openRecord(row)">处理记录</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -134,22 +134,22 @@
       <el-form>
         <el-form-item :label="form.name" label-width="60px">
           <div class="flex lh-center">
-            <el-select v-model="form.dis_status" placeholder="请选择" disabled>
+            <el-select size="small" v-model="form.dis_status" placeholder="请选择" disabled>
               <el-option v-for="item in salesmanList" :key="item.id" :label="item.name" :value="item.id"> </el-option>
             </el-select>
             <span class="el-icon-d-arrow-right"></span>
-            <el-select v-model="form.status" placeholder="请选择">
+            <el-select size="small" v-model="form.status" placeholder="请选择">
               <el-option v-for="item in salesmanList" :key="item.id" :label="item.name" :value="item.id"> </el-option>
             </el-select>
           </div>
         </el-form-item>
         <el-form-item label-width="60px" v-if="form.dis_locationStatus !== 0">
           <div>
-            <el-select v-model="form.dis_locationStatus" placeholder="请选择" disabled>
+            <el-select size="small" v-model="form.dis_locationStatus" placeholder="请选择" disabled>
               <el-option v-for="item in placeList" :key="item.id" :label="item.name" :value="item.id"> </el-option>
             </el-select>
             <span class="el-icon-d-arrow-right"></span>
-            <el-select v-model="form.location_status" placeholder="请选择">
+            <el-select size="small" v-model="form.location_status" placeholder="请选择">
               <el-option v-for="item in placeList" :key="item.id" :label="item.name" :value="item.id"> </el-option>
             </el-select>
           </div>
@@ -168,21 +168,20 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
-import dayjs from 'dayjs'
-import { TABLE_HEIGHT } from '@/constants/tableSize.ts'
-import { dailyStatisticsApi, putStatisticsApi } from '@/api/config.ts'
+import moment from 'moment'
+import { TABLE_HEIGHT } from '@/constants/tableSize'
+import { dailyStatisticsApi, putStatisticsApi } from '@/api/config'
 export default {
   name: 'CrmebOaEntDaily',
   components: {
-    formBox: defineAsyncComponent(() => import('./components/formBox')),
-    oaDialog: defineAsyncComponent(() => import('@/components/form-common/dialog-form')),
-    recordDrawer: defineAsyncComponent(() => import('./components/recordDrawer')),
-    exportExcel: defineAsyncComponent(() => import('@/components/common/exportExcel'))
+    formBox: () => import('./components/formBox'),
+    oaDialog: () => import('@/components/form-common/dialog-form'),
+    recordDrawer: () => import('./components/recordDrawer'),
+    exportExcel: () => import('@/components/common/exportExcel')
   },
 
   computed: {
-    dayjs: () => dayjs
+    moment: () => moment
   },
   data() {
     return {
@@ -381,7 +380,7 @@ export default {
     async exportFn() {
       let aoaData = [
         ['概况统计与打卡明细'],
-        [`统计时间：${this.where.time} 制表时间：${dayjs(new Date()).format('YYYY/MM/DD')}`],
+        [`统计时间：${this.where.time} 制表时间：${moment(new Date()).format('YYYY/MM/DD')}`],
         [
           '姓名',
           '部门',
@@ -430,7 +429,7 @@ export default {
           item.card ? item.card.name : '--',
           item.frame ? item.frame.name : '--',
           item.group || '--',
-          dayjs(item.created_at).format('YYYY-MM-DD'),
+          moment(item.created_at).format('YYYY-MM-DD'),
           item.shift_data.name + this.getShift(item.shift_data),
 
           this.handle(item.one_shift_status, item.one_shift_is_after, item.one_shift_time),
@@ -500,7 +499,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.el-table thead.is-group th) {
+::v-deep .el-table thead.is-group th {
   background-color: rgba(247, 251, 255, 1);
   border-color: #f5f5f5;
 }
@@ -508,10 +507,10 @@ export default {
   margin: 0 12px;
 }
 
-:deep(.el-table td) {
+::v-deep .el-table td {
   border: none;
 }
-:deep(.el-table) {
+::v-deep .el-table {
   border: none;
 }
 .red {

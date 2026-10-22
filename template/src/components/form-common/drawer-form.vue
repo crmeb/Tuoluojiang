@@ -3,11 +3,12 @@
   <div class="oa-dialog">
     <el-drawer
       :title="fromData.title"
-      v-model="show"
+      :visible.sync="show"
       direction="rtl"
+      :wrapper-closable="true"
       :before-close="handleClose"
       :size="fromData.width"
-      :close-on-click-modal="fromData.type=='slot'?true:false"
+      :wrapperClosable="fromData.type=='slot'?true:false"
     >
     <div v-if="fromData.type == 'slot'">
         <slot></slot>
@@ -24,8 +25,8 @@
         ></oaForm>
       </div>
       <div class="button from-foot-btn fix btn-shadow" v-if="fromData.type != 'slot'">
-        <el-button class="el-btn" @click="handleClose">取消</el-button>
-        <el-button type="primary" @click="submit">保存</el-button>
+        <el-button class="el-btn" size="small" @click="handleClose">取消</el-button>
+        <el-button size="small" type="primary" @click="submit">保存</el-button>
       </div>
     </el-drawer>
   </div>
@@ -36,7 +37,6 @@ import oaForm from './oa-form'
 
 export default {
   name: 'DrawerForm',
-  emits: ['submit', 'getRankList'],
   components: {
     oaForm
   },

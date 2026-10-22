@@ -84,21 +84,19 @@
             
               <!-- 客户子项行 -->
               <template v-if="!scope.row.isGroup">
-              <el-button class="mr10" type="primary" link @click="checkRow(scope.row)">查看</el-button>
+              <el-button class="mr10" type="text" @click="checkRow(scope.row)">查看</el-button>
               <el-dropdown>
-                <el-button type="primary" link class="el-dropdown-link"> 更多 <i class="el-icon-arrow-down" /></el-button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item @click="openShare(scope.row)"> 共享协作 </el-dropdown-item>
-                    <el-dropdown-item v-if="scope.row.is_share" @click="cancelShare(scope.row)">
-                      取消协作
-                    </el-dropdown-item>
-                    <el-dropdown-item @click="handleDropdown('transfer', scope.row)">
-                      移交负责人
-                    </el-dropdown-item>
-                    <el-dropdown-item @click="deleteRow(scope.row)">删除</el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
+                <span class="el-dropdown-link el-button--text el-button"> 更多 <i class="el-icon-arrow-down" /></span>
+                <el-dropdown-menu>
+                  <el-dropdown-item @click.native="openShare(scope.row)"> 共享协作 </el-dropdown-item>
+                  <el-dropdown-item v-if="scope.row.is_share" @click.native="cancelShare(scope.row)">
+                    取消协作
+                  </el-dropdown-item>
+                  <el-dropdown-item @click.native="handleDropdown('transfer', scope.row)">
+                    移交负责人
+                  </el-dropdown-item>
+                  <el-dropdown-item @click.native="deleteRow(scope.row)">删除</el-dropdown-item>
+                </el-dropdown-menu>
               </el-dropdown>
               </template>
             </template>
@@ -110,7 +108,6 @@
 <script>
 import tableColumn from './components/tableColumn'
 export default {
-  emits: ['selectionChange', 'checkRow', 'openShare', 'cancelShare', 'handleDropdown', 'deleteRow', 'handleLoadMore'],
   name: 'CustomerTreeTable',
   props: {
     treeData: {
@@ -350,7 +347,7 @@ font-size: 13px;
 color: #909399;
 margin-left: 20px;
 }
-:deep(.load-more-row) {
+::v-deep .load-more-row {
   .el-table__cell{
     padding: 0 !important;
   }

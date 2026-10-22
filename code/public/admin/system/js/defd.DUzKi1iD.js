@@ -1,0 +1,1 @@
+var e=`/admin/system/img/defd-CAbbtiv-.png`;export{e as t};

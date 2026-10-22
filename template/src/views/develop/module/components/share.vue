@@ -2,9 +2,10 @@
   <div>
     <el-drawer
       title="数据共享协作"
-      v-model="drawer"
+      :visible.sync="drawer"
       direction="rtl"
       :show-close="true"
+      :wrapper-closable="true"
       :append-to-body="true"
       :before-close="handleClose"
       :size="`55%`"
@@ -12,7 +13,7 @@
       <div class="table-box">
         <div class="flex-between mb10">
           <div class="title-16">协作人列表</div>
-          <el-button type="primary" @click="addShare">添加协作人</el-button>
+          <el-button type="primary" size="small" @click="addShare">添加协作人</el-button>
         </div>
         <el-table :data="tableData" style="width: 100%" :height="height">
           <el-table-column prop="user.name" label="协作人员"> </el-table-column>
@@ -21,6 +22,7 @@
               <el-select
                 v-model="scope.row.role_type"
                 placeholder="请选择"
+                size="small"
                 @change="roleTypeFn($event, scope.row.id)"
               >
                 <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value">
@@ -32,7 +34,7 @@
           <el-table-column prop="updated_at" label="最后操作时间" width="150"> </el-table-column>
           <el-table-column prop="address" label="操作" width="120">
             <template #default="scope">
-              <el-button type="primary" link @click="delModuleShare(scope.row.id)">删除</el-button>
+              <el-button type="text" @click="delModuleShare(scope.row.id)">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -60,8 +62,8 @@
   </div>
 </template>
 <script>
-import { modalSure } from '@/libs/public.ts'
-import { moduleShareListApi, delModuleShareApi, putModuleShareApi, moduleShareApi } from '@/api/develop.ts'
+import { modalSure } from '@/libs/public'
+import { moduleShareListApi, delModuleShareApi, putModuleShareApi, moduleShareApi } from '@/api/develop'
 import oaDialog from '@/components/form-common/dialog-form'
 export default {
   name: '',

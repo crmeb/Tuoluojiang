@@ -15,16 +15,15 @@
 </template>
 
 <script>
-import { modalSure } from '@/libs/public.ts'
-import modalForm from '@/libs/modal-form.ts'
+import { modalSure } from '@/libs/public'
+import modalForm from '@/libs/modal-form'
 import {
   assessTargetCateApi,
   assessTargetCateEditApi,
   assessTargetCateListApi,
   targetCateDeleteApi
-} from '@/api/enterprise.ts'
+} from '@/api/enterprise'
 export default {
-  emits: ['eventOptionData'],
   name: 'DepartmentNot',
   props: {
     type: {

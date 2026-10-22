@@ -1,6 +1,6 @@
 <template>
   <div class="goods-brief flex">
-    <el-image :src="sku && sku.image" :preview-src-list="sku && sku.image ? [sku.image] : []" preview-teleported
+    <el-image :src="sku && sku.image" :preview-src-list="sku && sku.image ? [sku.image] : []"
       class="goods-brief__img" />
     <div class="goods-brief__info">
       <div class="goods-brief__name">{{ goodsName }}</div>
@@ -15,7 +15,7 @@
 
 <script>
 import { computed } from "vue";
-import { getGoodsName, getSpecName, getProductCode, getBarcode } from "../utils.ts";
+import { getGoodsName, getSpecName, getProductCode, getBarcode } from "../utils";
 
 export default {
   name: "GoodsBrief",

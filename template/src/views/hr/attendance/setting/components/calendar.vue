@@ -1,7 +1,7 @@
 <template>
   <div>
-    <el-dialog top="5%" v-model="show" width="600" :close-on-click-modal="false" :show-close="false">
-      <template #header>
+    <el-dialog top="5%" :visible.sync="show" width="600" :close-on-click-modal="false" :show-close="false">
+      <template #title>
         <div class="header">
           <span class="title">排班日历</span>
 
@@ -48,13 +48,12 @@
 </template>
 
 <script>
-import dayjs from 'dayjs'
-import veCalendar from '@/components/ve-calendar'
+import moment from 'moment'
+import veCalendar from 've-calendar'
 
-import { putCalendarApi, calendarYearApi } from '@/api/config.ts'
+import { putCalendarApi, calendarYearApi } from '@/api/config'
 
 export default {
-  emits: ['getList'],
   name: 'CrmebOaEntCalendar',
   components: {
     veCalendar
@@ -71,7 +70,7 @@ export default {
       selectList: [],
       loading: false,
       sundayOff: [],
-      min: dayjs(new Date()).add(1, 'days').format('YYYY-MM-DD')
+      min: moment(new Date()).add(1, 'days').format('YYYY-MM-DD')
     }
   },
 
@@ -229,32 +228,32 @@ export default {
     font-size: 14px;
   }
 }
-:deep(.el-dialog) {
+::v-deep .el-dialog {
   border-radius: 6px;
 }
-:deep(.day-title) {
+::v-deep .day-title {
   display: flex;
   flex-direction: column;
   align-items: center;
   height: 82px;
 }
-:deep(.day-grid) {
+::v-deep .day-grid {
   cursor: pointer;
   height: 72px;
   padding-top: 19px;
   border-radius: 0;
   border: 1px solid #eeeeee;
 }
-:deep(.day-grid:active) {
+::v-deep .day-grid:active {
   background-color: #fff;
 }
-:deep(.title-grid) {
+::v-deep .title-grid {
   font-size: 15px;
   font-family: PingFang SC-Regular, PingFang SC;
   font-weight: 400;
   color: #303133;
 }
-:deep(.day-number) {
+::v-deep .day-number {
   height: 24px;
   line-height: 24px;
   display: flex;
@@ -266,31 +265,31 @@ export default {
     color: #303133;
   }
 }
-:deep(.day-lunar) {
+::v-deep .day-lunar {
   font-size: 14px;
   font-weight: 400;
   display: flex;
   justify-content: center;
   font-family: PingFang SC-Regular, PingFang SC;
 }
-:deep(.day-grid.selected) {
+::v-deep .day-grid.selected {
   background-color: #fff;
   color: #ed4014 !important;
   .day-number div {
     color: #ed4014;
   }
 }
-:deep(.week-title) {
+::v-deep .week-title {
   height: 43px;
   background-color: #e7f3ff;
   line-height: 43px;
   font-family: PingFang SC-Regular, PingFang SC;
 }
 .box {
-  :deep(.ve-calendar) {
+  ::v-deep .ve-calendar {
     padding: 0;
   }
-  :deep(.day-grid.today) {
+  ::v-deep .day-grid.today {
     .day-number {
       width: 24px;
       height: 24px;
@@ -302,7 +301,7 @@ export default {
       font-weight: 500;
     }
   }
-  :deep(.day-grid.today.selected) {
+  ::v-deep .day-grid.today.selected {
     .day-number {
       color: #fff !important;
       font-size: 14px;
@@ -318,7 +317,7 @@ export default {
   // 注：`visibility: none` 不是合法取值（只有 visible / hidden / collapse），
   // 会在解析阶段被丢弃，实际生效的仍是 ve-calendar 自带的 .day-grid.hide{visibility:hidden}。
   // 想让越界日期显示成空白边框格，得把它改成 visibility: visible——那是行为变更，此处不动。
-  :deep(.day-grid.hide) {
+  ::v-deep .day-grid.hide {
     visibility: none;
     border: 1px solid;
     // 这里不能再写 ::v-deep：外层已经穿透，嵌套的第二个不会被 scoped 编译器处理，

@@ -5,11 +5,21 @@
         <el-button @click="setCondition">{{ setConditionText }}</el-button>
         <!-- <div class="ml-a-span" @click="setCondition" v-else></div> -->
       </el-form-item>
+      <!-- <zbDialog title="过滤条件" append-to-body width="37%" v-model="dialogIsShow">
+        <zbSetConditions
+          v-if="dialogIsShow"
+          v-model="conditionConf"
+          footer
+          @cancel="dialogIsShow = false"
+          @confirm="conditionConfirm"
+          :entityName="allEntityName[cutOption.dataEntity]"
+        ></zbSetConditions>
+      </zbDialog> -->
       <el-drawer
         :append-to-body="true"
         title="条件设置"
-        v-model="dialogIsShow"
-        :close-on-click-modal="false"
+        :visible.sync="dialogIsShow"
+        :wrapperClosable="false"
         direction="rtl"
         class="condition_copyer"
         size="650px"
@@ -28,21 +38,18 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useConditionDialogStore } from '@/stores/conditionDialog.ts'
+import { mapState } from 'vuex'
+import zbDialog from '@/components/zbDialog'
+import zbSetConditions from '@/components/zbSetConditions'
 import conditionDialog from '@/components/develop/conditionDialog'
-import { viewSearchApi } from '@/api/develop.ts'
+import { viewSearchApi } from '@/api/develop'
 export default {
-  emits: ['update:optionModel'],
   name: 'setChartFilter-editor',
-  components: { conditionDialog },
+  components: { zbDialog, zbSetConditions, conditionDialog },
   props: {
     designer: Object,
     selectedWidget: Object,
     optionModel: Object
-  },
-  computed: {
-    ...mapStores(useConditionDialogStore)
   },
   data() {
     return {
@@ -52,6 +59,11 @@ export default {
       dialogIsShow: false,
       setConditionText: ''
     }
+  },
+  computed: {
+    ...mapState({
+      allEntityName: (state) => state.common.allEntityName
+    })
   },
   watch: {
     optionModel: {
@@ -67,14 +79,14 @@ export default {
             type: '',
             additional_search_boolean: this.cutOption.setChartFilter.additional_search_boolean || '0'
           }
-          this.conditionDialogStore.setFieldOptions(data)
+          this.$store.commit('uadatefieldOptions', data)
         } else {
           let data = {
             list: [],
             type: '',
             additional_search_boolean: '1'
           }
-          this.conditionDialogStore.setFieldOptions(data)
+          this.$store.commit('uadatefieldOptions', data)
         }
         this.getSetConditionText()
 
@@ -153,7 +165,7 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-:deep(.condition_content) {
+::v-deep .condition_content {
   padding-right: 24px;
 }
 </style>
