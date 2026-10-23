@@ -74,17 +74,17 @@ AI的极速发展，加速了企业管理从数字化走向智能化。陀螺匠
 ---
 
 ## 🏠 产品架构图
-![输入图片说明](help/%E9%99%80%E8%9E%BA%E5%8C%A0%E4%B8%9A%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE-850%E5%AE%BD@2x.png)
+![输入图片说明](help/resource/%E9%99%80%E8%9E%BA%E5%8C%A0%E4%B8%9A%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE-850%E5%AE%BD@2x.png)
 
 ---
 
 ## 🖼️ 页面预览
-![输入图片说明](a839243ad364bf6aa64d2a8f1b6b8066.png)
-![输入图片说明](93104a66b07900d58311d4eed16a64c0.png)
-![输入图片说明](c5e437c628b3e415a98d98f065582da9.png)
-![输入图片说明](86ca1ace169c226d3e7169fc971e1d82.png)
-![输入图片说明](5880be56e8c3c639c221a21e26115425.png)
-![输入图片说明](15366dde0a9bbd28a5f44e58a1c4d2ab.png)
+![输入图片说明](help/resource/a839243ad364bf6aa64d2a8f1b6b8066.png)
+![输入图片说明](help/resource/93104a66b07900d58311d4eed16a64c0.png)
+![输入图片说明](help/resource/c5e437c628b3e415a98d98f065582da9.png)
+![输入图片说明](help/resource/86ca1ace169c226d3e7169fc971e1d82.png)
+![输入图片说明](help/resource/5880be56e8c3c639c221a21e26115425.png)
+![输入图片说明](help/resource/15366dde0a9bbd28a5f44e58a1c4d2ab.png)
 ---
 
 ## ✅ 帮助文档
@@ -192,7 +192,7 @@ Docker安装教程：https://doc.crmeb.com/tuoluojiang/tuoluojing26/48774
 **陀螺匠开源技术交流群**
 
 
-![输入图片说明](%E6%9B%BF%E6%8D%A2%E4%BA%8C%E7%BB%B4%E7%A0%81.jpg)
+![输入图片说明](help/resource/%E6%9B%BF%E6%8D%A2%E4%BA%8C%E7%BB%B4%E7%A0%81.jpg)
 
 **技术社区！找方法、提bug、看官方消息、拿活跃大奖！都在 **[**CRMEB 技术社区**](https://www.crmeb.com/ask/thread/list/157)** 应有尽有~**
 
