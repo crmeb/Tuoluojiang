@@ -27,7 +27,7 @@ AI的极速发展，加速了企业管理从数字化走向智能化。陀螺匠
 ## ✴️ 开源说明
  **开源说明：** 项目代码100%开源，基于 AGPL-3.0，支持免费商用！
 
- **技 术 栈：** 系统基于Laravel 9+Swoole+Vue.js 框架开发，前后端分离；
+ **技 术 栈：** 后端基于 Laravel 9 + LaravelS/Swoole 4.8，前端基于 Vite + Vue 2.7 + Element UI，前后端分离；
 
  **多种模型接入：** 支持无需注册，开箱即用的一号通token接入；支持市场常见的近20种大模型接入；支持自定义私有化大模型接入；
 
@@ -51,53 +51,49 @@ AI的极速发展，加速了企业管理从数字化走向智能化。陀螺匠
 ./manage.sh start
 ```
 
-启动后访问 http://localhost:20300 ，安装页为 http://localhost:20300/install 。端口、Redis Stack 与安装说明见 `code/docker/README.md`。
+启动后访问 http://localhost:20300 ，安装页为 http://localhost:20300/install 。非 Docker 部署时 LaravelS 默认监听 20200；端口、Redis Stack 与安装说明见 `code/docker/README.md`。
 
 
 ## 💯 技术亮点
 
-1.前后端分离：后端Laravel9+Swoole，前端ElementUI+Vue；
+1.代码内置 Agents rules skills结构化知识库，适配 IDE开发工具读取解析系统代码，让 AI 快速了解系统代码结构，精准定位修改位置，修改有规范，改完能验证。
 
-2.代码规范：遵循PSR-2命名规范、Restful标准接口、代码严格分层、注释齐全；
+2.前后端分离：后端 Laravel 9 + LaravelS/Swoole 4.8，前端 Vite + Vue 2.7 + Element UI；
 
-3.权限管理：内置强大灵活的权限管理，RBAC权限模型；
+3.代码规范：遵循PSR-2命名规范、Restful标准接口、代码严格分层、注释齐全，AI开发更易识别；
 
-4.开发配置：低代码增加配置、系统组合数据模块；
+4.权限管理：内置强大灵活的权限管理，RBAC权限模型；
 
-5.高性能：支持Redis缓存、队列、长连接、多种云储存；
+5.开发配置：低代码增加配置、系统组合数据模块；
 
-6.低代码：自定义表单、自定义字段、自定义数据字典、自定义审批流、自定义列表展示、自定义触发事件、自定义图表统计、自定义对接接口，快速开发企业常见应用。
+6.高性能：支持 Redis 缓存、队列、长连接、多种云存储（知识库向量检索使用 Redis Stack / RediSearch）；
+
+7.低代码：自定义表单、自定义字段、自定义数据字典、自定义审批流、自定义列表展示、自定义触发事件、自定义图表统计、自定义对接接口，快速开发企业常见应用。
 
 
 ---
 
 ## 🏠 产品架构图
-
-![输入图片说明](./help/resource/framework.jpg)
+![输入图片说明](help/%E9%99%80%E8%9E%BA%E5%8C%A0%E4%B8%9A%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE-850%E5%AE%BD@2x.png)
 
 ---
 
 ## 🖼️ 页面预览
-
-![输入图片说明](help/resource/%E5%B7%A5%E4%BD%9C%E5%8F%B0-%E6%96%B0%E6%A1%86%E6%9E%B6-%E8%93%9D.png)
-![输入图片说明](help/resource/%E6%96%B0%E5%A2%9E-%E7%9C%8B%E6%9D%BF%E8%AE%BE%E8%AE%A1.png)
-![输入图片说明](help/resource/%E5%AE%A2%E6%88%B7%E7%AE%A1%E7%90%86%E5%88%97%E8%A1%A8-%E4%BD%8E%E4%BB%A3%E7%A0%81.png)
-![输入图片说明](help/resource/%E5%BC%80%E5%8F%91-%E5%AE%9E%E4%BD%93%E7%AE%A1%E7%90%86-%E8%A1%A8%E5%8D%95%E8%AE%BE%E8%AE%A1.png)
-![输入图片说明](help/resource/%E6%96%B0%E5%BB%BA.png)
-![输入图片说明](help/resource/%E5%BC%80%E5%8F%91-%E8%A7%A6%E5%8F%91%E5%99%A8%E7%AE%A1%E7%90%86.png)
-![输入图片说明](help/resource/%E5%AE%A2%E6%88%B7-%E5%8F%91%E7%A5%A8%E7%AE%A1%E7%90%86.png)
-![输入图片说明](help/resource/%E5%8A%9E%E5%85%AC-%E6%88%91%E7%9A%84%E6%97%A5%E7%A8%8B%EF%BC%88%E5%A4%A9%EF%BC%89.png)
-![输入图片说明](help/resource/%E9%A1%B9%E7%9B%AE-%E6%88%91%E7%9A%84%E4%BB%BB%E5%8A%A1.png)
-![输入图片说明](help/resource/%E5%BA%94%E7%94%A8%E5%88%97%E8%A1%A8%E8%AE%BE%E7%BD%AE.png)
-![输入图片说明](help/resource/AI%E5%8A%A9%E6%89%8B%E5%88%97%E8%A1%A8%E6%A0%B7%E5%BC%8F.png)
-
+![输入图片说明](a839243ad364bf6aa64d2a8f1b6b8066.png)
+![输入图片说明](93104a66b07900d58311d4eed16a64c0.png)
+![输入图片说明](c5e437c628b3e415a98d98f065582da9.png)
+![输入图片说明](86ca1ace169c226d3e7169fc971e1d82.png)
+![输入图片说明](5880be56e8c3c639c221a21e26115425.png)
+![输入图片说明](15366dde0a9bbd28a5f44e58a1c4d2ab.png)
 ---
 
 ## ✅ 帮助文档
 
 官网地址：https://tuoluojiang.com
+
 文档地址：https://doc.crmeb.com/tuoluojiang
 
+## ✅ 体验智能客服[立即体验](https://zb.tuoluojiang.com/chat/visitor/TlJDefaultCsShareKey7kQm2nXp9wR4vB8h)
 ---
 
 ## ✳️ 系统演示
@@ -118,29 +114,29 @@ H5端：**https://demo.tuoluojiang.com/work**
 
 **服务器运行环境：**
 
-PHP Nginx
+PHP 8.0.2+（Docker 镜像固定 PHP 8.0）
 
-PHP 8.0-8.2
+Nginx
 
-MySQL 5.7-8.0
+MySQL 8.0（Docker 默认）
 
-Redis
+Redis Stack（含 RediSearch，知识库向量检索使用）
 
 
 **前端运行环境：**
 
-node版本：14.21.3
+Node.js：>= 22.12
 
-npm版本：6.14.18
+pnpm：>= 10
 
 
 **推荐新手刚入门使用如下配置：**
 
 宝塔Linux控制面板
 
-Nginx 1.1.8
+Nginx 1.18+
 
-MySQL 5.7
+MySQL 8.0
 
 PHP 8.0
 
@@ -154,41 +150,37 @@ Supervisor管理器
 
 | 技术     | 版本号 | 官网 
 | ----------- | ----------- | ----------- 
-| laravel      |  9.52.16       | https://laravel.com 
-| laravel-s    |  3.7.39      | https://github.com/hhxsv5/laravel-s
-| laravel-route-attributes      |  1.20       | https://github.com/spatie/laravel-route-attributes 
-| jwt-auth      |   2.1       | https://github.com/tymondesigns/jwt-auth 
-| form-builder     |  2.0       | https://github.com/xaboy/form-builder 
+| laravel      |  9.52.22       | https://laravel.com 
+| laravel-s    |  3.7.43      | https://github.com/hhxsv5/laravel-s
+| laravel-route-attributes      |  1.20.1       | https://github.com/spatie/laravel-route-attributes 
+| jwt-auth      |   2.3.0       | https://github.com/tymondesigns/jwt-auth 
+| form-builder     |  2.1.1       | https://github.com/xaboy/form-builder 
 
 **前端框架**
 
 |技术| 名称 | 版本号| 官网 |
 |----------- |----------- |----------- |-----------  |
-| vue2      |  MVVM框架   | 2.6.10   | https://v2.cn.vuejs.org/v2/guide |
+| vue2      |  MVVM框架   | 2.7.16   | https://v2.cn.vuejs.org/v2/guide |
 | elementUI      |  UI组件库  | 2.15.14  | https://element.eleme.cn |
-| vuex      |  状态管理模式 + 库   | 3.1.0  | https://vuex.vuejs.org|
-| vue-router  |  路由管理   | 3.0.2  | https://router.vuejs.org |
-| webpack     | 静态模块打包工具  | 4.44.2   | https://www.webpackjs.com |
+| vuex      |  状态管理模式 + 库   | 3.6.2  | https://vuex.vuejs.org|
+| vue-router  |  路由管理   | 3.6.5  | https://router.vuejs.org |
+| vite     | 前端构建工具  | 7.3.6   | https://vite.dev |
 
 
 
 ## 👊想要快速安装，教程来助攻！
 
-宝塔安装教程：https://doc.crmeb.com/tuoluojiang/tuoluojiang19/19107
+Docker安装教程：https://doc.crmeb.com/tuoluojiang/tuoluojing26/48774
 
-Linux安装教程：https://doc.crmeb.com/tuoluojiang/tuoluojiang19/19108
+宝塔安装教程：https://doc.crmeb.com/tuoluojiang/tuoluojing26/48598
 
-前端打包教程：https://doc.crmeb.com/tuoluojiang/tuoluojiang19/19212
+前端打包教程：https://doc.crmeb.com/tuoluojiang/tuoluojing26/48698
 
 ---
 
 ## ⛽️二开支持
 
 使用文档：https://doc.crmeb.com/tuoluojiang
-
-接口文档：https://apifox.com/apidoc/shared-c280d902-20d4-491e-987f-c7aa7e6150e1
-
-视频教程：https://www.bilibili.com/video/BV1t7qzYsE4a
 
 技术社区：https://www.crmeb.com/ask/thread/list/157
 
@@ -200,7 +192,7 @@ Linux安装教程：https://doc.crmeb.com/tuoluojiang/tuoluojiang19/19108
 **陀螺匠开源技术交流群**
 
 
-![输入图片说明](help/resource/image1.jpg)
+![输入图片说明](%E6%9B%BF%E6%8D%A2%E4%BA%8C%E7%BB%B4%E7%A0%81.jpg)
 
 **技术社区！找方法、提bug、看官方消息、拿活跃大奖！都在 **[**CRMEB 技术社区**](https://www.crmeb.com/ask/thread/list/157)** 应有尽有~**
 
@@ -217,15 +209,10 @@ Linux安装教程：https://doc.crmeb.com/tuoluojiang/tuoluojiang19/19108
 
 本项目包含的第三方源码和二进制文件之版权信息另行标注。
 
-版权所有Copyright © 2017-2025 by 陀螺匠 (https://www.tuoluojiang.com)
+版权所有Copyright © 2017-2026 by 陀螺匠 (https://www.tuoluojiang.com)
 
 All rights reserved。
 
 陀螺匠商标和著作权所有者为西安众邦网络科技有限公司。
-
-
-## 欢迎了解CRMEB多商户商城系统
-
-![输入图片说明](help/resource/%E5%BC%80%E6%BA%90%E7%AB%99%E5%A4%9A%E5%95%86%E6%88%B7PHP.jpg)
 
 
