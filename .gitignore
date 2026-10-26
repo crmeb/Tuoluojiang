@@ -38,6 +38,8 @@ yarn-error.log*
 # 编译输出
 dist/
 build/
+# template/build 是 Vite 构建插件源码（被 vite.config.ts 引用），不能按产物忽略
+!template/build/
 *.o
 *.class
 *.jar
